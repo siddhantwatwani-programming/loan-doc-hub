@@ -12,7 +12,12 @@ import {
   Clock,
   User,
   AlertTriangle,
-  Eye
+  Eye,
+  Link2,
+  ShieldOff,
+  Timer,
+  RefreshCw,
+  UserCheck
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -68,6 +73,12 @@ const ACTION_CONFIG: Record<ActionType, {
     color: 'text-purple-600',
     bgColor: 'bg-purple-100',
   },
+  FieldUpdatedByExternal: {
+    icon: UserCheck,
+    label: 'External Field Update',
+    color: 'text-cyan-600',
+    bgColor: 'bg-cyan-100',
+  },
   ParticipantInvited: {
     icon: User,
     label: 'Participant Invited',
@@ -85,6 +96,30 @@ const ACTION_CONFIG: Record<ActionType, {
     label: 'Section Completed',
     color: 'text-emerald-600',
     bgColor: 'bg-emerald-100',
+  },
+  MagicLinkAccessed: {
+    icon: Link2,
+    label: 'Link Accessed',
+    color: 'text-sky-600',
+    bgColor: 'bg-sky-100',
+  },
+  AccessRevoked: {
+    icon: ShieldOff,
+    label: 'Access Revoked',
+    color: 'text-red-600',
+    bgColor: 'bg-red-100',
+  },
+  AccessExpired: {
+    icon: Timer,
+    label: 'Access Expired',
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-100',
+  },
+  ParticipantStatusReset: {
+    icon: RefreshCw,
+    label: 'Status Reset',
+    color: 'text-violet-600',
+    bgColor: 'bg-violet-100',
   },
   FieldOverwritten: {
     icon: AlertTriangle,
@@ -177,6 +212,8 @@ export const ActivityLogViewer: React.FC<ActivityLogViewerProps> = ({
         return d.reason || (d.fieldChanged ? `Field changed: ${d.fieldChanged}` : null);
       case 'FieldUpdated':
         return d.fieldLabel || d.fieldKey;
+      case 'FieldUpdatedByExternal':
+        return d.role ? `${d.fieldLabel || d.fieldKey} by ${d.role}` : (d.fieldLabel || d.fieldKey);
       case 'FieldOverwritten':
         return `${d.fieldLabel || d.fieldKey} (was edited by ${d.previousUpdaterRole || 'external user'})`;
       case 'ExternalDataReviewed':
@@ -187,6 +224,14 @@ export const ActivityLogViewer: React.FC<ActivityLogViewerProps> = ({
         return d.role || null;
       case 'ParticipantCompleted':
         return d.role ? `${d.role} completed their section` : null;
+      case 'MagicLinkAccessed':
+        return d.role ? `${d.role} accessed the deal` : null;
+      case 'AccessRevoked':
+        return d.role ? `${d.role}'s access was revoked${d.email ? ` (${d.email})` : ''}` : null;
+      case 'AccessExpired':
+        return d.role ? `${d.role}'s access expired${d.reason ? `: ${d.reason}` : ''}` : null;
+      case 'ParticipantStatusReset':
+        return d.role ? `${d.role} reset from ${d.previousStatus}` : null;
       default:
         return null;
     }

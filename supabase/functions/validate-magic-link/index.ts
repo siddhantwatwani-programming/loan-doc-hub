@@ -80,6 +80,26 @@ Deno.serve(async (req) => {
       console.error("Error updating participant status:", updateError);
     }
 
+    // Log the magic link access in activity_log
+    // We need to use a system user ID since the external user may not have an auth account
+    // Use the participant_id as a reference in the actor_user_id field
+    const { error: logError } = await supabase
+      .from("activity_log")
+      .insert({
+        deal_id: result.deal_id,
+        actor_user_id: result.participant_id, // Using participant_id as actor since no auth user exists
+        action_type: "MagicLinkAccessed",
+        action_details: {
+          role: result.role,
+          participantId: result.participant_id,
+          dealNumber: result.deal_number,
+        },
+      });
+
+    if (logError) {
+      console.error("Error logging magic link access:", logError);
+    }
+
     const response: ValidationResult = {
       isValid: true,
       dealId: result.deal_id,

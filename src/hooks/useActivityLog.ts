@@ -13,9 +13,14 @@ export type ActionType =
   | 'DealRevertedToDraft'
   | 'FieldUpdated'
   | 'FieldOverwritten'
+  | 'FieldUpdatedByExternal'
   | 'ParticipantInvited'
   | 'ParticipantRemoved'
   | 'ParticipantCompleted'
+  | 'MagicLinkAccessed'
+  | 'AccessRevoked'
+  | 'AccessExpired'
+  | 'ParticipantStatusReset'
   | 'ExternalDataReviewed';
 
 export interface ActivityLogEntry {
@@ -192,6 +197,80 @@ export async function logExternalDataReviewed(dealId: string, details: {
   return logActivity({
     dealId,
     actionType: 'ExternalDataReviewed',
+    actionDetails: details,
+  });
+}
+
+/**
+ * Log when external user updates a field
+ */
+export async function logFieldUpdatedByExternal(dealId: string, details: {
+  fieldKey: string;
+  fieldLabel?: string;
+  role: string;
+}): Promise<boolean> {
+  return logActivity({
+    dealId,
+    actionType: 'FieldUpdatedByExternal',
+    actionDetails: details,
+  });
+}
+
+/**
+ * Log when magic link is accessed
+ */
+export async function logMagicLinkAccessed(dealId: string, details: {
+  role: string;
+  participantId: string;
+}): Promise<boolean> {
+  return logActivity({
+    dealId,
+    actionType: 'MagicLinkAccessed',
+    actionDetails: details,
+  });
+}
+
+/**
+ * Log when CSR revokes participant access
+ */
+export async function logAccessRevoked(dealId: string, details: {
+  role: string;
+  participantId: string;
+  email?: string;
+}): Promise<boolean> {
+  return logActivity({
+    dealId,
+    actionType: 'AccessRevoked',
+    actionDetails: details,
+  });
+}
+
+/**
+ * Log when participant access expires
+ */
+export async function logAccessExpired(dealId: string, details: {
+  role: string;
+  participantId: string;
+  reason?: string;
+}): Promise<boolean> {
+  return logActivity({
+    dealId,
+    actionType: 'AccessExpired',
+    actionDetails: details,
+  });
+}
+
+/**
+ * Log when CSR resets participant status
+ */
+export async function logParticipantStatusReset(dealId: string, details: {
+  role: string;
+  participantId: string;
+  previousStatus: string;
+}): Promise<boolean> {
+  return logActivity({
+    dealId,
+    actionType: 'ParticipantStatusReset',
     actionDetails: details,
   });
 }
