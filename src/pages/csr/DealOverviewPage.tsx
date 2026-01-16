@@ -319,82 +319,64 @@ export const DealOverviewPage: React.FC = () => {
     // All preconditions met - proceed with generation
     setIsGenerating(true);
     try {
-      // Generate documents for all templates in the packet
-      const { data: packetTemplates, error: ptError } = await supabase
-        .from('packet_templates')
-        .select('template_id, templates(id, name, file_path)')
-        .eq('packet_id', packet.id)
-        .order('display_order');
+      // Use packet-based generation - the edge function handles all templates
+      const { data, error } = await supabase.functions.invoke('generate-document', {
+        body: {
+          dealId: deal.id,
+          packetId: packet.id,
+          outputType: 'docx_only',
+        },
+      });
 
-      if (ptError) throw ptError;
-
-      const templatesWithFiles = (packetTemplates || []).filter(
-        (pt: any) => pt.templates?.file_path
-      );
-
-      if (templatesWithFiles.length === 0) {
-        toast({
-          title: 'No Templates',
-          description: 'No templates with DOCX files found in this packet',
-          variant: 'destructive',
-        });
-        return;
+      if (error) {
+        throw new Error(error.message || 'Generation failed');
       }
 
-      let successCount = 0;
-      let failCount = 0;
-      const errors: string[] = [];
-
-      // Generate each template
-      for (const pt of templatesWithFiles) {
-        const template = (pt as any).templates;
-        try {
-          const { data, error } = await supabase.functions.invoke('generate-document', {
-            body: {
-              dealId: deal.id,
-              templateId: template.id,
-              outputType: 'docx_only',
-            },
-          });
-
-          if (error) {
-            failCount++;
-            errors.push(`${template.name}: ${error.message}`);
-            console.error(`Failed to generate ${template.name}:`, error);
-          } else if (data?.error) {
-            failCount++;
-            errors.push(`${template.name}: ${data.error}`);
-            console.error(`Failed to generate ${template.name}:`, data.error);
-          } else {
-            successCount++;
-            console.log(`Generated ${template.name}:`, data);
-          }
-        } catch (err: any) {
-          failCount++;
-          errors.push(`${template.name}: ${err.message}`);
-          console.error(`Exception generating ${template.name}:`, err);
-        }
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
-      // Show result summary
-      if (successCount > 0 && failCount === 0) {
+      // Parse job result
+      const jobResult = data as {
+        jobId: string;
+        status: string;
+        successCount: number;
+        failCount: number;
+        results: Array<{
+          templateName: string;
+          success: boolean;
+          error?: string;
+          versionNumber?: number;
+        }>;
+      };
+
+      console.log('Generation job result:', jobResult);
+
+      // Show detailed result
+      if (jobResult.failCount === 0 && jobResult.successCount > 0) {
         toast({
           title: 'Documents Generated',
-          description: `Successfully generated ${successCount} document${successCount > 1 ? 's' : ''}`,
+          description: `Successfully generated ${jobResult.successCount} document${jobResult.successCount > 1 ? 's' : ''}`,
         });
-        // Refresh deal data to show new status
         fetchDealData();
-      } else if (successCount > 0 && failCount > 0) {
+      } else if (jobResult.successCount > 0 && jobResult.failCount > 0) {
+        // Partial success - show which ones failed
+        const failedTemplates = jobResult.results
+          .filter(r => !r.success)
+          .map(r => r.templateName)
+          .join(', ');
         toast({
           title: 'Partial Success',
-          description: `Generated ${successCount} document${successCount > 1 ? 's' : ''}, ${failCount} failed`,
+          description: `Generated ${jobResult.successCount} document${jobResult.successCount > 1 ? 's' : ''}, ${jobResult.failCount} failed: ${failedTemplates}`,
           variant: 'destructive',
         });
         fetchDealData();
       } else {
+        // All failed
+        const firstError = jobResult.results.find(r => !r.success)?.error || 'Unknown error';
         toast({
           title: 'Generation Failed',
-          description: errors[0] || 'Failed to generate documents',
+          description: firstError,
           variant: 'destructive',
         });
       }

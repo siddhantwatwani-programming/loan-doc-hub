@@ -7,7 +7,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// ============================================
 // Types
+// ============================================
+
+type OutputType = "docx_only" | "docx_and_pdf";
+type RequestType = "single_doc" | "packet";
+type GenerationStatus = "queued" | "running" | "success" | "failed";
+
+interface GenerateDocumentRequest {
+  dealId: string;
+  templateId?: string;  // For single doc
+  packetId?: string;    // For packet generation
+  outputType?: OutputType;
+}
+
 interface TemplateFieldMap {
   field_key: string;
   transform_rule: string | null;
@@ -27,14 +41,36 @@ interface DealFieldValue {
   value_date: string | null;
 }
 
-interface GenerateDocumentRequest {
-  dealId: string;
+interface Template {
+  id: string;
+  name: string;
+  file_path: string | null;
+}
+
+interface GenerationResult {
   templateId: string;
-  outputType?: "docx_only" | "docx_and_pdf";
+  templateName: string;
+  success: boolean;
+  documentId?: string;
+  versionNumber?: number;
+  outputPath?: string;
+  error?: string;
+}
+
+interface JobResult {
+  jobId: string;
+  dealId: string;
+  requestType: RequestType;
+  status: GenerationStatus;
+  results: GenerationResult[];
+  successCount: number;
+  failCount: number;
+  startedAt: string;
+  completedAt?: string;
 }
 
 // ============================================
-// Formatting Utilities (duplicated from fieldTransforms.ts for edge function context)
+// Formatting Utilities
 // ============================================
 
 function formatCurrency(value: string | number | null): string {
@@ -271,10 +307,6 @@ interface ParsedMergeTag {
   inlineTransform: string | null;
 }
 
-/**
- * Parse merge tags from content
- * Supports: {{FieldKey}} and {{FieldKey | transform}}
- */
 function parseMergeTags(content: string): ParsedMergeTag[] {
   const tagPattern = /\{\{([^}|]+)(?:\s*\|\s*([^}]+))?\}\}/g;
   const tags: ParsedMergeTag[] = [];
@@ -291,9 +323,6 @@ function parseMergeTags(content: string): ParsedMergeTag[] {
   return tags;
 }
 
-/**
- * Replace merge tags in content with resolved values
- */
 function replaceMergeTags(
   content: string,
   fieldValues: Map<string, { rawValue: string | number | null; dataType: string }>,
@@ -307,7 +336,6 @@ function replaceMergeTags(
     let resolvedValue = "";
 
     if (fieldData) {
-      // Priority: inline transform > templateFieldMap transform > default dataType formatting
       const transform = tag.inlineTransform || fieldTransforms.get(tag.fieldKey);
 
       if (transform) {
@@ -317,7 +345,6 @@ function replaceMergeTags(
       }
     }
 
-    // Replace all occurrences of this exact tag
     result = result.split(tag.fullMatch).join(resolvedValue);
   }
 
@@ -328,42 +355,206 @@ function replaceMergeTags(
 // DOCX Processing
 // ============================================
 
-/**
- * Extract and process a DOCX file
- * DOCX is a ZIP archive containing XML files
- */
 async function processDocx(
   docxBuffer: Uint8Array,
   fieldValues: Map<string, { rawValue: string | number | null; dataType: string }>,
   fieldTransforms: Map<string, string>
 ): Promise<Uint8Array> {
-  // Decompress the DOCX (ZIP) file
   const decompressed = fflate.unzipSync(docxBuffer);
-
-  // Process each XML file in the archive
   const processedFiles: { [key: string]: Uint8Array } = {};
 
   for (const [filename, content] of Object.entries(decompressed)) {
     if (filename.endsWith(".xml") || filename.endsWith(".rels")) {
-      // Decode XML content as text
       const decoder = new TextDecoder("utf-8");
       let xmlContent = decoder.decode(content);
-
-      // Replace merge tags in XML content
       xmlContent = replaceMergeTags(xmlContent, fieldValues, fieldTransforms);
-
-      // Encode back to bytes
       const encoder = new TextEncoder();
       processedFiles[filename] = encoder.encode(xmlContent);
     } else {
-      // Keep non-XML files as-is (images, etc.)
       processedFiles[filename] = content;
     }
   }
 
-  // Recompress to DOCX
   const compressed = fflate.zipSync(processedFiles);
   return compressed;
+}
+
+// ============================================
+// Single Document Generation
+// ============================================
+
+async function generateSingleDocument(
+  supabase: any,
+  dealId: string,
+  templateId: string,
+  packetId: string | null,
+  outputType: OutputType,
+  userId: string
+): Promise<GenerationResult> {
+  const result: GenerationResult = {
+    templateId,
+    templateName: "",
+    success: false,
+  };
+
+  try {
+    // 1. Fetch template info
+    const { data: template, error: templateError } = await supabase
+      .from("templates")
+      .select("id, name, file_path, is_active")
+      .eq("id", templateId)
+      .single();
+
+    if (templateError || !template) {
+      result.error = "Template not found";
+      return result;
+    }
+
+    result.templateName = template.name;
+
+    if (!template.file_path) {
+      result.error = "Template has no DOCX file";
+      return result;
+    }
+
+    console.log(`[generate-document] Processing template: ${template.name}`);
+
+    // 2. Fetch template field maps
+    const { data: fieldMaps, error: fmError } = await supabase
+      .from("template_field_maps")
+      .select("field_key, transform_rule, required_flag")
+      .eq("template_id", templateId);
+
+    if (fmError) {
+      result.error = "Failed to fetch template field maps";
+      return result;
+    }
+
+    const fieldKeys = (fieldMaps || []).map((fm: TemplateFieldMap) => fm.field_key);
+    const fieldTransforms = new Map<string, string>();
+    (fieldMaps || []).forEach((fm: TemplateFieldMap) => {
+      if (fm.transform_rule) {
+        fieldTransforms.set(fm.field_key, fm.transform_rule);
+      }
+    });
+
+    // 3. Fetch field definitions
+    const { data: fieldDefs } = await supabase
+      .from("field_dictionary")
+      .select("field_key, data_type, label")
+      .in("field_key", fieldKeys.length > 0 ? fieldKeys : ["__none__"]);
+
+    const fieldDefMap = new Map<string, FieldDefinition>();
+    (fieldDefs || []).forEach((fd: FieldDefinition) => {
+      fieldDefMap.set(fd.field_key, fd);
+    });
+
+    // 4. Fetch deal field values
+    const { data: dealFieldValues } = await supabase
+      .from("deal_field_values")
+      .select("field_key, value_text, value_number, value_date")
+      .eq("deal_id", dealId)
+      .in("field_key", fieldKeys.length > 0 ? fieldKeys : ["__none__"]);
+
+    const fieldValues = new Map<string, { rawValue: string | number | null; dataType: string }>();
+    (dealFieldValues || []).forEach((dfv: DealFieldValue) => {
+      const fieldDef = fieldDefMap.get(dfv.field_key);
+      const dataType = fieldDef?.data_type || "text";
+      const rawValue = extractRawValue(dfv, dataType);
+      fieldValues.set(dfv.field_key, { rawValue, dataType });
+    });
+
+    console.log(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);
+
+    // 5. Download template DOCX from storage
+    const { data: fileData, error: fileError } = await supabase.storage
+      .from("templates")
+      .download(template.file_path);
+
+    if (fileError || !fileData) {
+      result.error = "Failed to download template file";
+      return result;
+    }
+
+    // 6. Process the DOCX
+    const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
+    const processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms);
+
+    console.log(`[generate-document] Processed DOCX: ${processedDocx.length} bytes`);
+
+    // 7. Calculate version number (trigger handles this, but we track for response)
+    const { data: existingDocs } = await supabase
+      .from("generated_documents")
+      .select("version_number")
+      .eq("deal_id", dealId)
+      .eq("template_id", templateId)
+      .order("version_number", { ascending: false })
+      .limit(1);
+
+    const versionNumber = existingDocs && existingDocs.length > 0 ? existingDocs[0].version_number + 1 : 1;
+
+    // 8. Upload generated document to storage
+    const timestamp = Date.now();
+    const outputFileName = `generated/${dealId}/${templateId}_v${versionNumber}_${timestamp}.docx`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("templates")
+      .upload(outputFileName, processedDocx, {
+        contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      result.error = "Failed to save generated document";
+      return result;
+    }
+
+    console.log(`[generate-document] Uploaded to: ${outputFileName}`);
+
+    // 9. Handle PDF conversion (placeholder - would need external service)
+    let pdfPath: string | null = null;
+    if (outputType === "docx_and_pdf") {
+      // PDF conversion not yet implemented
+      // Would integrate with a service like CloudConvert, Gotenberg, or LibreOffice
+      console.log(`[generate-document] PDF conversion requested but not yet implemented`);
+    }
+
+    // 10. Create generated_documents record
+    const { data: generatedDoc, error: insertError } = await supabase
+      .from("generated_documents")
+      .insert({
+        deal_id: dealId,
+        template_id: templateId,
+        packet_id: packetId,
+        output_docx_path: outputFileName,
+        output_pdf_path: pdfPath,
+        output_type: outputType,
+        version_number: versionNumber,
+        created_by: userId,
+        generation_status: "success",
+        error_message: null,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      result.error = "Failed to create document record";
+      return result;
+    }
+
+    console.log(`[generate-document] Created document record: ${generatedDoc.id}`);
+
+    result.success = true;
+    result.documentId = generatedDoc.id;
+    result.versionNumber = versionNumber;
+    result.outputPath = outputFileName;
+
+    return result;
+  } catch (error: any) {
+    console.error(`[generate-document] Error processing ${result.templateName}:`, error);
+    result.error = error.message || "Unknown error";
+    return result;
+  }
 }
 
 // ============================================
@@ -371,17 +562,16 @@ async function processDocx(
 // ============================================
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get authorization header for user context
+  try {
+    // Authenticate user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing authorization header" }), {
@@ -390,7 +580,6 @@ serve(async (req) => {
       });
     }
 
-    // Verify user and get their ID
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     if (userError || !userData.user) {
@@ -404,18 +593,26 @@ serve(async (req) => {
     console.log(`[generate-document] User: ${userId}`);
 
     // Parse request
-    const { dealId, templateId, outputType = "docx_only" }: GenerateDocumentRequest = await req.json();
+    const { dealId, templateId, packetId, outputType = "docx_only" }: GenerateDocumentRequest = await req.json();
 
-    if (!dealId || !templateId) {
-      return new Response(JSON.stringify({ error: "dealId and templateId are required" }), {
+    if (!dealId) {
+      return new Response(JSON.stringify({ error: "dealId is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`[generate-document] Processing deal: ${dealId}, template: ${templateId}`);
+    if (!templateId && !packetId) {
+      return new Response(JSON.stringify({ error: "Either templateId or packetId is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // 1. Verify deal exists and is in ready status
+    const requestType: RequestType = templateId ? "single_doc" : "packet";
+    console.log(`[generate-document] Request type: ${requestType}, deal: ${dealId}`);
+
+    // Verify deal exists and is in ready/generated status
     const { data: deal, error: dealError } = await supabase
       .from("deals")
       .select("id, deal_number, status, packet_id")
@@ -423,7 +620,6 @@ serve(async (req) => {
       .single();
 
     if (dealError || !deal) {
-      console.error("[generate-document] Deal not found:", dealError);
       return new Response(JSON.stringify({ error: "Deal not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -432,7 +628,7 @@ serve(async (req) => {
 
     if (deal.status !== "ready" && deal.status !== "generated") {
       return new Response(
-        JSON.stringify({ error: "Deal must be in Ready or Generated status to generate documents" }),
+        JSON.stringify({ error: "Deal must be in Ready or Generated status" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -440,201 +636,184 @@ serve(async (req) => {
       );
     }
 
-    // 2. Fetch template info
-    const { data: template, error: templateError } = await supabase
-      .from("templates")
-      .select("id, name, file_path, is_active")
-      .eq("id", templateId)
-      .single();
-
-    if (templateError || !template) {
-      console.error("[generate-document] Template not found:", templateError);
-      return new Response(JSON.stringify({ error: "Template not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (!template.file_path) {
-      return new Response(JSON.stringify({ error: "Template has no DOCX file" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    console.log(`[generate-document] Template: ${template.name}, file: ${template.file_path}`);
-
-    // 3. Fetch template field maps
-    const { data: fieldMaps, error: fmError } = await supabase
-      .from("template_field_maps")
-      .select("field_key, transform_rule, required_flag")
-      .eq("template_id", templateId);
-
-    if (fmError) {
-      console.error("[generate-document] Error fetching field maps:", fmError);
-      return new Response(JSON.stringify({ error: "Failed to fetch template field maps" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const fieldKeys = (fieldMaps || []).map((fm: TemplateFieldMap) => fm.field_key);
-    const fieldTransforms = new Map<string, string>();
-    (fieldMaps || []).forEach((fm: TemplateFieldMap) => {
-      if (fm.transform_rule) {
-        fieldTransforms.set(fm.field_key, fm.transform_rule);
-      }
-    });
-
-    console.log(`[generate-document] Field keys: ${fieldKeys.length}, transforms: ${fieldTransforms.size}`);
-
-    // 4. Fetch field definitions
-    const { data: fieldDefs, error: fdError } = await supabase
-      .from("field_dictionary")
-      .select("field_key, data_type, label")
-      .in("field_key", fieldKeys.length > 0 ? fieldKeys : ["__none__"]);
-
-    if (fdError) {
-      console.error("[generate-document] Error fetching field definitions:", fdError);
-    }
-
-    const fieldDefMap = new Map<string, FieldDefinition>();
-    (fieldDefs || []).forEach((fd: FieldDefinition) => {
-      fieldDefMap.set(fd.field_key, fd);
-    });
-
-    // 5. Fetch deal field values
-    const { data: dealFieldValues, error: dfvError } = await supabase
-      .from("deal_field_values")
-      .select("field_key, value_text, value_number, value_date")
-      .eq("deal_id", dealId)
-      .in("field_key", fieldKeys.length > 0 ? fieldKeys : ["__none__"]);
-
-    if (dfvError) {
-      console.error("[generate-document] Error fetching deal field values:", dfvError);
-    }
-
-    // Build field values map
-    const fieldValues = new Map<string, { rawValue: string | number | null; dataType: string }>();
-    (dealFieldValues || []).forEach((dfv: DealFieldValue) => {
-      const fieldDef = fieldDefMap.get(dfv.field_key);
-      const dataType = fieldDef?.data_type || "text";
-      const rawValue = extractRawValue(dfv, dataType);
-      fieldValues.set(dfv.field_key, { rawValue, dataType });
-    });
-
-    console.log(`[generate-document] Resolved ${fieldValues.size} field values`);
-
-    // 6. Download template DOCX from storage
-    const { data: fileData, error: fileError } = await supabase.storage
-      .from("templates")
-      .download(template.file_path);
-
-    if (fileError || !fileData) {
-      console.error("[generate-document] Error downloading template:", fileError);
-      return new Response(JSON.stringify({ error: "Failed to download template file" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    console.log(`[generate-document] Downloaded template: ${fileData.size} bytes`);
-
-    // 7. Process the DOCX
-    const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
-    const processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms);
-
-    console.log(`[generate-document] Processed DOCX: ${processedDocx.length} bytes`);
-
-    // 8. Calculate version number
-    const { data: existingDocs, error: versionError } = await supabase
-      .from("generated_documents")
-      .select("version_number")
-      .eq("deal_id", dealId)
-      .eq("template_id", templateId)
-      .order("version_number", { ascending: false })
-      .limit(1);
-
-    const versionNumber = existingDocs && existingDocs.length > 0 ? existingDocs[0].version_number + 1 : 1;
-
-    // 9. Upload generated document to storage
-    const timestamp = Date.now();
-    const outputFileName = `generated/${dealId}/${templateId}_v${versionNumber}_${timestamp}.docx`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("templates")
-      .upload(outputFileName, processedDocx, {
-        contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        upsert: false,
-      });
-
-    if (uploadError) {
-      console.error("[generate-document] Error uploading generated document:", uploadError);
-      return new Response(JSON.stringify({ error: "Failed to save generated document" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    console.log(`[generate-document] Uploaded to: ${outputFileName}`);
-
-    // 10. Create generated_documents record
-    const { data: generatedDoc, error: insertError } = await supabase
-      .from("generated_documents")
+    // Create GenerationJob record
+    const { data: job, error: jobError } = await supabase
+      .from("generation_jobs")
       .insert({
         deal_id: dealId,
-        template_id: templateId,
-        packet_id: deal.packet_id,
-        output_docx_path: outputFileName,
-        output_pdf_path: null, // PDF generation not implemented yet
+        requested_by: userId,
+        request_type: requestType,
+        packet_id: packetId || deal.packet_id,
+        template_id: templateId || null,
         output_type: outputType,
-        version_number: versionNumber,
-        created_by: userId,
-        generation_status: "success",
-        error_message: null,
+        status: "running",
+        started_at: new Date().toISOString(),
       })
       .select()
       .single();
 
-    if (insertError) {
-      console.error("[generate-document] Error creating document record:", insertError);
-      return new Response(JSON.stringify({ error: "Failed to create document record" }), {
+    if (jobError) {
+      console.error("[generate-document] Failed to create job:", jobError);
+      return new Response(JSON.stringify({ error: "Failed to create generation job" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`[generate-document] Created document record: ${generatedDoc.id}`);
+    console.log(`[generate-document] Created job: ${job.id}`);
 
-    // 11. Update deal status to generated if first successful generation
-    if (deal.status === "ready") {
-      await supabase.from("deals").update({ status: "generated" }).eq("id", dealId);
-      console.log(`[generate-document] Updated deal status to generated`);
-    }
+    const jobResult: JobResult = {
+      jobId: job.id,
+      dealId,
+      requestType,
+      status: "running",
+      results: [],
+      successCount: 0,
+      failCount: 0,
+      startedAt: job.started_at,
+    };
 
-    // Return success response
-    return new Response(
-      JSON.stringify({
-        success: true,
-        document: {
-          id: generatedDoc.id,
-          dealId: dealId,
-          templateId: templateId,
-          templateName: template.name,
-          versionNumber: versionNumber,
-          outputPath: outputFileName,
-          generatedAt: generatedDoc.created_at,
-        },
-      }),
-      {
+    try {
+      if (requestType === "single_doc" && templateId) {
+        // Single document generation
+        const result = await generateSingleDocument(
+          supabase,
+          dealId,
+          templateId,
+          deal.packet_id,
+          outputType,
+          userId
+        );
+        jobResult.results.push(result);
+        
+        if (result.success) {
+          jobResult.successCount++;
+        } else {
+          jobResult.failCount++;
+        }
+      } else if (packetId || deal.packet_id) {
+        // Packet generation - iterate all templates in order
+        const effectivePacketId = packetId || deal.packet_id;
+        
+        const { data: packetTemplates, error: ptError } = await supabase
+          .from("packet_templates")
+          .select("template_id, templates(id, name, file_path)")
+          .eq("packet_id", effectivePacketId)
+          .order("display_order");
+
+        if (ptError) {
+          throw new Error("Failed to fetch packet templates");
+        }
+
+        console.log(`[generate-document] Processing ${packetTemplates?.length || 0} templates in packet`);
+
+        for (const pt of (packetTemplates || [])) {
+          const template = (pt as any).templates as Template;
+          
+          if (!template?.file_path) {
+            jobResult.results.push({
+              templateId: pt.template_id,
+              templateName: template?.name || "Unknown",
+              success: false,
+              error: "Template has no DOCX file",
+            });
+            jobResult.failCount++;
+            continue;
+          }
+
+          const result = await generateSingleDocument(
+            supabase,
+            dealId,
+            pt.template_id,
+            effectivePacketId,
+            outputType,
+            userId
+          );
+          
+          jobResult.results.push(result);
+          
+          if (result.success) {
+            jobResult.successCount++;
+          } else {
+            jobResult.failCount++;
+          }
+        }
+      }
+
+      // Determine final job status
+      const completedAt = new Date().toISOString();
+      let finalStatus: GenerationStatus;
+      let errorMessage: string | null = null;
+
+      if (jobResult.failCount === 0 && jobResult.successCount > 0) {
+        finalStatus = "success";
+      } else if (jobResult.successCount === 0 && jobResult.failCount > 0) {
+        finalStatus = "failed";
+        const failures = jobResult.results.filter(r => !r.success);
+        errorMessage = failures.map(f => `${f.templateName}: ${f.error}`).join("; ");
+      } else {
+        // Partial success - still mark as success but include error details
+        finalStatus = "success";
+        const failures = jobResult.results.filter(r => !r.success);
+        errorMessage = `Partial: ${failures.length} failed - ${failures.map(f => f.templateName).join(", ")}`;
+      }
+
+      // Update job record
+      await supabase
+        .from("generation_jobs")
+        .update({
+          status: finalStatus,
+          completed_at: completedAt,
+          error_message: errorMessage,
+        })
+        .eq("id", job.id);
+
+      jobResult.status = finalStatus;
+      jobResult.completedAt = completedAt;
+
+      // Update deal status to generated if successful and was ready
+      if (jobResult.successCount > 0 && deal.status === "ready") {
+        await supabase.from("deals").update({ status: "generated" }).eq("id", dealId);
+        console.log(`[generate-document] Updated deal status to generated`);
+      }
+
+      console.log(`[generate-document] Job ${job.id} completed: ${jobResult.successCount} success, ${jobResult.failCount} failed`);
+
+      return new Response(JSON.stringify(jobResult), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  } catch (error) {
+      });
+
+    } catch (error: any) {
+      // Mark job as failed
+      const completedAt = new Date().toISOString();
+      await supabase
+        .from("generation_jobs")
+        .update({
+          status: "failed",
+          completed_at: completedAt,
+          error_message: error.message || "Unknown error",
+        })
+        .eq("id", job.id);
+
+      jobResult.status = "failed";
+      jobResult.completedAt = completedAt;
+
+      console.error("[generate-document] Job failed:", error);
+
+      return new Response(JSON.stringify({
+        ...jobResult,
+        error: error.message || "Unknown error",
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+  } catch (error: any) {
     console.error("[generate-document] Unexpected error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: error.message || "Unknown error" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
