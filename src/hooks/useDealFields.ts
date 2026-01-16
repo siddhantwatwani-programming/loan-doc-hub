@@ -34,16 +34,19 @@ export interface DealFieldsData {
   loading: boolean;
   saving: boolean;
   error: string | null;
+  isDirty: boolean;
 }
 
 export interface UseDealFieldsReturn extends DealFieldsData {
-  updateValue: (fieldKey: string, value: string) => void;
+  updateValue: (fieldKey: string, value: string, isRequiredField?: boolean) => void;
   saveDraft: () => Promise<boolean>;
   getValidationErrors: (section?: FieldSection) => string[];
   getMissingRequiredFields: (section?: FieldSection) => ResolvedField[];
   isSectionComplete: (section: FieldSection) => boolean;
   isPacketComplete: () => boolean;
   computeCalculatedFields: () => Record<string, string>;
+  hasRequiredFieldChanged: () => boolean;
+  resetDirty: () => void;
 }
 
 // Map field data types to value columns
@@ -70,6 +73,8 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [requiredFieldChanged, setRequiredFieldChanged] = useState(false);
 
   // Fetch resolved fields and values
   useEffect(() => {
@@ -138,12 +143,18 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     }
   };
 
-  const updateValue = useCallback((fieldKey: string, value: string) => {
+  const updateValue = useCallback((fieldKey: string, value: string, isRequiredField?: boolean) => {
     setValues(prev => ({
       ...prev,
       [fieldKey]: value
     }));
-  }, []);
+    setIsDirty(true);
+    
+    // Track if a required field was changed
+    if (isRequiredField || resolvedFields?.requiredFieldKeys.includes(fieldKey)) {
+      setRequiredFieldChanged(true);
+    }
+  }, [resolvedFields]);
 
   const computeCalculatedFields = useCallback((): Record<string, string> => {
     if (!resolvedFields) return values;
@@ -280,6 +291,15 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     return getMissingRequiredFields().length === 0;
   }, [getMissingRequiredFields]);
 
+  const hasRequiredFieldChanged = useCallback((): boolean => {
+    return requiredFieldChanged;
+  }, [requiredFieldChanged]);
+
+  const resetDirty = useCallback(() => {
+    setIsDirty(false);
+    setRequiredFieldChanged(false);
+  }, []);
+
   return {
     fields: resolvedFields?.fields || [],
     fieldsBySection: resolvedFields?.fieldsBySection || ({} as Record<FieldSection, ResolvedField[]>),
@@ -290,6 +310,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     loading,
     saving,
     error,
+    isDirty,
     updateValue,
     saveDraft,
     getValidationErrors,
@@ -297,5 +318,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     isSectionComplete,
     isPacketComplete,
     computeCalculatedFields,
+    hasRequiredFieldChanged,
+    resetDirty,
   };
 }

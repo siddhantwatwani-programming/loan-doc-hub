@@ -92,11 +92,14 @@ export const DealDataEntryPage: React.FC = () => {
     requiredFieldKeys,
     loading: fieldsLoading,
     saving,
+    isDirty,
     updateValue,
     saveDraft,
     getMissingRequiredFields,
     isSectionComplete,
     isPacketComplete,
+    hasRequiredFieldChanged,
+    resetDirty,
   } = useDealFields(id || '', deal?.packet_id || null);
 
   // Set initial active tab when sections load
@@ -106,10 +109,40 @@ export const DealDataEntryPage: React.FC = () => {
     }
   }, [sections, activeTab]);
 
+  // Auto-revert to Draft if a required field is changed when status is Ready
+  useEffect(() => {
+    if (deal?.status === 'ready' && hasRequiredFieldChanged() && isDirty) {
+      // Revert status to draft
+      revertToDraft();
+    }
+  }, [values, deal?.status, hasRequiredFieldChanged, isDirty]);
+
+  const revertToDraft = async () => {
+    try {
+      const { error } = await supabase
+        .from('deals')
+        .update({ status: 'draft' })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setDeal(prev => prev ? { ...prev, status: 'draft' } : null);
+      toast({
+        title: 'Status changed to Draft',
+        description: 'Deal status was reverted because a required field was modified',
+      });
+    } catch (error) {
+      console.error('Error reverting to draft:', error);
+    }
+  };
+
   const handleSave = async () => {
     setShowValidation(true);
     const success = await saveDraft();
     if (success) {
+      resetDirty();
+      // Refresh deal to get updated timestamp
+      fetchDeal();
       const missing = getMissingRequiredFields();
       if (missing.length > 0) {
         toast({
@@ -145,6 +178,7 @@ export const DealDataEntryPage: React.FC = () => {
 
       if (error) throw error;
 
+      resetDirty();
       toast({
         title: 'Deal marked as ready',
         description: 'All required fields are complete',

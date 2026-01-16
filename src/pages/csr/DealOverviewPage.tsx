@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { resolvePacketFields } from '@/lib/requiredFieldsResolver';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -11,8 +13,10 @@ import {
   FileText,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   Clock,
-  Edit
+  Edit,
+  User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -47,11 +51,9 @@ interface TemplateFieldSummary {
   missing_required: number;
 }
 
-interface FieldValue {
-  field_key: string;
-  value_text: string | null;
-  value_number: number | null;
-  value_date: string | null;
+interface LastUpdatedInfo {
+  updated_at: string;
+  updated_by_email: string | null;
 }
 
 const modeLabels: Record<string, string> = {
@@ -59,10 +61,10 @@ const modeLabels: Record<string, string> = {
   servicing_only: 'Servicing Only',
 };
 
-const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  draft: { label: 'Draft', color: 'bg-muted text-muted-foreground', icon: Clock },
-  ready: { label: 'Ready', color: 'bg-primary/10 text-primary', icon: CheckCircle2 },
-  generated: { label: 'Generated', color: 'bg-success/10 text-success', icon: CheckCircle2 },
+const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType; bgColor: string }> = {
+  draft: { label: 'Draft', color: 'text-muted-foreground', bgColor: 'bg-muted', icon: Clock },
+  ready: { label: 'Ready', color: 'text-primary', bgColor: 'bg-primary/10', icon: CheckCircle2 },
+  generated: { label: 'Generated', color: 'text-success', bgColor: 'bg-success/10', icon: CheckCircle2 },
 };
 
 export const DealOverviewPage: React.FC = () => {
@@ -74,6 +76,9 @@ export const DealOverviewPage: React.FC = () => {
   const [packet, setPacket] = useState<Packet | null>(null);
   const [templateSummaries, setTemplateSummaries] = useState<TemplateFieldSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalMissingRequired, setTotalMissingRequired] = useState(0);
+  const [totalRequiredFields, setTotalRequiredFields] = useState(0);
+  const [lastUpdatedInfo, setLastUpdatedInfo] = useState<LastUpdatedInfo | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -103,26 +108,65 @@ export const DealOverviewPage: React.FC = () => {
         
         setPacket(packetData);
 
-        // Fetch templates in packet
+        // Use the resolver to get required fields
+        const resolved = await resolvePacketFields(dealData.packet_id);
+        setTotalRequiredFields(resolved.requiredFieldKeys.length);
+
+        // Fetch field values for this deal
+        const { data: fieldValues } = await supabase
+          .from('deal_field_values')
+          .select('field_key, value_text, value_number, value_date, updated_at, updated_by')
+          .eq('deal_id', id);
+
+        // Find filled field keys
+        const filledFieldKeys = new Set(
+          (fieldValues || [])
+            .filter((fv: any) => 
+              fv.value_text || fv.value_number !== null || fv.value_date
+            )
+            .map((fv: any) => fv.field_key)
+        );
+
+        // Count missing required fields
+        const missingCount = resolved.requiredFieldKeys.filter(
+          key => !filledFieldKeys.has(key)
+        ).length;
+        setTotalMissingRequired(missingCount);
+
+        // Get last updated info
+        if (fieldValues && fieldValues.length > 0) {
+          // Sort by updated_at to get most recent
+          const sorted = [...fieldValues].sort((a: any, b: any) => 
+            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+          );
+          const mostRecent = sorted[0] as any;
+          
+          if (mostRecent.updated_by) {
+            // Fetch user email from profiles
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('email, full_name')
+              .eq('user_id', mostRecent.updated_by)
+              .maybeSingle();
+
+            setLastUpdatedInfo({
+              updated_at: mostRecent.updated_at,
+              updated_by_email: profileData?.full_name || profileData?.email || 'Unknown',
+            });
+          } else {
+            setLastUpdatedInfo({
+              updated_at: mostRecent.updated_at,
+              updated_by_email: null,
+            });
+          }
+        }
+
+        // Fetch templates in packet for template breakdown
         const { data: packetTemplates } = await supabase
           .from('packet_templates')
           .select('template_id, templates(id, name)')
           .eq('packet_id', dealData.packet_id)
           .order('display_order');
-
-        // Fetch field values for this deal
-        const { data: fieldValues } = await supabase
-          .from('deal_field_values')
-          .select('field_key, value_text, value_number, value_date')
-          .eq('deal_id', id);
-
-        const filledFieldKeys = new Set(
-          (fieldValues || [])
-            .filter((fv: FieldValue) => 
-              fv.value_text || fv.value_number !== null || fv.value_date
-            )
-            .map((fv: FieldValue) => fv.field_key)
-        );
 
         // Calculate summaries for each template
         const summaries: TemplateFieldSummary[] = [];
@@ -131,7 +175,6 @@ export const DealOverviewPage: React.FC = () => {
           const template = (pt as any).templates;
           if (!template) continue;
 
-          // Fetch template field maps
           const { data: fieldMaps } = await supabase
             .from('template_field_maps')
             .select('field_key, required_flag')
@@ -168,10 +211,8 @@ export const DealOverviewPage: React.FC = () => {
     }
   };
 
-  const totalRequiredFields = templateSummaries.reduce((sum, t) => sum + t.required_fields, 0);
-  const totalFilledFields = templateSummaries.reduce((sum, t) => sum + t.filled_fields, 0);
-  const totalMissingRequired = templateSummaries.reduce((sum, t) => sum + t.missing_required, 0);
   const totalFields = templateSummaries.reduce((sum, t) => sum + t.total_fields, 0);
+  const totalFilledFields = templateSummaries.reduce((sum, t) => sum + t.filled_fields, 0);
   const completionPercent = totalFields > 0 ? Math.round((totalFilledFields / totalFields) * 100) : 0;
 
   const formatCurrency = (amount: number | null) => {
@@ -181,6 +222,18 @@ export const DealOverviewPage: React.FC = () => {
       currency: 'USD',
       minimumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
   };
 
   if (loading) {
@@ -203,6 +256,8 @@ export const DealOverviewPage: React.FC = () => {
   }
 
   const StatusIcon = statusConfig[deal.status].icon;
+  const isReady = deal.status === 'ready';
+  const canBeReady = totalMissingRequired === 0 && totalRequiredFields > 0;
 
   return (
     <div className="page-container">
@@ -213,19 +268,21 @@ export const DealOverviewPage: React.FC = () => {
         </Button>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{deal.deal_number}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-foreground">{deal.deal_number}</h1>
+              <Badge 
+                variant="secondary" 
+                className={cn(statusConfig[deal.status].bgColor, statusConfig[deal.status].color)}
+              >
+                <StatusIcon className="h-3.5 w-3.5 mr-1" />
+                {statusConfig[deal.status].label}
+              </Badge>
+            </div>
             <p className="text-muted-foreground mt-1">
               {deal.state} • {deal.product_type} • {modeLabels[deal.mode]}
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className={cn(
-              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium',
-              statusConfig[deal.status].color
-            )}>
-              <StatusIcon className="h-4 w-4" />
-              {statusConfig[deal.status].label}
-            </span>
             <Button variant="outline" onClick={() => navigate(`/deals/${deal.id}/edit`)} className="gap-2">
               <Edit className="h-4 w-4" />
               Enter Data
@@ -233,6 +290,44 @@ export const DealOverviewPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Status Banner */}
+      {totalRequiredFields > 0 && (
+        <div className={cn(
+          'mb-6 px-4 py-3 rounded-lg flex items-center justify-between',
+          totalMissingRequired > 0 
+            ? 'bg-warning/10 border border-warning/20' 
+            : 'bg-success/10 border border-success/20'
+        )}>
+          <div className="flex items-center gap-3">
+            {totalMissingRequired > 0 ? (
+              <>
+                <AlertTriangle className="h-5 w-5 text-warning" />
+                <div>
+                  <p className="font-medium text-foreground">
+                    {totalMissingRequired} required field{totalMissingRequired > 1 ? 's' : ''} missing
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Complete all required fields to mark deal as ready
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-5 w-5 text-success" />
+                <div>
+                  <p className="font-medium text-foreground">
+                    {isReady ? 'Deal is ready for document generation' : 'All required fields complete'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {totalRequiredFields} required field{totalRequiredFields > 1 ? 's' : ''} filled
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
@@ -249,18 +344,22 @@ export const DealOverviewPage: React.FC = () => {
               <Progress value={completionPercent} className="h-2" />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div className="text-center p-4 rounded-lg bg-muted/50">
-                <p className="text-3xl font-bold text-foreground">{totalFields}</p>
-                <p className="text-sm text-muted-foreground">Total Fields</p>
+                <p className="text-2xl font-bold text-foreground">{totalFields}</p>
+                <p className="text-xs text-muted-foreground">Total Fields</p>
+              </div>
+              <div className="text-center p-4 rounded-lg bg-primary/10">
+                <p className="text-2xl font-bold text-primary">{totalRequiredFields}</p>
+                <p className="text-xs text-muted-foreground">Required</p>
               </div>
               <div className="text-center p-4 rounded-lg bg-success/10">
-                <p className="text-3xl font-bold text-success">{totalFilledFields}</p>
-                <p className="text-sm text-muted-foreground">Filled</p>
+                <p className="text-2xl font-bold text-success">{totalFilledFields}</p>
+                <p className="text-xs text-muted-foreground">Filled</p>
               </div>
               <div className="text-center p-4 rounded-lg bg-destructive/10">
-                <p className="text-3xl font-bold text-destructive">{totalMissingRequired}</p>
-                <p className="text-sm text-muted-foreground">Missing Required</p>
+                <p className="text-2xl font-bold text-destructive">{totalMissingRequired}</p>
+                <p className="text-xs text-muted-foreground">Missing Req.</p>
               </div>
             </div>
           </div>
@@ -334,6 +433,21 @@ export const DealOverviewPage: React.FC = () => {
                 <dd className="font-medium text-foreground">{deal.deal_number}</dd>
               </div>
               <div className="flex justify-between">
+                <dt className="text-muted-foreground">Status</dt>
+                <dd>
+                  <Badge 
+                    variant="secondary" 
+                    className={cn(
+                      'text-xs',
+                      statusConfig[deal.status].bgColor, 
+                      statusConfig[deal.status].color
+                    )}
+                  >
+                    {statusConfig[deal.status].label}
+                  </Badge>
+                </dd>
+              </div>
+              <div className="flex justify-between">
                 <dt className="text-muted-foreground">State</dt>
                 <dd className="font-medium text-foreground">{deal.state}</dd>
               </div>
@@ -360,22 +474,38 @@ export const DealOverviewPage: React.FC = () => {
             </dl>
           </div>
 
-          {/* Timestamps */}
+          {/* Activity / Timestamps */}
           <div className="section-card">
             <h3 className="font-semibold text-foreground mb-4">Activity</h3>
             <dl className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Created</dt>
                 <dd className="text-foreground">
-                  {new Date(deal.created_at).toLocaleDateString()}
+                  {formatDateTime(deal.created_at)}
                 </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Last Updated</dt>
+                <dt className="text-muted-foreground">Deal Updated</dt>
                 <dd className="text-foreground">
-                  {new Date(deal.updated_at).toLocaleDateString()}
+                  {formatDateTime(deal.updated_at)}
                 </dd>
               </div>
+              {lastUpdatedInfo && (
+                <>
+                  <div className="border-t border-border pt-3 mt-3">
+                    <dt className="text-muted-foreground mb-1">Last Field Update</dt>
+                    <dd className="text-foreground">
+                      {formatDateTime(lastUpdatedInfo.updated_at)}
+                    </dd>
+                  </div>
+                  {lastUpdatedInfo.updated_by_email && (
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-foreground">{lastUpdatedInfo.updated_by_email}</span>
+                    </div>
+                  )}
+                </>
+              )}
             </dl>
           </div>
 
