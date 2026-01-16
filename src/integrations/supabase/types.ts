@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          action_details: Json | null
+          action_type: string
+          actor_user_id: string
+          created_at: string
+          deal_id: string
+          id: string
+        }
+        Insert: {
+          action_details?: Json | null
+          action_type: string
+          actor_user_id: string
+          created_at?: string
+          deal_id: string
+          id?: string
+        }
+        Update: {
+          action_details?: Json | null
+          action_type?: string
+          actor_user_id?: string
+          created_at?: string
+          deal_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_log_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_field_values: {
         Row: {
           deal_id: string

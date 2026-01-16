@@ -3,9 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { resolvePacketFields } from '@/lib/requiredFieldsResolver';
+import { ActivityLogViewer } from '@/components/deal/ActivityLogViewer';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -16,7 +18,8 @@ import {
   AlertTriangle,
   Clock,
   Edit,
-  User
+  User,
+  History
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -474,9 +477,18 @@ export const DealOverviewPage: React.FC = () => {
             </dl>
           </div>
 
-          {/* Activity / Timestamps */}
+          {/* Activity Log */}
           <div className="section-card">
-            <h3 className="font-semibold text-foreground mb-4">Activity</h3>
+            <div className="flex items-center gap-2 mb-4">
+              <History className="h-4 w-4 text-muted-foreground" />
+              <h3 className="font-semibold text-foreground">Activity Log</h3>
+            </div>
+            <ActivityLogViewer dealId={id!} maxHeight="300px" />
+          </div>
+
+          {/* Timestamps */}
+          <div className="section-card">
+            <h3 className="font-semibold text-foreground mb-4">Timestamps</h3>
             <dl className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Created</dt>
