@@ -199,6 +199,7 @@ export type Database = {
       }
       field_dictionary: {
         Row: {
+          allowed_roles: string[] | null
           calculation_dependencies: string[] | null
           calculation_formula: string | null
           created_at: string
@@ -210,11 +211,13 @@ export type Database = {
           is_calculated: boolean
           is_repeatable: boolean
           label: string
+          read_only_roles: string[] | null
           section: Database["public"]["Enums"]["field_section"]
           updated_at: string
           validation_rule: string | null
         }
         Insert: {
+          allowed_roles?: string[] | null
           calculation_dependencies?: string[] | null
           calculation_formula?: string | null
           created_at?: string
@@ -226,11 +229,13 @@ export type Database = {
           is_calculated?: boolean
           is_repeatable?: boolean
           label: string
+          read_only_roles?: string[] | null
           section: Database["public"]["Enums"]["field_section"]
           updated_at?: string
           validation_rule?: string | null
         }
         Update: {
+          allowed_roles?: string[] | null
           calculation_dependencies?: string[] | null
           calculation_formula?: string | null
           created_at?: string
@@ -242,6 +247,7 @@ export type Database = {
           is_calculated?: boolean
           is_repeatable?: boolean
           label?: string
+          read_only_roles?: string[] | null
           section?: Database["public"]["Enums"]["field_section"]
           updated_at?: string
           validation_rule?: string | null
@@ -667,7 +673,15 @@ export type Database = {
         Args: { _field_key: string; _user_id: string }
         Returns: boolean
       }
+      can_edit_field_v2: {
+        Args: { _field_key: string; _user_id: string }
+        Returns: boolean
+      }
       can_view_field: {
+        Args: { _field_key: string; _user_id: string }
+        Returns: boolean
+      }
+      can_view_field_v2: {
         Args: { _field_key: string; _user_id: string }
         Returns: boolean
       }

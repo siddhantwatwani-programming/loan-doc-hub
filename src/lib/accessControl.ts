@@ -60,7 +60,38 @@ export const canAccessAdminScreens = (role: AppRole): boolean => {
 };
 
 /**
- * Fetch field permissions for a given role
+ * Field visibility info from field_dictionary
+ */
+export interface FieldVisibility {
+  field_key: string;
+  allowed_roles: string[];
+  read_only_roles: string[];
+  is_calculated: boolean;
+}
+
+/**
+ * Fetch field visibility settings from field_dictionary
+ */
+export const fetchFieldVisibility = async (): Promise<Map<string, FieldVisibility>> => {
+  const { data, error } = await supabase
+    .from('field_dictionary')
+    .select('field_key, allowed_roles, read_only_roles, is_calculated');
+
+  if (error) {
+    console.error('Error fetching field visibility:', error);
+    return new Map();
+  }
+
+  return new Map((data || []).map(fv => [fv.field_key, {
+    field_key: fv.field_key,
+    allowed_roles: fv.allowed_roles || ['admin', 'csr'],
+    read_only_roles: fv.read_only_roles || [],
+    is_calculated: fv.is_calculated,
+  }]));
+};
+
+/**
+ * Fetch field permissions for a given role (legacy - uses field_permissions table)
  */
 export const fetchFieldPermissions = async (role: AppRole): Promise<Map<string, FieldPermission>> => {
   if (!role || isInternalRole(role)) {
@@ -82,7 +113,56 @@ export const fetchFieldPermissions = async (role: AppRole): Promise<Map<string, 
 };
 
 /**
- * Check if user can view a specific field
+ * Check if user can view a specific field using field_dictionary visibility
+ */
+export const canViewFieldWithVisibility = (
+  role: AppRole,
+  fieldKey: string,
+  fieldVisibility: Map<string, FieldVisibility>
+): boolean => {
+  // Internal users have full access
+  if (isInternalRole(role)) {
+    return true;
+  }
+
+  // External users need to be in allowed_roles or read_only_roles
+  const visibility = fieldVisibility.get(fieldKey);
+  if (!visibility) return false;
+  
+  return visibility.allowed_roles.includes(role!) || visibility.read_only_roles.includes(role!);
+};
+
+/**
+ * Check if user can edit a specific field using field_dictionary visibility
+ */
+export const canEditFieldWithVisibility = (
+  role: AppRole,
+  fieldKey: string,
+  fieldVisibility: Map<string, FieldVisibility>
+): boolean => {
+  // Admin can view all but not edit deal data (only config)
+  if (role === 'admin') {
+    return false; // Admin can only view, edit is handled at config level
+  }
+  
+  // CSR can edit all non-calculated fields
+  if (role === 'csr') {
+    const visibility = fieldVisibility.get(fieldKey);
+    return visibility ? !visibility.is_calculated : true;
+  }
+
+  // External users need to be in allowed_roles (not read_only_roles)
+  const visibility = fieldVisibility.get(fieldKey);
+  if (!visibility) return false;
+  
+  // Cannot edit calculated fields
+  if (visibility.is_calculated) return false;
+  
+  return visibility.allowed_roles.includes(role!);
+};
+
+/**
+ * Check if user can view a specific field (legacy - uses field_permissions)
  */
 export const canViewField = (
   role: AppRole,
@@ -100,7 +180,7 @@ export const canViewField = (
 };
 
 /**
- * Check if user can edit a specific field
+ * Check if user can edit a specific field (legacy - uses field_permissions)
  */
 export const canEditField = (
   role: AppRole,

@@ -1,57 +1,57 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
-  FieldPermission, 
-  fetchFieldPermissions, 
-  canViewField, 
-  canEditField,
+  FieldVisibility,
+  fetchFieldVisibility,
+  canViewFieldWithVisibility,
+  canEditFieldWithVisibility,
   isInternalRole 
 } from '@/lib/accessControl';
 
 export const useFieldPermissions = () => {
   const { role, user } = useAuth();
-  const [permissions, setPermissions] = useState<Map<string, FieldPermission>>(new Map());
+  const [visibility, setVisibility] = useState<Map<string, FieldVisibility>>(new Map());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadPermissions = async () => {
+    const loadVisibility = async () => {
       if (!user || !role) {
-        setPermissions(new Map());
-        setLoading(false);
-        return;
-      }
-
-      // Internal users don't need to fetch permissions
-      if (isInternalRole(role)) {
-        setPermissions(new Map());
+        setVisibility(new Map());
         setLoading(false);
         return;
       }
 
       setLoading(true);
-      const perms = await fetchFieldPermissions(role);
-      setPermissions(perms);
+      const vis = await fetchFieldVisibility();
+      setVisibility(vis);
       setLoading(false);
     };
 
-    loadPermissions();
+    loadVisibility();
   }, [user, role]);
 
-  const checkCanView = (fieldKey: string): boolean => {
-    return canViewField(role, fieldKey, permissions);
-  };
+  const checkCanView = useCallback((fieldKey: string): boolean => {
+    return canViewFieldWithVisibility(role, fieldKey, visibility);
+  }, [role, visibility]);
 
-  const checkCanEdit = (fieldKey: string): boolean => {
-    return canEditField(role, fieldKey, permissions);
-  };
+  const checkCanEdit = useCallback((fieldKey: string): boolean => {
+    return canEditFieldWithVisibility(role, fieldKey, visibility);
+  }, [role, visibility]);
+
+  const getFieldVisibility = useCallback((fieldKey: string): FieldVisibility | undefined => {
+    return visibility.get(fieldKey);
+  }, [visibility]);
 
   const hasFullAccess = isInternalRole(role);
+  const isReadOnlyUser = role === 'admin'; // Admin can view all but only edit config
 
   return {
-    permissions,
+    visibility,
     loading,
     checkCanView,
     checkCanEdit,
+    getFieldVisibility,
     hasFullAccess,
+    isReadOnlyUser,
   };
 };
