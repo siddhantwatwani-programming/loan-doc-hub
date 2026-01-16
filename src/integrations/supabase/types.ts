@@ -144,8 +144,11 @@ export type Database = {
           completed_at: string | null
           created_at: string
           deal_id: string
+          email: string | null
           id: string
           invited_at: string
+          name: string | null
+          revoked_at: string | null
           role: Database["public"]["Enums"]["app_role"]
           sequence_order: number | null
           status: Database["public"]["Enums"]["participant_status"]
@@ -157,8 +160,11 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           deal_id: string
+          email?: string | null
           id?: string
           invited_at?: string
+          name?: string | null
+          revoked_at?: string | null
           role: Database["public"]["Enums"]["app_role"]
           sequence_order?: number | null
           status?: Database["public"]["Enums"]["participant_status"]
@@ -170,8 +176,11 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           deal_id?: string
+          email?: string | null
           id?: string
           invited_at?: string
+          name?: string | null
+          revoked_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           sequence_order?: number | null
           status?: Database["public"]["Enums"]["participant_status"]
