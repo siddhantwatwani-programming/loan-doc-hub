@@ -12,7 +12,8 @@ import { AuthPage } from "./components/auth/AuthPage";
 import { AppLayout } from "./components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import DealsPage from "./pages/csr/DealsPage";
-import NewDealPage from "./pages/csr/NewDealPage";
+import CreateDealPage from "./pages/csr/CreateDealPage";
+import DealOverviewPage from "./pages/csr/DealOverviewPage";
 import BorrowersPage from "./pages/csr/BorrowersPage";
 import DocumentsPage from "./pages/csr/DocumentsPage";
 import ConfigurationPage from "./pages/admin/ConfigurationPage";
@@ -45,7 +46,8 @@ const App = () => (
               {/* CSR routes */}
               <Route element={<AppLayout requiredRoles={['csr']} />}>
                 <Route path="/deals" element={<DealsPage />} />
-                <Route path="/deals/new" element={<NewDealPage />} />
+                <Route path="/deals/new" element={<CreateDealPage />} />
+                <Route path="/deals/:id" element={<DealOverviewPage />} />
                 <Route path="/borrowers" element={<BorrowersPage />} />
                 <Route path="/documents" element={<DocumentsPage />} />
               </Route>

@@ -11,7 +11,7 @@ import {
   Sun,
   Moon,
   FolderOpen,
-  ClipboardList,
+  Plus,
   Package,
   Key,
   Link,
@@ -44,7 +44,7 @@ interface NavGroup {
 const csrItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['admin', 'csr'] },
   { label: 'Deals', icon: FolderOpen, path: '/deals', roles: ['csr'] },
-  { label: 'New Deal', icon: ClipboardList, path: '/deals/new', roles: ['csr'] },
+  { label: 'Create Deal', icon: Plus, path: '/deals/new', roles: ['csr'] },
   { label: 'Borrowers', icon: Users, path: '/borrowers', roles: ['csr'] },
   { label: 'Documents', icon: FileText, path: '/documents', roles: ['csr'] },
 ];
@@ -85,11 +85,14 @@ export const AppSidebar: React.FC = () => {
     if (path === '/dashboard') {
       return location.pathname === '/dashboard' || location.pathname === '/';
     }
-    return location.pathname === path || location.pathname.startsWith(path + '/');
+    if (path === '/deals') {
+      return location.pathname === '/deals';
+    }
+    return location.pathname === path;
   };
 
   const isGroupActive = (group: NavGroup) => {
-    return group.items.some((item) => isActive(item.path));
+    return group.items.some((item) => location.pathname === item.path);
   };
 
   const toggleGroup = (label: string) => {
@@ -160,7 +163,7 @@ export const AppSidebar: React.FC = () => {
                   onClick={() => navigate(item.path)}
                   className={cn(
                     'sidebar-item w-full text-sm',
-                    isActive(item.path) && 'sidebar-item-active'
+                    location.pathname === item.path && 'sidebar-item-active'
                   )}
                 >
                   <item.icon className="h-4 w-4" />
