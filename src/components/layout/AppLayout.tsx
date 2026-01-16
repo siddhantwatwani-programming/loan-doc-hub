@@ -1,15 +1,17 @@
 import React from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, AppRole } from '@/contexts/AuthContext';
 import { AppSidebar } from './AppSidebar';
 import { Loader2 } from 'lucide-react';
+import { isExternalRole } from '@/lib/accessControl';
 
 interface AppLayoutProps {
-  requiredRoles?: ('admin' | 'csr')[];
+  requiredRoles?: AppRole[];
+  blockExternalUsers?: boolean;
 }
 
-export const AppLayout: React.FC<AppLayoutProps> = ({ requiredRoles }) => {
-  const { user, role, loading } = useAuth();
+export const AppLayout: React.FC<AppLayoutProps> = ({ requiredRoles, blockExternalUsers = false }) => {
+  const { user, role, loading, isExternalUser } = useAuth();
 
   if (loading) {
     return (
@@ -40,8 +42,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ requiredRoles }) => {
     );
   }
 
-  if (requiredRoles && !requiredRoles.includes(role)) {
+  // Block external users from admin routes
+  if (blockExternalUsers && isExternalUser) {
     return <Navigate to="/dashboard" replace />;
+  }
+
+  // Check if user has required role
+  if (requiredRoles && requiredRoles.length > 0) {
+    const hasRequiredRole = requiredRoles.includes(role);
+    if (!hasRequiredRole) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return (

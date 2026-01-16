@@ -40,16 +40,20 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<AuthPage />} />
               
-              {/* Protected routes with layout */}
+              {/* Protected routes with layout - all authenticated users */}
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
               </Route>
 
-              {/* CSR routes */}
-              <Route element={<AppLayout requiredRoles={['csr']} />}>
+              {/* Deal viewing - accessible by CSR, Admin, and external users (via RLS) */}
+              <Route element={<AppLayout requiredRoles={['csr', 'admin', 'borrower', 'broker', 'lender']} />}>
                 <Route path="/deals" element={<DealsPage />} />
-                <Route path="/deals/new" element={<CreateDealPage />} />
                 <Route path="/deals/:id" element={<DealOverviewPage />} />
+              </Route>
+
+              {/* CSR-only routes - creating deals and data entry */}
+              <Route element={<AppLayout requiredRoles={['csr', 'admin']} blockExternalUsers />}>
+                <Route path="/deals/new" element={<CreateDealPage />} />
                 <Route path="/deals/:id/edit" element={<DealDataEntryPage />} />
                 <Route path="/borrowers" element={<BorrowersPage />} />
                 <Route path="/documents" element={<DocumentsPage />} />
@@ -61,7 +65,7 @@ const App = () => (
               </Route>
 
               {/* Admin routes */}
-              <Route element={<AppLayout requiredRoles={['admin']} />}>
+              <Route element={<AppLayout requiredRoles={['admin']} blockExternalUsers />}>
                 <Route path="/admin/config" element={<ConfigurationPage />} />
                 <Route path="/admin/users" element={<UserManagementPage />} />
                 <Route path="/admin/templates" element={<TemplateManagementPage />} />

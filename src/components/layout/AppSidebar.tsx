@@ -1,7 +1,8 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, AppRole } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { isInternalRole, getRoleDisplayName } from '@/lib/accessControl';
 import {
   LayoutDashboard,
   FileText,
@@ -18,6 +19,7 @@ import {
   Sliders,
   ChevronDown,
   ChevronRight,
+  Eye,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
@@ -31,22 +33,29 @@ interface NavItem {
   label: string;
   icon: React.ElementType;
   path: string;
-  roles: ('admin' | 'csr')[];
+  roles: AppRole[];
+  internalOnly?: boolean;
 }
 
 interface NavGroup {
   label: string;
   icon: React.ElementType;
-  roles: ('admin' | 'csr')[];
+  roles: AppRole[];
   items: NavItem[];
 }
 
 const csrItems: NavItem[] = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['admin', 'csr'] },
-  { label: 'Deals', icon: FolderOpen, path: '/deals', roles: ['csr'] },
-  { label: 'Create Deal', icon: Plus, path: '/deals/new', roles: ['csr'] },
-  { label: 'Borrowers', icon: Users, path: '/borrowers', roles: ['csr'] },
-  { label: 'Documents', icon: FileText, path: '/documents', roles: ['csr'] },
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['admin', 'csr', 'borrower', 'broker', 'lender'] },
+  { label: 'Deals', icon: FolderOpen, path: '/deals', roles: ['csr', 'borrower', 'broker', 'lender'] },
+  { label: 'Create Deal', icon: Plus, path: '/deals/new', roles: ['csr'], internalOnly: true },
+  { label: 'Borrowers', icon: Users, path: '/borrowers', roles: ['csr'], internalOnly: true },
+  { label: 'Documents', icon: FileText, path: '/documents', roles: ['csr'], internalOnly: true },
+];
+
+// External user items - limited view
+const externalItems: NavItem[] = [
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['borrower', 'broker', 'lender'] },
+  { label: 'My Deals', icon: FolderOpen, path: '/deals', roles: ['borrower', 'broker', 'lender'] },
 ];
 
 const adminGroups: NavGroup[] = [
@@ -69,11 +78,19 @@ const adminGroups: NavGroup[] = [
 export const AppSidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { role, signOut, user } = useAuth();
+  const { role, signOut, user, isExternalUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [openGroups, setOpenGroups] = React.useState<string[]>(['Configuration']);
 
-  const filteredItems = csrItems.filter((item) => role && item.roles.includes(role));
+  // Filter items based on role
+  const getFilteredItems = (): NavItem[] => {
+    if (isExternalUser) {
+      return externalItems.filter((item) => role && item.roles.includes(role));
+    }
+    return csrItems.filter((item) => role && item.roles.includes(role));
+  };
+
+  const filteredItems = getFilteredItems();
   const filteredGroups = adminGroups.filter((group) => role && group.roles.includes(role));
 
   const handleSignOut = async () => {
@@ -113,6 +130,16 @@ export const AppSidebar: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* External User Banner */}
+      {isExternalUser && (
+        <div className="px-4 py-2 bg-primary/10 border-b border-sidebar-border">
+          <div className="flex items-center gap-2 text-xs text-primary">
+            <Eye className="h-3 w-3" />
+            <span>External Access</span>
+          </div>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -181,8 +208,8 @@ export const AppSidebar: React.FC = () => {
           <p className="text-sm font-medium text-sidebar-foreground truncate">
             {user?.email}
           </p>
-          <p className="text-xs text-sidebar-foreground/70 capitalize">
-            {role || 'No role assigned'}
+          <p className="text-xs text-sidebar-foreground/70">
+            {getRoleDisplayName(role)}
           </p>
         </div>
 
