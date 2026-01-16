@@ -19,6 +19,7 @@ import {
   FolderOpen,
   Loader2,
   Eye,
+  Edit,
   Trash2
 } from 'lucide-react';
 import {
@@ -350,6 +351,13 @@ export const DealsPage: React.FC = () => {
                           }}>
                             <Eye className="h-4 w-4 mr-2" />
                             View
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/deals/${deal.id}/edit`);
+                          }}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Enter Data
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={(e) => {
