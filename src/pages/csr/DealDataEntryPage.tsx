@@ -116,15 +116,17 @@ export const DealDataEntryPage: React.FC = () => {
     }
   }, [sections, activeTab]);
 
-  // Auto-revert to Draft if a required field is changed when status is Ready
+  // Auto-revert to Draft if a required field is changed when status is Ready or Generated
   useEffect(() => {
-    if (deal?.status === 'ready' && hasRequiredFieldChanged() && isDirty) {
+    if ((deal?.status === 'ready' || deal?.status === 'generated') && hasRequiredFieldChanged() && isDirty) {
       // Revert status to draft
       revertToDraft();
     }
   }, [values, deal?.status, hasRequiredFieldChanged, isDirty]);
 
   const revertToDraft = async () => {
+    const wasGenerated = deal?.status === 'generated';
+    
     try {
       const { error } = await supabase
         .from('deals')
@@ -136,14 +138,21 @@ export const DealDataEntryPage: React.FC = () => {
       // Log the revert
       if (id) {
         await logDealRevertedToDraft(id, {
-          reason: 'Required field modified after ready status',
+          reason: wasGenerated 
+            ? 'Required field modified after documents were generated'
+            : 'Required field modified after ready status',
+          previousStatus: deal?.status,
         });
       }
 
       setDeal(prev => prev ? { ...prev, status: 'draft' } : null);
+      
       toast({
         title: 'Status changed to Draft',
-        description: 'Deal status was reverted because a required field was modified',
+        description: wasGenerated
+          ? 'Deal status was reverted because a required field was modified. Documents should be regenerated.'
+          : 'Deal status was reverted because a required field was modified',
+        variant: wasGenerated ? 'destructive' : 'default',
       });
     } catch (error) {
       console.error('Error reverting to draft:', error);

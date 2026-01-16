@@ -15,6 +15,7 @@ import DealsPage from "./pages/csr/DealsPage";
 import CreateDealPage from "./pages/csr/CreateDealPage";
 import DealOverviewPage from "./pages/csr/DealOverviewPage";
 import DealDataEntryPage from "./pages/csr/DealDataEntryPage";
+import DealDocumentsPage from "./pages/csr/DealDocumentsPage";
 import BorrowersPage from "./pages/csr/BorrowersPage";
 import DocumentsPage from "./pages/csr/DocumentsPage";
 import ConfigurationPage from "./pages/admin/ConfigurationPage";
@@ -50,6 +51,7 @@ const App = () => (
                 <Route path="/deals/new" element={<CreateDealPage />} />
                 <Route path="/deals/:id" element={<DealOverviewPage />} />
                 <Route path="/deals/:id/edit" element={<DealDataEntryPage />} />
+                <Route path="/deals/:id/documents" element={<DealDocumentsPage />} />
                 <Route path="/borrowers" element={<BorrowersPage />} />
                 <Route path="/documents" element={<DocumentsPage />} />
               </Route>
