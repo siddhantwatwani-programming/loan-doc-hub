@@ -17,6 +17,11 @@ import BorrowersPage from "./pages/csr/BorrowersPage";
 import DocumentsPage from "./pages/csr/DocumentsPage";
 import ConfigurationPage from "./pages/admin/ConfigurationPage";
 import UserManagementPage from "./pages/admin/UserManagementPage";
+import TemplateManagementPage from "./pages/admin/TemplateManagementPage";
+import PacketManagementPage from "./pages/admin/PacketManagementPage";
+import FieldDictionaryPage from "./pages/admin/FieldDictionaryPage";
+import FieldMapEditorPage from "./pages/admin/FieldMapEditorPage";
+import SystemSettingsPage from "./pages/admin/SystemSettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +54,11 @@ const App = () => (
               <Route element={<AppLayout requiredRoles={['admin']} />}>
                 <Route path="/admin/config" element={<ConfigurationPage />} />
                 <Route path="/admin/users" element={<UserManagementPage />} />
+                <Route path="/admin/templates" element={<TemplateManagementPage />} />
+                <Route path="/admin/packets" element={<PacketManagementPage />} />
+                <Route path="/admin/fields" element={<FieldDictionaryPage />} />
+                <Route path="/admin/field-maps" element={<FieldMapEditorPage />} />
+                <Route path="/admin/settings" element={<SystemSettingsPage />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
