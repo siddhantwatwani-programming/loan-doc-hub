@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useDealFields } from '@/hooks/useDealFields';
 import { useEntryOrchestration } from '@/hooks/useEntryOrchestration';
+import { useFieldPermissions } from '@/hooks/useFieldPermissions';
 import { useAuth } from '@/contexts/AuthContext';
 import { DealSectionTab } from '@/components/deal/DealSectionTab';
 import { 
@@ -23,7 +25,8 @@ import {
   AlertTriangle,
   ChevronRight,
   Clock,
-  Lock
+  Lock,
+  User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRoleDisplayName } from '@/lib/accessControl';
@@ -116,6 +119,9 @@ export const DealDataEntryPage: React.FC = () => {
     calculationResults,
   } = useDealFields(id || '', deal?.packet_id || null);
 
+  // Field permissions for filtering visible fields/sections
+  const { checkCanView, loading: permissionsLoading } = useFieldPermissions();
+
   // Entry orchestration for external users
   const {
     mode: orchestrationMode,
@@ -128,12 +134,72 @@ export const DealDataEntryPage: React.FC = () => {
     completeSection,
   } = useEntryOrchestration(id || '');
 
-  // Set initial active tab when sections load
-  useEffect(() => {
-    if (sections.length > 0 && !activeTab) {
-      setActiveTab(sections[0]);
+  // Calculate visible fields and sections for external users
+  const { 
+    visibleSections, 
+    visibleFieldsBySection, 
+    visibleRequiredCount,
+    visibleFilledRequiredCount,
+    externalMissingFields 
+  } = useMemo(() => {
+    if (!isExternalUser) {
+      // Internal users see everything
+      const totalRequired = fields.filter(f => f.is_required).length;
+      const filledRequired = fields.filter(f => f.is_required && values[f.field_key]?.trim()).length;
+      return {
+        visibleSections: sections,
+        visibleFieldsBySection: fieldsBySection,
+        visibleRequiredCount: totalRequired,
+        visibleFilledRequiredCount: filledRequired,
+        externalMissingFields: getMissingRequiredFields(),
+      };
     }
-  }, [sections, activeTab]);
+
+    // For external users, filter fields by allowed_roles
+    const filteredBySection: Record<FieldSection, typeof fields> = {} as any;
+    let totalVisible = 0;
+    let requiredCount = 0;
+    let filledRequired = 0;
+    const missing: typeof fields = [];
+
+    sections.forEach(section => {
+      const sectionFields = fieldsBySection[section] || [];
+      const visibleFields = sectionFields.filter(f => checkCanView(f.field_key));
+      if (visibleFields.length > 0) {
+        filteredBySection[section] = visibleFields;
+        totalVisible += visibleFields.length;
+        
+        visibleFields.forEach(f => {
+          if (f.is_required) {
+            requiredCount++;
+            if (values[f.field_key]?.trim()) {
+              filledRequired++;
+            } else {
+              missing.push(f);
+            }
+          }
+        });
+      }
+    });
+
+    const visibleSectionList = sections.filter(s => filteredBySection[s]?.length > 0);
+
+    return {
+      visibleSections: visibleSectionList,
+      visibleFieldsBySection: filteredBySection,
+      visibleRequiredCount: requiredCount,
+      visibleFilledRequiredCount: filledRequired,
+      externalMissingFields: missing,
+    };
+  }, [isExternalUser, sections, fieldsBySection, fields, values, checkCanView, getMissingRequiredFields]);
+
+  // Set initial active tab when sections load (use visible sections for external users)
+  useEffect(() => {
+    const targetSections = isExternalUser ? visibleSections : sections;
+    if (targetSections.length > 0 && !activeTab) {
+      setActiveTab(targetSections[0]);
+    }
+  }, [sections, visibleSections, activeTab, isExternalUser]);
 
   // Auto-revert to Draft if a required field is changed when status is Ready or Generated
   useEffect(() => {
@@ -286,7 +352,7 @@ export const DealDataEntryPage: React.FC = () => {
   // Handle Complete Section for external users
   const handleCompleteSection = async () => {
     // Validate that required fields visible to this user are filled
-    const missing = getMissingRequiredFields();
+    const missing = isExternalUser ? externalMissingFields : getMissingRequiredFields();
     if (missing.length > 0) {
       setShowValidation(true);
       toast({
@@ -329,9 +395,13 @@ export const DealDataEntryPage: React.FC = () => {
     }
   };
 
-  const totalMissing = getMissingRequiredFields().length;
+  // Calculate missing/progress based on user type
+  const totalMissing = isExternalUser ? externalMissingFields.length : getMissingRequiredFields().length;
   const canMarkReady = isPacketComplete() && deal?.status === 'draft';
   const showCompleteSectionButton = isExternalUser && currentParticipant && !hasCompleted && orchestrationCanEdit;
+  const progressPercent = visibleRequiredCount > 0 
+    ? Math.round((visibleFilledRequiredCount / visibleRequiredCount) * 100) 
+    : 100;
 
   if (dealLoading) {
     return (
@@ -367,16 +437,24 @@ export const DealDataEntryPage: React.FC = () => {
     <div className="page-container">
       {/* Header */}
       <div className="mb-6">
-        <Button variant="ghost" onClick={() => navigate(`/deals/${deal.id}`)} className="gap-2 mb-4">
+        {/* Back button - external users go to deals list, internal users go to deal overview */}
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate(isExternalUser ? '/deals' : `/deals/${deal.id}`)} 
+          className="gap-2 mb-4"
+        >
           <ArrowLeft className="h-4 w-4" />
-          Back to Deal Overview
+          {isExternalUser ? 'Back to Deals' : 'Back to Deal Overview'}
         </Button>
         
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-foreground">Enter Deal Data</h1>
-              {deal.status !== 'draft' && (
+              <h1 className="text-2xl font-bold text-foreground">
+                {isExternalUser ? 'Complete Your Information' : 'Enter Deal Data'}
+              </h1>
+              {/* Show deal status for CSR only */}
+              {isInternalUser && deal.status !== 'draft' && (
                 <Badge variant={deal.status === 'ready' ? 'default' : 'secondary'} className="capitalize">
                   {deal.status}
                 </Badge>
@@ -440,8 +518,42 @@ export const DealDataEntryPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Missing Fields Banner */}
-      {!fieldsLoading && fields.length > 0 && (
+      {/* External User Progress Banner */}
+      {isExternalUser && !fieldsLoading && visibleSections.length > 0 && (
+        <div className="mb-6 space-y-3">
+          {/* Role and Status */}
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <User className="h-4 w-4" />
+            <span>Logged in as <span className="font-medium text-foreground">{getRoleDisplayName(currentParticipant?.role as any || 'borrower')}</span></span>
+            {hasCompleted && (
+              <Badge variant="secondary" className="bg-success/10 text-success border-success/20">
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                Completed
+              </Badge>
+            )}
+          </div>
+          
+          {/* Progress bar */}
+          <div className="px-4 py-4 rounded-lg bg-muted/30 border border-border">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-foreground">Your Progress</span>
+              <span className="text-sm text-muted-foreground">
+                {visibleFilledRequiredCount} of {visibleRequiredCount} required fields
+              </span>
+            </div>
+            <Progress value={progressPercent} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-2">
+              {progressPercent === 100 
+                ? 'All your required fields are complete! You can now submit your section.'
+                : `Complete the remaining ${totalMissing} required field${totalMissing > 1 ? 's' : ''} to submit.`
+              }
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* CSR Missing Fields Banner */}
+      {isInternalUser && !fieldsLoading && fields.length > 0 && (
         <div className={cn(
           'mb-6 px-4 py-3 rounded-lg flex items-center justify-between',
           totalMissing > 0 ? 'bg-warning/10 border border-warning/20' : 'bg-success/10 border border-success/20'
@@ -487,26 +599,38 @@ export const DealDataEntryPage: React.FC = () => {
       )}
 
       {/* Content */}
-      {fieldsLoading ? (
+      {fieldsLoading || permissionsLoading ? (
         <div className="section-card flex items-center justify-center min-h-[300px]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      ) : sections.length === 0 ? (
+      ) : (isExternalUser ? visibleSections : sections).length === 0 ? (
         <div className="section-card text-center py-12">
           <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">No Fields Configured</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            {isExternalUser ? 'No Fields Available' : 'No Fields Configured'}
+          </h3>
           <p className="text-muted-foreground">
-            No fields have been mapped to the templates in this packet.
+            {isExternalUser 
+              ? 'There are no fields assigned to your role for this deal.'
+              : 'No fields have been mapped to the templates in this packet.'
+            }
           </p>
         </div>
       ) : (
         <div className="section-card">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6 flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
-              {sections.map(section => {
-                const sectionMissing = getMissingRequiredFields(section).length;
+              {(isExternalUser ? visibleSections : sections).map(section => {
+                // For external users, use their filtered fields
+                const sectionFields = isExternalUser 
+                  ? (visibleFieldsBySection[section] || [])
+                  : (fieldsBySection[section] || []);
+                
+                // Calculate missing for this section based on visible fields
+                const sectionMissing = sectionFields.filter(f => 
+                  f.is_required && !values[f.field_key]?.trim()
+                ).length;
                 const isComplete = sectionMissing === 0;
-                const sectionFields = fieldsBySection[section] || [];
                 const hasRequiredFields = sectionFields.some(f => f.is_required);
                 
                 return (
@@ -539,13 +663,21 @@ export const DealDataEntryPage: React.FC = () => {
               })}
             </TabsList>
 
-            {sections.map(section => (
+            {(isExternalUser ? visibleSections : sections).map(section => (
               <TabsContent key={section} value={section} className="animate-fade-in">
                 <DealSectionTab
-                  fields={fieldsBySection[section] || []}
+                  fields={isExternalUser 
+                    ? (visibleFieldsBySection[section] || [])
+                    : (fieldsBySection[section] || [])
+                  }
                   values={values}
                   onValueChange={updateValue}
-                  missingRequiredFields={getMissingRequiredFields(section)}
+                  missingRequiredFields={
+                    (isExternalUser 
+                      ? (visibleFieldsBySection[section] || [])
+                      : (fieldsBySection[section] || [])
+                    ).filter(f => f.is_required && !values[f.field_key]?.trim())
+                  }
                   showValidation={showValidation}
                   calculationResults={calculationResults}
                   orchestrationCanEdit={orchestrationCanEdit}
