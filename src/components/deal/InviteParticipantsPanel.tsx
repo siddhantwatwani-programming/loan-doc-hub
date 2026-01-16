@@ -41,7 +41,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { createMagicLink, revokeMagicLink, getMagicLinksForParticipant } from '@/lib/magicLink';
-import { logParticipantInvited, logParticipantRemoved } from '@/hooks/useActivityLog';
+import { logParticipantInvited, logParticipantRemoved, logAccessRevoked, logParticipantStatusReset } from '@/hooks/useActivityLog';
 import { getRoleDisplayName, getRoleBadgeClasses } from '@/lib/accessControl';
 import { formatDistanceToNow, format } from 'date-fns';
 import { 
@@ -434,6 +434,13 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
 
       if (error) throw error;
 
+      // Log the revocation
+      await logAccessRevoked(dealId, {
+        role: participant.role,
+        participantId: participant.id,
+        email: participant.email || undefined,
+      });
+
       toast({
         title: 'Access Revoked',
         description: `${getRoleDisplayName(participant.role)}'s access has been revoked`,
@@ -455,6 +462,8 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
   const handleResetStatus = async (participant: Participant) => {
     setActionLoading(participant.id);
     try {
+      const previousStatus = participant.status;
+      
       const { error } = await supabase
         .from('deal_participants')
         .update({ 
@@ -465,6 +474,13 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
         .eq('id', participant.id);
 
       if (error) throw error;
+
+      // Log the status reset
+      await logParticipantStatusReset(dealId, {
+        role: participant.role,
+        participantId: participant.id,
+        previousStatus,
+      });
 
       toast({
         title: 'Status Reset',
