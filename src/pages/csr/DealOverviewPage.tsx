@@ -3,11 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { resolvePacketFields } from '@/lib/requiredFieldsResolver';
+import { resolvePacketFields, type ResolvedField } from '@/lib/requiredFieldsResolver';
 import { ActivityLogViewer } from '@/components/deal/ActivityLogViewer';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -19,7 +27,10 @@ import {
   Clock,
   Edit,
   User,
-  History
+  History,
+  Play,
+  XCircle,
+  FileOutput
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -74,6 +85,7 @@ export const DealOverviewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { role } = useAuth();
   
   const [deal, setDeal] = useState<Deal | null>(null);
   const [packet, setPacket] = useState<Packet | null>(null);
@@ -82,6 +94,9 @@ export const DealOverviewPage: React.FC = () => {
   const [totalMissingRequired, setTotalMissingRequired] = useState(0);
   const [totalRequiredFields, setTotalRequiredFields] = useState(0);
   const [lastUpdatedInfo, setLastUpdatedInfo] = useState<LastUpdatedInfo | null>(null);
+  const [missingRequiredFields, setMissingRequiredFields] = useState<ResolvedField[]>([]);
+  const [showMissingFieldsDialog, setShowMissingFieldsDialog] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -130,11 +145,12 @@ export const DealOverviewPage: React.FC = () => {
             .map((fv: any) => fv.field_key)
         );
 
-        // Count missing required fields
-        const missingCount = resolved.requiredFieldKeys.filter(
-          key => !filledFieldKeys.has(key)
-        ).length;
-        setTotalMissingRequired(missingCount);
+        // Count missing required fields and track which fields are missing
+        const missingFields = resolved.fields.filter(
+          field => field.is_required && !filledFieldKeys.has(field.field_key)
+        );
+        setMissingRequiredFields(missingFields);
+        setTotalMissingRequired(missingFields.length);
 
         // Get last updated info
         if (fieldValues && fieldValues.length > 0) {
@@ -261,6 +277,76 @@ export const DealOverviewPage: React.FC = () => {
   const StatusIcon = statusConfig[deal.status].icon;
   const isReady = deal.status === 'ready';
   const canBeReady = totalMissingRequired === 0 && totalRequiredFields > 0;
+  
+  // Preconditions for document generation
+  const isCsr = role === 'csr' || role === 'admin';
+  const canGenerate = isCsr && isReady && totalMissingRequired === 0 && packet !== null;
+  
+  const handleGenerateClick = async () => {
+    // Check preconditions
+    if (!isCsr) {
+      toast({
+        title: 'Permission Denied',
+        description: 'Only CSR users can generate documents',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (deal.status !== 'ready') {
+      toast({
+        title: 'Deal Not Ready',
+        description: 'Deal must be in "Ready" status before generating documents',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (totalMissingRequired > 0) {
+      setShowMissingFieldsDialog(true);
+      return;
+    }
+    
+    if (!packet) {
+      toast({
+        title: 'No Packet Assigned',
+        description: 'A packet must be assigned to the deal before generating documents',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // All preconditions met - proceed with generation
+    setIsGenerating(true);
+    try {
+      // TODO: Implement actual document generation
+      // For now, just show a success message
+      toast({
+        title: 'Generation Started',
+        description: 'Document generation has been queued',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Generation Failed',
+        description: error.message || 'Failed to start document generation',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Section labels for display
+  const sectionLabels: Record<string, string> = {
+    borrower: 'Borrower',
+    co_borrower: 'Co-Borrower',
+    property: 'Property',
+    loan_terms: 'Loan Terms',
+    seller: 'Seller',
+    title: 'Title',
+    escrow: 'Escrow',
+    other: 'Other',
+  };
 
   return (
     <div className="page-container">
@@ -290,9 +376,91 @@ export const DealOverviewPage: React.FC = () => {
               <Edit className="h-4 w-4" />
               Enter Data
             </Button>
+            {/* Generate Button - Only show when preconditions can be met */}
+            {isCsr && packet && (
+              <Button 
+                onClick={handleGenerateClick}
+                disabled={!canGenerate || isGenerating}
+                className="gap-2"
+                variant={canGenerate ? 'default' : 'outline'}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <FileOutput className="h-4 w-4" />
+                    Generate Documents
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Missing Required Fields Dialog */}
+      <Dialog open={showMissingFieldsDialog} onOpenChange={setShowMissingFieldsDialog}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <XCircle className="h-5 w-5" />
+              Cannot Generate Documents
+            </DialogTitle>
+            <DialogDescription>
+              The following required fields are missing values. Please complete them before generating documents.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-4">
+              {/* Group missing fields by section */}
+              {Object.entries(
+                missingRequiredFields.reduce((acc, field) => {
+                  if (!acc[field.section]) acc[field.section] = [];
+                  acc[field.section].push(field);
+                  return acc;
+                }, {} as Record<string, ResolvedField[]>)
+              ).map(([section, fields]) => (
+                <div key={section}>
+                  <h4 className="text-sm font-medium text-foreground mb-2">
+                    {sectionLabels[section] || section}
+                  </h4>
+                  <ul className="space-y-1">
+                    {fields.map((field) => (
+                      <li 
+                        key={field.field_key}
+                        className="flex items-center gap-2 text-sm text-muted-foreground pl-4"
+                      >
+                        <AlertCircle className="h-3 w-3 text-destructive flex-shrink-0" />
+                        <span>{field.label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-sm text-muted-foreground">
+                <strong>{missingRequiredFields.length}</strong> required field{missingRequiredFields.length !== 1 ? 's' : ''} missing
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowMissingFieldsDialog(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              setShowMissingFieldsDialog(false);
+              navigate(`/deals/${deal.id}/edit`);
+            }}>
+              <Edit className="h-4 w-4 mr-2" />
+              Enter Data
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Status Banner */}
       {totalRequiredFields > 0 && (
