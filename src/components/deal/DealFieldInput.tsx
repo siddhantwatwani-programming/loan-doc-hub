@@ -3,8 +3,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { AlertCircle, Lock, Calculator, Asterisk } from 'lucide-react';
+import { AlertCircle, Lock, Calculator, Asterisk, CheckCircle2 } from 'lucide-react';
 import type { FieldDefinition } from '@/hooks/useDealFields';
+import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface DealFieldInputProps {
   field: FieldDefinition;
@@ -13,6 +14,7 @@ interface DealFieldInputProps {
   error?: boolean;
   showValidation?: boolean;
   disabled?: boolean;
+  calculationResult?: CalculationResult;
 }
 
 export const DealFieldInput: React.FC<DealFieldInputProps> = ({
@@ -22,9 +24,12 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
   error = false,
   showValidation = false,
   disabled = false,
+  calculationResult,
 }) => {
   const isDisabled = disabled || field.is_calculated;
   const showError = error && showValidation;
+  const isComputed = calculationResult?.computed === true;
+  const hasCalculationError = calculationResult?.error !== undefined;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     let newValue = e.target.value;
@@ -170,8 +175,15 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
           )}
         </Label>
         {field.is_calculated && (
-          <span title="Calculated field" className="text-muted-foreground">
+          <span 
+            title={isComputed ? "Calculated - value computed" : "Calculated field (waiting for dependencies)"} 
+            className={cn(
+              "flex items-center gap-1",
+              isComputed ? "text-green-600" : "text-muted-foreground"
+            )}
+          >
             <Calculator className="h-3.5 w-3.5" />
+            {isComputed && <CheckCircle2 className="h-3 w-3" />}
           </span>
         )}
         {isDisabled && !field.is_calculated && (
@@ -190,7 +202,20 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
         </p>
       )}
       
-      {field.transform_rules.length > 0 && !showError && (
+      {hasCalculationError && (
+        <p className="text-xs text-amber-600 flex items-center gap-1">
+          <AlertCircle className="h-3 w-3 flex-shrink-0" />
+          {calculationResult?.error}
+        </p>
+      )}
+      
+      {field.is_calculated && !isComputed && !hasCalculationError && (
+        <p className="text-xs text-muted-foreground">
+          Waiting for: {field.calculation_dependencies.join(', ')}
+        </p>
+      )}
+      
+      {field.transform_rules.length > 0 && !showError && !field.is_calculated && (
         <p className="text-xs text-muted-foreground">
           Format: {field.transform_rules.join(', ')}
         </p>

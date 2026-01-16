@@ -126,6 +126,8 @@ export type Database = {
       }
       field_dictionary: {
         Row: {
+          calculation_dependencies: string[] | null
+          calculation_formula: string | null
           created_at: string
           data_type: Database["public"]["Enums"]["field_data_type"]
           default_value: string | null
@@ -140,6 +142,8 @@ export type Database = {
           validation_rule: string | null
         }
         Insert: {
+          calculation_dependencies?: string[] | null
+          calculation_formula?: string | null
           created_at?: string
           data_type?: Database["public"]["Enums"]["field_data_type"]
           default_value?: string | null
@@ -154,6 +158,8 @@ export type Database = {
           validation_rule?: string | null
         }
         Update: {
+          calculation_dependencies?: string[] | null
+          calculation_formula?: string | null
           created_at?: string
           data_type?: Database["public"]["Enums"]["field_data_type"]
           default_value?: string | null

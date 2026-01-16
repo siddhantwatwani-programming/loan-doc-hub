@@ -16,6 +16,8 @@ export interface ResolvedField {
   validation_rule: string | null;
   is_required: boolean;
   transform_rules: string[];
+  calculation_formula: string | null;
+  calculation_dependencies: string[];
 }
 
 export interface ResolvedFieldSet {
@@ -144,6 +146,8 @@ export async function resolvePacketFields(packetId: string): Promise<ResolvedFie
     validation_rule: fd.validation_rule,
     is_required: requiredSet.has(fd.field_key),
     transform_rules: transformRulesMap[fd.field_key] || [],
+    calculation_formula: (fd as any).calculation_formula || null,
+    calculation_dependencies: (fd as any).calculation_dependencies || [],
   }));
 
   // Sort by section order, then by label

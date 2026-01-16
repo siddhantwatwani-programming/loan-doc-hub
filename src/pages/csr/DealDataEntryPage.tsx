@@ -100,6 +100,8 @@ export const DealDataEntryPage: React.FC = () => {
     isPacketComplete,
     hasRequiredFieldChanged,
     resetDirty,
+    computeCalculatedFields,
+    calculationResults,
   } = useDealFields(id || '', deal?.packet_id || null);
 
   // Set initial active tab when sections load
@@ -138,6 +140,8 @@ export const DealDataEntryPage: React.FC = () => {
 
   const handleSave = async () => {
     setShowValidation(true);
+    // Run calculations before saving
+    computeCalculatedFields();
     const success = await saveDraft();
     if (success) {
       resetDirty();
@@ -166,6 +170,9 @@ export const DealDataEntryPage: React.FC = () => {
 
     setMarkingReady(true);
     try {
+      // Run calculations before saving
+      computeCalculatedFields();
+      
       // Save first
       const saveSuccess = await saveDraft();
       if (!saveSuccess) return;
@@ -415,6 +422,7 @@ export const DealDataEntryPage: React.FC = () => {
                   onValueChange={updateValue}
                   missingRequiredFields={getMissingRequiredFields(section)}
                   showValidation={showValidation}
+                  calculationResults={calculationResults}
                 />
               </TabsContent>
             ))}
