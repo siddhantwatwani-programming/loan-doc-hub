@@ -51,9 +51,13 @@ const App = () => (
                 <Route path="/deals/new" element={<CreateDealPage />} />
                 <Route path="/deals/:id" element={<DealOverviewPage />} />
                 <Route path="/deals/:id/edit" element={<DealDataEntryPage />} />
-                <Route path="/deals/:id/documents" element={<DealDocumentsPage />} />
                 <Route path="/borrowers" element={<BorrowersPage />} />
                 <Route path="/documents" element={<DocumentsPage />} />
+              </Route>
+
+              {/* Deal Documents - accessible by CSR and Admin */}
+              <Route element={<AppLayout requiredRoles={['csr', 'admin']} />}>
+                <Route path="/deals/:id/documents" element={<DealDocumentsPage />} />
               </Route>
 
               {/* Admin routes */}
