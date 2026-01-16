@@ -23,8 +23,10 @@ export interface FieldDefinition {
 
 export interface FieldValue {
   field_key: string;
-  field_value: string;
-  repeat_index: number;
+  value_text: string | null;
+  value_number: number | null;
+  value_date: string | null;
+  value_json: any | null;
 }
 
 export interface DealFieldsData {
@@ -59,6 +61,23 @@ const SECTION_ORDER: FieldSection[] = [
   'other'
 ];
 
+// Map field data types to value columns
+function getValueFromRecord(record: FieldValue, dataType: FieldDataType): string {
+  switch (dataType) {
+    case 'number':
+    case 'currency':
+    case 'percentage':
+      return record.value_number?.toString() || '';
+    case 'date':
+      return record.value_date || '';
+    case 'boolean':
+      // Boolean stored as text 'true'/'false'
+      return record.value_text || '';
+    default:
+      return record.value_text || '';
+  }
+}
+
 export function useDealFields(dealId: string, packetId: string | null): UseDealFieldsReturn {
   const { toast } = useToast();
   const [fields, setFields] = useState<FieldDefinition[]>([]);
@@ -67,6 +86,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldDataTypes, setFieldDataTypes] = useState<Record<string, FieldDataType>>({});
 
   // Group fields by section
   const fieldsBySection = fields.reduce((acc, field) => {
@@ -158,6 +178,13 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
 
       if (fdError) throw fdError;
 
+      // Build data type lookup
+      const dataTypeMap: Record<string, FieldDataType> = {};
+      (fieldDefs || []).forEach(fd => {
+        dataTypeMap[fd.field_key] = fd.data_type;
+      });
+      setFieldDataTypes(dataTypeMap);
+
       // Build field definitions with required flag and transform rules
       const enrichedFields: FieldDefinition[] = (fieldDefs || []).map(fd => ({
         id: fd.id,
@@ -187,17 +214,18 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
       // 4. Fetch existing field values for this deal
       const { data: existingValues, error: evError } = await supabase
         .from('deal_field_values')
-        .select('field_key, field_value, repeat_index')
-        .eq('deal_id', dealId)
-        .eq('repeat_index', 0);
+        .select('field_key, value_text, value_number, value_date, value_json')
+        .eq('deal_id', dealId);
 
       if (evError) throw evError;
 
-      // Build values map
+      // Build values map - convert typed values to strings for form display
       const valuesMap: Record<string, string> = {};
-      (existingValues || []).forEach(ev => {
-        if (ev.field_value) {
-          valuesMap[ev.field_key] = ev.field_value;
+      (existingValues || []).forEach((ev: FieldValue) => {
+        const dataType = dataTypeMap[ev.field_key] || 'text';
+        const value = getValueFromRecord(ev, dataType);
+        if (value) {
+          valuesMap[ev.field_key] = value;
         }
       });
 
@@ -255,6 +283,10 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     try {
       setSaving(true);
 
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       // Compute calculated fields before saving
       const finalValues = computeCalculatedFields();
 
@@ -263,23 +295,58 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
         finalValues[key] !== undefined && finalValues[key] !== ''
       );
 
-      // Delete existing values for this deal (to handle updates)
+      // Delete existing values for this deal
       const { error: deleteError } = await supabase
         .from('deal_field_values')
         .delete()
-        .eq('deal_id', dealId)
-        .eq('repeat_index', 0);
+        .eq('deal_id', dealId);
 
       if (deleteError) throw deleteError;
 
-      // Insert new values
+      // Insert new values with correct typed columns
       if (fieldKeysToSave.length > 0) {
-        const valuesToInsert = fieldKeysToSave.map(fieldKey => ({
-          deal_id: dealId,
-          field_key: fieldKey,
-          field_value: finalValues[fieldKey],
-          repeat_index: 0,
-        }));
+        const valuesToInsert = fieldKeysToSave.map(fieldKey => {
+          const dataType = fieldDataTypes[fieldKey] || 'text';
+          const stringValue = finalValues[fieldKey];
+          
+          // Build record with typed values
+          const record: {
+            deal_id: string;
+            field_key: string;
+            value_text: string | null;
+            value_number: number | null;
+            value_date: string | null;
+            value_json: any | null;
+            updated_by: string;
+          } = {
+            deal_id: dealId,
+            field_key: fieldKey,
+            value_text: null,
+            value_number: null,
+            value_date: null,
+            value_json: null,
+            updated_by: user.id,
+          };
+
+          switch (dataType) {
+            case 'number':
+            case 'currency':
+            case 'percentage':
+              const numValue = parseFloat(stringValue);
+              record.value_number = isNaN(numValue) ? null : numValue;
+              break;
+            case 'date':
+              record.value_date = stringValue || null;
+              break;
+            case 'boolean':
+              record.value_text = stringValue;
+              break;
+            default:
+              record.value_text = stringValue;
+          }
+
+          return record;
+        });
 
         const { error: insertError } = await supabase
           .from('deal_field_values')
@@ -298,14 +365,14 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
       console.error('Error saving deal data:', err);
       toast({
         title: 'Error',
-        description: 'Failed to save deal data',
+        description: err.message || 'Failed to save deal data',
         variant: 'destructive',
       });
       return false;
     } finally {
       setSaving(false);
     }
-  }, [dealId, values, fields, computeCalculatedFields, toast]);
+  }, [dealId, values, fields, fieldDataTypes, computeCalculatedFields, toast]);
 
   const getMissingRequiredFields = useCallback((section?: FieldSection): FieldDefinition[] => {
     return fields.filter(field => {

@@ -16,31 +16,37 @@ export type Database = {
     Tables: {
       deal_field_values: {
         Row: {
-          created_at: string
           deal_id: string
           field_key: string
-          field_value: string | null
           id: string
-          repeat_index: number | null
           updated_at: string
+          updated_by: string | null
+          value_date: string | null
+          value_json: Json | null
+          value_number: number | null
+          value_text: string | null
         }
         Insert: {
-          created_at?: string
           deal_id: string
           field_key: string
-          field_value?: string | null
           id?: string
-          repeat_index?: number | null
           updated_at?: string
+          updated_by?: string | null
+          value_date?: string | null
+          value_json?: Json | null
+          value_number?: number | null
+          value_text?: string | null
         }
         Update: {
-          created_at?: string
           deal_id?: string
           field_key?: string
-          field_value?: string | null
           id?: string
-          repeat_index?: number | null
           updated_at?: string
+          updated_by?: string | null
+          value_date?: string | null
+          value_json?: Json | null
+          value_number?: number | null
+          value_text?: string | null
         }
         Relationships: [
           {

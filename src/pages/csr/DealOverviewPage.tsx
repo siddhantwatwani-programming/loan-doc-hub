@@ -49,7 +49,9 @@ interface TemplateFieldSummary {
 
 interface FieldValue {
   field_key: string;
-  field_value: string | null;
+  value_text: string | null;
+  value_number: number | null;
+  value_date: string | null;
 }
 
 const modeLabels: Record<string, string> = {
@@ -111,12 +113,14 @@ export const DealOverviewPage: React.FC = () => {
         // Fetch field values for this deal
         const { data: fieldValues } = await supabase
           .from('deal_field_values')
-          .select('field_key, field_value')
+          .select('field_key, value_text, value_number, value_date')
           .eq('deal_id', id);
 
         const filledFieldKeys = new Set(
           (fieldValues || [])
-            .filter((fv: FieldValue) => fv.field_value && fv.field_value.trim() !== '')
+            .filter((fv: FieldValue) => 
+              fv.value_text || fv.value_number !== null || fv.value_date
+            )
             .map((fv: FieldValue) => fv.field_key)
         );
 
