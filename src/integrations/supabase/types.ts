@@ -14,6 +14,233 @@ export type Database = {
   }
   public: {
     Tables: {
+      deal_field_values: {
+        Row: {
+          created_at: string
+          deal_id: string
+          field_key: string
+          field_value: string | null
+          id: string
+          repeat_index: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          field_key: string
+          field_value?: string | null
+          id?: string
+          repeat_index?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          field_key?: string
+          field_value?: string | null
+          id?: string
+          repeat_index?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_field_values_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_field_values_field_key_fkey"
+            columns: ["field_key"]
+            isOneToOne: false
+            referencedRelation: "field_dictionary"
+            referencedColumns: ["field_key"]
+          },
+        ]
+      }
+      deals: {
+        Row: {
+          borrower_name: string | null
+          created_at: string
+          created_by: string
+          deal_number: string
+          id: string
+          loan_amount: number | null
+          mode: Database["public"]["Enums"]["deal_mode"]
+          notes: string | null
+          packet_id: string | null
+          product_type: string
+          property_address: string | null
+          state: string
+          status: Database["public"]["Enums"]["deal_status"]
+          updated_at: string
+        }
+        Insert: {
+          borrower_name?: string | null
+          created_at?: string
+          created_by: string
+          deal_number: string
+          id?: string
+          loan_amount?: number | null
+          mode?: Database["public"]["Enums"]["deal_mode"]
+          notes?: string | null
+          packet_id?: string | null
+          product_type: string
+          property_address?: string | null
+          state: string
+          status?: Database["public"]["Enums"]["deal_status"]
+          updated_at?: string
+        }
+        Update: {
+          borrower_name?: string | null
+          created_at?: string
+          created_by?: string
+          deal_number?: string
+          id?: string
+          loan_amount?: number | null
+          mode?: Database["public"]["Enums"]["deal_mode"]
+          notes?: string | null
+          packet_id?: string | null
+          product_type?: string
+          property_address?: string | null
+          state?: string
+          status?: Database["public"]["Enums"]["deal_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_packet_id_fkey"
+            columns: ["packet_id"]
+            isOneToOne: false
+            referencedRelation: "packets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      field_dictionary: {
+        Row: {
+          created_at: string
+          data_type: Database["public"]["Enums"]["field_data_type"]
+          default_value: string | null
+          description: string | null
+          field_key: string
+          id: string
+          is_calculated: boolean
+          is_repeatable: boolean
+          label: string
+          section: Database["public"]["Enums"]["field_section"]
+          updated_at: string
+          validation_rule: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_type?: Database["public"]["Enums"]["field_data_type"]
+          default_value?: string | null
+          description?: string | null
+          field_key: string
+          id?: string
+          is_calculated?: boolean
+          is_repeatable?: boolean
+          label: string
+          section: Database["public"]["Enums"]["field_section"]
+          updated_at?: string
+          validation_rule?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_type?: Database["public"]["Enums"]["field_data_type"]
+          default_value?: string | null
+          description?: string | null
+          field_key?: string
+          id?: string
+          is_calculated?: boolean
+          is_repeatable?: boolean
+          label?: string
+          section?: Database["public"]["Enums"]["field_section"]
+          updated_at?: string
+          validation_rule?: string | null
+        }
+        Relationships: []
+      }
+      packet_templates: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_required: boolean
+          packet_id: string
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_required?: boolean
+          packet_id: string
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_required?: boolean
+          packet_id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "packet_templates_packet_id_fkey"
+            columns: ["packet_id"]
+            isOneToOne: false
+            referencedRelation: "packets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packet_templates_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      packets: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          product_type: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          product_type: string
+          state: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          product_type?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -38,6 +265,93 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      template_field_maps: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          field_key: string
+          id: string
+          required_flag: boolean
+          template_id: string
+          transform_rule: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          field_key: string
+          id?: string
+          required_flag?: boolean
+          template_id: string
+          transform_rule?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          field_key?: string
+          id?: string
+          required_flag?: boolean
+          template_id?: string
+          transform_rule?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_field_maps_field_key_fkey"
+            columns: ["field_key"]
+            isOneToOne: false
+            referencedRelation: "field_dictionary"
+            referencedColumns: ["field_key"]
+          },
+          {
+            foreignKeyName: "template_field_maps_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          file_path: string | null
+          id: string
+          is_active: boolean
+          name: string
+          product_type: string
+          state: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          product_type: string
+          state: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          product_type?: string
+          state?: string
+          updated_at?: string
+          version?: number
         }
         Relationships: []
       }
@@ -67,6 +381,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_deal_number: { Args: never; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -81,6 +396,24 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "csr"
+      deal_mode: "doc_prep" | "servicing_only"
+      deal_status: "draft" | "ready" | "generated"
+      field_data_type:
+        | "text"
+        | "number"
+        | "currency"
+        | "date"
+        | "percentage"
+        | "boolean"
+      field_section:
+        | "borrower"
+        | "co_borrower"
+        | "loan_terms"
+        | "property"
+        | "seller"
+        | "title"
+        | "escrow"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -209,6 +542,26 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "csr"],
+      deal_mode: ["doc_prep", "servicing_only"],
+      deal_status: ["draft", "ready", "generated"],
+      field_data_type: [
+        "text",
+        "number",
+        "currency",
+        "date",
+        "percentage",
+        "boolean",
+      ],
+      field_section: [
+        "borrower",
+        "co_borrower",
+        "loan_terms",
+        "property",
+        "seller",
+        "title",
+        "escrow",
+        "other",
+      ],
     },
   },
 } as const
