@@ -49,7 +49,17 @@ interface FieldDictionary {
   description: string | null;
   default_value: string | null;
   validation_rule: string | null;
+  allowed_roles: string[];
+  read_only_roles: string[];
 }
+
+const ROLES = [
+  { value: 'admin', label: 'Admin' },
+  { value: 'csr', label: 'CSR' },
+  { value: 'borrower', label: 'Borrower' },
+  { value: 'broker', label: 'Broker' },
+  { value: 'lender', label: 'Lender' },
+];
 
 const SECTIONS = [
   { value: 'borrower', label: 'Borrower' },
@@ -91,6 +101,8 @@ export const FieldDictionaryPage: React.FC = () => {
     description: '',
     default_value: '',
     validation_rule: '',
+    allowed_roles: ['admin', 'csr'] as string[],
+    read_only_roles: [] as string[],
   });
 
   useEffect(() => {
@@ -161,6 +173,8 @@ export const FieldDictionaryPage: React.FC = () => {
         description: formData.description || null,
         default_value: formData.default_value || null,
         validation_rule: formData.validation_rule || null,
+        allowed_roles: formData.allowed_roles,
+        read_only_roles: formData.read_only_roles,
       };
 
       if (editingField) {
@@ -203,6 +217,8 @@ export const FieldDictionaryPage: React.FC = () => {
       description: field.description || '',
       default_value: field.default_value || '',
       validation_rule: field.validation_rule || '',
+      allowed_roles: field.allowed_roles || ['admin', 'csr'],
+      read_only_roles: field.read_only_roles || [],
     });
     setIsDialogOpen(true);
   };
@@ -240,6 +256,30 @@ export const FieldDictionaryPage: React.FC = () => {
       description: '',
       default_value: '',
       validation_rule: '',
+      allowed_roles: ['admin', 'csr'],
+      read_only_roles: [],
+    });
+  };
+
+  const toggleRole = (role: string, field: 'allowed_roles' | 'read_only_roles') => {
+    setFormData(prev => {
+      const currentRoles = prev[field];
+      const otherField = field === 'allowed_roles' ? 'read_only_roles' : 'allowed_roles';
+      
+      if (currentRoles.includes(role)) {
+        // Remove role
+        return {
+          ...prev,
+          [field]: currentRoles.filter(r => r !== role),
+        };
+      } else {
+        // Add role and ensure it's not in the other field
+        return {
+          ...prev,
+          [field]: [...currentRoles, role],
+          [otherField]: prev[otherField].filter(r => r !== role),
+        };
+      }
     });
   };
 
@@ -377,6 +417,65 @@ export const FieldDictionaryPage: React.FC = () => {
                   placeholder="Optional default"
                 />
               </div>
+
+              {/* Role-based Visibility Section */}
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-medium text-foreground mb-3">Field Visibility & Permissions</h4>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Configure which roles can view and edit this field. CSR and Admin always have full access by default.
+                </p>
+                
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm">Can View & Edit (Allowed Roles)</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {ROLES.map(role => (
+                        <Button
+                          key={role.value}
+                          type="button"
+                          size="sm"
+                          variant={formData.allowed_roles.includes(role.value) ? 'default' : 'outline'}
+                          className={cn(
+                            'text-xs',
+                            formData.allowed_roles.includes(role.value) && 'bg-primary'
+                          )}
+                          onClick={() => toggleRole(role.value, 'allowed_roles')}
+                        >
+                          {role.label}
+                        </Button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      These roles can view and edit this field value
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm">View Only (Read-Only Roles)</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {ROLES.filter(r => !['admin', 'csr'].includes(r.value)).map(role => (
+                        <Button
+                          key={role.value}
+                          type="button"
+                          size="sm"
+                          variant={formData.read_only_roles.includes(role.value) ? 'secondary' : 'outline'}
+                          className={cn(
+                            'text-xs',
+                            formData.read_only_roles.includes(role.value) && 'bg-secondary'
+                          )}
+                          onClick={() => toggleRole(role.value, 'read_only_roles')}
+                          disabled={formData.allowed_roles.includes(role.value)}
+                        >
+                          {role.label}
+                        </Button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      These roles can only view (not edit) this field
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
@@ -437,6 +536,7 @@ export const FieldDictionaryPage: React.FC = () => {
                       <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Field Key</th>
                       <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Type</th>
                       <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Flags</th>
+                      <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Visibility</th>
                       <th className="text-right py-2 px-3 text-sm font-medium text-muted-foreground">Actions</th>
                     </tr>
                   </thead>
@@ -461,6 +561,31 @@ export const FieldDictionaryPage: React.FC = () => {
                               <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-success/10 text-success">
                                 Repeat
                               </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="flex flex-wrap gap-1">
+                            {field.allowed_roles?.filter(r => !['admin', 'csr'].includes(r)).map(role => (
+                              <span 
+                                key={role} 
+                                className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium bg-success/10 text-success capitalize"
+                                title="Can view & edit"
+                              >
+                                {role}
+                              </span>
+                            ))}
+                            {field.read_only_roles?.map(role => (
+                              <span 
+                                key={role} 
+                                className="inline-flex px-1.5 py-0.5 rounded text-xs font-medium bg-warning/10 text-warning capitalize"
+                                title="View only"
+                              >
+                                {role} (RO)
+                              </span>
+                            ))}
+                            {(!field.allowed_roles?.some(r => !['admin', 'csr'].includes(r)) && !field.read_only_roles?.length) && (
+                              <span className="text-xs text-muted-foreground">Internal only</span>
                             )}
                           </div>
                         </td>

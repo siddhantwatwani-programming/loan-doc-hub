@@ -4,6 +4,8 @@ import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
+import { useFieldPermissions } from '@/hooks/useFieldPermissions';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DealSectionTabProps {
   fields: FieldDefinition[];
@@ -22,18 +24,40 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
   showValidation = false,
   calculationResults = {},
 }) => {
+  const { checkCanView, checkCanEdit } = useFieldPermissions();
+  const { isExternalUser } = useAuth();
   const missingFieldKeys = new Set(missingRequiredFields.map(f => f.field_key));
-  const isComplete = missingRequiredFields.length === 0;
-  const requiredFields = fields.filter(f => f.is_required);
-  const filledRequired = requiredFields.filter(f => !missingFieldKeys.has(f.field_key));
 
-  if (fields.length === 0) {
+  // Filter fields based on view permissions for external users
+  const visibleFields = isExternalUser 
+    ? fields.filter(f => checkCanView(f.field_key))
+    : fields;
+
+  // Create a map of which fields are read-only for the current user
+  const readOnlyFields = new Set(
+    visibleFields
+      .filter(f => !checkCanEdit(f.field_key))
+      .map(f => f.field_key)
+  );
+
+  if (visibleFields.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">No fields in this section</p>
+        <p className="text-muted-foreground">
+          {fields.length === 0 ? 'No fields in this section' : 'No accessible fields in this section'}
+        </p>
       </div>
     );
   }
+
+  // Recalculate missing based on visible fields only
+  const visibleMissingFields = missingRequiredFields.filter(f => 
+    visibleFields.some(vf => vf.field_key === f.field_key)
+  );
+  
+  const isComplete = visibleMissingFields.length === 0;
+  const requiredFields = visibleFields.filter(f => f.is_required);
+  const filledRequired = requiredFields.filter(f => !missingFieldKeys.has(f.field_key));
 
   return (
     <div className="space-y-6">
@@ -54,7 +78,7 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
           ) : (
             <>
               <AlertCircle className="h-4 w-4" />
-              <span>{missingRequiredFields.length} required field{missingRequiredFields.length > 1 ? 's' : ''} missing</span>
+              <span>{visibleMissingFields.length} required field{visibleMissingFields.length > 1 ? 's' : ''} missing</span>
             </>
           )}
         </div>
@@ -67,7 +91,7 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
 
       {/* Fields grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {fields.map(field => (
+        {visibleFields.map(field => (
           <DealFieldInput
             key={field.field_key}
             field={field}
@@ -76,6 +100,7 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
             error={missingFieldKeys.has(field.field_key)}
             showValidation={showValidation}
             calculationResult={calculationResults[field.field_key]}
+            disabled={readOnlyFields.has(field.field_key)}
           />
         ))}
       </div>
