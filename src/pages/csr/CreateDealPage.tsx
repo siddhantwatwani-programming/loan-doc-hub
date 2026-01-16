@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { logDealCreated } from '@/hooks/useActivityLog';
 import { ArrowLeft, Loader2, FolderOpen, Package, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -144,6 +145,14 @@ export const CreateDealPage: React.FC = () => {
         .single();
 
       if (error) throw error;
+
+      // Log the activity
+      await logDealCreated(data.id, {
+        dealNumber: dealNumber,
+        state: formData.state,
+        productType: formData.product_type,
+        mode: formData.mode,
+      });
 
       toast({ title: 'Deal created successfully' });
       navigate(`/deals/${data.id}`);

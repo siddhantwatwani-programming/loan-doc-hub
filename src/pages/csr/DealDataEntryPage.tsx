@@ -8,6 +8,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useDealFields } from '@/hooks/useDealFields';
 import { DealSectionTab } from '@/components/deal/DealSectionTab';
 import { 
+  logDealUpdated, 
+  logDealMarkedReady, 
+  logDealRevertedToDraft 
+} from '@/hooks/useActivityLog';
+import { 
   ArrowLeft, 
   Loader2, 
   Save,
@@ -128,6 +133,13 @@ export const DealDataEntryPage: React.FC = () => {
 
       if (error) throw error;
 
+      // Log the revert
+      if (id) {
+        await logDealRevertedToDraft(id, {
+          reason: 'Required field modified after ready status',
+        });
+      }
+
       setDeal(prev => prev ? { ...prev, status: 'draft' } : null);
       toast({
         title: 'Status changed to Draft',
@@ -144,6 +156,15 @@ export const DealDataEntryPage: React.FC = () => {
     computeCalculatedFields();
     const success = await saveDraft();
     if (success) {
+      // Log the save activity
+      if (id) {
+        const filledCount = Object.values(values).filter(v => v && v.trim() !== '').length;
+        await logDealUpdated(id, {
+          fieldsUpdated: filledCount,
+          fieldsTotal: visibleFieldKeys.length,
+        });
+      }
+      
       resetDirty();
       // Refresh deal to get updated timestamp
       fetchDeal();
@@ -184,6 +205,13 @@ export const DealDataEntryPage: React.FC = () => {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Log the mark ready activity
+      if (id) {
+        await logDealMarkedReady(id, {
+          requiredFieldsCount: requiredFieldKeys.length,
+        });
+      }
 
       resetDirty();
       toast({
