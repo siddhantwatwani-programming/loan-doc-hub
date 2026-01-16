@@ -138,6 +138,56 @@ export type Database = {
           },
         ]
       }
+      deal_participants: {
+        Row: {
+          access_method: Database["public"]["Enums"]["participant_access_method"]
+          completed_at: string | null
+          created_at: string
+          deal_id: string
+          id: string
+          invited_at: string
+          role: Database["public"]["Enums"]["app_role"]
+          sequence_order: number | null
+          status: Database["public"]["Enums"]["participant_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          access_method?: Database["public"]["Enums"]["participant_access_method"]
+          completed_at?: string | null
+          created_at?: string
+          deal_id: string
+          id?: string
+          invited_at?: string
+          role: Database["public"]["Enums"]["app_role"]
+          sequence_order?: number | null
+          status?: Database["public"]["Enums"]["participant_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          access_method?: Database["public"]["Enums"]["participant_access_method"]
+          completed_at?: string | null
+          created_at?: string
+          deal_id?: string
+          id?: string
+          invited_at?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          sequence_order?: number | null
+          status?: Database["public"]["Enums"]["participant_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_participants_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           borrower_name: string | null
@@ -728,6 +778,8 @@ export type Database = {
         | "other"
       generation_status: "queued" | "running" | "success" | "failed"
       output_type: "docx_only" | "docx_and_pdf"
+      participant_access_method: "login" | "magic_link"
+      participant_status: "invited" | "in_progress" | "completed" | "expired"
       request_type: "single_doc" | "packet"
     }
     CompositeTypes: {
@@ -879,6 +931,8 @@ export const Constants = {
       ],
       generation_status: ["queued", "running", "success", "failed"],
       output_type: ["docx_only", "docx_and_pdf"],
+      participant_access_method: ["login", "magic_link"],
+      participant_status: ["invited", "in_progress", "completed", "expired"],
       request_type: ["single_doc", "packet"],
     },
   },
