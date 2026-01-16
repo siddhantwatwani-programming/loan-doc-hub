@@ -227,34 +227,34 @@ export const DealsPage: React.FC = () => {
 
           {showFilters && (
             <div className="flex flex-col sm:flex-row gap-3 pt-3 border-t border-border">
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <Select value={filterStatus || "all"} onValueChange={(v) => setFilterStatus(v === "all" ? "" : v)}>
                 <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   {STATUS_OPTIONS.map((s) => (
                     <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={filterState} onValueChange={setFilterState}>
+              <Select value={filterState || "all"} onValueChange={(v) => setFilterState(v === "all" ? "" : v)}>
                 <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="State" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All States</SelectItem>
+                  <SelectItem value="all">All States</SelectItem>
                   {US_STATES.map((s) => (
                     <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={filterProduct} onValueChange={setFilterProduct}>
+              <Select value={filterProduct || "all"} onValueChange={(v) => setFilterProduct(v === "all" ? "" : v)}>
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Product Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Products</SelectItem>
+                  <SelectItem value="all">All Products</SelectItem>
                   {PRODUCT_TYPES.map((p) => (
                     <SelectItem key={p} value={p}>{p}</SelectItem>
                   ))}
