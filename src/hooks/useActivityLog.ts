@@ -13,7 +13,8 @@ export type ActionType =
   | 'DealRevertedToDraft'
   | 'FieldUpdated'
   | 'ParticipantInvited'
-  | 'ParticipantRemoved';
+  | 'ParticipantRemoved'
+  | 'ParticipantCompleted';
 
 export interface ActivityLogEntry {
   id: string;

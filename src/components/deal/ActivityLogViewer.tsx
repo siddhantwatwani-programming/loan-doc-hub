@@ -78,6 +78,12 @@ const ACTION_CONFIG: Record<ActionType, {
     color: 'text-red-600',
     bgColor: 'bg-red-100',
   },
+  ParticipantCompleted: {
+    icon: CheckCircle2,
+    label: 'Section Completed',
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-100',
+  },
 };
 
 export const ActivityLogViewer: React.FC<ActivityLogViewerProps> = ({
