@@ -49,6 +49,44 @@ export type Database = {
           },
         ]
       }
+      deal_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          deal_id: string
+          id: string
+          notes: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          deal_id: string
+          id?: string
+          notes?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          deal_id?: string
+          id?: string
+          notes?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_assignments_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_field_values: {
         Row: {
           deal_id: string
@@ -207,6 +245,36 @@ export type Database = {
           section?: Database["public"]["Enums"]["field_section"]
           updated_at?: string
           validation_rule?: string | null
+        }
+        Relationships: []
+      }
+      field_permissions: {
+        Row: {
+          can_edit: boolean
+          can_view: boolean
+          created_at: string
+          field_key: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          can_edit?: boolean
+          can_view?: boolean
+          created_at?: string
+          field_key: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          can_edit?: boolean
+          can_view?: boolean
+          created_at?: string
+          field_key?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
         }
         Relationships: []
       }
@@ -595,10 +663,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_edit_field: {
+        Args: { _field_key: string; _user_id: string }
+        Returns: boolean
+      }
+      can_view_field: {
+        Args: { _field_key: string; _user_id: string }
+        Returns: boolean
+      }
       generate_deal_number: { Args: never; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_deal_access: {
+        Args: { _deal_id: string; _user_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
@@ -607,9 +687,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_external_role: {
+        Args: { _role: Database["public"]["Enums"]["app_role"] }
+        Returns: boolean
+      }
     }
     Enums: {
-      app_role: "admin" | "csr"
+      app_role: "admin" | "csr" | "borrower" | "broker" | "lender"
       deal_mode: "doc_prep" | "servicing_only"
       deal_status: "draft" | "ready" | "generated"
       field_data_type:
@@ -758,7 +842,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "csr"],
+      app_role: ["admin", "csr", "borrower", "broker", "lender"],
       deal_mode: ["doc_prep", "servicing_only"],
       deal_status: ["draft", "ready", "generated"],
       field_data_type: [

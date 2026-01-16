@@ -2,13 +2,18 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'admin' | 'csr' | null;
+export type AppRole = 'admin' | 'csr' | 'borrower' | 'broker' | 'lender' | null;
+
+export const EXTERNAL_ROLES: AppRole[] = ['borrower', 'broker', 'lender'];
+export const INTERNAL_ROLES: AppRole[] = ['admin', 'csr'];
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: AppRole;
   loading: boolean;
+  isExternalUser: boolean;
+  isInternalUser: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -29,6 +34,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole>(null);
   const [loading, setLoading] = useState(true);
+
+  const isExternalUser = role !== null && EXTERNAL_ROLES.includes(role);
+  const isInternalUser = role !== null && INTERNAL_ROLES.includes(role);
 
   const fetchUserRole = async (userId: string) => {
     try {
@@ -114,7 +122,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      role, 
+      loading, 
+      isExternalUser,
+      isInternalUser,
+      signIn, 
+      signUp, 
+      signOut 
+    }}>
       {children}
     </AuthContext.Provider>
   );
