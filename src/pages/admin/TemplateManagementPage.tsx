@@ -25,20 +25,25 @@ import {
   Plus, 
   Search, 
   FileText, 
-  Upload, 
   Loader2, 
   MoreHorizontal,
   Pencil,
   Trash2,
-  Eye
+  Eye,
+  Copy,
+  Calendar,
+  Info,
+  FileUp
 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 interface Template {
   id: string;
@@ -49,7 +54,9 @@ interface Template {
   is_active: boolean;
   description: string | null;
   file_path: string | null;
+  reference_pdf_path: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 const US_STATES = [
@@ -76,9 +83,12 @@ export const TemplateManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingDocx, setUploadingDocx] = useState(false);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -89,6 +99,7 @@ export const TemplateManagementPage: React.FC = () => {
     is_active: true,
     description: '',
     file_path: '',
+    reference_pdf_path: '',
   });
 
   useEffect(() => {
@@ -100,7 +111,8 @@ export const TemplateManagementPage: React.FC = () => {
       const { data, error } = await supabase
         .from('templates')
         .select('*')
-        .order('name');
+        .order('name')
+        .order('version', { ascending: false });
 
       if (error) throw error;
       setTemplates(data || []);
@@ -116,7 +128,7 @@ export const TemplateManagementPage: React.FC = () => {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDocxUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -129,7 +141,7 @@ export const TemplateManagementPage: React.FC = () => {
       return;
     }
 
-    setUploading(true);
+    setUploadingDocx(true);
     try {
       const fileName = `${Date.now()}_${file.name}`;
       const { error } = await supabase.storage
@@ -141,7 +153,7 @@ export const TemplateManagementPage: React.FC = () => {
       setFormData((prev) => ({ ...prev, file_path: fileName }));
       toast({
         title: 'File uploaded',
-        description: 'Template file uploaded successfully',
+        description: 'Template DOCX file uploaded successfully',
       });
     } catch (error: any) {
       console.error('Upload error:', error);
@@ -151,7 +163,46 @@ export const TemplateManagementPage: React.FC = () => {
         variant: 'destructive',
       });
     } finally {
-      setUploading(false);
+      setUploadingDocx(false);
+    }
+  };
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.pdf')) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please upload a .pdf file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploadingPdf(true);
+    try {
+      const fileName = `ref_${Date.now()}_${file.name}`;
+      const { error } = await supabase.storage
+        .from('templates')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      setFormData((prev) => ({ ...prev, reference_pdf_path: fileName }));
+      toast({
+        title: 'File uploaded',
+        description: 'Reference PDF uploaded successfully',
+      });
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({
+        title: 'Upload failed',
+        description: error.message || 'Failed to upload file',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingPdf(false);
     }
   };
 
@@ -160,6 +211,16 @@ export const TemplateManagementPage: React.FC = () => {
       toast({
         title: 'Validation error',
         description: 'Please fill in all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Require DOCX file for new templates
+    if (!editingTemplate && !formData.file_path) {
+      toast({
+        title: 'Template file required',
+        description: 'Please upload a DOCX template file',
         variant: 'destructive',
       });
       return;
@@ -178,6 +239,7 @@ export const TemplateManagementPage: React.FC = () => {
             is_active: formData.is_active,
             description: formData.description || null,
             file_path: formData.file_path || null,
+            reference_pdf_path: formData.reference_pdf_path || null,
           })
           .eq('id', editingTemplate.id);
 
@@ -192,6 +254,7 @@ export const TemplateManagementPage: React.FC = () => {
           is_active: formData.is_active,
           description: formData.description || null,
           file_path: formData.file_path || null,
+          reference_pdf_path: formData.reference_pdf_path || null,
         });
 
         if (error) throw error;
@@ -213,6 +276,29 @@ export const TemplateManagementPage: React.FC = () => {
     }
   };
 
+  const handleCreateNewVersion = async (template: Template) => {
+    // Find the highest version for this template configuration
+    const existingVersions = templates.filter(
+      t => t.name === template.name && 
+           t.state === template.state && 
+           t.product_type === template.product_type
+    );
+    const maxVersion = Math.max(...existingVersions.map(t => t.version));
+    
+    setEditingTemplate(null);
+    setFormData({
+      name: template.name,
+      state: template.state,
+      product_type: template.product_type,
+      version: maxVersion + 1,
+      is_active: true,
+      description: template.description || '',
+      file_path: '', // Require new file upload for new version
+      reference_pdf_path: '',
+    });
+    setIsDialogOpen(true);
+  };
+
   const handleEdit = (template: Template) => {
     setEditingTemplate(template);
     setFormData({
@@ -223,17 +309,27 @@ export const TemplateManagementPage: React.FC = () => {
       is_active: template.is_active,
       description: template.description || '',
       file_path: template.file_path || '',
+      reference_pdf_path: template.reference_pdf_path || '',
     });
     setIsDialogOpen(true);
   };
 
+  const handlePreview = (template: Template) => {
+    setPreviewTemplate(template);
+    setIsPreviewOpen(true);
+  };
+
   const handleDelete = async (template: Template) => {
-    if (!confirm(`Are you sure you want to delete "${template.name}"?`)) return;
+    if (!confirm(`Are you sure you want to delete "${template.name}" v${template.version}?`)) return;
 
     try {
-      // Delete file from storage if exists
-      if (template.file_path) {
-        await supabase.storage.from('templates').remove([template.file_path]);
+      // Delete files from storage if exists
+      const filesToDelete: string[] = [];
+      if (template.file_path) filesToDelete.push(template.file_path);
+      if (template.reference_pdf_path) filesToDelete.push(template.reference_pdf_path);
+      
+      if (filesToDelete.length > 0) {
+        await supabase.storage.from('templates').remove(filesToDelete);
       }
 
       const { error } = await supabase
@@ -263,6 +359,12 @@ export const TemplateManagementPage: React.FC = () => {
 
       if (error) throw error;
       fetchTemplates();
+      toast({
+        title: template.is_active ? 'Template deactivated' : 'Template activated',
+        description: template.is_active 
+          ? 'This template can no longer be used in packets' 
+          : 'This template is now available for use in packets',
+      });
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -282,6 +384,7 @@ export const TemplateManagementPage: React.FC = () => {
       is_active: true,
       description: '',
       file_path: '',
+      reference_pdf_path: '',
     });
   };
 
@@ -317,7 +420,7 @@ export const TemplateManagementPage: React.FC = () => {
               New Template
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingTemplate ? 'Edit Template' : 'Create Template'}</DialogTitle>
               <DialogDescription>
@@ -377,7 +480,11 @@ export const TemplateManagementPage: React.FC = () => {
                     min="1"
                     value={formData.version}
                     onChange={(e) => setFormData((prev) => ({ ...prev, version: parseInt(e.target.value) || 1 }))}
+                    disabled={!!editingTemplate}
                   />
+                  {editingTemplate && (
+                    <p className="text-xs text-muted-foreground">Use "Create New Version" to increment</p>
+                  )}
                 </div>
                 <div className="space-y-2 flex items-end pb-2">
                   <div className="flex items-center gap-2">
@@ -398,28 +505,71 @@ export const TemplateManagementPage: React.FC = () => {
                   placeholder="Optional description"
                 />
               </div>
+              
+              {/* DOCX Template File - Required */}
               <div className="space-y-2">
-                <Label>Template File (DOCX)</Label>
+                <Label className="flex items-center gap-1">
+                  <FileUp className="h-4 w-4" />
+                  Template File (DOCX) *
+                </Label>
                 <div className="flex gap-2">
                   <Input
                     type="file"
                     accept=".docx"
-                    onChange={handleFileUpload}
-                    disabled={uploading}
+                    onChange={handleDocxUpload}
+                    disabled={uploadingDocx}
                     className="flex-1"
                   />
                 </div>
                 {formData.file_path && (
-                  <p className="text-sm text-muted-foreground">
-                    File: {formData.file_path}
+                  <p className="text-sm text-success flex items-center gap-1">
+                    <FileText className="h-3 w-3" />
+                    {formData.file_path}
                   </p>
                 )}
-                {uploading && (
+                {uploadingDocx && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Uploading...
+                    Uploading DOCX...
                   </div>
                 )}
+                {!editingTemplate && !formData.file_path && (
+                  <p className="text-xs text-muted-foreground">
+                    A DOCX template file is required for document generation
+                  </p>
+                )}
+              </div>
+
+              {/* Reference PDF - Optional */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  <Eye className="h-4 w-4" />
+                  Reference PDF (Optional)
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="file"
+                    accept=".pdf"
+                    onChange={handlePdfUpload}
+                    disabled={uploadingPdf}
+                    className="flex-1"
+                  />
+                </div>
+                {formData.reference_pdf_path && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <FileText className="h-3 w-3" />
+                    {formData.reference_pdf_path}
+                  </p>
+                )}
+                {uploadingPdf && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Uploading PDF...
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Optional reference PDF for preview purposes only
+                </p>
               </div>
             </div>
             <DialogFooter>
@@ -440,6 +590,94 @@ export const TemplateManagementPage: React.FC = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Template Preview Metadata Dialog */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5" />
+              Template Metadata
+            </DialogTitle>
+            <DialogDescription>
+              Preview template information and configuration
+            </DialogDescription>
+          </DialogHeader>
+          {previewTemplate && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Name</p>
+                  <p className="font-medium text-foreground">{previewTemplate.name}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Version</p>
+                  <p className="font-medium text-foreground">v{previewTemplate.version}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">State</p>
+                  <p className="font-medium text-foreground">{previewTemplate.state}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Product Type</p>
+                  <p className="font-medium text-foreground">{previewTemplate.product_type}</p>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Status</p>
+                <span className={cn(
+                  'inline-flex px-2.5 py-1 rounded-full text-xs font-medium',
+                  previewTemplate.is_active
+                    ? 'bg-success/10 text-success'
+                    : 'bg-muted text-muted-foreground'
+                )}>
+                  {previewTemplate.is_active ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+
+              {previewTemplate.description && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Description</p>
+                  <p className="text-sm text-foreground">{previewTemplate.description}</p>
+                </div>
+              )}
+
+              <div className="border-t border-border pt-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Template File:</span>
+                  <span className={previewTemplate.file_path ? 'text-success' : 'text-destructive'}>
+                    {previewTemplate.file_path ? 'Uploaded' : 'Missing'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Reference PDF:</span>
+                  <span className={previewTemplate.reference_pdf_path ? 'text-primary' : 'text-muted-foreground'}>
+                    {previewTemplate.reference_pdf_path ? 'Available' : 'None'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>Last updated: {format(new Date(previewTemplate.updated_at), 'MMM d, yyyy h:mm a')}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPreviewOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="section-card mb-6">
         <div className="relative">
@@ -470,13 +708,13 @@ export const TemplateManagementPage: React.FC = () => {
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Product</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Version</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">File</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Files</th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredTemplates.map((template) => (
-                  <tr key={template.id} className="border-b border-border last:border-0">
+                  <tr key={template.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
                     <td className="py-4 px-4 font-medium text-foreground">{template.name}</td>
                     <td className="py-4 px-4 text-foreground">{template.state}</td>
                     <td className="py-4 px-4 text-foreground">{template.product_type}</td>
@@ -495,11 +733,16 @@ export const TemplateManagementPage: React.FC = () => {
                       </button>
                     </td>
                     <td className="py-4 px-4">
-                      {template.file_path ? (
-                        <span className="text-sm text-primary">Uploaded</span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">None</span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {template.file_path ? (
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">DOCX</span>
+                        ) : (
+                          <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded">No DOCX</span>
+                        )}
+                        {template.reference_pdf_path && (
+                          <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">PDF</span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-4 px-4 text-right">
                       <DropdownMenu>
@@ -509,10 +752,19 @@ export const TemplateManagementPage: React.FC = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handlePreview(template)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Metadata
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEdit(template)}>
                             <Pencil className="h-4 w-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleCreateNewVersion(template)}>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Create New Version
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             onClick={() => handleDelete(template)}
                             className="text-destructive"
