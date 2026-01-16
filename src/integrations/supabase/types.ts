@@ -210,6 +210,140 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_documents: {
+        Row: {
+          created_at: string
+          created_by: string
+          deal_id: string
+          error_message: string | null
+          generation_status: Database["public"]["Enums"]["generation_status"]
+          id: string
+          output_docx_path: string
+          output_pdf_path: string | null
+          output_type: Database["public"]["Enums"]["output_type"]
+          packet_id: string | null
+          template_id: string
+          version_number: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          deal_id: string
+          error_message?: string | null
+          generation_status?: Database["public"]["Enums"]["generation_status"]
+          id?: string
+          output_docx_path: string
+          output_pdf_path?: string | null
+          output_type?: Database["public"]["Enums"]["output_type"]
+          packet_id?: string | null
+          template_id: string
+          version_number?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          deal_id?: string
+          error_message?: string | null
+          generation_status?: Database["public"]["Enums"]["generation_status"]
+          id?: string
+          output_docx_path?: string
+          output_pdf_path?: string | null
+          output_type?: Database["public"]["Enums"]["output_type"]
+          packet_id?: string | null
+          template_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_documents_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_documents_packet_id_fkey"
+            columns: ["packet_id"]
+            isOneToOne: false
+            referencedRelation: "packets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_documents_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generation_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          deal_id: string
+          error_message: string | null
+          id: string
+          output_type: Database["public"]["Enums"]["output_type"]
+          packet_id: string | null
+          request_type: Database["public"]["Enums"]["request_type"]
+          requested_by: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["generation_status"]
+          template_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          deal_id: string
+          error_message?: string | null
+          id?: string
+          output_type?: Database["public"]["Enums"]["output_type"]
+          packet_id?: string | null
+          request_type: Database["public"]["Enums"]["request_type"]
+          requested_by: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["generation_status"]
+          template_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          deal_id?: string
+          error_message?: string | null
+          id?: string
+          output_type?: Database["public"]["Enums"]["output_type"]
+          packet_id?: string | null
+          request_type?: Database["public"]["Enums"]["request_type"]
+          requested_by?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["generation_status"]
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_jobs_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generation_jobs_packet_id_fkey"
+            columns: ["packet_id"]
+            isOneToOne: false
+            referencedRelation: "packets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generation_jobs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       packet_templates: {
         Row: {
           created_at: string
@@ -491,6 +625,9 @@ export type Database = {
         | "title"
         | "escrow"
         | "other"
+      generation_status: "queued" | "running" | "success" | "failed"
+      output_type: "docx_only" | "docx_and_pdf"
+      request_type: "single_doc" | "packet"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -639,6 +776,9 @@ export const Constants = {
         "escrow",
         "other",
       ],
+      generation_status: ["queued", "running", "success", "failed"],
+      output_type: ["docx_only", "docx_and_pdf"],
+      request_type: ["single_doc", "packet"],
     },
   },
 } as const
