@@ -83,12 +83,15 @@ export const DealDataEntryPage: React.FC = () => {
     fieldsBySection,
     sections,
     values,
+    visibleFieldKeys,
+    requiredFieldKeys,
     loading: fieldsLoading,
     saving,
     updateValue,
     saveDraft,
     getMissingRequiredFields,
     isSectionComplete,
+    isPacketComplete,
   } = useDealFields(id || '', deal?.packet_id || null);
 
   // Set initial active tab when sections load
