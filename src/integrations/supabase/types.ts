@@ -468,6 +468,50 @@ export type Database = {
           },
         ]
       }
+      magic_links: {
+        Row: {
+          created_at: string
+          created_by: string
+          deal_participant_id: string
+          expires_at: string
+          id: string
+          last_used_at: string | null
+          max_uses: number
+          token: string
+          used_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          deal_participant_id: string
+          expires_at: string
+          id?: string
+          last_used_at?: string | null
+          max_uses?: number
+          token: string
+          used_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          deal_participant_id?: string
+          expires_at?: string
+          id?: string
+          last_used_at?: string | null
+          max_uses?: number
+          token?: string
+          used_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magic_links_deal_participant_id_fkey"
+            columns: ["deal_participant_id"]
+            isOneToOne: false
+            referencedRelation: "deal_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       packet_templates: {
         Row: {
           created_at: string
@@ -754,6 +798,17 @@ export type Database = {
       is_external_role: {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
+      }
+      validate_magic_link: {
+        Args: { _token: string }
+        Returns: {
+          deal_id: string
+          deal_number: string
+          error_message: string
+          is_valid: boolean
+          participant_id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
       }
     }
     Enums: {

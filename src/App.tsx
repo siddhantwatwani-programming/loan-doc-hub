@@ -25,6 +25,7 @@ import PacketManagementPage from "./pages/admin/PacketManagementPage";
 import FieldDictionaryPage from "./pages/admin/FieldDictionaryPage";
 import FieldMapEditorPage from "./pages/admin/FieldMapEditorPage";
 import SystemSettingsPage from "./pages/admin/SystemSettingsPage";
+import MagicLinkAccessPage from "./pages/MagicLinkAccessPage";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,9 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<AuthPage />} />
               
+              {/* Magic link access - no auth required */}
+              <Route path="/access/:token" element={<MagicLinkAccessPage />} />
+              
               {/* Protected routes with layout - all authenticated users */}
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
@@ -51,7 +55,12 @@ const App = () => (
                 <Route path="/deals/:id" element={<DealOverviewPage />} />
               </Route>
 
-              {/* CSR-only routes - creating deals and data entry */}
+              {/* Deal data entry - accessible by CSR, Admin, and assigned external users */}
+              <Route element={<AppLayout requiredRoles={['csr', 'admin', 'borrower', 'broker', 'lender']} />}>
+                <Route path="/deals/:id/data" element={<DealDataEntryPage />} />
+              </Route>
+
+              {/* CSR-only routes - creating deals */}
               <Route element={<AppLayout requiredRoles={['csr', 'admin']} blockExternalUsers />}>
                 <Route path="/deals/new" element={<CreateDealPage />} />
                 <Route path="/deals/:id/edit" element={<DealDataEntryPage />} />
