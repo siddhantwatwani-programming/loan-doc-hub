@@ -66,6 +66,18 @@ const ACTION_CONFIG: Record<ActionType, {
     color: 'text-purple-600',
     bgColor: 'bg-purple-100',
   },
+  ParticipantInvited: {
+    icon: User,
+    label: 'Participant Invited',
+    color: 'text-teal-600',
+    bgColor: 'bg-teal-100',
+  },
+  ParticipantRemoved: {
+    icon: User,
+    label: 'Participant Removed',
+    color: 'text-red-600',
+    bgColor: 'bg-red-100',
+  },
 };
 
 export const ActivityLogViewer: React.FC<ActivityLogViewerProps> = ({

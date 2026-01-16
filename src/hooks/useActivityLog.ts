@@ -11,7 +11,9 @@ export type ActionType =
   | 'DealUpdated'
   | 'DealMarkedReady'
   | 'DealRevertedToDraft'
-  | 'FieldUpdated';
+  | 'FieldUpdated'
+  | 'ParticipantInvited'
+  | 'ParticipantRemoved';
 
 export interface ActivityLogEntry {
   id: string;
@@ -79,13 +81,38 @@ export async function logDealCreated(dealId: string, details?: {
 /**
  * Log deal draft saved
  */
-export async function logDealUpdated(dealId: string, details?: {
-  fieldsUpdated?: number;
-  fieldsTotal?: number;
-}): Promise<boolean> {
+export async function logDealUpdated(dealId: string, details?: Record<string, any>): Promise<boolean> {
   return logActivity({
     dealId,
     actionType: 'DealUpdated',
+    actionDetails: details,
+  });
+}
+
+/**
+ * Log participant invited
+ */
+export async function logParticipantInvited(dealId: string, details: {
+  role: string;
+  email: string;
+  accessMethod: string;
+}): Promise<boolean> {
+  return logActivity({
+    dealId,
+    actionType: 'ParticipantInvited',
+    actionDetails: details,
+  });
+}
+
+/**
+ * Log participant removed
+ */
+export async function logParticipantRemoved(dealId: string, details: {
+  role: string;
+}): Promise<boolean> {
+  return logActivity({
+    dealId,
+    actionType: 'ParticipantRemoved',
     actionDetails: details,
   });
 }

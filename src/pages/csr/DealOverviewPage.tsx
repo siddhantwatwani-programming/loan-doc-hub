@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { resolvePacketFields } from '@/lib/requiredFieldsResolver';
 import { ActivityLogViewer } from '@/components/deal/ActivityLogViewer';
+import { InviteParticipantsPanel } from '@/components/deal/InviteParticipantsPanel';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   ArrowLeft, 
@@ -503,6 +504,11 @@ export const DealOverviewPage: React.FC = () => {
               )}
             </dl>
           </div>
+
+          {/* Participants Panel - CSR only */}
+          {isCsr && (
+            <InviteParticipantsPanel dealId={deal.id} dealNumber={deal.deal_number} />
+          )}
 
           {/* Activity Log */}
           <div className="section-card">
