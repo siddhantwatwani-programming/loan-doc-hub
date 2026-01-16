@@ -319,13 +319,87 @@ export const DealOverviewPage: React.FC = () => {
     // All preconditions met - proceed with generation
     setIsGenerating(true);
     try {
-      // TODO: Implement actual document generation
-      // For now, just show a success message
-      toast({
-        title: 'Generation Started',
-        description: 'Document generation has been queued',
-      });
+      // Generate documents for all templates in the packet
+      const { data: packetTemplates, error: ptError } = await supabase
+        .from('packet_templates')
+        .select('template_id, templates(id, name, file_path)')
+        .eq('packet_id', packet.id)
+        .order('display_order');
+
+      if (ptError) throw ptError;
+
+      const templatesWithFiles = (packetTemplates || []).filter(
+        (pt: any) => pt.templates?.file_path
+      );
+
+      if (templatesWithFiles.length === 0) {
+        toast({
+          title: 'No Templates',
+          description: 'No templates with DOCX files found in this packet',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      let successCount = 0;
+      let failCount = 0;
+      const errors: string[] = [];
+
+      // Generate each template
+      for (const pt of templatesWithFiles) {
+        const template = (pt as any).templates;
+        try {
+          const { data, error } = await supabase.functions.invoke('generate-document', {
+            body: {
+              dealId: deal.id,
+              templateId: template.id,
+              outputType: 'docx_only',
+            },
+          });
+
+          if (error) {
+            failCount++;
+            errors.push(`${template.name}: ${error.message}`);
+            console.error(`Failed to generate ${template.name}:`, error);
+          } else if (data?.error) {
+            failCount++;
+            errors.push(`${template.name}: ${data.error}`);
+            console.error(`Failed to generate ${template.name}:`, data.error);
+          } else {
+            successCount++;
+            console.log(`Generated ${template.name}:`, data);
+          }
+        } catch (err: any) {
+          failCount++;
+          errors.push(`${template.name}: ${err.message}`);
+          console.error(`Exception generating ${template.name}:`, err);
+        }
+      }
+
+      // Show result summary
+      if (successCount > 0 && failCount === 0) {
+        toast({
+          title: 'Documents Generated',
+          description: `Successfully generated ${successCount} document${successCount > 1 ? 's' : ''}`,
+        });
+        // Refresh deal data to show new status
+        fetchDealData();
+      } else if (successCount > 0 && failCount > 0) {
+        toast({
+          title: 'Partial Success',
+          description: `Generated ${successCount} document${successCount > 1 ? 's' : ''}, ${failCount} failed`,
+          variant: 'destructive',
+        });
+        fetchDealData();
+      } else {
+        toast({
+          title: 'Generation Failed',
+          description: errors[0] || 'Failed to generate documents',
+          variant: 'destructive',
+        });
+      }
     } catch (error: any) {
+      console.error('Document generation error:', error);
       toast({
         title: 'Generation Failed',
         description: error.message || 'Failed to start document generation',
