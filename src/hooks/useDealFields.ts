@@ -1,25 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  resolvePacketFields, 
+  getMissingRequiredFields as getResolverMissingFields,
+  isSectionComplete as isResolverSectionComplete,
+  type ResolvedField,
+  type ResolvedFieldSet 
+} from '@/lib/requiredFieldsResolver';
 import type { Database } from '@/integrations/supabase/types';
 
 type FieldSection = Database['public']['Enums']['field_section'];
 type FieldDataType = Database['public']['Enums']['field_data_type'];
 
-export interface FieldDefinition {
-  id: string;
-  field_key: string;
-  label: string;
-  section: FieldSection;
-  data_type: FieldDataType;
-  description: string | null;
-  default_value: string | null;
-  is_calculated: boolean;
-  is_repeatable: boolean;
-  validation_rule: string | null;
-  is_required: boolean;
-  transform_rules: string[];
-}
+// Re-export types for convenience
+export type { ResolvedField as FieldDefinition, ResolvedFieldSet };
 
 export interface FieldValue {
   field_key: string;
@@ -30,11 +25,12 @@ export interface FieldValue {
 }
 
 export interface DealFieldsData {
-  fields: FieldDefinition[];
-  fieldsBySection: Record<FieldSection, FieldDefinition[]>;
+  fields: ResolvedField[];
+  fieldsBySection: Record<FieldSection, ResolvedField[]>;
   sections: FieldSection[];
   values: Record<string, string>;
-  requiredFields: Set<string>;
+  visibleFieldKeys: string[];
+  requiredFieldKeys: string[];
   loading: boolean;
   saving: boolean;
   error: string | null;
@@ -44,22 +40,11 @@ export interface UseDealFieldsReturn extends DealFieldsData {
   updateValue: (fieldKey: string, value: string) => void;
   saveDraft: () => Promise<boolean>;
   getValidationErrors: (section?: FieldSection) => string[];
-  getMissingRequiredFields: (section?: FieldSection) => FieldDefinition[];
+  getMissingRequiredFields: (section?: FieldSection) => ResolvedField[];
   isSectionComplete: (section: FieldSection) => boolean;
-  computeCalculatedFields: () => void;
+  isPacketComplete: () => boolean;
+  computeCalculatedFields: () => Record<string, string>;
 }
-
-// Section display order
-const SECTION_ORDER: FieldSection[] = [
-  'borrower',
-  'co_borrower',
-  'property',
-  'loan_terms',
-  'seller',
-  'title',
-  'escrow',
-  'other'
-];
 
 // Map field data types to value columns
 function getValueFromRecord(record: FieldValue, dataType: FieldDataType): string {
@@ -71,7 +56,6 @@ function getValueFromRecord(record: FieldValue, dataType: FieldDataType): string
     case 'date':
       return record.value_date || '';
     case 'boolean':
-      // Boolean stored as text 'true'/'false'
       return record.value_text || '';
     default:
       return record.value_text || '';
@@ -80,29 +64,14 @@ function getValueFromRecord(record: FieldValue, dataType: FieldDataType): string
 
 export function useDealFields(dealId: string, packetId: string | null): UseDealFieldsReturn {
   const { toast } = useToast();
-  const [fields, setFields] = useState<FieldDefinition[]>([]);
+  const [resolvedFields, setResolvedFields] = useState<ResolvedFieldSet | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
-  const [requiredFields, setRequiredFields] = useState<Set<string>>(new Set());
+  const [fieldDataTypes, setFieldDataTypes] = useState<Record<string, FieldDataType>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fieldDataTypes, setFieldDataTypes] = useState<Record<string, FieldDataType>>({});
 
-  // Group fields by section
-  const fieldsBySection = fields.reduce((acc, field) => {
-    if (!acc[field.section]) {
-      acc[field.section] = [];
-    }
-    acc[field.section].push(field);
-    return acc;
-  }, {} as Record<FieldSection, FieldDefinition[]>);
-
-  // Get sections that have fields, in order
-  const sections = SECTION_ORDER.filter(section => 
-    fieldsBySection[section] && fieldsBySection[section].length > 0
-  );
-
-  // Fetch fields and values
+  // Fetch resolved fields and values
   useEffect(() => {
     if (!dealId || !packetId) {
       setLoading(false);
@@ -117,126 +86,45 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
       setLoading(true);
       setError(null);
 
-      // 1. Get templates in this packet
-      const { data: packetTemplates, error: ptError } = await supabase
-        .from('packet_templates')
-        .select('template_id')
-        .eq('packet_id', packetId!);
+      // 1. Resolve required fields for this packet (deterministic resolver)
+      const resolved = await resolvePacketFields(packetId!);
+      setResolvedFields(resolved);
 
-      if (ptError) throw ptError;
-
-      const templateIds = (packetTemplates || []).map(pt => pt.template_id);
-
-      if (templateIds.length === 0) {
-        setFields([]);
-        setLoading(false);
-        return;
-      }
-
-      // 2. Get all field mappings for these templates
-      const { data: fieldMaps, error: fmError } = await supabase
-        .from('template_field_maps')
-        .select('field_key, required_flag, transform_rule')
-        .in('template_id', templateIds);
-
-      if (fmError) throw fmError;
-
-      // Aggregate required fields and transform rules
-      const requiredSet = new Set<string>();
-      const transformRulesMap: Record<string, string[]> = {};
-
-      (fieldMaps || []).forEach(fm => {
-        if (fm.required_flag) {
-          requiredSet.add(fm.field_key);
-        }
-        if (fm.transform_rule) {
-          if (!transformRulesMap[fm.field_key]) {
-            transformRulesMap[fm.field_key] = [];
-          }
-          if (!transformRulesMap[fm.field_key].includes(fm.transform_rule)) {
-            transformRulesMap[fm.field_key].push(fm.transform_rule);
-          }
-        }
-      });
-
-      setRequiredFields(requiredSet);
-
-      // Get unique field keys
-      const fieldKeys = [...new Set((fieldMaps || []).map(fm => fm.field_key))];
-
-      if (fieldKeys.length === 0) {
-        setFields([]);
-        setLoading(false);
-        return;
-      }
-
-      // 3. Get field definitions from dictionary
-      const { data: fieldDefs, error: fdError } = await supabase
-        .from('field_dictionary')
-        .select('*')
-        .in('field_key', fieldKeys);
-
-      if (fdError) throw fdError;
-
-      // Build data type lookup
+      // Build data type lookup for saving
       const dataTypeMap: Record<string, FieldDataType> = {};
-      (fieldDefs || []).forEach(fd => {
-        dataTypeMap[fd.field_key] = fd.data_type;
+      resolved.fields.forEach(f => {
+        dataTypeMap[f.field_key] = f.data_type;
       });
       setFieldDataTypes(dataTypeMap);
 
-      // Build field definitions with required flag and transform rules
-      const enrichedFields: FieldDefinition[] = (fieldDefs || []).map(fd => ({
-        id: fd.id,
-        field_key: fd.field_key,
-        label: fd.label,
-        section: fd.section,
-        data_type: fd.data_type,
-        description: fd.description,
-        default_value: fd.default_value,
-        is_calculated: fd.is_calculated,
-        is_repeatable: fd.is_repeatable,
-        validation_rule: fd.validation_rule,
-        is_required: requiredSet.has(fd.field_key),
-        transform_rules: transformRulesMap[fd.field_key] || [],
-      }));
+      // 2. Fetch existing field values for this deal
+      if (resolved.visibleFieldKeys.length > 0) {
+        const { data: existingValues, error: evError } = await supabase
+          .from('deal_field_values')
+          .select('field_key, value_text, value_number, value_date, value_json')
+          .eq('deal_id', dealId);
 
-      // Sort fields by section and then by label
-      enrichedFields.sort((a, b) => {
-        const sectionOrderA = SECTION_ORDER.indexOf(a.section);
-        const sectionOrderB = SECTION_ORDER.indexOf(b.section);
-        if (sectionOrderA !== sectionOrderB) return sectionOrderA - sectionOrderB;
-        return a.label.localeCompare(b.label);
-      });
+        if (evError) throw evError;
 
-      setFields(enrichedFields);
+        // Build values map - convert typed values to strings for form display
+        const valuesMap: Record<string, string> = {};
+        (existingValues || []).forEach((ev: FieldValue) => {
+          const dataType = dataTypeMap[ev.field_key] || 'text';
+          const value = getValueFromRecord(ev, dataType);
+          if (value) {
+            valuesMap[ev.field_key] = value;
+          }
+        });
 
-      // 4. Fetch existing field values for this deal
-      const { data: existingValues, error: evError } = await supabase
-        .from('deal_field_values')
-        .select('field_key, value_text, value_number, value_date, value_json')
-        .eq('deal_id', dealId);
+        // Apply default values for fields without values
+        resolved.fields.forEach(field => {
+          if (!valuesMap[field.field_key] && field.default_value) {
+            valuesMap[field.field_key] = field.default_value;
+          }
+        });
 
-      if (evError) throw evError;
-
-      // Build values map - convert typed values to strings for form display
-      const valuesMap: Record<string, string> = {};
-      (existingValues || []).forEach((ev: FieldValue) => {
-        const dataType = dataTypeMap[ev.field_key] || 'text';
-        const value = getValueFromRecord(ev, dataType);
-        if (value) {
-          valuesMap[ev.field_key] = value;
-        }
-      });
-
-      // Apply default values for fields without values
-      enrichedFields.forEach(field => {
-        if (!valuesMap[field.field_key] && field.default_value) {
-          valuesMap[field.field_key] = field.default_value;
-        }
-      });
-
-      setValues(valuesMap);
+        setValues(valuesMap);
+      }
     } catch (err: any) {
       console.error('Error fetching deal fields:', err);
       setError(err.message || 'Failed to load fields');
@@ -257,11 +145,12 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     }));
   }, []);
 
-  const computeCalculatedFields = useCallback(() => {
-    // Example calculated field computations
+  const computeCalculatedFields = useCallback((): Record<string, string> => {
+    if (!resolvedFields) return values;
+    
     const newValues = { ...values };
     
-    fields.forEach(field => {
+    resolvedFields.fields.forEach(field => {
       if (field.is_calculated) {
         // Example: loan_to_value calculation
         if (field.field_key === 'loan_terms.ltv') {
@@ -277,7 +166,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
 
     setValues(newValues);
     return newValues;
-  }, [fields, values]);
+  }, [resolvedFields, values]);
 
   const saveDraft = useCallback(async (): Promise<boolean> => {
     try {
@@ -309,7 +198,6 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
           const dataType = fieldDataTypes[fieldKey] || 'text';
           const stringValue = finalValues[fieldKey];
           
-          // Build record with typed values
           const record: {
             deal_id: string;
             field_key: string;
@@ -372,38 +260,33 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     } finally {
       setSaving(false);
     }
-  }, [dealId, values, fields, fieldDataTypes, computeCalculatedFields, toast]);
+  }, [dealId, values, fieldDataTypes, computeCalculatedFields, toast]);
 
-  const getMissingRequiredFields = useCallback((section?: FieldSection): FieldDefinition[] => {
-    return fields.filter(field => {
-      if (section && field.section !== section) return false;
-      if (!field.is_required) return false;
-      const value = values[field.field_key];
-      return !value || value.trim() === '';
-    });
-  }, [fields, values]);
+  const getMissingRequiredFields = useCallback((section?: FieldSection): ResolvedField[] => {
+    if (!resolvedFields) return [];
+    return getResolverMissingFields(resolvedFields, values, section);
+  }, [resolvedFields, values]);
 
   const getValidationErrors = useCallback((section?: FieldSection): string[] => {
-    const errors: string[] = [];
-    const missingFields = getMissingRequiredFields(section);
-    
-    missingFields.forEach(field => {
-      errors.push(`${field.label} is required`);
-    });
-
-    return errors;
+    return getMissingRequiredFields(section).map(field => `${field.label} is required`);
   }, [getMissingRequiredFields]);
 
   const isSectionComplete = useCallback((section: FieldSection): boolean => {
-    return getMissingRequiredFields(section).length === 0;
+    if (!resolvedFields) return true;
+    return isResolverSectionComplete(resolvedFields, values, section);
+  }, [resolvedFields, values]);
+
+  const isPacketComplete = useCallback((): boolean => {
+    return getMissingRequiredFields().length === 0;
   }, [getMissingRequiredFields]);
 
   return {
-    fields,
-    fieldsBySection,
-    sections,
+    fields: resolvedFields?.fields || [],
+    fieldsBySection: resolvedFields?.fieldsBySection || ({} as Record<FieldSection, ResolvedField[]>),
+    sections: resolvedFields?.sections || [],
     values,
-    requiredFields,
+    visibleFieldKeys: resolvedFields?.visibleFieldKeys || [],
+    requiredFieldKeys: resolvedFields?.requiredFieldKeys || [],
     loading,
     saving,
     error,
@@ -412,6 +295,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     getValidationErrors,
     getMissingRequiredFields,
     isSectionComplete,
+    isPacketComplete,
     computeCalculatedFields,
   };
 }
