@@ -10,7 +10,9 @@ import {
   RotateCcw, 
   Edit3,
   Clock,
-  User
+  User,
+  AlertTriangle,
+  Eye
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -83,6 +85,18 @@ const ACTION_CONFIG: Record<ActionType, {
     label: 'Section Completed',
     color: 'text-emerald-600',
     bgColor: 'bg-emerald-100',
+  },
+  FieldOverwritten: {
+    icon: AlertTriangle,
+    label: 'Field Overwritten',
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-100',
+  },
+  ExternalDataReviewed: {
+    icon: Eye,
+    label: 'External Data Reviewed',
+    color: 'text-indigo-600',
+    bgColor: 'bg-indigo-100',
   },
 };
 
@@ -163,8 +177,18 @@ export const ActivityLogViewer: React.FC<ActivityLogViewerProps> = ({
         return d.reason || (d.fieldChanged ? `Field changed: ${d.fieldChanged}` : null);
       case 'FieldUpdated':
         return d.fieldLabel || d.fieldKey;
+      case 'FieldOverwritten':
+        return `${d.fieldLabel || d.fieldKey} (was edited by ${d.previousUpdaterRole || 'external user'})`;
+      case 'ExternalDataReviewed':
+        return d.fieldsReviewed ? `${d.fieldsReviewed} field${d.fieldsReviewed > 1 ? 's' : ''} reviewed` : null;
+      case 'ParticipantInvited':
+        return d.role ? `${d.role} invited via ${d.accessMethod || 'email'}` : null;
+      case 'ParticipantRemoved':
+        return d.role || null;
+      case 'ParticipantCompleted':
+        return d.role ? `${d.role} completed their section` : null;
       default:
-        return JSON.stringify(d);
+        return null;
     }
   };
 

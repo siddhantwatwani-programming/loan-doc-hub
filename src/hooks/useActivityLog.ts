@@ -12,9 +12,11 @@ export type ActionType =
   | 'DealMarkedReady'
   | 'DealRevertedToDraft'
   | 'FieldUpdated'
+  | 'FieldOverwritten'
   | 'ParticipantInvited'
   | 'ParticipantRemoved'
-  | 'ParticipantCompleted';
+  | 'ParticipantCompleted'
+  | 'ExternalDataReviewed';
 
 export interface ActivityLogEntry {
   id: string;
@@ -158,6 +160,38 @@ export async function logFieldUpdated(dealId: string, details: {
   return logActivity({
     dealId,
     actionType: 'FieldUpdated',
+    actionDetails: details,
+  });
+}
+
+/**
+ * Log when CSR overwrites external user data
+ */
+export async function logFieldOverwritten(dealId: string, details: {
+  fieldKey: string;
+  fieldLabel?: string;
+  previousValue?: string;
+  newValue?: string;
+  previousUpdatedBy?: string;
+  previousUpdaterRole?: string;
+}): Promise<boolean> {
+  return logActivity({
+    dealId,
+    actionType: 'FieldOverwritten',
+    actionDetails: details,
+  });
+}
+
+/**
+ * Log when CSR reviews external modifications
+ */
+export async function logExternalDataReviewed(dealId: string, details: {
+  fieldsReviewed: number;
+  fieldKeys: string[];
+}): Promise<boolean> {
+  return logActivity({
+    dealId,
+    actionType: 'ExternalDataReviewed',
     actionDetails: details,
   });
 }
