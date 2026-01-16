@@ -534,6 +534,7 @@ export type Database = {
           is_active: boolean
           name: string
           product_type: string
+          reference_pdf_path: string | null
           state: string
           updated_at: string
           version: number
@@ -547,6 +548,7 @@ export type Database = {
           is_active?: boolean
           name: string
           product_type: string
+          reference_pdf_path?: string | null
           state: string
           updated_at?: string
           version?: number
@@ -560,6 +562,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           product_type?: string
+          reference_pdf_path?: string | null
           state?: string
           updated_at?: string
           version?: number
