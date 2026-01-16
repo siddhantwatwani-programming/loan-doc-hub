@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { AlertCircle, Lock, Calculator } from 'lucide-react';
+import { AlertCircle, Lock, Calculator, Asterisk } from 'lucide-react';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 
 interface DealFieldInputProps {
@@ -11,6 +11,7 @@ interface DealFieldInputProps {
   value: string;
   onChange: (value: string) => void;
   error?: boolean;
+  showValidation?: boolean;
   disabled?: boolean;
 }
 
@@ -19,9 +20,11 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
   value,
   onChange,
   error = false,
+  showValidation = false,
   disabled = false,
 }) => {
   const isDisabled = disabled || field.is_calculated;
+  const showError = error && showValidation;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     let newValue = e.target.value;
@@ -29,15 +32,12 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     // Apply input formatting based on data type
     switch (field.data_type) {
       case 'number':
-        // Allow only numbers and decimal
         newValue = newValue.replace(/[^0-9.-]/g, '');
         break;
       case 'currency':
-        // Allow only numbers and decimal, format on blur
         newValue = newValue.replace(/[^0-9.-]/g, '');
         break;
       case 'percentage':
-        // Allow only numbers and decimal
         newValue = newValue.replace(/[^0-9.]/g, '');
         break;
     }
@@ -48,7 +48,6 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
   const handleBlur = () => {
     let formattedValue = value;
 
-    // Format value on blur
     switch (field.data_type) {
       case 'currency':
         if (value && !isNaN(parseFloat(value))) {
@@ -74,7 +73,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
       case 'number':
       case 'currency':
       case 'percentage':
-        return 'text'; // Use text for better formatting control
+        return 'text';
       default:
         return 'text';
     }
@@ -103,7 +102,6 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     const suffix = getInputSuffix();
     const inputType = getInputType();
 
-    // Use textarea for text fields that might be longer
     if (field.data_type === 'text' && field.field_key.includes('address')) {
       return (
         <Textarea
@@ -112,8 +110,8 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
           onChange={handleChange}
           disabled={isDisabled}
           className={cn(
-            'resize-none',
-            error && 'border-destructive focus:ring-destructive',
+            'resize-none transition-colors',
+            showError && 'border-destructive focus:ring-destructive bg-destructive/5',
             isDisabled && 'bg-muted cursor-not-allowed'
           )}
           rows={2}
@@ -137,9 +135,10 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
           onBlur={handleBlur}
           disabled={isDisabled}
           className={cn(
+            'transition-colors',
             prefix && 'pl-7',
             suffix && 'pr-8',
-            error && 'border-destructive focus:ring-destructive',
+            showError && 'border-destructive focus:ring-destructive bg-destructive/5',
             isDisabled && 'bg-muted cursor-not-allowed'
           )}
           placeholder={field.description || undefined}
@@ -154,42 +153,44 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" id={`field-${field.field_key}`}>
       <div className="flex items-center gap-2">
         <Label
           htmlFor={field.field_key}
           className={cn(
-            'text-sm font-medium',
-            error && 'text-destructive'
+            'text-sm font-medium flex items-center gap-1',
+            showError && 'text-destructive'
           )}
         >
           {field.label}
-        {field.is_required && (
-            <span className="text-destructive ml-1">*</span>
+          {field.is_required && (
+            <span className="text-destructive" title="Required field">
+              <Asterisk className="h-3 w-3" />
+            </span>
           )}
         </Label>
         {field.is_calculated && (
-          <span title="Calculated field">
-            <Calculator className="h-3.5 w-3.5 text-muted-foreground" />
+          <span title="Calculated field" className="text-muted-foreground">
+            <Calculator className="h-3.5 w-3.5" />
           </span>
         )}
         {isDisabled && !field.is_calculated && (
-          <span title="Read-only">
-            <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+          <span title="Read-only" className="text-muted-foreground">
+            <Lock className="h-3.5 w-3.5" />
           </span>
         )}
       </div>
       
       {renderInput()}
       
-      {error && (
-        <p className="text-xs text-destructive flex items-center gap-1">
-          <AlertCircle className="h-3 w-3" />
+      {showError && (
+        <p className="text-xs text-destructive flex items-center gap-1 animate-fade-in">
+          <AlertCircle className="h-3 w-3 flex-shrink-0" />
           This field is required
         </p>
       )}
       
-      {field.transform_rules.length > 0 && (
+      {field.transform_rules.length > 0 && !showError && (
         <p className="text-xs text-muted-foreground">
           Format: {field.transform_rules.join(', ')}
         </p>
@@ -197,20 +198,5 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     </div>
   );
 };
-
-// Helper functions for formatting
-function formatPhoneNumber(value: string): string {
-  const numbers = value.replace(/\D/g, '').slice(0, 10);
-  if (numbers.length <= 3) return numbers;
-  if (numbers.length <= 6) return `(${numbers.slice(0, 3)}) ${numbers.slice(3)}`;
-  return `(${numbers.slice(0, 3)}) ${numbers.slice(3, 6)}-${numbers.slice(6)}`;
-}
-
-function formatSSN(value: string): string {
-  const numbers = value.replace(/\D/g, '').slice(0, 9);
-  if (numbers.length <= 3) return numbers;
-  if (numbers.length <= 5) return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
-  return `${numbers.slice(0, 3)}-${numbers.slice(3, 5)}-${numbers.slice(5)}`;
-}
 
 export default DealFieldInput;
