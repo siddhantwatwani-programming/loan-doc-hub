@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -8,6 +8,12 @@ import {
   type ResolvedField,
   type ResolvedFieldSet 
 } from '@/lib/requiredFieldsResolver';
+import { 
+  computeCalculatedFields as runCalculations,
+  mergeCalculatedValues,
+  type CalculatedField,
+  type CalculationResult
+} from '@/lib/calculationEngine';
 import type { Database } from '@/integrations/supabase/types';
 
 type FieldSection = Database['public']['Enums']['field_section'];
@@ -45,6 +51,8 @@ export interface UseDealFieldsReturn extends DealFieldsData {
   isSectionComplete: (section: FieldSection) => boolean;
   isPacketComplete: () => boolean;
   computeCalculatedFields: () => Record<string, string>;
+  calculationResults: Record<string, CalculationResult>;
+  calculatedFields: CalculatedField[];
   hasRequiredFieldChanged: () => boolean;
   resetDirty: () => void;
 }
@@ -156,28 +164,35 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     }
   }, [resolvedFields]);
 
-  const computeCalculatedFields = useCallback((): Record<string, string> => {
-    if (!resolvedFields) return values;
-    
-    const newValues = { ...values };
-    
-    resolvedFields.fields.forEach(field => {
-      if (field.is_calculated) {
-        // Example: loan_to_value calculation
-        if (field.field_key === 'loan_terms.ltv') {
-          const loanAmount = parseFloat(values['loan_terms.amount'] || '0');
-          const propertyValue = parseFloat(values['property.value'] || '0');
-          if (propertyValue > 0) {
-            newValues[field.field_key] = ((loanAmount / propertyValue) * 100).toFixed(2);
-          }
-        }
-        // Add more calculated field logic as needed
-      }
-    });
+  // Memoize calculated fields list
+  const calculatedFieldsList = useMemo((): CalculatedField[] => {
+    if (!resolvedFields) return [];
+    return resolvedFields.fields
+      .filter(f => f.is_calculated && f.calculation_formula)
+      .map(f => ({
+        field_key: f.field_key,
+        calculation_formula: f.calculation_formula!,
+        calculation_dependencies: f.calculation_dependencies,
+        data_type: f.data_type,
+      }));
+  }, [resolvedFields]);
 
+  // Store calculation results
+  const [calculationResults, setCalculationResults] = useState<Record<string, CalculationResult>>({});
+
+  const computeCalculatedFields = useCallback((): Record<string, string> => {
+    if (!resolvedFields || calculatedFieldsList.length === 0) return values;
+    
+    // Run the calculation engine
+    const results = runCalculations(calculatedFieldsList, values);
+    setCalculationResults(results);
+    
+    // Merge computed values
+    const newValues = mergeCalculatedValues(values, results);
     setValues(newValues);
+    
     return newValues;
-  }, [resolvedFields, values]);
+  }, [resolvedFields, calculatedFieldsList, values]);
 
   const saveDraft = useCallback(async (): Promise<boolean> => {
     try {
@@ -318,6 +333,8 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     isSectionComplete,
     isPacketComplete,
     computeCalculatedFields,
+    calculationResults,
+    calculatedFields: calculatedFieldsList,
     hasRequiredFieldChanged,
     resetDirty,
   };

@@ -3,6 +3,7 @@ import { DealFieldInput } from './DealFieldInput';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/hooks/useDealFields';
+import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface DealSectionTabProps {
   fields: FieldDefinition[];
@@ -10,6 +11,7 @@ interface DealSectionTabProps {
   onValueChange: (fieldKey: string, value: string) => void;
   missingRequiredFields: FieldDefinition[];
   showValidation?: boolean;
+  calculationResults?: Record<string, CalculationResult>;
 }
 
 export const DealSectionTab: React.FC<DealSectionTabProps> = ({
@@ -18,6 +20,7 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
   onValueChange,
   missingRequiredFields,
   showValidation = false,
+  calculationResults = {},
 }) => {
   const missingFieldKeys = new Set(missingRequiredFields.map(f => f.field_key));
   const isComplete = missingRequiredFields.length === 0;
@@ -72,6 +75,7 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
             onChange={(value) => onValueChange(field.field_key, value)}
             error={missingFieldKeys.has(field.field_key)}
             showValidation={showValidation}
+            calculationResult={calculationResults[field.field_key]}
           />
         ))}
       </div>
