@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useDealFields } from '@/hooks/useDealFields';
 import { useEntryOrchestration } from '@/hooks/useEntryOrchestration';
 import { useFieldPermissions } from '@/hooks/useFieldPermissions';
+import { useExternalModificationDetector } from '@/hooks/useExternalModificationDetector';
 import { useAuth } from '@/contexts/AuthContext';
 import { DealSectionTab } from '@/components/deal/DealSectionTab';
 import { 
@@ -26,7 +27,8 @@ import {
   ChevronRight,
   Clock,
   Lock,
-  User
+  User,
+  Eye
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRoleDisplayName } from '@/lib/accessControl';
@@ -133,6 +135,14 @@ export const DealDataEntryPage: React.FC = () => {
     loading: orchestrationLoading,
     completeSection,
   } = useEntryOrchestration(id || '');
+
+  // External modification detection for CSR warning banner
+  const {
+    hasExternalModifications,
+    externalModifications,
+    markAsReviewed,
+    loading: modificationsLoading,
+  } = useExternalModificationDetector(id || '');
 
   // Calculate visible fields and sections for external users
   const { 
@@ -548,6 +558,61 @@ export const DealDataEntryPage: React.FC = () => {
                 : `Complete the remaining ${totalMissing} required field${totalMissing > 1 ? 's' : ''} to submit.`
               }
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* CSR External Modification Warning Banner */}
+      {isInternalUser && !modificationsLoading && hasExternalModifications && (
+        <div className="mb-4 px-4 py-3 rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-orange-800 dark:text-orange-200">
+                  External data was modified
+                </p>
+                <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
+                  {externalModifications.length} field{externalModifications.length > 1 ? 's were' : ' was'} updated by external participants. Review before generating documents.
+                </p>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {externalModifications.slice(0, 5).map(mod => (
+                    <Badge 
+                      key={mod.field_key} 
+                      variant="outline" 
+                      className="text-xs bg-orange-100 dark:bg-orange-900/50 border-orange-300 dark:border-orange-700 text-orange-800 dark:text-orange-200"
+                    >
+                      {mod.field_key}
+                    </Badge>
+                  ))}
+                  {externalModifications.length > 5 && (
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs bg-orange-100 dark:bg-orange-900/50 border-orange-300 dark:border-orange-700 text-orange-800 dark:text-orange-200"
+                    >
+                      +{externalModifications.length - 5} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                const success = await markAsReviewed();
+                if (success) {
+                  toast({
+                    title: 'Marked as reviewed',
+                    description: 'External modifications have been acknowledged',
+                  });
+                }
+              }}
+              className="gap-1.5 flex-shrink-0 border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/50"
+            >
+              <Eye className="h-4 w-4" />
+              Mark Reviewed
+            </Button>
           </div>
         </div>
       )}
