@@ -33,7 +33,12 @@ import {
   Copy,
   Calendar,
   Info,
-  FileUp
+  FileUp,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  ClipboardCheck,
+  AlertCircle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -44,6 +49,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Template {
   id: string;
@@ -54,9 +61,35 @@ interface Template {
   is_active: boolean;
   description: string | null;
   file_path: string | null;
-  reference_pdf_path: string | null;
+  reference_pdf_path?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+interface TemplateFieldMap {
+  id: string;
+  template_id: string;
+  field_key: string;
+  required_flag: boolean;
+  transform_rule: string | null;
+  display_order: number | null;
+}
+
+interface FieldDictionaryEntry {
+  field_key: string;
+  label: string;
+  data_type: string;
+  section: string;
+}
+
+interface ValidationResult {
+  template: Template;
+  fieldMaps: TemplateFieldMap[];
+  fieldDictionary: Map<string, FieldDictionaryEntry>;
+  missingFields: string[];
+  duplicateFields: { fieldKey: string; count: number }[];
+  inconsistentMappings: { fieldKey: string; issue: string }[];
+  validFields: string[];
 }
 
 const US_STATES = [
@@ -84,6 +117,9 @@ export const TemplateManagementPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isValidationOpen, setIsValidationOpen] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [saving, setSaving] = useState(false);
@@ -115,7 +151,7 @@ export const TemplateManagementPage: React.FC = () => {
         .order('version', { ascending: false });
 
       if (error) throw error;
-      setTemplates(data || []);
+      setTemplates((data || []) as Template[]);
     } catch (error) {
       console.error('Error fetching templates:', error);
       toast({
@@ -317,6 +353,107 @@ export const TemplateManagementPage: React.FC = () => {
   const handlePreview = (template: Template) => {
     setPreviewTemplate(template);
     setIsPreviewOpen(true);
+  };
+
+  const handleValidateMapping = async (template: Template) => {
+    setValidating(true);
+    setIsValidationOpen(true);
+    setValidationResult(null);
+
+    try {
+      // Fetch template field maps
+      const { data: fieldMapsData, error: fieldMapsError } = await supabase
+        .from('template_field_maps')
+        .select('*')
+        .eq('template_id', template.id)
+        .order('display_order');
+
+      if (fieldMapsError) throw fieldMapsError;
+
+      const fieldMaps = (fieldMapsData || []) as TemplateFieldMap[];
+
+      // Get unique field keys from mappings
+      const fieldKeys = fieldMaps.map(fm => fm.field_key);
+      const uniqueFieldKeys = [...new Set(fieldKeys)];
+
+      // Fetch field dictionary entries for these keys
+      const { data: fieldDictData, error: fieldDictError } = await supabase
+        .from('field_dictionary')
+        .select('field_key, label, data_type, section')
+        .in('field_key', uniqueFieldKeys.length > 0 ? uniqueFieldKeys : ['__none__']);
+
+      if (fieldDictError) throw fieldDictError;
+
+      const fieldDictionary = new Map<string, FieldDictionaryEntry>(
+        (fieldDictData || []).map(fd => [fd.field_key, fd])
+      );
+
+      // Find missing fields (in template map but not in dictionary)
+      const missingFields = uniqueFieldKeys.filter(fk => !fieldDictionary.has(fk));
+
+      // Find duplicate fields (same field key mapped multiple times)
+      const fieldCounts = new Map<string, number>();
+      fieldKeys.forEach(fk => {
+        fieldCounts.set(fk, (fieldCounts.get(fk) || 0) + 1);
+      });
+      const duplicateFields = Array.from(fieldCounts.entries())
+        .filter(([_, count]) => count > 1)
+        .map(([fieldKey, count]) => ({ fieldKey, count }));
+
+      // Find inconsistent mappings
+      const inconsistentMappings: { fieldKey: string; issue: string }[] = [];
+      
+      // Check for transform rules that reference invalid transforms
+      const validTransforms = ['uppercase', 'lowercase', 'titlecase', 'date', 'currency', 'percentage', 'phone', 'ssn'];
+      fieldMaps.forEach(fm => {
+        if (fm.transform_rule) {
+          const transform = fm.transform_rule.toLowerCase().trim();
+          if (!validTransforms.includes(transform)) {
+            inconsistentMappings.push({
+              fieldKey: fm.field_key,
+              issue: `Unknown transform rule: "${fm.transform_rule}"`
+            });
+          }
+        }
+      });
+
+      // Check for fields marked required in mapping but optional-looking in dictionary
+      fieldMaps.forEach(fm => {
+        const dictEntry = fieldDictionary.get(fm.field_key);
+        if (dictEntry && fm.required_flag) {
+          // Check if it's a calculated field - those shouldn't be marked required for input
+          // This would need additional data, so we'll skip for now
+        }
+      });
+
+      // Valid fields are those that exist in dictionary and have no issues
+      const problemFieldKeys = new Set([
+        ...missingFields,
+        ...duplicateFields.map(d => d.fieldKey),
+        ...inconsistentMappings.map(i => i.fieldKey)
+      ]);
+      const validFields = uniqueFieldKeys.filter(fk => !problemFieldKeys.has(fk));
+
+      setValidationResult({
+        template,
+        fieldMaps,
+        fieldDictionary,
+        missingFields,
+        duplicateFields,
+        inconsistentMappings,
+        validFields
+      });
+    } catch (error: any) {
+      console.error('Validation error:', error);
+      toast({
+        title: 'Validation Failed',
+        description: error.message || 'Failed to validate template mapping',
+        variant: 'destructive',
+      });
+      setIsValidationOpen(false);
+    } finally {
+      setValidating(false);
+    }
   };
 
   const handleDelete = async (template: Template) => {
@@ -679,6 +816,220 @@ export const TemplateManagementPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Validation Dialog */}
+      <Dialog open={isValidationOpen} onOpenChange={setIsValidationOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardCheck className="h-5 w-5 text-primary" />
+              Validate Template Mapping
+            </DialogTitle>
+            <DialogDescription>
+              {validationResult?.template.name} v{validationResult?.template.version} — Configuration consistency check
+            </DialogDescription>
+          </DialogHeader>
+          
+          {validating ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : validationResult ? (
+            <ScrollArea className="flex-1 pr-4">
+              <div className="space-y-6 py-4">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-4 gap-3">
+                  <div className="p-3 rounded-lg bg-muted/50 text-center">
+                    <p className="text-2xl font-bold text-foreground">{validationResult.fieldMaps.length}</p>
+                    <p className="text-xs text-muted-foreground">Total Mappings</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-success/10 text-center">
+                    <p className="text-2xl font-bold text-success">{validationResult.validFields.length}</p>
+                    <p className="text-xs text-muted-foreground">Valid</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-destructive/10 text-center">
+                    <p className="text-2xl font-bold text-destructive">{validationResult.missingFields.length}</p>
+                    <p className="text-xs text-muted-foreground">Missing</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-warning/10 text-center">
+                    <p className="text-2xl font-bold text-warning">
+                      {validationResult.duplicateFields.length + validationResult.inconsistentMappings.length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Issues</p>
+                  </div>
+                </div>
+
+                {/* Overall Status */}
+                {validationResult.missingFields.length === 0 && 
+                 validationResult.duplicateFields.length === 0 && 
+                 validationResult.inconsistentMappings.length === 0 ? (
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-success/10 border border-success/20">
+                    <CheckCircle2 className="h-6 w-6 text-success" />
+                    <div>
+                      <p className="font-medium text-success">All mappings are valid</p>
+                      <p className="text-sm text-muted-foreground">
+                        This template is ready for document generation
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-warning/10 border border-warning/20">
+                    <AlertTriangle className="h-6 w-6 text-warning" />
+                    <div>
+                      <p className="font-medium text-warning">Issues detected</p>
+                      <p className="text-sm text-muted-foreground">
+                        Review and fix the issues below to prevent generation failures
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Missing Fields */}
+                {validationResult.missingFields.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <XCircle className="h-4 w-4 text-destructive" />
+                      <h4 className="font-medium text-foreground">
+                        Missing Field Dictionary Entries ({validationResult.missingFields.length})
+                      </h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      These field keys are mapped to the template but don't exist in the Field Dictionary.
+                    </p>
+                    <div className="space-y-2">
+                      {validationResult.missingFields.map((fieldKey) => {
+                        const mapping = validationResult.fieldMaps.find(fm => fm.field_key === fieldKey);
+                        return (
+                          <div 
+                            key={fieldKey}
+                            className="flex items-center justify-between p-3 rounded-lg bg-destructive/5 border border-destructive/20"
+                          >
+                            <div>
+                              <code className="text-sm font-mono text-destructive">{fieldKey}</code>
+                              {mapping?.required_flag && (
+                                <Badge variant="destructive" className="ml-2 text-xs">Required</Badge>
+                              )}
+                            </div>
+                            <Badge variant="outline" className="text-destructive border-destructive/30">
+                              Not in Dictionary
+                            </Badge>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Duplicate Fields */}
+                {validationResult.duplicateFields.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-warning" />
+                      <h4 className="font-medium text-foreground">
+                        Duplicate Mappings ({validationResult.duplicateFields.length})
+                      </h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      These field keys appear multiple times in the template mapping.
+                    </p>
+                    <div className="space-y-2">
+                      {validationResult.duplicateFields.map(({ fieldKey, count }) => (
+                        <div 
+                          key={fieldKey}
+                          className="flex items-center justify-between p-3 rounded-lg bg-warning/5 border border-warning/20"
+                        >
+                          <code className="text-sm font-mono text-warning">{fieldKey}</code>
+                          <Badge variant="outline" className="text-warning border-warning/30">
+                            {count} occurrences
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Inconsistent Mappings */}
+                {validationResult.inconsistentMappings.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-warning" />
+                      <h4 className="font-medium text-foreground">
+                        Inconsistent Mappings ({validationResult.inconsistentMappings.length})
+                      </h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      These mappings have configuration issues that may cause problems.
+                    </p>
+                    <div className="space-y-2">
+                      {validationResult.inconsistentMappings.map(({ fieldKey, issue }, index) => (
+                        <div 
+                          key={`${fieldKey}-${index}`}
+                          className="p-3 rounded-lg bg-warning/5 border border-warning/20"
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <code className="text-sm font-mono text-foreground">{fieldKey}</code>
+                          </div>
+                          <p className="text-sm text-warning">{issue}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Valid Fields */}
+                {validationResult.validFields.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-success" />
+                      <h4 className="font-medium text-foreground">
+                        Valid Mappings ({validationResult.validFields.length})
+                      </h4>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {validationResult.validFields.map((fieldKey) => {
+                        const dictEntry = validationResult.fieldDictionary.get(fieldKey);
+                        const mapping = validationResult.fieldMaps.find(fm => fm.field_key === fieldKey);
+                        return (
+                          <div 
+                            key={fieldKey}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-success/5 border border-success/20"
+                          >
+                            <CheckCircle2 className="h-3 w-3 text-success" />
+                            <span className="text-sm font-mono text-foreground">{fieldKey}</span>
+                            {mapping?.required_flag && (
+                              <Badge variant="secondary" className="text-xs">Req</Badge>
+                            )}
+                            {mapping?.transform_rule && (
+                              <Badge variant="outline" className="text-xs">{mapping.transform_rule}</Badge>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* No Mappings */}
+                {validationResult.fieldMaps.length === 0 && (
+                  <div className="text-center py-8">
+                    <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                    <p className="text-muted-foreground">No field mappings configured for this template</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Add mappings in the Field Map Editor to enable document generation
+                    </p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          ) : null}
+          
+          <DialogFooter className="border-t border-border pt-4">
+            <Button variant="outline" onClick={() => setIsValidationOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="section-card mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -756,6 +1107,11 @@ export const TemplateManagementPage: React.FC = () => {
                             <Eye className="h-4 w-4 mr-2" />
                             View Metadata
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleValidateMapping(template)}>
+                            <ClipboardCheck className="h-4 w-4 mr-2" />
+                            Validate Mapping
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => handleEdit(template)}>
                             <Pencil className="h-4 w-4 mr-2" />
                             Edit
