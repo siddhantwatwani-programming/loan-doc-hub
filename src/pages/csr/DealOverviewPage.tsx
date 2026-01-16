@@ -222,9 +222,9 @@ export const DealOverviewPage: React.FC = () => {
               <StatusIcon className="h-4 w-4" />
               {statusConfig[deal.status].label}
             </span>
-            <Button onClick={() => navigate(`/deals/${deal.id}/edit`)} className="gap-2">
+            <Button variant="outline" onClick={() => navigate(`/deals/${deal.id}/edit`)} className="gap-2">
               <Edit className="h-4 w-4" />
-              Edit Deal
+              Enter Data
             </Button>
           </div>
         </div>
