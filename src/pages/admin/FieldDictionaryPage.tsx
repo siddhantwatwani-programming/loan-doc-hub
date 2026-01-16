@@ -399,12 +399,12 @@ export const FieldDictionaryPage: React.FC = () => {
               className="pl-10"
             />
           </div>
-          <Select value={filterSection} onValueChange={setFilterSection}>
+          <Select value={filterSection || "all"} onValueChange={(v) => setFilterSection(v === "all" ? "" : v)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="All Sections" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Sections</SelectItem>
+              <SelectItem value="all">All Sections</SelectItem>
               {SECTIONS.map((s) => (
                 <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
               ))}
