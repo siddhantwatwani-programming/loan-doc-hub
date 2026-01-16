@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,7 +12,9 @@ import {
   Loader2, 
   Save,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
@@ -48,6 +51,8 @@ export const DealDataEntryPage: React.FC = () => {
   const [deal, setDeal] = useState<Deal | null>(null);
   const [dealLoading, setDealLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('');
+  const [showValidation, setShowValidation] = useState(false);
+  const [markingReady, setMarkingReady] = useState(false);
 
   // Fetch deal info
   useEffect(() => {
@@ -102,13 +107,87 @@ export const DealDataEntryPage: React.FC = () => {
   }, [sections, activeTab]);
 
   const handleSave = async () => {
+    setShowValidation(true);
     const success = await saveDraft();
     if (success) {
-      // Optionally navigate back or stay
+      const missing = getMissingRequiredFields();
+      if (missing.length > 0) {
+        toast({
+          title: 'Saved with incomplete fields',
+          description: `${missing.length} required field${missing.length > 1 ? 's' : ''} still missing`,
+          variant: 'default',
+        });
+      }
     }
   };
 
+  const handleMarkReady = async () => {
+    if (!isPacketComplete()) {
+      toast({
+        title: 'Cannot mark ready',
+        description: 'Please complete all required fields first',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setMarkingReady(true);
+    try {
+      // Save first
+      const saveSuccess = await saveDraft();
+      if (!saveSuccess) return;
+
+      // Update deal status to ready
+      const { error } = await supabase
+        .from('deals')
+        .update({ status: 'ready' })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Deal marked as ready',
+        description: 'All required fields are complete',
+      });
+
+      // Update local state
+      setDeal(prev => prev ? { ...prev, status: 'ready' } : null);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to mark deal as ready',
+        variant: 'destructive',
+      });
+    } finally {
+      setMarkingReady(false);
+    }
+  };
+
+  const jumpToFirstMissing = () => {
+    const missing = getMissingRequiredFields();
+    if (missing.length === 0) return;
+
+    const firstMissing = missing[0];
+    // Switch to the tab containing the first missing field
+    setActiveTab(firstMissing.section);
+    setShowValidation(true);
+
+    // Scroll to the field after tab switch
+    setTimeout(() => {
+      const element = document.getElementById(`field-${firstMissing.field_key}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Focus the input
+        const input = element.querySelector('input, textarea');
+        if (input) {
+          (input as HTMLElement).focus();
+        }
+      }
+    }, 100);
+  };
+
   const totalMissing = getMissingRequiredFields().length;
+  const canMarkReady = isPacketComplete() && deal?.status === 'draft';
 
   if (dealLoading) {
     return (
@@ -151,26 +230,26 @@ export const DealDataEntryPage: React.FC = () => {
         
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Enter Deal Data</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-foreground">Enter Deal Data</h1>
+              {deal.status !== 'draft' && (
+                <Badge variant={deal.status === 'ready' ? 'default' : 'secondary'} className="capitalize">
+                  {deal.status}
+                </Badge>
+              )}
+            </div>
             <p className="text-muted-foreground mt-1">
               {deal.deal_number} • {deal.state} • {deal.product_type}
             </p>
           </div>
           
           <div className="flex items-center gap-3">
-            {totalMissing > 0 ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-warning/10 text-warning">
-                <AlertCircle className="h-4 w-4" />
-                {totalMissing} required field{totalMissing > 1 ? 's' : ''} missing
-              </span>
-            ) : fields.length > 0 ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-success/10 text-success">
-                <CheckCircle2 className="h-4 w-4" />
-                All required fields complete
-              </span>
-            ) : null}
-            
-            <Button onClick={handleSave} disabled={saving} className="gap-2">
+            <Button 
+              onClick={handleSave} 
+              disabled={saving} 
+              variant="outline"
+              className="gap-2"
+            >
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -178,9 +257,68 @@ export const DealDataEntryPage: React.FC = () => {
               )}
               Save Draft
             </Button>
+            
+            <Button 
+              onClick={handleMarkReady} 
+              disabled={!canMarkReady || markingReady || saving}
+              className="gap-2"
+            >
+              {markingReady ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" />
+              )}
+              Mark Deal Ready
+            </Button>
           </div>
         </div>
       </div>
+
+      {/* Missing Fields Banner */}
+      {!fieldsLoading && fields.length > 0 && (
+        <div className={cn(
+          'mb-6 px-4 py-3 rounded-lg flex items-center justify-between',
+          totalMissing > 0 ? 'bg-warning/10 border border-warning/20' : 'bg-success/10 border border-success/20'
+        )}>
+          <div className="flex items-center gap-3">
+            {totalMissing > 0 ? (
+              <>
+                <AlertTriangle className="h-5 w-5 text-warning" />
+                <div>
+                  <p className="font-medium text-foreground">
+                    Missing {totalMissing} required field{totalMissing > 1 ? 's' : ''}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Complete all required fields to mark deal as ready
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-5 w-5 text-success" />
+                <div>
+                  <p className="font-medium text-foreground">All required fields complete</p>
+                  <p className="text-sm text-muted-foreground">
+                    {requiredFieldKeys.length} required field{requiredFieldKeys.length > 1 ? 's' : ''} filled
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+          
+          {totalMissing > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={jumpToFirstMissing}
+              className="gap-1 text-warning hover:text-warning hover:bg-warning/10"
+            >
+              Jump to first missing
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Content */}
       {fieldsLoading ? (
@@ -200,25 +338,35 @@ export const DealDataEntryPage: React.FC = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6 flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
               {sections.map(section => {
-                const isComplete = isSectionComplete(section);
+                const sectionMissing = getMissingRequiredFields(section).length;
+                const isComplete = sectionMissing === 0;
                 const sectionFields = fieldsBySection[section] || [];
-                const requiredCount = sectionFields.filter(f => f.is_required).length;
+                const hasRequiredFields = sectionFields.some(f => f.is_required);
                 
                 return (
                   <TabsTrigger
                     key={section}
                     value={section}
                     className={cn(
-                      'gap-2 data-[state=active]:bg-background',
-                      !isComplete && requiredCount > 0 && 'text-warning'
+                      'gap-2 data-[state=active]:bg-background relative',
+                      !isComplete && hasRequiredFields && showValidation && 'text-warning'
                     )}
                   >
                     {SECTION_LABELS[section]}
-                    {!isComplete && requiredCount > 0 && (
-                      <AlertCircle className="h-3.5 w-3.5" />
+                    
+                    {/* Badge with missing count */}
+                    {!isComplete && hasRequiredFields && (
+                      <Badge 
+                        variant="destructive" 
+                        className="h-5 min-w-[20px] px-1.5 text-xs font-medium"
+                      >
+                        {sectionMissing}
+                      </Badge>
                     )}
-                    {isComplete && requiredCount > 0 && (
-                      <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                    
+                    {/* Checkmark when complete */}
+                    {isComplete && hasRequiredFields && (
+                      <CheckCircle2 className="h-4 w-4 text-success" />
                     )}
                   </TabsTrigger>
                 );
@@ -232,6 +380,7 @@ export const DealDataEntryPage: React.FC = () => {
                   values={values}
                   onValueChange={updateValue}
                   missingRequiredFields={getMissingRequiredFields(section)}
+                  showValidation={showValidation}
                 />
               </TabsContent>
             ))}

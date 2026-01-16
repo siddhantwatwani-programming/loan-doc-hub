@@ -9,6 +9,7 @@ interface DealSectionTabProps {
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   missingRequiredFields: FieldDefinition[];
+  showValidation?: boolean;
 }
 
 export const DealSectionTab: React.FC<DealSectionTabProps> = ({
@@ -16,9 +17,12 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
   values,
   onValueChange,
   missingRequiredFields,
+  showValidation = false,
 }) => {
   const missingFieldKeys = new Set(missingRequiredFields.map(f => f.field_key));
   const isComplete = missingRequiredFields.length === 0;
+  const requiredFields = fields.filter(f => f.is_required);
+  const filledRequired = requiredFields.filter(f => !missingFieldKeys.has(f.field_key));
 
   if (fields.length === 0) {
     return (
@@ -32,19 +36,29 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
     <div className="space-y-6">
       {/* Section status */}
       <div className={cn(
-        'flex items-center gap-2 px-4 py-3 rounded-lg text-sm',
-        isComplete ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
+        'flex items-center justify-between px-4 py-3 rounded-lg text-sm',
+        isComplete ? 'bg-success/10' : 'bg-warning/10'
       )}>
-        {isComplete ? (
-          <>
-            <CheckCircle2 className="h-4 w-4" />
-            <span>All required fields are complete</span>
-          </>
-        ) : (
-          <>
-            <AlertCircle className="h-4 w-4" />
-            <span>{missingRequiredFields.length} required field{missingRequiredFields.length > 1 ? 's' : ''} missing</span>
-          </>
+        <div className={cn(
+          'flex items-center gap-2',
+          isComplete ? 'text-success' : 'text-warning'
+        )}>
+          {isComplete ? (
+            <>
+              <CheckCircle2 className="h-4 w-4" />
+              <span>All required fields are complete</span>
+            </>
+          ) : (
+            <>
+              <AlertCircle className="h-4 w-4" />
+              <span>{missingRequiredFields.length} required field{missingRequiredFields.length > 1 ? 's' : ''} missing</span>
+            </>
+          )}
+        </div>
+        {requiredFields.length > 0 && (
+          <span className="text-muted-foreground text-xs">
+            {filledRequired.length}/{requiredFields.length} required fields filled
+          </span>
         )}
       </div>
 
@@ -57,6 +71,7 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
             value={values[field.field_key] || ''}
             onChange={(value) => onValueChange(field.field_key, value)}
             error={missingFieldKeys.has(field.field_key)}
+            showValidation={showValidation}
           />
         ))}
       </div>
