@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useDealFields } from '@/hooks/useDealFields';
+import { useEntryOrchestration } from '@/hooks/useEntryOrchestration';
+import { useAuth } from '@/contexts/AuthContext';
 import { DealSectionTab } from '@/components/deal/DealSectionTab';
 import { 
   logDealUpdated, 
@@ -19,9 +21,12 @@ import {
   CheckCircle2,
   AlertCircle,
   AlertTriangle,
-  ChevronRight
+  ChevronRight,
+  Clock,
+  Lock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getRoleDisplayName } from '@/lib/accessControl';
 import type { Database } from '@/integrations/supabase/types';
 
 type FieldSection = Database['public']['Enums']['field_section'];
@@ -52,12 +57,14 @@ export const DealDataEntryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isExternalUser, isInternalUser } = useAuth();
   
   const [deal, setDeal] = useState<Deal | null>(null);
   const [dealLoading, setDealLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('');
   const [showValidation, setShowValidation] = useState(false);
   const [markingReady, setMarkingReady] = useState(false);
+  const [completingSection, setCompletingSection] = useState(false);
 
   // Fetch deal info
   useEffect(() => {
@@ -108,6 +115,18 @@ export const DealDataEntryPage: React.FC = () => {
     computeCalculatedFields,
     calculationResults,
   } = useDealFields(id || '', deal?.packet_id || null);
+
+  // Entry orchestration for external users
+  const {
+    mode: orchestrationMode,
+    canEdit: orchestrationCanEdit,
+    isWaiting,
+    currentParticipant,
+    blockingParticipant,
+    hasCompleted,
+    loading: orchestrationLoading,
+    completeSection,
+  } = useEntryOrchestration(id || '');
 
   // Set initial active tab when sections load
   useEffect(() => {
@@ -264,8 +283,55 @@ export const DealDataEntryPage: React.FC = () => {
     }, 100);
   };
 
+  // Handle Complete Section for external users
+  const handleCompleteSection = async () => {
+    // Validate that required fields visible to this user are filled
+    const missing = getMissingRequiredFields();
+    if (missing.length > 0) {
+      setShowValidation(true);
+      toast({
+        title: 'Cannot complete section',
+        description: `Please fill in all ${missing.length} required field(s) first`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setCompletingSection(true);
+    try {
+      // Save first
+      computeCalculatedFields();
+      const saveSuccess = await saveDraft();
+      if (!saveSuccess) {
+        throw new Error('Failed to save changes');
+      }
+
+      // Complete the section
+      const success = await completeSection();
+      if (!success) {
+        throw new Error('Failed to complete section');
+      }
+
+      toast({
+        title: 'Section completed',
+        description: 'Thank you! Your section has been submitted successfully.',
+      });
+
+      resetDirty();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to complete section',
+        variant: 'destructive',
+      });
+    } finally {
+      setCompletingSection(false);
+    }
+  };
+
   const totalMissing = getMissingRequiredFields().length;
   const canMarkReady = isPacketComplete() && deal?.status === 'draft';
+  const showCompleteSectionButton = isExternalUser && currentParticipant && !hasCompleted && orchestrationCanEdit;
 
   if (dealLoading) {
     return (
@@ -322,32 +388,54 @@ export const DealDataEntryPage: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-3">
-            <Button 
-              onClick={handleSave} 
-              disabled={saving} 
-              variant="outline"
-              className="gap-2"
-            >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              Save Draft
-            </Button>
+            {/* Save button - always visible unless completed */}
+            {(!isExternalUser || !hasCompleted) && (
+              <Button 
+                onClick={handleSave} 
+                disabled={saving || (isExternalUser && !orchestrationCanEdit)} 
+                variant="outline"
+                className="gap-2"
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                Save Draft
+              </Button>
+            )}
             
-            <Button 
-              onClick={handleMarkReady} 
-              disabled={!canMarkReady || markingReady || saving}
-              className="gap-2"
-            >
-              {markingReady ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <CheckCircle2 className="h-4 w-4" />
-              )}
-              Mark Deal Ready
-            </Button>
+            {/* Mark Ready button - CSR only */}
+            {isInternalUser && (
+              <Button 
+                onClick={handleMarkReady} 
+                disabled={!canMarkReady || markingReady || saving}
+                className="gap-2"
+              >
+                {markingReady ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" />
+                )}
+                Mark Deal Ready
+              </Button>
+            )}
+
+            {/* Complete Section button - External users only */}
+            {showCompleteSectionButton && (
+              <Button 
+                onClick={handleCompleteSection} 
+                disabled={completingSection || saving || totalMissing > 0}
+                className="gap-2"
+              >
+                {completingSection ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" />
+                )}
+                Complete Section
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -460,6 +548,10 @@ export const DealDataEntryPage: React.FC = () => {
                   missingRequiredFields={getMissingRequiredFields(section)}
                   showValidation={showValidation}
                   calculationResults={calculationResults}
+                  orchestrationCanEdit={orchestrationCanEdit}
+                  isWaitingForPrevious={isWaiting}
+                  blockingRole={blockingParticipant?.role}
+                  hasCompleted={hasCompleted}
                 />
               </TabsContent>
             ))}

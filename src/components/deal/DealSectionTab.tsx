@@ -1,11 +1,12 @@
 import React from 'react';
 import { DealFieldInput } from './DealFieldInput';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Lock, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { useFieldPermissions } from '@/hooks/useFieldPermissions';
 import { useAuth } from '@/contexts/AuthContext';
+import { getRoleDisplayName } from '@/lib/accessControl';
 
 interface DealSectionTabProps {
   fields: FieldDefinition[];
@@ -14,6 +15,14 @@ interface DealSectionTabProps {
   missingRequiredFields: FieldDefinition[];
   showValidation?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  /** Orchestration: whether the current user can edit (for external users) */
+  orchestrationCanEdit?: boolean;
+  /** Orchestration: whether waiting for previous participant */
+  isWaitingForPrevious?: boolean;
+  /** Orchestration: the role blocking the current user */
+  blockingRole?: string | null;
+  /** Orchestration: whether the section is already completed */
+  hasCompleted?: boolean;
 }
 
 export const DealSectionTab: React.FC<DealSectionTabProps> = ({
@@ -23,6 +32,10 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
   missingRequiredFields,
   showValidation = false,
   calculationResults = {},
+  orchestrationCanEdit = true,
+  isWaitingForPrevious = false,
+  blockingRole = null,
+  hasCompleted = false,
 }) => {
   const { checkCanView, checkCanEdit } = useFieldPermissions();
   const { isExternalUser } = useAuth();
@@ -34,9 +47,16 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
     : fields;
 
   // Create a map of which fields are read-only for the current user
+  // Include orchestration-based restrictions for external users
   const readOnlyFields = new Set(
     visibleFields
-      .filter(f => !checkCanEdit(f.field_key))
+      .filter(f => {
+        // Field-level permission check
+        if (!checkCanEdit(f.field_key)) return true;
+        // Orchestration-based restriction for external users
+        if (isExternalUser && !orchestrationCanEdit) return true;
+        return false;
+      })
       .map(f => f.field_key)
   );
 
@@ -61,6 +81,45 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Waiting/Locked banner for sequential mode */}
+      {isExternalUser && isWaitingForPrevious && blockingRole && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-muted border border-border">
+          <Clock className="h-5 w-5 text-muted-foreground" />
+          <div>
+            <p className="font-medium text-foreground">Waiting for previous participant</p>
+            <p className="text-sm text-muted-foreground">
+              The {getRoleDisplayName(blockingRole as any)} must complete their section before you can enter data.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Completed banner */}
+      {isExternalUser && hasCompleted && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-success/10 border border-success/20">
+          <CheckCircle2 className="h-5 w-5 text-success" />
+          <div>
+            <p className="font-medium text-foreground">Section completed</p>
+            <p className="text-sm text-muted-foreground">
+              You have already completed your section. Fields are now read-only.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Read-only mode indicator (not waiting, not completed, but can't edit) */}
+      {isExternalUser && !orchestrationCanEdit && !isWaitingForPrevious && !hasCompleted && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-muted border border-border">
+          <Lock className="h-5 w-5 text-muted-foreground" />
+          <div>
+            <p className="font-medium text-foreground">View only</p>
+            <p className="text-sm text-muted-foreground">
+              You can view but not edit these fields.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Section status */}
       <div className={cn(
         'flex items-center justify-between px-4 py-3 rounded-lg text-sm',
