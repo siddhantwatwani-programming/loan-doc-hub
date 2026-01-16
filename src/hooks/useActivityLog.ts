@@ -109,6 +109,7 @@ export async function logDealMarkedReady(dealId: string, details?: {
 export async function logDealRevertedToDraft(dealId: string, details?: {
   reason?: string;
   fieldChanged?: string;
+  previousStatus?: string;
 }): Promise<boolean> {
   return logActivity({
     dealId,

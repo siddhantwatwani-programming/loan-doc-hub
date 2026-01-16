@@ -3,17 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { resolvePacketFields, type ResolvedField } from '@/lib/requiredFieldsResolver';
+import { resolvePacketFields } from '@/lib/requiredFieldsResolver';
 import { ActivityLogViewer } from '@/components/deal/ActivityLogViewer';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -28,8 +20,6 @@ import {
   Edit,
   User,
   History,
-  Play,
-  XCircle,
   FileOutput
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -94,9 +84,6 @@ export const DealOverviewPage: React.FC = () => {
   const [totalMissingRequired, setTotalMissingRequired] = useState(0);
   const [totalRequiredFields, setTotalRequiredFields] = useState(0);
   const [lastUpdatedInfo, setLastUpdatedInfo] = useState<LastUpdatedInfo | null>(null);
-  const [missingRequiredFields, setMissingRequiredFields] = useState<ResolvedField[]>([]);
-  const [showMissingFieldsDialog, setShowMissingFieldsDialog] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -145,12 +132,11 @@ export const DealOverviewPage: React.FC = () => {
             .map((fv: any) => fv.field_key)
         );
 
-        // Count missing required fields and track which fields are missing
-        const missingFields = resolved.fields.filter(
+        // Count missing required fields
+        const missingCount = resolved.fields.filter(
           field => field.is_required && !filledFieldKeys.has(field.field_key)
-        );
-        setMissingRequiredFields(missingFields);
-        setTotalMissingRequired(missingFields.length);
+        ).length;
+        setTotalMissingRequired(missingCount);
 
         // Get last updated info
         if (fieldValues && fieldValues.length > 0) {
@@ -278,119 +264,8 @@ export const DealOverviewPage: React.FC = () => {
   const isReady = deal.status === 'ready';
   const canBeReady = totalMissingRequired === 0 && totalRequiredFields > 0;
   
-  // Preconditions for document generation
+  // Check if user is CSR
   const isCsr = role === 'csr' || role === 'admin';
-  const canGenerate = isCsr && isReady && totalMissingRequired === 0 && packet !== null;
-  
-  const handleGenerateClick = async () => {
-    // Check preconditions
-    if (!isCsr) {
-      toast({
-        title: 'Permission Denied',
-        description: 'Only CSR users can generate documents',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    if (deal.status !== 'ready') {
-      toast({
-        title: 'Deal Not Ready',
-        description: 'Deal must be in "Ready" status before generating documents',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    if (totalMissingRequired > 0) {
-      setShowMissingFieldsDialog(true);
-      return;
-    }
-    
-    if (!packet) {
-      toast({
-        title: 'No Packet Assigned',
-        description: 'A packet must be assigned to the deal before generating documents',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    // All preconditions met - proceed with generation
-    setIsGenerating(true);
-    try {
-      // Use packet-based generation - the edge function handles all templates
-      const { data, error } = await supabase.functions.invoke('generate-document', {
-        body: {
-          dealId: deal.id,
-          packetId: packet.id,
-          outputType: 'docx_only',
-        },
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Generation failed');
-      }
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      // Parse job result
-      const jobResult = data as {
-        jobId: string;
-        status: string;
-        successCount: number;
-        failCount: number;
-        results: Array<{
-          templateName: string;
-          success: boolean;
-          error?: string;
-          versionNumber?: number;
-        }>;
-      };
-
-      console.log('Generation job result:', jobResult);
-
-      // Show detailed result
-      if (jobResult.failCount === 0 && jobResult.successCount > 0) {
-        toast({
-          title: 'Documents Generated',
-          description: `Successfully generated ${jobResult.successCount} document${jobResult.successCount > 1 ? 's' : ''}`,
-        });
-        fetchDealData();
-      } else if (jobResult.successCount > 0 && jobResult.failCount > 0) {
-        // Partial success - show which ones failed
-        const failedTemplates = jobResult.results
-          .filter(r => !r.success)
-          .map(r => r.templateName)
-          .join(', ');
-        toast({
-          title: 'Partial Success',
-          description: `Generated ${jobResult.successCount} document${jobResult.successCount > 1 ? 's' : ''}, ${jobResult.failCount} failed: ${failedTemplates}`,
-          variant: 'destructive',
-        });
-        fetchDealData();
-      } else {
-        // All failed
-        const firstError = jobResult.results.find(r => !r.success)?.error || 'Unknown error';
-        toast({
-          title: 'Generation Failed',
-          description: firstError,
-          variant: 'destructive',
-        });
-      }
-    } catch (error: any) {
-      console.error('Document generation error:', error);
-      toast({
-        title: 'Generation Failed',
-        description: error.message || 'Failed to start document generation',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   // Section labels for display
   const sectionLabels: Record<string, string> = {
@@ -432,92 +307,20 @@ export const DealOverviewPage: React.FC = () => {
               <Edit className="h-4 w-4" />
               Enter Data
             </Button>
-            {/* Generate Button - Only show when preconditions can be met */}
+            {/* Documents Page Button */}
             {isCsr && packet && (
               <Button 
-                onClick={handleGenerateClick}
-                disabled={!canGenerate || isGenerating}
+                onClick={() => navigate(`/deals/${deal.id}/documents`)}
                 className="gap-2"
-                variant={canGenerate ? 'default' : 'outline'}
+                variant={deal.status === 'ready' || deal.status === 'generated' ? 'default' : 'outline'}
               >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <FileOutput className="h-4 w-4" />
-                    Generate Documents
-                  </>
-                )}
+                <FileOutput className="h-4 w-4" />
+                Documents
               </Button>
             )}
           </div>
         </div>
       </div>
-
-      {/* Missing Required Fields Dialog */}
-      <Dialog open={showMissingFieldsDialog} onOpenChange={setShowMissingFieldsDialog}>
-        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <XCircle className="h-5 w-5" />
-              Cannot Generate Documents
-            </DialogTitle>
-            <DialogDescription>
-              The following required fields are missing values. Please complete them before generating documents.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <div className="space-y-4">
-              {/* Group missing fields by section */}
-              {Object.entries(
-                missingRequiredFields.reduce((acc, field) => {
-                  if (!acc[field.section]) acc[field.section] = [];
-                  acc[field.section].push(field);
-                  return acc;
-                }, {} as Record<string, ResolvedField[]>)
-              ).map(([section, fields]) => (
-                <div key={section}>
-                  <h4 className="text-sm font-medium text-foreground mb-2">
-                    {sectionLabels[section] || section}
-                  </h4>
-                  <ul className="space-y-1">
-                    {fields.map((field) => (
-                      <li 
-                        key={field.field_key}
-                        className="flex items-center gap-2 text-sm text-muted-foreground pl-4"
-                      >
-                        <AlertCircle className="h-3 w-3 text-destructive flex-shrink-0" />
-                        <span>{field.label}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-sm text-muted-foreground">
-                <strong>{missingRequiredFields.length}</strong> required field{missingRequiredFields.length !== 1 ? 's' : ''} missing
-              </p>
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowMissingFieldsDialog(false)}>
-              Close
-            </Button>
-            <Button onClick={() => {
-              setShowMissingFieldsDialog(false);
-              navigate(`/deals/${deal.id}/edit`);
-            }}>
-              <Edit className="h-4 w-4 mr-2" />
-              Enter Data
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Status Banner */}
       {totalRequiredFields > 0 && (
         <div className={cn(
