@@ -575,12 +575,114 @@ async function generateSingleDocument(
 
     console.log(`[generate-document] Uploaded to generated-docs: ${outputFileName}`);
 
-    // 9. Handle PDF conversion (placeholder - would need external service)
+    // 9. Handle PDF conversion using CloudConvert
     let pdfPath: string | null = null;
     if (outputType === "docx_and_pdf") {
-      // PDF conversion not yet implemented
-      // Would integrate with a service like CloudConvert, Gotenberg, or LibreOffice
-      console.log(`[generate-document] PDF conversion requested but not yet implemented`);
+      const cloudConvertApiKey = Deno.env.get("CLOUDCONVERT_API_KEY");
+      
+      if (cloudConvertApiKey) {
+        try {
+          console.log(`[generate-document] Starting PDF conversion via CloudConvert...`);
+          
+          // Create a CloudConvert job for conversion
+          const jobResponse = await fetch("https://api.cloudconvert.com/v2/jobs", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${cloudConvertApiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              tasks: {
+                "import-docx": {
+                  operation: "import/base64",
+                  file: btoa(String.fromCharCode(...processedDocx)),
+                  filename: `document.docx`,
+                },
+                "convert-pdf": {
+                  operation: "convert",
+                  input: ["import-docx"],
+                  output_format: "pdf",
+                },
+                "export-pdf": {
+                  operation: "export/url",
+                  input: ["convert-pdf"],
+                },
+              },
+            }),
+          });
+
+          if (!jobResponse.ok) {
+            const errorText = await jobResponse.text();
+            console.error(`[generate-document] CloudConvert job creation failed: ${errorText}`);
+            throw new Error("PDF conversion job creation failed");
+          }
+
+          const jobData = await jobResponse.json();
+          const jobId = jobData.data.id;
+          console.log(`[generate-document] CloudConvert job created: ${jobId}`);
+
+          // Poll for job completion (max 60 seconds)
+          let completed = false;
+          let exportUrl: string | null = null;
+          const startTime = Date.now();
+          
+          while (!completed && (Date.now() - startTime) < 60000) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            const statusResponse = await fetch(`https://api.cloudconvert.com/v2/jobs/${jobId}`, {
+              headers: {
+                "Authorization": `Bearer ${cloudConvertApiKey}`,
+              },
+            });
+
+            if (!statusResponse.ok) continue;
+
+            const statusData = await statusResponse.json();
+            const jobStatus = statusData.data.status;
+
+            if (jobStatus === "finished") {
+              completed = true;
+              // Find the export task result
+              const exportTask = statusData.data.tasks.find((t: any) => t.operation === "export/url");
+              if (exportTask?.result?.files?.[0]?.url) {
+                exportUrl = exportTask.result.files[0].url;
+              }
+            } else if (jobStatus === "error") {
+              console.error(`[generate-document] CloudConvert job failed`);
+              break;
+            }
+          }
+
+          if (exportUrl) {
+            // Download the PDF from CloudConvert
+            const pdfResponse = await fetch(exportUrl);
+            if (pdfResponse.ok) {
+              const pdfBuffer = new Uint8Array(await pdfResponse.arrayBuffer());
+              
+              // Upload PDF to storage
+              const pdfFileName = outputFileName.replace('.docx', '.pdf');
+              const { error: pdfUploadError } = await supabase.storage
+                .from("generated-docs")
+                .upload(pdfFileName, pdfBuffer, {
+                  contentType: "application/pdf",
+                  upsert: false,
+                });
+
+              if (!pdfUploadError) {
+                pdfPath = pdfFileName;
+                console.log(`[generate-document] PDF uploaded: ${pdfFileName}`);
+              } else {
+                console.error(`[generate-document] PDF upload failed:`, pdfUploadError);
+              }
+            }
+          }
+        } catch (pdfError: any) {
+          console.error(`[generate-document] PDF conversion error:`, pdfError);
+          // Continue without PDF - don't fail the whole generation
+        }
+      } else {
+        console.log(`[generate-document] PDF conversion requested but CLOUDCONVERT_API_KEY not set`);
+      }
     }
 
     // 10. Create generated_documents record

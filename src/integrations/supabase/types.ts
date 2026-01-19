@@ -601,28 +601,40 @@ export type Database = {
       }
       profiles: {
         Row: {
+          company: string | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
+          license_number: string | null
+          phone: string | null
           updated_at: string
           user_id: string
+          user_type: string | null
         }
         Insert: {
+          company?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
+          license_number?: string | null
+          phone?: string | null
           updated_at?: string
           user_id: string
+          user_type?: string | null
         }
         Update: {
+          company?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
+          license_number?: string | null
+          phone?: string | null
           updated_at?: string
           user_id?: string
+          user_type?: string | null
         }
         Relationships: []
       }

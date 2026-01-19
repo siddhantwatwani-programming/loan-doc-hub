@@ -16,7 +16,7 @@ import CreateDealPage from "./pages/csr/CreateDealPage";
 import DealOverviewPage from "./pages/csr/DealOverviewPage";
 import DealDataEntryPage from "./pages/csr/DealDataEntryPage";
 import DealDocumentsPage from "./pages/csr/DealDocumentsPage";
-import BorrowersPage from "./pages/csr/BorrowersPage";
+import UsersPage from "./pages/csr/UsersPage";
 import DocumentsPage from "./pages/csr/DocumentsPage";
 import ConfigurationPage from "./pages/admin/ConfigurationPage";
 import UserManagementPage from "./pages/admin/UserManagementPage";
@@ -64,7 +64,7 @@ const App = () => (
               <Route element={<AppLayout requiredRoles={['csr', 'admin']} blockExternalUsers />}>
                 <Route path="/deals/new" element={<CreateDealPage />} />
                 <Route path="/deals/:id/edit" element={<DealDataEntryPage />} />
-                <Route path="/borrowers" element={<BorrowersPage />} />
+                <Route path="/users" element={<UsersPage />} />
                 <Route path="/documents" element={<DocumentsPage />} />
               </Route>
 

@@ -210,17 +210,9 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
         finalValues[key] !== undefined && finalValues[key] !== ''
       );
 
-      // Delete existing values for this deal
-      const { error: deleteError } = await supabase
-        .from('deal_field_values')
-        .delete()
-        .eq('deal_id', dealId);
-
-      if (deleteError) throw deleteError;
-
-      // Insert new values with correct typed columns
+      // Use upsert instead of delete+insert to avoid race conditions
       if (fieldKeysToSave.length > 0) {
-        const valuesToInsert = fieldKeysToSave.map(fieldKey => {
+        const valuesToUpsert = fieldKeysToSave.map(fieldKey => {
           const dataType = fieldDataTypes[fieldKey] || 'text';
           const stringValue = finalValues[fieldKey];
           
@@ -262,11 +254,11 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
           return record;
         });
 
-        const { error: insertError } = await supabase
+        const { error: upsertError } = await supabase
           .from('deal_field_values')
-          .insert(valuesToInsert);
+          .upsert(valuesToUpsert, { onConflict: 'deal_id,field_key' });
 
-        if (insertError) throw insertError;
+        if (upsertError) throw upsertError;
       }
 
       toast({

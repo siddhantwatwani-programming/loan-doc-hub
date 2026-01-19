@@ -145,7 +145,7 @@ export const DealDocumentsPage: React.FC = () => {
 
   const isCsr = role === 'csr' || role === 'admin';
   const isAdminViewOnly = role === 'admin';
-  const canGenerate = (role === 'csr' || role === 'admin') && deal?.status === 'ready';
+  const canGenerate = (role === 'csr' || role === 'admin') && (deal?.status === 'ready' || deal?.status === 'generated');
 
   useEffect(() => {
     if (id) {
