@@ -840,6 +840,8 @@ export type Database = {
         | "title"
         | "escrow"
         | "other"
+        | "broker"
+        | "system"
       generation_status: "queued" | "running" | "success" | "failed"
       output_type: "docx_only" | "docx_and_pdf"
       participant_access_method: "login" | "magic_link"
@@ -992,6 +994,8 @@ export const Constants = {
         "title",
         "escrow",
         "other",
+        "broker",
+        "system",
       ],
       generation_status: ["queued", "running", "success", "failed"],
       output_type: ["docx_only", "docx_and_pdf"],

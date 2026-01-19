@@ -271,13 +271,15 @@ export const DealOverviewPage: React.FC = () => {
   // Section labels for display
   const sectionLabels: Record<string, string> = {
     borrower: 'Borrower',
+    broker: 'Broker',
     co_borrower: 'Co-Borrower',
-    property: 'Property',
-    loan_terms: 'Loan Terms',
-    seller: 'Seller',
-    title: 'Title',
     escrow: 'Escrow',
+    loan_terms: 'Loan Terms',
     other: 'Other',
+    property: 'Property',
+    seller: 'Seller',
+    system: 'System',
+    title: 'Title',
   };
 
   return (
