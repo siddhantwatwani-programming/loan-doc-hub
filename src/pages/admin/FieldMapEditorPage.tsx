@@ -50,7 +50,7 @@ interface TemplateFieldMap {
 }
 
 const TRANSFORM_RULES = [
-  { value: '', label: 'None' },
+  { value: 'none', label: 'None' },
   { value: 'uppercase', label: 'UPPERCASE' },
   { value: 'lowercase', label: 'lowercase' },
   { value: 'titlecase', label: 'Title Case' },
@@ -371,9 +371,9 @@ export const FieldMapEditorPage: React.FC = () => {
                         </div>
                         <div className="flex-1">
                           <Select
-                            value={fm.transform_rule || ''}
+                            value={fm.transform_rule || 'none'}
                             onValueChange={(value) =>
-                              handleUpdateField(fm.id, { transform_rule: value || null })
+                              handleUpdateField(fm.id, { transform_rule: value === 'none' ? null : value })
                             }
                           >
                             <SelectTrigger className="h-8">
