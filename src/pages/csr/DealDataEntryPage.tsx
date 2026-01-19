@@ -49,13 +49,15 @@ interface Deal {
 // Section labels for display
 const SECTION_LABELS: Record<FieldSection, string> = {
   borrower: 'Borrower',
+  broker: 'Broker',
   co_borrower: 'Co-Borrower',
-  property: 'Property',
-  loan_terms: 'Loan Terms',
-  seller: 'Seller',
-  title: 'Title',
   escrow: 'Escrow',
+  loan_terms: 'Loan Terms',
   other: 'Other',
+  property: 'Property',
+  seller: 'Seller',
+  system: 'System',
+  title: 'Title',
 };
 
 export const DealDataEntryPage: React.FC = () => {
