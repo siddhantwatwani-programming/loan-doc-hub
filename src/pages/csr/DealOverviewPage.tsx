@@ -9,6 +9,7 @@ import { resolvePacketFields } from '@/lib/requiredFieldsResolver';
 import { ActivityLogViewer } from '@/components/deal/ActivityLogViewer';
 import { InviteParticipantsPanel } from '@/components/deal/InviteParticipantsPanel';
 import { useAuth } from '@/contexts/AuthContext';
+import { logDealMarkedReady } from '@/hooks/useActivityLog';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -85,6 +86,7 @@ export const DealOverviewPage: React.FC = () => {
   const [totalMissingRequired, setTotalMissingRequired] = useState(0);
   const [totalRequiredFields, setTotalRequiredFields] = useState(0);
   const [lastUpdatedInfo, setLastUpdatedInfo] = useState<LastUpdatedInfo | null>(null);
+  const [markingReady, setMarkingReady] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -263,10 +265,42 @@ export const DealOverviewPage: React.FC = () => {
 
   const StatusIcon = statusConfig[deal.status].icon;
   const isReady = deal.status === 'ready';
+  const isGenerated = deal.status === 'generated';
   const canBeReady = totalMissingRequired === 0 && totalRequiredFields > 0;
   
   // Check if user is CSR
   const isCsr = role === 'csr' || role === 'admin';
+
+  const handleMarkReady = async () => {
+    if (!deal || markingReady) return;
+    
+    setMarkingReady(true);
+    try {
+      const { error } = await supabase
+        .from('deals')
+        .update({ status: 'ready' })
+        .eq('id', deal.id);
+
+      if (error) throw error;
+
+      await logDealMarkedReady(deal.id);
+
+      setDeal({ ...deal, status: 'ready' });
+      toast({
+        title: 'Deal Marked Ready',
+        description: 'You can now generate documents for this deal.',
+      });
+    } catch (error) {
+      console.error('Error marking deal ready:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to mark deal as ready',
+        variant: 'destructive',
+      });
+    } finally {
+      setMarkingReady(false);
+    }
+  };
 
   // Section labels for display
   const sectionLabels: Record<string, string> = {
@@ -350,7 +384,7 @@ export const DealOverviewPage: React.FC = () => {
                 <CheckCircle2 className="h-5 w-5 text-success" />
                 <div>
                   <p className="font-medium text-foreground">
-                    {isReady ? 'Deal is ready for document generation' : 'All required fields complete'}
+                    {isReady || isGenerated ? 'Deal is ready for document generation' : 'All required fields complete'}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {totalRequiredFields} required field{totalRequiredFields > 1 ? 's' : ''} filled
@@ -359,6 +393,19 @@ export const DealOverviewPage: React.FC = () => {
               </>
             )}
           </div>
+          {/* Action Buttons in Status Banner */}
+          {isCsr && canBeReady && deal.status === 'draft' && (
+            <Button onClick={handleMarkReady} disabled={markingReady} className="gap-2">
+              {markingReady ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+              Mark Ready
+            </Button>
+          )}
+          {isCsr && (isReady || isGenerated) && packet && (
+            <Button onClick={() => navigate(`/deals/${deal.id}/documents`)} className="gap-2">
+              <FileOutput className="h-4 w-4" />
+              Generate Documents
+            </Button>
+          )}
         </div>
       )}
 
