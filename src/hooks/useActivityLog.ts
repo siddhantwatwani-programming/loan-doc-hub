@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 export type ActionType = 
   | 'DealCreated'
   | 'DealUpdated'
+  | 'DataSaved'
   | 'DealMarkedReady'
   | 'DealRevertedToDraft'
   | 'FieldUpdated'
