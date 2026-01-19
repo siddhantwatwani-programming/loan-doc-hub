@@ -17,7 +17,9 @@ import {
   ShieldOff,
   Timer,
   RefreshCw,
-  UserCheck
+  UserCheck,
+  FileOutput,
+  FilePlus
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -133,6 +135,18 @@ const ACTION_CONFIG: Record<ActionType, {
     color: 'text-indigo-600',
     bgColor: 'bg-indigo-100',
   },
+  DocumentGenerated: {
+    icon: FilePlus,
+    label: 'Document Generated',
+    color: 'text-green-600',
+    bgColor: 'bg-green-100',
+  },
+  DocumentRegenerated: {
+    icon: FileOutput,
+    label: 'Document Regenerated',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-100',
+  },
 };
 
 export const ActivityLogViewer: React.FC<ActivityLogViewerProps> = ({
@@ -232,6 +246,10 @@ export const ActivityLogViewer: React.FC<ActivityLogViewerProps> = ({
         return d.role ? `${d.role}'s access expired${d.reason ? `: ${d.reason}` : ''}` : null;
       case 'ParticipantStatusReset':
         return d.role ? `${d.role} reset from ${d.previousStatus}` : null;
+      case 'DocumentGenerated':
+        return d.templateName ? `${d.templateName} v${d.versionNumber || 1}` : null;
+      case 'DocumentRegenerated':
+        return d.templateName ? `${d.templateName} v${d.versionNumber || 1}` : null;
       default:
         return null;
     }

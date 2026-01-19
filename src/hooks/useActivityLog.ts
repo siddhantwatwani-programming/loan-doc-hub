@@ -21,7 +21,9 @@ export type ActionType =
   | 'AccessRevoked'
   | 'AccessExpired'
   | 'ParticipantStatusReset'
-  | 'ExternalDataReviewed';
+  | 'ExternalDataReviewed'
+  | 'DocumentGenerated'
+  | 'DocumentRegenerated';
 
 export interface ActivityLogEntry {
   id: string;

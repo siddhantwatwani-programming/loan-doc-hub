@@ -298,28 +298,84 @@ function applyTransform(value: string | number | null, transform: string): strin
 }
 
 // ============================================
-// Merge Tag Parsing
+// Merge Tag Parsing - Supports multiple formats
 // ============================================
 
 interface ParsedMergeTag {
   fullMatch: string;
-  fieldKey: string;
+  tagName: string;  // The raw tag name from the document
   inlineTransform: string | null;
 }
 
-function parseMergeTags(content: string): ParsedMergeTag[] {
-  const tagPattern = /\{\{([^}|]+)(?:\s*\|\s*([^}]+))?\}\}/g;
-  const tags: ParsedMergeTag[] = [];
-  let match;
+// Map document merge tags to canonical field keys
+// This allows the document to use its own naming convention
+const MERGE_TAG_TO_FIELD_MAP: Record<string, string> = {
+  // Borrower mappings
+  "Borrower_Name": "Borrower.Name",
+  "Borrower_Address": "Borrower.Address",
+  "Borrower_address": "Borrower.Address",
+  
+  // Broker mappings
+  "Broker_Name": "Broker.Name",
+  "Broker_address": "Broker.Address",
+  "Broker_Address": "Broker.Address",
+  "Broker_License_": "Broker.License",
+  "Broker_License": "Broker.License",
+  "Broker_Rep": "Broker.Representative",
+  "Broker_License_1": "Broker.License",
+  
+  // Loan terms mappings
+  "Loan_Number": "Terms.LoanNumber",
+  "Loan_Amount": "Terms.LoanAmount",
+  "Amount_Funded": "Terms.LoanAmount",
+  "Interest_Rate": "Terms.InterestRate",
+  
+  // Property mappings
+  "Property_Address": "Property1.Address",
+  "Property_address": "Property1.Address",
+  "Market_Value": "Property1.MarketValue",
+  
+  // System mappings
+  "Document_Date": "System.DocumentDate",
+};
 
-  while ((match = tagPattern.exec(content)) !== null) {
+function resolveFieldKey(tagName: string): string {
+  return MERGE_TAG_TO_FIELD_MAP[tagName] || tagName;
+}
+
+// Parse Word merge field format: «field_name»
+// In the XML, these appear as MERGEFIELD codes or direct Unicode chars
+function parseWordMergeFields(content: string): ParsedMergeTag[] {
+  const tags: ParsedMergeTag[] = [];
+  
+  // Pattern 1: Unicode chevrons «field_name»
+  const unicodePattern = /«([^»]+)»/g;
+  let match;
+  while ((match = unicodePattern.exec(content)) !== null) {
     tags.push({
       fullMatch: match[0],
-      fieldKey: match[1].trim(),
+      tagName: match[1].trim(),
+      inlineTransform: null,
+    });
+  }
+  
+  // Pattern 2: Word MERGEFIELD XML - w:instrText containing MERGEFIELD
+  const mergeFieldPattern = /<w:instrText[^>]*>\s*MERGEFIELD\s+([^\s<\\]+)/gi;
+  while ((match = mergeFieldPattern.exec(content)) !== null) {
+    // We'll handle this in a more comprehensive way in processMergeFields
+    // For now, just note the field names
+  }
+  
+  // Pattern 3: Double curly braces {{field_name}} or {{field_name|transform}}
+  const curlyPattern = /\{\{([^}|]+)(?:\s*\|\s*([^}]+))?\}\}/g;
+  while ((match = curlyPattern.exec(content)) !== null) {
+    tags.push({
+      fullMatch: match[0],
+      tagName: match[1].trim(),
       inlineTransform: match[2]?.trim() || null,
     });
   }
-
+  
   return tags;
 }
 
@@ -328,26 +384,33 @@ function replaceMergeTags(
   fieldValues: Map<string, { rawValue: string | number | null; dataType: string }>,
   fieldTransforms: Map<string, string>
 ): string {
-  const tags = parseMergeTags(content);
-
   let result = content;
+  
+  // First, handle Word MERGEFIELD instructions by cleaning up the XML
+  // This is complex because Word splits fields across multiple XML nodes
+  // We'll use a simplified approach: replace «field» patterns directly
+  
+  const tags = parseWordMergeFields(content);
+  
   for (const tag of tags) {
-    const fieldData = fieldValues.get(tag.fieldKey);
+    const canonicalKey = resolveFieldKey(tag.tagName);
+    const fieldData = fieldValues.get(canonicalKey);
     let resolvedValue = "";
-
+    
     if (fieldData) {
-      const transform = tag.inlineTransform || fieldTransforms.get(tag.fieldKey);
-
+      const transform = tag.inlineTransform || fieldTransforms.get(canonicalKey);
+      
       if (transform) {
         resolvedValue = applyTransform(fieldData.rawValue, transform);
       } else {
         resolvedValue = formatByDataType(fieldData.rawValue, fieldData.dataType);
       }
     }
-
+    // Leave unmapped/empty tags blank (as per requirements)
+    
     result = result.split(tag.fullMatch).join(resolvedValue);
   }
-
+  
   return result;
 }
 
@@ -493,23 +556,24 @@ async function generateSingleDocument(
 
     const versionNumber = existingDocs && existingDocs.length > 0 ? existingDocs[0].version_number + 1 : 1;
 
-    // 8. Upload generated document to storage
+    // 8. Upload generated document to storage (use generated-docs bucket)
     const timestamp = Date.now();
-    const outputFileName = `generated/${dealId}/${templateId}_v${versionNumber}_${timestamp}.docx`;
+    const outputFileName = `${dealId}/${templateId}_v${versionNumber}_${timestamp}.docx`;
 
     const { error: uploadError } = await supabase.storage
-      .from("templates")
+      .from("generated-docs")
       .upload(outputFileName, processedDocx, {
         contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         upsert: false,
       });
 
     if (uploadError) {
+      console.error(`[generate-document] Upload error:`, uploadError);
       result.error = "Failed to save generated document";
       return result;
     }
 
-    console.log(`[generate-document] Uploaded to: ${outputFileName}`);
+    console.log(`[generate-document] Uploaded to generated-docs: ${outputFileName}`);
 
     // 9. Handle PDF conversion (placeholder - would need external service)
     let pdfPath: string | null = null;
@@ -520,6 +584,7 @@ async function generateSingleDocument(
     }
 
     // 10. Create generated_documents record
+    const isRegeneration = versionNumber > 1;
     const { data: generatedDoc, error: insertError } = await supabase
       .from("generated_documents")
       .insert({
@@ -543,6 +608,23 @@ async function generateSingleDocument(
     }
 
     console.log(`[generate-document] Created document record: ${generatedDoc.id}`);
+
+    // 11. Log activity
+    const actionType = isRegeneration ? "DocumentRegenerated" : "DocumentGenerated";
+    await supabase.from("activity_log").insert({
+      deal_id: dealId,
+      actor_user_id: userId,
+      action_type: actionType,
+      action_details: {
+        templateId,
+        templateName: result.templateName,
+        versionNumber,
+        documentId: generatedDoc.id,
+        outputType,
+      },
+    });
+
+    console.log(`[generate-document] Logged activity: ${actionType}`);
 
     result.success = true;
     result.documentId = generatedDoc.id;

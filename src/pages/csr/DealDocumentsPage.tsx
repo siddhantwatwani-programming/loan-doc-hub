@@ -339,7 +339,7 @@ export const DealDocumentsPage: React.FC = () => {
   const handleDownload = async (path: string, filename: string) => {
     try {
       const { data, error } = await supabase.storage
-        .from('templates')
+        .from('generated-docs')
         .download(path);
 
       if (error) throw error;
