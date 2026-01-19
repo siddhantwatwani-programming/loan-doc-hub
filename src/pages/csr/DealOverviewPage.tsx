@@ -85,6 +85,7 @@ export const DealOverviewPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [totalMissingRequired, setTotalMissingRequired] = useState(0);
   const [totalRequiredFields, setTotalRequiredFields] = useState(0);
+  const [totalFilledRequiredFields, setTotalFilledRequiredFields] = useState(0);
   const [lastUpdatedInfo, setLastUpdatedInfo] = useState<LastUpdatedInfo | null>(null);
   const [markingReady, setMarkingReady] = useState(false);
 
@@ -140,10 +141,13 @@ export const DealOverviewPage: React.FC = () => {
             .filter(Boolean)
         );
 
-        // Count missing required fields
-        const missingCount = resolved.fields.filter(
-          field => field.is_required && !filledFieldKeys.has(field.field_key)
+        // Count filled required fields and missing required fields
+        const filledRequiredCount = resolved.fields.filter(
+          field => field.is_required && filledFieldKeys.has(field.field_key)
         ).length;
+        const missingCount = resolved.requiredFieldKeys.length - filledRequiredCount;
+        
+        setTotalFilledRequiredFields(filledRequiredCount);
         setTotalMissingRequired(missingCount);
 
         // Get last updated info
@@ -231,7 +235,10 @@ export const DealOverviewPage: React.FC = () => {
 
   const totalFields = templateSummaries.reduce((sum, t) => sum + t.total_fields, 0);
   const totalFilledFields = templateSummaries.reduce((sum, t) => sum + t.filled_fields, 0);
-  const completionPercent = totalFields > 0 ? Math.round((totalFilledFields / totalFields) * 100) : 0;
+  // Overall progress is based on required fields completion, not total fields
+  const completionPercent = totalRequiredFields > 0 
+    ? Math.round((totalFilledRequiredFields / totalRequiredFields) * 100) 
+    : 0;
 
   const formatCurrency = (amount: number | null) => {
     if (!amount) return '—';
