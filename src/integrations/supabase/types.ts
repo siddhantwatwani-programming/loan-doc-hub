@@ -90,6 +90,7 @@ export type Database = {
       deal_field_values: {
         Row: {
           deal_id: string
+          field_dictionary_id: string | null
           field_key: string
           id: string
           updated_at: string
@@ -101,6 +102,7 @@ export type Database = {
         }
         Insert: {
           deal_id: string
+          field_dictionary_id?: string | null
           field_key: string
           id?: string
           updated_at?: string
@@ -112,6 +114,7 @@ export type Database = {
         }
         Update: {
           deal_id?: string
+          field_dictionary_id?: string | null
           field_key?: string
           id?: string
           updated_at?: string
@@ -672,6 +675,7 @@ export type Database = {
         Row: {
           created_at: string
           display_order: number | null
+          field_dictionary_id: string | null
           field_key: string
           id: string
           required_flag: boolean
@@ -681,6 +685,7 @@ export type Database = {
         Insert: {
           created_at?: string
           display_order?: number | null
+          field_dictionary_id?: string | null
           field_key: string
           id?: string
           required_flag?: boolean
@@ -690,6 +695,7 @@ export type Database = {
         Update: {
           created_at?: string
           display_order?: number | null
+          field_dictionary_id?: string | null
           field_key?: string
           id?: string
           required_flag?: boolean
