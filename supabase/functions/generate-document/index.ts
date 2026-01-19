@@ -314,6 +314,9 @@ const MERGE_TAG_TO_FIELD_MAP: Record<string, string> = {
   "Borrower_Name": "Borrower.Name",
   "Borrower_Address": "Borrower.Address",
   "Borrower_address": "Borrower.Address",
+  "Borrower_City": "Borrower.City",
+  "Borrower_State": "Borrower.State",
+  "Borrower_Zip": "Borrower.Zip",
   
   // Broker mappings
   "Broker_Name": "Broker.Name",
@@ -329,52 +332,143 @@ const MERGE_TAG_TO_FIELD_MAP: Record<string, string> = {
   "Loan_Amount": "Terms.LoanAmount",
   "Amount_Funded": "Terms.LoanAmount",
   "Interest_Rate": "Terms.InterestRate",
+  "Term_Months": "Terms.TermMonths",
+  "First_Payment_Date": "Terms.FirstPaymentDate",
+  "Maturity_Date": "Terms.MaturityDate",
+  "Payment_Amount": "Terms.PaymentAmount",
   
   // Property mappings
   "Property_Address": "Property1.Address",
   "Property_address": "Property1.Address",
+  "Property_City": "Property1.City",
+  "Property_State": "Property1.State",
+  "Property_Zip": "Property1.Zip",
   "Market_Value": "Property1.MarketValue",
   
   // System mappings
   "Document_Date": "System.DocumentDate",
+  
+  // Lender mappings (from template)
+  "Lender_Name": "Lender.Name",
+  "Lender_Vesting": "Lender.Vesting",
+  "Lender_address": "Lender.Address",
+  "Beneficial_interest_": "Lender.BeneficialInterest",
 };
 
 function resolveFieldKey(tagName: string): string {
-  return MERGE_TAG_TO_FIELD_MAP[tagName] || tagName;
+  // Clean the tag name (remove trailing underscores, etc.)
+  const cleanedTag = tagName.replace(/_+$/, "").trim();
+  return MERGE_TAG_TO_FIELD_MAP[tagName] || MERGE_TAG_TO_FIELD_MAP[cleanedTag] || tagName;
+}
+
+/**
+ * Normalize Word XML by consolidating fragmented text runs.
+ * Word often splits text across multiple <w:t> elements within a run or across runs.
+ * This function consolidates text within each paragraph to enable merge field detection.
+ */
+function normalizeWordXml(xmlContent: string): string {
+  // Pattern to match a paragraph and consolidate its text runs
+  // Word paragraphs are wrapped in <w:p>...</w:p>
+  
+  // First, let's handle the case where «field» is split across multiple <w:t> tags
+  // We need to consolidate text within run elements <w:r>...</w:r>
+  
+  // Strategy: Find all text between « and » that may be split, and consolidate
+  
+  // Step 1: Find occurrences of « and » that might be split
+  // We'll process the content to handle fragmented merge fields
+  
+  let result = xmlContent;
+  
+  // Pattern to find « possibly followed by fragmented XML until »
+  // This handles cases like: «</w:t></w:r><w:r><w:t>Field_Name</w:t></w:r><w:r><w:t>»
+  const fragmentedPattern = /«((?:<[^>]*>|\s)*?)([A-Za-z0-9_]+)((?:<[^>]*>|\s)*?)»/g;
+  
+  result = result.replace(fragmentedPattern, (match, pre, fieldName, post) => {
+    // If there's XML in between, it means the field was fragmented
+    if (pre.includes("<") || post.includes("<")) {
+      console.log(`[generate-document] Found fragmented merge field: ${fieldName}`);
+    }
+    return `«${fieldName}»`;
+  });
+  
+  // Also handle MERGEFIELD instructions in Word's field code format
+  // Pattern: <w:instrText ... >MERGEFIELD Field_Name</w:instrText> ... <w:t>«Field_Name»</w:t>
+  // These can also be fragmented
+  
+  // Handle case where merge field chevrons are in separate text nodes
+  // Pattern: </w:t>...<w:t>«...» or «...</w:t>...<w:t>...»
+  
+  // More aggressive cleanup: find XML-fragmented chevron patterns
+  const leftChevronFragmented = /«((?:<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)+)/g;
+  result = result.replace(leftChevronFragmented, (match, xmlFragment) => {
+    return "«";
+  });
+  
+  const rightChevronFragmented = /((?:<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)+)»/g;
+  result = result.replace(rightChevronFragmented, (match, xmlFragment) => {
+    return "»";
+  });
+  
+  // Handle underscores that get their own text runs
+  // Pattern: Field</w:t></w:r><w:r><w:t>_</w:t></w:r><w:r><w:t>Name
+  const fragmentedUnderscore = /([A-Za-z0-9]+)(<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)_(<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)?([A-Za-z0-9]+)/g;
+  result = result.replace(fragmentedUnderscore, "$1_$4");
+  
+  return result;
 }
 
 // Parse Word merge field format: «field_name»
 // In the XML, these appear as MERGEFIELD codes or direct Unicode chars
 function parseWordMergeFields(content: string): ParsedMergeTag[] {
   const tags: ParsedMergeTag[] = [];
+  const seenTags = new Set<string>();
   
   // Pattern 1: Unicode chevrons «field_name»
   const unicodePattern = /«([^»]+)»/g;
   let match;
   while ((match = unicodePattern.exec(content)) !== null) {
-    tags.push({
-      fullMatch: match[0],
-      tagName: match[1].trim(),
-      inlineTransform: null,
-    });
+    const tagName = match[1].trim();
+    if (!seenTags.has(match[0])) {
+      seenTags.add(match[0]);
+      tags.push({
+        fullMatch: match[0],
+        tagName: tagName,
+        inlineTransform: null,
+      });
+    }
   }
   
-  // Pattern 2: Word MERGEFIELD XML - w:instrText containing MERGEFIELD
-  const mergeFieldPattern = /<w:instrText[^>]*>\s*MERGEFIELD\s+([^\s<\\]+)/gi;
-  while ((match = mergeFieldPattern.exec(content)) !== null) {
-    // We'll handle this in a more comprehensive way in processMergeFields
-    // For now, just note the field names
-  }
-  
-  // Pattern 3: Double curly braces {{field_name}} or {{field_name|transform}}
+  // Pattern 2: Double curly braces {{field_name}} or {{field_name|transform}}
   const curlyPattern = /\{\{([^}|]+)(?:\s*\|\s*([^}]+))?\}\}/g;
   while ((match = curlyPattern.exec(content)) !== null) {
-    tags.push({
-      fullMatch: match[0],
-      tagName: match[1].trim(),
-      inlineTransform: match[2]?.trim() || null,
-    });
+    if (!seenTags.has(match[0])) {
+      seenTags.add(match[0]);
+      tags.push({
+        fullMatch: match[0],
+        tagName: match[1].trim(),
+        inlineTransform: match[2]?.trim() || null,
+      });
+    }
   }
+  
+  // Pattern 3: Word MERGEFIELD in instrText
+  const mergeFieldPattern = /MERGEFIELD\s+([A-Za-z0-9_]+)/gi;
+  while ((match = mergeFieldPattern.exec(content)) !== null) {
+    const fieldName = match[1].trim();
+    // Create a synthetic tag for MERGEFIELD
+    const syntheticTag = `«${fieldName}»`;
+    if (!seenTags.has(syntheticTag)) {
+      seenTags.add(syntheticTag);
+      tags.push({
+        fullMatch: syntheticTag,
+        tagName: fieldName,
+        inlineTransform: null,
+      });
+    }
+  }
+  
+  console.log(`[generate-document] Found ${tags.length} merge tags: ${tags.map(t => t.tagName).join(", ")}`);
   
   return tags;
 }
@@ -384,13 +478,11 @@ function replaceMergeTags(
   fieldValues: Map<string, { rawValue: string | number | null; dataType: string }>,
   fieldTransforms: Map<string, string>
 ): string {
-  let result = content;
+  // First normalize the XML to handle fragmented merge fields
+  let result = normalizeWordXml(content);
   
-  // First, handle Word MERGEFIELD instructions by cleaning up the XML
-  // This is complex because Word splits fields across multiple XML nodes
-  // We'll use a simplified approach: replace «field» patterns directly
-  
-  const tags = parseWordMergeFields(content);
+  // Parse and replace merge tags
+  const tags = parseWordMergeFields(result);
   
   for (const tag of tags) {
     const canonicalKey = resolveFieldKey(tag.tagName);
@@ -405,6 +497,9 @@ function replaceMergeTags(
       } else {
         resolvedValue = formatByDataType(fieldData.rawValue, fieldData.dataType);
       }
+      console.log(`[generate-document] Replacing ${tag.tagName} -> ${canonicalKey} = "${resolvedValue}"`);
+    } else {
+      console.log(`[generate-document] No data for ${tag.tagName} (canonical: ${canonicalKey})`);
     }
     // Leave unmapped/empty tags blank (as per requirements)
     
