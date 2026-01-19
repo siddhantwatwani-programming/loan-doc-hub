@@ -91,7 +91,6 @@ export type Database = {
         Row: {
           deal_id: string
           field_dictionary_id: string | null
-          field_key: string
           id: string
           updated_at: string
           updated_by: string | null
@@ -103,7 +102,6 @@ export type Database = {
         Insert: {
           deal_id: string
           field_dictionary_id?: string | null
-          field_key: string
           id?: string
           updated_at?: string
           updated_by?: string | null
@@ -115,7 +113,6 @@ export type Database = {
         Update: {
           deal_id?: string
           field_dictionary_id?: string | null
-          field_key?: string
           id?: string
           updated_at?: string
           updated_by?: string | null
@@ -131,13 +128,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "deals"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "deal_field_values_field_key_fkey"
-            columns: ["field_key"]
-            isOneToOne: false
-            referencedRelation: "field_dictionary"
-            referencedColumns: ["field_key"]
           },
         ]
       }
@@ -676,7 +666,6 @@ export type Database = {
           created_at: string
           display_order: number | null
           field_dictionary_id: string | null
-          field_key: string
           id: string
           required_flag: boolean
           template_id: string
@@ -686,7 +675,6 @@ export type Database = {
           created_at?: string
           display_order?: number | null
           field_dictionary_id?: string | null
-          field_key: string
           id?: string
           required_flag?: boolean
           template_id: string
@@ -696,20 +684,12 @@ export type Database = {
           created_at?: string
           display_order?: number | null
           field_dictionary_id?: string | null
-          field_key?: string
           id?: string
           required_flag?: boolean
           template_id?: string
           transform_rule?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "template_field_maps_field_key_fkey"
-            columns: ["field_key"]
-            isOneToOne: false
-            referencedRelation: "field_dictionary"
-            referencedColumns: ["field_key"]
-          },
           {
             foreignKeyName: "template_field_maps_template_id_fkey"
             columns: ["template_id"]
@@ -800,6 +780,10 @@ export type Database = {
       }
       can_view_field: {
         Args: { _field_key: string; _user_id: string }
+        Returns: boolean
+      }
+      can_view_field_by_id: {
+        Args: { _field_dictionary_id: string; _user_id: string }
         Returns: boolean
       }
       can_view_field_v2: {

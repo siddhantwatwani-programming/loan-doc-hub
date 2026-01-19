@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ExternalModification {
+  field_dictionary_id: string;
   field_key: string;
   updated_by: string;
   updated_at: string;
@@ -80,9 +81,10 @@ export function useExternalModificationDetector(dealId: string): UseExternalModi
       const { data: fieldValues, error } = await supabase
         .from('deal_field_values')
         .select(`
-          field_key,
+          field_dictionary_id,
           updated_by,
-          updated_at
+          updated_at,
+          field_dictionary!fk_deal_field_values_field_dictionary(field_key)
         `)
         .eq('deal_id', dealId)
         .not('updated_by', 'is', null);
@@ -92,7 +94,7 @@ export function useExternalModificationDetector(dealId: string): UseExternalModi
       // For each field value, check if the updater is an external user
       const modifications: ExternalModification[] = [];
       
-      for (const fv of fieldValues || []) {
+      for (const fv of (fieldValues || []) as any[]) {
         if (!fv.updated_by) continue;
 
         // Get the updater's role
@@ -115,8 +117,10 @@ export function useExternalModificationDetector(dealId: string): UseExternalModi
               .eq('user_id', fv.updated_by)
               .single();
 
+            const fieldKey = fv.field_dictionary?.field_key || fv.field_dictionary_id;
             modifications.push({
-              field_key: fv.field_key,
+              field_dictionary_id: fv.field_dictionary_id,
+              field_key: fieldKey,
               updated_by: fv.updated_by,
               updated_at: fv.updated_at,
               updater_role: updaterRole.role,

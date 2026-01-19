@@ -23,18 +23,21 @@ interface GenerateDocumentRequest {
 }
 
 interface TemplateFieldMap {
+  field_dictionary_id: string;
   field_key: string;
   transform_rule: string | null;
   required_flag: boolean;
 }
 
 interface FieldDefinition {
+  id: string;
   field_key: string;
   data_type: string;
   label: string;
 }
 
 interface DealFieldValue {
+  field_dictionary_id: string;
   field_key: string;
   value_text: string | null;
   value_number: number | null;
@@ -577,10 +580,10 @@ async function generateSingleDocument(
 
     console.log(`[generate-document] Processing template: ${template.name}`);
 
-    // 2. Fetch template field maps
+    // 2. Fetch template field maps with joined field_dictionary
     const { data: fieldMaps, error: fmError } = await supabase
       .from("template_field_maps")
-      .select("field_key, transform_rule, required_flag")
+      .select("field_dictionary_id, transform_rule, required_flag, field_dictionary!fk_template_field_maps_field_dictionary(id, field_key, data_type, label)")
       .eq("template_id", templateId);
 
     if (fmError) {
@@ -588,38 +591,44 @@ async function generateSingleDocument(
       return result;
     }
 
-    const fieldKeys = (fieldMaps || []).map((fm: TemplateFieldMap) => fm.field_key);
+    // Build field maps with field_key from joined data
+    const mappedFields: TemplateFieldMap[] = (fieldMaps || []).map((fm: any) => ({
+      field_dictionary_id: fm.field_dictionary_id,
+      field_key: fm.field_dictionary?.field_key || "",
+      transform_rule: fm.transform_rule,
+      required_flag: fm.required_flag,
+    }));
+
+    const fieldKeys = mappedFields.map((fm) => fm.field_key).filter(Boolean);
     const fieldTransforms = new Map<string, string>();
-    (fieldMaps || []).forEach((fm: TemplateFieldMap) => {
-      if (fm.transform_rule) {
+    mappedFields.forEach((fm) => {
+      if (fm.transform_rule && fm.field_key) {
         fieldTransforms.set(fm.field_key, fm.transform_rule);
       }
     });
 
-    // 3. Fetch field definitions
-    const { data: fieldDefs } = await supabase
-      .from("field_dictionary")
-      .select("field_key, data_type, label")
-      .in("field_key", fieldKeys.length > 0 ? fieldKeys : ["__none__"]);
-
+    // Build field definitions from joined data
     const fieldDefMap = new Map<string, FieldDefinition>();
-    (fieldDefs || []).forEach((fd: FieldDefinition) => {
-      fieldDefMap.set(fd.field_key, fd);
+    (fieldMaps || []).forEach((fm: any) => {
+      if (fm.field_dictionary) {
+        fieldDefMap.set(fm.field_dictionary.field_key, fm.field_dictionary);
+      }
     });
 
-    // 4. Fetch deal field values
+    // 3. Fetch deal field values with joined field_dictionary
     const { data: dealFieldValues } = await supabase
       .from("deal_field_values")
-      .select("field_key, value_text, value_number, value_date")
-      .eq("deal_id", dealId)
-      .in("field_key", fieldKeys.length > 0 ? fieldKeys : ["__none__"]);
+      .select("field_dictionary_id, value_text, value_number, value_date, field_dictionary!fk_deal_field_values_field_dictionary(field_key, data_type)")
+      .eq("deal_id", dealId);
 
     const fieldValues = new Map<string, { rawValue: string | number | null; dataType: string }>();
-    (dealFieldValues || []).forEach((dfv: DealFieldValue) => {
-      const fieldDef = fieldDefMap.get(dfv.field_key);
-      const dataType = fieldDef?.data_type || "text";
-      const rawValue = extractRawValue(dfv, dataType);
-      fieldValues.set(dfv.field_key, { rawValue, dataType });
+    (dealFieldValues || []).forEach((dfv: any) => {
+      if (dfv.field_dictionary?.field_key) {
+        const fieldKey = dfv.field_dictionary.field_key;
+        const dataType = dfv.field_dictionary.data_type || "text";
+        const rawValue = extractRawValue({ field_dictionary_id: dfv.field_dictionary_id, field_key: fieldKey, value_text: dfv.value_text, value_number: dfv.value_number, value_date: dfv.value_date }, dataType);
+        fieldValues.set(fieldKey, { rawValue, dataType });
+      }
     });
 
     console.log(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);

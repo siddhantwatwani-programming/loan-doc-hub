@@ -69,7 +69,8 @@ interface Template {
 interface TemplateFieldMap {
   id: string;
   template_id: string;
-  field_key: string;
+  field_dictionary_id: string;
+  field_key?: string;
   required_flag: boolean;
   transform_rule: string | null;
   display_order: number | null;
@@ -361,35 +362,36 @@ export const TemplateManagementPage: React.FC = () => {
     setValidationResult(null);
 
     try {
-      // Fetch template field maps
+      // Fetch template field maps with joined field dictionary
       const { data: fieldMapsData, error: fieldMapsError } = await supabase
         .from('template_field_maps')
-        .select('*')
+        .select('*, field_dictionary!fk_template_field_maps_field_dictionary(field_key, label, data_type, section)')
         .eq('template_id', template.id)
         .order('display_order');
 
       if (fieldMapsError) throw fieldMapsError;
 
-      const fieldMaps = (fieldMapsData || []) as TemplateFieldMap[];
+      // Map to include field_key from joined field_dictionary
+      const fieldMaps: TemplateFieldMap[] = (fieldMapsData || []).map((fm: any) => ({
+        ...fm,
+        field_key: fm.field_dictionary?.field_key || '',
+      }));
 
       // Get unique field keys from mappings
-      const fieldKeys = fieldMaps.map(fm => fm.field_key);
+      const fieldKeys = fieldMaps.map(fm => fm.field_key).filter(Boolean);
       const uniqueFieldKeys = [...new Set(fieldKeys)];
 
-      // Fetch field dictionary entries for these keys
-      const { data: fieldDictData, error: fieldDictError } = await supabase
-        .from('field_dictionary')
-        .select('field_key, label, data_type, section')
-        .in('field_key', uniqueFieldKeys.length > 0 ? uniqueFieldKeys : ['__none__']);
-
-      if (fieldDictError) throw fieldDictError;
-
+      // Build field dictionary from joined data
       const fieldDictionary = new Map<string, FieldDictionaryEntry>(
-        (fieldDictData || []).map(fd => [fd.field_key, fd])
+        (fieldMapsData || [])
+          .filter((fm: any) => fm.field_dictionary)
+          .map((fm: any) => [fm.field_dictionary.field_key, fm.field_dictionary])
       );
 
-      // Find missing fields (in template map but not in dictionary)
-      const missingFields = uniqueFieldKeys.filter(fk => !fieldDictionary.has(fk));
+      // Find missing fields (in template map but field_dictionary join failed)
+      const missingFields = fieldMaps
+        .filter(fm => !fm.field_key)
+        .map(fm => fm.field_dictionary_id);
 
       // Find duplicate fields (same field key mapped multiple times)
       const fieldCounts = new Map<string, number>();
@@ -410,7 +412,7 @@ export const TemplateManagementPage: React.FC = () => {
           const transform = fm.transform_rule.toLowerCase().trim();
           if (!validTransforms.includes(transform)) {
             inconsistentMappings.push({
-              fieldKey: fm.field_key,
+              fieldKey: fm.field_key || fm.field_dictionary_id,
               issue: `Unknown transform rule: "${fm.transform_rule}"`
             });
           }
