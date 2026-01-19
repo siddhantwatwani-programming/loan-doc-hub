@@ -529,13 +529,47 @@ async function generateSingleDocument(
 
     console.log(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);
 
-    // 5. Download template DOCX from storage
-    const { data: fileData, error: fileError } = await supabase.storage
+    // 5. Download template DOCX from storage (or fallback to public URL)
+    let fileData: Blob | null = null;
+    
+    // Try storage first
+    const { data: storageData, error: fileError } = await supabase.storage
       .from("templates")
       .download(template.file_path);
 
-    if (fileError || !fileData) {
-      result.error = "Failed to download template file";
+    if (!fileError && storageData) {
+      fileData = storageData;
+      console.log(`[generate-document] Downloaded template from storage: ${template.file_path}`);
+    } else {
+      // Fallback: Try to fetch from public URL (for templates stored in public folder)
+      console.log(`[generate-document] Storage download failed, trying public URL fallback...`);
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+      // Extract the project ref from the Supabase URL
+      const projectRef = supabaseUrl.replace("https://", "").split(".")[0];
+      
+      // Try multiple public URL patterns
+      const publicUrls = [
+        `https://${projectRef}.supabase.co/storage/v1/object/public/templates/${template.file_path}`,
+        // Also try the lovable preview URL pattern
+      ];
+      
+      for (const url of publicUrls) {
+        try {
+          const response = await fetch(url);
+          if (response.ok) {
+            fileData = await response.blob();
+            console.log(`[generate-document] Downloaded template from public URL: ${url}`);
+            break;
+          }
+        } catch (e) {
+          console.log(`[generate-document] Failed to fetch from ${url}: ${e}`);
+        }
+      }
+    }
+
+    if (!fileData) {
+      console.error(`[generate-document] Failed to download template: ${template.file_path}`);
+      result.error = "Failed to download template file. Please upload the template to storage.";
       return result;
     }
 

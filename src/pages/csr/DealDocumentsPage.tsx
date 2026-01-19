@@ -51,7 +51,8 @@ import {
   ChevronRight,
   History,
   User,
-  Eye
+  Eye,
+  Upload
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -136,6 +137,7 @@ export const DealDocumentsPage: React.FC = () => {
   const [profiles, setProfiles] = useState<Map<string, Profile>>(new Map());
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [uploadingTemplate, setUploadingTemplate] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [outputType, setOutputType] = useState<OutputType>('docx_only');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -414,6 +416,56 @@ export const DealDocumentsPage: React.FC = () => {
     return generatedDocuments.filter(doc => doc.generation_status === 'failed');
   };
 
+  // Handle template file upload for templates without files
+  const handleTemplateUpload = async (templateId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.docx')) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please upload a .docx file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploadingTemplate(true);
+    try {
+      const fileName = `${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('templates')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Update the template record with the file path
+      const { error: updateError } = await supabase
+        .from('templates')
+        .update({ file_path: fileName })
+        .eq('id', templateId);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: 'Template Uploaded',
+        description: 'Template file uploaded successfully. You can now generate documents.',
+      });
+
+      // Refresh data
+      fetchData();
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({
+        title: 'Upload Failed',
+        description: error.message || 'Failed to upload template file',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingTemplate(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="page-container flex items-center justify-center min-h-[400px]">
@@ -660,6 +712,35 @@ export const DealDocumentsPage: React.FC = () => {
                             <RefreshCw className="h-3.5 w-3.5" />
                             {latestDoc ? 'Regenerate' : 'Generate'}
                           </Button>
+                        )}
+
+                        {/* Upload button for templates without files */}
+                        {!hasFile && role === 'admin' && (
+                          <label className="cursor-pointer">
+                            <input
+                              type="file"
+                              accept=".docx"
+                              className="hidden"
+                              onChange={(e) => handleTemplateUpload(template.id, e)}
+                              disabled={uploadingTemplate}
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1"
+                              asChild
+                              disabled={uploadingTemplate}
+                            >
+                              <span>
+                                {uploadingTemplate ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Upload className="h-3.5 w-3.5" />
+                                )}
+                                Upload DOCX
+                              </span>
+                            </Button>
+                          </label>
                         )}
                       </div>
                     </div>
