@@ -123,8 +123,12 @@ export const DealOverviewPage: React.FC = () => {
         // Fetch field values for this deal
         const { data: fieldValues } = await supabase
           .from('deal_field_values')
-          .select('field_key, value_text, value_number, value_date, updated_at, updated_by')
+          .select('field_dictionary_id, value_text, value_number, value_date, updated_at, updated_by')
           .eq('deal_id', id);
+
+        // Create a map of field_dictionary_id to field_key using resolved fields
+        const fieldDictIdToKeyMap = new Map<string, string>();
+        resolved.fields.forEach(f => fieldDictIdToKeyMap.set(f.field_dictionary_id, f.field_key));
 
         // Find filled field keys
         const filledFieldKeys = new Set(
@@ -132,7 +136,8 @@ export const DealOverviewPage: React.FC = () => {
             .filter((fv: any) => 
               fv.value_text || fv.value_number !== null || fv.value_date
             )
-            .map((fv: any) => fv.field_key)
+            .map((fv: any) => fieldDictIdToKeyMap.get(fv.field_dictionary_id))
+            .filter(Boolean)
         );
 
         // Count missing required fields
@@ -185,15 +190,20 @@ export const DealOverviewPage: React.FC = () => {
 
           const { data: fieldMaps } = await supabase
             .from('template_field_maps')
-            .select('field_key, required_flag')
+            .select('field_dictionary_id, required_flag')
             .eq('template_id', template.id);
 
+          // Map field_dictionary_ids to field_keys using resolved fields
           const totalFields = fieldMaps?.length || 0;
           const requiredFields = fieldMaps?.filter((fm: any) => fm.required_flag).length || 0;
-          const filledFields = fieldMaps?.filter((fm: any) => filledFieldKeys.has(fm.field_key)).length || 0;
-          const missingRequired = fieldMaps?.filter(
-            (fm: any) => fm.required_flag && !filledFieldKeys.has(fm.field_key)
-          ).length || 0;
+          const filledFields = fieldMaps?.filter((fm: any) => {
+            const fieldKey = resolved.fields.find(f => f.field_dictionary_id === fm.field_dictionary_id)?.field_key;
+            return fieldKey && filledFieldKeys.has(fieldKey);
+          }).length || 0;
+          const missingRequired = fieldMaps?.filter((fm: any) => {
+            const fieldKey = resolved.fields.find(f => f.field_dictionary_id === fm.field_dictionary_id)?.field_key;
+            return fm.required_flag && fieldKey && !filledFieldKeys.has(fieldKey);
+          }).length || 0;
 
           summaries.push({
             template_id: template.id,

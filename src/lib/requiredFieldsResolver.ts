@@ -86,15 +86,10 @@ export async function resolvePacketFields(packetId: string): Promise<ResolvedFie
     };
   }
 
-  // 2. Load all TemplateFieldMap rows with joined field_dictionary
+  // 2. Load all TemplateFieldMap rows
   const { data: fieldMaps, error: fmError } = await supabase
     .from('template_field_maps')
-    .select(`
-      field_dictionary_id,
-      required_flag,
-      transform_rule,
-      field_dictionary!fk_template_field_maps_field_dictionary(*)
-    `)
+    .select('field_dictionary_id, required_flag, transform_rule')
     .in('template_id', templateIds);
 
   if (fmError) throw fmError;
@@ -111,7 +106,34 @@ export async function resolvePacketFields(packetId: string): Promise<ResolvedFie
     };
   }
 
-  // 3. Deduplicate and aggregate
+  // Get unique field dictionary IDs
+  const fieldDictIds = [...new Set(fieldMaps.map(fm => fm.field_dictionary_id).filter(Boolean))] as string[];
+  
+  if (fieldDictIds.length === 0) {
+    return {
+      visibleFieldIds: [],
+      visibleFieldKeys: [],
+      requiredFieldIds: [],
+      requiredFieldKeys: [],
+      fields: [],
+      fieldsBySection: {} as Record<FieldSection, ResolvedField[]>,
+      sections: [],
+    };
+  }
+
+  // 3. Load field dictionary entries for those IDs
+  const { data: fieldDictEntries, error: fdError } = await supabase
+    .from('field_dictionary')
+    .select('*')
+    .in('id', fieldDictIds);
+
+  if (fdError) throw fdError;
+
+  // Create lookup map for field dictionary by ID
+  const fieldDictMap = new Map<string, any>();
+  (fieldDictEntries || []).forEach(fd => fieldDictMap.set(fd.id, fd));
+
+  // 4. Deduplicate and aggregate
   // - requiredFieldIds: field is required if ANY template requires it
   // - visibleFieldIds: all unique field dictionary IDs
   // - transformRulesMap: collect all transform rules per field
@@ -121,9 +143,10 @@ export async function resolvePacketFields(packetId: string): Promise<ResolvedFie
 
   (fieldMaps as any[]).forEach(fm => {
     const fieldDictId = fm.field_dictionary_id;
-    const fieldDict = fm.field_dictionary;
+    if (!fieldDictId) return;
     
-    if (!fieldDict) return; // Skip if no joined data
+    const fieldDict = fieldDictMap.get(fieldDictId);
+    if (!fieldDict) return; // Skip if no dictionary entry found
     
     // Store field dictionary data
     if (!fieldDataMap.has(fieldDictId)) {

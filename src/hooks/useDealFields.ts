@@ -115,39 +115,37 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
       setFieldDataTypes(dataTypeMap);
       setFieldIdMap(idMap);
 
-      // 2. Fetch existing field values for this deal with joined field_dictionary
+      // 2. Fetch existing field values for this deal
       if (resolved.visibleFieldKeys.length > 0) {
         const { data: existingValues, error: evError } = await supabase
           .from('deal_field_values')
-          .select(`
-            field_dictionary_id,
-            value_text,
-            value_number,
-            value_date,
-            value_json,
-            field_dictionary!fk_deal_field_values_field_dictionary(field_key, data_type)
-          `)
+          .select('field_dictionary_id, value_text, value_number, value_date, value_json')
           .eq('deal_id', dealId);
 
         if (evError) throw evError;
 
+        // Create lookup map from field_dictionary_id to field metadata
+        const fieldDictIdToMeta = new Map<string, { field_key: string; data_type: FieldDataType }>();
+        resolved.fields.forEach(f => {
+          fieldDictIdToMeta.set(f.field_dictionary_id, { field_key: f.field_key, data_type: f.data_type });
+        });
+
         // Build values map - convert typed values to strings for form display
         const valuesMap: Record<string, string> = {};
         ((existingValues || []) as any[]).forEach((ev) => {
-          if (ev.field_dictionary?.field_key) {
-            const fieldKey = ev.field_dictionary.field_key;
-            const dataType = ev.field_dictionary.data_type || 'text';
+          const fieldMeta = fieldDictIdToMeta.get(ev.field_dictionary_id);
+          if (fieldMeta) {
             const fieldValue: FieldValue = {
               field_dictionary_id: ev.field_dictionary_id,
-              field_key: fieldKey,
+              field_key: fieldMeta.field_key,
               value_text: ev.value_text,
               value_number: ev.value_number,
               value_date: ev.value_date,
               value_json: ev.value_json,
             };
-            const value = getValueFromRecord(fieldValue, dataType);
+            const value = getValueFromRecord(fieldValue, fieldMeta.data_type);
             if (value) {
-              valuesMap[fieldKey] = value;
+              valuesMap[fieldMeta.field_key] = value;
             }
           }
         });
