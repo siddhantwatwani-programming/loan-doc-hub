@@ -57,6 +57,12 @@ const ACTION_CONFIG: Record<ActionType, {
     color: 'text-gray-600',
     bgColor: 'bg-gray-100',
   },
+  DataSaved: {
+    icon: Save,
+    label: 'Data Saved',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-100',
+  },
   DealMarkedReady: {
     icon: CheckCircle2,
     label: 'Marked Ready',
@@ -216,6 +222,11 @@ export const ActivityLogViewer: React.FC<ActivityLogViewerProps> = ({
       case 'DealUpdated':
         if (d.fieldsUpdated !== undefined) {
           return `${d.fieldsUpdated} of ${d.fieldsTotal || '?'} fields saved`;
+        }
+        return null;
+      case 'DataSaved':
+        if (d.fields_count !== undefined) {
+          return `${d.fields_count} fields saved`;
         }
         return null;
       case 'DealMarkedReady':
