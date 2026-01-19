@@ -27,6 +27,7 @@ type FieldDataType = Database['public']['Enums']['field_data_type'];
 
 export interface ResolvedFieldValue {
   fieldKey: string;
+  fieldDictionaryId: string;
   rawValue: string | number | null;
   formattedValue: string;
   dataType: FieldDataType;
@@ -45,14 +46,17 @@ export interface FieldValueResolverResult {
 }
 
 interface DealFieldValue {
+  field_dictionary_id: string;
   field_key: string;
   value_text: string | null;
   value_number: number | null;
   value_date: string | null;
   value_json: unknown;
+  data_type: FieldDataType;
 }
 
 interface FieldDefinition {
+  id: string;
   field_key: string;
   data_type: FieldDataType;
   label: string;
@@ -187,27 +191,39 @@ export async function resolveFieldValues(
   };
 
   try {
-    // 1. Fetch deal field values
-    let fieldValuesQuery = supabase
+    // 1. Fetch deal field values with joined field_dictionary
+    const { data: fieldValues, error: fvError } = await supabase
       .from('deal_field_values')
-      .select('field_key, value_text, value_number, value_date, value_json')
+      .select(`
+        field_dictionary_id,
+        value_text,
+        value_number,
+        value_date,
+        value_json,
+        field_dictionary!fk_deal_field_values_field_dictionary(id, field_key, data_type, label)
+      `)
       .eq('deal_id', dealId);
-
-    if (fieldKeys && fieldKeys.length > 0) {
-      fieldValuesQuery = fieldValuesQuery.in('field_key', fieldKeys);
-    }
-
-    const { data: fieldValues, error: fvError } = await fieldValuesQuery;
 
     if (fvError) {
       result.errors.push(`Failed to fetch deal field values: ${fvError.message}`);
       return result;
     }
 
-    // Create lookup map for field values
+    // Create lookup map for field values by field_key
     const fieldValueMap: Record<string, DealFieldValue> = {};
-    (fieldValues || []).forEach((fv) => {
-      fieldValueMap[fv.field_key] = fv;
+    ((fieldValues || []) as any[]).forEach((fv) => {
+      if (fv.field_dictionary) {
+        const fieldKey = fv.field_dictionary.field_key;
+        fieldValueMap[fieldKey] = {
+          field_dictionary_id: fv.field_dictionary_id,
+          field_key: fieldKey,
+          value_text: fv.value_text,
+          value_number: fv.value_number,
+          value_date: fv.value_date,
+          value_json: fv.value_json,
+          data_type: fv.field_dictionary.data_type,
+        };
+      }
     });
 
     // 2. Get the list of field keys to resolve
@@ -217,30 +233,12 @@ export async function resolveFieldValues(
       return result;
     }
 
-    // 3. Fetch field definitions from dictionary
-    const { data: fieldDefs, error: fdError } = await supabase
-      .from('field_dictionary')
-      .select('field_key, data_type, label')
-      .in('field_key', keysToResolve);
-
-    if (fdError) {
-      result.errors.push(`Failed to fetch field definitions: ${fdError.message}`);
-      return result;
-    }
-
-    // Create lookup map for field definitions
-    const fieldDefMap: Record<string, FieldDefinition> = {};
-    (fieldDefs || []).forEach((fd) => {
-      fieldDefMap[fd.field_key] = fd;
-    });
-
-    // 4. Resolve each field
+    // 3. Resolve each field
     for (const fieldKey of keysToResolve) {
-      const fieldDef = fieldDefMap[fieldKey];
       const fieldValue = fieldValueMap[fieldKey];
 
-      // Default to 'text' if field definition not found
-      const dataType: FieldDataType = fieldDef?.data_type || 'text';
+      // Default to 'text' if field value not found
+      const dataType: FieldDataType = fieldValue?.data_type || 'text';
 
       // Extract raw value based on data type
       const rawValue = extractRawValue(fieldValue, dataType);
@@ -272,6 +270,7 @@ export async function resolveFieldValues(
       result.values[fieldKey] = formattedValue;
       result.details[fieldKey] = {
         fieldKey,
+        fieldDictionaryId: fieldValue?.field_dictionary_id || '',
         rawValue,
         formattedValue,
         dataType,
@@ -297,10 +296,14 @@ export async function resolveFieldValuesForTemplate(
   dealId: string,
   templateId: string
 ): Promise<FieldValueResolverResult> {
-  // 1. Fetch template field maps to get field keys and transform rules
+  // 1. Fetch template field maps with joined field_dictionary
   const { data: fieldMaps, error: fmError } = await supabase
     .from('template_field_maps')
-    .select('field_key, transform_rule')
+    .select(`
+      field_dictionary_id,
+      transform_rule,
+      field_dictionary!fk_template_field_maps_field_dictionary(field_key)
+    `)
     .eq('template_id', templateId);
 
   if (fmError) {
@@ -322,12 +325,16 @@ export async function resolveFieldValuesForTemplate(
   }
 
   // Extract field keys and transform rules
-  const fieldKeys = fieldMaps.map((fm) => fm.field_key);
+  const fieldKeys: string[] = [];
   const transformRules: Record<string, string> = {};
   
-  fieldMaps.forEach((fm) => {
-    if (fm.transform_rule) {
-      transformRules[fm.field_key] = fm.transform_rule;
+  (fieldMaps as any[]).forEach((fm) => {
+    if (fm.field_dictionary?.field_key) {
+      const fieldKey = fm.field_dictionary.field_key;
+      fieldKeys.push(fieldKey);
+      if (fm.transform_rule) {
+        transformRules[fieldKey] = fm.transform_rule;
+      }
     }
   });
 
@@ -373,10 +380,14 @@ export async function resolveFieldValuesForPacket(
 
   const templateIds = packetTemplates.map((pt) => pt.template_id);
 
-  // 2. Fetch all field maps for all templates
+  // 2. Fetch all field maps with joined field_dictionary
   const { data: fieldMaps, error: fmError } = await supabase
     .from('template_field_maps')
-    .select('field_key, transform_rule')
+    .select(`
+      field_dictionary_id,
+      transform_rule,
+      field_dictionary!fk_template_field_maps_field_dictionary(field_key)
+    `)
     .in('template_id', templateIds);
 
   if (fmError) {
@@ -403,10 +414,13 @@ export async function resolveFieldValuesForPacket(
   const fieldKeySet = new Set<string>();
   const transformRules: Record<string, string> = {};
 
-  fieldMaps.forEach((fm) => {
-    fieldKeySet.add(fm.field_key);
-    if (fm.transform_rule) {
-      transformRules[fm.field_key] = fm.transform_rule;
+  (fieldMaps as any[]).forEach((fm) => {
+    if (fm.field_dictionary?.field_key) {
+      const fieldKey = fm.field_dictionary.field_key;
+      fieldKeySet.add(fieldKey);
+      if (fm.transform_rule) {
+        transformRules[fieldKey] = fm.transform_rule;
+      }
     }
   });
 

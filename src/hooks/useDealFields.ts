@@ -23,6 +23,7 @@ type FieldDataType = Database['public']['Enums']['field_data_type'];
 export type { ResolvedField as FieldDefinition, ResolvedFieldSet };
 
 export interface FieldValue {
+  field_dictionary_id: string;
   field_key: string;
   value_text: string | null;
   value_number: number | null;
@@ -78,6 +79,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
   const [resolvedFields, setResolvedFields] = useState<ResolvedFieldSet | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [fieldDataTypes, setFieldDataTypes] = useState<Record<string, FieldDataType>>({});
+  const [fieldIdMap, setFieldIdMap] = useState<Record<string, string>>({}); // field_key -> field_dictionary_id
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,29 +105,50 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
       const resolved = await resolvePacketFields(packetId!);
       setResolvedFields(resolved);
 
-      // Build data type lookup for saving
+      // Build data type and ID lookup maps
       const dataTypeMap: Record<string, FieldDataType> = {};
+      const idMap: Record<string, string> = {};
       resolved.fields.forEach(f => {
         dataTypeMap[f.field_key] = f.data_type;
+        idMap[f.field_key] = f.field_dictionary_id;
       });
       setFieldDataTypes(dataTypeMap);
+      setFieldIdMap(idMap);
 
-      // 2. Fetch existing field values for this deal
+      // 2. Fetch existing field values for this deal with joined field_dictionary
       if (resolved.visibleFieldKeys.length > 0) {
         const { data: existingValues, error: evError } = await supabase
           .from('deal_field_values')
-          .select('field_key, value_text, value_number, value_date, value_json')
+          .select(`
+            field_dictionary_id,
+            value_text,
+            value_number,
+            value_date,
+            value_json,
+            field_dictionary!fk_deal_field_values_field_dictionary(field_key, data_type)
+          `)
           .eq('deal_id', dealId);
 
         if (evError) throw evError;
 
         // Build values map - convert typed values to strings for form display
         const valuesMap: Record<string, string> = {};
-        (existingValues || []).forEach((ev: FieldValue) => {
-          const dataType = dataTypeMap[ev.field_key] || 'text';
-          const value = getValueFromRecord(ev, dataType);
-          if (value) {
-            valuesMap[ev.field_key] = value;
+        ((existingValues || []) as any[]).forEach((ev) => {
+          if (ev.field_dictionary?.field_key) {
+            const fieldKey = ev.field_dictionary.field_key;
+            const dataType = ev.field_dictionary.data_type || 'text';
+            const fieldValue: FieldValue = {
+              field_dictionary_id: ev.field_dictionary_id,
+              field_key: fieldKey,
+              value_text: ev.value_text,
+              value_number: ev.value_number,
+              value_date: ev.value_date,
+              value_json: ev.value_json,
+            };
+            const value = getValueFromRecord(fieldValue, dataType);
+            if (value) {
+              valuesMap[fieldKey] = value;
+            }
           }
         });
 
@@ -210,55 +233,60 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
         finalValues[key] !== undefined && finalValues[key] !== ''
       );
 
-      // Use upsert instead of delete+insert to avoid race conditions
+      // Use upsert with field_dictionary_id
       if (fieldKeysToSave.length > 0) {
-        const valuesToUpsert = fieldKeysToSave.map(fieldKey => {
-          const dataType = fieldDataTypes[fieldKey] || 'text';
-          const stringValue = finalValues[fieldKey];
-          
-          const record: {
-            deal_id: string;
-            field_key: string;
-            value_text: string | null;
-            value_number: number | null;
-            value_date: string | null;
-            value_json: any | null;
-            updated_by: string;
-          } = {
-            deal_id: dealId,
-            field_key: fieldKey,
-            value_text: null,
-            value_number: null,
-            value_date: null,
-            value_json: null,
-            updated_by: user.id,
-          };
+        const valuesToUpsert = fieldKeysToSave
+          .filter(fieldKey => fieldIdMap[fieldKey]) // Only save fields we have IDs for
+          .map(fieldKey => {
+            const dataType = fieldDataTypes[fieldKey] || 'text';
+            const stringValue = finalValues[fieldKey];
+            const fieldDictId = fieldIdMap[fieldKey];
+            
+            const record: {
+              deal_id: string;
+              field_dictionary_id: string;
+              value_text: string | null;
+              value_number: number | null;
+              value_date: string | null;
+              value_json: any | null;
+              updated_by: string;
+            } = {
+              deal_id: dealId,
+              field_dictionary_id: fieldDictId,
+              value_text: null,
+              value_number: null,
+              value_date: null,
+              value_json: null,
+              updated_by: user.id,
+            };
 
-          switch (dataType) {
-            case 'number':
-            case 'currency':
-            case 'percentage':
-              const numValue = parseFloat(stringValue);
-              record.value_number = isNaN(numValue) ? null : numValue;
-              break;
-            case 'date':
-              record.value_date = stringValue || null;
-              break;
-            case 'boolean':
-              record.value_text = stringValue;
-              break;
-            default:
-              record.value_text = stringValue;
-          }
+            switch (dataType) {
+              case 'number':
+              case 'currency':
+              case 'percentage':
+                const numValue = parseFloat(stringValue);
+                record.value_number = isNaN(numValue) ? null : numValue;
+                break;
+              case 'date':
+                record.value_date = stringValue || null;
+                break;
+              case 'boolean':
+                record.value_text = stringValue;
+                break;
+              default:
+                record.value_text = stringValue;
+            }
 
-          return record;
-        });
+            return record;
+          });
 
-        const { error: upsertError } = await supabase
-          .from('deal_field_values')
-          .upsert(valuesToUpsert, { onConflict: 'deal_id,field_key' });
+        if (valuesToUpsert.length > 0) {
+          const { error: upsertError } = await supabase
+            .from('deal_field_values')
+            .upsert(valuesToUpsert, { onConflict: 'deal_id,field_dictionary_id' });
 
-        if (upsertError) throw upsertError;
+          if (upsertError) throw upsertError;
+        }
       }
 
       toast({
@@ -278,7 +306,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     } finally {
       setSaving(false);
     }
-  }, [dealId, values, fieldDataTypes, computeCalculatedFields, toast]);
+  }, [dealId, values, fieldDataTypes, fieldIdMap, computeCalculatedFields, toast]);
 
   const getMissingRequiredFields = useCallback((section?: FieldSection): ResolvedField[] => {
     if (!resolvedFields) return [];

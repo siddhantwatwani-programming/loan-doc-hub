@@ -42,7 +42,7 @@ interface FieldDictionary {
 interface TemplateFieldMap {
   id: string;
   template_id: string;
-  field_key: string;
+  field_dictionary_id: string;
   required_flag: boolean;
   transform_rule: string | null;
   display_order: number;
@@ -113,7 +113,7 @@ export const FieldMapEditorPage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('template_field_maps')
-        .select('*, field_dictionary(*)')
+        .select('*, field_dictionary!fk_template_field_maps_field_dictionary(*)')
         .eq('template_id', templateId)
         .order('display_order');
 
@@ -130,7 +130,7 @@ export const FieldMapEditorPage: React.FC = () => {
     }
   };
 
-  const handleAddField = async (fieldKey: string) => {
+  const handleAddField = async (fieldId: string) => {
     if (!selectedTemplateId) return;
 
     try {
@@ -140,7 +140,7 @@ export const FieldMapEditorPage: React.FC = () => {
 
       const { error } = await supabase.from('template_field_maps').insert({
         template_id: selectedTemplateId,
-        field_key: fieldKey,
+        field_dictionary_id: fieldId,
         required_flag: false,
         display_order: maxOrder + 1,
       });
@@ -203,8 +203,8 @@ export const FieldMapEditorPage: React.FC = () => {
   };
 
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
-  const mappedFieldKeys = fieldMaps.map((fm) => fm.field_key);
-  const availableFields = fields.filter((f) => !mappedFieldKeys.includes(f.field_key));
+  const mappedFieldIds = fieldMaps.map((fm) => fm.field_dictionary_id);
+  const availableFields = fields.filter((f) => !mappedFieldIds.includes(f.id));
 
   const filteredAvailableFields = availableFields.filter(
     (f) =>
@@ -294,7 +294,7 @@ export const FieldMapEditorPage: React.FC = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleAddField(field.field_key)}
+                          onClick={() => handleAddField(field.id)}
                           className="opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Plus className="h-4 w-4" />
@@ -343,10 +343,10 @@ export const FieldMapEditorPage: React.FC = () => {
                           </span>
                           <div>
                             <p className="font-medium text-foreground">
-                              {fm.field?.label || fm.field_key}
+                              {fm.field?.label || fm.field?.field_key || 'Unknown field'}
                             </p>
                             <p className="text-xs text-muted-foreground font-mono">
-                              {fm.field_key}
+                              {fm.field?.field_key || fm.field_dictionary_id}
                             </p>
                           </div>
                         </div>

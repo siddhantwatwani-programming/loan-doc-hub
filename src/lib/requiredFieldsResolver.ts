@@ -5,6 +5,7 @@ type FieldSection = Database['public']['Enums']['field_section'];
 type FieldDataType = Database['public']['Enums']['field_data_type'];
 
 export interface ResolvedField {
+  field_dictionary_id: string;
   field_key: string;
   label: string;
   section: FieldSection;
@@ -21,8 +22,12 @@ export interface ResolvedField {
 }
 
 export interface ResolvedFieldSet {
-  /** All unique field keys visible for this packet (required + optional) */
+  /** All unique field dictionary IDs visible for this packet (required + optional) */
+  visibleFieldIds: string[];
+  /** All unique field keys visible for this packet */
   visibleFieldKeys: string[];
+  /** Field dictionary IDs that are required (ANY template requires them) */
+  requiredFieldIds: string[];
   /** Field keys that are required (ANY template requires them) */
   requiredFieldKeys: string[];
   /** Full field definitions with metadata */
@@ -51,8 +56,8 @@ const SECTION_ORDER: FieldSection[] = [
  * 
  * Logic:
  * 1. Load all templates in the packet (via PacketTemplate → Template)
- * 2. Load all TemplateFieldMap rows for those templates
- * 3. Deduplicate by fieldKey
+ * 2. Load all TemplateFieldMap rows for those templates (with field_dictionary join)
+ * 3. Deduplicate by field_dictionary_id
  * 4. Mark a field as required = true if ANY TemplateFieldMap.requiredFlag is true
  * 
  * @param packetId - The packet ID to resolve fields for
@@ -71,7 +76,9 @@ export async function resolvePacketFields(packetId: string): Promise<ResolvedFie
 
   if (templateIds.length === 0) {
     return {
+      visibleFieldIds: [],
       visibleFieldKeys: [],
+      requiredFieldIds: [],
       requiredFieldKeys: [],
       fields: [],
       fieldsBySection: {} as Record<FieldSection, ResolvedField[]>,
@@ -79,45 +86,24 @@ export async function resolvePacketFields(packetId: string): Promise<ResolvedFie
     };
   }
 
-  // 2. Load all TemplateFieldMap rows for those templates
+  // 2. Load all TemplateFieldMap rows with joined field_dictionary
   const { data: fieldMaps, error: fmError } = await supabase
     .from('template_field_maps')
-    .select('field_key, required_flag, transform_rule')
+    .select(`
+      field_dictionary_id,
+      required_flag,
+      transform_rule,
+      field_dictionary!fk_template_field_maps_field_dictionary(*)
+    `)
     .in('template_id', templateIds);
 
   if (fmError) throw fmError;
 
-  // 3. Deduplicate and aggregate
-  // - requiredFieldKeys: field is required if ANY template requires it
-  // - visibleFieldKeys: all unique field keys
-  // - transformRulesMap: collect all transform rules per field
-  const requiredSet = new Set<string>();
-  const transformRulesMap: Record<string, string[]> = {};
-
-  (fieldMaps || []).forEach(fm => {
-    // Mark as required if ANY template requires this field
-    if (fm.required_flag) {
-      requiredSet.add(fm.field_key);
-    }
-    
-    // Collect transform rules (deduplicated per field)
-    if (fm.transform_rule) {
-      if (!transformRulesMap[fm.field_key]) {
-        transformRulesMap[fm.field_key] = [];
-      }
-      if (!transformRulesMap[fm.field_key].includes(fm.transform_rule)) {
-        transformRulesMap[fm.field_key].push(fm.transform_rule);
-      }
-    }
-  });
-
-  // Get unique visible field keys
-  const visibleFieldKeys = [...new Set((fieldMaps || []).map(fm => fm.field_key))];
-  const requiredFieldKeys = [...requiredSet];
-
-  if (visibleFieldKeys.length === 0) {
+  if (!fieldMaps || fieldMaps.length === 0) {
     return {
+      visibleFieldIds: [],
       visibleFieldKeys: [],
+      requiredFieldIds: [],
       requiredFieldKeys: [],
       fields: [],
       fieldsBySection: {} as Record<FieldSection, ResolvedField[]>,
@@ -125,30 +111,81 @@ export async function resolvePacketFields(packetId: string): Promise<ResolvedFie
     };
   }
 
-  // 4. Load field definitions from dictionary
-  const { data: fieldDefs, error: fdError } = await supabase
-    .from('field_dictionary')
-    .select('*')
-    .in('field_key', visibleFieldKeys);
+  // 3. Deduplicate and aggregate
+  // - requiredFieldIds: field is required if ANY template requires it
+  // - visibleFieldIds: all unique field dictionary IDs
+  // - transformRulesMap: collect all transform rules per field
+  const requiredSet = new Set<string>();
+  const transformRulesMap: Record<string, string[]> = {};
+  const fieldDataMap = new Map<string, any>(); // field_dictionary_id -> field_dictionary data
 
-  if (fdError) throw fdError;
+  (fieldMaps as any[]).forEach(fm => {
+    const fieldDictId = fm.field_dictionary_id;
+    const fieldDict = fm.field_dictionary;
+    
+    if (!fieldDict) return; // Skip if no joined data
+    
+    // Store field dictionary data
+    if (!fieldDataMap.has(fieldDictId)) {
+      fieldDataMap.set(fieldDictId, fieldDict);
+    }
+    
+    // Mark as required if ANY template requires this field
+    if (fm.required_flag) {
+      requiredSet.add(fieldDictId);
+    }
+    
+    // Collect transform rules (deduplicated per field)
+    if (fm.transform_rule) {
+      if (!transformRulesMap[fieldDictId]) {
+        transformRulesMap[fieldDictId] = [];
+      }
+      if (!transformRulesMap[fieldDictId].includes(fm.transform_rule)) {
+        transformRulesMap[fieldDictId].push(fm.transform_rule);
+      }
+    }
+  });
 
-  // Build resolved fields
-  const fields: ResolvedField[] = (fieldDefs || []).map(fd => ({
-    field_key: fd.field_key,
-    label: fd.label,
-    section: fd.section,
-    data_type: fd.data_type,
-    description: fd.description,
-    default_value: fd.default_value,
-    is_calculated: fd.is_calculated,
-    is_repeatable: fd.is_repeatable,
-    validation_rule: fd.validation_rule,
-    is_required: requiredSet.has(fd.field_key),
-    transform_rules: transformRulesMap[fd.field_key] || [],
-    calculation_formula: (fd as any).calculation_formula || null,
-    calculation_dependencies: (fd as any).calculation_dependencies || [],
-  }));
+  // Get unique visible field IDs
+  const visibleFieldIds = [...fieldDataMap.keys()];
+  const requiredFieldIds = [...requiredSet];
+
+  if (visibleFieldIds.length === 0) {
+    return {
+      visibleFieldIds: [],
+      visibleFieldKeys: [],
+      requiredFieldIds: [],
+      requiredFieldKeys: [],
+      fields: [],
+      fieldsBySection: {} as Record<FieldSection, ResolvedField[]>,
+      sections: [],
+    };
+  }
+
+  // Build resolved fields from the joined data
+  const fields: ResolvedField[] = visibleFieldIds.map(fieldDictId => {
+    const fd = fieldDataMap.get(fieldDictId)!;
+    return {
+      field_dictionary_id: fd.id,
+      field_key: fd.field_key,
+      label: fd.label,
+      section: fd.section,
+      data_type: fd.data_type,
+      description: fd.description,
+      default_value: fd.default_value,
+      is_calculated: fd.is_calculated,
+      is_repeatable: fd.is_repeatable,
+      validation_rule: fd.validation_rule,
+      is_required: requiredSet.has(fieldDictId),
+      transform_rules: transformRulesMap[fieldDictId] || [],
+      calculation_formula: fd.calculation_formula || null,
+      calculation_dependencies: fd.calculation_dependencies || [],
+    };
+  });
+
+  // Get visible and required field keys for backwards compatibility
+  const visibleFieldKeys = fields.map(f => f.field_key);
+  const requiredFieldKeys = fields.filter(f => f.is_required).map(f => f.field_key);
 
   // Sort by section order, then by label
   fields.sort((a, b) => {
@@ -173,7 +210,9 @@ export async function resolvePacketFields(packetId: string): Promise<ResolvedFie
   );
 
   return {
+    visibleFieldIds,
     visibleFieldKeys,
+    requiredFieldIds,
     requiredFieldKeys,
     fields,
     fieldsBySection,
