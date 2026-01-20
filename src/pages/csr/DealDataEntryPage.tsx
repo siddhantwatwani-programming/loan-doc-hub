@@ -46,19 +46,33 @@ interface Deal {
   packet_id: string | null;
 }
 
-// Section labels for display
+// Section labels for display - TMO-style naming
 const SECTION_LABELS: Record<FieldSection, string> = {
   borrower: 'Borrower',
-  broker: 'Broker',
-  co_borrower: 'Co-Borrower',
-  escrow: 'Escrow',
   loan_terms: 'Loan Terms',
-  other: 'Other',
+  broker: 'Broker',
   property: 'Property',
-  seller: 'Seller',
+  seller: 'Charges',
+  title: 'Dates',
+  escrow: 'Escrow',
+  co_borrower: 'Participants',
+  other: 'Notes',
   system: 'System',
-  title: 'Title',
 };
+
+// TMO-style section ordering - exact order as specified
+const TMO_SECTION_ORDER: FieldSection[] = [
+  'borrower',
+  'loan_terms',
+  'broker',
+  'property',
+  'seller',      // Charges
+  'title',       // Dates
+  'escrow',
+  'co_borrower', // Participants
+  'other',       // Notes
+  'system',
+];
 
 export const DealDataEntryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -147,6 +161,7 @@ export const DealDataEntryPage: React.FC = () => {
   } = useExternalModificationDetector(id || '');
 
   // Calculate visible fields and sections for external users
+  // Also ensures TMO-style section ordering
   const { 
     visibleSections, 
     visibleFieldsBySection, 
@@ -154,12 +169,19 @@ export const DealDataEntryPage: React.FC = () => {
     visibleFilledRequiredCount,
     externalMissingFields 
   } = useMemo(() => {
+    // Sort sections by TMO order and exclude 'system' from display
+    const sortSectionsByTMO = (sectionList: FieldSection[]): FieldSection[] => {
+      return TMO_SECTION_ORDER.filter(s => 
+        s !== 'system' && sectionList.includes(s)
+      );
+    };
+
     if (!isExternalUser) {
-      // Internal users see everything
+      // Internal users see everything (except system section)
       const totalRequired = fields.filter(f => f.is_required).length;
       const filledRequired = fields.filter(f => f.is_required && values[f.field_key]?.trim()).length;
       return {
-        visibleSections: sections,
+        visibleSections: sortSectionsByTMO(sections),
         visibleFieldsBySection: fieldsBySection,
         visibleRequiredCount: totalRequired,
         visibleFilledRequiredCount: filledRequired,
@@ -194,7 +216,9 @@ export const DealDataEntryPage: React.FC = () => {
       }
     });
 
-    const visibleSectionList = sections.filter(s => filteredBySection[s]?.length > 0);
+    const visibleSectionList = sortSectionsByTMO(
+      sections.filter(s => filteredBySection[s]?.length > 0)
+    );
 
     return {
       visibleSections: visibleSectionList,
