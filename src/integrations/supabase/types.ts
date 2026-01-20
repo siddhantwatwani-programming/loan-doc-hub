@@ -854,6 +854,24 @@ export type Database = {
         | "charge_history_actions"
         | "loan_charges_summary_header"
         | "loan_charges_summary_details"
+        | "loan_charges_history_header"
+        | "loan_charges_history_summary"
+        | "loan_charges_history_transactions"
+        | "loan_charges_toolbar"
+        | "properties_main_grid"
+        | "properties_eds"
+        | "customize_grid_config"
+        | "customize_grid_actions"
+        | "new_property_address"
+        | "new_property_appraisal"
+        | "new_property_legal"
+        | "new_property_tabs"
+        | "new_property_actions"
+        | "new_property_dropdowns"
+        | "trust_ledger_tabs"
+        | "trust_ledger_filters"
+        | "trust_ledger_grid"
+        | "trust_ledger_toolbar"
       generation_status: "queued" | "running" | "success" | "failed"
       output_type: "docx_only" | "docx_and_pdf"
       participant_access_method: "login" | "magic_link"
@@ -1018,6 +1036,24 @@ export const Constants = {
         "charge_history_actions",
         "loan_charges_summary_header",
         "loan_charges_summary_details",
+        "loan_charges_history_header",
+        "loan_charges_history_summary",
+        "loan_charges_history_transactions",
+        "loan_charges_toolbar",
+        "properties_main_grid",
+        "properties_eds",
+        "customize_grid_config",
+        "customize_grid_actions",
+        "new_property_address",
+        "new_property_appraisal",
+        "new_property_legal",
+        "new_property_tabs",
+        "new_property_actions",
+        "new_property_dropdowns",
+        "trust_ledger_tabs",
+        "trust_ledger_filters",
+        "trust_ledger_grid",
+        "trust_ledger_toolbar",
       ],
       generation_status: ["queued", "running", "success", "failed"],
       output_type: ["docx_only", "docx_and_pdf"],
