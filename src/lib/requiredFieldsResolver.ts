@@ -38,7 +38,8 @@ export interface ResolvedFieldSet {
   sections: FieldSection[];
 }
 
-// Section display order
+// Section display order - main UI sections only
+// These are the primary sections shown in the CSR data entry tabs
 const SECTION_ORDER: FieldSection[] = [
   'borrower',
   'co_borrower',
