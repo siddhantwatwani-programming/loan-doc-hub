@@ -833,6 +833,7 @@ export type Database = {
         | "date"
         | "percentage"
         | "boolean"
+        | "action"
       field_section:
         | "borrower"
         | "co_borrower"
@@ -844,6 +845,15 @@ export type Database = {
         | "other"
         | "broker"
         | "system"
+        | "charge_adjustment_loan_info"
+        | "charge_adjustment_adjustment_info"
+        | "charge_adjustment_adjustments"
+        | "charge_adjustment_actions"
+        | "charge_history_header"
+        | "charge_history_transaction_grid"
+        | "charge_history_actions"
+        | "loan_charges_summary_header"
+        | "loan_charges_summary_details"
       generation_status: "queued" | "running" | "success" | "failed"
       output_type: "docx_only" | "docx_and_pdf"
       participant_access_method: "login" | "magic_link"
@@ -986,6 +996,7 @@ export const Constants = {
         "date",
         "percentage",
         "boolean",
+        "action",
       ],
       field_section: [
         "borrower",
@@ -998,6 +1009,15 @@ export const Constants = {
         "other",
         "broker",
         "system",
+        "charge_adjustment_loan_info",
+        "charge_adjustment_adjustment_info",
+        "charge_adjustment_adjustments",
+        "charge_adjustment_actions",
+        "charge_history_header",
+        "charge_history_transaction_grid",
+        "charge_history_actions",
+        "loan_charges_summary_header",
+        "loan_charges_summary_details",
       ],
       generation_status: ["queued", "running", "success", "failed"],
       output_type: ["docx_only", "docx_and_pdf"],
