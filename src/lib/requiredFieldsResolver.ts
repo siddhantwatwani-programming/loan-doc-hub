@@ -44,9 +44,14 @@ const SECTION_ORDER: FieldSection[] = [
   'co_borrower',
   'property',
   'loan_terms',
+  'broker',
+  'charges',
+  'dates',
+  'escrow',
+  'participants',
+  'notes',
   'seller',
   'title',
-  'escrow',
   'other'
 ];
 
