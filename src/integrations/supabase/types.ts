@@ -834,6 +834,20 @@ export type Database = {
         | "percentage"
         | "boolean"
         | "action"
+        | "navigation"
+        | "entity_reference"
+        | "file"
+        | "label"
+        | "datetime"
+        | "date_range"
+        | "search_input"
+        | "sort_control"
+        | "object_reference"
+        | "reference"
+        | "document"
+        | "list"
+        | "dropdown"
+        | "integer"
       field_section:
         | "borrower"
         | "co_borrower"
@@ -872,6 +886,33 @@ export type Database = {
         | "trust_ledger_filters"
         | "trust_ledger_grid"
         | "trust_ledger_toolbar"
+        | "eds_confidential_info"
+        | "eds_messaging"
+        | "eds_notepro_toolbar"
+        | "eds_notepro_borrower_summary"
+        | "eds_notepro_tabs"
+        | "eds_notepro_letter_templates"
+        | "eds_notepro_letter_wizard"
+        | "credit_report_navigation"
+        | "cdfi_navigation"
+        | "event_journal_header"
+        | "event_journal_filters"
+        | "event_journal_columns"
+        | "event_journal_pagination"
+        | "loan_notes_navigation"
+        | "text_messages_navigation"
+        | "conversation_log_table"
+        | "conversation_log_filters"
+        | "conversation_log_toolbar"
+        | "conversation_log_pagination"
+        | "custom_fields_data"
+        | "attachments_grid"
+        | "attachments_filters"
+        | "attachments_toolbar"
+        | "edit_deposit_fields"
+        | "edit_deposit_actions"
+        | "edit_deposit_splits"
+        | "trust_ledger_data"
       generation_status: "queued" | "running" | "success" | "failed"
       output_type: "docx_only" | "docx_and_pdf"
       participant_access_method: "login" | "magic_link"
@@ -1015,6 +1056,20 @@ export const Constants = {
         "percentage",
         "boolean",
         "action",
+        "navigation",
+        "entity_reference",
+        "file",
+        "label",
+        "datetime",
+        "date_range",
+        "search_input",
+        "sort_control",
+        "object_reference",
+        "reference",
+        "document",
+        "list",
+        "dropdown",
+        "integer",
       ],
       field_section: [
         "borrower",
@@ -1054,6 +1109,33 @@ export const Constants = {
         "trust_ledger_filters",
         "trust_ledger_grid",
         "trust_ledger_toolbar",
+        "eds_confidential_info",
+        "eds_messaging",
+        "eds_notepro_toolbar",
+        "eds_notepro_borrower_summary",
+        "eds_notepro_tabs",
+        "eds_notepro_letter_templates",
+        "eds_notepro_letter_wizard",
+        "credit_report_navigation",
+        "cdfi_navigation",
+        "event_journal_header",
+        "event_journal_filters",
+        "event_journal_columns",
+        "event_journal_pagination",
+        "loan_notes_navigation",
+        "text_messages_navigation",
+        "conversation_log_table",
+        "conversation_log_filters",
+        "conversation_log_toolbar",
+        "conversation_log_pagination",
+        "custom_fields_data",
+        "attachments_grid",
+        "attachments_filters",
+        "attachments_toolbar",
+        "edit_deposit_fields",
+        "edit_deposit_actions",
+        "edit_deposit_splits",
+        "trust_ledger_data",
       ],
       generation_status: ["queued", "running", "success", "failed"],
       output_type: ["docx_only", "docx_and_pdf"],
