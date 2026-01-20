@@ -46,22 +46,22 @@ interface Deal {
   packet_id: string | null;
 }
 
-// Section labels for display
-const SECTION_LABELS: Record<FieldSection, string> = {
+// Section labels for display (partial - only includes displayable main sections)
+const SECTION_LABELS: Partial<Record<FieldSection, string>> = {
   borrower: 'Borrower',
+  co_borrower: 'Co-Borrower',
+  property: 'Property',
+  loan_terms: 'Loan Terms',
   broker: 'Broker',
   charges: 'Charges',
-  co_borrower: 'Co-Borrower',
   dates: 'Dates',
   escrow: 'Escrow',
-  loan_terms: 'Loan Terms',
-  notes: 'Notes',
-  other: 'Other',
   participants: 'Participants',
-  property: 'Property',
+  notes: 'Notes',
   seller: 'Seller',
-  system: 'System',
   title: 'Title',
+  other: 'Other',
+  system: 'System',
 };
 
 export const DealDataEntryPage: React.FC = () => {
