@@ -914,6 +914,10 @@ export type Database = {
         | "edit_deposit_actions"
         | "edit_deposit_splits"
         | "trust_ledger_data"
+        | "charges"
+        | "dates"
+        | "participants"
+        | "notes"
       generation_status: "queued" | "running" | "success" | "failed"
       output_type: "docx_only" | "docx_and_pdf"
       participant_access_method: "login" | "magic_link"
@@ -1138,6 +1142,10 @@ export const Constants = {
         "edit_deposit_actions",
         "edit_deposit_splits",
         "trust_ledger_data",
+        "charges",
+        "dates",
+        "participants",
+        "notes",
       ],
       generation_status: ["queued", "running", "success", "failed"],
       output_type: ["docx_only", "docx_and_pdf"],
