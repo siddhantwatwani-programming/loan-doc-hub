@@ -38,19 +38,16 @@ export interface ResolvedFieldSet {
   sections: FieldSection[];
 }
 
-// TMO-style section display order
-// Order: Borrower → Loan Terms → Broker → Property → Charges (other) → Dates (system) → Escrow → Participants (seller/co_borrower/title) → Notes
+// Section display order
 const SECTION_ORDER: FieldSection[] = [
-  'borrower',      // Borrower
-  'loan_terms',    // Loan Terms
-  'broker',        // Broker
-  'property',      // Property
-  'other',         // Charges
-  'system',        // Dates
-  'escrow',        // Escrow
-  'seller',        // Participants (Seller)
-  'co_borrower',   // Participants (Co-Borrower)
-  'title',         // Title/Participants
+  'borrower',
+  'co_borrower',
+  'property',
+  'loan_terms',
+  'seller',
+  'title',
+  'escrow',
+  'other'
 ];
 
 /**

@@ -46,18 +46,18 @@ interface Deal {
   packet_id: string | null;
 }
 
-// TMO-style section labels for display
+// Section labels for display
 const SECTION_LABELS: Record<FieldSection, string> = {
   borrower: 'Borrower',
-  loan_terms: 'Loan Terms',
   broker: 'Broker',
-  property: 'Property',
-  other: 'Charges',
-  system: 'Dates',
-  escrow: 'Escrow',
-  seller: 'Participants',
   co_borrower: 'Co-Borrower',
-  title: 'Notes',
+  escrow: 'Escrow',
+  loan_terms: 'Loan Terms',
+  other: 'Other',
+  property: 'Property',
+  seller: 'Seller',
+  system: 'System',
+  title: 'Title',
 };
 
 export const DealDataEntryPage: React.FC = () => {
