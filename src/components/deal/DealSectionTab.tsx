@@ -150,18 +150,46 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
 
       {/* Fields grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {visibleFields.map(field => (
-          <DealFieldInput
-            key={field.field_key}
-            field={field}
-            value={values[field.field_key] || ''}
-            onChange={(value) => onValueChange(field.field_key, value)}
-            error={missingFieldKeys.has(field.field_key)}
-            showValidation={showValidation}
-            calculationResult={calculationResults[field.field_key]}
-            disabled={readOnlyFields.has(field.field_key)}
-          />
-        ))}
+        {visibleFields.map(field => {
+          // Non-input types (section, label, template, action) render differently
+          const isNonInputType = ['section', 'label', 'template', 'action'].includes(field.data_type);
+          
+          if (isNonInputType) {
+            // Non-input types get full width and simpler rendering
+            return (
+              <div 
+                key={field.field_key} 
+                className={cn(
+                  field.data_type === 'section' && 'col-span-full',
+                  field.data_type === 'label' && 'col-span-full'
+                )}
+              >
+                <DealFieldInput
+                  field={field}
+                  value={values[field.field_key] || ''}
+                  onChange={(value) => onValueChange(field.field_key, value)}
+                  error={false}
+                  showValidation={false}
+                  disabled={true}
+                />
+              </div>
+            );
+          }
+          
+          // Standard input fields
+          return (
+            <DealFieldInput
+              key={field.field_key}
+              field={field}
+              value={values[field.field_key] || ''}
+              onChange={(value) => onValueChange(field.field_key, value)}
+              error={missingFieldKeys.has(field.field_key)}
+              showValidation={showValidation}
+              calculationResult={calculationResults[field.field_key]}
+              disabled={readOnlyFields.has(field.field_key)}
+            />
+          );
+        })}
       </div>
     </div>
   );

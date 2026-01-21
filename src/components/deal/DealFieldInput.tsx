@@ -181,7 +181,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     />
   );
 
-  // Render standard input (text, number, currency, percentage)
+  // Render standard input (text, number, currency, percentage, decimal)
   const renderInput = () => {
     const prefix = getInputPrefix();
     const suffix = getInputSuffix();
@@ -196,7 +196,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
         <Input
           id={field.field_key}
           type="text"
-          inputMode={['number', 'currency', 'percentage'].includes(field.data_type) ? 'decimal' : 'text'}
+          inputMode={['number', 'currency', 'percentage', 'decimal', 'integer'].includes(field.data_type) ? 'decimal' : 'text'}
           value={getDisplayValue()}
           onChange={handleChange}
           onBlur={handleBlur}
@@ -220,8 +220,110 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     );
   };
 
+  // Render phone input
+  const renderPhoneInput = () => (
+    <Input
+      id={field.field_key}
+      type="tel"
+      inputMode="tel"
+      value={value || ''}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      onFocus={handleFocus}
+      disabled={isDisabled}
+      className={cn(
+        'transition-colors',
+        showError && 'border-destructive focus:ring-destructive bg-destructive/5',
+        isDisabled && 'bg-muted cursor-not-allowed'
+      )}
+      placeholder={field.description || 'Phone number'}
+    />
+  );
+
+  // Render section header (non-input)
+  const renderSectionHeader = () => (
+    <div className="col-span-2 border-b border-border pb-2 mt-4 first:mt-0">
+      <span className="font-semibold text-sm text-foreground">{field.label}</span>
+    </div>
+  );
+
+  // Render label (static text, non-input)
+  const renderLabel = () => (
+    <p className="text-sm text-muted-foreground italic">{field.label}</p>
+  );
+
+  // Render template button
+  const renderTemplateButton = () => (
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={isDisabled}
+      className="justify-start text-left h-auto py-2"
+      onClick={() => {
+        // Template click handler - can be extended later
+        console.log('Template clicked:', field.field_key);
+      }}
+    >
+      {field.label}
+    </Button>
+  );
+
+  // Render action button
+  const renderActionButton = () => (
+    <Button
+      variant="default"
+      size="sm"
+      disabled={isDisabled}
+      onClick={() => {
+        // Action click handler - can be extended later
+        console.log('Action clicked:', field.field_key);
+      }}
+    >
+      {field.label}
+    </Button>
+  );
+
+  // Render file input
+  const renderFileInput = () => (
+    <Input
+      id={field.field_key}
+      type="file"
+      disabled={isDisabled}
+      className={cn(
+        'transition-colors cursor-pointer',
+        showError && 'border-destructive focus:ring-destructive bg-destructive/5',
+        isDisabled && 'bg-muted cursor-not-allowed'
+      )}
+    />
+  );
+
   // Choose the right input based on data type
   const renderFieldInput = () => {
+    // Handle non-input data types first
+    if (field.data_type === 'section') {
+      return renderSectionHeader();
+    }
+    
+    if (field.data_type === 'label') {
+      return renderLabel();
+    }
+    
+    if (field.data_type === 'template') {
+      return renderTemplateButton();
+    }
+    
+    if (field.data_type === 'action') {
+      return renderActionButton();
+    }
+    
+    if (field.data_type === 'file') {
+      return renderFileInput();
+    }
+    
+    if (field.data_type === 'phone') {
+      return renderPhoneInput();
+    }
+
     if (field.data_type === 'date') {
       return renderDatePicker();
     }
@@ -232,6 +334,17 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     
     return renderInput();
   };
+
+  // For non-input types (section, label, template, action), render without the label wrapper
+  const isNonInputType = ['section', 'label'].includes(field.data_type);
+  
+  if (isNonInputType) {
+    return (
+      <div id={`field-${field.field_key}`}>
+        {renderFieldInput()}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2" id={`field-${field.field_key}`}>
