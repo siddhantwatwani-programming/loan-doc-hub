@@ -849,6 +849,9 @@ export type Database = {
         | "dropdown"
         | "integer"
         | "phone"
+        | "section"
+        | "template"
+        | "decimal"
       field_section:
         | "borrower"
         | "co_borrower"
@@ -1076,6 +1079,9 @@ export const Constants = {
         "dropdown",
         "integer",
         "phone",
+        "section",
+        "template",
+        "decimal",
       ],
       field_section: [
         "borrower",
