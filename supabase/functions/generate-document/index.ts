@@ -373,6 +373,26 @@ const MERGE_TAG_TO_FIELD_MAP: Record<string, string> = {
   "Signer_Title": "Allonge.Title",
 };
 
+// Map static document labels to canonical field keys for label-based replacement
+// This allows templates with static labels (no merge fields) to still be populated
+const LABEL_TO_FIELD_MAP: Record<string, { fieldKey: string; transform?: string; replaceNext?: string }> = {
+  // Allonge to Note specific labels
+  "DATE OF NOTE:": { fieldKey: "other.date_of_note", transform: "date_long" },
+  "MORTGAGOR (S):": { fieldKey: "other.mortgagor_s" },
+  "MORTGAGOR(S):": { fieldKey: "other.mortgagor_s" },
+  "PROPERTY ADDRESS:": { fieldKey: "Property1.Address" },
+  "LOAN AMOUNT:": { fieldKey: "Terms.LoanAmount", transform: "currency" },
+  "LOAN NO.:": { fieldKey: "Terms.LoanNumber" },
+  "LOAN NO:": { fieldKey: "Terms.LoanNumber" },
+  "Lender Name:": { fieldKey: "Lender.Name" },
+  "Print Name:": { fieldKey: "Allonge.PrintName" },
+  "Title:": { fieldKey: "Allonge.Title" },
+  // The execution date appears after "as of" in the witness clause
+  "as of _": { fieldKey: "Allonge.ExecutionDate", transform: "date_long" },
+  // PAY TO THE ORDER OF - need to replace the text that follows (CALIFORNIA HOUSING FINANCE AGENCY)
+  "PAY TO THE ORDER OF": { fieldKey: "Allonge.PayToOrderOf", replaceNext: "CALIFORNIA HOUSING FINANCE AGENCY" },
+};
+
 function resolveFieldKey(tagName: string): string {
   // Clean the tag name (remove trailing underscores, etc.)
   const cleanedTag = tagName.replace(/_+$/, "").trim();
@@ -491,6 +511,94 @@ function parseWordMergeFields(content: string): ParsedMergeTag[] {
   return tags;
 }
 
+/**
+ * Perform label-based replacement for templates without explicit merge tags.
+ * This finds static labels like "DATE OF NOTE:" and appends the corresponding value.
+ */
+function replaceLabelBasedFields(
+  content: string,
+  fieldValues: Map<string, { rawValue: string | number | null; dataType: string }>,
+  fieldTransforms: Map<string, string>
+): { content: string; replacementCount: number } {
+  let result = content;
+  let replacementCount = 0;
+  
+  for (const [label, mapping] of Object.entries(LABEL_TO_FIELD_MAP)) {
+    const fieldData = fieldValues.get(mapping.fieldKey);
+    if (!fieldData || fieldData.rawValue === null) {
+      console.log(`[generate-document] Label "${label}" -> No data for ${mapping.fieldKey}`);
+      continue;
+    }
+    
+    // Determine the formatted value
+    const transform = mapping.transform || fieldTransforms.get(mapping.fieldKey);
+    let formattedValue: string;
+    if (transform) {
+      formattedValue = applyTransform(fieldData.rawValue, transform);
+    } else {
+      formattedValue = formatByDataType(fieldData.rawValue, fieldData.dataType);
+    }
+    
+    // Handle special case for execution date with underscores
+    if (label === "as of _") {
+      // Replace "as of ___..." pattern with "as of [date]"
+      const asOfPattern = /as of\s*_+/gi;
+      if (asOfPattern.test(result)) {
+        result = result.replace(asOfPattern, `as of ${formattedValue}`);
+        replacementCount++;
+        console.log(`[generate-document] Label-replaced "as of ___" -> "${formattedValue}"`);
+      }
+      continue;
+    }
+    
+    // Handle special case where we need to replace text that follows the label
+    if ((mapping as any).replaceNext) {
+      const textToReplace = (mapping as any).replaceNext;
+      const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const replaceNextPattern = new RegExp(escapedText, 'gi');
+      
+      if (replaceNextPattern.test(result)) {
+        result = result.replace(replaceNextPattern, formattedValue);
+        replacementCount++;
+        console.log(`[generate-document] Label-replaced "${textToReplace}" -> "${formattedValue}"`);
+      }
+      continue;
+    }
+    
+    // Find the label in the XML content (may be split across tags)
+    // First try exact match in the content
+    const labelEscaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    
+    // Pattern to find the label possibly followed by whitespace or closing tags, then content until next tag/label
+    // We want to insert the value right after the label
+    const labelPattern = new RegExp(`(${labelEscaped})(\\s*)`, 'gi');
+    
+    if (labelPattern.test(result)) {
+      result = result.replace(labelPattern, `$1$2${formattedValue} `);
+      replacementCount++;
+      console.log(`[generate-document] Label-replaced "${label}" -> "${formattedValue}"`);
+    } else {
+      // Try to find the label that may be split in Word XML
+      // Look for the label text that might be fragmented
+      const labelWords = label.replace(':', '').trim().split(/\s+/);
+      if (labelWords.length > 0) {
+        // Try finding just the key word with colon
+        const simpleLabel = labelWords[labelWords.length - 1] + ':';
+        const simpleLabelEscaped = simpleLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const simpleLabelPattern = new RegExp(`(${simpleLabelEscaped})(\\s*)`, 'gi');
+        
+        if (simpleLabelPattern.test(result)) {
+          result = result.replace(simpleLabelPattern, `$1$2${formattedValue} `);
+          replacementCount++;
+          console.log(`[generate-document] Label-replaced (simple) "${simpleLabel}" -> "${formattedValue}"`);
+        }
+      }
+    }
+  }
+  
+  return { content: result, replacementCount };
+}
+
 function replaceMergeTags(
   content: string,
   fieldValues: Map<string, { rawValue: string | number | null; dataType: string }>,
@@ -522,6 +630,14 @@ function replaceMergeTags(
     // Leave unmapped/empty tags blank (as per requirements)
     
     result = result.split(tag.fullMatch).join(resolvedValue);
+  }
+  
+  // If no merge tags were found, try label-based replacement
+  if (tags.length === 0) {
+    console.log(`[generate-document] No merge tags found, attempting label-based replacement`);
+    const labelResult = replaceLabelBasedFields(result, fieldValues, fieldTransforms);
+    result = labelResult.content;
+    console.log(`[generate-document] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
   }
   
   return result;
@@ -644,15 +760,28 @@ async function generateSingleDocument(
       fieldDefMap.set(fd.field_key, fd);
     });
 
-    // 3. Fetch deal field values
+    // 3. Fetch ALL deal field values (not just mapped ones, for label-based replacement)
     const { data: dealFieldValues } = await supabase
       .from("deal_field_values")
       .select("field_dictionary_id, value_text, value_number, value_date")
       .eq("deal_id", dealId);
 
+    // Get all field dictionary IDs from deal values
+    const allFieldDictIds = [...new Set((dealFieldValues || []).map((dfv: any) => dfv.field_dictionary_id).filter(Boolean))];
+    
+    // Fetch ALL field dictionary entries for deal values
+    const { data: allFieldDictEntries } = await supabase
+      .from("field_dictionary")
+      .select("id, field_key, data_type, label")
+      .in("id", allFieldDictIds);
+
+    // Create a complete lookup map for all field dictionary entries
+    const allFieldDictMap = new Map<string, FieldDefinition>();
+    (allFieldDictEntries || []).forEach((fd: any) => allFieldDictMap.set(fd.id, fd));
+
     const fieldValues = new Map<string, { rawValue: string | number | null; dataType: string }>();
     (dealFieldValues || []).forEach((dfv: any) => {
-      const fieldDict = fieldDictMap.get(dfv.field_dictionary_id);
+      const fieldDict = allFieldDictMap.get(dfv.field_dictionary_id);
       if (fieldDict) {
         const fieldKey = fieldDict.field_key;
         const dataType = fieldDict.data_type || "text";
