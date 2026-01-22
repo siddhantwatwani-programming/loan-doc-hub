@@ -375,20 +375,21 @@ const MERGE_TAG_TO_FIELD_MAP: Record<string, string> = {
 
 // Map static document labels to canonical field keys for label-based replacement
 // This allows templates with static labels (no merge fields) to still be populated
-const LABEL_TO_FIELD_MAP: Record<string, { fieldKey: string; transform?: string; replaceNext?: string }> = {
+const LABEL_TO_FIELD_MAP: Record<string, { fieldKey: string; replaceNext?: string }> = {
   // Allonge to Note specific labels
-  "DATE OF NOTE:": { fieldKey: "other.date_of_note", transform: "date_long" },
+  "DATE OF NOTE:": { fieldKey: "other.date_of_note" },
   "MORTGAGOR (S):": { fieldKey: "other.mortgagor_s" },
   "MORTGAGOR(S):": { fieldKey: "other.mortgagor_s" },
   "PROPERTY ADDRESS:": { fieldKey: "Property1.Address" },
-  "LOAN AMOUNT:": { fieldKey: "Terms.LoanAmount", transform: "currency" },
+  "LOAN AMOUNT:": { fieldKey: "Terms.LoanAmount" },
   "LOAN NO.:": { fieldKey: "Terms.LoanNumber" },
   "LOAN NO:": { fieldKey: "Terms.LoanNumber" },
-  "Lender Name:": { fieldKey: "Lender.Name" },
+  // Requirement: Lender Name -> lender.nameAddress
+  "Lender Name:": { fieldKey: "lender.nameAddress" },
   "Print Name:": { fieldKey: "Allonge.PrintName" },
   "Title:": { fieldKey: "Allonge.Title" },
   // The execution date appears after "as of" in the witness clause
-  "as of _": { fieldKey: "Allonge.ExecutionDate", transform: "date_long" },
+  "as of _": { fieldKey: "Allonge.ExecutionDate" },
   // PAY TO THE ORDER OF - need to replace the text that follows (CALIFORNIA HOUSING FINANCE AGENCY)
   "PAY TO THE ORDER OF": { fieldKey: "Allonge.PayToOrderOf", replaceNext: "CALIFORNIA HOUSING FINANCE AGENCY" },
 };
@@ -526,12 +527,33 @@ function replaceLabelBasedFields(
   for (const [label, mapping] of Object.entries(LABEL_TO_FIELD_MAP)) {
     const fieldData = fieldValues.get(mapping.fieldKey);
     if (!fieldData || fieldData.rawValue === null) {
-      console.log(`[generate-document] Label "${label}" -> No data for ${mapping.fieldKey}`);
+      // Requirement: if mapped field is empty, leave the document field blank.
+      // For labels that replace a following placeholder, blank that placeholder.
+      if ((mapping as any).replaceNext) {
+        const textToReplace = (mapping as any).replaceNext;
+        const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const replaceNextPattern = new RegExp(escapedText, "gi");
+        if (replaceNextPattern.test(result)) {
+          result = result.replace(replaceNextPattern, "");
+          replacementCount++;
+          console.log(`[generate-document] Label "${label}" -> No data; blanked "${textToReplace}"`);
+        }
+      } else if (label === "as of _") {
+        const asOfPattern = /as of\s*_+/gi;
+        if (asOfPattern.test(result)) {
+          result = result.replace(asOfPattern, "as of ");
+          replacementCount++;
+          console.log(`[generate-document] Label "${label}" -> No data; blanked "as of ___"`);
+        }
+      } else {
+        console.log(`[generate-document] Label "${label}" -> No data for ${mapping.fieldKey}`);
+      }
       continue;
     }
     
-    // Determine the formatted value
-    const transform = mapping.transform || fieldTransforms.get(mapping.fieldKey);
+    // Determine the formatted value ONLY via existing TemplateFieldMap rule (fieldTransforms)
+    // or default data-type formatting. No label-specific transforms.
+    const transform = fieldTransforms.get(mapping.fieldKey);
     let formattedValue: string;
     if (transform) {
       formattedValue = applyTransform(fieldData.rawValue, transform);
@@ -577,21 +599,17 @@ function replaceLabelBasedFields(
       result = result.replace(labelPattern, `$1$2${formattedValue} `);
       replacementCount++;
       console.log(`[generate-document] Label-replaced "${label}" -> "${formattedValue}"`);
-    } else {
-      // Try to find the label that may be split in Word XML
-      // Look for the label text that might be fragmented
-      const labelWords = label.replace(':', '').trim().split(/\s+/);
-      if (labelWords.length > 0) {
-        // Try finding just the key word with colon
-        const simpleLabel = labelWords[labelWords.length - 1] + ':';
-        const simpleLabelEscaped = simpleLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const simpleLabelPattern = new RegExp(`(${simpleLabelEscaped})(\\s*)`, 'gi');
-        
-        if (simpleLabelPattern.test(result)) {
-          result = result.replace(simpleLabelPattern, `$1$2${formattedValue} `);
-          replacementCount++;
-          console.log(`[generate-document] Label-replaced (simple) "${simpleLabel}" -> "${formattedValue}"`);
-        }
+    } else if (label.endsWith(':')) {
+      // Colon-tolerant match: label text + optional whitespace/XML tags + ':'
+      // This helps when Word splits the ':' into a separate run.
+      const labelNoColon = label.slice(0, -1);
+      const labelNoColonEscaped = labelNoColon.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const colonTolerantPattern = new RegExp(`(${labelNoColonEscaped})(?:\\s|<[^>]+>)*:`, 'gi');
+
+      if (colonTolerantPattern.test(result)) {
+        result = result.replace(colonTolerantPattern, `$&${formattedValue} `);
+        replacementCount++;
+        console.log(`[generate-document] Label-replaced (colon-tolerant) "${label}" -> "${formattedValue}"`);
       }
     }
   }
