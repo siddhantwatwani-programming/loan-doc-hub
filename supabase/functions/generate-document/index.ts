@@ -355,7 +355,22 @@ const MERGE_TAG_TO_FIELD_MAP: Record<string, string> = {
   "Lender_Name": "Lender.Name",
   "Lender_Vesting": "Lender.Vesting",
   "Lender_address": "Lender.Address",
+  "Lender_Address": "Lender.Address",
   "Beneficial_interest_": "Lender.BeneficialInterest",
+  
+  // Allonge to Note specific mappings
+  "Note_Date": "Terms.NoteDate",
+  "Date_of_Note": "Terms.NoteDate",
+  "Mortgagor": "Borrower.Name",
+  "Mortgagors": "Borrower.Name",
+  "Pay_To_Order_Of": "Allonge.PayToOrderOf",
+  "Pay_To_The_Order_Of": "Allonge.PayToOrderOf",
+  "Execution_Date": "Allonge.ExecutionDate",
+  "Allonge_Execution_Date": "Allonge.ExecutionDate",
+  "Authorized_Signature": "Allonge.AuthorizedSignature",
+  "Print_Name": "Allonge.PrintName",
+  "Title": "Allonge.Title",
+  "Signer_Title": "Allonge.Title",
 };
 
 function resolveFieldKey(tagName: string): string {
