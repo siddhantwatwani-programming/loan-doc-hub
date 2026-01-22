@@ -691,6 +691,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_template_field_maps_field_dictionary"
+            columns: ["field_dictionary_id"]
+            isOneToOne: false
+            referencedRelation: "field_dictionary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_template_field_maps_template"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "template_field_maps_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
