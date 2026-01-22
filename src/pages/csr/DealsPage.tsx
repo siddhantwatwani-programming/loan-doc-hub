@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +20,9 @@ import {
   Loader2,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -73,6 +75,8 @@ const modeLabels: Record<string, string> = {
   servicing_only: 'Servicing Only',
 };
 
+const PAGE_SIZE = 20;
+
 export const DealsPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -83,31 +87,22 @@ export const DealsPage: React.FC = () => {
   const [filterState, setFilterState] = useState<string>('');
   const [filterProduct, setFilterProduct] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
-  useEffect(() => {
-    fetchDeals();
-
-    // Real-time subscription
-    const channel = supabase
-      .channel('deals-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'deals' },
-        () => fetchDeals()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const fetchDeals = async () => {
+  const fetchDeals = useCallback(async (page: number = 1) => {
+    setLoading(true);
     try {
-      const { data, error } = await supabase
+      const from = (page - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const { data, error, count } = await supabase
         .from('deals')
-        .select('*, packets(name)')
-        .order('created_at', { ascending: false });
+        .select('*, packets(name)', { count: 'exact' })
+        .order('updated_at', { ascending: false })
+        .range(from, to);
 
       if (error) throw error;
 
@@ -117,6 +112,8 @@ export const DealsPage: React.FC = () => {
           packet: d.packets,
         }))
       );
+      setTotalCount(count || 0);
+      setCurrentPage(page);
     } catch (error) {
       console.error('Error fetching deals:', error);
       toast({
@@ -127,6 +124,32 @@ export const DealsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchDeals(1);
+
+    // Real-time subscription - refresh current page
+    const channel = supabase
+      .channel('deals-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'deals' },
+        () => fetchDeals(1) // Always go to page 1 on changes to show newest
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchDeals]);
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      fetchDeals(page);
+    }
   };
 
   const handleDelete = async (deal: Deal) => {
@@ -136,7 +159,7 @@ export const DealsPage: React.FC = () => {
       const { error } = await supabase.from('deals').delete().eq('id', deal.id);
       if (error) throw error;
       toast({ title: 'Deal deleted' });
-      fetchDeals();
+      fetchDeals(currentPage);
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -377,6 +400,62 @@ export const DealsPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t border-border mt-4">
+              <p className="text-sm text-muted-foreground">
+                Showing {((currentPage - 1) * PAGE_SIZE) + 1}-{Math.min(currentPage * PAGE_SIZE, totalCount)} of {totalCount} deals
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="gap-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => handlePageChange(pageNum)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="gap-1"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
