@@ -75,7 +75,7 @@ const modeLabels: Record<string, string> = {
   servicing_only: 'Servicing Only',
 };
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 export const DealsPage: React.FC = () => {
   const navigate = useNavigate();
