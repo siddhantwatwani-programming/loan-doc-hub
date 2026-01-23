@@ -795,13 +795,13 @@ function replaceMergeTags(
     result = result.split(tag.fullMatch).join(resolvedValue);
   }
   
-  // If no merge tags were found, try label-based replacement
-  if (tags.length === 0) {
-    console.log(`[generate-document] No merge tags found, attempting label-based replacement`);
-    const labelResult = replaceLabelBasedFields(result, fieldValues, fieldTransforms);
-    result = labelResult.content;
-    console.log(`[generate-document] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
-  }
+  // Always run label-based replacement after merge tag replacement.
+  // Some templates (like Assignment of Deed of Trust 100%) have merge tags in headers/footers
+  // but use static labels in the body that need to be replaced with field values.
+  console.log(`[generate-document] Running label-based replacement (${tags.length} merge tags were processed)`);
+  const labelResult = replaceLabelBasedFields(result, fieldValues, fieldTransforms);
+  result = labelResult.content;
+  console.log(`[generate-document] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
   
   return result;
 }
