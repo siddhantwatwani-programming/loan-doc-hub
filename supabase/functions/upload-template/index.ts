@@ -34,8 +34,8 @@ serve(async (req) => {
       bytes[i] = binaryString.charCodeAt(i);
     }
 
-    // Upload to templates bucket
-    const storagePath = `templates/${fileName}`;
+    // Upload to templates bucket (use just fileName, not nested "templates/" path)
+    const storagePath = fileName;
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from("templates")
       .upload(storagePath, bytes, {
@@ -51,10 +51,10 @@ serve(async (req) => {
       );
     }
 
-    // Update the template record with the file path
+    // Update the template record with the file path (just use fileName directly)
     const { error: updateError } = await supabase
       .from("templates")
-      .update({ file_path: storagePath })
+      .update({ file_path: fileName })
       .eq("id", templateId);
 
     if (updateError) {
