@@ -104,10 +104,25 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
       // 1. Resolve required fields for this packet (deterministic resolver)
       const resolved = await resolvePacketFields(packetId!);
 
-      // UI: Ensure certain sections render as tabs when they exist in field_dictionary,
+      // UI: Ensure all standard sections render as tabs when they exist in field_dictionary,
       // even if they are not mapped in TemplateFieldMap for the active packet.
       // NOTE: Required-field logic remains driven by TemplateFieldMap (resolved.requiredFieldKeys).
-      const TMO_TAB_SECTIONS: FieldSection[] = ['lender', 'participants', 'title'];
+      const TMO_TAB_SECTIONS: FieldSection[] = [
+        'borrower',
+        'co_borrower',
+        'property',
+        'loan_terms',
+        'lender',
+        'broker',
+        'charges',
+        'dates',
+        'escrow',
+        'participants',
+        'notes',
+        'seller',
+        'title',
+        'other'
+      ];
 
       let mergedResolved = resolved;
       try {
@@ -154,11 +169,11 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
             return acc;
           }, {} as Record<FieldSection, ResolvedField[]>);
 
-          // Append the requested tabs after whatever the packet already exposes
-          const appendedSectionsInOrder = TMO_TAB_SECTIONS.filter(
-            (s) => (mergedFieldsBySection[s]?.length || 0) > 0 && !resolved.sections.includes(s)
+          // Use TMO_TAB_SECTIONS order for consistent tab display
+          // Filter to sections that have fields in the merged set
+          const mergedSections = TMO_TAB_SECTIONS.filter(
+            (s) => (mergedFieldsBySection[s]?.length || 0) > 0
           );
-          const mergedSections = [...resolved.sections, ...appendedSectionsInOrder];
 
           mergedResolved = {
             ...resolved,
