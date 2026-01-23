@@ -623,10 +623,17 @@ export const DealDocumentsPage: React.FC = () => {
                 const latestDoc = getLatestDocumentForTemplate(template.id);
                 const history = getDocumentHistory(template.id);
                 const hasFile = !!template.file_path;
+                const latestJob = recentJobs?.[0] || null;
                 const needsTemplateUpload =
+                  // No file path on template
                   !hasFile ||
+                  // A generated_documents row exists but couldn't download
                   (latestDoc?.generation_status === 'failed' &&
-                    (latestDoc.error_message || '').toLowerCase().includes('failed to download template file'));
+                    (latestDoc.error_message || '').toLowerCase().includes('failed to download template file')) ||
+                  // A generation job failed before inserting a generated_documents row
+                  (latestJob?.status === 'failed' &&
+                    (latestJob.error_message || '').toLowerCase().includes('failed to download template file') &&
+                    (latestJob.error_message || '').includes(template.name));
 
                 return (
                   <div
