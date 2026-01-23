@@ -409,11 +409,16 @@ const MERGE_TAG_TO_FIELD_MAP: Record<string, string> = {
   "Notary_Execution_Date": "notary.execution_date",
   "Notary_Name": "notary.name",
   "Notary_Seal": "notary.seal",
-  "Notary1_State": "notary1.state",
-  "Notary1_County": "notary1.county",
-  "Notary1_Appearing_Party": "notary1.appearing_party_names",
-  "Notary1_Appearing_Party_Names": "notary1.appearing_party_names",
-  "Notary1_Signature": "notary1.signature",
+  "Notary_Date": "notary.date",
+  "Notary_Commission_Expiry": "notary.commission_expiry",
+  "Notary_County": "notary.county",
+  "Notary_State": "notary.state",
+  "Notary_Appearing_Party_Names": "notary.appearing_party_names",
+  "Notary1_State": "notary.state",
+  "Notary1_County": "notary.county",
+  "Notary1_Appearing_Party": "notary.appearing_party_names",
+  "Notary1_Appearing_Party_Names": "notary.appearing_party_names",
+  "Notary1_Signature": "notary.signature",
   
   // Document fields
   "Document_Page_Number": "document.page_number",
@@ -476,6 +481,21 @@ const LABEL_TO_FIELD_MAP: Record<string, { fieldKey: string; replaceNext?: strin
   "Authorized Signor Name": { fieldKey: "signatory.name", replaceNext: "Authorized Signor Name" },
   "Title / Capacity": { fieldKey: "signatory.title", replaceNext: "Title / Capacity" },
   "Current Lender Vesting (or Successor if applicable),": { fieldKey: "lender.current.vesting", replaceNext: "Current Lender Vesting (or Successor if applicable)," },
+  
+  // Assignment of Deed of Trust (100%) - Notary section labels
+  "Notary Name": { fieldKey: "notary.name", replaceNext: "Notary Name" },
+  "Notary Seal": { fieldKey: "notary.seal", replaceNext: "Notary Seal" },
+  "Notary Date": { fieldKey: "notary.date", replaceNext: "Notary Date" },
+  "Notary Commission Expiry": { fieldKey: "notary.commission_expiry", replaceNext: "Notary Commission Expiry" },
+  "Notary County": { fieldKey: "notary.county", replaceNext: "Notary County" },
+  "Notary State": { fieldKey: "notary.state", replaceNext: "Notary State" },
+  "Appearing Party Names": { fieldKey: "notary.appearing_party_names", replaceNext: "Appearing Party Names" },
+  // Alternative notary label patterns
+  "State of": { fieldKey: "notary.state", replaceNext: "State of" },
+  "County of": { fieldKey: "notary.county", replaceNext: "County of" },
+  "Commission Expires": { fieldKey: "notary.commission_expiry" },
+  "My Commission Expires": { fieldKey: "notary.commission_expiry" },
+  "personally appeared": { fieldKey: "notary.appearing_party_names", replaceNext: "personally appeared" },
 };
 
 function resolveFieldKey(tagName: string): string {
