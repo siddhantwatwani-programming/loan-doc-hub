@@ -358,42 +358,64 @@ const MERGE_TAG_TO_FIELD_MAP: Record<string, string> = {
   "F1428": "system.field_code_f1428",
   "F1429": "system.field_code_f1429",
   
-  // Assignment of Deed of Trust (100%) - Document field mappings
-  "Assignee_Name": "assignee.name",
-  "Assignee_Address": "assignee.address",
-  "DOT_Date": "deedOfTrust.date",
-  "DOT_Grantor": "deedOfTrust.grantor",
-  "DOT_Trustee": "deedOfTrust.trustee",
-  "DOT_Recording_Date": "deed_of_trust.recording_date",
-  "DOT_Instrument_Number": "deed_of_trust.instrument_number",
-  "DOT_County": "deed_of_trust.county",
-  "Vesting": "assignment.vesting",
+  // Assignment of Deed of Trust (100%) - Document field mappings (39 fields)
+  // Loan & Property fields (unique merge tags to avoid conflicts)
+  "Loan_Loan_Number": "loan.loan_number",
+  "Deal_Loan_Number": "loan.loan_number",
+  "Property_Legal_Description": "property.legalDescription",
+  "Legal_Description": "property.legalDescription",
+  "Property_APN": "property.apn",
+  "Assessors_Parcel_Number": "property.apn",
+  
+  // Borrower fields (unique merge tags)
+  "Deal_Borrower_Name": "borrower.name",
+  "Borrower_Full_Name": "borrower.name",
+  "Borrower_Vesting": "borrower.vesting",
+  
+  // Recording fields
+  "Recording_County": "recording.county",
+  "Recording_Date": "recording.recording_date",
+  "Recording_Requested_By": "recording.requested_by",
+  "Mail_To_Name": "recording.mail_to.name",
+  "Mail_To_Address": "recording.mail_to.address",
+  "Recording_Instrument_Number": "recording.instrument_number",
+  "Recording_State": "recording.state",
+  
+  // Lender fields
   "Current_Lender_Name": "lender.current.name",
   "Current_Lender_Vesting": "lender.current.vesting",
   "New_Lender_Name": "lender.new.name",
   "New_Lender_Vesting": "lender.new.vesting",
-  "Legal_Description": "property.legalDescription",
-  "Recording_Requested_By": "recording.requested_by",
-  "Mail_To_Name": "recording.mail_to.name",
-  "Mail_To_Address": "recording.mail_to.address",
+  
+  // Deed of Trust fields
+  "DOT_Instrument_Number": "deed_of_trust.instrument_number",
+  "DOT_Recording_Date": "deed_of_trust.recording_date",
+  "DOT_County": "deed_of_trust.county",
+  "DOT_Recording_County": "deed_of_trust.county",
+  "DOT_State": "deed_of_trust.state",
+  "DOT_Recording_State": "deed_of_trust.state",
+  
+  // Assignment fields
+  "Assignment_Execution_Date": "assignment.execution_date",
+  
+  // Signatory fields
   "Signatory_Name": "signatory.name",
   "Signatory_Title": "signatory.title",
+  "Signatory_Capacity": "signatory.capacity",
+  "Signatory_Organization": "signatory.organization",
+  
+  // Notary fields
+  "Notary_Execution_Date": "notary.execution_date",
+  "Notary_Name": "notary.name",
+  "Notary_Seal": "notary.seal",
   "Notary1_State": "notary1.state",
   "Notary1_County": "notary1.county",
-  "Notary1_Ack_Day": "notary1.ackDay",
-  "Notary1_Ack_Month": "notary1.ackMonth",
-  "Notary1_Ack_Year": "notary1.ackYear",
-  "Notary1_Appearing_Party": "notary1.appearingPartyName",
+  "Notary1_Appearing_Party": "notary1.appearing_party_names",
+  "Notary1_Appearing_Party_Names": "notary1.appearing_party_names",
   "Notary1_Signature": "notary1.signature",
-  "Notary1_Printed_Name": "notary1.printedName",
-  "Notary1_Residence": "notary1.residence",
-  "Notary1_Expiration_Date": "notary1.expirationDate",
-  "Notary2_State": "notary2.state",
-  "Notary2_County": "notary2.county",
-  "Notary2_Ack_Date": "notary2.ackDate",
-  "Notary2_Signature": "notary2.signature",
-  "Auditors_File_Number": "recording.auditorsFileNumber",
-  "Title_Company_Name": "title.companyName",
+  
+  // Document fields
+  "Document_Page_Number": "document.page_number",
   
   // Lender mappings (from template)
   "Lender_Name": "Lender.Name",
