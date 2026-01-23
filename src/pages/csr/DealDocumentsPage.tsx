@@ -623,6 +623,10 @@ export const DealDocumentsPage: React.FC = () => {
                 const latestDoc = getLatestDocumentForTemplate(template.id);
                 const history = getDocumentHistory(template.id);
                 const hasFile = !!template.file_path;
+                const needsTemplateUpload =
+                  !hasFile ||
+                  (latestDoc?.generation_status === 'failed' &&
+                    (latestDoc.error_message || '').toLowerCase().includes('failed to download template file'));
 
                 return (
                   <div
@@ -714,8 +718,8 @@ export const DealDocumentsPage: React.FC = () => {
                           </Button>
                         )}
 
-                        {/* Upload button for templates without files */}
-                        {!hasFile && (role === 'admin' || role === 'csr') && (
+                        {/* Upload button when file is missing OR generation failed due to missing template */}
+                        {needsTemplateUpload && (role === 'admin' || role === 'csr') && (
                           <label className="cursor-pointer">
                             <input
                               type="file"
