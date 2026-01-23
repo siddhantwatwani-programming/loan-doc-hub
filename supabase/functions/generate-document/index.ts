@@ -694,21 +694,39 @@ function replaceMergeTags(
   
   // Parse and replace merge tags
   const tags = parseWordMergeFields(result);
+
+  // Case-insensitive field-key lookup helper.
+  // Some templates/tags use different casing than the stored field_dictionary.field_key
+  // (e.g. borrower.name vs Borrower.Name). We keep replacement logic the same, but
+  // fall back to a case-insensitive lookup when an exact key match is missing.
+  const getFieldData = (canonicalKey: string) => {
+    const exact = fieldValues.get(canonicalKey);
+    if (exact) return { key: canonicalKey, data: exact };
+
+    const target = canonicalKey.toLowerCase();
+    for (const [k, v] of fieldValues.entries()) {
+      if (k.toLowerCase() === target) return { key: k, data: v };
+    }
+    return null;
+  };
   
   for (const tag of tags) {
     const canonicalKey = resolveFieldKey(tag.tagName);
-    const fieldData = fieldValues.get(canonicalKey);
+    const resolved = getFieldData(canonicalKey);
+    const fieldData = resolved?.data;
     let resolvedValue = "";
     
     if (fieldData) {
-      const transform = tag.inlineTransform || fieldTransforms.get(canonicalKey);
+      // If we matched a differently-cased key, respect transforms stored for that exact key.
+      const transformKey = resolved?.key || canonicalKey;
+      const transform = tag.inlineTransform || fieldTransforms.get(transformKey);
       
       if (transform) {
         resolvedValue = applyTransform(fieldData.rawValue, transform);
       } else {
         resolvedValue = formatByDataType(fieldData.rawValue, fieldData.dataType);
       }
-      console.log(`[generate-document] Replacing ${tag.tagName} -> ${canonicalKey} = "${resolvedValue}"`);
+      console.log(`[generate-document] Replacing ${tag.tagName} -> ${transformKey} = "${resolvedValue}"`);
     } else {
       console.log(`[generate-document] No data for ${tag.tagName} (canonical: ${canonicalKey})`);
     }
