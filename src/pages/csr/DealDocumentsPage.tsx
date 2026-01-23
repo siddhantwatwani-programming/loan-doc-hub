@@ -623,17 +623,6 @@ export const DealDocumentsPage: React.FC = () => {
                 const latestDoc = getLatestDocumentForTemplate(template.id);
                 const history = getDocumentHistory(template.id);
                 const hasFile = !!template.file_path;
-                const latestJob = recentJobs?.[0] || null;
-                const needsTemplateUpload =
-                  // No file path on template
-                  !hasFile ||
-                  // A generated_documents row exists but couldn't download
-                  (latestDoc?.generation_status === 'failed' &&
-                    (latestDoc.error_message || '').toLowerCase().includes('failed to download template file')) ||
-                  // A generation job failed before inserting a generated_documents row
-                  (latestJob?.status === 'failed' &&
-                    (latestJob.error_message || '').toLowerCase().includes('failed to download template file') &&
-                    (latestJob.error_message || '').includes(template.name));
 
                 return (
                   <div
@@ -725,8 +714,8 @@ export const DealDocumentsPage: React.FC = () => {
                           </Button>
                         )}
 
-                        {/* Upload button when file is missing OR generation failed due to missing template */}
-                        {needsTemplateUpload && (role === 'admin' || role === 'csr') && (
+                        {/* Upload button for templates without files */}
+                        {!hasFile && (role === 'admin' || role === 'csr') && (
                           <label className="cursor-pointer">
                             <input
                               type="file"
