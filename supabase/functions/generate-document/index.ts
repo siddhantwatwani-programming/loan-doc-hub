@@ -351,12 +351,13 @@ const MERGE_TAG_TO_FIELD_MAP: Record<string, string> = {
   // System mappings
   "Document_Date": "System.DocumentDate",
   
-  // Assignment of Deed of Trust (100%) - System field codes
-  "F0000": "system.field_code_f0000",
-  "F0001": "system.field_code_f0001",
-  "F0009": "system.field_code_f0009",
-  "F1428": "system.field_code_f1428",
-  "F1429": "system.field_code_f1429",
+  // Assignment of Deed of Trust (100%) - System field codes mapped to actual data fields
+  // Based on the 39 field mapping configuration from template_field_maps
+  "F0000": "Terms.LoanNumber",           // Loan Number field
+  "F0001": "lender.current.name",        // Current Lender Name
+  "F0009": "deed_of_trust.county",       // DOT County
+  "F1428": "deed_of_trust.instrument_number",  // DOT Instrument Number
+  "F1429": "deed_of_trust.recording_date",     // DOT Recording Date
   
   // Assignment of Deed of Trust (100%) - Document field mappings (39 fields)
   // Loan & Property fields (unique merge tags to avoid conflicts)
