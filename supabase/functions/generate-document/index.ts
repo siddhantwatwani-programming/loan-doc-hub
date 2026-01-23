@@ -361,8 +361,10 @@ const MERGE_TAG_TO_FIELD_MAP: Record<string, string> = {
   
   // Assignment of Deed of Trust (100%) - Document field mappings (39 fields)
   // Loan & Property fields (unique merge tags to avoid conflicts)
-  "Loan_Loan_Number": "loan.loan_number",
-  "Deal_Loan_Number": "loan.loan_number",
+  // NOTE: Template uses these tags for the deal's loan number.
+  // Canonical field key used throughout the app is Terms.LoanNumber.
+  "Loan_Loan_Number": "Terms.LoanNumber",
+  "Deal_Loan_Number": "Terms.LoanNumber",
   "Property_Legal_Description": "property.legalDescription",
   "Legal_Description": "property.legalDescription",
   "Property_APN": "property.apn",
@@ -479,8 +481,23 @@ const LABEL_TO_FIELD_MAP: Record<string, { fieldKey: string; replaceNext?: strin
   "APN:": { fieldKey: "property.apn" },
   "APN#": { fieldKey: "property.apn" },
   "Authorized Signor Name": { fieldKey: "signatory.name", replaceNext: "Authorized Signor Name" },
+  // Common spelling in the template UI request
+  "Authorized Signer Name": { fieldKey: "signatory.name", replaceNext: "Authorized Signer Name" },
   "Title / Capacity": { fieldKey: "signatory.title", replaceNext: "Title / Capacity" },
+  // Template variants (punctuation differs between versions)
   "Current Lender Vesting (or Successor if applicable),": { fieldKey: "lender.current.vesting", replaceNext: "Current Lender Vesting (or Successor if applicable)," },
+  "Current Lender Vesting (or Successor, if applicable)": { fieldKey: "lender.current.vesting", replaceNext: "Current Lender Vesting (or Successor, if applicable)" },
+  "Current Lender Vesting (or Successor, if applicable),": { fieldKey: "lender.current.vesting", replaceNext: "Current Lender Vesting (or Successor, if applicable)," },
+  "Current Lender Vesting (or Successor, if applicable).": { fieldKey: "lender.current.vesting", replaceNext: "Current Lender Vesting (or Successor, if applicable)." },
+
+  // Mail To block (per requirement: Address = Mail To Address)
+  // This label is commonly used in the “Mail To” section of the template.
+  "Address": { fieldKey: "recording.mail_to.address", replaceNext: "Address" },
+
+  // Loan number label variants (some versions are label-based rather than merge-tag based)
+  "Loan No.": { fieldKey: "Terms.LoanNumber", replaceNext: "Loan No." },
+  "Loan No": { fieldKey: "Terms.LoanNumber", replaceNext: "Loan No" },
+  "Loan Number": { fieldKey: "Terms.LoanNumber", replaceNext: "Loan Number" },
   
   // Assignment of Deed of Trust (100%) - Notary section labels
   "Notary Name": { fieldKey: "notary.name", replaceNext: "Notary Name" },
@@ -496,6 +513,12 @@ const LABEL_TO_FIELD_MAP: Record<string, { fieldKey: string; replaceNext?: strin
   "Commission Expires": { fieldKey: "notary.commission_expiry" },
   "My Commission Expires": { fieldKey: "notary.commission_expiry" },
   "personally appeared": { fieldKey: "notary.appearing_party_names", replaceNext: "personally appeared" },
+
+  // Labels called out in the issue report
+  "Date": { fieldKey: "notary.date", replaceNext: "Date" },
+  // Requirement: Notary Signature should use Notary Name
+  "Notary Signature": { fieldKey: "notary.name", replaceNext: "Notary Signature" },
+  "Notary Stamp or Seal": { fieldKey: "notary.seal", replaceNext: "Notary Stamp or Seal" },
 };
 
 function resolveFieldKey(tagName: string): string {
