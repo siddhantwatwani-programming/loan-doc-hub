@@ -52,7 +52,7 @@ const SECTION_LABELS: Partial<Record<FieldSection, string>> = {
   co_borrower: 'Co-Borrower',
   property: 'Property',
   loan_terms: 'Loan Terms',
-  lender: 'Lender',
+  lender: 'Lenders',
   broker: 'Broker',
   charges: 'Charges',
   dates: 'Dates',
@@ -60,7 +60,7 @@ const SECTION_LABELS: Partial<Record<FieldSection, string>> = {
   participants: 'Participants',
   notes: 'Notes',
   seller: 'Seller',
-  title: 'Title',
+  title: 'Titles',
   other: 'Other',
   system: 'System',
 };
