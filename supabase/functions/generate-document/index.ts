@@ -459,6 +459,23 @@ const LABEL_TO_FIELD_MAP: Record<string, { fieldKey: string; replaceNext?: strin
   "as of _": { fieldKey: "Allonge.ExecutionDate" },
   // PAY TO THE ORDER OF - need to replace the text that follows (CALIFORNIA HOUSING FINANCE AGENCY)
   "PAY TO THE ORDER OF": { fieldKey: "Allonge.PayToOrderOf", replaceNext: "CALIFORNIA HOUSING FINANCE AGENCY" },
+  
+  // Assignment of Deed of Trust (100%) - Placeholder text replacements
+  // These match static placeholder text in the template and replace with deal data
+  "Current Lender": { fieldKey: "lender.current.name", replaceNext: "Current Lender" },
+  "New Lender Vesting": { fieldKey: "lender.new.vesting", replaceNext: "New Lender Vesting" },
+  "New Lender": { fieldKey: "lender.new.name", replaceNext: "New Lender" },
+  "borrower vesting": { fieldKey: "borrower.vesting", replaceNext: "borrower vesting" },
+  "instrument number": { fieldKey: "deed_of_trust.instrument_number", replaceNext: "instrument number" },
+  "recording date": { fieldKey: "deed_of_trust.recording_date", replaceNext: "recording date" },
+  "County, State": { fieldKey: "deed_of_trust.county", replaceNext: "County, State" },
+  "Property Address": { fieldKey: "Property1.Address", replaceNext: "Property Address" },
+  "Legal Description": { fieldKey: "property.legalDescription", replaceNext: "Legal Description" },
+  "APN:": { fieldKey: "property.apn" },
+  "APN#": { fieldKey: "property.apn" },
+  "Authorized Signor Name": { fieldKey: "signatory.name", replaceNext: "Authorized Signor Name" },
+  "Title / Capacity": { fieldKey: "signatory.title", replaceNext: "Title / Capacity" },
+  "Current Lender Vesting (or Successor if applicable),": { fieldKey: "lender.current.vesting", replaceNext: "Current Lender Vesting (or Successor if applicable)," },
 };
 
 function resolveFieldKey(tagName: string): string {
