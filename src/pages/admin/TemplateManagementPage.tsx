@@ -180,7 +180,9 @@ export const TemplateManagementPage: React.FC = () => {
 
     setUploadingDocx(true);
     try {
-      const fileName = `${Date.now()}_${file.name}`;
+      // Sanitize filename: replace spaces and special chars with underscores
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const fileName = `${Date.now()}_${sanitizedName}`;
       const { error } = await supabase.storage
         .from('templates')
         .upload(fileName, file);
@@ -219,7 +221,9 @@ export const TemplateManagementPage: React.FC = () => {
 
     setUploadingPdf(true);
     try {
-      const fileName = `ref_${Date.now()}_${file.name}`;
+      // Sanitize filename: replace spaces and special chars with underscores
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const fileName = `ref_${Date.now()}_${sanitizedName}`;
       const { error } = await supabase.storage
         .from('templates')
         .upload(fileName, file);
