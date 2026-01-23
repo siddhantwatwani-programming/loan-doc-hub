@@ -103,12 +103,83 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
 
       // 1. Resolve required fields for this packet (deterministic resolver)
       const resolved = await resolvePacketFields(packetId!);
-      setResolvedFields(resolved);
+
+      // UI: Ensure certain sections render as tabs when they exist in field_dictionary,
+      // even if they are not mapped in TemplateFieldMap for the active packet.
+      // NOTE: Required-field logic remains driven by TemplateFieldMap (resolved.requiredFieldKeys).
+      const TMO_TAB_SECTIONS: FieldSection[] = ['lender', 'participants', 'title'];
+
+      let mergedResolved = resolved;
+      try {
+        const { data: tmoFields, error: tmoError } = await supabase
+          .from('field_dictionary')
+          .select(
+            'id, field_key, label, section, data_type, description, default_value, is_calculated, is_repeatable, validation_rule, calculation_formula, calculation_dependencies'
+          )
+          .in('section', TMO_TAB_SECTIONS as any);
+
+        if (tmoError) throw tmoError;
+
+        const existingIds = new Set(resolved.fields.map(f => f.field_dictionary_id));
+        const existingKeys = new Set(resolved.fields.map(f => f.field_key));
+
+        const appendedFields: ResolvedField[] = (tmoFields || [])
+          .filter((fd: any) => fd?.id && fd?.field_key)
+          .filter((fd: any) => !existingIds.has(fd.id) && !existingKeys.has(fd.field_key))
+          .map((fd: any) => ({
+            field_dictionary_id: fd.id,
+            field_key: fd.field_key,
+            label: fd.label,
+            section: fd.section,
+            data_type: fd.data_type,
+            description: fd.description,
+            default_value: fd.default_value,
+            is_calculated: !!fd.is_calculated,
+            is_repeatable: !!fd.is_repeatable,
+            validation_rule: fd.validation_rule,
+            // Keep required-field logic unchanged: only TemplateFieldMap determines required.
+            is_required: false,
+            transform_rules: [],
+            calculation_formula: fd.calculation_formula || null,
+            calculation_dependencies: fd.calculation_dependencies || [],
+          }));
+
+        if (appendedFields.length > 0) {
+          // Merge fields
+          const mergedFields = [...resolved.fields, ...appendedFields];
+
+          // Rebuild groups
+          const mergedFieldsBySection = mergedFields.reduce((acc, field) => {
+            (acc[field.section] ||= []).push(field);
+            return acc;
+          }, {} as Record<FieldSection, ResolvedField[]>);
+
+          // Append the requested tabs after whatever the packet already exposes
+          const appendedSectionsInOrder = TMO_TAB_SECTIONS.filter(
+            (s) => (mergedFieldsBySection[s]?.length || 0) > 0 && !resolved.sections.includes(s)
+          );
+          const mergedSections = [...resolved.sections, ...appendedSectionsInOrder];
+
+          mergedResolved = {
+            ...resolved,
+            visibleFieldIds: [...new Set([...resolved.visibleFieldIds, ...appendedFields.map(f => f.field_dictionary_id)])],
+            visibleFieldKeys: [...new Set([...resolved.visibleFieldKeys, ...appendedFields.map(f => f.field_key)])],
+            fields: mergedFields,
+            fieldsBySection: mergedFieldsBySection,
+            sections: mergedSections,
+          };
+        }
+      } catch (e) {
+        // Non-blocking: if the dictionary lookup fails, fall back to the packet-resolved set
+        console.warn('Unable to load additional TMO tab sections from field_dictionary:', e);
+      }
+
+      setResolvedFields(mergedResolved);
 
       // Build data type and ID lookup maps
       const dataTypeMap: Record<string, FieldDataType> = {};
       const idMap: Record<string, string> = {};
-      resolved.fields.forEach(f => {
+      mergedResolved.fields.forEach(f => {
         dataTypeMap[f.field_key] = f.data_type;
         idMap[f.field_key] = f.field_dictionary_id;
       });
@@ -116,7 +187,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
       setFieldIdMap(idMap);
 
       // 2. Fetch existing field values for this deal
-      if (resolved.visibleFieldKeys.length > 0) {
+      if (mergedResolved.visibleFieldKeys.length > 0) {
         const { data: existingValues, error: evError } = await supabase
           .from('deal_field_values')
           .select('field_dictionary_id, value_text, value_number, value_date, value_json')
@@ -126,7 +197,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
 
         // Create lookup map from field_dictionary_id to field metadata
         const fieldDictIdToMeta = new Map<string, { field_key: string; data_type: FieldDataType }>();
-        resolved.fields.forEach(f => {
+        mergedResolved.fields.forEach(f => {
           fieldDictIdToMeta.set(f.field_dictionary_id, { field_key: f.field_key, data_type: f.data_type });
         });
 
@@ -151,7 +222,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
         });
 
         // Apply default values for fields without values
-        resolved.fields.forEach(field => {
+        mergedResolved.fields.forEach(field => {
           if (!valuesMap[field.field_key] && field.default_value) {
             valuesMap[field.field_key] = field.default_value;
           }
