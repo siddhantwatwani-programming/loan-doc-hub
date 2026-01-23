@@ -715,7 +715,7 @@ export const DealDocumentsPage: React.FC = () => {
                         )}
 
                         {/* Upload button for templates without files */}
-                        {!hasFile && role === 'admin' && (
+                        {!hasFile && (role === 'admin' || role === 'csr') && (
                           <label className="cursor-pointer">
                             <input
                               type="file"
