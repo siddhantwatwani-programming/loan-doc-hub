@@ -49,17 +49,30 @@ export const LenderFundingForm: React.FC<LenderFundingFormProps> = ({
                 value={values['funding_account'] || ''}
                 onChange={(e) => onValueChange('funding_account', e.target.value)}
                 disabled={disabled}
-                placeholder="0002174937"
+                placeholder="Enter account number"
               />
             </div>
             
             <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">Borrower</Label>
-              <div className="p-3 bg-muted/30 rounded-md border border-border text-sm">
-                <p className="font-medium">{values['borrower_full_name'] || 'Nicole Alexander'}</p>
-                <p className="text-muted-foreground">{values['borrower_street'] || '36 Moore Oconner Rd'}</p>
-                <p className="text-muted-foreground">{values['borrower_city_state_zip'] || 'GRANITEVILLE SC 29829'}</p>
-              </div>
+              <Label className="text-sm text-muted-foreground">Borrower Name</Label>
+              <Input
+                value={values['funding_borrower_name'] || ''}
+                onChange={(e) => onValueChange('funding_borrower_name', e.target.value)}
+                disabled={disabled}
+                placeholder="Enter borrower name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Borrower Address</Label>
+              <Textarea
+                value={values['funding_borrower_address'] || ''}
+                onChange={(e) => onValueChange('funding_borrower_address', e.target.value)}
+                disabled={disabled}
+                placeholder="Enter borrower address"
+                rows={3}
+                className="resize-none"
+              />
             </div>
           </div>
         </div>
@@ -82,7 +95,7 @@ export const LenderFundingForm: React.FC<LenderFundingFormProps> = ({
                     onValueChange('funding_principal_balance', value);
                   }}
                   disabled={disabled}
-                  placeholder="2,068.12"
+                  placeholder="Enter principal balance"
                   className="flex-1"
                 />
               </div>
