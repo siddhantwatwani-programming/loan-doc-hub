@@ -13,6 +13,7 @@ import { useExternalModificationDetector } from '@/hooks/useExternalModification
 import { useAuth } from '@/contexts/AuthContext';
 import { DealSectionTab } from '@/components/deal/DealSectionTab';
 import { BorrowerSectionContent } from '@/components/deal/BorrowerSectionContent';
+import { LenderSectionContent } from '@/components/deal/LenderSectionContent';
 import { PropertySectionContent } from '@/components/deal/PropertySectionContent';
 import { 
   logDealUpdated, 
@@ -754,6 +755,18 @@ export const DealDataEntryPage: React.FC = () => {
                   />
                 ) : section === 'property' ? (
                   <PropertySectionContent
+                    fields={isExternalUser 
+                      ? (visibleFieldsBySection[section] || [])
+                      : (fieldsBySection[section] || [])
+                    }
+                    values={values}
+                    onValueChange={updateValue}
+                    showValidation={showValidation}
+                    disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                    calculationResults={calculationResults}
+                  />
+                ) : section === 'lender' ? (
+                  <LenderSectionContent
                     fields={isExternalUser 
                       ? (visibleFieldsBySection[section] || [])
                       : (fieldsBySection[section] || [])
