@@ -21,13 +21,13 @@ export const PropertySubNavigation: React.FC<PropertySubNavigationProps> = ({
   onSubSectionChange,
 }) => {
   return (
-    <div className="flex border-b border-border bg-background">
+    <div className="flex flex-col border-r border-border bg-background min-w-[180px]">
       {SUB_SECTIONS.map((section) => (
         <button
           key={section.key}
           onClick={() => onSubSectionChange(section.key)}
           className={cn(
-            'px-6 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px',
+            'px-4 py-3 text-sm font-medium transition-colors text-left border-l-2',
             activeSubSection === section.key
               ? 'border-primary text-foreground bg-muted/30'
               : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/20'
