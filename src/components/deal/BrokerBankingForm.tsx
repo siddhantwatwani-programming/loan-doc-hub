@@ -54,6 +54,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('achStatus', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter ACH status"
             />
           </div>
 
@@ -65,6 +66,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('bank', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter bank name"
             />
           </div>
 
@@ -76,6 +78,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('routingNumber', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter routing number"
             />
           </div>
 
@@ -87,6 +90,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('accountNumber', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter account number"
             />
           </div>
 
@@ -98,6 +102,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('type', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter account type"
             />
           </div>
 
@@ -109,6 +114,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('name', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter account name"
             />
           </div>
 
@@ -120,6 +126,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('id', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter ID"
             />
           </div>
 
@@ -131,6 +138,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('furtherCreditTo', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter further credit info"
             />
           </div>
         </div>
@@ -171,6 +179,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('address', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter mailing address"
             />
           </div>
 
@@ -182,6 +191,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('city', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter city"
             />
           </div>
 
@@ -193,6 +203,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('zipCode', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter ZIP code"
             />
           </div>
 
@@ -205,6 +216,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('achEmail1', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter ACH email"
             />
           </div>
 
@@ -217,6 +229,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('achEmail2', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter ACH email"
             />
           </div>
         </div>
@@ -233,6 +246,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('cardName', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter cardholder name"
             />
           </div>
 
@@ -244,6 +258,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('cardNumber', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter card number"
             />
           </div>
 
@@ -256,6 +271,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               disabled={disabled}
               className="h-9"
               type="password"
+              placeholder="Enter CVV"
             />
           </div>
 
@@ -279,6 +295,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
               onChange={(e) => handleChange('ccZipCode', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter billing ZIP"
             />
           </div>
         </div>
