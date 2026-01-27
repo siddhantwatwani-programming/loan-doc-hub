@@ -12,6 +12,7 @@ import { useFieldPermissions } from '@/hooks/useFieldPermissions';
 import { useExternalModificationDetector } from '@/hooks/useExternalModificationDetector';
 import { useAuth } from '@/contexts/AuthContext';
 import { DealSectionTab } from '@/components/deal/DealSectionTab';
+import { BorrowerSectionContent } from '@/components/deal/BorrowerSectionContent';
 import { 
   logDealUpdated, 
   logDealMarkedReady, 
@@ -737,26 +738,41 @@ export const DealDataEntryPage: React.FC = () => {
 
             {(isExternalUser ? visibleSections : sections).map(section => (
               <TabsContent key={section} value={section} className="animate-fade-in">
-                <DealSectionTab
-                  fields={isExternalUser 
-                    ? (visibleFieldsBySection[section] || [])
-                    : (fieldsBySection[section] || [])
-                  }
-                  values={values}
-                  onValueChange={updateValue}
-                  missingRequiredFields={
-                    (isExternalUser 
+                {/* Use BorrowerSectionContent for the borrower section to show sub-navigation */}
+                {section === 'borrower' ? (
+                  <BorrowerSectionContent
+                    fields={isExternalUser 
                       ? (visibleFieldsBySection[section] || [])
                       : (fieldsBySection[section] || [])
-                    ).filter(f => f.is_required && !values[f.field_key]?.trim())
-                  }
-                  showValidation={showValidation}
-                  calculationResults={calculationResults}
-                  orchestrationCanEdit={orchestrationCanEdit}
-                  isWaitingForPrevious={isWaiting}
-                  blockingRole={blockingParticipant?.role}
-                  hasCompleted={hasCompleted}
-                />
+                    }
+                    values={values}
+                    onValueChange={updateValue}
+                    showValidation={showValidation}
+                    disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                    calculationResults={calculationResults}
+                  />
+                ) : (
+                  <DealSectionTab
+                    fields={isExternalUser 
+                      ? (visibleFieldsBySection[section] || [])
+                      : (fieldsBySection[section] || [])
+                    }
+                    values={values}
+                    onValueChange={updateValue}
+                    missingRequiredFields={
+                      (isExternalUser 
+                        ? (visibleFieldsBySection[section] || [])
+                        : (fieldsBySection[section] || [])
+                      ).filter(f => f.is_required && !values[f.field_key]?.trim())
+                    }
+                    showValidation={showValidation}
+                    calculationResults={calculationResults}
+                    orchestrationCanEdit={orchestrationCanEdit}
+                    isWaitingForPrevious={isWaiting}
+                    blockingRole={blockingParticipant?.role}
+                    hasCompleted={hasCompleted}
+                  />
+                )}
               </TabsContent>
             ))}
           </Tabs>
