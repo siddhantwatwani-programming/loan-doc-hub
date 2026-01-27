@@ -51,13 +51,15 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
           <h3 className="font-semibold text-sm text-foreground border-b border-border pb-2">Name</h3>
           
           <div className="space-y-2">
-            <Label htmlFor="brokerId" className="text-sm">Broker ID</Label>
+            <Label htmlFor="brokerId" className="text-sm">Broker ID <span className="text-destructive">*</span></Label>
             <Input
               id="brokerId"
               value={formData.brokerId}
               onChange={(e) => handleChange('brokerId', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter broker ID"
+              required
             />
           </div>
 
@@ -69,6 +71,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               onChange={(e) => handleChange('license', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter license number"
             />
           </div>
 
@@ -80,6 +83,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               onChange={(e) => handleChange('company', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter company name"
             />
           </div>
 
@@ -91,6 +95,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               onChange={(e) => handleChange('firstName', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter first name"
             />
           </div>
 
@@ -102,6 +107,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               onChange={(e) => handleChange('middleName', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter middle name"
             />
           </div>
 
@@ -113,6 +119,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               onChange={(e) => handleChange('lastName', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter last name"
             />
           </div>
 
@@ -125,6 +132,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               onChange={(e) => handleChange('email', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter email address"
             />
           </div>
         </div>
@@ -141,6 +149,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               onChange={(e) => handleChange('street', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter street address"
             />
           </div>
 
@@ -152,6 +161,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               onChange={(e) => handleChange('city', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter city"
             />
           </div>
 
@@ -163,6 +173,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               onChange={(e) => handleChange('state', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter state"
             />
           </div>
 
@@ -174,6 +185,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               onChange={(e) => handleChange('zip', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter ZIP code"
             />
           </div>
 
@@ -185,6 +197,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               onChange={(e) => handleChange('taxIdType', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter tax ID type"
             />
           </div>
 
@@ -196,6 +209,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               onChange={(e) => handleChange('taxId', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter tax ID"
             />
           </div>
 
@@ -207,6 +221,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               onChange={(e) => handleChange('issue1099', e.target.value)}
               disabled={disabled}
               className="h-9"
+              placeholder="Enter 1099 status"
             />
           </div>
         </div>
@@ -225,6 +240,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
                 onChange={(e) => handleChange('phoneHome', e.target.value)}
                 disabled={disabled}
                 className="h-9"
+                placeholder="Enter home phone"
               />
             </div>
           </div>
@@ -239,6 +255,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
                 onChange={(e) => handleChange('phoneWork', e.target.value)}
                 disabled={disabled}
                 className="h-9"
+                placeholder="Enter work phone"
               />
             </div>
           </div>
@@ -253,6 +270,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
                 onChange={(e) => handleChange('phoneCell', e.target.value)}
                 disabled={disabled}
                 className="h-9"
+                placeholder="Enter cell phone"
               />
             </div>
           </div>
@@ -267,6 +285,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
                 onChange={(e) => handleChange('phoneFax', e.target.value)}
                 disabled={disabled}
                 className="h-9"
+                placeholder="Enter fax number"
               />
             </div>
           </div>
