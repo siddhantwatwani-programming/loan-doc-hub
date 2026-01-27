@@ -78,15 +78,15 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   };
 
   return (
-    <div className="space-y-0">
-      {/* Sub-navigation tabs */}
+    <div className="flex border border-border rounded-lg bg-background overflow-hidden">
+      {/* Sub-navigation tabs on the left */}
       <BorrowerSubNavigation
         activeSubSection={activeSubSection}
         onSubSectionChange={setActiveSubSection}
       />
 
-      {/* Sub-section content */}
-      <div className="border border-t-0 border-border rounded-b-lg bg-background">
+      {/* Sub-section content on the right */}
+      <div className="flex-1">
         {renderSubSectionContent()}
       </div>
     </div>
