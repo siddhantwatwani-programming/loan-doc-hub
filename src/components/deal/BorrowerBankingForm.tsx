@@ -340,6 +340,18 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
               />
             </div>
           </div>
+
+          {/* Send Confirm */}
+          <div className="flex items-center gap-4">
+            <Label className="w-32 text-sm text-foreground flex-shrink-0">Send Confirm</Label>
+            <input
+              type="checkbox"
+              checked={getFieldValue('Borrower.Banking.SendConfirm') === 'true'}
+              onChange={(e) => onValueChange('Borrower.Banking.SendConfirm', e.target.checked ? 'true' : 'false')}
+              disabled={disabled}
+              className="h-4 w-4 rounded border-input"
+            />
+          </div>
         </div>
       </div>
 
