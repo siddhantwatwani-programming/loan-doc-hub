@@ -13,6 +13,7 @@ import { useExternalModificationDetector } from '@/hooks/useExternalModification
 import { useAuth } from '@/contexts/AuthContext';
 import { DealSectionTab } from '@/components/deal/DealSectionTab';
 import { BorrowerSectionContent } from '@/components/deal/BorrowerSectionContent';
+import { PropertySectionContent } from '@/components/deal/PropertySectionContent';
 import { 
   logDealUpdated, 
   logDealMarkedReady, 
@@ -741,6 +742,18 @@ export const DealDataEntryPage: React.FC = () => {
                 {/* Use BorrowerSectionContent for the borrower section to show sub-navigation */}
                 {section === 'borrower' ? (
                   <BorrowerSectionContent
+                    fields={isExternalUser 
+                      ? (visibleFieldsBySection[section] || [])
+                      : (fieldsBySection[section] || [])
+                    }
+                    values={values}
+                    onValueChange={updateValue}
+                    showValidation={showValidation}
+                    disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                    calculationResults={calculationResults}
+                  />
+                ) : section === 'property' ? (
+                  <PropertySectionContent
                     fields={isExternalUser 
                       ? (visibleFieldsBySection[section] || [])
                       : (fieldsBySection[section] || [])
