@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AlertCircle } from 'lucide-react';
 
 interface BrokerInfoFormProps {
   disabled?: boolean;
@@ -42,8 +43,33 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Calculate required fields status
+  const requiredFieldsStatus = useMemo(() => {
+    const requiredFields = ['brokerId'];
+    const filledCount = requiredFields.filter(field => formData[field as keyof typeof formData] && String(formData[field as keyof typeof formData]).trim() !== '').length;
+    const totalRequired = requiredFields.length;
+    const missingCount = totalRequired - filledCount;
+    return { filledCount, totalRequired, missingCount };
+  }, [formData]);
+
   return (
     <div className="space-y-6">
+      {/* Required fields alert banner */}
+      {requiredFieldsStatus.missingCount > 0 && (
+        <div className="flex items-center justify-between px-4 py-3 rounded-lg border border-primary/30 bg-primary/5">
+          <div className="flex items-center gap-2 text-amber-500">
+            <AlertCircle className="h-4 w-4" />
+            <span className="text-sm font-medium">
+              {requiredFieldsStatus.missingCount} required field{requiredFieldsStatus.missingCount !== 1 ? 's' : ''} missing
+            </span>
+          </div>
+          <span className="text-sm text-muted-foreground">
+            {requiredFieldsStatus.filledCount}/{requiredFieldsStatus.totalRequired} required fields filled
+          </span>
+        </div>
+      )}
+
+      {/* Form grid layout matching screenshot */}
       {/* Form grid layout matching screenshot */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Column 1 - Name Section */}
