@@ -108,9 +108,12 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
     );
   };
 
-  const handleSameAsPrimaryChange = (checked: boolean) => {
-    handleChange('isPrimary', checked);
-    if (checked) {
+  const handleSameAsPrimaryChange = (checked: boolean | "indeterminate") => {
+    const isChecked = checked === true;
+    handleChange('isPrimary', isChecked);
+    
+    if (isChecked) {
+      // Copy primary address values to mailing address fields
       handleChange('mailingStreet', getValue('primaryStreet'));
       handleChange('mailingCity', getValue('primaryCity'));
       handleChange('mailingState', getValue('primaryState'));
