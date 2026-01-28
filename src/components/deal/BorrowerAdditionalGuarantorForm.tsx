@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
-
 // Field key mapping for additional guarantor fields - uses same borrower keys per spec
 const FIELD_KEYS = {
   // Borrower Details (shared keys)
@@ -117,6 +116,35 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
       handleChange('mailingZip', getValue('primaryZip'));
     }
   };
+
+  // Real-time sync: when checkbox is checked and primary address changes, update mailing address
+  useEffect(() => {
+    if (getBoolValue('isPrimary')) {
+      const primaryStreet = getValue('primaryStreet');
+      const primaryCity = getValue('primaryCity');
+      const primaryState = getValue('primaryState');
+      const primaryZip = getValue('primaryZip');
+      
+      if (getValue('mailingStreet') !== primaryStreet) {
+        handleChange('mailingStreet', primaryStreet);
+      }
+      if (getValue('mailingCity') !== primaryCity) {
+        handleChange('mailingCity', primaryCity);
+      }
+      if (getValue('mailingState') !== primaryState) {
+        handleChange('mailingState', primaryState);
+      }
+      if (getValue('mailingZip') !== primaryZip) {
+        handleChange('mailingZip', primaryZip);
+      }
+    }
+  }, [
+    values[FIELD_KEYS.primaryStreet],
+    values[FIELD_KEYS.primaryCity],
+    values[FIELD_KEYS.primaryState],
+    values[FIELD_KEYS.primaryZip],
+    values[FIELD_KEYS.isPrimary],
+  ]);
 
   return (
     <div className="p-4 space-y-6">
