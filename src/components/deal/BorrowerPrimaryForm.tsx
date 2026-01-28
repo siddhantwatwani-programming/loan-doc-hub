@@ -5,6 +5,36 @@ import { Checkbox } from '@/components/ui/checkbox';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
+// Field key mapping for primary borrower fields
+const FIELD_KEYS = {
+  // Borrower Details
+  borrowerType: 'borrower.borrower_type',
+  borrowerId: 'borrower.borrower_id',
+  fullName: 'borrower.full_name',
+  firstName: 'borrower.first_name',
+  middleName: 'borrower.middle_initial',
+  lastName: 'borrower.last_name',
+  capacity: 'borrower.capacity',
+  email: 'borrower.email',
+  creditScore: 'borrower.credit_score',
+  taxIdType: 'borrower.tax_id_type',
+  taxId: 'borrower.tax_id',
+  issue1098: 'borrower.issue_1098',
+  // Primary Address
+  primaryStreet: 'borrower.address.street',
+  primaryCity: 'borrower.address.city',
+  primaryState: 'borrower.state',
+  primaryZip: 'borrower.address.zip',
+  // Phone
+  phoneHome: 'borrower.phone.home',
+  phoneWork: 'borrower.phone.work',
+  phoneCell: 'borrower.phone.mobile',
+  phoneFax: 'borrower.phone.fax',
+  // Vesting & FORD
+  vesting: 'borrower.vesting',
+  ford: 'borrower.ford',
+} as const;
+
 interface BorrowerPrimaryFormProps {
   fields: FieldDefinition[];
   values: Record<string, string>;
@@ -14,78 +44,6 @@ interface BorrowerPrimaryFormProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
-// Field mapping for the Primary sub-section based on screenshot layout
-const PRIMARY_FIELD_GROUPS = {
-  name: [
-    'Borrower.Type',
-    'Borrower.ID',
-    'Borrower.FullName',
-    'Borrower.FirstName',
-    'Borrower.MiddleName',
-    'Borrower.LastName',
-    'Borrower.Capacity',
-    'Borrower.Email',
-    'Borrower.CreditScore',
-    'Borrower.TaxIDType',
-    'Borrower.TIN',
-  ],
-  primaryAddress: [
-    'Borrower.PrimaryAddress.Street',
-    'Borrower.PrimaryAddress.City',
-    'Borrower.PrimaryAddress.State',
-    'Borrower.PrimaryAddress.ZIP',
-  ],
-  phone: [
-    'Borrower.Phone.Home',
-    'Borrower.Phone.Work',
-    'Borrower.Phone.Cell',
-    'Borrower.Phone.Fax',
-    'Borrower.Issue1098',
-  ],
-  mailingAddress: [
-    'Borrower.MailingAddress.SameAsPrimary',
-    'Borrower.MailingAddress.Street',
-    'Borrower.MailingAddress.City',
-    'Borrower.MailingAddress.State',
-    'Borrower.MailingAddress.ZIP',
-  ],
-  vesting: [
-    'Borrower.Vesting',
-    'Borrower.FORD',
-  ],
-};
-
-// Labels for display
-const FIELD_LABELS: Record<string, string> = {
-  'Borrower.Type': 'Borrower Type',
-  'Borrower.ID': 'Borrower ID',
-  'Borrower.FullName': 'Full Name: If Entity, Use Entity',
-  'Borrower.FirstName': 'First: If Entity, Use Signer',
-  'Borrower.MiddleName': 'Middle',
-  'Borrower.LastName': 'Last',
-  'Borrower.Capacity': 'Capacity',
-  'Borrower.Email': 'Email',
-  'Borrower.CreditScore': 'Credit Score',
-  'Borrower.TaxIDType': 'Tax ID Type',
-  'Borrower.TIN': 'TIN',
-  'Borrower.PrimaryAddress.Street': 'Street',
-  'Borrower.PrimaryAddress.City': 'City',
-  'Borrower.PrimaryAddress.State': 'State',
-  'Borrower.PrimaryAddress.ZIP': 'ZIP',
-  'Borrower.Phone.Home': 'Home',
-  'Borrower.Phone.Work': 'Work',
-  'Borrower.Phone.Cell': 'Cell',
-  'Borrower.Phone.Fax': 'Fax',
-  'Borrower.Issue1098': 'Issue 1098',
-  'Borrower.MailingAddress.SameAsPrimary': 'Same as Primary',
-  'Borrower.MailingAddress.Street': 'Street',
-  'Borrower.MailingAddress.City': 'City',
-  'Borrower.MailingAddress.State': 'State',
-  'Borrower.MailingAddress.ZIP': 'ZIP',
-  'Borrower.Vesting': 'Vesting',
-  'Borrower.FORD': 'FORD',
-};
-
 export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
   fields,
   values,
@@ -93,23 +51,32 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
   showValidation = false,
   disabled = false,
 }) => {
-  const getFieldValue = (key: string) => values[key] || '';
-  
-  const renderField = (fieldKey: string, label?: string) => {
-    const displayLabel = label || FIELD_LABELS[fieldKey] || fieldKey.split('.').pop() || fieldKey;
-    const value = getFieldValue(fieldKey);
-    const field = fields.find(f => f.field_key === fieldKey);
-    const isRequired = field?.is_required || false;
+  const getValue = (key: keyof typeof FIELD_KEYS): string => {
+    return values[FIELD_KEYS[key]] || '';
+  };
+
+  const getBoolValue = (key: keyof typeof FIELD_KEYS): boolean => {
+    return values[FIELD_KEYS[key]] === 'true';
+  };
+
+  const handleChange = (key: keyof typeof FIELD_KEYS, value: string | boolean) => {
+    onValueChange(FIELD_KEYS[key], String(value));
+  };
+
+  const renderField = (key: keyof typeof FIELD_KEYS, label: string) => {
+    const value = getValue(key);
+    const fieldDef = fields.find(f => f.field_key === FIELD_KEYS[key]);
+    const isRequired = fieldDef?.is_required || false;
     const showError = showValidation && isRequired && !value.trim();
 
     return (
-      <div key={fieldKey} className="flex items-center gap-2">
+      <div key={key} className="flex items-center gap-2">
         <Label className="w-44 text-xs text-foreground flex-shrink-0">
-          {displayLabel}
+          {label}
         </Label>
         <Input
           value={value}
-          onChange={(e) => onValueChange(fieldKey, e.target.value)}
+          onChange={(e) => handleChange(key, e.target.value)}
           disabled={disabled}
           className={`h-7 text-xs flex-1 ${showError ? 'border-destructive' : ''}`}
         />
@@ -117,32 +84,15 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
     );
   };
 
-  const renderPhoneField = (fieldKey: string, label: string) => {
-    const value = getFieldValue(fieldKey);
-    const preferredKey = `${fieldKey}.Preferred`;
-    const preferredValue = getFieldValue(preferredKey);
+  const renderPhoneField = (key: keyof typeof FIELD_KEYS, label: string) => {
+    const value = getValue(key);
 
     return (
-      <div key={fieldKey} className="flex items-center gap-2">
+      <div key={key} className="flex items-center gap-2">
         <Label className="w-16 text-xs text-foreground flex-shrink-0">{label}</Label>
         <Input
           value={value}
-          onChange={(e) => onValueChange(fieldKey, e.target.value)}
-          disabled={disabled}
-          className="h-7 text-xs w-24"
-        />
-        <div className="flex items-center gap-1">
-          <Checkbox
-            id={preferredKey}
-            checked={preferredValue === 'true'}
-            onCheckedChange={(checked) => onValueChange(preferredKey, checked ? 'true' : 'false')}
-            disabled={disabled}
-            className="h-4 w-4"
-          />
-          <Label htmlFor={preferredKey} className="text-xs text-muted-foreground">Preferred</Label>
-        </div>
-        <Input
-          placeholder=""
+          onChange={(e) => handleChange(key, e.target.value)}
           disabled={disabled}
           className="h-7 text-xs flex-1"
         />
@@ -160,7 +110,17 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
             <span className="font-semibold text-sm text-foreground">Name</span>
           </div>
           <div className="space-y-1.5">
-            {PRIMARY_FIELD_GROUPS.name.map(key => renderField(key))}
+            {renderField('borrowerType', 'Borrower Type')}
+            {renderField('borrowerId', 'Borrower ID')}
+            {renderField('fullName', 'Full Name: If Entity, Use Entity')}
+            {renderField('firstName', 'First: If Entity, Use Signer')}
+            {renderField('middleName', 'Middle')}
+            {renderField('lastName', 'Last')}
+            {renderField('capacity', 'Capacity')}
+            {renderField('email', 'Email')}
+            {renderField('creditScore', 'Credit Score')}
+            {renderField('taxIdType', 'Tax ID Type')}
+            {renderField('taxId', 'TIN')}
           </div>
         </div>
 
@@ -172,7 +132,10 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
               <span className="font-semibold text-sm text-foreground">Primary Address</span>
             </div>
             <div className="space-y-1.5">
-              {PRIMARY_FIELD_GROUPS.primaryAddress.map(key => renderField(key))}
+              {renderField('primaryStreet', 'Street')}
+              {renderField('primaryCity', 'City')}
+              {renderField('primaryState', 'State')}
+              {renderField('primaryZip', 'ZIP')}
             </div>
           </div>
 
@@ -182,82 +145,47 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
               <span className="font-semibold text-sm text-foreground">Phone</span>
             </div>
             <div className="space-y-1.5">
-              {renderPhoneField('Borrower.Phone.Home', 'Home')}
-              {renderPhoneField('Borrower.Phone.Home2', 'Home')}
-              {renderPhoneField('Borrower.Phone.Work', 'Work')}
-              {renderPhoneField('Borrower.Phone.Cell', 'Cell')}
-              {renderPhoneField('Borrower.Phone.Fax', 'Fax')}
-              <div className="flex items-center gap-2">
-                <Label className="w-16 text-xs text-foreground flex-shrink-0">Issue 1098</Label>
-                <Input
-                  value={getFieldValue('Borrower.Issue1098')}
-                  onChange={(e) => onValueChange('Borrower.Issue1098', e.target.value)}
-                  disabled={disabled}
-                  className="h-7 text-xs w-24"
-                />
+              {renderPhoneField('phoneHome', 'Home')}
+              {renderPhoneField('phoneWork', 'Work')}
+              {renderPhoneField('phoneCell', 'Cell')}
+              {renderPhoneField('phoneFax', 'Fax')}
+              <div className="flex items-center gap-2 pt-2">
                 <Checkbox
-                  id="issue1098-check"
+                  id="issue1098"
+                  checked={getBoolValue('issue1098')}
+                  onCheckedChange={(checked) => handleChange('issue1098', !!checked)}
                   disabled={disabled}
                   className="h-4 w-4"
                 />
+                <Label htmlFor="issue1098" className="text-xs text-foreground">Issue 1098</Label>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Column 3: Mailing Address + Vesting */}
+        {/* Column 3: Vesting */}
         <div className="space-y-4">
-          {/* Mailing Address */}
-          <div>
-            <div className="border-b border-border pb-1 mb-3 flex items-center justify-between">
-              <span className="font-semibold text-sm text-foreground">Mailing Address</span>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="same-as-primary"
-                  checked={getFieldValue('Borrower.MailingAddress.SameAsPrimary') === 'true'}
-                  onCheckedChange={(checked) => onValueChange('Borrower.MailingAddress.SameAsPrimary', checked ? 'true' : 'false')}
-                  disabled={disabled}
-                  className="h-4 w-4"
-                />
-                <Label htmlFor="same-as-primary" className="text-xs text-muted-foreground">Same as Primary</Label>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              {PRIMARY_FIELD_GROUPS.mailingAddress.slice(1).map(key => renderField(key))}
-            </div>
-          </div>
-
           {/* Vesting Section */}
           <div>
             <div className="border-b border-border pb-1 mb-3">
               <span className="font-semibold text-sm text-foreground">Vesting</span>
             </div>
             <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <Input
-                  value={getFieldValue('Borrower.Vesting')}
-                  onChange={(e) => onValueChange('Borrower.Vesting', e.target.value)}
-                  disabled={disabled}
-                  className="h-16 text-xs flex-1"
-                />
-              </div>
+              <Input
+                value={getValue('vesting')}
+                onChange={(e) => handleChange('vesting', e.target.value)}
+                disabled={disabled}
+                className="h-16 text-xs flex-1"
+              />
               <div className="border-b border-border pb-1 mb-2 mt-4">
                 <span className="font-semibold text-sm text-foreground">FORD</span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Input
-                  value={getFieldValue('Borrower.FORD.1')}
-                  onChange={(e) => onValueChange('Borrower.FORD.1', e.target.value)}
-                  disabled={disabled}
-                  className="h-7 text-xs"
-                />
-                <Input
-                  value={getFieldValue('Borrower.FORD.2')}
-                  onChange={(e) => onValueChange('Borrower.FORD.2', e.target.value)}
-                  disabled={disabled}
-                  className="h-7 text-xs"
-                />
-              </div>
+              <Input
+                value={getValue('ford')}
+                onChange={(e) => handleChange('ford', e.target.value)}
+                disabled={disabled}
+                className="h-7 text-xs"
+              />
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -6,11 +6,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
+
+// Field key mapping for banking fields
+const FIELD_KEYS = {
+  bankName: 'ach.bank_name',
+  bankAddress: 'ach.bank_address',
+  routingNumber: 'ach.routing_number',
+  accountNumber: 'ach.account_number',
+  individualId: 'ach.individual_id',
+  individualName: 'ach.individual_name',
+  accountType: 'ach.account_type',
+  serviceStatus: 'ach.service_status',
+  applyDebitAs: 'ach.apply_debit_as',
+  debitFrequency: 'ach.debit_frequency',
+  debitDueDay: 'ach.debit_due_day',
+  nextDebitDate: 'ach.next_debit_date',
+  stopDate: 'ach.stop_date',
+  debitAmount: 'ach.debit_amount',
+  sendConfirm: 'ach.send_confirm',
+} as const;
 
 interface BorrowerBankingFormProps {
   fields: FieldDefinition[];
@@ -45,28 +65,33 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
   showValidation = false,
   disabled = false,
 }) => {
+  const getValue = (key: keyof typeof FIELD_KEYS): string => {
+    return values[FIELD_KEYS[key]] || '';
+  };
+
+  const getBoolValue = (key: keyof typeof FIELD_KEYS): boolean => {
+    return values[FIELD_KEYS[key]] === 'true';
+  };
+
+  const handleChange = (key: keyof typeof FIELD_KEYS, value: string | boolean) => {
+    onValueChange(FIELD_KEYS[key], String(value));
+  };
+
   // Initialize defaults
   useEffect(() => {
-    if (!values['Borrower.Banking.ServiceStatus']) {
-      onValueChange('Borrower.Banking.ServiceStatus', 'None');
+    if (!getValue('serviceStatus')) {
+      handleChange('serviceStatus', 'None');
     }
-    if (!values['Borrower.Banking.ApplyDebitAs']) {
-      onValueChange('Borrower.Banking.ApplyDebitAs', 'To Trust');
+    if (!getValue('applyDebitAs')) {
+      handleChange('applyDebitAs', 'To Trust');
     }
-    if (!values['Borrower.Banking.DebitFrequency']) {
-      onValueChange('Borrower.Banking.DebitFrequency', 'Once Only');
+    if (!getValue('debitFrequency')) {
+      handleChange('debitFrequency', 'Once Only');
     }
   }, []);
-
-  const getFieldValue = (key: string) => values[key] || '';
   
-  const debitFrequency = getFieldValue('Borrower.Banking.DebitFrequency') || 'Once Only';
+  const debitFrequency = getValue('debitFrequency') || 'Once Only';
   const isOnceOnly = debitFrequency === 'Once Only';
-
-  const maskValue = (value: string) => {
-    if (!value || value.length <= 4) return value;
-    return '•'.repeat(value.length - 4) + value.slice(-4);
-  };
 
   const parseDate = (dateStr: string): Date | undefined => {
     if (!dateStr) return undefined;
@@ -87,8 +112,8 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           <div className="flex items-center gap-4">
             <Label className="w-32 text-sm text-foreground flex-shrink-0">Bank Name</Label>
             <Input
-              value={getFieldValue('Borrower.Banking.BankName')}
-              onChange={(e) => onValueChange('Borrower.Banking.BankName', e.target.value)}
+              value={getValue('bankName')}
+              onChange={(e) => handleChange('bankName', e.target.value)}
               disabled={disabled}
               className="h-8 text-sm flex-1"
             />
@@ -98,22 +123,22 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           <div className="flex items-start gap-4">
             <Label className="w-32 text-sm text-foreground flex-shrink-0 pt-2">Bank Address</Label>
             <Textarea
-              value={getFieldValue('Borrower.Banking.BankAddress')}
-              onChange={(e) => onValueChange('Borrower.Banking.BankAddress', e.target.value)}
+              value={getValue('bankAddress')}
+              onChange={(e) => handleChange('bankAddress', e.target.value)}
               disabled={disabled}
               className="text-sm flex-1 min-h-[80px]"
               rows={3}
             />
           </div>
 
-          {/* Routing Number - Masked */}
+          {/* Routing Number */}
           <div className="flex items-center gap-4">
             <Label className="w-32 text-sm text-foreground flex-shrink-0">Routing Number</Label>
             <Input
-              value={getFieldValue('Borrower.Banking.RoutingNumber')}
+              value={getValue('routingNumber')}
               onChange={(e) => {
                 const val = e.target.value.replace(/\D/g, '').slice(0, 9);
-                onValueChange('Borrower.Banking.RoutingNumber', val);
+                handleChange('routingNumber', val);
               }}
               disabled={disabled}
               className="h-8 text-sm flex-1"
@@ -123,14 +148,14 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
             />
           </div>
 
-          {/* Account Number - Masked */}
+          {/* Account Number */}
           <div className="flex items-center gap-4">
             <Label className="w-32 text-sm text-foreground flex-shrink-0">Account Number</Label>
             <Input
-              value={getFieldValue('Borrower.Banking.AccountNumber')}
+              value={getValue('accountNumber')}
               onChange={(e) => {
                 const val = e.target.value.replace(/\D/g, '').slice(0, 17);
-                onValueChange('Borrower.Banking.AccountNumber', val);
+                handleChange('accountNumber', val);
               }}
               disabled={disabled}
               className="h-8 text-sm flex-1"
@@ -144,8 +169,8 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           <div className="flex items-center gap-4">
             <Label className="w-32 text-sm text-foreground flex-shrink-0">Individual Id</Label>
             <Input
-              value={getFieldValue('Borrower.Banking.IndividualId')}
-              onChange={(e) => onValueChange('Borrower.Banking.IndividualId', e.target.value)}
+              value={getValue('individualId')}
+              onChange={(e) => handleChange('individualId', e.target.value)}
               disabled={disabled}
               className="h-8 text-sm flex-1"
             />
@@ -155,8 +180,8 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           <div className="flex items-center gap-4">
             <Label className="w-32 text-sm text-foreground flex-shrink-0">Individual Name</Label>
             <Input
-              value={getFieldValue('Borrower.Banking.IndividualName')}
-              onChange={(e) => onValueChange('Borrower.Banking.IndividualName', e.target.value)}
+              value={getValue('individualName')}
+              onChange={(e) => handleChange('individualName', e.target.value)}
               disabled={disabled}
               className="h-8 text-sm flex-1"
             />
@@ -166,8 +191,8 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           <div className="flex items-center gap-4">
             <Label className="w-32 text-sm text-foreground flex-shrink-0">Account Type</Label>
             <Select
-              value={getFieldValue('Borrower.Banking.AccountType') || 'Checking'}
-              onValueChange={(val) => onValueChange('Borrower.Banking.AccountType', val)}
+              value={getValue('accountType') || 'Checking'}
+              onValueChange={(val) => handleChange('accountType', val)}
               disabled={disabled}
             >
               <SelectTrigger className="h-8 text-sm flex-1">
@@ -188,8 +213,8 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           <div className="flex items-center gap-4">
             <Label className="w-32 text-sm text-foreground flex-shrink-0">Service Status</Label>
             <Select
-              value={getFieldValue('Borrower.Banking.ServiceStatus') || 'None'}
-              onValueChange={(val) => onValueChange('Borrower.Banking.ServiceStatus', val)}
+              value={getValue('serviceStatus') || 'None'}
+              onValueChange={(val) => handleChange('serviceStatus', val)}
               disabled={disabled}
             >
               <SelectTrigger className="h-8 text-sm flex-1">
@@ -207,8 +232,8 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           <div className="flex items-center gap-4">
             <Label className="w-32 text-sm text-foreground flex-shrink-0">Apply Debit As</Label>
             <Select
-              value={getFieldValue('Borrower.Banking.ApplyDebitAs') || 'To Trust'}
-              onValueChange={(val) => onValueChange('Borrower.Banking.ApplyDebitAs', val)}
+              value={getValue('applyDebitAs') || 'To Trust'}
+              onValueChange={(val) => handleChange('applyDebitAs', val)}
               disabled={disabled}
             >
               <SelectTrigger className="h-8 text-sm flex-1">
@@ -227,7 +252,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
             <Label className="w-32 text-sm text-foreground flex-shrink-0">Debit Frequency</Label>
             <Select
               value={debitFrequency}
-              onValueChange={(val) => onValueChange('Borrower.Banking.DebitFrequency', val)}
+              onValueChange={(val) => handleChange('debitFrequency', val)}
               disabled={disabled}
             >
               <SelectTrigger className="h-8 text-sm flex-1">
@@ -245,12 +270,12 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           <div className="flex items-center gap-4">
             <Label className="w-32 text-sm text-foreground flex-shrink-0">Debit Due Day</Label>
             <Input
-              value={getFieldValue('Borrower.Banking.DebitDueDay')}
+              value={getValue('debitDueDay')}
               onChange={(e) => {
                 const val = e.target.value.replace(/\D/g, '');
                 const num = parseInt(val, 10);
                 if (val === '' || (num >= 1 && num <= 31)) {
-                  onValueChange('Borrower.Banking.DebitDueDay', val);
+                  handleChange('debitDueDay', val);
                 }
               }}
               disabled={disabled || isOnceOnly}
@@ -270,20 +295,20 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                   disabled={disabled}
                   className={cn(
                     "h-8 text-sm flex-1 justify-start text-left font-normal",
-                    !getFieldValue('Borrower.Banking.NextDebitDate') && "text-muted-foreground"
+                    !getValue('nextDebitDate') && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {getFieldValue('Borrower.Banking.NextDebitDate')
-                    ? format(parseDate(getFieldValue('Borrower.Banking.NextDebitDate'))!, 'MM/dd/yyyy')
+                  {getValue('nextDebitDate')
+                    ? format(parseDate(getValue('nextDebitDate'))!, 'MM/dd/yyyy')
                     : 'mm/dd/yyyy'}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
                 <Calendar
                   mode="single"
-                  selected={parseDate(getFieldValue('Borrower.Banking.NextDebitDate'))}
-                  onSelect={(date) => onValueChange('Borrower.Banking.NextDebitDate', date ? format(date, 'yyyy-MM-dd') : '')}
+                  selected={parseDate(getValue('nextDebitDate'))}
+                  onSelect={(date) => handleChange('nextDebitDate', date ? format(date, 'yyyy-MM-dd') : '')}
                   initialFocus
                   className="p-3 pointer-events-auto"
                 />
@@ -301,20 +326,20 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                   disabled={disabled}
                   className={cn(
                     "h-8 text-sm flex-1 justify-start text-left font-normal",
-                    !getFieldValue('Borrower.Banking.StopDate') && "text-muted-foreground"
+                    !getValue('stopDate') && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {getFieldValue('Borrower.Banking.StopDate')
-                    ? format(parseDate(getFieldValue('Borrower.Banking.StopDate'))!, 'MM/dd/yyyy')
+                  {getValue('stopDate')
+                    ? format(parseDate(getValue('stopDate'))!, 'MM/dd/yyyy')
                     : 'mm/dd/yyyy'}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
                 <Calendar
                   mode="single"
-                  selected={parseDate(getFieldValue('Borrower.Banking.StopDate'))}
-                  onSelect={(date) => onValueChange('Borrower.Banking.StopDate', date ? format(date, 'yyyy-MM-dd') : '')}
+                  selected={parseDate(getValue('stopDate'))}
+                  onSelect={(date) => handleChange('stopDate', date ? format(date, 'yyyy-MM-dd') : '')}
                   initialFocus
                   className="p-3 pointer-events-auto"
                 />
@@ -328,10 +353,10 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
             <div className="flex items-center flex-1">
               <span className="text-sm text-muted-foreground mr-2">$</span>
               <Input
-                value={getFieldValue('Borrower.Banking.DebitAmount')}
+                value={getValue('debitAmount')}
                 onChange={(e) => {
                   const val = e.target.value.replace(/[^\d.]/g, '');
-                  onValueChange('Borrower.Banking.DebitAmount', val);
+                  handleChange('debitAmount', val);
                 }}
                 disabled={disabled}
                 className="h-8 text-sm flex-1"
@@ -344,12 +369,11 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           {/* Send Confirm */}
           <div className="flex items-center gap-4">
             <Label className="w-32 text-sm text-foreground flex-shrink-0">Send Confirm</Label>
-            <input
-              type="checkbox"
-              checked={getFieldValue('Borrower.Banking.SendConfirm') === 'true'}
-              onChange={(e) => onValueChange('Borrower.Banking.SendConfirm', e.target.checked ? 'true' : 'false')}
+            <Checkbox
+              checked={getBoolValue('sendConfirm')}
+              onCheckedChange={(checked) => handleChange('sendConfirm', !!checked)}
               disabled={disabled}
-              className="h-4 w-4 rounded border-input"
+              className="h-4 w-4"
             />
           </div>
         </div>

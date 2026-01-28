@@ -5,6 +5,44 @@ import { Checkbox } from '@/components/ui/checkbox';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
+// Field key mapping for additional guarantor fields - uses same borrower keys per spec
+const FIELD_KEYS = {
+  // Borrower Details (shared keys)
+  borrowerType: 'borrower.borrower_type',
+  borrowerId: 'borrower.borrower_id',
+  fullName: 'borrower.full_name',
+  firstName: 'borrower.first_name',
+  middleName: 'borrower.middle_initial',
+  lastName: 'borrower.last_name',
+  capacity: 'borrower.capacity',
+  email: 'borrower.email',
+  creditScore: 'borrower.credit_score',
+  taxIdType: 'borrower.tax_id_type',
+  taxId: 'borrower.tax_id',
+  issue1098: 'borrower.issue_1098',
+  // Primary Address
+  primaryStreet: 'borrower.address.street',
+  primaryCity: 'borrower.address.city',
+  primaryState: 'borrower.state',
+  primaryZip: 'borrower.address.zip',
+  // Phone
+  phoneHome: 'borrower.phone.home',
+  phoneWork: 'borrower.phone.work',
+  phoneCell: 'borrower.phone.mobile',
+  phoneFax: 'borrower.phone.fax',
+  // Preferred
+  preferred: 'borrower.preferred',
+  // Mailing Address
+  isPrimary: 'borrower.isPrimary',
+  mailingStreet: 'borrower.street',
+  mailingCity: 'borrower.city',
+  mailingState: 'borrower.state',
+  mailingZip: 'borrower.zip',
+  // Vesting & FORD
+  vesting: 'borrower.vesting',
+  ford: 'borrower.ford',
+} as const;
+
 interface BorrowerAdditionalGuarantorFormProps {
   fields: FieldDefinition[];
   values: Record<string, string>;
@@ -14,49 +52,6 @@ interface BorrowerAdditionalGuarantorFormProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
-// Labels for display - mirrors Primary form structure for Additional Guarantor
-const FIELD_LABELS: Record<string, string> = {
-  'AdditionalGuarantor.Type': 'Borrower Type',
-  'AdditionalGuarantor.ID': 'Borrower ID',
-  'AdditionalGuarantor.FullName': 'Full Name: If Entity, Use Entity',
-  'AdditionalGuarantor.FirstName': 'First: If Entity, Use Signer',
-  'AdditionalGuarantor.MiddleName': 'Middle',
-  'AdditionalGuarantor.LastName': 'Last',
-  'AdditionalGuarantor.Capacity': 'Capacity',
-  'AdditionalGuarantor.Email': 'Email',
-  'AdditionalGuarantor.CreditScore': 'Credit Score',
-  'AdditionalGuarantor.TaxIDType': 'Tax ID Type',
-  'AdditionalGuarantor.TIN': 'TIN',
-};
-
-const NAME_FIELDS = [
-  'AdditionalGuarantor.Type',
-  'AdditionalGuarantor.ID',
-  'AdditionalGuarantor.FullName',
-  'AdditionalGuarantor.FirstName',
-  'AdditionalGuarantor.MiddleName',
-  'AdditionalGuarantor.LastName',
-  'AdditionalGuarantor.Capacity',
-  'AdditionalGuarantor.Email',
-  'AdditionalGuarantor.CreditScore',
-  'AdditionalGuarantor.TaxIDType',
-  'AdditionalGuarantor.TIN',
-];
-
-const ADDRESS_FIELDS = [
-  'AdditionalGuarantor.PrimaryAddress.Street',
-  'AdditionalGuarantor.PrimaryAddress.City',
-  'AdditionalGuarantor.PrimaryAddress.State',
-  'AdditionalGuarantor.PrimaryAddress.ZIP',
-];
-
-const MAILING_FIELDS = [
-  'AdditionalGuarantor.MailingAddress.Street',
-  'AdditionalGuarantor.MailingAddress.City',
-  'AdditionalGuarantor.MailingAddress.State',
-  'AdditionalGuarantor.MailingAddress.ZIP',
-];
-
 export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarantorFormProps> = ({
   fields,
   values,
@@ -64,23 +59,32 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
   showValidation = false,
   disabled = false,
 }) => {
-  const getFieldValue = (key: string) => values[key] || '';
+  const getValue = (key: keyof typeof FIELD_KEYS): string => {
+    return values[FIELD_KEYS[key]] || '';
+  };
 
-  const renderField = (fieldKey: string, label?: string) => {
-    const displayLabel = label || FIELD_LABELS[fieldKey] || fieldKey.split('.').pop() || fieldKey;
-    const value = getFieldValue(fieldKey);
-    const field = fields.find(f => f.field_key === fieldKey);
-    const isRequired = field?.is_required || false;
+  const getBoolValue = (key: keyof typeof FIELD_KEYS): boolean => {
+    return values[FIELD_KEYS[key]] === 'true';
+  };
+
+  const handleChange = (key: keyof typeof FIELD_KEYS, value: string | boolean) => {
+    onValueChange(FIELD_KEYS[key], String(value));
+  };
+
+  const renderField = (key: keyof typeof FIELD_KEYS, label: string) => {
+    const value = getValue(key);
+    const fieldDef = fields.find(f => f.field_key === FIELD_KEYS[key]);
+    const isRequired = fieldDef?.is_required || false;
     const showError = showValidation && isRequired && !value.trim();
 
     return (
-      <div key={fieldKey} className="flex items-center gap-2">
+      <div key={key} className="flex items-center gap-2">
         <Label className="w-44 text-xs text-foreground flex-shrink-0">
-          {displayLabel}
+          {label}
         </Label>
         <Input
           value={value}
-          onChange={(e) => onValueChange(fieldKey, e.target.value)}
+          onChange={(e) => handleChange(key, e.target.value)}
           disabled={disabled}
           className={`h-7 text-xs flex-1 ${showError ? 'border-destructive' : ''}`}
         />
@@ -88,37 +92,30 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
     );
   };
 
-  const renderPhoneField = (fieldKey: string, label: string) => {
-    const value = getFieldValue(fieldKey);
-    const preferredKey = `${fieldKey}.Preferred`;
-    const preferredValue = getFieldValue(preferredKey);
+  const renderPhoneField = (key: keyof typeof FIELD_KEYS, label: string) => {
+    const value = getValue(key);
 
     return (
-      <div key={fieldKey} className="flex items-center gap-2">
+      <div key={key} className="flex items-center gap-2">
         <Label className="w-16 text-xs text-foreground flex-shrink-0">{label}</Label>
         <Input
           value={value}
-          onChange={(e) => onValueChange(fieldKey, e.target.value)}
-          disabled={disabled}
-          className="h-7 text-xs w-24"
-        />
-        <div className="flex items-center gap-1">
-          <Checkbox
-            id={preferredKey}
-            checked={preferredValue === 'true'}
-            onCheckedChange={(checked) => onValueChange(preferredKey, checked ? 'true' : 'false')}
-            disabled={disabled}
-            className="h-4 w-4"
-          />
-          <Label htmlFor={preferredKey} className="text-xs text-muted-foreground">Preferred</Label>
-        </div>
-        <Input
-          placeholder=""
+          onChange={(e) => handleChange(key, e.target.value)}
           disabled={disabled}
           className="h-7 text-xs flex-1"
         />
       </div>
     );
+  };
+
+  const handleSameAsPrimaryChange = (checked: boolean) => {
+    handleChange('isPrimary', checked);
+    if (checked) {
+      handleChange('mailingStreet', getValue('primaryStreet'));
+      handleChange('mailingCity', getValue('primaryCity'));
+      handleChange('mailingState', getValue('primaryState'));
+      handleChange('mailingZip', getValue('primaryZip'));
+    }
   };
 
   return (
@@ -130,7 +127,17 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             <span className="font-semibold text-sm text-foreground">Name</span>
           </div>
           <div className="space-y-1.5">
-            {NAME_FIELDS.map(key => renderField(key))}
+            {renderField('borrowerType', 'Borrower Type')}
+            {renderField('borrowerId', 'Borrower ID')}
+            {renderField('fullName', 'Full Name: If Entity, Use Entity')}
+            {renderField('firstName', 'First: If Entity, Use Signer')}
+            {renderField('middleName', 'Middle')}
+            {renderField('lastName', 'Last')}
+            {renderField('capacity', 'Capacity')}
+            {renderField('email', 'Email')}
+            {renderField('creditScore', 'Credit Score')}
+            {renderField('taxIdType', 'Tax ID Type')}
+            {renderField('taxId', 'TIN')}
           </div>
         </div>
 
@@ -141,7 +148,10 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
               <span className="font-semibold text-sm text-foreground">Primary Address</span>
             </div>
             <div className="space-y-1.5">
-              {ADDRESS_FIELDS.map(key => renderField(key))}
+              {renderField('primaryStreet', 'Street')}
+              {renderField('primaryCity', 'City')}
+              {renderField('primaryState', 'State')}
+              {renderField('primaryZip', 'ZIP')}
             </div>
           </div>
 
@@ -150,24 +160,28 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
               <span className="font-semibold text-sm text-foreground">Phone</span>
             </div>
             <div className="space-y-1.5">
-              {renderPhoneField('AdditionalGuarantor.Phone.Home', 'Home')}
-              {renderPhoneField('AdditionalGuarantor.Phone.Home2', 'Home')}
-              {renderPhoneField('AdditionalGuarantor.Phone.Work', 'Work')}
-              {renderPhoneField('AdditionalGuarantor.Phone.Cell', 'Cell')}
-              {renderPhoneField('AdditionalGuarantor.Phone.Fax', 'Fax')}
-              <div className="flex items-center gap-2">
-                <Label className="w-16 text-xs text-foreground flex-shrink-0">Issue 1098</Label>
+              {renderPhoneField('phoneHome', 'Home')}
+              {renderPhoneField('phoneWork', 'Work')}
+              {renderPhoneField('phoneCell', 'Cell')}
+              {renderPhoneField('phoneFax', 'Fax')}
+              <div className="flex items-center gap-2 pt-2">
+                <Label className="w-16 text-xs text-foreground flex-shrink-0">Preferred</Label>
                 <Input
-                  value={getFieldValue('AdditionalGuarantor.Issue1098')}
-                  onChange={(e) => onValueChange('AdditionalGuarantor.Issue1098', e.target.value)}
+                  value={getValue('preferred')}
+                  onChange={(e) => handleChange('preferred', e.target.value)}
                   disabled={disabled}
-                  className="h-7 text-xs w-24"
+                  className="h-7 text-xs flex-1"
                 />
+              </div>
+              <div className="flex items-center gap-2 pt-2">
                 <Checkbox
-                  id="guarantor-issue1098-check"
+                  id="guarantor-issue1098"
+                  checked={getBoolValue('issue1098')}
+                  onCheckedChange={(checked) => handleChange('issue1098', !!checked)}
                   disabled={disabled}
                   className="h-4 w-4"
                 />
+                <Label htmlFor="guarantor-issue1098" className="text-xs text-foreground">Issue 1098</Label>
               </div>
             </div>
           </div>
@@ -181,8 +195,8 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
               <div className="flex items-center gap-2">
                 <Checkbox
                   id="guarantor-same-as-primary"
-                  checked={getFieldValue('AdditionalGuarantor.MailingAddress.SameAsPrimary') === 'true'}
-                  onCheckedChange={(checked) => onValueChange('AdditionalGuarantor.MailingAddress.SameAsPrimary', checked ? 'true' : 'false')}
+                  checked={getBoolValue('isPrimary')}
+                  onCheckedChange={handleSameAsPrimaryChange}
                   disabled={disabled}
                   className="h-4 w-4"
                 />
@@ -190,7 +204,10 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
               </div>
             </div>
             <div className="space-y-1.5">
-              {MAILING_FIELDS.map(key => renderField(key))}
+              {renderField('mailingStreet', 'Street')}
+              {renderField('mailingCity', 'City')}
+              {renderField('mailingState', 'State')}
+              {renderField('mailingZip', 'ZIP')}
             </div>
           </div>
 
@@ -200,28 +217,20 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             </div>
             <div className="space-y-1.5">
               <Input
-                value={getFieldValue('AdditionalGuarantor.Vesting')}
-                onChange={(e) => onValueChange('AdditionalGuarantor.Vesting', e.target.value)}
+                value={getValue('vesting')}
+                onChange={(e) => handleChange('vesting', e.target.value)}
                 disabled={disabled}
                 className="h-16 text-xs flex-1"
               />
               <div className="border-b border-border pb-1 mb-2 mt-4">
                 <span className="font-semibold text-sm text-foreground">FORD</span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Input
-                  value={getFieldValue('AdditionalGuarantor.FORD.1')}
-                  onChange={(e) => onValueChange('AdditionalGuarantor.FORD.1', e.target.value)}
-                  disabled={disabled}
-                  className="h-7 text-xs"
-                />
-                <Input
-                  value={getFieldValue('AdditionalGuarantor.FORD.2')}
-                  onChange={(e) => onValueChange('AdditionalGuarantor.FORD.2', e.target.value)}
-                  disabled={disabled}
-                  className="h-7 text-xs"
-                />
-              </div>
+              <Input
+                value={getValue('ford')}
+                onChange={(e) => handleChange('ford', e.target.value)}
+                disabled={disabled}
+                className="h-7 text-xs"
+              />
             </div>
           </div>
         </div>
