@@ -34,10 +34,10 @@ const FIELD_KEYS = {
   preferred: 'borrower.preferred',
   // Mailing Address
   isPrimary: 'borrower.isPrimary',
-  mailingStreet: 'borrower.street',
-  mailingCity: 'borrower.city',
-  mailingState: 'borrower.state',
-  mailingZip: 'borrower.zip',
+  mailingStreet: 'borrower.mailing_street',
+  mailingCity: 'borrower.mailing_city',
+  mailingState: 'borrower.mailing_state',
+  mailingZip: 'borrower.mailing_zip',
   // Vesting & FORD
   vesting: 'borrower.vesting',
   ford: 'borrower.ford',
