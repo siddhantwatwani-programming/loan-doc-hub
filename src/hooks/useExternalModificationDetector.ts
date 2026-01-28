@@ -76,56 +76,68 @@ export function useExternalModificationDetector(dealId: string): UseExternalModi
       const reviewedAt = lastReviewActivity?.created_at || null;
       setLastReviewedAt(reviewedAt);
 
-      // Find field values updated by external users (borrower, broker, lender)
-      // We need to join with user_roles to check the updater's role
-      const { data: fieldValues, error } = await supabase
-        .from('deal_field_values')
-        .select(`
-          field_dictionary_id,
-          updated_by,
-          updated_at,
-          field_dictionary!fk_deal_field_values_field_dictionary(field_key)
-        `)
-        .eq('deal_id', dealId)
-        .not('updated_by', 'is', null);
+      // Find field values updated by external users from deal_section_values
+      const { data: sectionValues, error: svError } = await supabase
+        .from('deal_section_values')
+        .select('section, field_values')
+        .eq('deal_id', dealId);
 
-      if (error) throw error;
+      if (svError) throw svError;
 
-      // For each field value, check if the updater is an external user
+      // Collect all field_dictionary_ids from JSONB keys
+      const allFieldDictIds: string[] = [];
+      ((sectionValues || []) as any[]).forEach((sv) => {
+        Object.keys(sv.field_values || {}).forEach(id => {
+          if (!allFieldDictIds.includes(id)) allFieldDictIds.push(id);
+        });
+      });
+
+      // Fetch field dictionary entries for field_key lookup
+      const { data: fieldDictEntries } = await supabase
+        .from('field_dictionary')
+        .select('id, field_key')
+        .in('id', allFieldDictIds);
+
+      const fieldDictMap = new Map<string, string>();
+      (fieldDictEntries || []).forEach((fd: any) => fieldDictMap.set(fd.id, fd.field_key));
+
+      // Extract field-level audit data from JSONB
       const modifications: ExternalModification[] = [];
       
-      for (const fv of (fieldValues || []) as any[]) {
-        if (!fv.updated_by) continue;
+      for (const sv of (sectionValues || []) as any[]) {
+        for (const [fieldDictId, data] of Object.entries(sv.field_values || {}) as [string, any][]) {
+          if (!data?.updated_by) continue;
 
-        // Get the updater's role
-        const { data: updaterRole } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', fv.updated_by)
-          .single();
+          // Get the updater's role
+          const { data: updaterRole } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', data.updated_by)
+            .single();
 
-        // Check if it's an external role
-        const isExternal = updaterRole && ['borrower', 'broker', 'lender'].includes(updaterRole.role);
-        
-        if (isExternal) {
-          // Check if this modification is after the last review
-          if (!reviewedAt || new Date(fv.updated_at) > new Date(reviewedAt)) {
-            // Get the updater's profile
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('full_name')
-              .eq('user_id', fv.updated_by)
-              .single();
+          // Check if it's an external role
+          const isExternal = updaterRole && ['borrower', 'broker', 'lender'].includes(updaterRole.role);
+          
+          if (isExternal) {
+            // Check if this modification is after the last review
+            if (!reviewedAt || new Date(data.updated_at) > new Date(reviewedAt)) {
+              // Get the updater's profile
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('user_id', data.updated_by)
+                .single();
 
-            const fieldKey = fv.field_dictionary?.field_key || fv.field_dictionary_id;
-            modifications.push({
-              field_dictionary_id: fv.field_dictionary_id,
-              field_key: fieldKey,
-              updated_by: fv.updated_by,
-              updated_at: fv.updated_at,
-              updater_role: updaterRole.role,
-              updater_name: profile?.full_name || null,
-            });
+              const fieldKey = fieldDictMap.get(fieldDictId) || fieldDictId;
+              modifications.push({
+                field_dictionary_id: fieldDictId,
+                field_key: fieldKey,
+                updated_by: data.updated_by,
+                updated_at: data.updated_at,
+                updater_role: updaterRole.role,
+                updater_name: profile?.full_name || null,
+              });
+            }
           }
         }
       }

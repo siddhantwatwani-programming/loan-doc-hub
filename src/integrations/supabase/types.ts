@@ -190,6 +190,41 @@ export type Database = {
           },
         ]
       }
+      deal_section_values: {
+        Row: {
+          deal_id: string
+          field_values: Json
+          id: string
+          section: Database["public"]["Enums"]["field_section"]
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          deal_id: string
+          field_values?: Json
+          id?: string
+          section: Database["public"]["Enums"]["field_section"]
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          deal_id?: string
+          field_values?: Json
+          id?: string
+          section?: Database["public"]["Enums"]["field_section"]
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_section_values_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           borrower_name: string | null

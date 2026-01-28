@@ -55,6 +55,16 @@ interface DealFieldValue {
   data_type: FieldDataType;
 }
 
+// JSONB field value structure from deal_section_values
+interface JsonbFieldValue {
+  value_text: string | null;
+  value_number: number | null;
+  value_date: string | null;
+  value_json: unknown;
+  updated_at: string;
+  updated_by: string | null;
+}
+
 interface FieldDefinition {
   id: string;
   field_key: string;
@@ -191,49 +201,61 @@ export async function resolveFieldValues(
   };
 
   try {
-    // 1. Fetch deal field values
-    const { data: fieldValues, error: fvError } = await supabase
-      .from('deal_field_values')
-      .select('field_dictionary_id, value_text, value_number, value_date, value_json')
+    // 1. Fetch deal section values from deal_section_values
+    const { data: sectionValues, error: svError } = await supabase
+      .from('deal_section_values')
+      .select('section, field_values')
       .eq('deal_id', dealId);
 
-    if (fvError) {
-      result.errors.push(`Failed to fetch deal field values: ${fvError.message}`);
+    if (svError) {
+      result.errors.push(`Failed to fetch deal section values: ${svError.message}`);
       return result;
     }
 
-    // Get unique field dictionary IDs
-    const fieldDictIds = [...new Set((fieldValues || []).map(fv => fv.field_dictionary_id).filter(Boolean))] as string[];
+    // Collect all field_dictionary_ids from JSONB keys
+    const allFieldDictIds: string[] = [];
+    ((sectionValues || []) as any[]).forEach((sv) => {
+      Object.keys(sv.field_values || {}).forEach(id => {
+        if (!allFieldDictIds.includes(id)) allFieldDictIds.push(id);
+      });
+    });
+
+    if (allFieldDictIds.length === 0) {
+      return result;
+    }
     
     // Fetch field dictionary entries
-    let fieldDictMap = new Map<string, any>();
-    if (fieldDictIds.length > 0) {
-      const { data: fieldDictEntries, error: fdError } = await supabase
-        .from('field_dictionary')
-        .select('id, field_key, data_type, label')
-        .in('id', fieldDictIds);
+    const { data: fieldDictEntries, error: fdError } = await supabase
+      .from('field_dictionary')
+      .select('id, field_key, data_type, label')
+      .in('id', allFieldDictIds);
 
-      if (!fdError && fieldDictEntries) {
-        fieldDictEntries.forEach(fd => fieldDictMap.set(fd.id, fd));
-      }
+    if (fdError) {
+      result.errors.push(`Failed to fetch field dictionary: ${fdError.message}`);
+      return result;
     }
 
-    // Create lookup map for field values by field_key
+    // Build field dictionary lookup map
+    const fieldDictMap = new Map<string, any>();
+    (fieldDictEntries || []).forEach((fd: any) => fieldDictMap.set(fd.id, fd));
+
+    // Create lookup map for field values by field_key (parse from JSONB)
     const fieldValueMap: Record<string, DealFieldValue> = {};
-    ((fieldValues || []) as any[]).forEach((fv) => {
-      const fieldDict = fieldDictMap.get(fv.field_dictionary_id);
-      if (fieldDict) {
-        const fieldKey = fieldDict.field_key;
-        fieldValueMap[fieldKey] = {
-          field_dictionary_id: fv.field_dictionary_id,
-          field_key: fieldKey,
-          value_text: fv.value_text,
-          value_number: fv.value_number,
-          value_date: fv.value_date,
-          value_json: fv.value_json,
-          data_type: fieldDict.data_type,
-        };
-      }
+    ((sectionValues || []) as any[]).forEach((sv) => {
+      Object.entries(sv.field_values || {}).forEach(([fieldDictId, data]: [string, any]) => {
+        const fieldDict = fieldDictMap.get(fieldDictId);
+        if (fieldDict) {
+          fieldValueMap[fieldDict.field_key] = {
+            field_dictionary_id: fieldDictId,
+            field_key: fieldDict.field_key,
+            value_text: data.value_text,
+            value_number: data.value_number,
+            value_date: data.value_date,
+            value_json: data.value_json,
+            data_type: fieldDict.data_type,
+          };
+        }
+      });
     });
 
     // 2. Get the list of field keys to resolve

@@ -58,6 +58,16 @@ export interface UseDealFieldsReturn extends DealFieldsData {
   resetDirty: () => void;
 }
 
+// JSONB field value structure
+interface JsonbFieldValue {
+  value_text: string | null;
+  value_number: number | null;
+  value_date: string | null;
+  value_json: any | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
 // Map field data types to value columns
 function getValueFromRecord(record: FieldValue, dataType: FieldDataType): string {
   switch (dataType) {
@@ -71,6 +81,22 @@ function getValueFromRecord(record: FieldValue, dataType: FieldDataType): string
       return record.value_text || '';
     default:
       return record.value_text || '';
+  }
+}
+
+// Extract typed value from JSONB structure
+function extractTypedValueFromJsonb(fieldData: JsonbFieldValue, dataType: FieldDataType): string {
+  switch (dataType) {
+    case 'number':
+    case 'currency':
+    case 'percentage':
+      return fieldData.value_number?.toString() || '';
+    case 'date':
+      return fieldData.value_date || '';
+    case 'boolean':
+      return fieldData.value_text || '';
+    default:
+      return fieldData.value_text || '';
   }
 }
 
@@ -201,14 +227,14 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
       setFieldDataTypes(dataTypeMap);
       setFieldIdMap(idMap);
 
-      // 2. Fetch existing field values for this deal
+      // 2. Fetch existing field values for this deal from deal_section_values
       if (mergedResolved.visibleFieldKeys.length > 0) {
-        const { data: existingValues, error: evError } = await supabase
-          .from('deal_field_values')
-          .select('field_dictionary_id, value_text, value_number, value_date, value_json')
+        const { data: sectionValues, error: svError } = await supabase
+          .from('deal_section_values')
+          .select('section, field_values')
           .eq('deal_id', dealId);
 
-        if (evError) throw evError;
+        if (svError) throw svError;
 
         // Create lookup map from field_dictionary_id to field metadata
         const fieldDictIdToMeta = new Map<string, { field_key: string; data_type: FieldDataType }>();
@@ -216,24 +242,19 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
           fieldDictIdToMeta.set(f.field_dictionary_id, { field_key: f.field_key, data_type: f.data_type });
         });
 
-        // Build values map - convert typed values to strings for form display
+        // Build values map - parse JSONB field_values keyed by field_dictionary_id
         const valuesMap: Record<string, string> = {};
-        ((existingValues || []) as any[]).forEach((ev) => {
-          const fieldMeta = fieldDictIdToMeta.get(ev.field_dictionary_id);
-          if (fieldMeta) {
-            const fieldValue: FieldValue = {
-              field_dictionary_id: ev.field_dictionary_id,
-              field_key: fieldMeta.field_key,
-              value_text: ev.value_text,
-              value_number: ev.value_number,
-              value_date: ev.value_date,
-              value_json: ev.value_json,
-            };
-            const value = getValueFromRecord(fieldValue, fieldMeta.data_type);
-            if (value) {
-              valuesMap[fieldMeta.field_key] = value;
+        ((sectionValues || []) as any[]).forEach((sv) => {
+          const fieldValues = sv.field_values || {};
+          Object.entries(fieldValues).forEach(([fieldDictId, fieldData]: [string, any]) => {
+            const fieldMeta = fieldDictIdToMeta.get(fieldDictId);
+            if (fieldMeta && fieldData) {
+              const value = extractTypedValueFromJsonb(fieldData as JsonbFieldValue, fieldMeta.data_type);
+              if (value) {
+                valuesMap[fieldMeta.field_key] = value;
+              }
             }
-          }
+          });
         });
 
         // Apply default values for fields without values
@@ -317,57 +338,86 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
         finalValues[key] !== undefined && finalValues[key] !== ''
       );
 
-      // Use upsert with field_dictionary_id
+      // Group values by section and build JSONB structure
       if (fieldKeysToSave.length > 0) {
-        const valuesToUpsert = fieldKeysToSave
-          .filter(fieldKey => fieldIdMap[fieldKey]) // Only save fields we have IDs for
-          .map(fieldKey => {
-            const dataType = fieldDataTypes[fieldKey] || 'text';
-            const stringValue = finalValues[fieldKey];
-            const fieldDictId = fieldIdMap[fieldKey];
-            
-            const record: {
-              deal_id: string;
-              field_dictionary_id: string;
-              value_text: string | null;
-              value_number: number | null;
-              value_date: string | null;
-              value_json: any | null;
-              updated_by: string;
-            } = {
-              deal_id: dealId,
-              field_dictionary_id: fieldDictId,
-              value_text: null,
-              value_number: null,
-              value_date: null,
-              value_json: null,
-              updated_by: user.id,
-            };
+        // Build section -> field_dictionary_id -> value object mapping
+        const sectionUpdates: Record<string, Record<string, JsonbFieldValue>> = {};
+        
+        for (const fieldKey of fieldKeysToSave) {
+          const fieldDictId = fieldIdMap[fieldKey];
+          if (!fieldDictId) continue;
+          
+          // Find the field to get its section
+          const field = resolvedFields?.fields.find(f => f.field_key === fieldKey);
+          if (!field) continue;
+          
+          const section = field.section;
+          if (!sectionUpdates[section]) {
+            sectionUpdates[section] = {};
+          }
+          
+          const dataType = fieldDataTypes[fieldKey] || 'text';
+          const stringValue = finalValues[fieldKey];
+          
+          // Build the JSONB field value object
+          const fieldValueObj: JsonbFieldValue = {
+            value_text: null,
+            value_number: null,
+            value_date: null,
+            value_json: null,
+            updated_at: new Date().toISOString(),
+            updated_by: user.id,
+          };
+          
+          switch (dataType) {
+            case 'number':
+            case 'currency':
+            case 'percentage':
+              const numValue = parseFloat(stringValue);
+              fieldValueObj.value_number = isNaN(numValue) ? null : numValue;
+              break;
+            case 'date':
+              fieldValueObj.value_date = stringValue || null;
+              break;
+            case 'boolean':
+              fieldValueObj.value_text = stringValue;
+              break;
+            default:
+              fieldValueObj.value_text = stringValue;
+          }
+          
+          sectionUpdates[section][fieldDictId] = fieldValueObj;
+        }
 
-            switch (dataType) {
-              case 'number':
-              case 'currency':
-              case 'percentage':
-                const numValue = parseFloat(stringValue);
-                record.value_number = isNaN(numValue) ? null : numValue;
-                break;
-              case 'date':
-                record.value_date = stringValue || null;
-                break;
-              case 'boolean':
-                record.value_text = stringValue;
-                break;
-              default:
-                record.value_text = stringValue;
-            }
-
-            return record;
-          });
-
-        if (valuesToUpsert.length > 0) {
+        // Upsert each section - merge with existing field_values using RPC or fetch-then-update
+        for (const [section, newFieldValues] of Object.entries(sectionUpdates)) {
+          // Fetch existing section values to merge
+          const { data: existingSection } = await supabase
+            .from('deal_section_values')
+            .select('field_values, version')
+            .eq('deal_id', dealId)
+            .eq('section', section as FieldSection)
+            .maybeSingle();
+          
+          // Merge new values with existing - cast through unknown for JSONB compatibility
+          const existingFieldValues = (existingSection?.field_values as unknown as Record<string, JsonbFieldValue>) || {};
+          const mergedFieldValues: Record<string, JsonbFieldValue> = {
+            ...existingFieldValues,
+            ...newFieldValues
+          };
+          
+          const newVersion = (existingSection?.version || 0) + 1;
+          
+          // Use raw upsert - cast merged values to Json for JSONB storage
           const { error: upsertError } = await supabase
-            .from('deal_field_values')
-            .upsert(valuesToUpsert, { onConflict: 'deal_id,field_dictionary_id' });
+            .from('deal_section_values')
+            .upsert([{
+              deal_id: dealId,
+              section: section as FieldSection,
+              field_values: JSON.parse(JSON.stringify(mergedFieldValues)),
+              updated_at: new Date().toISOString(),
+              version: newVersion,
+            }], { onConflict: 'deal_id,section' });
 
           if (upsertError) throw upsertError;
         }

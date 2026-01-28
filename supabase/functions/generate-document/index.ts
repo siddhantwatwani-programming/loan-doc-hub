@@ -923,14 +923,19 @@ async function generateSingleDocument(
       fieldDefMap.set(fd.field_key, fd);
     });
 
-    // 3. Fetch ALL deal field values (not just mapped ones, for label-based replacement)
-    const { data: dealFieldValues } = await supabase
-      .from("deal_field_values")
-      .select("field_dictionary_id, value_text, value_number, value_date")
+    // 3. Fetch ALL deal field values from deal_section_values (not just mapped ones, for label-based replacement)
+    const { data: sectionValues } = await supabase
+      .from("deal_section_values")
+      .select("section, field_values")
       .eq("deal_id", dealId);
 
-    // Get all field dictionary IDs from deal values
-    const allFieldDictIds = [...new Set((dealFieldValues || []).map((dfv: any) => dfv.field_dictionary_id).filter(Boolean))];
+    // Get all field_dictionary_ids from JSONB keys
+    const allFieldDictIds: string[] = [];
+    (sectionValues || []).forEach((sv: any) => {
+      Object.keys(sv.field_values || {}).forEach((id: string) => {
+        if (!allFieldDictIds.includes(id)) allFieldDictIds.push(id);
+      });
+    });
     
     // Fetch ALL field dictionary entries for deal values
     const { data: allFieldDictEntries } = await supabase
@@ -942,15 +947,32 @@ async function generateSingleDocument(
     const allFieldDictMap = new Map<string, FieldDefinition>();
     (allFieldDictEntries || []).forEach((fd: any) => allFieldDictMap.set(fd.id, fd));
 
-    const fieldValues = new Map<string, { rawValue: string | number | null; dataType: string }>();
-    (dealFieldValues || []).forEach((dfv: any) => {
-      const fieldDict = allFieldDictMap.get(dfv.field_dictionary_id);
-      if (fieldDict) {
-        const fieldKey = fieldDict.field_key;
-        const dataType = fieldDict.data_type || "text";
-        const rawValue = extractRawValue({ field_dictionary_id: dfv.field_dictionary_id, field_key: fieldKey, value_text: dfv.value_text, value_number: dfv.value_number, value_date: dfv.value_date }, dataType);
-        fieldValues.set(fieldKey, { rawValue, dataType });
+    // Helper function to extract raw value from JSONB structure
+    const extractRawValueFromJsonb = (data: any, dataType: string): string | number | null => {
+      switch (dataType) {
+        case "currency":
+        case "number":
+        case "percentage":
+          return data.value_number;
+        case "date":
+          return data.value_date;
+        case "text":
+        case "boolean":
+        default:
+          return data.value_text;
       }
+    };
+
+    const fieldValues = new Map<string, { rawValue: string | number | null; dataType: string }>();
+    (sectionValues || []).forEach((sv: any) => {
+      Object.entries(sv.field_values || {}).forEach(([fieldDictId, data]: [string, any]) => {
+        const fieldDict = allFieldDictMap.get(fieldDictId);
+        if (fieldDict) {
+          const dataType = fieldDict.data_type || "text";
+          const rawValue = extractRawValueFromJsonb(data, dataType);
+          fieldValues.set(fieldDict.field_key, { rawValue, dataType });
+        }
+      });
     });
 
     console.log(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);
