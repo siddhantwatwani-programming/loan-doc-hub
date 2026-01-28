@@ -33,6 +33,22 @@ const INSURANCE_DESCRIPTION_OPTIONS = [
   'Wind'
 ];
 
+// Field key mapping as specified
+const FIELD_KEYS = {
+  description: 'property1.insurance_description',
+  insuredName: 'property1.insured_s_name',
+  companyName: 'property1.insurance_company_name',
+  policyNumber: 'property1.insurance_policy_number',
+  expiration: 'property1.insurance_expiration',
+  coverage: 'property1.insurance_coverage',
+  active: 'property1.insurance_active',
+  agentName: 'property1.agent_s_name',
+  businessAddress: 'property1.insurance_business_address',
+  phoneNumber: 'property1.insurance_phone_number',
+  faxNumber: 'property1.insurance_fax_number',
+  email: 'property1.insurance_e_mail',
+} as const;
+
 export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
   fields,
   values,
@@ -43,7 +59,7 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
   const getFieldValue = (key: string) => values[key] || '';
 
   // Pulls in property addresses for the dropdown
-  const propertyAddress = values['Property.Address.Street'] || 'Unassigned';
+  const propertyAddress = values['property1.street'] || 'Unassigned';
 
   return (
     <div className="p-6 space-y-6">
@@ -91,8 +107,8 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
           <div>
             <Label className="text-sm text-foreground">Description</Label>
             <Select
-              value={getFieldValue('Property.Insurance.Description')}
-              onValueChange={(val) => onValueChange('Property.Insurance.Description', val)}
+              value={getFieldValue(FIELD_KEYS.description)}
+              onValueChange={(val) => onValueChange(FIELD_KEYS.description, val)}
               disabled={disabled}
             >
               <SelectTrigger className="h-8 text-sm mt-1">
@@ -109,8 +125,8 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
           <div>
             <Label className="text-sm text-foreground">Insured's Name</Label>
             <Input
-              value={getFieldValue('Property.Insurance.InsuredName')}
-              onChange={(e) => onValueChange('Property.Insurance.InsuredName', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.insuredName)}
+              onChange={(e) => onValueChange(FIELD_KEYS.insuredName, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
             />
@@ -119,8 +135,8 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
           <div>
             <Label className="text-sm text-foreground">Company Name</Label>
             <Input
-              value={getFieldValue('Property.Insurance.CompanyName')}
-              onChange={(e) => onValueChange('Property.Insurance.CompanyName', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.companyName)}
+              onChange={(e) => onValueChange(FIELD_KEYS.companyName, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
             />
@@ -129,8 +145,8 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
           <div>
             <Label className="text-sm text-foreground">Policy Number</Label>
             <Input
-              value={getFieldValue('Property.Insurance.PolicyNumber')}
-              onChange={(e) => onValueChange('Property.Insurance.PolicyNumber', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.policyNumber)}
+              onChange={(e) => onValueChange(FIELD_KEYS.policyNumber, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
             />
@@ -140,8 +156,8 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
             <Label className="text-sm text-foreground">Expiration</Label>
             <Input
               type="date"
-              value={getFieldValue('Property.Insurance.Expiration')}
-              onChange={(e) => onValueChange('Property.Insurance.Expiration', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.expiration)}
+              onChange={(e) => onValueChange(FIELD_KEYS.expiration, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
             />
@@ -152,8 +168,8 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
             <div className="flex items-center gap-1 mt-1">
               <span className="text-sm text-muted-foreground">$</span>
               <Input
-                value={getFieldValue('Property.Insurance.Coverage')}
-                onChange={(e) => onValueChange('Property.Insurance.Coverage', e.target.value)}
+                value={getFieldValue(FIELD_KEYS.coverage)}
+                onChange={(e) => onValueChange(FIELD_KEYS.coverage, e.target.value)}
                 disabled={disabled}
                 className="h-8 text-sm text-right"
                 inputMode="decimal"
@@ -165,8 +181,8 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
           <div className="flex items-center gap-2 pt-2">
             <Checkbox
               id="insurance-active"
-              checked={getFieldValue('Property.Insurance.Active') === 'true'}
-              onCheckedChange={(checked) => onValueChange('Property.Insurance.Active', checked ? 'true' : 'false')}
+              checked={getFieldValue(FIELD_KEYS.active) === 'true'}
+              onCheckedChange={(checked) => onValueChange(FIELD_KEYS.active, checked ? 'true' : 'false')}
               disabled={disabled}
               className="h-4 w-4"
             />
@@ -185,8 +201,8 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
           <div>
             <Label className="text-sm text-foreground">Agent's Name</Label>
             <Input
-              value={getFieldValue('Property.Insurance.AgentName')}
-              onChange={(e) => onValueChange('Property.Insurance.AgentName', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.agentName)}
+              onChange={(e) => onValueChange(FIELD_KEYS.agentName, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
             />
@@ -195,8 +211,8 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
           <div>
             <Label className="text-sm text-foreground">Bus. Address</Label>
             <Input
-              value={getFieldValue('Property.Insurance.AgentAddress')}
-              onChange={(e) => onValueChange('Property.Insurance.AgentAddress', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.businessAddress)}
+              onChange={(e) => onValueChange(FIELD_KEYS.businessAddress, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
             />
@@ -205,8 +221,8 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
           <div>
             <Label className="text-sm text-foreground">Phone Number</Label>
             <Input
-              value={getFieldValue('Property.Insurance.AgentPhone')}
-              onChange={(e) => onValueChange('Property.Insurance.AgentPhone', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.phoneNumber)}
+              onChange={(e) => onValueChange(FIELD_KEYS.phoneNumber, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
             />
@@ -215,8 +231,8 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
           <div>
             <Label className="text-sm text-foreground">Fax Number</Label>
             <Input
-              value={getFieldValue('Property.Insurance.AgentFax')}
-              onChange={(e) => onValueChange('Property.Insurance.AgentFax', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.faxNumber)}
+              onChange={(e) => onValueChange(FIELD_KEYS.faxNumber, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
             />
@@ -226,8 +242,8 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
             <Label className="text-sm text-foreground">E-mail</Label>
             <Input
               type="email"
-              value={getFieldValue('Property.Insurance.AgentEmail')}
-              onChange={(e) => onValueChange('Property.Insurance.AgentEmail', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.email)}
+              onChange={(e) => onValueChange(FIELD_KEYS.email, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
             />

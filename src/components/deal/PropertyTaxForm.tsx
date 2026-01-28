@@ -35,6 +35,18 @@ const FREQUENCY_OPTIONS = [
   'Yearly'
 ];
 
+// Field key mapping as specified
+const FIELD_KEYS = {
+  payeeName: 'property1.payee_name',
+  payeeAddress: 'property1.payee_address',
+  ref: 'property1.payee_ref',
+  memo: 'property1.payee_memo',
+  nextDueDateFrequency: 'property1.payee_next_due_datefrequency',
+  hold: 'property1.payee_hold',
+  amount: 'property1.payee_amount',
+  taxYear: 'property1.payee_tax_year',
+} as const;
+
 export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
   fields,
   values,
@@ -45,12 +57,12 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
   const getFieldValue = (key: string) => values[key] || '';
 
   // Auto-populate Ref from APN (Legal Description page)
-  const apnValue = values['Property.Legal.APN'] || '';
+  const apnValue = values['property1.apn'] || '';
   
   useEffect(() => {
     // Auto-populate the Ref field from APN if APN exists and Ref is empty
-    if (apnValue && !getFieldValue('Property.Tax.Ref')) {
-      onValueChange('Property.Tax.Ref', apnValue);
+    if (apnValue && !getFieldValue(FIELD_KEYS.ref)) {
+      onValueChange(FIELD_KEYS.ref, apnValue);
     }
   }, [apnValue]);
 
@@ -72,8 +84,8 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
           <div>
             <Label className="text-sm text-foreground">Payee Name</Label>
             <Input
-              value={getFieldValue('Property.Tax.PayeeName')}
-              onChange={(e) => onValueChange('Property.Tax.PayeeName', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.payeeName)}
+              onChange={(e) => onValueChange(FIELD_KEYS.payeeName, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
               placeholder="SDTAXCOLL"
@@ -83,8 +95,8 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
           <div>
             <Label className="text-sm text-foreground">Payee Address</Label>
             <Textarea
-              value={getFieldValue('Property.Tax.PayeeAddress')}
-              onChange={(e) => onValueChange('Property.Tax.PayeeAddress', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.payeeAddress)}
+              onChange={(e) => onValueChange(FIELD_KEYS.payeeAddress, e.target.value)}
               disabled={disabled}
               className="mt-1 min-h-[80px] text-sm"
               placeholder="Dan McAllister&#10;P.O. Box 129009&#10;San Diego CA 92112"
@@ -94,8 +106,8 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
           <div>
             <Label className="text-sm text-foreground">Ref</Label>
             <Input
-              value={getFieldValue('Property.Tax.Ref') || apnValue}
-              onChange={(e) => onValueChange('Property.Tax.Ref', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.ref) || apnValue}
+              onChange={(e) => onValueChange(FIELD_KEYS.ref, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
               placeholder="APN: 578-012-76-09"
@@ -108,8 +120,8 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
           <div>
             <Label className="text-sm text-foreground">Memo</Label>
             <Input
-              value={getFieldValue('Property.Tax.Memo')}
-              onChange={(e) => onValueChange('Property.Tax.Memo', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.memo)}
+              onChange={(e) => onValueChange(FIELD_KEYS.memo, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
               placeholder="Enter memo"
@@ -124,39 +136,21 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
           </div>
 
           <div>
-            <Label className="text-sm text-foreground">Next Due Date</Label>
+            <Label className="text-sm text-foreground">Next Due Date / Frequency</Label>
             <Input
-              type="date"
-              value={getFieldValue('Property.Tax.NextDueDate')}
-              onChange={(e) => onValueChange('Property.Tax.NextDueDate', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.nextDueDateFrequency)}
+              onChange={(e) => onValueChange(FIELD_KEYS.nextDueDateFrequency, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
+              placeholder="e.g., 2024-12-31 / Yearly"
             />
-          </div>
-
-          <div>
-            <Label className="text-sm text-foreground">Frequency</Label>
-            <Select
-              value={getFieldValue('Property.Tax.Frequency') || 'Once Only'}
-              onValueChange={(val) => onValueChange('Property.Tax.Frequency', val)}
-              disabled={disabled}
-            >
-              <SelectTrigger className="h-8 text-sm mt-1">
-                <SelectValue placeholder="Once Only" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border border-border z-50">
-                {FREQUENCY_OPTIONS.map(opt => (
-                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="flex items-center gap-2 pt-2">
             <Checkbox
               id="tax-hold"
-              checked={getFieldValue('Property.Tax.Hold') === 'true'}
-              onCheckedChange={(checked) => onValueChange('Property.Tax.Hold', checked ? 'true' : 'false')}
+              checked={getFieldValue(FIELD_KEYS.hold) === 'true'}
+              onCheckedChange={(checked) => onValueChange(FIELD_KEYS.hold, checked ? 'true' : 'false')}
               disabled={disabled}
               className="h-4 w-4"
             />
@@ -170,8 +164,8 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
             <div className="flex items-center gap-1 mt-1">
               <span className="text-sm text-muted-foreground">$</span>
               <Input
-                value={getFieldValue('Property.Tax.Amount')}
-                onChange={(e) => onValueChange('Property.Tax.Amount', e.target.value)}
+                value={getFieldValue(FIELD_KEYS.amount)}
+                onChange={(e) => onValueChange(FIELD_KEYS.amount, e.target.value)}
                 disabled={disabled}
                 className="h-8 text-sm text-right"
                 inputMode="decimal"
@@ -183,8 +177,8 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
           <div>
             <Label className="text-sm text-foreground">Tax Year</Label>
             <Input
-              value={getFieldValue('Property.Tax.TaxYear')}
-              onChange={(e) => onValueChange('Property.Tax.TaxYear', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.taxYear)}
+              onChange={(e) => onValueChange(FIELD_KEYS.taxYear, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
               placeholder="2024"
