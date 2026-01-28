@@ -12,6 +12,19 @@ import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
+// Field key mapping for funding fields
+const FIELD_KEYS = {
+  account: 'lender.funding.account',
+  borrowerName: 'lender.funding.borrower_name',
+  borrowerAddress: 'lender.funding.borrower_address',
+  principalBalance: 'lender.funding.principal_balance',
+  fundingDate: 'lender.funding.funding_date',
+  reference: 'lender.funding.reference',
+  fundingAmount: 'lender.funding.funding_amount',
+  none: 'lender.funding.none',
+  notes: 'lender.funding.notes',
+} as const;
+
 interface LenderFundingFormProps {
   fields: FieldDefinition[];
   values: Record<string, string>;
@@ -29,7 +42,15 @@ export const LenderFundingForm: React.FC<LenderFundingFormProps> = ({
   disabled = false,
   calculationResults = {},
 }) => {
-  const fundingDate = values['funding_date'] ? new Date(values['funding_date']) : undefined;
+  const getValue = (key: keyof typeof FIELD_KEYS): string => {
+    return values[FIELD_KEYS[key]] || '';
+  };
+
+  const handleChange = (key: keyof typeof FIELD_KEYS, value: string) => {
+    onValueChange(FIELD_KEYS[key], value);
+  };
+
+  const fundingDate = getValue('fundingDate') ? new Date(getValue('fundingDate')) : undefined;
 
   return (
     <div className="p-6 space-y-6">
@@ -46,8 +67,8 @@ export const LenderFundingForm: React.FC<LenderFundingFormProps> = ({
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">Account</Label>
               <Input
-                value={values['funding_account'] || ''}
-                onChange={(e) => onValueChange('funding_account', e.target.value)}
+                value={getValue('account')}
+                onChange={(e) => handleChange('account', e.target.value)}
                 disabled={disabled}
                 placeholder="Enter account number"
               />
@@ -56,8 +77,8 @@ export const LenderFundingForm: React.FC<LenderFundingFormProps> = ({
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">Borrower Name</Label>
               <Input
-                value={values['funding_borrower_name'] || ''}
-                onChange={(e) => onValueChange('funding_borrower_name', e.target.value)}
+                value={getValue('borrowerName')}
+                onChange={(e) => handleChange('borrowerName', e.target.value)}
                 disabled={disabled}
                 placeholder="Enter borrower name"
               />
@@ -66,8 +87,8 @@ export const LenderFundingForm: React.FC<LenderFundingFormProps> = ({
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">Borrower Address</Label>
               <Textarea
-                value={values['funding_borrower_address'] || ''}
-                onChange={(e) => onValueChange('funding_borrower_address', e.target.value)}
+                value={getValue('borrowerAddress')}
+                onChange={(e) => handleChange('borrowerAddress', e.target.value)}
                 disabled={disabled}
                 placeholder="Enter borrower address"
                 rows={3}
@@ -89,10 +110,10 @@ export const LenderFundingForm: React.FC<LenderFundingFormProps> = ({
                 <Input
                   type="text"
                   inputMode="decimal"
-                  value={values['funding_principal_balance'] || ''}
+                  value={getValue('principalBalance')}
                   onChange={(e) => {
                     const value = e.target.value.replace(/[^0-9.]/g, '');
-                    onValueChange('funding_principal_balance', value);
+                    handleChange('principalBalance', value);
                   }}
                   disabled={disabled}
                   placeholder="Enter principal balance"
@@ -121,7 +142,7 @@ export const LenderFundingForm: React.FC<LenderFundingFormProps> = ({
                   <Calendar
                     mode="single"
                     selected={fundingDate}
-                    onSelect={(date) => onValueChange('funding_date', date ? format(date, 'yyyy-MM-dd') : '')}
+                    onSelect={(date) => handleChange('fundingDate', date ? format(date, 'yyyy-MM-dd') : '')}
                     initialFocus
                   />
                 </PopoverContent>
@@ -131,8 +152,8 @@ export const LenderFundingForm: React.FC<LenderFundingFormProps> = ({
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">Reference</Label>
               <Input
-                value={values['funding_reference'] || ''}
-                onChange={(e) => onValueChange('funding_reference', e.target.value)}
+                value={getValue('reference')}
+                onChange={(e) => handleChange('reference', e.target.value)}
                 disabled={disabled}
               />
             </div>
@@ -144,18 +165,18 @@ export const LenderFundingForm: React.FC<LenderFundingFormProps> = ({
                 <Input
                   type="text"
                   inputMode="decimal"
-                  value={values['funding_amount'] || ''}
+                  value={getValue('fundingAmount')}
                   onChange={(e) => {
                     const value = e.target.value.replace(/[^0-9.]/g, '');
-                    onValueChange('funding_amount', value);
+                    handleChange('fundingAmount', value);
                   }}
                   disabled={disabled}
                   className="flex-1"
                 />
               </div>
               <Select
-                value={values['funding_amount_type'] || 'None'}
-                onValueChange={(value) => onValueChange('funding_amount_type', value)}
+                value={getValue('none') || 'None'}
+                onValueChange={(value) => handleChange('none', value)}
                 disabled={disabled}
               >
                 <SelectTrigger>
@@ -173,8 +194,8 @@ export const LenderFundingForm: React.FC<LenderFundingFormProps> = ({
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">Notes</Label>
               <Textarea
-                value={values['funding_notes'] || ''}
-                onChange={(e) => onValueChange('funding_notes', e.target.value)}
+                value={getValue('notes')}
+                onChange={(e) => handleChange('notes', e.target.value)}
                 disabled={disabled}
                 rows={4}
                 className="resize-none"
