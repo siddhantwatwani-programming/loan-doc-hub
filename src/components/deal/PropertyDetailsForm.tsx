@@ -51,6 +51,30 @@ interface PropertyEntry {
   isPrimary: boolean;
 }
 
+// Field key mapping as specified
+const FIELD_KEYS = {
+  // Address
+  address: 'property1.address',
+  street: 'property1.street',
+  city: 'property1.city',
+  state: 'property1.state',
+  zip: 'property1.zip',
+  county: 'property1.county',
+  copyBorrowerAddress: 'property1.copy_borrower_address',
+  primaryProperty: 'property1.primary_property',
+  // Appraisal
+  performedBy: 'property1.appraisal_performed_by',
+  propertyType: 'property1.appraisal_property_type',
+  occupancy: 'property1.appraisal_occupancy',
+  ltv: 'property1.ltv',
+  zoning: 'property1.zoning',
+  appraisedValue: 'property1.appraised_value',
+  pledgedEquity: 'property1.pledged_equity',
+  appraisedDate: 'property1.appraised_date',
+  priority: 'property1.priority',
+  floodZone: 'property1.flood_zone',
+} as const;
+
 export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   fields,
   values,
@@ -61,12 +85,12 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   const [properties, setProperties] = useState<PropertyEntry[]>([
     {
       id: '1',
-      street: values['Property.Address.Street'] || '',
-      city: values['Property.Address.City'] || '',
-      state: values['Property.Address.State'] || '',
-      zipCode: values['Property.Address.ZipCode'] || '',
-      county: values['Property.Address.County'] || '',
-      isPrimary: true,
+      street: values[FIELD_KEYS.street] || '',
+      city: values[FIELD_KEYS.city] || '',
+      state: values[FIELD_KEYS.state] || '',
+      zipCode: values[FIELD_KEYS.zip] || '',
+      county: values[FIELD_KEYS.county] || '',
+      isPrimary: values[FIELD_KEYS.primaryProperty] === 'true',
     }
   ]);
 
@@ -98,14 +122,15 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
     const property = properties.find(p => p.id === id);
     if (property?.isPrimary || id === '1') {
       const fieldKeyMap: Record<string, string> = {
-        street: 'Property.Address.Street',
-        city: 'Property.Address.City',
-        state: 'Property.Address.State',
-        zipCode: 'Property.Address.ZipCode',
-        county: 'Property.Address.County',
+        street: FIELD_KEYS.street,
+        city: FIELD_KEYS.city,
+        state: FIELD_KEYS.state,
+        zipCode: FIELD_KEYS.zip,
+        county: FIELD_KEYS.county,
+        isPrimary: FIELD_KEYS.primaryProperty,
       };
       if (fieldKeyMap[field as string]) {
-        onValueChange(fieldKeyMap[field as string], value as string);
+        onValueChange(fieldKeyMap[field as string], String(value));
       }
     }
   };
@@ -249,8 +274,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
               <div>
                 <Label className="text-sm text-foreground">Performed By:</Label>
                 <Select
-                  value={getFieldValue('Property.Appraisal.PerformedBy')}
-                  onValueChange={(val) => onValueChange('Property.Appraisal.PerformedBy', val)}
+                  value={getFieldValue(FIELD_KEYS.performedBy)}
+                  onValueChange={(val) => onValueChange(FIELD_KEYS.performedBy, val)}
                   disabled={disabled}
                 >
                   <SelectTrigger className="h-8 text-sm mt-1">
@@ -267,8 +292,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
               <div>
                 <Label className="text-sm text-foreground">Property Type</Label>
                 <Select
-                  value={getFieldValue('Property.PropertyType')}
-                  onValueChange={(val) => onValueChange('Property.PropertyType', val)}
+                  value={getFieldValue(FIELD_KEYS.propertyType)}
+                  onValueChange={(val) => onValueChange(FIELD_KEYS.propertyType, val)}
                   disabled={disabled}
                 >
                   <SelectTrigger className="h-8 text-sm mt-1">
@@ -285,8 +310,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
               <div>
                 <Label className="text-sm text-foreground">Occupancy</Label>
                 <Select
-                  value={getFieldValue('Property.Occupancy')}
-                  onValueChange={(val) => onValueChange('Property.Occupancy', val)}
+                  value={getFieldValue(FIELD_KEYS.occupancy)}
+                  onValueChange={(val) => onValueChange(FIELD_KEYS.occupancy, val)}
                   disabled={disabled}
                 >
                   <SelectTrigger className="h-8 text-sm mt-1">
@@ -305,8 +330,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
                   <Label className="text-sm text-foreground">LTV</Label>
                   <div className="flex items-center gap-1 mt-1">
                     <Input
-                      value={getFieldValue('Property.LTV')}
-                      onChange={(e) => onValueChange('Property.LTV', e.target.value)}
+                      value={getFieldValue(FIELD_KEYS.ltv)}
+                      onChange={(e) => onValueChange(FIELD_KEYS.ltv, e.target.value)}
                       disabled={disabled}
                       className="h-8 text-sm"
                       inputMode="decimal"
@@ -318,8 +343,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
                 <div>
                   <Label className="text-sm text-foreground">Zoning</Label>
                   <Input
-                    value={getFieldValue('Property.Zoning')}
-                    onChange={(e) => onValueChange('Property.Zoning', e.target.value)}
+                    value={getFieldValue(FIELD_KEYS.zoning)}
+                    onChange={(e) => onValueChange(FIELD_KEYS.zoning, e.target.value)}
                     disabled={disabled}
                     className="h-8 text-sm mt-1"
                   />
@@ -332,8 +357,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
                   <div className="flex items-center gap-1 mt-1">
                     <span className="text-sm text-muted-foreground">$</span>
                     <Input
-                      value={getFieldValue('Property.AppraisedValue')}
-                      onChange={(e) => onValueChange('Property.AppraisedValue', e.target.value)}
+                      value={getFieldValue(FIELD_KEYS.appraisedValue)}
+                      onChange={(e) => onValueChange(FIELD_KEYS.appraisedValue, e.target.value)}
                       disabled={disabled}
                       className="h-8 text-sm text-right"
                       inputMode="decimal"
@@ -347,8 +372,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
                   <div className="flex items-center gap-1 mt-1">
                     <span className="text-sm text-muted-foreground">$</span>
                     <Input
-                      value={getFieldValue('Property.PledgedEquity')}
-                      onChange={(e) => onValueChange('Property.PledgedEquity', e.target.value)}
+                      value={getFieldValue(FIELD_KEYS.pledgedEquity)}
+                      onChange={(e) => onValueChange(FIELD_KEYS.pledgedEquity, e.target.value)}
                       disabled={disabled}
                       className="h-8 text-sm text-right"
                       inputMode="decimal"
@@ -362,8 +387,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
                 <Label className="text-sm text-foreground">Appraised Date</Label>
                 <Input
                   type="date"
-                  value={getFieldValue('Property.AppraisedDate')}
-                  onChange={(e) => onValueChange('Property.AppraisedDate', e.target.value)}
+                  value={getFieldValue(FIELD_KEYS.appraisedDate)}
+                  onChange={(e) => onValueChange(FIELD_KEYS.appraisedDate, e.target.value)}
                   disabled={disabled}
                   className="h-8 text-sm mt-1"
                 />
@@ -372,8 +397,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
               <div>
                 <Label className="text-sm text-foreground">Priority</Label>
                 <Select
-                  value={getFieldValue('Property.Priority')}
-                  onValueChange={(val) => onValueChange('Property.Priority', val)}
+                  value={getFieldValue(FIELD_KEYS.priority)}
+                  onValueChange={(val) => onValueChange(FIELD_KEYS.priority, val)}
                   disabled={disabled}
                 >
                   <SelectTrigger className="h-8 text-sm mt-1">
@@ -390,8 +415,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
               <div>
                 <Label className="text-sm text-foreground">Flood Zone</Label>
                 <Select
-                  value={getFieldValue('Property.FloodZone')}
-                  onValueChange={(val) => onValueChange('Property.FloodZone', val)}
+                  value={getFieldValue(FIELD_KEYS.floodZone)}
+                  onValueChange={(val) => onValueChange(FIELD_KEYS.floodZone, val)}
                   disabled={disabled}
                 >
                   <SelectTrigger className="h-8 text-sm mt-1">

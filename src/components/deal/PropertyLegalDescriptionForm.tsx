@@ -15,6 +15,16 @@ interface PropertyLegalDescriptionFormProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
+// Field key mapping as specified
+const FIELD_KEYS = {
+  apn: 'property1.apn',
+  legalDescription: 'property1.legal_description',
+  lot: 'property1.lot',
+  block: 'property1.block',
+  tract: 'property1.tract',
+  unit: 'property1.unit',
+} as const;
+
 export const PropertyLegalDescriptionForm: React.FC<PropertyLegalDescriptionFormProps> = ({
   fields,
   values,
@@ -41,8 +51,8 @@ export const PropertyLegalDescriptionForm: React.FC<PropertyLegalDescriptionForm
         <div>
           <Label className="text-sm text-foreground">APN (Assessor's Parcel Number)</Label>
           <Input
-            value={getFieldValue('Property.Legal.APN')}
-            onChange={(e) => onValueChange('Property.Legal.APN', e.target.value)}
+            value={getFieldValue(FIELD_KEYS.apn)}
+            onChange={(e) => onValueChange(FIELD_KEYS.apn, e.target.value)}
             disabled={disabled}
             className="h-8 text-sm mt-1 max-w-md"
             placeholder="Enter APN"
@@ -52,8 +62,8 @@ export const PropertyLegalDescriptionForm: React.FC<PropertyLegalDescriptionForm
         <div>
           <Label className="text-sm text-foreground">Legal Description</Label>
           <Textarea
-            value={getFieldValue('Property.Legal.Description')}
-            onChange={(e) => onValueChange('Property.Legal.Description', e.target.value)}
+            value={getFieldValue(FIELD_KEYS.legalDescription)}
+            onChange={(e) => onValueChange(FIELD_KEYS.legalDescription, e.target.value)}
             disabled={disabled}
             className="mt-1 min-h-[200px] text-sm"
             placeholder="Enter the legal description of the property..."
@@ -64,8 +74,8 @@ export const PropertyLegalDescriptionForm: React.FC<PropertyLegalDescriptionForm
           <div>
             <Label className="text-sm text-foreground">Lot</Label>
             <Input
-              value={getFieldValue('Property.Legal.Lot')}
-              onChange={(e) => onValueChange('Property.Legal.Lot', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.lot)}
+              onChange={(e) => onValueChange(FIELD_KEYS.lot, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
             />
@@ -74,8 +84,8 @@ export const PropertyLegalDescriptionForm: React.FC<PropertyLegalDescriptionForm
           <div>
             <Label className="text-sm text-foreground">Block</Label>
             <Input
-              value={getFieldValue('Property.Legal.Block')}
-              onChange={(e) => onValueChange('Property.Legal.Block', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.block)}
+              onChange={(e) => onValueChange(FIELD_KEYS.block, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
             />
@@ -84,8 +94,8 @@ export const PropertyLegalDescriptionForm: React.FC<PropertyLegalDescriptionForm
           <div>
             <Label className="text-sm text-foreground">Tract</Label>
             <Input
-              value={getFieldValue('Property.Legal.Tract')}
-              onChange={(e) => onValueChange('Property.Legal.Tract', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.tract)}
+              onChange={(e) => onValueChange(FIELD_KEYS.tract, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
             />
@@ -94,8 +104,8 @@ export const PropertyLegalDescriptionForm: React.FC<PropertyLegalDescriptionForm
           <div>
             <Label className="text-sm text-foreground">Unit</Label>
             <Input
-              value={getFieldValue('Property.Legal.Unit')}
-              onChange={(e) => onValueChange('Property.Legal.Unit', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.unit)}
+              onChange={(e) => onValueChange(FIELD_KEYS.unit, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
             />

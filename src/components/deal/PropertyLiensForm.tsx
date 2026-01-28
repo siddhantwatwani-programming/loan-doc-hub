@@ -23,6 +23,20 @@ interface PropertyLiensFormProps {
 
 const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
 
+// Field key mapping as specified
+const FIELD_KEYS = {
+  property: 'property1.lien_property',
+  priority: 'property1.lien_priority',
+  holder: 'property1.lien_holder',
+  account: 'property1.lien_account',
+  contact: 'property1.lien_contact',
+  phone: 'property1.lien_phone',
+  originalBalance: 'property1.lien_original_balance',
+  currentBalance: 'property1.lien_current_balance',
+  regularPayment: 'property1.lien_regular_payment',
+  lastChecked: 'property1.lien_last_checked',
+} as const;
+
 export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
   fields,
   values,
@@ -49,8 +63,8 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
         <div>
           <Label className="text-sm text-foreground">Property</Label>
           <Select
-            value={getFieldValue('Property.Lien.Property')}
-            onValueChange={(val) => onValueChange('Property.Lien.Property', val)}
+            value={getFieldValue(FIELD_KEYS.property)}
+            onValueChange={(val) => onValueChange(FIELD_KEYS.property, val)}
             disabled={disabled}
           >
             <SelectTrigger className="h-8 text-sm mt-1">
@@ -67,8 +81,8 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
         <div>
           <Label className="text-sm text-foreground">Priority</Label>
           <Select
-            value={getFieldValue('Property.Lien.Priority')}
-            onValueChange={(val) => onValueChange('Property.Lien.Priority', val)}
+            value={getFieldValue(FIELD_KEYS.priority)}
+            onValueChange={(val) => onValueChange(FIELD_KEYS.priority, val)}
             disabled={disabled}
           >
             <SelectTrigger className="h-8 text-sm mt-1">
@@ -85,8 +99,8 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
         <div>
           <Label className="text-sm text-foreground">Lien Holder</Label>
           <Input
-            value={getFieldValue('Property.Lien.Holder')}
-            onChange={(e) => onValueChange('Property.Lien.Holder', e.target.value)}
+            value={getFieldValue(FIELD_KEYS.holder)}
+            onChange={(e) => onValueChange(FIELD_KEYS.holder, e.target.value)}
             disabled={disabled}
             className="h-8 text-sm mt-1"
           />
@@ -95,8 +109,8 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
         <div>
           <Label className="text-sm text-foreground">Account</Label>
           <Input
-            value={getFieldValue('Property.Lien.Account')}
-            onChange={(e) => onValueChange('Property.Lien.Account', e.target.value)}
+            value={getFieldValue(FIELD_KEYS.account)}
+            onChange={(e) => onValueChange(FIELD_KEYS.account, e.target.value)}
             disabled={disabled}
             className="h-8 text-sm mt-1"
           />
@@ -105,8 +119,8 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
         <div>
           <Label className="text-sm text-foreground">Contact</Label>
           <Input
-            value={getFieldValue('Property.Lien.Contact')}
-            onChange={(e) => onValueChange('Property.Lien.Contact', e.target.value)}
+            value={getFieldValue(FIELD_KEYS.contact)}
+            onChange={(e) => onValueChange(FIELD_KEYS.contact, e.target.value)}
             disabled={disabled}
             className="h-8 text-sm mt-1"
           />
@@ -115,8 +129,8 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
         <div>
           <Label className="text-sm text-foreground">Phone</Label>
           <Input
-            value={getFieldValue('Property.Lien.Phone')}
-            onChange={(e) => onValueChange('Property.Lien.Phone', e.target.value)}
+            value={getFieldValue(FIELD_KEYS.phone)}
+            onChange={(e) => onValueChange(FIELD_KEYS.phone, e.target.value)}
             disabled={disabled}
             className="h-8 text-sm mt-1"
           />
@@ -127,8 +141,8 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
           <div className="flex items-center gap-1 mt-1">
             <span className="text-sm text-muted-foreground">$</span>
             <Input
-              value={getFieldValue('Property.Lien.OriginalBalance')}
-              onChange={(e) => onValueChange('Property.Lien.OriginalBalance', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.originalBalance)}
+              onChange={(e) => onValueChange(FIELD_KEYS.originalBalance, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm text-right"
               inputMode="decimal"
@@ -142,8 +156,8 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
           <div className="flex items-center gap-1 mt-1">
             <span className="text-sm text-muted-foreground">$</span>
             <Input
-              value={getFieldValue('Property.Lien.CurrentBalance')}
-              onChange={(e) => onValueChange('Property.Lien.CurrentBalance', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.currentBalance)}
+              onChange={(e) => onValueChange(FIELD_KEYS.currentBalance, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm text-right"
               inputMode="decimal"
@@ -157,8 +171,8 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
           <div className="flex items-center gap-1 mt-1">
             <span className="text-sm text-muted-foreground">$</span>
             <Input
-              value={getFieldValue('Property.Lien.RegularPayment')}
-              onChange={(e) => onValueChange('Property.Lien.RegularPayment', e.target.value)}
+              value={getFieldValue(FIELD_KEYS.regularPayment)}
+              onChange={(e) => onValueChange(FIELD_KEYS.regularPayment, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm text-right"
               inputMode="decimal"
@@ -171,8 +185,8 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
           <Label className="text-sm text-foreground">Last Checked</Label>
           <Input
             type="date"
-            value={getFieldValue('Property.Lien.LastChecked')}
-            onChange={(e) => onValueChange('Property.Lien.LastChecked', e.target.value)}
+            value={getFieldValue(FIELD_KEYS.lastChecked)}
+            onChange={(e) => onValueChange(FIELD_KEYS.lastChecked, e.target.value)}
             disabled={disabled}
             className="h-8 text-sm mt-1"
           />
