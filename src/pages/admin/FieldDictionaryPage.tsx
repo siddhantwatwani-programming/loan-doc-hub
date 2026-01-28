@@ -69,6 +69,8 @@ const SECTIONS = [
   { value: 'seller', label: 'Seller' },
   { value: 'title', label: 'Title' },
   { value: 'escrow', label: 'Escrow' },
+  { value: 'broker', label: 'Broker' },
+  { value: 'lender', label: 'Lender' },
   { value: 'other', label: 'Other' },
 ];
 
