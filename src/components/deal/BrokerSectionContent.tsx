@@ -27,9 +27,21 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
   const renderSubSectionContent = () => {
     switch (activeSubSection) {
       case 'broker':
-        return <BrokerInfoForm disabled={disabled} />;
+        return (
+          <BrokerInfoForm 
+            disabled={disabled} 
+            values={values}
+            onValueChange={onValueChange}
+          />
+        );
       case 'banking':
-        return <BrokerBankingForm disabled={disabled} />;
+        return (
+          <BrokerBankingForm 
+            disabled={disabled}
+            values={values}
+            onValueChange={onValueChange}
+          />
+        );
       default:
         return null;
     }

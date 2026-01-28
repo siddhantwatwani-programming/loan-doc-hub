@@ -1,41 +1,54 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 
+// Field key mapping for broker banking fields
+const FIELD_KEYS = {
+  achStatus: 'broker.banking.ach_status',
+  bank: 'broker.banking.bank',
+  routingNumber: 'broker.banking.routing_number',
+  accountNumber: 'broker.banking.account_number',
+  accountType: 'broker.banking.account_type',
+  accountName: 'broker.banking.account_name',
+  accountId: 'broker.banking.account_id',
+  furtherCreditTo: 'broker.banking.further_credit_to',
+  byCheck: 'broker.banking.by_check',
+  checkSameAsMailing: 'broker.banking.check_same_as_mailing',
+  checkAddress: 'broker.banking.check_address',
+  checkCity: 'broker.banking.check_city',
+  checkZip: 'broker.banking.check_zip',
+  achEmail: 'broker.banking.ach_email',
+  ccName: 'broker.banking.cc_name',
+  ccNumber: 'broker.banking.cc_number',
+  ccSecurityCode: 'broker.banking.cc_security_code',
+  ccExpiration: 'broker.banking.cc_expiration',
+  ccZip: 'broker.banking.cc_zip',
+} as const;
+
 interface BrokerBankingFormProps {
   disabled?: boolean;
+  values?: Record<string, string>;
+  onValueChange?: (fieldKey: string, value: string) => void;
 }
 
-export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled = false }) => {
-  const [formData, setFormData] = useState({
-    // ACH Section
-    achStatus: '',
-    bank: '',
-    routingNumber: '',
-    accountNumber: '',
-    type: '',
-    name: '',
-    id: '',
-    furtherCreditTo: '',
-    // Check/Mailing Section
-    byCheck: false,
-    sameAsMailing: false,
-    address: '',
-    city: '',
-    zipCode: '',
-    achEmail1: '',
-    achEmail2: '',
-    // Credit Card Section
-    cardName: '',
-    cardNumber: '',
-    securityCode: '',
-    expiration: '',
-    ccZipCode: '',
-  });
+export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ 
+  disabled = false,
+  values = {},
+  onValueChange,
+}) => {
+  const getValue = (key: keyof typeof FIELD_KEYS): string => {
+    return values[FIELD_KEYS[key]] || '';
+  };
 
-  const handleChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const getBoolValue = (key: keyof typeof FIELD_KEYS): boolean => {
+    return values[FIELD_KEYS[key]] === 'true';
+  };
+
+  const handleChange = (key: keyof typeof FIELD_KEYS, value: string | boolean) => {
+    if (onValueChange) {
+      onValueChange(FIELD_KEYS[key], String(value));
+    }
   };
 
   return (
@@ -50,7 +63,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
             <Label htmlFor="achStatus" className="text-sm">ACH Status</Label>
             <Input
               id="achStatus"
-              value={formData.achStatus}
+              value={getValue('achStatus')}
               onChange={(e) => handleChange('achStatus', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -62,7 +75,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
             <Label htmlFor="bank" className="text-sm">Bank</Label>
             <Input
               id="bank"
-              value={formData.bank}
+              value={getValue('bank')}
               onChange={(e) => handleChange('bank', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -74,7 +87,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
             <Label htmlFor="routingNumber" className="text-sm">Routing Number</Label>
             <Input
               id="routingNumber"
-              value={formData.routingNumber}
+              value={getValue('routingNumber')}
               onChange={(e) => handleChange('routingNumber', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -86,7 +99,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
             <Label htmlFor="accountNumber" className="text-sm">Account Number</Label>
             <Input
               id="accountNumber"
-              value={formData.accountNumber}
+              value={getValue('accountNumber')}
               onChange={(e) => handleChange('accountNumber', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -95,11 +108,11 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="type" className="text-sm">Type</Label>
+            <Label htmlFor="accountType" className="text-sm">Type</Label>
             <Input
-              id="type"
-              value={formData.type}
-              onChange={(e) => handleChange('type', e.target.value)}
+              id="accountType"
+              value={getValue('accountType')}
+              onChange={(e) => handleChange('accountType', e.target.value)}
               disabled={disabled}
               className="h-9"
               placeholder="Enter account type"
@@ -107,11 +120,11 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="achName" className="text-sm">Name</Label>
+            <Label htmlFor="accountName" className="text-sm">Name</Label>
             <Input
-              id="achName"
-              value={formData.name}
-              onChange={(e) => handleChange('name', e.target.value)}
+              id="accountName"
+              value={getValue('accountName')}
+              onChange={(e) => handleChange('accountName', e.target.value)}
               disabled={disabled}
               className="h-9"
               placeholder="Enter account name"
@@ -119,11 +132,11 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="achId" className="text-sm">ID</Label>
+            <Label htmlFor="accountId" className="text-sm">ID</Label>
             <Input
-              id="achId"
-              value={formData.id}
-              onChange={(e) => handleChange('id', e.target.value)}
+              id="accountId"
+              value={getValue('accountId')}
+              onChange={(e) => handleChange('accountId', e.target.value)}
               disabled={disabled}
               className="h-9"
               placeholder="Enter ID"
@@ -134,7 +147,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
             <Label htmlFor="furtherCreditTo" className="text-sm">Further Credit To</Label>
             <Input
               id="furtherCreditTo"
-              value={formData.furtherCreditTo}
+              value={getValue('furtherCreditTo')}
               onChange={(e) => handleChange('furtherCreditTo', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -150,7 +163,7 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
           <div className="flex items-center space-x-2">
             <Checkbox
               id="byCheck"
-              checked={formData.byCheck}
+              checked={getBoolValue('byCheck')}
               onCheckedChange={(checked) => handleChange('byCheck', !!checked)}
               disabled={disabled}
             />
@@ -161,12 +174,12 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
 
           <div className="flex items-center space-x-2">
             <Checkbox
-              id="sameAsMailing"
-              checked={formData.sameAsMailing}
-              onCheckedChange={(checked) => handleChange('sameAsMailing', !!checked)}
+              id="checkSameAsMailing"
+              checked={getBoolValue('checkSameAsMailing')}
+              onCheckedChange={(checked) => handleChange('checkSameAsMailing', !!checked)}
               disabled={disabled}
             />
-            <Label htmlFor="sameAsMailing" className="text-sm font-normal cursor-pointer">
+            <Label htmlFor="checkSameAsMailing" className="text-sm font-normal cursor-pointer">
               Same as Mailing
             </Label>
           </div>
@@ -175,8 +188,8 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
             <Label htmlFor="checkAddress" className="text-sm">Address</Label>
             <Input
               id="checkAddress"
-              value={formData.address}
-              onChange={(e) => handleChange('address', e.target.value)}
+              value={getValue('checkAddress')}
+              onChange={(e) => handleChange('checkAddress', e.target.value)}
               disabled={disabled}
               className="h-9"
               placeholder="Enter mailing address"
@@ -187,8 +200,8 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
             <Label htmlFor="checkCity" className="text-sm">City</Label>
             <Input
               id="checkCity"
-              value={formData.city}
-              onChange={(e) => handleChange('city', e.target.value)}
+              value={getValue('checkCity')}
+              onChange={(e) => handleChange('checkCity', e.target.value)}
               disabled={disabled}
               className="h-9"
               placeholder="Enter city"
@@ -196,11 +209,11 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="checkZipCode" className="text-sm">Zip Code</Label>
+            <Label htmlFor="checkZip" className="text-sm">Zip Code</Label>
             <Input
-              id="checkZipCode"
-              value={formData.zipCode}
-              onChange={(e) => handleChange('zipCode', e.target.value)}
+              id="checkZip"
+              value={getValue('checkZip')}
+              onChange={(e) => handleChange('checkZip', e.target.value)}
               disabled={disabled}
               className="h-9"
               placeholder="Enter ZIP code"
@@ -208,25 +221,12 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="achEmail1" className="text-sm">Add ACH Email</Label>
+            <Label htmlFor="achEmail" className="text-sm">Add ACH Email</Label>
             <Input
-              id="achEmail1"
+              id="achEmail"
               type="email"
-              value={formData.achEmail1}
-              onChange={(e) => handleChange('achEmail1', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter ACH email"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="achEmail2" className="text-sm">Add ACH Email</Label>
-            <Input
-              id="achEmail2"
-              type="email"
-              value={formData.achEmail2}
-              onChange={(e) => handleChange('achEmail2', e.target.value)}
+              value={getValue('achEmail')}
+              onChange={(e) => handleChange('achEmail', e.target.value)}
               disabled={disabled}
               className="h-9"
               placeholder="Enter ACH email"
@@ -239,11 +239,11 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
           <h3 className="font-semibold text-sm text-foreground border-b border-border pb-2">Credit Card</h3>
           
           <div className="space-y-2">
-            <Label htmlFor="cardName" className="text-sm">Name</Label>
+            <Label htmlFor="ccName" className="text-sm">Name</Label>
             <Input
-              id="cardName"
-              value={formData.cardName}
-              onChange={(e) => handleChange('cardName', e.target.value)}
+              id="ccName"
+              value={getValue('ccName')}
+              onChange={(e) => handleChange('ccName', e.target.value)}
               disabled={disabled}
               className="h-9"
               placeholder="Enter cardholder name"
@@ -251,11 +251,11 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="cardNumber" className="text-sm">Card Number</Label>
+            <Label htmlFor="ccNumber" className="text-sm">Card Number</Label>
             <Input
-              id="cardNumber"
-              value={formData.cardNumber}
-              onChange={(e) => handleChange('cardNumber', e.target.value)}
+              id="ccNumber"
+              value={getValue('ccNumber')}
+              onChange={(e) => handleChange('ccNumber', e.target.value)}
               disabled={disabled}
               className="h-9"
               placeholder="Enter card number"
@@ -263,11 +263,11 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="securityCode" className="text-sm">Security Code</Label>
+            <Label htmlFor="ccSecurityCode" className="text-sm">Security Code</Label>
             <Input
-              id="securityCode"
-              value={formData.securityCode}
-              onChange={(e) => handleChange('securityCode', e.target.value)}
+              id="ccSecurityCode"
+              value={getValue('ccSecurityCode')}
+              onChange={(e) => handleChange('ccSecurityCode', e.target.value)}
               disabled={disabled}
               className="h-9"
               type="password"
@@ -276,11 +276,11 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="expiration" className="text-sm">Expiration</Label>
+            <Label htmlFor="ccExpiration" className="text-sm">Expiration</Label>
             <Input
-              id="expiration"
-              value={formData.expiration}
-              onChange={(e) => handleChange('expiration', e.target.value)}
+              id="ccExpiration"
+              value={getValue('ccExpiration')}
+              onChange={(e) => handleChange('ccExpiration', e.target.value)}
               disabled={disabled}
               className="h-9"
               placeholder="MM/YY"
@@ -288,11 +288,11 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ disabled =
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ccZipCode" className="text-sm">Zip Code</Label>
+            <Label htmlFor="ccZip" className="text-sm">Zip Code</Label>
             <Input
-              id="ccZipCode"
-              value={formData.ccZipCode}
-              onChange={(e) => handleChange('ccZipCode', e.target.value)}
+              id="ccZip"
+              value={getValue('ccZip')}
+              onChange={(e) => handleChange('ccZip', e.target.value)}
               disabled={disabled}
               className="h-9"
               placeholder="Enter billing ZIP"

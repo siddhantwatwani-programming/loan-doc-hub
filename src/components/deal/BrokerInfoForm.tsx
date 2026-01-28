@@ -1,56 +1,69 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertCircle } from 'lucide-react';
 
+// Field key mapping for broker info fields
+const FIELD_KEYS = {
+  brokerId: 'broker.id',
+  license: 'broker.License',
+  company: 'broker.company',
+  firstName: 'broker.first_name',
+  middleName: 'broker.middle_name',
+  lastName: 'broker.last_name',
+  email: 'broker.email',
+  street: 'broker.address.street',
+  city: 'broker.address.city',
+  state: 'broker.address.state',
+  zip: 'broker.address.zip',
+  taxIdType: 'broker.tax_id_type',
+  taxId: 'broker.tax_id',
+  issue1099: 'broker.issue_1099',
+  phoneHome: 'broker.phone.home',
+  phoneWork: 'broker.phone.work',
+  phoneCell: 'broker.phone.cell',
+  phoneFax: 'broker.phone.fax',
+  paymentNotification: 'broker.send_pref.payment_notification',
+  lateNotice: 'broker.send_pref.late_notice',
+  lenderStatement: 'broker.send_pref.lender_statement',
+  borrowerStatement: 'broker.send_pref.borrower_statement',
+  maturityNotice: 'broker.send_pref.maturity_notice',
+} as const;
+
 interface BrokerInfoFormProps {
   disabled?: boolean;
+  values?: Record<string, string>;
+  onValueChange?: (fieldKey: string, value: string) => void;
 }
 
-export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false }) => {
-  const [formData, setFormData] = useState({
-    brokerId: '',
-    license: '',
-    company: '',
-    firstName: '',
-    middleName: '',
-    lastName: '',
-    email: '',
-    street: '',
-    city: '',
-    state: '',
-    zip: '',
-    taxIdType: '',
-    taxId: '',
-    issue1099: '',
-    phoneHome: '',
-    phoneWork: '',
-    phoneCell: '',
-    phoneFax: '',
-    preferredHome: false,
-    preferredWork: false,
-    preferredCell: false,
-    preferredFax: false,
-    paymentNotification: false,
-    lateNotice: false,
-    lenderStatement: false,
-    borrowerStatement: false,
-    maturityNotice: false,
-  });
+export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ 
+  disabled = false,
+  values = {},
+  onValueChange,
+}) => {
+  const getValue = (key: keyof typeof FIELD_KEYS): string => {
+    return values[FIELD_KEYS[key]] || '';
+  };
 
-  const handleChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const getBoolValue = (key: keyof typeof FIELD_KEYS): boolean => {
+    return values[FIELD_KEYS[key]] === 'true';
+  };
+
+  const handleChange = (key: keyof typeof FIELD_KEYS, value: string | boolean) => {
+    if (onValueChange) {
+      onValueChange(FIELD_KEYS[key], String(value));
+    }
   };
 
   // Calculate required fields status
   const requiredFieldsStatus = useMemo(() => {
-    const requiredFields = ['brokerId'];
-    const filledCount = requiredFields.filter(field => formData[field as keyof typeof formData] && String(formData[field as keyof typeof formData]).trim() !== '').length;
+    const requiredFields: (keyof typeof FIELD_KEYS)[] = ['brokerId'];
+    const filledCount = requiredFields.filter(field => getValue(field).trim() !== '').length;
     const totalRequired = requiredFields.length;
     const missingCount = totalRequired - filledCount;
     return { filledCount, totalRequired, missingCount };
-  }, [formData]);
+  }, [values]);
 
   return (
     <div className="space-y-6">
@@ -80,7 +93,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <Label htmlFor="brokerId" className="text-sm">Broker ID <span className="text-destructive">*</span></Label>
             <Input
               id="brokerId"
-              value={formData.brokerId}
+              value={getValue('brokerId')}
               onChange={(e) => handleChange('brokerId', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -93,7 +106,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <Label htmlFor="license" className="text-sm">License:</Label>
             <Input
               id="license"
-              value={formData.license}
+              value={getValue('license')}
               onChange={(e) => handleChange('license', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -105,7 +118,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <Label htmlFor="company" className="text-sm">Company</Label>
             <Input
               id="company"
-              value={formData.company}
+              value={getValue('company')}
               onChange={(e) => handleChange('company', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -117,7 +130,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <Label htmlFor="firstName" className="text-sm">First</Label>
             <Input
               id="firstName"
-              value={formData.firstName}
+              value={getValue('firstName')}
               onChange={(e) => handleChange('firstName', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -129,7 +142,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <Label htmlFor="middleName" className="text-sm">Middle</Label>
             <Input
               id="middleName"
-              value={formData.middleName}
+              value={getValue('middleName')}
               onChange={(e) => handleChange('middleName', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -141,7 +154,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <Label htmlFor="lastName" className="text-sm">Last</Label>
             <Input
               id="lastName"
-              value={formData.lastName}
+              value={getValue('lastName')}
               onChange={(e) => handleChange('lastName', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -154,7 +167,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <Input
               id="email"
               type="email"
-              value={formData.email}
+              value={getValue('email')}
               onChange={(e) => handleChange('email', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -171,7 +184,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <Label htmlFor="street" className="text-sm">Street</Label>
             <Input
               id="street"
-              value={formData.street}
+              value={getValue('street')}
               onChange={(e) => handleChange('street', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -183,7 +196,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <Label htmlFor="city" className="text-sm">City</Label>
             <Input
               id="city"
-              value={formData.city}
+              value={getValue('city')}
               onChange={(e) => handleChange('city', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -195,7 +208,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <Label htmlFor="state" className="text-sm">State</Label>
             <Input
               id="state"
-              value={formData.state}
+              value={getValue('state')}
               onChange={(e) => handleChange('state', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -207,7 +220,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <Label htmlFor="zip" className="text-sm">ZIP</Label>
             <Input
               id="zip"
-              value={formData.zip}
+              value={getValue('zip')}
               onChange={(e) => handleChange('zip', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -219,7 +232,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <Label htmlFor="taxIdType" className="text-sm">Tax ID Type</Label>
             <Input
               id="taxIdType"
-              value={formData.taxIdType}
+              value={getValue('taxIdType')}
               onChange={(e) => handleChange('taxIdType', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -231,7 +244,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <Label htmlFor="taxId" className="text-sm">Tax ID</Label>
             <Input
               id="taxId"
-              value={formData.taxId}
+              value={getValue('taxId')}
               onChange={(e) => handleChange('taxId', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -243,7 +256,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <Label htmlFor="issue1099" className="text-sm">Issue 1099</Label>
             <Input
               id="issue1099"
-              value={formData.issue1099}
+              value={getValue('issue1099')}
               onChange={(e) => handleChange('issue1099', e.target.value)}
               disabled={disabled}
               className="h-9"
@@ -262,7 +275,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               <Input
                 id="phoneHome"
                 type="tel"
-                value={formData.phoneHome}
+                value={getValue('phoneHome')}
                 onChange={(e) => handleChange('phoneHome', e.target.value)}
                 disabled={disabled}
                 className="h-9"
@@ -277,7 +290,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               <Input
                 id="phoneWork"
                 type="tel"
-                value={formData.phoneWork}
+                value={getValue('phoneWork')}
                 onChange={(e) => handleChange('phoneWork', e.target.value)}
                 disabled={disabled}
                 className="h-9"
@@ -292,7 +305,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               <Input
                 id="phoneCell"
                 type="tel"
-                value={formData.phoneCell}
+                value={getValue('phoneCell')}
                 onChange={(e) => handleChange('phoneCell', e.target.value)}
                 disabled={disabled}
                 className="h-9"
@@ -307,7 +320,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
               <Input
                 id="phoneFax"
                 type="tel"
-                value={formData.phoneFax}
+                value={getValue('phoneFax')}
                 onChange={(e) => handleChange('phoneFax', e.target.value)}
                 disabled={disabled}
                 className="h-9"
@@ -323,7 +336,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="paymentNotification"
-                checked={formData.paymentNotification}
+                checked={getBoolValue('paymentNotification')}
                 onCheckedChange={(checked) => handleChange('paymentNotification', !!checked)}
                 disabled={disabled}
               />
@@ -335,7 +348,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="lateNotice"
-                checked={formData.lateNotice}
+                checked={getBoolValue('lateNotice')}
                 onCheckedChange={(checked) => handleChange('lateNotice', !!checked)}
                 disabled={disabled}
               />
@@ -347,7 +360,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="lenderStatement"
-                checked={formData.lenderStatement}
+                checked={getBoolValue('lenderStatement')}
                 onCheckedChange={(checked) => handleChange('lenderStatement', !!checked)}
                 disabled={disabled}
               />
@@ -360,62 +373,14 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
 
         {/* Column 4 - Preferred Section */}
         <div className="space-y-4">
-          <h3 className="font-semibold text-sm text-foreground border-b border-border pb-2">Preferred</h3>
+          <h3 className="font-semibold text-sm text-foreground border-b border-border pb-2">Send Preferences</h3>
           
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="preferredHome"
-              checked={formData.preferredHome}
-              onCheckedChange={(checked) => handleChange('preferredHome', !!checked)}
-              disabled={disabled}
-            />
-            <Label htmlFor="preferredHome" className="text-sm font-normal cursor-pointer">
-              Home
-            </Label>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="preferredWork"
-              checked={formData.preferredWork}
-              onCheckedChange={(checked) => handleChange('preferredWork', !!checked)}
-              disabled={disabled}
-            />
-            <Label htmlFor="preferredWork" className="text-sm font-normal cursor-pointer">
-              Work
-            </Label>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="preferredCell"
-              checked={formData.preferredCell}
-              onCheckedChange={(checked) => handleChange('preferredCell', !!checked)}
-              disabled={disabled}
-            />
-            <Label htmlFor="preferredCell" className="text-sm font-normal cursor-pointer">
-              Cell
-            </Label>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="preferredFax"
-              checked={formData.preferredFax}
-              onCheckedChange={(checked) => handleChange('preferredFax', !!checked)}
-              disabled={disabled}
-            />
-            <Label htmlFor="preferredFax" className="text-sm font-normal cursor-pointer">
-              Fax
-            </Label>
-          </div>
-
           {/* Additional Send checkboxes in column 4 */}
-          <div className="space-y-3 pt-8">
+          <div className="space-y-3">
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="borrowerStatement"
-                checked={formData.borrowerStatement}
+                checked={getBoolValue('borrowerStatement')}
                 onCheckedChange={(checked) => handleChange('borrowerStatement', !!checked)}
                 disabled={disabled}
               />
@@ -427,7 +392,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({ disabled = false
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="maturityNotice"
-                checked={formData.maturityNotice}
+                checked={getBoolValue('maturityNotice')}
                 onCheckedChange={(checked) => handleChange('maturityNotice', !!checked)}
                 disabled={disabled}
               />
