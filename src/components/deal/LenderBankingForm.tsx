@@ -5,6 +5,33 @@ import { Checkbox } from '@/components/ui/checkbox';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
+// Field key mapping for lender banking fields
+const FIELD_KEYS = {
+  // Bank / ACH
+  achStatus: 'lender.banking.ach_status',
+  bank: 'lender.banking.bank',
+  routingNumber: 'lender.banking.routing_number',
+  accountNumber: 'lender.banking.account_number',
+  accountType: 'lender.banking.account_type',
+  accountName: 'lender.banking.account_name',
+  accountId: 'lender.banking.account_id',
+  furtherCreditTo: 'lender.banking.further_credit_to',
+  // Check / Mailing
+  byCheck: 'lender.banking.by_check',
+  checkSameAsMailing: 'lender.banking.check_same_as_mailing',
+  checkAddress: 'lender.banking.address',
+  checkCity: 'lender.banking.city',
+  checkZip: 'lender.banking.zip_code',
+  // ACH Notification
+  achEmail: 'lender.banking.ach_email',
+  // Credit Card
+  ccName: 'lender.banking.cc_name',
+  ccNumber: 'lender.banking.cc_number',
+  ccSecurityCode: 'lender.banking.cc_security_code',
+  ccExpiration: 'lender.banking.cc_expiration',
+  ccZip: 'lender.banking.cc_zip',
+} as const;
+
 interface LenderBankingFormProps {
   fields: FieldDefinition[];
   values: Record<string, string>;
@@ -22,17 +49,31 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
   disabled = false,
   calculationResults = {},
 }) => {
+  const getValue = (key: keyof typeof FIELD_KEYS): string => {
+    return values[FIELD_KEYS[key]] || '';
+  };
+
+  const getBoolValue = (key: keyof typeof FIELD_KEYS): boolean => {
+    return values[FIELD_KEYS[key]] === 'true';
+  };
+
+  const handleChange = (key: keyof typeof FIELD_KEYS, value: string | boolean) => {
+    onValueChange(FIELD_KEYS[key], String(value));
+  };
+
   return (
     <div className="p-6 space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* ACH Section */}
         <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Bank / ACH</h3>
+          
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">ACH Status</Label>
               <Input
-                value={values['lender_ach_status'] || ''}
-                onChange={(e) => onValueChange('lender_ach_status', e.target.value)}
+                value={getValue('achStatus')}
+                onChange={(e) => handleChange('achStatus', e.target.value)}
                 disabled={disabled}
                 className="h-8"
               />
@@ -41,8 +82,8 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Bank</Label>
               <Input
-                value={values['lender_bank_name'] || ''}
-                onChange={(e) => onValueChange('lender_bank_name', e.target.value)}
+                value={getValue('bank')}
+                onChange={(e) => handleChange('bank', e.target.value)}
                 disabled={disabled}
                 className="h-8"
               />
@@ -51,10 +92,10 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Routing Number</Label>
               <Input
-                value={values['lender_routing_number'] || ''}
+                value={getValue('routingNumber')}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, '');
-                  onValueChange('lender_routing_number', value);
+                  handleChange('routingNumber', value);
                 }}
                 disabled={disabled}
                 className="h-8"
@@ -65,10 +106,10 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Account Number</Label>
               <Input
-                value={values['lender_account_number'] || ''}
+                value={getValue('accountNumber')}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, '');
-                  onValueChange('lender_account_number', value);
+                  handleChange('accountNumber', value);
                 }}
                 disabled={disabled}
                 className="h-8"
@@ -78,8 +119,8 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Type</Label>
               <Input
-                value={values['lender_account_type'] || ''}
-                onChange={(e) => onValueChange('lender_account_type', e.target.value)}
+                value={getValue('accountType')}
+                onChange={(e) => handleChange('accountType', e.target.value)}
                 disabled={disabled}
                 className="h-8"
               />
@@ -88,8 +129,8 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Name</Label>
               <Input
-                value={values['lender_account_name'] || ''}
-                onChange={(e) => onValueChange('lender_account_name', e.target.value)}
+                value={getValue('accountName')}
+                onChange={(e) => handleChange('accountName', e.target.value)}
                 disabled={disabled}
                 className="h-8"
               />
@@ -98,8 +139,8 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">ID</Label>
               <Input
-                value={values['lender_account_id'] || ''}
-                onChange={(e) => onValueChange('lender_account_id', e.target.value)}
+                value={getValue('accountId')}
+                onChange={(e) => handleChange('accountId', e.target.value)}
                 disabled={disabled}
                 className="h-8"
               />
@@ -108,8 +149,8 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Further Credit To</Label>
               <Input
-                value={values['lender_further_credit_to'] || ''}
-                onChange={(e) => onValueChange('lender_further_credit_to', e.target.value)}
+                value={getValue('furtherCreditTo')}
+                onChange={(e) => handleChange('furtherCreditTo', e.target.value)}
                 disabled={disabled}
                 className="h-8"
               />
@@ -119,12 +160,14 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
 
         {/* Check/Mailing Section */}
         <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Check / Mailing</h3>
+          
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">By Check</Label>
               <Checkbox
-                checked={values['lender_by_check'] === 'true'}
-                onCheckedChange={(checked) => onValueChange('lender_by_check', checked ? 'true' : 'false')}
+                checked={getBoolValue('byCheck')}
+                onCheckedChange={(checked) => handleChange('byCheck', !!checked)}
                 disabled={disabled}
               />
             </div>
@@ -132,8 +175,8 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Same as Mailing</Label>
               <Checkbox
-                checked={values['lender_same_as_mailing'] === 'true'}
-                onCheckedChange={(checked) => onValueChange('lender_same_as_mailing', checked ? 'true' : 'false')}
+                checked={getBoolValue('checkSameAsMailing')}
+                onCheckedChange={(checked) => handleChange('checkSameAsMailing', !!checked)}
                 disabled={disabled}
               />
             </div>
@@ -141,8 +184,8 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Address</Label>
               <Input
-                value={values['lender_check_address'] || ''}
-                onChange={(e) => onValueChange('lender_check_address', e.target.value)}
+                value={getValue('checkAddress')}
+                onChange={(e) => handleChange('checkAddress', e.target.value)}
                 disabled={disabled}
                 className="h-8"
               />
@@ -151,8 +194,8 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">City</Label>
               <Input
-                value={values['lender_check_city'] || ''}
-                onChange={(e) => onValueChange('lender_check_city', e.target.value)}
+                value={getValue('checkCity')}
+                onChange={(e) => handleChange('checkCity', e.target.value)}
                 disabled={disabled}
                 className="h-8"
               />
@@ -161,30 +204,23 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Zip Code</Label>
               <Input
-                value={values['lender_check_zip'] || ''}
-                onChange={(e) => onValueChange('lender_check_zip', e.target.value)}
+                value={getValue('checkZip')}
+                onChange={(e) => handleChange('checkZip', e.target.value)}
                 disabled={disabled}
                 className="h-8"
               />
             </div>
-            
+          </div>
+
+          <h3 className="text-sm font-semibold text-foreground border-b pb-2 mt-6">ACH Notification</h3>
+          
+          <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Add ACH Email</Label>
               <Input
                 type="email"
-                value={values['lender_ach_email_1'] || ''}
-                onChange={(e) => onValueChange('lender_ach_email_1', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Add ACH Email</Label>
-              <Input
-                type="email"
-                value={values['lender_ach_email_2'] || ''}
-                onChange={(e) => onValueChange('lender_ach_email_2', e.target.value)}
+                value={getValue('achEmail')}
+                onChange={(e) => handleChange('achEmail', e.target.value)}
                 disabled={disabled}
                 className="h-8"
               />
@@ -200,8 +236,8 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Name</Label>
               <Input
-                value={values['lender_cc_name'] || ''}
-                onChange={(e) => onValueChange('lender_cc_name', e.target.value)}
+                value={getValue('ccName')}
+                onChange={(e) => handleChange('ccName', e.target.value)}
                 disabled={disabled}
                 className="h-8"
               />
@@ -210,10 +246,10 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Card Number</Label>
               <Input
-                value={values['lender_cc_number'] || ''}
+                value={getValue('ccNumber')}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, '');
-                  onValueChange('lender_cc_number', value);
+                  handleChange('ccNumber', value);
                 }}
                 disabled={disabled}
                 className="h-8"
@@ -224,10 +260,10 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Security Code</Label>
               <Input
-                value={values['lender_cc_security_code'] || ''}
+                value={getValue('ccSecurityCode')}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, '');
-                  onValueChange('lender_cc_security_code', value);
+                  handleChange('ccSecurityCode', value);
                 }}
                 disabled={disabled}
                 className="h-8"
@@ -239,8 +275,8 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Expiration</Label>
               <Input
-                value={values['lender_cc_expiration'] || ''}
-                onChange={(e) => onValueChange('lender_cc_expiration', e.target.value)}
+                value={getValue('ccExpiration')}
+                onChange={(e) => handleChange('ccExpiration', e.target.value)}
                 disabled={disabled}
                 className="h-8"
                 placeholder="MM/YY"
@@ -250,8 +286,8 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Zip Code</Label>
               <Input
-                value={values['lender_cc_zip'] || ''}
-                onChange={(e) => onValueChange('lender_cc_zip', e.target.value)}
+                value={getValue('ccZip')}
+                onChange={(e) => handleChange('ccZip', e.target.value)}
                 disabled={disabled}
                 className="h-8"
               />
