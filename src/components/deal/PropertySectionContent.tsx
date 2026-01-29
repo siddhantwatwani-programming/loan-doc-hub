@@ -259,7 +259,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
 
   return (
     <>
-      <div className="flex border border-border rounded-lg bg-background overflow-hidden">
+      <div className="flex border border-border rounded-lg bg-background">
         {/* Sub-navigation tabs on the left */}
         <PropertySubNavigation
           activeSubSection={activeSubSection}
@@ -267,7 +267,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         />
 
         {/* Sub-section content on the right */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0 overflow-auto">
           {renderSubSectionContent()}
         </div>
       </div>
