@@ -1,16 +1,14 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export type PropertySubSection = 'properties_grid' | 'property_details' | 'legal_description' | 'liens' | 'insurance' | 'property_tax';
+export type PropertySubSection = 'property_details' | 'legal_description' | 'liens' | 'insurance' | 'property_tax';
 
 interface PropertySubNavigationProps {
   activeSubSection: PropertySubSection;
   onSubSectionChange: (subSection: PropertySubSection) => void;
-  showGridOption?: boolean;
 }
 
-const SUB_SECTIONS: { key: PropertySubSection; label: string; gridOnly?: boolean }[] = [
-  { key: 'properties_grid', label: 'Properties', gridOnly: true },
+const SUB_SECTIONS: { key: PropertySubSection; label: string }[] = [
   { key: 'property_details', label: 'Property Details' },
   { key: 'legal_description', label: 'Legal Description' },
   { key: 'liens', label: 'Liens' },
@@ -21,15 +19,10 @@ const SUB_SECTIONS: { key: PropertySubSection; label: string; gridOnly?: boolean
 export const PropertySubNavigation: React.FC<PropertySubNavigationProps> = ({
   activeSubSection,
   onSubSectionChange,
-  showGridOption = true,
 }) => {
-  const visibleSections = showGridOption 
-    ? SUB_SECTIONS 
-    : SUB_SECTIONS.filter(s => !s.gridOnly);
-
   return (
     <div className="flex flex-col border-r border-border bg-background min-w-[180px]">
-      {visibleSections.map((section) => (
+      {SUB_SECTIONS.map((section) => (
         <button
           key={section.key}
           onClick={() => onSubSectionChange(section.key)}
