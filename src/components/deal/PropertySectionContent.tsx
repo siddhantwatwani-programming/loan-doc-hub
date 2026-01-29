@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { PropertySubNavigation, type PropertySubSection } from './PropertySubNavigation';
 import { PropertyDetailsForm } from './PropertyDetailsForm';
 import { PropertyLegalDescriptionForm } from './PropertyLegalDescriptionForm';
 import { PropertyLiensForm } from './PropertyLiensForm';
 import { PropertyInsuranceForm } from './PropertyInsuranceForm';
 import { PropertyTaxForm } from './PropertyTaxForm';
+import { PropertiesTableView, type PropertyData } from './PropertiesTableView';
+import { PropertyModal } from './PropertyModal';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -17,6 +19,68 @@ interface PropertySectionContentProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
+// Helper to extract properties from values based on property prefix pattern
+const extractPropertiesFromValues = (values: Record<string, string>): PropertyData[] => {
+  const properties: PropertyData[] = [];
+  const propertyPrefixes = new Set<string>();
+  
+  // Find all property prefixes (property1, property2, etc.)
+  Object.keys(values).forEach(key => {
+    const match = key.match(/^(property\d+)\./);
+    if (match) {
+      propertyPrefixes.add(match[1]);
+    }
+  });
+  
+  // Build property objects from values
+  propertyPrefixes.forEach(prefix => {
+    const property: PropertyData = {
+      id: prefix,
+      isPrimary: values[`${prefix}.primary_property`] === 'true',
+      description: values[`${prefix}.description`] || '',
+      street: values[`${prefix}.street`] || '',
+      city: values[`${prefix}.city`] || '',
+      state: values[`${prefix}.state`] || '',
+      zipCode: values[`${prefix}.zip`] || '',
+      county: values[`${prefix}.county`] || '',
+      propertyType: values[`${prefix}.appraisal_property_type`] || '',
+      occupancy: values[`${prefix}.appraisal_occupancy`] || '',
+      appraisedValue: values[`${prefix}.appraised_value`] || '',
+      appraisedDate: values[`${prefix}.appraised_date`] || '',
+      ltv: values[`${prefix}.ltv`] || '',
+      apn: values[`${prefix}.apn`] || '',
+      loanPriority: values[`${prefix}.priority`] || '',
+    };
+    properties.push(property);
+  });
+  
+  // Sort to ensure property1 comes first
+  properties.sort((a, b) => {
+    const numA = parseInt(a.id.replace('property', ''));
+    const numB = parseInt(b.id.replace('property', ''));
+    return numA - numB;
+  });
+  
+  return properties;
+};
+
+// Get the next available property prefix
+const getNextPropertyPrefix = (values: Record<string, string>): string => {
+  const propertyPrefixes = new Set<string>();
+  Object.keys(values).forEach(key => {
+    const match = key.match(/^(property\d+)\./);
+    if (match) {
+      propertyPrefixes.add(match[1]);
+    }
+  });
+  
+  let nextNum = 1;
+  while (propertyPrefixes.has(`property${nextNum}`)) {
+    nextNum++;
+  }
+  return `property${nextNum}`;
+};
+
 export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   fields,
   values,
@@ -25,16 +89,120 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   disabled = false,
   calculationResults = {},
 }) => {
-  const [activeSubSection, setActiveSubSection] = useState<PropertySubSection>('property_details');
+  const [activeSubSection, setActiveSubSection] = useState<PropertySubSection>('properties');
+  const [selectedPropertyPrefix, setSelectedPropertyPrefix] = useState<string>('property1');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingProperty, setEditingProperty] = useState<PropertyData | null>(null);
+  
+  // Extract properties from values
+  const properties = extractPropertiesFromValues(values);
+
+  // Handle adding a new property
+  const handleAddProperty = useCallback(() => {
+    setEditingProperty(null);
+    setModalOpen(true);
+  }, []);
+
+  // Handle editing a property
+  const handleEditProperty = useCallback((property: PropertyData) => {
+    setEditingProperty(property);
+    setModalOpen(true);
+  }, []);
+
+  // Handle row click - navigate to property details
+  const handleRowClick = useCallback((property: PropertyData) => {
+    setSelectedPropertyPrefix(property.id);
+    setActiveSubSection('property_details');
+  }, []);
+
+  // Handle primary property change - only one can be primary
+  const handlePrimaryChange = useCallback((propertyId: string, isPrimary: boolean) => {
+    if (isPrimary) {
+      // Unset all other properties as non-primary
+      properties.forEach(p => {
+        if (p.id !== propertyId) {
+          onValueChange(`${p.id}.primary_property`, 'false');
+        }
+      });
+    }
+    onValueChange(`${propertyId}.primary_property`, String(isPrimary));
+  }, [properties, onValueChange]);
+
+  // Handle saving property from modal
+  const handleSaveProperty = useCallback((propertyData: PropertyData) => {
+    const prefix = editingProperty ? editingProperty.id : getNextPropertyPrefix(values);
+    
+    // Save all property fields
+    onValueChange(`${prefix}.primary_property`, String(propertyData.isPrimary));
+    onValueChange(`${prefix}.description`, propertyData.description);
+    onValueChange(`${prefix}.street`, propertyData.street);
+    onValueChange(`${prefix}.city`, propertyData.city);
+    onValueChange(`${prefix}.state`, propertyData.state);
+    onValueChange(`${prefix}.zip`, propertyData.zipCode);
+    onValueChange(`${prefix}.county`, propertyData.county);
+    onValueChange(`${prefix}.appraisal_property_type`, propertyData.propertyType);
+    onValueChange(`${prefix}.appraisal_occupancy`, propertyData.occupancy);
+    onValueChange(`${prefix}.appraised_value`, propertyData.appraisedValue);
+    onValueChange(`${prefix}.appraised_date`, propertyData.appraisedDate);
+    onValueChange(`${prefix}.ltv`, propertyData.ltv);
+    onValueChange(`${prefix}.apn`, propertyData.apn);
+    onValueChange(`${prefix}.priority`, propertyData.loanPriority);
+    
+    // If this is marked as primary, unset others
+    if (propertyData.isPrimary) {
+      properties.forEach(p => {
+        if (p.id !== prefix) {
+          onValueChange(`${p.id}.primary_property`, 'false');
+        }
+      });
+    }
+    
+    setModalOpen(false);
+  }, [editingProperty, values, onValueChange, properties]);
+
+  // Create property-specific values for the detail forms
+  const getPropertySpecificValues = (): Record<string, string> => {
+    const result: Record<string, string> = {};
+    Object.entries(values).forEach(([key, value]) => {
+      // Replace the current property prefix with property1 for the form
+      if (key.startsWith(`${selectedPropertyPrefix}.`)) {
+        const fieldName = key.replace(`${selectedPropertyPrefix}.`, 'property1.');
+        result[fieldName] = value;
+      } else if (key.startsWith('property1.') && selectedPropertyPrefix !== 'property1') {
+        // Don't include property1 fields if we're editing a different property
+      } else {
+        result[key] = value;
+      }
+    });
+    return result;
+  };
+
+  // Handle value change for property-specific forms
+  const handlePropertyValueChange = (fieldKey: string, value: string) => {
+    // Replace property1 with the selected property prefix
+    const actualKey = fieldKey.replace('property1.', `${selectedPropertyPrefix}.`);
+    onValueChange(actualKey, value);
+  };
 
   const renderSubSectionContent = () => {
     switch (activeSubSection) {
+      case 'properties':
+        return (
+          <PropertiesTableView
+            properties={properties}
+            onAddProperty={handleAddProperty}
+            onEditProperty={handleEditProperty}
+            onRowClick={handleRowClick}
+            onPrimaryChange={handlePrimaryChange}
+            disabled={disabled}
+          />
+        );
       case 'property_details':
         return (
           <PropertyDetailsForm
             fields={fields}
-            values={values}
-            onValueChange={onValueChange}
+            values={getPropertySpecificValues()}
+            onValueChange={handlePropertyValueChange}
             showValidation={showValidation}
             disabled={disabled}
             calculationResults={calculationResults}
@@ -44,8 +212,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         return (
           <PropertyLegalDescriptionForm
             fields={fields}
-            values={values}
-            onValueChange={onValueChange}
+            values={getPropertySpecificValues()}
+            onValueChange={handlePropertyValueChange}
             showValidation={showValidation}
             disabled={disabled}
             calculationResults={calculationResults}
@@ -55,8 +223,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         return (
           <PropertyLiensForm
             fields={fields}
-            values={values}
-            onValueChange={onValueChange}
+            values={getPropertySpecificValues()}
+            onValueChange={handlePropertyValueChange}
             showValidation={showValidation}
             disabled={disabled}
             calculationResults={calculationResults}
@@ -66,8 +234,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         return (
           <PropertyInsuranceForm
             fields={fields}
-            values={values}
-            onValueChange={onValueChange}
+            values={getPropertySpecificValues()}
+            onValueChange={handlePropertyValueChange}
             showValidation={showValidation}
             disabled={disabled}
             calculationResults={calculationResults}
@@ -77,8 +245,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         return (
           <PropertyTaxForm
             fields={fields}
-            values={values}
-            onValueChange={onValueChange}
+            values={getPropertySpecificValues()}
+            onValueChange={handlePropertyValueChange}
             showValidation={showValidation}
             disabled={disabled}
             calculationResults={calculationResults}
@@ -90,18 +258,29 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   };
 
   return (
-    <div className="flex border border-border rounded-lg bg-background overflow-hidden">
-      {/* Sub-navigation tabs on the left */}
-      <PropertySubNavigation
-        activeSubSection={activeSubSection}
-        onSubSectionChange={setActiveSubSection}
-      />
+    <>
+      <div className="flex border border-border rounded-lg bg-background overflow-hidden">
+        {/* Sub-navigation tabs on the left */}
+        <PropertySubNavigation
+          activeSubSection={activeSubSection}
+          onSubSectionChange={setActiveSubSection}
+        />
 
-      {/* Sub-section content on the right */}
-      <div className="flex-1">
-        {renderSubSectionContent()}
+        {/* Sub-section content on the right */}
+        <div className="flex-1">
+          {renderSubSectionContent()}
+        </div>
       </div>
-    </div>
+
+      {/* Add/Edit Property Modal */}
+      <PropertyModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        property={editingProperty}
+        onSave={handleSaveProperty}
+        isEdit={!!editingProperty}
+      />
+    </>
   );
 };
 
