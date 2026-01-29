@@ -173,8 +173,6 @@ export const TemplateManagementPage: React.FC = () => {
 
   const [formData, setFormData] = useState({
     name: '',
-    state: '',
-    product_type: '',
     version: 1,
     is_active: true,
     description: '',
@@ -291,10 +289,10 @@ export const TemplateManagementPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.state || !formData.product_type) {
+    if (!formData.name) {
       toast({
         title: 'Validation error',
-        description: 'Please fill in all required fields',
+        description: 'Please enter a template name',
         variant: 'destructive',
       });
       return;
@@ -317,8 +315,6 @@ export const TemplateManagementPage: React.FC = () => {
           .from('templates')
           .update({
             name: formData.name,
-            state: formData.state,
-            product_type: formData.product_type,
             version: formData.version,
             is_active: formData.is_active,
             description: formData.description || null,
@@ -332,8 +328,8 @@ export const TemplateManagementPage: React.FC = () => {
       } else {
         const { error } = await supabase.from('templates').insert({
           name: formData.name,
-          state: formData.state,
-          product_type: formData.product_type,
+          state: 'TBD',
+          product_type: 'TBD',
           version: formData.version,
           is_active: formData.is_active,
           description: formData.description || null,
@@ -372,8 +368,6 @@ export const TemplateManagementPage: React.FC = () => {
     setEditingTemplate(null);
     setFormData({
       name: template.name,
-      state: template.state,
-      product_type: template.product_type,
       version: maxVersion + 1,
       is_active: true,
       description: template.description || '',
@@ -387,8 +381,6 @@ export const TemplateManagementPage: React.FC = () => {
     setEditingTemplate(template);
     setFormData({
       name: template.name,
-      state: template.state,
-      product_type: template.product_type,
       version: template.version,
       is_active: template.is_active,
       description: template.description || '',
@@ -703,8 +695,6 @@ export const TemplateManagementPage: React.FC = () => {
     setEditingTemplate(null);
     setFormData({
       name: '',
-      state: '',
-      product_type: '',
       version: 1,
       is_active: true,
       description: '',
@@ -761,40 +751,6 @@ export const TemplateManagementPage: React.FC = () => {
                   onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                   placeholder="e.g., Deed of Trust"
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>State *</Label>
-                  <Select
-                    value={formData.state}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, state: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select state" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {US_STATES.map((state) => (
-                        <SelectItem key={state} value={state}>{state}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Product Type *</Label>
-                  <Select
-                    value={formData.product_type}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, product_type: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PRODUCT_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
