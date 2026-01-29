@@ -163,6 +163,8 @@ export const TemplateManagementPage: React.FC = () => {
   const [docxValidating, setDocxValidating] = useState(false);
   const [docxValidationResult, setDocxValidationResult] = useState<DocxValidationResult | null>(null);
   const [docxValidationTemplateName, setDocxValidationTemplateName] = useState('');
+  const [docxValidationTemplateId, setDocxValidationTemplateId] = useState<string | null>(null);
+  const [creatingMapping, setCreatingMapping] = useState(false);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -513,6 +515,7 @@ export const TemplateManagementPage: React.FC = () => {
     setIsDocxValidationOpen(true);
     setDocxValidationResult(null);
     setDocxValidationTemplateName(`${template.name} v${template.version}`);
+    setDocxValidationTemplateId(template.id);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -544,8 +547,83 @@ export const TemplateManagementPage: React.FC = () => {
         variant: 'destructive',
       });
       setIsDocxValidationOpen(false);
+      setDocxValidationTemplateId(null);
     } finally {
       setDocxValidating(false);
+    }
+  };
+
+  const handleRevalidateDocxTags = async () => {
+    if (!docxValidationTemplateId) return;
+    
+    setDocxValidating(true);
+    setDocxValidationResult(null);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/validate-template`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ templateId: docxValidationTemplateId }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Validation failed');
+      }
+
+      const result = await response.json();
+      setDocxValidationResult(result);
+    } catch (error: any) {
+      console.error('DOCX revalidation error:', error);
+      toast({
+        title: 'Revalidation Failed',
+        description: error.message || 'Failed to revalidate template DOCX',
+        variant: 'destructive',
+      });
+    } finally {
+      setDocxValidating(false);
+    }
+  };
+
+  const handleCreateMappingFromValidation = async (tagName: string, fieldKey: string) => {
+    setCreatingMapping(true);
+    try {
+      // Determine tag type based on pattern
+      const tagType = tagName.match(/^F\d{4,}$/) ? 'f_code' : 'merge_tag';
+      
+      const { error } = await supabase.from('merge_tag_aliases').insert({
+        tag_name: tagName,
+        field_key: fieldKey,
+        tag_type: tagType,
+        is_active: true,
+      });
+
+      if (error) throw error;
+      
+      toast({
+        title: 'Mapping created',
+        description: `${tagName} → ${fieldKey}`,
+      });
+
+      // Auto re-validate to update the results
+      await handleRevalidateDocxTags();
+    } catch (error: any) {
+      console.error('Create mapping error:', error);
+      toast({
+        title: 'Failed to create mapping',
+        description: error.message || 'Unknown error',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingMapping(false);
     }
   };
 
@@ -1242,17 +1320,18 @@ export const TemplateManagementPage: React.FC = () => {
       {/* DOCX Tag Validation Dialog */}
       <TemplateValidationDialog
         open={isDocxValidationOpen}
-        onOpenChange={setIsDocxValidationOpen}
+        onOpenChange={(open) => {
+          setIsDocxValidationOpen(open);
+          if (!open) {
+            setDocxValidationTemplateId(null);
+          }
+        }}
         templateName={docxValidationTemplateName}
         validating={docxValidating}
         result={docxValidationResult}
-        onCreateMapping={(tagName, fieldKey) => {
-          // Navigate to tag mapping page or show inline create form
-          toast({
-            title: 'Create Mapping',
-            description: `Create mapping: ${tagName} → ${fieldKey}`,
-          });
-        }}
+        onCreateMapping={handleCreateMappingFromValidation}
+        onRevalidate={handleRevalidateDocxTags}
+        creatingMapping={creatingMapping}
       />
     </div>
   );
