@@ -81,13 +81,6 @@ const adminQuickLinks: AdminQuickLink[] = [
     color: 'bg-cyan-500/10 text-cyan-500',
   },
   {
-    title: 'Tag Mapping',
-    description: 'Map document placeholders to field keys',
-    icon: Tags,
-    path: '/admin/tag-mapping',
-    color: 'bg-purple-500/10 text-purple-500',
-  },
-  {
     title: 'Packet Management',
     description: 'Create packets and assign templates',
     icon: Package,
