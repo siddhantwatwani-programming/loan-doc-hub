@@ -10,6 +10,8 @@ const corsHeaders = {
 interface ValidateTemplateRequest {
   templateId?: string;      // Validate existing template by ID
   templateFile?: string;    // Base64-encoded DOCX file for new upload validation
+  includeDocumentText?: boolean;  // Return extracted document text
+  includeFieldDictionary?: boolean; // Return field dictionary info for mapped tags
 }
 
 interface FoundTag {
@@ -19,6 +21,13 @@ interface FoundTag {
   fieldKey: string | null;
   mapped: boolean;
   suggestions?: string[];
+  fieldDictionaryInfo?: {
+    id: string;
+    label: string;
+    data_type: string;
+    section: string;
+    description: string | null;
+  } | null;
 }
 
 interface ValidationResult {
@@ -36,6 +45,7 @@ interface ValidationResult {
     mappedCount: number;
     unmappedCount: number;
   };
+  documentText?: string;
 }
 
 // ============================================
@@ -212,7 +222,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body = await req.json() as ValidateTemplateRequest;
-    const { templateId, templateFile } = body;
+    const { templateId, templateFile, includeDocumentText, includeFieldDictionary } = body;
 
     if (!templateId && !templateFile) {
       return new Response(
@@ -314,12 +324,38 @@ serve(async (req) => {
       }
     }
 
-    // 4. Fetch all field keys from dictionary for suggestions
-    const { data: fieldDictionary } = await supabase
+    // 4. Fetch all field keys from dictionary for suggestions (and metadata if requested)
+    const { data: fieldDictionaryData } = await supabase
       .from("field_dictionary")
-      .select("field_key");
+      .select("id, field_key, label, data_type, section, description");
     
-    const allFieldKeys = (fieldDictionary || []).map(fd => fd.field_key);
+    const allFieldKeys = (fieldDictionaryData || []).map(fd => fd.field_key);
+    
+    // Build a map for quick lookup of field dictionary info
+    const fieldDictMap = new Map<string, {
+      id: string;
+      label: string;
+      data_type: string;
+      section: string;
+      description: string | null;
+    }>();
+    for (const fd of (fieldDictionaryData || [])) {
+      fieldDictMap.set(fd.field_key, {
+        id: fd.id,
+        label: fd.label,
+        data_type: fd.data_type,
+        section: fd.section,
+        description: fd.description,
+      });
+      // Also map lowercase for case-insensitive lookup
+      fieldDictMap.set(fd.field_key.toLowerCase(), {
+        id: fd.id,
+        label: fd.label,
+        data_type: fd.data_type,
+        section: fd.section,
+        description: fd.description,
+      });
+    }
 
     // 5. Find all tags in the document
     const foundMergeTags = findMergeTags(allRawXml);
@@ -336,12 +372,14 @@ serve(async (req) => {
       const fieldKey = mergeTagMap.get(tag.tagName) || mergeTagMap.get(tag.tagName.toLowerCase());
       
       if (fieldKey) {
+        const dictInfo = includeFieldDictionary ? (fieldDictMap.get(fieldKey) || fieldDictMap.get(fieldKey.toLowerCase()) || null) : undefined;
         mappedTags.push({
           tag: tag.tag,
           tagName: tag.tagName,
           tagType: tag.tagType,
           fieldKey,
           mapped: true,
+          fieldDictionaryInfo: includeFieldDictionary ? dictInfo : undefined,
         });
       } else {
         // Check if it's in the field dictionary directly
@@ -351,12 +389,14 @@ serve(async (req) => {
         );
         
         if (directMatch) {
+          const dictInfo = includeFieldDictionary ? (fieldDictMap.get(directMatch) || fieldDictMap.get(directMatch.toLowerCase()) || null) : undefined;
           mappedTags.push({
             tag: tag.tag,
             tagName: tag.tagName,
             tagType: tag.tagType,
             fieldKey: directMatch,
             mapped: true,
+            fieldDictionaryInfo: includeFieldDictionary ? dictInfo : undefined,
           });
           warnings.push(`Tag "${tag.tagName}" maps directly to field "${directMatch}" but has no alias entry`);
         } else {
@@ -375,12 +415,14 @@ serve(async (req) => {
 
     // Process labels
     for (const label of foundLabels) {
+      const dictInfo = includeFieldDictionary ? (fieldDictMap.get(label.fieldKey) || fieldDictMap.get(label.fieldKey.toLowerCase()) || null) : undefined;
       mappedTags.push({
         tag: label.tag,
         tagName: label.tagName,
         tagType: "label",
         fieldKey: label.fieldKey,
         mapped: true,
+        fieldDictionaryInfo: includeFieldDictionary ? dictInfo : undefined,
       });
     }
 
@@ -411,6 +453,7 @@ serve(async (req) => {
       warnings,
       errors,
       summary,
+      documentText: includeDocumentText ? allContent.trim() : undefined,
     };
 
     console.log(`[validate-template] Validated "${templateName}": ${mappedTags.length} mapped, ${unmappedTags.length} unmapped`);
