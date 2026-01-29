@@ -93,15 +93,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   // Parse properties from values
   const properties = parsePropertiesFromValues(values);
 
-  // Handle property selection from grid (view details on row click)
+  // Handle property selection from grid
   const handlePropertySelect = useCallback((property: PropertyData) => {
-    const index = parseInt(property.id.replace('property', ''), 10);
-    setSelectedPropertyIndex(index);
-    setActiveSubSection('property_details');
-  }, []);
-
-  // Handle edit property action (same as select, opens edit form)
-  const handleEditProperty = useCallback((property: PropertyData) => {
     const index = parseInt(property.id.replace('property', ''), 10);
     setSelectedPropertyIndex(index);
     setActiveSubSection('property_details');
@@ -159,7 +152,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             <PropertyGrid
               properties={properties}
               onPropertySelect={handlePropertySelect}
-              onEditProperty={handleEditProperty}
               onAddProperty={handleAddProperty}
               onPrimaryChange={handlePrimaryChange}
               disabled={disabled}
