@@ -39,7 +39,8 @@ import {
   XCircle,
   ClipboardCheck,
   AlertCircle,
-  Scan
+  Scan,
+  FileSearch
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -53,6 +54,7 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TemplateValidationDialog } from '@/components/admin/TemplateValidationDialog';
+import { TemplateDocumentViewerDialog } from '@/components/admin/TemplateDocumentViewerDialog';
 
 interface Template {
   id: string;
@@ -165,6 +167,8 @@ export const TemplateManagementPage: React.FC = () => {
   const [docxValidationTemplateName, setDocxValidationTemplateName] = useState('');
   const [docxValidationTemplateId, setDocxValidationTemplateId] = useState<string | null>(null);
   const [creatingMapping, setCreatingMapping] = useState(false);
+  const [isDocumentViewerOpen, setIsDocumentViewerOpen] = useState(false);
+  const [documentViewerTemplate, setDocumentViewerTemplate] = useState<Template | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -625,6 +629,19 @@ export const TemplateManagementPage: React.FC = () => {
     } finally {
       setCreatingMapping(false);
     }
+  };
+
+  const handleViewDocument = (template: Template) => {
+    if (!template.file_path) {
+      toast({
+        title: 'No DOCX file',
+        description: 'This template has no DOCX file to view',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setDocumentViewerTemplate(template);
+    setIsDocumentViewerOpen(true);
   };
 
   const handleDelete = async (template: Template) => {
@@ -1283,6 +1300,13 @@ export const TemplateManagementPage: React.FC = () => {
                             Validate Mapping
                           </DropdownMenuItem>
                           <DropdownMenuItem 
+                            onClick={() => handleViewDocument(template)}
+                            disabled={!template.file_path}
+                          >
+                            <FileSearch className="h-4 w-4 mr-2" />
+                            View Document & Mappings
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
                             onClick={() => handleValidateDocxTags(template)}
                             disabled={!template.file_path}
                           >
@@ -1333,6 +1357,21 @@ export const TemplateManagementPage: React.FC = () => {
         onRevalidate={handleRevalidateDocxTags}
         creatingMapping={creatingMapping}
       />
+
+      {/* Document Viewer Dialog */}
+      {documentViewerTemplate && (
+        <TemplateDocumentViewerDialog
+          open={isDocumentViewerOpen}
+          onOpenChange={(open) => {
+            setIsDocumentViewerOpen(open);
+            if (!open) {
+              setDocumentViewerTemplate(null);
+            }
+          }}
+          templateId={documentViewerTemplate.id}
+          templateName={`${documentViewerTemplate.name} v${documentViewerTemplate.version}`}
+        />
+      )}
     </div>
   );
 };
