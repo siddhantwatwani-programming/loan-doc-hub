@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  resolvePacketFields, 
+  resolvePacketFields,
+  resolveAllFields,
   getMissingRequiredFields as getResolverMissingFields,
   isSectionComplete as isResolverSectionComplete,
+  SECTION_ORDER,
   type ResolvedField,
   type ResolvedFieldSet 
 } from '@/lib/requiredFieldsResolver';
@@ -114,7 +116,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
 
   // Fetch resolved fields and values
   useEffect(() => {
-    if (!dealId || !packetId) {
+    if (!dealId) {
       setLoading(false);
       return;
     }
@@ -127,8 +129,10 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
       setLoading(true);
       setError(null);
 
-      // 1. Resolve required fields for this packet (deterministic resolver)
-      const resolved = await resolvePacketFields(packetId!);
+      // 1. Resolve fields - use packet fields if packet exists, otherwise all fields
+      const resolved = packetId 
+        ? await resolvePacketFields(packetId)
+        : await resolveAllFields();
 
       // UI: Ensure all standard sections render as tabs when they exist in field_dictionary,
       // even if they are not mapped in TemplateFieldMap for the active packet.
