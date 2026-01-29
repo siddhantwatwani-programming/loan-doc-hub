@@ -1,691 +1,33 @@
+/**
+ * Generate Document Edge Function
+ * 
+ * Orchestrates document generation by processing DOCX templates
+ * with deal field values. Supports single document and packet generation.
+ */
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as fflate from "https://esm.sh/fflate@0.8.2";
+
+// Import shared modules
+import type {
+  OutputType,
+  RequestType,
+  GenerationStatus,
+  GenerateDocumentRequest,
+  TemplateFieldMap,
+  FieldDefinition,
+  Template,
+  GenerationResult,
+  JobResult,
+  FieldValueData,
+} from "../_shared/types.ts";
+import { fetchMergeTagMappings, extractRawValueFromJsonb } from "../_shared/field-resolver.ts";
+import { processDocx } from "../_shared/docx-processor.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-// ============================================
-// Types
-// ============================================
-
-type OutputType = "docx_only" | "docx_and_pdf";
-type RequestType = "single_doc" | "packet";
-type GenerationStatus = "queued" | "running" | "success" | "failed";
-
-interface GenerateDocumentRequest {
-  dealId: string;
-  templateId?: string;  // For single doc
-  packetId?: string;    // For packet generation
-  outputType?: OutputType;
-}
-
-interface TemplateFieldMap {
-  field_dictionary_id: string;
-  field_key: string;
-  transform_rule: string | null;
-  required_flag: boolean;
-}
-
-interface FieldDefinition {
-  id: string;
-  field_key: string;
-  data_type: string;
-  label: string;
-}
-
-interface DealFieldValue {
-  field_dictionary_id: string;
-  field_key: string;
-  value_text: string | null;
-  value_number: number | null;
-  value_date: string | null;
-}
-
-interface Template {
-  id: string;
-  name: string;
-  file_path: string | null;
-}
-
-interface GenerationResult {
-  templateId: string;
-  templateName: string;
-  success: boolean;
-  documentId?: string;
-  versionNumber?: number;
-  outputPath?: string;
-  error?: string;
-}
-
-interface JobResult {
-  jobId: string;
-  dealId: string;
-  requestType: RequestType;
-  status: GenerationStatus;
-  results: GenerationResult[];
-  successCount: number;
-  failCount: number;
-  startedAt: string;
-  completedAt?: string;
-}
-
-// ============================================
-// Formatting Utilities
-// ============================================
-
-function formatCurrency(value: string | number | null): string {
-  if (value === null || value === undefined || value === "") return "";
-  const num = typeof value === "string" ? parseFloat(value) : value;
-  if (isNaN(num)) return "";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(num);
-}
-
-function formatCurrencyInWords(value: string | number | null): string {
-  if (value === null || value === undefined || value === "") return "";
-  const num = typeof value === "string" ? parseFloat(value) : value;
-  if (isNaN(num)) return "";
-
-  const dollars = Math.floor(num);
-  const cents = Math.round((num - dollars) * 100);
-
-  const words = numberToWords(dollars);
-  return `${words} and ${cents.toString().padStart(2, "0")}/100 Dollars`;
-}
-
-function numberToWords(num: number): string {
-  const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
-  const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
-  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
-  const thousands = ["", "Thousand", "Million", "Billion"];
-
-  if (num === 0) return "Zero";
-  if (num < 0) return "Negative " + numberToWords(-num);
-
-  let words = "";
-  let i = 0;
-
-  while (num > 0) {
-    if (num % 1000 !== 0) {
-      let chunk = "";
-      const n = num % 1000;
-
-      if (n >= 100) {
-        chunk += ones[Math.floor(n / 100)] + " Hundred ";
-      }
-
-      const remainder = n % 100;
-      if (remainder >= 10 && remainder < 20) {
-        chunk += teens[remainder - 10] + " ";
-      } else {
-        if (remainder >= 20) {
-          chunk += tens[Math.floor(remainder / 10)] + " ";
-        }
-        if (remainder % 10 > 0) {
-          chunk += ones[remainder % 10] + " ";
-        }
-      }
-
-      words = chunk + thousands[i] + " " + words;
-    }
-    num = Math.floor(num / 1000);
-    i++;
-  }
-
-  return words.trim();
-}
-
-function formatDateMMDDYYYY(value: string | null): string {
-  if (!value) return "";
-  try {
-    const date = new Date(value);
-    if (isNaN(date.getTime())) return "";
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${month}/${day}/${year}`;
-  } catch {
-    return "";
-  }
-}
-
-function formatDateLong(value: string | null): string {
-  if (!value) return "";
-  try {
-    const date = new Date(value);
-    if (isNaN(date.getTime())) return "";
-    return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-  } catch {
-    return "";
-  }
-}
-
-function formatDateShort(value: string | null): string {
-  if (!value) return "";
-  try {
-    const date = new Date(value);
-    if (isNaN(date.getTime())) return "";
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  } catch {
-    return "";
-  }
-}
-
-function formatPercentage(value: string | number | null, decimals = 3): string {
-  if (value === null || value === undefined || value === "") return "";
-  const num = typeof value === "string" ? parseFloat(value) : value;
-  if (isNaN(num)) return "";
-  return `${num.toFixed(decimals)}%`;
-}
-
-function formatUppercase(value: string | null): string {
-  if (!value) return "";
-  return value.toUpperCase();
-}
-
-function formatTitlecase(value: string | null): string {
-  if (!value) return "";
-  return value.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
-}
-
-function formatLowercase(value: string | null): string {
-  if (!value) return "";
-  return value.toLowerCase();
-}
-
-function formatPhone(value: string | null): string {
-  if (!value) return "";
-  const digits = value.replace(/\D/g, "");
-  if (digits.length === 10) {
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-  }
-  return value;
-}
-
-function formatSSNMasked(value: string | null): string {
-  if (!value) return "";
-  const digits = value.replace(/\D/g, "");
-  if (digits.length === 9) {
-    return `XXX-XX-${digits.slice(5)}`;
-  }
-  return value;
-}
-
-// ============================================
-// Value Resolution
-// ============================================
-
-function extractRawValue(fieldValue: DealFieldValue | undefined, dataType: string): string | number | null {
-  if (!fieldValue) return null;
-
-  switch (dataType) {
-    case "currency":
-    case "number":
-    case "percentage":
-      return fieldValue.value_number;
-    case "date":
-      return fieldValue.value_date;
-    case "text":
-    case "boolean":
-    default:
-      return fieldValue.value_text;
-  }
-}
-
-function formatByDataType(value: string | number | null, dataType: string): string {
-  if (value === null || value === undefined) return "";
-
-  switch (dataType) {
-    case "currency":
-      return formatCurrency(value);
-    case "percentage":
-      return formatPercentage(value, 3);
-    case "date":
-      return formatDateMMDDYYYY(String(value));
-    case "number":
-      if (typeof value === "number") {
-        return new Intl.NumberFormat("en-US").format(value);
-      }
-      const num = parseFloat(String(value));
-      return isNaN(num) ? String(value) : new Intl.NumberFormat("en-US").format(num);
-    case "boolean":
-      const boolStr = String(value).toLowerCase();
-      if (boolStr === "true" || boolStr === "1" || boolStr === "yes") return "Yes";
-      if (boolStr === "false" || boolStr === "0" || boolStr === "no") return "No";
-      return String(value);
-    case "text":
-    default:
-      return String(value);
-  }
-}
-
-function applyTransform(value: string | number | null, transform: string): string {
-  if (value === null || value === undefined) return "";
-  const valueStr = String(value);
-  const t = transform.toLowerCase().trim();
-
-  switch (t) {
-    case "currency":
-      return formatCurrency(value);
-    case "currency_words":
-      return formatCurrencyInWords(value);
-    case "date":
-    case "date_mmddyyyy":
-      return formatDateMMDDYYYY(valueStr);
-    case "date_long":
-      return formatDateLong(valueStr);
-    case "date_short":
-      return formatDateShort(valueStr);
-    case "uppercase":
-      return formatUppercase(valueStr);
-    case "titlecase":
-      return formatTitlecase(valueStr);
-    case "lowercase":
-      return formatLowercase(valueStr);
-    case "percentage":
-      return formatPercentage(value);
-    case "phone":
-      return formatPhone(valueStr);
-    case "ssn_masked":
-      return formatSSNMasked(valueStr);
-    default:
-      return valueStr;
-  }
-}
-
-// ============================================
-// Merge Tag Mapping - Database-Driven
-// ============================================
-
-interface ParsedMergeTag {
-  fullMatch: string;
-  tagName: string;  // The raw tag name from the document
-  inlineTransform: string | null;
-}
-
-interface MergeTagAlias {
-  tag_name: string;
-  field_key: string;
-  tag_type: 'merge_tag' | 'label' | 'f_code';
-  replace_next: string | null;
-  is_active: boolean;
-}
-
-// In-memory cache for merge tag aliases with TTL
-let cachedMergeTagMap: Record<string, string> | null = null;
-let cachedLabelMap: Record<string, { fieldKey: string; replaceNext?: string }> | null = null;
-let cacheTimestamp: number = 0;
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-
-/**
- * Fetch merge tag aliases from database and build lookup maps
- */
-async function fetchMergeTagMappings(supabase: any): Promise<{
-  mergeTagMap: Record<string, string>;
-  labelMap: Record<string, { fieldKey: string; replaceNext?: string }>;
-}> {
-  const now = Date.now();
-  
-  // Return cached values if still valid
-  if (cachedMergeTagMap && cachedLabelMap && (now - cacheTimestamp) < CACHE_TTL_MS) {
-    console.log("[generate-document] Using cached merge tag mappings");
-    return { mergeTagMap: cachedMergeTagMap, labelMap: cachedLabelMap };
-  }
-  
-  console.log("[generate-document] Fetching merge tag mappings from database");
-  
-  const { data: aliases, error } = await supabase
-    .from("merge_tag_aliases")
-    .select("tag_name, field_key, tag_type, replace_next, is_active")
-    .eq("is_active", true);
-  
-  if (error) {
-    console.error("[generate-document] Failed to fetch merge tag aliases:", error);
-    // Return empty maps on error - will fall back to no mappings
-    return { mergeTagMap: {}, labelMap: {} };
-  }
-  
-  const mergeTagMap: Record<string, string> = {};
-  const labelMap: Record<string, { fieldKey: string; replaceNext?: string }> = {};
-  
-  for (const alias of (aliases || []) as MergeTagAlias[]) {
-    if (alias.tag_type === 'merge_tag' || alias.tag_type === 'f_code') {
-      mergeTagMap[alias.tag_name] = alias.field_key;
-    } else if (alias.tag_type === 'label') {
-      labelMap[alias.tag_name] = {
-        fieldKey: alias.field_key,
-        replaceNext: alias.replace_next || undefined,
-      };
-    }
-  }
-  
-  // Update cache
-  cachedMergeTagMap = mergeTagMap;
-  cachedLabelMap = labelMap;
-  cacheTimestamp = now;
-  
-  console.log(`[generate-document] Loaded ${Object.keys(mergeTagMap).length} merge tags and ${Object.keys(labelMap).length} labels from database`);
-  
-  return { mergeTagMap, labelMap };
-}
-
-function resolveFieldKeyWithMap(tagName: string, mergeTagMap: Record<string, string>): string {
-  // Clean the tag name (remove trailing underscores, etc.)
-  const cleanedTag = tagName.replace(/_+$/, "").trim();
-  return mergeTagMap[tagName] || mergeTagMap[cleanedTag] || tagName;
-}
-
-/**
- * Normalize Word XML by consolidating fragmented text runs.
- * Word often splits text across multiple <w:t> elements within a run or across runs.
- * This function consolidates text within each paragraph to enable merge field detection.
- */
-function normalizeWordXml(xmlContent: string): string {
-  // Pattern to match a paragraph and consolidate its text runs
-  // Word paragraphs are wrapped in <w:p>...</w:p>
-  
-  // First, let's handle the case where «field» is split across multiple <w:t> tags
-  // We need to consolidate text within run elements <w:r>...</w:r>
-  
-  // Strategy: Find all text between « and » that may be split, and consolidate
-  
-  // Step 1: Find occurrences of « and » that might be split
-  // We'll process the content to handle fragmented merge fields
-  
-  let result = xmlContent;
-  
-  // Pattern to find « possibly followed by fragmented XML until »
-  // This handles cases like: «</w:t></w:r><w:r><w:t>Field_Name</w:t></w:r><w:r><w:t>»
-  const fragmentedPattern = /«((?:<[^>]*>|\s)*?)([A-Za-z0-9_]+)((?:<[^>]*>|\s)*?)»/g;
-  
-  result = result.replace(fragmentedPattern, (match, pre, fieldName, post) => {
-    // If there's XML in between, it means the field was fragmented
-    if (pre.includes("<") || post.includes("<")) {
-      console.log(`[generate-document] Found fragmented merge field: ${fieldName}`);
-    }
-    return `«${fieldName}»`;
-  });
-  
-  // Also handle MERGEFIELD instructions in Word's field code format
-  // Pattern: <w:instrText ... >MERGEFIELD Field_Name</w:instrText> ... <w:t>«Field_Name»</w:t>
-  // These can also be fragmented
-  
-  // Handle case where merge field chevrons are in separate text nodes
-  // Pattern: </w:t>...<w:t>«...» or «...</w:t>...<w:t>...»
-  
-  // More aggressive cleanup: find XML-fragmented chevron patterns
-  const leftChevronFragmented = /«((?:<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)+)/g;
-  result = result.replace(leftChevronFragmented, (match, xmlFragment) => {
-    return "«";
-  });
-  
-  const rightChevronFragmented = /((?:<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)+)»/g;
-  result = result.replace(rightChevronFragmented, (match, xmlFragment) => {
-    return "»";
-  });
-  
-  // Handle underscores that get their own text runs
-  // Pattern: Field</w:t></w:r><w:r><w:t>_</w:t></w:r><w:r><w:t>Name
-  const fragmentedUnderscore = /([A-Za-z0-9]+)(<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)_(<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)?([A-Za-z0-9]+)/g;
-  result = result.replace(fragmentedUnderscore, "$1_$4");
-  
-  return result;
-}
-
-// Parse Word merge field format: «field_name»
-// In the XML, these appear as MERGEFIELD codes or direct Unicode chars
-function parseWordMergeFields(content: string): ParsedMergeTag[] {
-  const tags: ParsedMergeTag[] = [];
-  const seenTags = new Set<string>();
-  
-  // Pattern 1: Unicode chevrons «field_name»
-  const unicodePattern = /«([^»]+)»/g;
-  let match;
-  while ((match = unicodePattern.exec(content)) !== null) {
-    const tagName = match[1].trim();
-    if (!seenTags.has(match[0])) {
-      seenTags.add(match[0]);
-      tags.push({
-        fullMatch: match[0],
-        tagName: tagName,
-        inlineTransform: null,
-      });
-    }
-  }
-  
-  // Pattern 2: Double curly braces {{field_name}} or {{field_name|transform}}
-  const curlyPattern = /\{\{([^}|]+)(?:\s*\|\s*([^}]+))?\}\}/g;
-  while ((match = curlyPattern.exec(content)) !== null) {
-    if (!seenTags.has(match[0])) {
-      seenTags.add(match[0]);
-      tags.push({
-        fullMatch: match[0],
-        tagName: match[1].trim(),
-        inlineTransform: match[2]?.trim() || null,
-      });
-    }
-  }
-  
-  // Pattern 3: Word MERGEFIELD in instrText
-  const mergeFieldPattern = /MERGEFIELD\s+([A-Za-z0-9_]+)/gi;
-  while ((match = mergeFieldPattern.exec(content)) !== null) {
-    const fieldName = match[1].trim();
-    // Create a synthetic tag for MERGEFIELD
-    const syntheticTag = `«${fieldName}»`;
-    if (!seenTags.has(syntheticTag)) {
-      seenTags.add(syntheticTag);
-      tags.push({
-        fullMatch: syntheticTag,
-        tagName: fieldName,
-        inlineTransform: null,
-      });
-    }
-  }
-  
-  console.log(`[generate-document] Found ${tags.length} merge tags: ${tags.map(t => t.tagName).join(", ")}`);
-  
-  return tags;
-}
-
-/**
- * Perform label-based replacement for templates without explicit merge tags.
- * This finds static labels like "DATE OF NOTE:" and appends the corresponding value.
- */
-function replaceLabelBasedFields(
-  content: string,
-  fieldValues: Map<string, { rawValue: string | number | null; dataType: string }>,
-  fieldTransforms: Map<string, string>,
-  labelMap: Record<string, { fieldKey: string; replaceNext?: string }>
-): { content: string; replacementCount: number } {
-  let result = content;
-  let replacementCount = 0;
-  
-  for (const [label, mapping] of Object.entries(labelMap)) {
-    const fieldData = fieldValues.get(mapping.fieldKey);
-    if (!fieldData || fieldData.rawValue === null) {
-      // Requirement: if mapped field is empty, leave the document field blank.
-      // For labels that replace a following placeholder, blank that placeholder.
-      if (mapping.replaceNext) {
-        const textToReplace = mapping.replaceNext;
-        const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const replaceNextPattern = new RegExp(escapedText, "gi");
-        if (replaceNextPattern.test(result)) {
-          result = result.replace(replaceNextPattern, "");
-          replacementCount++;
-          console.log(`[generate-document] Label "${label}" -> No data; blanked "${textToReplace}"`);
-        }
-      } else if (label === "as of _") {
-        const asOfPattern = /as of\s*_+/gi;
-        if (asOfPattern.test(result)) {
-          result = result.replace(asOfPattern, "as of ");
-          replacementCount++;
-          console.log(`[generate-document] Label "${label}" -> No data; blanked "as of ___"`);
-        }
-      } else {
-        console.log(`[generate-document] Label "${label}" -> No data for ${mapping.fieldKey}`);
-      }
-      continue;
-    }
-    
-    // Determine the formatted value ONLY via existing TemplateFieldMap rule (fieldTransforms)
-    // or default data-type formatting. No label-specific transforms.
-    const transform = fieldTransforms.get(mapping.fieldKey);
-    let formattedValue: string;
-    if (transform) {
-      formattedValue = applyTransform(fieldData.rawValue, transform);
-    } else {
-      formattedValue = formatByDataType(fieldData.rawValue, fieldData.dataType);
-    }
-    
-    // Handle special case for execution date with underscores
-    if (label === "as of _") {
-      // Replace "as of ___..." pattern with "as of [date]"
-      const asOfPattern = /as of\s*_+/gi;
-      if (asOfPattern.test(result)) {
-        result = result.replace(asOfPattern, `as of ${formattedValue}`);
-        replacementCount++;
-        console.log(`[generate-document] Label-replaced "as of ___" -> "${formattedValue}"`);
-      }
-      continue;
-    }
-    
-    // Handle special case where we need to replace text that follows the label
-    if (mapping.replaceNext) {
-      const textToReplace = mapping.replaceNext;
-      const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const replaceNextPattern = new RegExp(escapedText, 'gi');
-      
-      if (replaceNextPattern.test(result)) {
-        result = result.replace(replaceNextPattern, formattedValue);
-        replacementCount++;
-        console.log(`[generate-document] Label-replaced "${textToReplace}" -> "${formattedValue}"`);
-      }
-      continue;
-    }
-    
-    // Find the label in the XML content (may be split across tags)
-    // First try exact match in the content
-    const labelEscaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    
-    // Pattern to find the label possibly followed by whitespace or closing tags, then content until next tag/label
-    // We want to insert the value right after the label
-    const labelPattern = new RegExp(`(${labelEscaped})(\\s*)`, 'gi');
-    
-    if (labelPattern.test(result)) {
-      result = result.replace(labelPattern, `$1$2${formattedValue} `);
-      replacementCount++;
-      console.log(`[generate-document] Label-replaced "${label}" -> "${formattedValue}"`);
-    } else if (label.endsWith(':')) {
-      // Colon-tolerant match: label text + optional whitespace/XML tags + ':'
-      // This helps when Word splits the ':' into a separate run.
-      const labelNoColon = label.slice(0, -1);
-      const labelNoColonEscaped = labelNoColon.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const colonTolerantPattern = new RegExp(`(${labelNoColonEscaped})(?:\\s|<[^>]+>)*:`, 'gi');
-
-      if (colonTolerantPattern.test(result)) {
-        result = result.replace(colonTolerantPattern, `$&${formattedValue} `);
-        replacementCount++;
-        console.log(`[generate-document] Label-replaced (colon-tolerant) "${label}" -> "${formattedValue}"`);
-      }
-    }
-  }
-  
-  return { content: result, replacementCount };
-}
-
-function replaceMergeTags(
-  content: string,
-  fieldValues: Map<string, { rawValue: string | number | null; dataType: string }>,
-  fieldTransforms: Map<string, string>,
-  mergeTagMap: Record<string, string>,
-  labelMap: Record<string, { fieldKey: string; replaceNext?: string }>
-): string {
-  // First normalize the XML to handle fragmented merge fields
-  let result = normalizeWordXml(content);
-  
-  // Parse and replace merge tags
-  const tags = parseWordMergeFields(result);
-
-  // Case-insensitive field-key lookup helper.
-  const getFieldData = (canonicalKey: string) => {
-    const exact = fieldValues.get(canonicalKey);
-    if (exact) return { key: canonicalKey, data: exact };
-
-    const target = canonicalKey.toLowerCase();
-    for (const [k, v] of fieldValues.entries()) {
-      if (k.toLowerCase() === target) return { key: k, data: v };
-    }
-    return null;
-  };
-  
-  for (const tag of tags) {
-    const canonicalKey = resolveFieldKeyWithMap(tag.tagName, mergeTagMap);
-    const resolved = getFieldData(canonicalKey);
-    const fieldData = resolved?.data;
-    let resolvedValue = "";
-    
-    if (fieldData) {
-      const transformKey = resolved?.key || canonicalKey;
-      const transform = tag.inlineTransform || fieldTransforms.get(transformKey);
-      
-      if (transform) {
-        resolvedValue = applyTransform(fieldData.rawValue, transform);
-      } else {
-        resolvedValue = formatByDataType(fieldData.rawValue, fieldData.dataType);
-      }
-      console.log(`[generate-document] Replacing ${tag.tagName} -> ${transformKey} = "${resolvedValue}"`);
-    } else {
-      console.log(`[generate-document] No data for ${tag.tagName} (canonical: ${canonicalKey})`);
-    }
-    
-    result = result.split(tag.fullMatch).join(resolvedValue);
-  }
-  
-  // Always run label-based replacement after merge tag replacement.
-  console.log(`[generate-document] Running label-based replacement (${tags.length} merge tags were processed)`);
-  const labelResult = replaceLabelBasedFields(result, fieldValues, fieldTransforms, labelMap);
-  result = labelResult.content;
-  console.log(`[generate-document] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
-  
-  return result;
-}
-
-// ============================================
-// DOCX Processing
-// ============================================
-
-async function processDocx(
-  docxBuffer: Uint8Array,
-  fieldValues: Map<string, { rawValue: string | number | null; dataType: string }>,
-  fieldTransforms: Map<string, string>,
-  mergeTagMap: Record<string, string>,
-  labelMap: Record<string, { fieldKey: string; replaceNext?: string }>
-): Promise<Uint8Array> {
-  const decompressed = fflate.unzipSync(docxBuffer);
-  const processedFiles: { [key: string]: Uint8Array } = {};
-
-  for (const [filename, content] of Object.entries(decompressed)) {
-    if (filename.endsWith(".xml") || filename.endsWith(".rels")) {
-      const decoder = new TextDecoder("utf-8");
-      let xmlContent = decoder.decode(content);
-      xmlContent = replaceMergeTags(xmlContent, fieldValues, fieldTransforms, mergeTagMap, labelMap);
-      const encoder = new TextEncoder();
-      processedFiles[filename] = encoder.encode(xmlContent);
-    } else {
-      processedFiles[filename] = content;
-    }
-  }
-
-  const compressed = fflate.zipSync(processedFiles);
-  return compressed;
-}
 
 // ============================================
 // Single Document Generation
@@ -762,7 +104,6 @@ async function generateSingleDocument(
       };
     });
 
-    const fieldKeys = mappedFields.map((fm) => fm.field_key).filter(Boolean);
     const fieldTransforms = new Map<string, string>();
     mappedFields.forEach((fm) => {
       if (fm.transform_rule && fm.field_key) {
@@ -770,13 +111,7 @@ async function generateSingleDocument(
       }
     });
 
-    // Build field definitions from lookup
-    const fieldDefMap = new Map<string, FieldDefinition>();
-    fieldDictMap.forEach((fd, id) => {
-      fieldDefMap.set(fd.field_key, fd);
-    });
-
-    // 3. Fetch ALL deal field values from deal_section_values (not just mapped ones, for label-based replacement)
+    // 3. Fetch ALL deal field values from deal_section_values
     const { data: sectionValues } = await supabase
       .from("deal_section_values")
       .select("section, field_values")
@@ -800,23 +135,7 @@ async function generateSingleDocument(
     const allFieldDictMap = new Map<string, FieldDefinition>();
     (allFieldDictEntries || []).forEach((fd: any) => allFieldDictMap.set(fd.id, fd));
 
-    // Helper function to extract raw value from JSONB structure
-    const extractRawValueFromJsonb = (data: any, dataType: string): string | number | null => {
-      switch (dataType) {
-        case "currency":
-        case "number":
-        case "percentage":
-          return data.value_number;
-        case "date":
-          return data.value_date;
-        case "text":
-        case "boolean":
-        default:
-          return data.value_text;
-      }
-    };
-
-    const fieldValues = new Map<string, { rawValue: string | number | null; dataType: string }>();
+    const fieldValues = new Map<string, FieldValueData>();
     (sectionValues || []).forEach((sv: any) => {
       Object.entries(sv.field_values || {}).forEach(([fieldDictId, data]: [string, any]) => {
         const fieldDict = allFieldDictMap.get(fieldDictId);
@@ -830,10 +149,9 @@ async function generateSingleDocument(
 
     console.log(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);
 
-    // 5. Download template DOCX from storage (or fallback to public URL)
+    // 4. Download template DOCX from storage
     let fileData: Blob | null = null;
     
-    // Try storage first
     const { data: storageData, error: fileError } = await supabase.storage
       .from("templates")
       .download(template.file_path);
@@ -842,16 +160,13 @@ async function generateSingleDocument(
       fileData = storageData;
       console.log(`[generate-document] Downloaded template from storage: ${template.file_path}`);
     } else {
-      // Fallback: Try to fetch from public URL (for templates stored in public folder)
+      // Fallback: Try public URL
       console.log(`[generate-document] Storage download failed, trying public URL fallback...`);
       const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-      // Extract the project ref from the Supabase URL
       const projectRef = supabaseUrl.replace("https://", "").split(".")[0];
       
-      // Try multiple public URL patterns
       const publicUrls = [
         `https://${projectRef}.supabase.co/storage/v1/object/public/templates/${template.file_path}`,
-        // Also try the lovable preview URL pattern
       ];
       
       for (const url of publicUrls) {
@@ -874,14 +189,14 @@ async function generateSingleDocument(
       return result;
     }
 
-    // 6. Fetch merge tag mappings and process the DOCX
+    // 5. Fetch merge tag mappings and process the DOCX
     const { mergeTagMap, labelMap } = await fetchMergeTagMappings(supabase);
     const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
     const processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, labelMap);
 
     console.log(`[generate-document] Processed DOCX: ${processedDocx.length} bytes`);
 
-    // 7. Calculate version number (trigger handles this, but we track for response)
+    // 6. Calculate version number
     const { data: existingDocs } = await supabase
       .from("generated_documents")
       .select("version_number")
@@ -892,7 +207,7 @@ async function generateSingleDocument(
 
     const versionNumber = existingDocs && existingDocs.length > 0 ? existingDocs[0].version_number + 1 : 1;
 
-    // 8. Upload generated document to storage (use generated-docs bucket)
+    // 7. Upload generated document to storage
     const timestamp = Date.now();
     const outputFileName = `${dealId}/${templateId}_v${versionNumber}_${timestamp}.docx`;
 
@@ -911,117 +226,13 @@ async function generateSingleDocument(
 
     console.log(`[generate-document] Uploaded to generated-docs: ${outputFileName}`);
 
-    // 9. Handle PDF conversion using CloudConvert
+    // 8. Handle PDF conversion using CloudConvert
     let pdfPath: string | null = null;
     if (outputType === "docx_and_pdf") {
-      const cloudConvertApiKey = Deno.env.get("CLOUDCONVERT_API_KEY");
-      
-      if (cloudConvertApiKey) {
-        try {
-          console.log(`[generate-document] Starting PDF conversion via CloudConvert...`);
-          
-          // Create a CloudConvert job for conversion
-          const jobResponse = await fetch("https://api.cloudconvert.com/v2/jobs", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${cloudConvertApiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              tasks: {
-                "import-docx": {
-                  operation: "import/base64",
-                  file: btoa(String.fromCharCode(...processedDocx)),
-                  filename: `document.docx`,
-                },
-                "convert-pdf": {
-                  operation: "convert",
-                  input: ["import-docx"],
-                  output_format: "pdf",
-                },
-                "export-pdf": {
-                  operation: "export/url",
-                  input: ["convert-pdf"],
-                },
-              },
-            }),
-          });
-
-          if (!jobResponse.ok) {
-            const errorText = await jobResponse.text();
-            console.error(`[generate-document] CloudConvert job creation failed: ${errorText}`);
-            throw new Error("PDF conversion job creation failed");
-          }
-
-          const jobData = await jobResponse.json();
-          const jobId = jobData.data.id;
-          console.log(`[generate-document] CloudConvert job created: ${jobId}`);
-
-          // Poll for job completion (max 60 seconds)
-          let completed = false;
-          let exportUrl: string | null = null;
-          const startTime = Date.now();
-          
-          while (!completed && (Date.now() - startTime) < 60000) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            const statusResponse = await fetch(`https://api.cloudconvert.com/v2/jobs/${jobId}`, {
-              headers: {
-                "Authorization": `Bearer ${cloudConvertApiKey}`,
-              },
-            });
-
-            if (!statusResponse.ok) continue;
-
-            const statusData = await statusResponse.json();
-            const jobStatus = statusData.data.status;
-
-            if (jobStatus === "finished") {
-              completed = true;
-              // Find the export task result
-              const exportTask = statusData.data.tasks.find((t: any) => t.operation === "export/url");
-              if (exportTask?.result?.files?.[0]?.url) {
-                exportUrl = exportTask.result.files[0].url;
-              }
-            } else if (jobStatus === "error") {
-              console.error(`[generate-document] CloudConvert job failed`);
-              break;
-            }
-          }
-
-          if (exportUrl) {
-            // Download the PDF from CloudConvert
-            const pdfResponse = await fetch(exportUrl);
-            if (pdfResponse.ok) {
-              const pdfBuffer = new Uint8Array(await pdfResponse.arrayBuffer());
-              
-              // Upload PDF to storage
-              const pdfFileName = outputFileName.replace('.docx', '.pdf');
-              const { error: pdfUploadError } = await supabase.storage
-                .from("generated-docs")
-                .upload(pdfFileName, pdfBuffer, {
-                  contentType: "application/pdf",
-                  upsert: false,
-                });
-
-              if (!pdfUploadError) {
-                pdfPath = pdfFileName;
-                console.log(`[generate-document] PDF uploaded: ${pdfFileName}`);
-              } else {
-                console.error(`[generate-document] PDF upload failed:`, pdfUploadError);
-              }
-            }
-          }
-        } catch (pdfError: any) {
-          console.error(`[generate-document] PDF conversion error:`, pdfError);
-          // Continue without PDF - don't fail the whole generation
-        }
-      } else {
-        console.log(`[generate-document] PDF conversion requested but CLOUDCONVERT_API_KEY not set`);
-      }
+      pdfPath = await convertToPdf(supabase, processedDocx, dealId, templateId, versionNumber, timestamp);
     }
 
-    // 10. Create generated_documents record
+    // 9. Create generated_documents record
     const isRegeneration = versionNumber > 1;
     const { data: generatedDoc, error: insertError } = await supabase
       .from("generated_documents")
@@ -1047,7 +258,7 @@ async function generateSingleDocument(
 
     console.log(`[generate-document] Created document record: ${generatedDoc.id}`);
 
-    // 11. Log activity
+    // 10. Log activity
     const actionType = isRegeneration ? "DocumentRegenerated" : "DocumentGenerated";
     await supabase.from("activity_log").insert({
       deal_id: dealId,
@@ -1075,6 +286,126 @@ async function generateSingleDocument(
     result.error = error.message || "Unknown error";
     return result;
   }
+}
+
+// ============================================
+// PDF Conversion
+// ============================================
+
+async function convertToPdf(
+  supabase: any,
+  docxBuffer: Uint8Array,
+  dealId: string,
+  templateId: string,
+  versionNumber: number,
+  timestamp: number
+): Promise<string | null> {
+  const cloudConvertApiKey = Deno.env.get("CLOUDCONVERT_API_KEY");
+  
+  if (!cloudConvertApiKey) {
+    console.log(`[generate-document] PDF conversion requested but CLOUDCONVERT_API_KEY not set`);
+    return null;
+  }
+
+  try {
+    console.log(`[generate-document] Starting PDF conversion via CloudConvert...`);
+    
+    const jobResponse = await fetch("https://api.cloudconvert.com/v2/jobs", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${cloudConvertApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        tasks: {
+          "import-docx": {
+            operation: "import/base64",
+            file: btoa(String.fromCharCode(...docxBuffer)),
+            filename: `document.docx`,
+          },
+          "convert-pdf": {
+            operation: "convert",
+            input: ["import-docx"],
+            output_format: "pdf",
+          },
+          "export-pdf": {
+            operation: "export/url",
+            input: ["convert-pdf"],
+          },
+        },
+      }),
+    });
+
+    if (!jobResponse.ok) {
+      const errorText = await jobResponse.text();
+      console.error(`[generate-document] CloudConvert job creation failed: ${errorText}`);
+      return null;
+    }
+
+    const jobData = await jobResponse.json();
+    const jobId = jobData.data.id;
+    console.log(`[generate-document] CloudConvert job created: ${jobId}`);
+
+    // Poll for job completion
+    let attempts = 0;
+    const maxAttempts = 30;
+    let exportUrl: string | null = null;
+
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      attempts++;
+
+      const statusResponse = await fetch(`https://api.cloudconvert.com/v2/jobs/${jobId}`, {
+        headers: {
+          "Authorization": `Bearer ${cloudConvertApiKey}`,
+        },
+      });
+
+      if (!statusResponse.ok) continue;
+
+      const statusData = await statusResponse.json();
+      const job = statusData.data;
+
+      if (job.status === "finished") {
+        const exportTask = job.tasks.find((t: any) => t.name === "export-pdf");
+        if (exportTask?.result?.files?.[0]?.url) {
+          exportUrl = exportTask.result.files[0].url;
+        }
+        break;
+      } else if (job.status === "error") {
+        console.error(`[generate-document] CloudConvert job failed:`, job);
+        break;
+      }
+    }
+
+    if (exportUrl) {
+      // Download the PDF
+      const pdfResponse = await fetch(exportUrl);
+      if (pdfResponse.ok) {
+        const pdfBlob = await pdfResponse.blob();
+        const pdfBuffer = new Uint8Array(await pdfBlob.arrayBuffer());
+
+        const pdfFileName = `${dealId}/${templateId}_v${versionNumber}_${timestamp}.pdf`;
+        const { error: pdfUploadError } = await supabase.storage
+          .from("generated-docs")
+          .upload(pdfFileName, pdfBuffer, {
+            contentType: "application/pdf",
+            upsert: false,
+          });
+
+        if (!pdfUploadError) {
+          console.log(`[generate-document] PDF uploaded: ${pdfFileName}`);
+          return pdfFileName;
+        } else {
+          console.error(`[generate-document] PDF upload failed:`, pdfUploadError);
+        }
+      }
+    }
+  } catch (pdfError: any) {
+    console.error(`[generate-document] PDF conversion error:`, pdfError);
+  }
+
+  return null;
 }
 
 // ============================================
@@ -1272,7 +603,6 @@ serve(async (req) => {
         const failures = jobResult.results.filter(r => !r.success);
         errorMessage = failures.map(f => `${f.templateName}: ${f.error}`).join("; ");
       } else {
-        // Partial success - still mark as success but include error details
         finalStatus = "success";
         const failures = jobResult.results.filter(r => !r.success);
         errorMessage = `Partial: ${failures.length} failed - ${failures.map(f => f.templateName).join(", ")}`;
@@ -1291,7 +621,7 @@ serve(async (req) => {
       jobResult.status = finalStatus;
       jobResult.completedAt = completedAt;
 
-      // Update deal status to generated if successful and was ready
+      // Update deal status to generated if successful
       if (jobResult.successCount > 0 && deal.status === "ready") {
         await supabase.from("deals").update({ status: "generated" }).eq("id", dealId);
         console.log(`[generate-document] Updated deal status to generated`);

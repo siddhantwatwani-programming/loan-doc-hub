@@ -1,0 +1,245 @@
+/**
+ * Formatting Utilities for Document Generation
+ * 
+ * Provides value formatting and transformation functions for
+ * currency, dates, text, percentages, phone numbers, etc.
+ */
+
+// ============================================
+// Basic Formatters
+// ============================================
+
+export function formatCurrency(value: string | number | null): string {
+  if (value === null || value === undefined || value === "") return "";
+  const num = typeof value === "string" ? parseFloat(value) : value;
+  if (isNaN(num)) return "";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(num);
+}
+
+export function formatCurrencyInWords(value: string | number | null): string {
+  if (value === null || value === undefined || value === "") return "";
+  const num = typeof value === "string" ? parseFloat(value) : value;
+  if (isNaN(num)) return "";
+
+  const dollars = Math.floor(num);
+  const cents = Math.round((num - dollars) * 100);
+
+  const words = numberToWords(dollars);
+  return `${words} and ${cents.toString().padStart(2, "0")}/100 Dollars`;
+}
+
+export function numberToWords(num: number): string {
+  const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
+  const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+  const thousands = ["", "Thousand", "Million", "Billion"];
+
+  if (num === 0) return "Zero";
+  if (num < 0) return "Negative " + numberToWords(-num);
+
+  let words = "";
+  let i = 0;
+
+  while (num > 0) {
+    if (num % 1000 !== 0) {
+      let chunk = "";
+      const n = num % 1000;
+
+      if (n >= 100) {
+        chunk += ones[Math.floor(n / 100)] + " Hundred ";
+      }
+
+      const remainder = n % 100;
+      if (remainder >= 10 && remainder < 20) {
+        chunk += teens[remainder - 10] + " ";
+      } else {
+        if (remainder >= 20) {
+          chunk += tens[Math.floor(remainder / 10)] + " ";
+        }
+        if (remainder % 10 > 0) {
+          chunk += ones[remainder % 10] + " ";
+        }
+      }
+
+      words = chunk + thousands[i] + " " + words;
+    }
+    num = Math.floor(num / 1000);
+    i++;
+  }
+
+  return words.trim();
+}
+
+// ============================================
+// Date Formatters
+// ============================================
+
+export function formatDateMMDDYYYY(value: string | null): string {
+  if (!value) return "";
+  try {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return "";
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
+  } catch {
+    return "";
+  }
+}
+
+export function formatDateLong(value: string | null): string {
+  if (!value) return "";
+  try {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return "";
+    return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  } catch {
+    return "";
+  }
+}
+
+export function formatDateShort(value: string | null): string {
+  if (!value) return "";
+  try {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return "";
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  } catch {
+    return "";
+  }
+}
+
+// ============================================
+// Text Formatters
+// ============================================
+
+export function formatUppercase(value: string | null): string {
+  if (!value) return "";
+  return value.toUpperCase();
+}
+
+export function formatTitlecase(value: string | null): string {
+  if (!value) return "";
+  return value.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+}
+
+export function formatLowercase(value: string | null): string {
+  if (!value) return "";
+  return value.toLowerCase();
+}
+
+// ============================================
+// Number/Percentage Formatters
+// ============================================
+
+export function formatPercentage(value: string | number | null, decimals = 3): string {
+  if (value === null || value === undefined || value === "") return "";
+  const num = typeof value === "string" ? parseFloat(value) : value;
+  if (isNaN(num)) return "";
+  return `${num.toFixed(decimals)}%`;
+}
+
+export function formatNumber(value: string | number | null): string {
+  if (value === null || value === undefined || value === "") return "";
+  const num = typeof value === "string" ? parseFloat(value) : value;
+  if (isNaN(num)) return String(value);
+  return new Intl.NumberFormat("en-US").format(num);
+}
+
+// ============================================
+// Phone/SSN Formatters
+// ============================================
+
+export function formatPhone(value: string | null): string {
+  if (!value) return "";
+  const digits = value.replace(/\D/g, "");
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return value;
+}
+
+export function formatSSNMasked(value: string | null): string {
+  if (!value) return "";
+  const digits = value.replace(/\D/g, "");
+  if (digits.length === 9) {
+    return `XXX-XX-${digits.slice(5)}`;
+  }
+  return value;
+}
+
+// ============================================
+// Boolean Formatter
+// ============================================
+
+export function formatBoolean(value: string | number | null): string {
+  if (value === null || value === undefined) return "";
+  const boolStr = String(value).toLowerCase();
+  if (boolStr === "true" || boolStr === "1" || boolStr === "yes") return "Yes";
+  if (boolStr === "false" || boolStr === "0" || boolStr === "no") return "No";
+  return String(value);
+}
+
+// ============================================
+// Transform Dispatcher
+// ============================================
+
+export function applyTransform(value: string | number | null, transform: string): string {
+  if (value === null || value === undefined) return "";
+  const valueStr = String(value);
+  const t = transform.toLowerCase().trim();
+
+  switch (t) {
+    case "currency":
+      return formatCurrency(value);
+    case "currency_words":
+      return formatCurrencyInWords(value);
+    case "date":
+    case "date_mmddyyyy":
+      return formatDateMMDDYYYY(valueStr);
+    case "date_long":
+      return formatDateLong(valueStr);
+    case "date_short":
+      return formatDateShort(valueStr);
+    case "uppercase":
+      return formatUppercase(valueStr);
+    case "titlecase":
+      return formatTitlecase(valueStr);
+    case "lowercase":
+      return formatLowercase(valueStr);
+    case "percentage":
+      return formatPercentage(value);
+    case "phone":
+      return formatPhone(valueStr);
+    case "ssn_masked":
+      return formatSSNMasked(valueStr);
+    default:
+      return valueStr;
+  }
+}
+
+export function formatByDataType(value: string | number | null, dataType: string): string {
+  if (value === null || value === undefined) return "";
+
+  switch (dataType) {
+    case "currency":
+      return formatCurrency(value);
+    case "percentage":
+      return formatPercentage(value, 3);
+    case "date":
+      return formatDateMMDDYYYY(String(value));
+    case "number":
+      return formatNumber(value);
+    case "boolean":
+      return formatBoolean(value);
+    case "text":
+    default:
+      return String(value);
+  }
+}
