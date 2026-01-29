@@ -236,9 +236,9 @@ export type Database = {
           mode: Database["public"]["Enums"]["deal_mode"]
           notes: string | null
           packet_id: string | null
-          product_type: string
+          product_type: string | null
           property_address: string | null
-          state: string
+          state: string | null
           status: Database["public"]["Enums"]["deal_status"]
           updated_at: string
         }
@@ -252,9 +252,9 @@ export type Database = {
           mode?: Database["public"]["Enums"]["deal_mode"]
           notes?: string | null
           packet_id?: string | null
-          product_type: string
+          product_type?: string | null
           property_address?: string | null
-          state: string
+          state?: string | null
           status?: Database["public"]["Enums"]["deal_status"]
           updated_at?: string
         }
@@ -268,9 +268,9 @@ export type Database = {
           mode?: Database["public"]["Enums"]["deal_mode"]
           notes?: string | null
           packet_id?: string | null
-          product_type?: string
+          product_type?: string | null
           property_address?: string | null
-          state?: string
+          state?: string | null
           status?: Database["public"]["Enums"]["deal_status"]
           updated_at?: string
         }
@@ -826,9 +826,9 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
-          product_type: string
+          product_type: string | null
           reference_pdf_path: string | null
-          state: string
+          state: string | null
           updated_at: string
           version: number
         }
@@ -840,9 +840,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
-          product_type: string
+          product_type?: string | null
           reference_pdf_path?: string | null
-          state: string
+          state?: string | null
           updated_at?: string
           version?: number
         }
@@ -854,9 +854,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
-          product_type?: string
+          product_type?: string | null
           reference_pdf_path?: string | null
-          state?: string
+          state?: string | null
           updated_at?: string
           version?: number
         }
