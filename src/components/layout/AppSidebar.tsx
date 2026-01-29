@@ -2,7 +2,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, AppRole } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { isInternalRole, getRoleDisplayName } from '@/lib/accessControl';
+import { getRoleDisplayName } from '@/lib/accessControl';
 import {
   LayoutDashboard,
   FileText,
@@ -20,6 +20,7 @@ import {
   ChevronDown,
   ChevronRight,
   Eye,
+  Tags,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
@@ -44,6 +45,7 @@ interface NavGroup {
   items: NavItem[];
 }
 
+// CSR items
 const csrItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['admin', 'csr', 'borrower', 'broker', 'lender'] },
   { label: 'Deals', icon: FolderOpen, path: '/deals', roles: ['csr', 'borrower', 'broker', 'lender'] },
@@ -58,19 +60,23 @@ const externalItems: NavItem[] = [
   { label: 'My Deals', icon: FolderOpen, path: '/deals', roles: ['borrower', 'broker', 'lender'] },
 ];
 
+// Top-level admin items (moved out of Configuration)
+const adminItems: NavItem[] = [
+  { label: 'User Management', icon: Users, path: '/admin/users', roles: ['admin'] },
+  { label: 'Templates', icon: FileText, path: '/admin/templates', roles: ['admin'] },
+  { label: 'Field Dictionary', icon: Key, path: '/admin/fields', roles: ['admin'] },
+  { label: 'Field Mapping', icon: Link, path: '/admin/field-maps', roles: ['admin'] },
+  { label: 'Tag Mapping', icon: Tags, path: '/admin/tag-mapping', roles: ['admin'] },
+];
+
+// Simplified Configuration group - only Packets and Settings
 const adminGroups: NavGroup[] = [
   {
     label: 'Configuration',
     icon: Settings,
     roles: ['admin'],
     items: [
-      { label: 'Overview', icon: Settings, path: '/admin/config', roles: ['admin'] },
-      { label: 'Users', icon: Users, path: '/admin/users', roles: ['admin'] },
-      { label: 'Templates', icon: FileText, path: '/admin/templates', roles: ['admin'] },
       { label: 'Packets', icon: Package, path: '/admin/packets', roles: ['admin'] },
-      { label: 'Field Dictionary', icon: Key, path: '/admin/fields', roles: ['admin'] },
-      { label: 'Field Mapping', icon: Link, path: '/admin/field-maps', roles: ['admin'] },
-      { label: 'Tag Mapping', icon: Link, path: '/admin/tag-mapping', roles: ['admin'] },
       { label: 'Settings', icon: Sliders, path: '/admin/settings', roles: ['admin'] },
     ],
   },
@@ -92,6 +98,7 @@ export const AppSidebar: React.FC = () => {
   };
 
   const filteredItems = getFilteredItems();
+  const filteredAdminItems = adminItems.filter((item) => role && item.roles.includes(role));
   const filteredGroups = adminGroups.filter((group) => role && group.roles.includes(role));
 
   const handleSignOut = async () => {
@@ -159,7 +166,32 @@ export const AppSidebar: React.FC = () => {
           </button>
         ))}
 
-        {/* Grouped Nav Items */}
+        {/* Separator before admin items */}
+        {filteredAdminItems.length > 0 && (
+          <div className="my-3 border-t border-sidebar-border" />
+        )}
+
+        {/* Top-level Admin Items */}
+        {filteredAdminItems.map((item) => (
+          <button
+            key={item.path}
+            onClick={() => navigate(item.path)}
+            className={cn(
+              'sidebar-item w-full',
+              isActive(item.path) && 'sidebar-item-active'
+            )}
+          >
+            <item.icon className="h-5 w-5" />
+            <span>{item.label}</span>
+          </button>
+        ))}
+
+        {/* Separator before Configuration group */}
+        {filteredGroups.length > 0 && (
+          <div className="my-3 border-t border-sidebar-border" />
+        )}
+
+        {/* Grouped Nav Items (Configuration) */}
         {filteredGroups.map((group) => (
           <Collapsible
             key={group.label}

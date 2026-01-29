@@ -10,7 +10,12 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Key,
+  Link,
+  Package,
+  Sliders,
+  Tags
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +42,59 @@ interface DashboardStats {
   readyDeals: number;
   generatedDeals: number;
 }
+
+interface AdminQuickLink {
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  path: string;
+  color: string;
+}
+
+const adminQuickLinks: AdminQuickLink[] = [
+  {
+    title: 'User Management',
+    description: 'Create and manage Admin and CSR users',
+    icon: Users,
+    path: '/admin/users',
+    color: 'bg-blue-500/10 text-blue-500',
+  },
+  {
+    title: 'Template Management',
+    description: 'Create and version document templates',
+    icon: FileText,
+    path: '/admin/templates',
+    color: 'bg-green-500/10 text-green-500',
+  },
+  {
+    title: 'Field Dictionary',
+    description: 'Define data fields and their properties',
+    icon: Key,
+    path: '/admin/fields',
+    color: 'bg-orange-500/10 text-orange-500',
+  },
+  {
+    title: 'Field Mapping',
+    description: 'Map fields to templates with transform rules',
+    icon: Link,
+    path: '/admin/field-maps',
+    color: 'bg-cyan-500/10 text-cyan-500',
+  },
+  {
+    title: 'Tag Mapping',
+    description: 'Map document placeholders to field keys',
+    icon: Tags,
+    path: '/admin/tag-mapping',
+    color: 'bg-purple-500/10 text-purple-500',
+  },
+  {
+    title: 'Packet Management',
+    description: 'Create packets and assign templates',
+    icon: Package,
+    path: '/admin/packets',
+    color: 'bg-indigo-500/10 text-indigo-500',
+  },
+];
 
 const StatCard: React.FC<StatCardProps> = ({ label, value, icon: Icon, trend, className, loading }) => (
   <div className={cn('stats-card', className)}>
@@ -200,41 +258,62 @@ const CSRDashboard: React.FC = () => {
 };
 
 const AdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [userCount, setUserCount] = useState(0);
+  const [templateCount, setTemplateCount] = useState(0);
+  const [fieldCount, setFieldCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUserCount = async () => {
+    const fetchCounts = async () => {
       try {
-        const { count, error } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true });
+        const [usersRes, templatesRes, fieldsRes] = await Promise.all([
+          supabase.from('profiles').select('*', { count: 'exact', head: true }),
+          supabase.from('templates').select('*', { count: 'exact', head: true }).eq('is_active', true),
+          supabase.from('field_dictionary').select('*', { count: 'exact', head: true }),
+        ]);
         
-        if (!error && count !== null) {
-          setUserCount(count);
-        }
+        if (usersRes.count !== null) setUserCount(usersRes.count);
+        if (templatesRes.count !== null) setTemplateCount(templatesRes.count);
+        if (fieldsRes.count !== null) setFieldCount(fieldsRes.count);
       } catch (error) {
-        console.error('Error fetching user count:', error);
+        console.error('Error fetching counts:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchUserCount();
+    fetchCounts();
   }, []);
 
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <StatCard label="Total Users" value={userCount} icon={Users} loading={loading} />
-        <StatCard label="Active CSRs" value={userCount} icon={Users} loading={loading} />
-        <StatCard label="Pending Configurations" value={0} icon={AlertCircle} loading={loading} />
+        <StatCard label="Active Templates" value={templateCount} icon={FileText} loading={loading} />
+        <StatCard label="Field Dictionary" value={fieldCount} icon={Key} loading={loading} />
       </div>
 
-      <div className="section-card">
-        <h3 className="text-lg font-semibold text-foreground mb-4">System Overview</h3>
-        <p className="text-muted-foreground">
-          Welcome to the Admin Dashboard. Use the navigation menu to access system configuration and user management.
-        </p>
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Quick Access</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {adminQuickLinks.map((link) => (
+            <button
+              key={link.path}
+              onClick={() => navigate(link.path)}
+              className="section-card text-left hover:shadow-lg transition-all duration-200 hover:-translate-y-1 group"
+            >
+              <div className="flex items-start gap-4">
+                <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform', link.color)}>
+                  <link.icon className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-foreground mb-1">{link.title}</h4>
+                  <p className="text-sm text-muted-foreground">{link.description}</p>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     </>
   );

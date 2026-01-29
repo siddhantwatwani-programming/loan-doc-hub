@@ -19,15 +19,15 @@ import {
   Trash2,
   FileText,
   Key,
-  Save
+  ArrowLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Template {
   id: string;
   name: string;
-  state: string;
-  product_type: string;
+  state: string | null;
+  product_type: string | null;
   version: number;
 }
 
@@ -69,8 +69,8 @@ export const FieldMapEditorPage: React.FC = () => {
   const [fieldMaps, setFieldMaps] = useState<TemplateFieldMap[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'mapped' | 'add'>('mapped');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -80,6 +80,7 @@ export const FieldMapEditorPage: React.FC = () => {
   useEffect(() => {
     if (selectedTemplateId) {
       fetchFieldMaps(selectedTemplateId);
+      setViewMode('mapped'); // Reset to mapped view when template changes
     } else {
       setFieldMaps([]);
     }
@@ -212,13 +213,21 @@ export const FieldMapEditorPage: React.FC = () => {
       f.field_key.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Group fields by section
+  // Group available fields by section
   const groupedFields = filteredAvailableFields.reduce((acc, field) => {
     const section = field.section;
     if (!acc[section]) acc[section] = [];
     acc[section].push(field);
     return acc;
   }, {} as Record<string, FieldDictionary[]>);
+
+  // Filter mapped fields by search
+  const filteredMappedFields = fieldMaps.filter(
+    (fm) =>
+      !searchQuery ||
+      fm.field?.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      fm.field?.field_key.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -245,7 +254,7 @@ export const FieldMapEditorPage: React.FC = () => {
             <SelectContent>
               {templates.map((t) => (
                 <SelectItem key={t.id} value={t.id}>
-                  {t.name} ({t.state} - {t.product_type} v{t.version})
+                  {t.name} v{t.version}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -253,7 +262,110 @@ export const FieldMapEditorPage: React.FC = () => {
         </div>
       </div>
 
-      {selectedTemplate && (
+      {selectedTemplate && viewMode === 'mapped' && (
+        <div className="section-card">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Mapped Fields</h3>
+              <p className="text-sm text-muted-foreground">
+                {fieldMaps.length} fields mapped to this template
+              </p>
+            </div>
+            <Button onClick={() => setViewMode('add')} variant="outline">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Fields
+            </Button>
+          </div>
+
+          {fieldMaps.length > 6 && (
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search mapped fields..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 max-w-sm"
+              />
+            </div>
+          )}
+
+          {fieldMaps.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">No fields mapped yet</p>
+              <Button onClick={() => setViewMode('add')} className="mt-4">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Fields
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[600px] overflow-y-auto">
+              {filteredMappedFields.map((fm, idx) => (
+                <div
+                  key={fm.id}
+                  className="p-3 rounded-lg border border-border bg-card"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-muted-foreground w-5">
+                        {idx + 1}
+                      </span>
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {fm.field?.label || fm.field?.field_key || 'Unknown field'}
+                        </p>
+                        <p className="text-xs text-muted-foreground font-mono">
+                          {fm.field?.field_key || fm.field_dictionary_id}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveField(fm.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-4 mt-3">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={fm.required_flag}
+                        onCheckedChange={(checked) =>
+                          handleUpdateField(fm.id, { required_flag: checked })
+                        }
+                      />
+                      <Label className="text-sm">Required</Label>
+                    </div>
+                    <div className="flex-1">
+                      <Select
+                        value={fm.transform_rule || 'none'}
+                        onValueChange={(value) =>
+                          handleUpdateField(fm.id, { transform_rule: value === 'none' ? null : value })
+                        }
+                      >
+                        <SelectTrigger className="h-8">
+                          <SelectValue placeholder="Transform rule" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TRANSFORM_RULES.map((rule) => (
+                            <SelectItem key={rule.value} value={rule.value}>
+                              {rule.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {selectedTemplate && viewMode === 'add' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Available Fields */}
           <div className="section-card">
@@ -316,9 +428,10 @@ export const FieldMapEditorPage: React.FC = () => {
           <div className="section-card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-foreground">Mapped Fields</h3>
-              <span className="text-sm text-muted-foreground">
-                {fieldMaps.length} fields
-              </span>
+              <Button variant="outline" size="sm" onClick={() => { setViewMode('mapped'); setSearchQuery(''); }}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Done
+              </Button>
             </div>
             <div className="max-h-[500px] overflow-y-auto">
               {fieldMaps.length === 0 ? (
