@@ -20,6 +20,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Fetch merge tag aliases from database and build lookup maps
+ * Note: Aliases are now optional - the system can resolve tags directly from field_dictionary
  */
 export async function fetchMergeTagMappings(supabase: any): Promise<MergeTagMappings> {
   const now = Date.now();
@@ -30,15 +31,19 @@ export async function fetchMergeTagMappings(supabase: any): Promise<MergeTagMapp
     return { mergeTagMap: cachedMergeTagMap, labelMap: cachedLabelMap };
   }
   
-  console.log("[field-resolver] Fetching merge tag mappings from database");
+  console.log("[field-resolver] Fetching merge tag mappings from database (optional fallback)");
   
   const { data: aliases, error } = await supabase
     .from("merge_tag_aliases")
     .select("tag_name, field_key, tag_type, replace_next, is_active")
     .eq("is_active", true);
   
+  // Gracefully handle missing table or errors - aliases are optional now
   if (error) {
-    console.error("[field-resolver] Failed to fetch merge tag aliases:", error);
+    console.log("[field-resolver] Merge tag aliases unavailable (this is OK - using direct field_key resolution):", error.message);
+    cachedMergeTagMap = {};
+    cachedLabelMap = {};
+    cacheTimestamp = now;
     return { mergeTagMap: {}, labelMap: {} };
   }
   
@@ -61,7 +66,7 @@ export async function fetchMergeTagMappings(supabase: any): Promise<MergeTagMapp
   cachedLabelMap = labelMap;
   cacheTimestamp = now;
   
-  console.log(`[field-resolver] Loaded ${Object.keys(mergeTagMap).length} merge tags and ${Object.keys(labelMap).length} labels from database`);
+  console.log(`[field-resolver] Loaded ${Object.keys(mergeTagMap).length} legacy aliases and ${Object.keys(labelMap).length} labels`);
   
   return { mergeTagMap, labelMap };
 }
