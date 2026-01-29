@@ -1,177 +1,178 @@
 
-# Simplify Deal Creation and Template Upload
 
-## Overview
+# Field Mapping Fix & Navigation Refactoring Plan
 
-This plan removes the complexity of packet selection, state, and product type from the deal creation and template upload processes. Users can simply create a deal and navigate directly to fill in information.
+## Part 1: Understanding Tag Mapping vs Field Mapping
 
-## Current State
+### Tag Mapping (Document Placeholders → Field Keys)
+Managed via `merge_tag_aliases` table. Maps document placeholders to data fields:
 
-### Deal Creation (`CreateDealPage.tsx`)
-- Requires: State, Product Type, Packet selection, Mode
-- Multi-step wizard interface
-- Validates state/product before allowing deal creation
+| Document Placeholder | Field Key |
+|---------------------|-----------|
+| `{{Borrower_Name}}` | `borrower.name` |
+| `«Loan_Amount»` | `Terms.LoanAmount` |
+| `F0001` | `lender.current.name` |
 
-### Template Upload (`TemplateManagementPage.tsx`)
-- Requires: State, Product Type as mandatory fields
-- Displays dropdowns for all 50 states and 8 product types
+**Purpose**: During document generation, tells the system "when you see this tag in the DOCX, replace it with data from this field"
 
-### Database Constraints
-- `deals.state` - NOT NULL
-- `deals.product_type` - NOT NULL
-- `templates.state` - NOT NULL
-- `templates.product_type` - NOT NULL
+### Field Mapping (Template ↔ Field Dictionary)
+Managed via `template_field_maps` table. Defines which fields from the dictionary are associated with each template:
 
-## Changes Required
+| Template | Field | Required | Transform |
+|----------|-------|----------|-----------|
+| Lender Disclosures v1 | borrower.name | Yes | titlecase |
+| Lender Disclosures v1 | Terms.LoanAmount | Yes | currency |
 
-### 1. Database Migration
-Make `state` and `product_type` nullable with defaults for both tables:
+**Purpose**: Controls which fields appear in the CSR data entry form for deals using that template, and whether they're required
 
-```sql
--- Make deals table columns nullable with defaults
-ALTER TABLE deals ALTER COLUMN state SET DEFAULT 'TBD';
-ALTER TABLE deals ALTER COLUMN product_type SET DEFAULT 'TBD';
-ALTER TABLE deals ALTER COLUMN state DROP NOT NULL;
-ALTER TABLE deals ALTER COLUMN product_type DROP NOT NULL;
+### Key Difference
+- **Tag Mapping**: "What placeholder text maps to what data field?" (document-centric)
+- **Field Mapping**: "What fields belong to this template?" (template-centric)
 
--- Make templates table columns nullable with defaults
-ALTER TABLE templates ALTER COLUMN state SET DEFAULT 'TBD';
-ALTER TABLE templates ALTER COLUMN product_type SET DEFAULT 'TBD';
-ALTER TABLE templates ALTER COLUMN state DROP NOT NULL;
-ALTER TABLE templates ALTER COLUMN product_type DROP NOT NULL;
+---
+
+## Part 2: Fix Field Mapping Screen
+
+### Current Problem
+When selecting a template, the page shows:
+- Left panel: ALL unmapped fields from the entire dictionary (potentially hundreds)
+- Right panel: Fields actually mapped to the selected template
+
+This is designed for adding new fields, but makes it confusing to just review what's mapped.
+
+### Solution
+Change the default view to only show mapped fields for the selected template. Add an "Add Fields" mode toggle that reveals the full dictionary when needed.
+
+### Changes to `FieldMapEditorPage.tsx`
+
+1. **Add view mode toggle**: 
+   - Default: "View Mapped Fields" - shows only fields mapped to this template
+   - Toggle: "Add New Fields" - shows the two-column layout with available fields
+
+2. **Simplify default view**: Single column showing all mapped fields with their settings
+
+3. **Keep full functionality**: The "Add Fields" mode preserves the current ability to add fields from dictionary
+
+---
+
+## Part 3: Navigation Refactoring
+
+### Current Sidebar Structure (for Admin)
+```
+Dashboard
+Deals
+Create Deal
+Users
+Documents
+▼ Configuration
+  ├── Overview        → /admin/config
+  ├── Users           → /admin/users  
+  ├── Templates       → /admin/templates
+  ├── Packets         → /admin/packets
+  ├── Field Dictionary→ /admin/fields
+  ├── Field Mapping   → /admin/field-maps
+  ├── Tag Mapping     → /admin/tag-mapping
+  └── Settings        → /admin/settings
 ```
 
-### 2. Simplify Deal Creation Page
-
-**File**: `src/pages/csr/CreateDealPage.tsx`
-
-Transform from multi-step wizard to simple one-click creation:
-- Remove State dropdown
-- Remove Product Type dropdown
-- Remove Packet selection step
-- Remove Mode selection step
-- Keep only a "Create Deal" button
-- Auto-navigate to `/deals/:id` after creation
-
-**New simplified flow**:
-```text
-+------------------------------------------+
-|  Create New Deal                         |
-+------------------------------------------+
-|                                          |
-|  Start a new loan document package       |
-|                                          |
-|  [Create Deal]        [Cancel]           |
-|                                          |
-+------------------------------------------+
+### New Sidebar Structure (Requested)
+```
+Dashboard              → /dashboard (merge Overview cards here)
+Deals                  → /deals
+Create Deal            → /deals/new
+Users (CSR)            → /users
+Documents              → /documents
+─────────────────────────
+User Management        → /admin/users      (separate item)
+Templates              → /admin/templates  (separate item)
+Field Dictionary       → /admin/fields     (separate item)
+Field Mapping          → /admin/field-maps (separate item)
+Tag Mapping            → /admin/tag-mapping (separate item)
+─────────────────────────
+▼ Configuration
+  ├── Packets         → /admin/packets
+  └── Settings        → /admin/settings
 ```
 
-### 3. Simplify Template Upload Dialog
+---
 
-**File**: `src/pages/admin/TemplateManagementPage.tsx`
-
-Remove State and Product Type from the template creation dialog:
-- Remove State dropdown
-- Remove Product Type dropdown
-- Keep: Template Name, Version, Active toggle, Description, DOCX upload, PDF upload (optional)
-
-**Simplified dialog**:
-```text
-+------------------------------------------+
-|  Create Template                         |
-+------------------------------------------+
-|  Template Name *                         |
-|  [________________________]              |
-|                                          |
-|  Version: [1]    [x] Active              |
-|                                          |
-|  Description (optional)                  |
-|  [________________________]              |
-|                                          |
-|  Template File (DOCX) *                  |
-|  [Choose file...]                        |
-|                                          |
-|  Reference PDF (optional)                |
-|  [Choose file...]                        |
-|                                          |
-|             [Cancel]  [Save]             |
-+------------------------------------------+
-```
-
-## Technical Implementation
+## Implementation Details
 
 ### Files to Modify
 
 | File | Changes |
 |------|---------|
-| Database | Add migration to make state/product_type nullable |
-| `src/pages/csr/CreateDealPage.tsx` | Remove state, product, packet, mode selection; simplify to one-click |
-| `src/pages/admin/TemplateManagementPage.tsx` | Remove state/product_type from form; update validation |
+| `src/pages/admin/FieldMapEditorPage.tsx` | Add view mode toggle, refactor to show only mapped fields by default |
+| `src/components/layout/AppSidebar.tsx` | Restructure navigation: move items out of Configuration group |
+| `src/pages/Dashboard.tsx` | Merge ConfigurationPage overview cards into Admin Dashboard |
+| `src/pages/admin/ConfigurationPage.tsx` | Simplify to only show Packets and Settings cards |
 
-### Deal Creation Logic (Simplified)
-
-```typescript
-const handleCreateDeal = async () => {
-  setLoading(true);
-  try {
-    const dealNumber = await generateDealNumber();
-    
-    const { data, error } = await supabase
-      .from('deals')
-      .insert({
-        deal_number: dealNumber,
-        state: 'TBD',      // Default placeholder
-        product_type: 'TBD', // Default placeholder
-        mode: 'doc_prep',
-        status: 'draft',
-        created_by: user?.id,
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    
-    // Navigate directly to deal page
-    navigate(`/deals/${data.id}`);
-  } catch (error) {
-    // Handle error
-  }
-};
-```
-
-### Template Creation Logic (Simplified)
+### FieldMapEditorPage Changes
 
 ```typescript
-const handleSubmit = async () => {
-  if (!formData.name) {
-    toast({ title: 'Please enter a template name', variant: 'destructive' });
-    return;
-  }
-  
-  if (!editingTemplate && !formData.file_path) {
-    toast({ title: 'Please upload a DOCX file', variant: 'destructive' });
-    return;
-  }
+// Add state for view mode
+const [viewMode, setViewMode] = useState<'mapped' | 'add'>('mapped');
 
-  // Insert with default values for state/product_type
-  await supabase.from('templates').insert({
-    name: formData.name,
-    state: 'TBD',
-    product_type: 'TBD',
-    version: formData.version,
-    is_active: formData.is_active,
-    description: formData.description || null,
-    file_path: formData.file_path || null,
-    reference_pdf_path: formData.reference_pdf_path || null,
-  });
-};
+// Default view: Only show mapped fields
+// Toggle to 'add' mode to see full dictionary for adding new fields
 ```
+
+**Default "Mapped Fields" View**:
+- Single column showing all fields mapped to selected template
+- Each row shows: field label, field_key, required toggle, transform dropdown, delete button
+- "Add Fields" button at top to switch to add mode
+
+**"Add Fields" Mode**:
+- Two-column layout (current design)
+- Left: Available fields from dictionary not yet mapped
+- Right: Currently mapped fields
+- "Done" button to return to default view
+
+### AppSidebar Changes
+
+```typescript
+// Move these items out of adminGroups and make them top-level admin items
+const adminItems: NavItem[] = [
+  { label: 'User Management', icon: Users, path: '/admin/users', roles: ['admin'] },
+  { label: 'Templates', icon: FileText, path: '/admin/templates', roles: ['admin'] },
+  { label: 'Field Dictionary', icon: Key, path: '/admin/fields', roles: ['admin'] },
+  { label: 'Field Mapping', icon: Link, path: '/admin/field-maps', roles: ['admin'] },
+  { label: 'Tag Mapping', icon: Link, path: '/admin/tag-mapping', roles: ['admin'] },
+];
+
+// Simplified Configuration group
+const adminGroups: NavGroup[] = [
+  {
+    label: 'Configuration',
+    icon: Settings,
+    roles: ['admin'],
+    items: [
+      { label: 'Packets', icon: Package, path: '/admin/packets', roles: ['admin'] },
+      { label: 'Settings', icon: Sliders, path: '/admin/settings', roles: ['admin'] },
+    ],
+  },
+];
+```
+
+### Dashboard Enhancement
+
+For Admin users, add the configuration quick-links from ConfigurationPage:
+- User Management card
+- Template Management card
+- Field Dictionary card
+- Field Mapping card
+
+This provides quick access from the dashboard while keeping them as separate top-level navigation items.
+
+---
 
 ## Summary
 
-This simplification:
-1. Makes deal creation a single-click action
-2. Navigates directly to deal details for data entry
-3. Removes state/product type requirements from templates
-4. Allows faster iteration during the pilot phase
-5. These fields can be re-enabled once the stable version is ready
+1. **Tag Mapping** = Document placeholders → field keys (for document generation)
+2. **Field Mapping** = Fields ↔ templates (for data entry forms)
+3. **Field Mapping Fix**: Default to showing only mapped fields; add toggle for "Add Fields" mode
+4. **Navigation Refactor**: 
+   - User Management, Templates, Field Dictionary, Field Mapping, Tag Mapping → separate top-level items
+   - Configuration group → only Packets and Settings
+   - Dashboard → merge Overview cards for quick access
+
