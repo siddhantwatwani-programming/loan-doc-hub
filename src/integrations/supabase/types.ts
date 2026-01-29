@@ -549,6 +549,42 @@ export type Database = {
           },
         ]
       }
+      merge_tag_aliases: {
+        Row: {
+          created_at: string
+          description: string | null
+          field_key: string
+          id: string
+          is_active: boolean
+          replace_next: string | null
+          tag_name: string
+          tag_type: Database["public"]["Enums"]["merge_tag_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          field_key: string
+          id?: string
+          is_active?: boolean
+          replace_next?: string | null
+          tag_name: string
+          tag_type?: Database["public"]["Enums"]["merge_tag_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          field_key?: string
+          id?: string
+          is_active?: boolean
+          replace_next?: string | null
+          tag_name?: string
+          tag_type?: Database["public"]["Enums"]["merge_tag_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       packet_templates: {
         Row: {
           created_at: string
@@ -972,6 +1008,7 @@ export type Database = {
         | "notes"
         | "lender"
       generation_status: "queued" | "running" | "success" | "failed"
+      merge_tag_type: "merge_tag" | "label" | "f_code"
       output_type: "docx_only" | "docx_and_pdf"
       participant_access_method: "login" | "magic_link"
       participant_status: "invited" | "in_progress" | "completed" | "expired"
@@ -1205,6 +1242,7 @@ export const Constants = {
         "lender",
       ],
       generation_status: ["queued", "running", "success", "failed"],
+      merge_tag_type: ["merge_tag", "label", "f_code"],
       output_type: ["docx_only", "docx_and_pdf"],
       participant_access_method: ["login", "magic_link"],
       participant_status: ["invited", "in_progress", "completed", "expired"],

@@ -301,7 +301,7 @@ function applyTransform(value: string | number | null, transform: string): strin
 }
 
 // ============================================
-// Merge Tag Parsing - Supports multiple formats
+// Merge Tag Mapping - Database-Driven
 // ============================================
 
 interface ParsedMergeTag {
@@ -310,221 +310,76 @@ interface ParsedMergeTag {
   inlineTransform: string | null;
 }
 
-// Map document merge tags to canonical field keys
-// This allows the document to use its own naming convention
-const MERGE_TAG_TO_FIELD_MAP: Record<string, string> = {
-  // Borrower mappings
-  "Borrower_Name": "Borrower.Name",
-  "Borrower_Address": "Borrower.Address",
-  "Borrower_address": "Borrower.Address",
-  "Borrower_City": "Borrower.City",
-  "Borrower_State": "Borrower.State",
-  "Borrower_Zip": "Borrower.Zip",
-  
-  // Broker mappings
-  "Broker_Name": "Broker.Name",
-  "Broker_address": "Broker.Address",
-  "Broker_Address": "Broker.Address",
-  "Broker_License_": "Broker.License",
-  "Broker_License": "Broker.License",
-  "Broker_Rep": "Broker.Representative",
-  "Broker_License_1": "Broker.License",
-  
-  // Loan terms mappings
-  "Loan_Number": "Terms.LoanNumber",
-  "Loan_Amount": "Terms.LoanAmount",
-  "Amount_Funded": "Terms.LoanAmount",
-  "Interest_Rate": "Terms.InterestRate",
-  "Term_Months": "Terms.TermMonths",
-  "First_Payment_Date": "Terms.FirstPaymentDate",
-  "Maturity_Date": "Terms.MaturityDate",
-  "Payment_Amount": "Terms.PaymentAmount",
-  
-  // Property mappings
-  "Property_Address": "Property1.Address",
-  "Property_address": "Property1.Address",
-  "Property_City": "Property1.City",
-  "Property_State": "Property1.State",
-  "Property_Zip": "Property1.Zip",
-  "Market_Value": "Property1.MarketValue",
-  
-  // System mappings
-  "Document_Date": "System.DocumentDate",
-  
-  // Assignment of Deed of Trust (100%) - System field codes mapped to actual data fields
-  // Based on the 39 field mapping configuration from template_field_maps
-  "F0000": "Terms.LoanNumber",           // Loan Number field
-  "F0001": "lender.current.name",        // Current Lender Name
-  "F0009": "deed_of_trust.county",       // DOT County
-  "F1428": "deed_of_trust.instrument_number",  // DOT Instrument Number
-  "F1429": "deed_of_trust.recording_date",     // DOT Recording Date
-  
-  // Assignment of Deed of Trust (100%) - Document field mappings (39 fields)
-  // Loan & Property fields (unique merge tags to avoid conflicts)
-  // NOTE: Template uses these tags for the deal's loan number.
-  // Canonical field key used throughout the app is Terms.LoanNumber.
-  "Loan_Loan_Number": "Terms.LoanNumber",
-  "Deal_Loan_Number": "Terms.LoanNumber",
-  "Property_Legal_Description": "property.legalDescription",
-  "Legal_Description": "property.legalDescription",
-  "Property_APN": "property.apn",
-  "Assessors_Parcel_Number": "property.apn",
-  
-  // Borrower fields (unique merge tags)
-  "Deal_Borrower_Name": "borrower.name",
-  "Borrower_Full_Name": "borrower.name",
-  "Borrower_Vesting": "borrower.vesting",
-  
-  // Recording fields
-  "Recording_County": "recording.county",
-  "Recording_Date": "recording.recording_date",
-  "Recording_Requested_By": "recording.requested_by",
-  "Mail_To_Name": "recording.mail_to.name",
-  "Mail_To_Address": "recording.mail_to.address",
-  "Recording_Instrument_Number": "recording.instrument_number",
-  "Recording_State": "recording.state",
-  
-  // Lender fields
-  "Current_Lender_Name": "lender.current.name",
-  "Current_Lender_Vesting": "lender.current.vesting",
-  "New_Lender_Name": "lender.new.name",
-  "New_Lender_Vesting": "lender.new.vesting",
-  
-  // Deed of Trust fields
-  "DOT_Instrument_Number": "deed_of_trust.instrument_number",
-  "DOT_Recording_Date": "deed_of_trust.recording_date",
-  "DOT_County": "deed_of_trust.county",
-  "DOT_Recording_County": "deed_of_trust.county",
-  "DOT_State": "deed_of_trust.state",
-  "DOT_Recording_State": "deed_of_trust.state",
-  
-  // Assignment fields
-  "Assignment_Execution_Date": "assignment.execution_date",
-  
-  // Signatory fields
-  "Signatory_Name": "signatory.name",
-  "Signatory_Title": "signatory.title",
-  "Signatory_Capacity": "signatory.capacity",
-  "Signatory_Organization": "signatory.organization",
-  
-  // Notary fields
-  "Notary_Execution_Date": "notary.execution_date",
-  "Notary_Name": "notary.name",
-  "Notary_Seal": "notary.seal",
-  "Notary_Date": "notary.date",
-  "Notary_Commission_Expiry": "notary.commission_expiry",
-  "Notary_County": "notary.county",
-  "Notary_State": "notary.state",
-  "Notary_Appearing_Party_Names": "notary.appearing_party_names",
-  "Notary1_State": "notary.state",
-  "Notary1_County": "notary.county",
-  "Notary1_Appearing_Party": "notary.appearing_party_names",
-  "Notary1_Appearing_Party_Names": "notary.appearing_party_names",
-  "Notary1_Signature": "notary.signature",
-  
-  // Document fields
-  "Document_Page_Number": "document.page_number",
-  
-  // Lender mappings (from template)
-  "Lender_Name": "Lender.Name",
-  "Lender_Vesting": "Lender.Vesting",
-  "Lender_address": "Lender.Address",
-  "Lender_Address": "Lender.Address",
-  "Beneficial_interest_": "Lender.BeneficialInterest",
-  
-  // Allonge to Note specific mappings
-  "Note_Date": "Terms.NoteDate",
-  "Date_of_Note": "Terms.NoteDate",
-  "Mortgagor": "Borrower.Name",
-  "Mortgagors": "Borrower.Name",
-  "Pay_To_Order_Of": "Allonge.PayToOrderOf",
-  "Pay_To_The_Order_Of": "Allonge.PayToOrderOf",
-  "Execution_Date": "Allonge.ExecutionDate",
-  "Allonge_Execution_Date": "Allonge.ExecutionDate",
-  "Authorized_Signature": "Allonge.AuthorizedSignature",
-  "Print_Name": "Allonge.PrintName",
-  "Title": "Allonge.Title",
-  "Signer_Title": "Allonge.Title",
-};
+interface MergeTagAlias {
+  tag_name: string;
+  field_key: string;
+  tag_type: 'merge_tag' | 'label' | 'f_code';
+  replace_next: string | null;
+  is_active: boolean;
+}
 
-// Map static document labels to canonical field keys for label-based replacement
-// This allows templates with static labels (no merge fields) to still be populated
-const LABEL_TO_FIELD_MAP: Record<string, { fieldKey: string; replaceNext?: string }> = {
-  // Allonge to Note specific labels
-  "DATE OF NOTE:": { fieldKey: "other.date_of_note" },
-  "MORTGAGOR (S):": { fieldKey: "other.mortgagor_s" },
-  "MORTGAGOR(S):": { fieldKey: "other.mortgagor_s" },
-  "PROPERTY ADDRESS:": { fieldKey: "Property1.Address" },
-  "LOAN AMOUNT:": { fieldKey: "Terms.LoanAmount" },
-  "LOAN NO.:": { fieldKey: "Terms.LoanNumber" },
-  "LOAN NO:": { fieldKey: "Terms.LoanNumber" },
-  // Requirement: Lender Name -> lender.nameAddress
-  "Lender Name:": { fieldKey: "lender.nameAddress" },
-  "Print Name:": { fieldKey: "Allonge.PrintName" },
-  "Title:": { fieldKey: "Allonge.Title" },
-  // The execution date appears after "as of" in the witness clause
-  "as of _": { fieldKey: "Allonge.ExecutionDate" },
-  // PAY TO THE ORDER OF - need to replace the text that follows (CALIFORNIA HOUSING FINANCE AGENCY)
-  "PAY TO THE ORDER OF": { fieldKey: "Allonge.PayToOrderOf", replaceNext: "CALIFORNIA HOUSING FINANCE AGENCY" },
+// In-memory cache for merge tag aliases with TTL
+let cachedMergeTagMap: Record<string, string> | null = null;
+let cachedLabelMap: Record<string, { fieldKey: string; replaceNext?: string }> | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Fetch merge tag aliases from database and build lookup maps
+ */
+async function fetchMergeTagMappings(supabase: any): Promise<{
+  mergeTagMap: Record<string, string>;
+  labelMap: Record<string, { fieldKey: string; replaceNext?: string }>;
+}> {
+  const now = Date.now();
   
-  // Assignment of Deed of Trust (100%) - Placeholder text replacements
-  // These match static placeholder text in the template and replace with deal data
-  "Current Lender": { fieldKey: "lender.current.name", replaceNext: "Current Lender" },
-  "New Lender Vesting": { fieldKey: "lender.new.vesting", replaceNext: "New Lender Vesting" },
-  "New Lender": { fieldKey: "lender.new.name", replaceNext: "New Lender" },
-  "borrower vesting": { fieldKey: "borrower.vesting", replaceNext: "borrower vesting" },
-  "instrument number": { fieldKey: "deed_of_trust.instrument_number", replaceNext: "instrument number" },
-  "recording date": { fieldKey: "deed_of_trust.recording_date", replaceNext: "recording date" },
-  "County, State": { fieldKey: "deed_of_trust.county", replaceNext: "County, State" },
-  "Property Address": { fieldKey: "Property1.Address", replaceNext: "Property Address" },
-  "Legal Description": { fieldKey: "property.legalDescription", replaceNext: "Legal Description" },
-  "APN:": { fieldKey: "property.apn" },
-  "APN#": { fieldKey: "property.apn" },
-  "Authorized Signor Name": { fieldKey: "signatory.name", replaceNext: "Authorized Signor Name" },
-  // Common spelling in the template UI request
-  "Authorized Signer Name": { fieldKey: "signatory.name", replaceNext: "Authorized Signer Name" },
-  "Title / Capacity": { fieldKey: "signatory.title", replaceNext: "Title / Capacity" },
-  // Template variants (punctuation differs between versions)
-  "Current Lender Vesting (or Successor if applicable),": { fieldKey: "lender.current.vesting", replaceNext: "Current Lender Vesting (or Successor if applicable)," },
-  "Current Lender Vesting (or Successor, if applicable)": { fieldKey: "lender.current.vesting", replaceNext: "Current Lender Vesting (or Successor, if applicable)" },
-  "Current Lender Vesting (or Successor, if applicable),": { fieldKey: "lender.current.vesting", replaceNext: "Current Lender Vesting (or Successor, if applicable)," },
-  "Current Lender Vesting (or Successor, if applicable).": { fieldKey: "lender.current.vesting", replaceNext: "Current Lender Vesting (or Successor, if applicable)." },
-
-  // Mail To block (per requirement: Address = Mail To Address)
-  // This label is commonly used in the “Mail To” section of the template.
-  "Address": { fieldKey: "recording.mail_to.address", replaceNext: "Address" },
-
-  // Loan number label variants (some versions are label-based rather than merge-tag based)
-  "Loan No.": { fieldKey: "Terms.LoanNumber", replaceNext: "Loan No." },
-  "Loan No": { fieldKey: "Terms.LoanNumber", replaceNext: "Loan No" },
-  "Loan Number": { fieldKey: "Terms.LoanNumber", replaceNext: "Loan Number" },
+  // Return cached values if still valid
+  if (cachedMergeTagMap && cachedLabelMap && (now - cacheTimestamp) < CACHE_TTL_MS) {
+    console.log("[generate-document] Using cached merge tag mappings");
+    return { mergeTagMap: cachedMergeTagMap, labelMap: cachedLabelMap };
+  }
   
-  // Assignment of Deed of Trust (100%) - Notary section labels
-  "Notary Name": { fieldKey: "notary.name", replaceNext: "Notary Name" },
-  "Notary Seal": { fieldKey: "notary.seal", replaceNext: "Notary Seal" },
-  "Notary Date": { fieldKey: "notary.date", replaceNext: "Notary Date" },
-  "Notary Commission Expiry": { fieldKey: "notary.commission_expiry", replaceNext: "Notary Commission Expiry" },
-  "Notary County": { fieldKey: "notary.county", replaceNext: "Notary County" },
-  "Notary State": { fieldKey: "notary.state", replaceNext: "Notary State" },
-  "Appearing Party Names": { fieldKey: "notary.appearing_party_names", replaceNext: "Appearing Party Names" },
-  // Alternative notary label patterns
-  "State of": { fieldKey: "notary.state", replaceNext: "State of" },
-  "County of": { fieldKey: "notary.county", replaceNext: "County of" },
-  "Commission Expires": { fieldKey: "notary.commission_expiry" },
-  "My Commission Expires": { fieldKey: "notary.commission_expiry" },
-  "personally appeared": { fieldKey: "notary.appearing_party_names", replaceNext: "personally appeared" },
+  console.log("[generate-document] Fetching merge tag mappings from database");
+  
+  const { data: aliases, error } = await supabase
+    .from("merge_tag_aliases")
+    .select("tag_name, field_key, tag_type, replace_next, is_active")
+    .eq("is_active", true);
+  
+  if (error) {
+    console.error("[generate-document] Failed to fetch merge tag aliases:", error);
+    // Return empty maps on error - will fall back to no mappings
+    return { mergeTagMap: {}, labelMap: {} };
+  }
+  
+  const mergeTagMap: Record<string, string> = {};
+  const labelMap: Record<string, { fieldKey: string; replaceNext?: string }> = {};
+  
+  for (const alias of (aliases || []) as MergeTagAlias[]) {
+    if (alias.tag_type === 'merge_tag' || alias.tag_type === 'f_code') {
+      mergeTagMap[alias.tag_name] = alias.field_key;
+    } else if (alias.tag_type === 'label') {
+      labelMap[alias.tag_name] = {
+        fieldKey: alias.field_key,
+        replaceNext: alias.replace_next || undefined,
+      };
+    }
+  }
+  
+  // Update cache
+  cachedMergeTagMap = mergeTagMap;
+  cachedLabelMap = labelMap;
+  cacheTimestamp = now;
+  
+  console.log(`[generate-document] Loaded ${Object.keys(mergeTagMap).length} merge tags and ${Object.keys(labelMap).length} labels from database`);
+  
+  return { mergeTagMap, labelMap };
+}
 
-  // Labels called out in the issue report
-  "Date": { fieldKey: "notary.date", replaceNext: "Date" },
-  // Requirement: Notary Signature should use Notary Name
-  "Notary Signature": { fieldKey: "notary.name", replaceNext: "Notary Signature" },
-  "Notary Stamp or Seal": { fieldKey: "notary.seal", replaceNext: "Notary Stamp or Seal" },
-};
-
-function resolveFieldKey(tagName: string): string {
+function resolveFieldKeyWithMap(tagName: string, mergeTagMap: Record<string, string>): string {
   // Clean the tag name (remove trailing underscores, etc.)
   const cleanedTag = tagName.replace(/_+$/, "").trim();
-  return MERGE_TAG_TO_FIELD_MAP[tagName] || MERGE_TAG_TO_FIELD_MAP[cleanedTag] || tagName;
+  return mergeTagMap[tagName] || mergeTagMap[cleanedTag] || tagName;
 }
 
 /**
@@ -646,18 +501,19 @@ function parseWordMergeFields(content: string): ParsedMergeTag[] {
 function replaceLabelBasedFields(
   content: string,
   fieldValues: Map<string, { rawValue: string | number | null; dataType: string }>,
-  fieldTransforms: Map<string, string>
+  fieldTransforms: Map<string, string>,
+  labelMap: Record<string, { fieldKey: string; replaceNext?: string }>
 ): { content: string; replacementCount: number } {
   let result = content;
   let replacementCount = 0;
   
-  for (const [label, mapping] of Object.entries(LABEL_TO_FIELD_MAP)) {
+  for (const [label, mapping] of Object.entries(labelMap)) {
     const fieldData = fieldValues.get(mapping.fieldKey);
     if (!fieldData || fieldData.rawValue === null) {
       // Requirement: if mapped field is empty, leave the document field blank.
       // For labels that replace a following placeholder, blank that placeholder.
-      if ((mapping as any).replaceNext) {
-        const textToReplace = (mapping as any).replaceNext;
+      if (mapping.replaceNext) {
+        const textToReplace = mapping.replaceNext;
         const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         const replaceNextPattern = new RegExp(escapedText, "gi");
         if (replaceNextPattern.test(result)) {
@@ -701,8 +557,8 @@ function replaceLabelBasedFields(
     }
     
     // Handle special case where we need to replace text that follows the label
-    if ((mapping as any).replaceNext) {
-      const textToReplace = (mapping as any).replaceNext;
+    if (mapping.replaceNext) {
+      const textToReplace = mapping.replaceNext;
       const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const replaceNextPattern = new RegExp(escapedText, 'gi');
       
@@ -747,7 +603,9 @@ function replaceLabelBasedFields(
 function replaceMergeTags(
   content: string,
   fieldValues: Map<string, { rawValue: string | number | null; dataType: string }>,
-  fieldTransforms: Map<string, string>
+  fieldTransforms: Map<string, string>,
+  mergeTagMap: Record<string, string>,
+  labelMap: Record<string, { fieldKey: string; replaceNext?: string }>
 ): string {
   // First normalize the XML to handle fragmented merge fields
   let result = normalizeWordXml(content);
@@ -756,9 +614,6 @@ function replaceMergeTags(
   const tags = parseWordMergeFields(result);
 
   // Case-insensitive field-key lookup helper.
-  // Some templates/tags use different casing than the stored field_dictionary.field_key
-  // (e.g. borrower.name vs Borrower.Name). We keep replacement logic the same, but
-  // fall back to a case-insensitive lookup when an exact key match is missing.
   const getFieldData = (canonicalKey: string) => {
     const exact = fieldValues.get(canonicalKey);
     if (exact) return { key: canonicalKey, data: exact };
@@ -771,13 +626,12 @@ function replaceMergeTags(
   };
   
   for (const tag of tags) {
-    const canonicalKey = resolveFieldKey(tag.tagName);
+    const canonicalKey = resolveFieldKeyWithMap(tag.tagName, mergeTagMap);
     const resolved = getFieldData(canonicalKey);
     const fieldData = resolved?.data;
     let resolvedValue = "";
     
     if (fieldData) {
-      // If we matched a differently-cased key, respect transforms stored for that exact key.
       const transformKey = resolved?.key || canonicalKey;
       const transform = tag.inlineTransform || fieldTransforms.get(transformKey);
       
@@ -790,16 +644,13 @@ function replaceMergeTags(
     } else {
       console.log(`[generate-document] No data for ${tag.tagName} (canonical: ${canonicalKey})`);
     }
-    // Leave unmapped/empty tags blank (as per requirements)
     
     result = result.split(tag.fullMatch).join(resolvedValue);
   }
   
   // Always run label-based replacement after merge tag replacement.
-  // Some templates (like Assignment of Deed of Trust 100%) have merge tags in headers/footers
-  // but use static labels in the body that need to be replaced with field values.
   console.log(`[generate-document] Running label-based replacement (${tags.length} merge tags were processed)`);
-  const labelResult = replaceLabelBasedFields(result, fieldValues, fieldTransforms);
+  const labelResult = replaceLabelBasedFields(result, fieldValues, fieldTransforms, labelMap);
   result = labelResult.content;
   console.log(`[generate-document] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
   
@@ -813,7 +664,9 @@ function replaceMergeTags(
 async function processDocx(
   docxBuffer: Uint8Array,
   fieldValues: Map<string, { rawValue: string | number | null; dataType: string }>,
-  fieldTransforms: Map<string, string>
+  fieldTransforms: Map<string, string>,
+  mergeTagMap: Record<string, string>,
+  labelMap: Record<string, { fieldKey: string; replaceNext?: string }>
 ): Promise<Uint8Array> {
   const decompressed = fflate.unzipSync(docxBuffer);
   const processedFiles: { [key: string]: Uint8Array } = {};
@@ -822,7 +675,7 @@ async function processDocx(
     if (filename.endsWith(".xml") || filename.endsWith(".rels")) {
       const decoder = new TextDecoder("utf-8");
       let xmlContent = decoder.decode(content);
-      xmlContent = replaceMergeTags(xmlContent, fieldValues, fieldTransforms);
+      xmlContent = replaceMergeTags(xmlContent, fieldValues, fieldTransforms, mergeTagMap, labelMap);
       const encoder = new TextEncoder();
       processedFiles[filename] = encoder.encode(xmlContent);
     } else {
@@ -1021,9 +874,10 @@ async function generateSingleDocument(
       return result;
     }
 
-    // 6. Process the DOCX
+    // 6. Fetch merge tag mappings and process the DOCX
+    const { mergeTagMap, labelMap } = await fetchMergeTagMappings(supabase);
     const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
-    const processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms);
+    const processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, labelMap);
 
     console.log(`[generate-document] Processed DOCX: ${processedDocx.length} bytes`);
 

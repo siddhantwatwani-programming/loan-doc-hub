@@ -70,6 +70,7 @@ const adminGroups: NavGroup[] = [
       { label: 'Packets', icon: Package, path: '/admin/packets', roles: ['admin'] },
       { label: 'Field Dictionary', icon: Key, path: '/admin/fields', roles: ['admin'] },
       { label: 'Field Mapping', icon: Link, path: '/admin/field-maps', roles: ['admin'] },
+      { label: 'Tag Mapping', icon: Link, path: '/admin/tag-mapping', roles: ['admin'] },
       { label: 'Settings', icon: Sliders, path: '/admin/settings', roles: ['admin'] },
     ],
   },
