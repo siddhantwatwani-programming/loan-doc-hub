@@ -132,6 +132,7 @@ export const DealDocumentsPage: React.FC = () => {
   const [deal, setDeal] = useState<Deal | null>(null);
   const [packet, setPacket] = useState<Packet | null>(null);
   const [packetTemplates, setPacketTemplates] = useState<PacketTemplate[]>([]);
+  const [allTemplates, setAllTemplates] = useState<Template[]>([]); // All active templates for no-packet mode
   const [generatedDocuments, setGeneratedDocuments] = useState<GeneratedDocument[]>([]);
   const [recentJobs, setRecentJobs] = useState<GenerationJob[]>([]);
   const [profiles, setProfiles] = useState<Map<string, Profile>>(new Map());
@@ -232,6 +233,15 @@ export const DealDocumentsPage: React.FC = () => {
         .order('display_order');
       
       setPacketTemplates((ptData || []) as any);
+    } else {
+      // No packet - fetch all active templates for single-template generation
+      const { data: templatesData } = await supabase
+        .from('templates')
+        .select('id, name, file_path, version')
+        .eq('is_active', true)
+        .order('name');
+      
+      setAllTemplates((templatesData || []) as Template[]);
     }
   };
 
@@ -564,7 +574,7 @@ export const DealDocumentsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Templates & Generation */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Packet Info */}
+            {/* Packet Info - only if packet exists */}
             {packet && (
               <div className="section-card">
                 <div className="flex items-center gap-3 mb-4">
@@ -613,7 +623,79 @@ export const DealDocumentsPage: React.FC = () => {
               </div>
             )}
 
-          {/* Templates List */}
+            {/* No Packet - Template Selector Mode */}
+            {!packet && (
+              <div className="section-card">
+                <div className="flex items-center gap-3 mb-4">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground">Single Template Generation</h2>
+                    <p className="text-sm text-muted-foreground">
+                      No packet assigned. Select a template to generate a single document.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Template Selector */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                    <span className="text-sm font-medium text-foreground">Template:</span>
+                    <Select 
+                      value={selectedTemplateId || ''} 
+                      onValueChange={(v) => setSelectedTemplateId(v)}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Select a template..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allTemplates.map(template => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.name} (v{template.version})
+                            {!template.file_path && ' - No file'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                    <span className="text-sm font-medium text-foreground">Output Format:</span>
+                    <Select value={outputType} onValueChange={(v) => setOutputType(v as OutputType)}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="docx_only">DOCX Only</SelectItem>
+                        <SelectItem value="docx_and_pdf">DOCX + PDF</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Generate Single Document Button */}
+                  <Button 
+                    onClick={() => handleGenerateClick('single', selectedTemplateId || undefined)}
+                    disabled={!canGenerate || generating || !selectedTemplateId}
+                    className="w-full gap-2"
+                    size="lg"
+                  >
+                    {generating ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Play className="h-5 w-5" />
+                        Generate Document
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+          {/* Templates List - only show if packet exists */}
+          {packet && packetTemplates.length > 0 && (
           <div className="section-card">
             <h3 className="text-lg font-semibold text-foreground mb-4">Templates in Packet</h3>
             
@@ -781,6 +863,7 @@ export const DealDocumentsPage: React.FC = () => {
               })}
             </div>
           </div>
+          )}
         </div>
 
         {/* Right Column - Status & History */}

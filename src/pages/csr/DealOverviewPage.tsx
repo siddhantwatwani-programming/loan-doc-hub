@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { resolvePacketFields } from '@/lib/requiredFieldsResolver';
+import { resolvePacketFields, resolveAllFields } from '@/lib/requiredFieldsResolver';
 import { ActivityLogViewer } from '@/components/deal/ActivityLogViewer';
 import { InviteParticipantsPanel } from '@/components/deal/InviteParticipantsPanel';
 import { useAuth } from '@/contexts/AuthContext';
@@ -116,69 +116,65 @@ export const DealOverviewPage: React.FC = () => {
           .single();
         
         setPacket(packetData);
+      }
 
-        // Use the resolver to get required fields
-        const resolved = await resolvePacketFields(dealData.packet_id);
-        setTotalRequiredFields(resolved.requiredFieldKeys.length);
+      // Use the resolver to get fields - works with or without packet
+      const resolved = dealData.packet_id 
+        ? await resolvePacketFields(dealData.packet_id)
+        : await resolveAllFields();
+      setTotalRequiredFields(resolved.requiredFieldKeys.length);
 
-        // Fetch field values for this deal
-        const { data: fieldValues } = await supabase
-          .from('deal_field_values')
-          .select('field_dictionary_id, value_text, value_number, value_date, updated_at, updated_by')
-          .eq('deal_id', id);
+      // Fetch section values for this deal
+      const { data: sectionValues } = await supabase
+        .from('deal_section_values')
+        .select('section, field_values, updated_at')
+        .eq('deal_id', id);
 
-        // Create a map of field_dictionary_id to field_key using resolved fields
-        const fieldDictIdToKeyMap = new Map<string, string>();
-        resolved.fields.forEach(f => fieldDictIdToKeyMap.set(f.field_dictionary_id, f.field_key));
+      // Create a map of field_dictionary_id to field_key using resolved fields
+      const fieldDictIdToKeyMap = new Map<string, string>();
+      resolved.fields.forEach(f => fieldDictIdToKeyMap.set(f.field_dictionary_id, f.field_key));
 
-        // Find filled field keys
-        const filledFieldKeys = new Set(
-          (fieldValues || [])
-            .filter((fv: any) => 
-              fv.value_text || fv.value_number !== null || fv.value_date
-            )
-            .map((fv: any) => fieldDictIdToKeyMap.get(fv.field_dictionary_id))
-            .filter(Boolean)
-        );
-
-        // Count filled required fields and missing required fields
-        const filledRequiredCount = resolved.fields.filter(
-          field => field.is_required && filledFieldKeys.has(field.field_key)
-        ).length;
-        const missingCount = resolved.requiredFieldKeys.length - filledRequiredCount;
-        
-        setTotalFilledRequiredFields(filledRequiredCount);
-        setTotalMissingRequired(missingCount);
-
-        // Get last updated info
-        if (fieldValues && fieldValues.length > 0) {
-          // Sort by updated_at to get most recent
-          const sorted = [...fieldValues].sort((a: any, b: any) => 
-            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-          );
-          const mostRecent = sorted[0] as any;
-          
-          if (mostRecent.updated_by) {
-            // Fetch user email from profiles
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('email, full_name')
-              .eq('user_id', mostRecent.updated_by)
-              .maybeSingle();
-
-            setLastUpdatedInfo({
-              updated_at: mostRecent.updated_at,
-              updated_by_email: profileData?.full_name || profileData?.email || 'Unknown',
-            });
-          } else {
-            setLastUpdatedInfo({
-              updated_at: mostRecent.updated_at,
-              updated_by_email: null,
-            });
+      // Find filled field keys from section values (JSONB format)
+      const filledFieldKeys = new Set<string>();
+      let mostRecentUpdate: { updated_at: string } | null = null;
+      
+      (sectionValues || []).forEach((sv: any) => {
+        const fieldValues = sv.field_values || {};
+        Object.entries(fieldValues).forEach(([fieldDictId, fieldData]: [string, any]) => {
+          const fieldKey = fieldDictIdToKeyMap.get(fieldDictId);
+          if (fieldKey && fieldData) {
+            const hasValue = fieldData.value_text || fieldData.value_number !== null || fieldData.value_date;
+            if (hasValue) {
+              filledFieldKeys.add(fieldKey);
+            }
           }
+        });
+        
+        // Track most recent update
+        if (sv.updated_at && (!mostRecentUpdate || new Date(sv.updated_at) > new Date(mostRecentUpdate.updated_at))) {
+          mostRecentUpdate = sv;
         }
+      });
 
-        // Fetch templates in packet for template breakdown
+      // Count filled required fields and missing required fields
+      const filledRequiredCount = resolved.fields.filter(
+        field => field.is_required && filledFieldKeys.has(field.field_key)
+      ).length;
+      const missingCount = resolved.requiredFieldKeys.length - filledRequiredCount;
+      
+      setTotalFilledRequiredFields(filledRequiredCount);
+      setTotalMissingRequired(missingCount);
+
+      // Get last updated info
+      if (mostRecentUpdate) {
+        setLastUpdatedInfo({
+          updated_at: (mostRecentUpdate as any).updated_at,
+          updated_by_email: null, // Section values don't track individual updated_by
+        });
+      }
+
+      // Fetch templates in packet for template breakdown (only if packet exists)
+      if (dealData.packet_id) {
         const { data: packetTemplates } = await supabase
           .from('packet_templates')
           .select('template_id, templates(id, name)')
@@ -361,8 +357,8 @@ export const DealOverviewPage: React.FC = () => {
               <Edit className="h-4 w-4" />
               Enter Data
             </Button>
-            {/* Documents Page Button */}
-            {isCsr && packet && (
+            {/* Documents Page Button - now works with or without packet */}
+            {isCsr && (
               <Button 
                 onClick={() => navigate(`/deals/${deal.id}/documents`)}
                 className="gap-2"

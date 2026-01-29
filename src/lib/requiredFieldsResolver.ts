@@ -40,7 +40,7 @@ export interface ResolvedFieldSet {
 
 // Section display order - main UI sections only
 // These are the primary sections shown in the CSR data entry tabs
-const SECTION_ORDER: FieldSection[] = [
+export const SECTION_ORDER: FieldSection[] = [
   'borrower',
   'co_borrower',
   'property',
@@ -56,6 +56,73 @@ const SECTION_ORDER: FieldSection[] = [
   'title',
   'other'
 ];
+
+/**
+ * Fallback resolver when no packet is assigned.
+ * Loads ALL fields from field_dictionary grouped by section.
+ * No fields are marked as required since there's no template mapping.
+ */
+export async function resolveAllFields(): Promise<ResolvedFieldSet> {
+  const { data: fieldDictEntries, error } = await supabase
+    .from('field_dictionary')
+    .select('*')
+    .in('section', SECTION_ORDER as any);
+
+  if (error) throw error;
+
+  const fields: ResolvedField[] = (fieldDictEntries || []).map(fd => ({
+    field_dictionary_id: fd.id,
+    field_key: fd.field_key,
+    label: fd.label,
+    section: fd.section,
+    data_type: fd.data_type,
+    description: fd.description,
+    default_value: fd.default_value,
+    is_calculated: fd.is_calculated,
+    is_repeatable: fd.is_repeatable,
+    validation_rule: fd.validation_rule,
+    is_required: false, // No required fields without packet
+    transform_rules: [],
+    calculation_formula: fd.calculation_formula || null,
+    calculation_dependencies: fd.calculation_dependencies || [],
+  }));
+
+  // Sort by section order, then by label
+  fields.sort((a, b) => {
+    const sectionOrderA = SECTION_ORDER.indexOf(a.section);
+    const sectionOrderB = SECTION_ORDER.indexOf(b.section);
+    if (sectionOrderA !== sectionOrderB) return sectionOrderA - sectionOrderB;
+    return a.label.localeCompare(b.label);
+  });
+
+  // Group by section
+  const fieldsBySection = fields.reduce((acc, field) => {
+    if (!acc[field.section]) {
+      acc[field.section] = [];
+    }
+    acc[field.section].push(field);
+    return acc;
+  }, {} as Record<FieldSection, ResolvedField[]>);
+
+  // Get sections in order that have fields
+  const sections = SECTION_ORDER.filter(section => 
+    fieldsBySection[section] && fieldsBySection[section].length > 0
+  );
+
+  // Build visible arrays
+  const visibleFieldIds = fields.map(f => f.field_dictionary_id);
+  const visibleFieldKeys = fields.map(f => f.field_key);
+
+  return {
+    visibleFieldIds,
+    visibleFieldKeys,
+    requiredFieldIds: [], // No required fields without packet
+    requiredFieldKeys: [], // No required fields without packet
+    fields,
+    fieldsBySection,
+    sections,
+  };
+}
 
 /**
  * Deterministic resolver that computes the required field set for a deal

@@ -443,16 +443,7 @@ export const DealDataEntryPage: React.FC = () => {
     );
   }
 
-  if (!deal.packet_id) {
-    return (
-      <div className="page-container text-center py-16">
-        <AlertCircle className="h-12 w-12 mx-auto text-warning mb-4" />
-        <h2 className="text-xl font-semibold text-foreground mb-2">No Packet Assigned</h2>
-        <p className="text-muted-foreground mb-4">This deal doesn't have a packet assigned. Please assign a packet first.</p>
-        <Button onClick={() => navigate(`/deals/${deal.id}`)}>Back to Deal</Button>
-      </div>
-    );
-  }
+  // Packet is no longer required - fields will load from field_dictionary if no packet
 
   return (
     <div className="page-container">
