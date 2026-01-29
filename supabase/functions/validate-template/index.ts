@@ -297,24 +297,24 @@ serve(async (req) => {
       }
     }
 
-    // 3. Fetch merge tag aliases from database
+    // 3. Fetch merge tag aliases from database (optional - used for legacy templates)
     const { data: aliases, error: aliasError } = await supabase
       .from("merge_tag_aliases")
       .select("tag_name, field_key, tag_type, replace_next, is_active")
       .eq("is_active", true);
 
+    // Gracefully handle missing aliases - they are optional now
     if (aliasError) {
-      console.error("Failed to fetch merge tag aliases:", aliasError);
+      console.log("[validate-template] Merge tag aliases unavailable (this is OK):", aliasError.message);
     }
 
-    // Build lookup maps
+    // Build lookup maps for legacy aliases
     const mergeTagMap = new Map<string, string>();
     const labelMap = new Map<string, { fieldKey: string; replaceNext?: string }>();
     
     for (const alias of (aliases || [])) {
       if (alias.tag_type === "merge_tag" || alias.tag_type === "f_code") {
         mergeTagMap.set(alias.tag_name, alias.field_key);
-        // Also add lowercase version for case-insensitive matching
         mergeTagMap.set(alias.tag_name.toLowerCase(), alias.field_key);
       } else if (alias.tag_type === "label") {
         labelMap.set(alias.tag_name, {
@@ -323,6 +323,8 @@ serve(async (req) => {
         });
       }
     }
+    
+    console.log(`[validate-template] Loaded ${mergeTagMap.size / 2} legacy aliases (optional)`);
 
     // 4. Fetch all field keys from dictionary for suggestions (and metadata if requested)
     const { data: fieldDictionaryData } = await supabase
@@ -425,9 +427,10 @@ serve(async (req) => {
           fieldDictionaryInfo: includeFieldDictionary ? dictInfo : undefined,
         });
         
-        // Add info message if resolved directly (no alias needed)
+        // Direct field_key resolution is now the primary method - no warning needed
+        // Only log for debugging purposes
         if (resolvedVia !== "alias") {
-          warnings.push(`Tag "${tag.tagName}" resolved directly to field "${fieldKey}" (${resolvedVia}) - no alias needed`);
+          console.log(`[validate-template] Tag "${tag.tagName}" resolved directly to "${fieldKey}" via ${resolvedVia}`);
         }
       } else {
         const suggestions = findSuggestions(tag.tagName, allFieldKeys);
@@ -467,11 +470,11 @@ serve(async (req) => {
 
     // Add validation errors
     if (unmappedTags.length > 0) {
-      errors.push(`${unmappedTags.length} tag(s) have no mapping and will not be replaced during document generation`);
+      errors.push(`${unmappedTags.length} tag(s) do not match any field_key in the Field Dictionary. Check spelling or add the field to the dictionary.`);
     }
 
     if (foundMergeTags.length === 0 && foundLabels.length === 0) {
-      warnings.push("No merge tags or labels found in this template. The document may not support data injection.");
+      warnings.push("No merge tags found. Use {{field_key}} format where field_key matches entries in the Field Dictionary.");
     }
 
     const result: ValidationResult = {

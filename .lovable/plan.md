@@ -1,129 +1,53 @@
-
-
 # Simplify Document Tag System: Use Field Keys Directly
 
-## Problem Statement
+## Status: ✅ COMPLETED
 
-The current system has two separate mapping layers:
-1. **Field Dictionary** - defines `field_key` like `Borrower.Address`
-2. **Merge Tag Aliases** - maps document tags to field keys
+## Summary
 
-This creates confusion because:
-- Users see `Borrower.Address` in the Field Dictionary
-- But templates might need `{{Borrower_Address}}` with an alias
-- Missing aliases cause silent failures during document generation
+The document generation system has been refactored to use `field_key` values directly from the Field Dictionary as document tags. This eliminates the need for mandatory merge tag aliases.
 
-## Proposed Solution
-
-Refactor the system to use `field_key` directly as the document tag, eliminating the mandatory alias requirement.
+## What Changed
 
 ### New Behavior
+- **Template tags like `{{Borrower.Address}}` now resolve directly** if `Borrower.Address` exists in the `field_dictionary` table
+- **No alias required** for standard field keys
+- **Case-insensitive matching** is supported
+- **Underscore-to-dot conversion** is automatic (e.g., `{{Borrower_Address}}` → `Borrower.Address`)
 
-| Template Tag | Lookup Order |
-|-------------|--------------|
-| `{{Borrower.Address}}` | 1. Check `merge_tag_aliases` for override<br>2. **NEW**: Check if `Borrower.Address` exists in `field_dictionary`<br>3. Case-insensitive fallback |
+### UI Changes
+- **Removed**: Tag Mapping admin screen (`/admin/tag-mapping`)
+- The Field Dictionary is now the single source of truth for document tags
 
-### Implementation Changes
-
-#### 1. Update `field-resolver.ts`
-
-Modify `resolveFieldKeyWithMap` to also query field_dictionary:
-
-```typescript
-export function resolveFieldKeyWithMap(
-  tagName: string, 
-  mergeTagMap: Record<string, string>,
-  validFieldKeys: Set<string>  // NEW: pass known field keys
-): string {
-  const cleanedTag = tagName.replace(/_+$/, "").trim();
-  
-  // Priority 1: Explicit alias mapping
-  if (mergeTagMap[tagName]) return mergeTagMap[tagName];
-  if (mergeTagMap[cleanedTag]) return mergeTagMap[cleanedTag];
-  
-  // Priority 2: Direct field_key match (exact or case-insensitive)
-  if (validFieldKeys.has(tagName)) return tagName;
-  if (validFieldKeys.has(cleanedTag)) return cleanedTag;
-  
-  // Case-insensitive check
-  const lowerTag = tagName.toLowerCase();
-  for (const key of validFieldKeys) {
-    if (key.toLowerCase() === lowerTag) return key;
-  }
-  
-  // Fallback: return as-is (might not match)
-  return tagName;
-}
-```
-
-#### 2. Update `generate-document/index.ts`
-
-Pass the set of valid field keys to the resolver:
-
-```typescript
-// Build set of valid field keys from field_dictionary
-const validFieldKeys = new Set<string>();
-allFieldDictEntries.forEach(fd => validFieldKeys.add(fd.field_key));
-
-// Pass to docx processor
-const processedDocx = await processDocx(
-  templateBuffer, 
-  fieldValues, 
-  fieldTransforms, 
-  mergeTagMap, 
-  labelMap,
-  validFieldKeys  // NEW parameter
-);
-```
-
-#### 3. Update `tag-parser.ts`
-
-Add `validFieldKeys` parameter to `replaceMergeTags`:
-
-```typescript
-export function replaceMergeTags(
-  content: string,
-  fieldValues: Map<string, FieldValueData>,
-  fieldTransforms: Map<string, string>,
-  mergeTagMap: Record<string, string>,
-  labelMap: Record<string, LabelMapping>,
-  validFieldKeys: Set<string>  // NEW
-): string {
-  // Use validFieldKeys in resolution
-}
-```
-
-### Files to Modify
-
-| File | Changes |
-|------|---------|
-| `supabase/functions/_shared/field-resolver.ts` | Add `validFieldKeys` parameter to resolution |
+### Files Modified
+| File | Change |
+|------|--------|
+| `supabase/functions/_shared/field-resolver.ts` | Added `validFieldKeys` parameter for direct resolution |
 | `supabase/functions/_shared/tag-parser.ts` | Pass `validFieldKeys` through to resolver |
 | `supabase/functions/_shared/docx-processor.ts` | Accept and forward `validFieldKeys` |
-| `supabase/functions/generate-document/index.ts` | Build `validFieldKeys` set and pass it |
-| `supabase/functions/validate-template/index.ts` | Same updates for validation |
+| `supabase/functions/generate-document/index.ts` | Build `validFieldKeys` set from `field_dictionary` |
+| `supabase/functions/validate-template/index.ts` | Same updates + clearer error messages |
+| `src/App.tsx` | Removed Tag Mapping route |
+| `src/components/layout/AppSidebar.tsx` | Removed Tag Mapping from navigation |
+| `src/pages/admin/TagMappingPage.tsx` | **Deleted** |
+
+### Resolution Priority
+1. Check `merge_tag_aliases` for explicit override (legacy support)
+2. Check if tag exists as `field_key` in `field_dictionary` (exact match)
+3. Case-insensitive match against `field_dictionary`
+4. Underscore-to-dot conversion match
 
 ### Backward Compatibility
+The `merge_tag_aliases` table is retained for:
+- Legacy templates using F-codes or non-standard naming
+- Label-based replacement with `replaceNext` logic
+- Explicit overrides when needed
 
-The `merge_tag_aliases` table remains for:
-- **Legacy templates** using non-standard naming (underscores, F-codes)
-- **Static labels** requiring `replaceNext` logic
-- **Explicit overrides** when needed
+But for new templates, simply use `{{field_key}}` directly from the Field Dictionary.
 
-But for new templates, you can simply use `{{Borrower.Address}}` directly if that's the `field_key` in the dictionary.
+## How to Use
 
-### Validation Enhancement
+1. **Find the field key** in Admin → Field Dictionary (e.g., `Borrower.Name`)
+2. **Use that exact key** in your DOCX template: `{{Borrower.Name}}`
+3. **Generate document** - the value will be replaced automatically
 
-Update template validation to show:
-- Tags that match field_keys directly (valid)
-- Tags that match via alias (valid)
-- Tags with no match (requires alias or dictionary entry)
-
-### Summary
-
-After this change:
-1. **Template authors** can use `{{field_key}}` directly from the Field Dictionary
-2. **Aliases remain optional** for legacy/special cases
-3. **Validation** clearly shows which tags are resolved and how
-4. **No silent failures** - unresolved tags are explicitly flagged
-
+No mapping configuration needed!

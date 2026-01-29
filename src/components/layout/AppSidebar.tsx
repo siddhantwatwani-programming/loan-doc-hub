@@ -20,7 +20,6 @@ import {
   ChevronDown,
   ChevronRight,
   Eye,
-  Tags,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
@@ -60,13 +59,12 @@ const externalItems: NavItem[] = [
   { label: 'My Deals', icon: FolderOpen, path: '/deals', roles: ['borrower', 'broker', 'lender'] },
 ];
 
-// Top-level admin items (moved out of Configuration)
+// Top-level admin items
 const adminItems: NavItem[] = [
   { label: 'User Management', icon: Users, path: '/admin/users', roles: ['admin'] },
   { label: 'Templates', icon: FileText, path: '/admin/templates', roles: ['admin'] },
   { label: 'Field Dictionary', icon: Key, path: '/admin/fields', roles: ['admin'] },
   { label: 'Field Mapping', icon: Link, path: '/admin/field-maps', roles: ['admin'] },
-  { label: 'Tag Mapping', icon: Tags, path: '/admin/tag-mapping', roles: ['admin'] },
 ];
 
 // Simplified Configuration group - only Packets and Settings
