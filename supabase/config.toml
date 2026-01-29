@@ -2,3 +2,6 @@ project_id = "rdnefvczlzsdoijdvoxt"
 
 [functions.generate-document]
 verify_jwt = false
+
+[functions.validate-template]
+verify_jwt = false

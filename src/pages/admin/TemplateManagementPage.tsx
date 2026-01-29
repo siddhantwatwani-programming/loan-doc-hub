@@ -38,7 +38,8 @@ import {
   AlertTriangle,
   XCircle,
   ClipboardCheck,
-  AlertCircle
+  AlertCircle,
+  Scan
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -51,6 +52,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { TemplateValidationDialog } from '@/components/admin/TemplateValidationDialog';
 
 interface Template {
   id: string;
@@ -93,6 +95,37 @@ interface ValidationResult {
   validFields: string[];
 }
 
+interface DocxValidationResult {
+  valid: boolean;
+  totalTagsFound: number;
+  mappedTags: {
+    tag: string;
+    tagName: string;
+    tagType: 'merge_tag' | 'label' | 'f_code' | 'curly_brace';
+    fieldKey: string | null;
+    mapped: boolean;
+    suggestions?: string[];
+  }[];
+  unmappedTags: {
+    tag: string;
+    tagName: string;
+    tagType: 'merge_tag' | 'label' | 'f_code' | 'curly_brace';
+    fieldKey: string | null;
+    mapped: boolean;
+    suggestions?: string[];
+  }[];
+  warnings: string[];
+  errors: string[];
+  summary: {
+    mergeTagCount: number;
+    labelCount: number;
+    fCodeCount: number;
+    curlyBraceCount: number;
+    mappedCount: number;
+    unmappedCount: number;
+  };
+}
+
 const US_STATES = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
   'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
@@ -126,6 +159,10 @@ export const TemplateManagementPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingDocx, setUploadingDocx] = useState(false);
   const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [isDocxValidationOpen, setIsDocxValidationOpen] = useState(false);
+  const [docxValidating, setDocxValidating] = useState(false);
+  const [docxValidationResult, setDocxValidationResult] = useState<DocxValidationResult | null>(null);
+  const [docxValidationTemplateName, setDocxValidationTemplateName] = useState('');
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -459,6 +496,56 @@ export const TemplateManagementPage: React.FC = () => {
       setIsValidationOpen(false);
     } finally {
       setValidating(false);
+    }
+  };
+
+  const handleValidateDocxTags = async (template: Template) => {
+    if (!template.file_path) {
+      toast({
+        title: 'No DOCX file',
+        description: 'This template has no DOCX file to validate',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setDocxValidating(true);
+    setIsDocxValidationOpen(true);
+    setDocxValidationResult(null);
+    setDocxValidationTemplateName(`${template.name} v${template.version}`);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/validate-template`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ templateId: template.id }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Validation failed');
+      }
+
+      const result = await response.json();
+      setDocxValidationResult(result);
+    } catch (error: any) {
+      console.error('DOCX validation error:', error);
+      toast({
+        title: 'Validation Failed',
+        description: error.message || 'Failed to validate template DOCX',
+        variant: 'destructive',
+      });
+      setIsDocxValidationOpen(false);
+    } finally {
+      setDocxValidating(false);
     }
   };
 
@@ -1117,6 +1204,13 @@ export const TemplateManagementPage: React.FC = () => {
                             <ClipboardCheck className="h-4 w-4 mr-2" />
                             Validate Mapping
                           </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleValidateDocxTags(template)}
+                            disabled={!template.file_path}
+                          >
+                            <Scan className="h-4 w-4 mr-2" />
+                            Validate DOCX Tags
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => handleEdit(template)}>
                             <Pencil className="h-4 w-4 mr-2" />
@@ -1144,6 +1238,22 @@ export const TemplateManagementPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* DOCX Tag Validation Dialog */}
+      <TemplateValidationDialog
+        open={isDocxValidationOpen}
+        onOpenChange={setIsDocxValidationOpen}
+        templateName={docxValidationTemplateName}
+        validating={docxValidating}
+        result={docxValidationResult}
+        onCreateMapping={(tagName, fieldKey) => {
+          // Navigate to tag mapping page or show inline create form
+          toast({
+            title: 'Create Mapping',
+            description: `Create mapping: ${tagName} → ${fieldKey}`,
+          });
+        }}
+      />
     </div>
   );
 };

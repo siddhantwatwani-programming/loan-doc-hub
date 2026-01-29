@@ -289,6 +289,7 @@ export type Database = {
           allowed_roles: string[] | null
           calculation_dependencies: string[] | null
           calculation_formula: string | null
+          canonical_key: string | null
           created_at: string
           data_type: Database["public"]["Enums"]["field_data_type"]
           default_value: string | null
@@ -307,6 +308,7 @@ export type Database = {
           allowed_roles?: string[] | null
           calculation_dependencies?: string[] | null
           calculation_formula?: string | null
+          canonical_key?: string | null
           created_at?: string
           data_type?: Database["public"]["Enums"]["field_data_type"]
           default_value?: string | null
@@ -325,6 +327,7 @@ export type Database = {
           allowed_roles?: string[] | null
           calculation_dependencies?: string[] | null
           calculation_formula?: string | null
+          canonical_key?: string | null
           created_at?: string
           data_type?: Database["public"]["Enums"]["field_data_type"]
           default_value?: string | null
@@ -338,6 +341,36 @@ export type Database = {
           section?: Database["public"]["Enums"]["field_section"]
           updated_at?: string
           validation_rule?: string | null
+        }
+        Relationships: []
+      }
+      field_key_migrations: {
+        Row: {
+          created_at: string
+          id: string
+          migrated_at: string | null
+          new_key: string
+          old_key: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          migrated_at?: string | null
+          new_key: string
+          old_key: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          migrated_at?: string | null
+          new_key?: string
+          old_key?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -895,6 +928,7 @@ export type Database = {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
       }
+      resolve_canonical_key: { Args: { p_field_key: string }; Returns: string }
       validate_magic_link: {
         Args: { _token: string }
         Returns: {
