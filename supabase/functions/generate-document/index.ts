@@ -149,6 +149,15 @@ async function generateSingleDocument(
 
     console.log(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);
 
+    // Build set of ALL valid field keys from the complete field_dictionary (for direct tag matching)
+    const { data: completeFieldDictionary } = await supabase
+      .from("field_dictionary")
+      .select("field_key");
+    
+    const validFieldKeys = new Set<string>();
+    (completeFieldDictionary || []).forEach((fd: any) => validFieldKeys.add(fd.field_key));
+    console.log(`[generate-document] Built validFieldKeys set with ${validFieldKeys.size} entries`);
+
     // 4. Download template DOCX from storage
     let fileData: Blob | null = null;
     
@@ -192,7 +201,7 @@ async function generateSingleDocument(
     // 5. Fetch merge tag mappings and process the DOCX
     const { mergeTagMap, labelMap } = await fetchMergeTagMappings(supabase);
     const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
-    const processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, labelMap);
+    const processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
 
     console.log(`[generate-document] Processed DOCX: ${processedDocx.length} bytes`);
 

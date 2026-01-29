@@ -193,13 +193,15 @@ export function replaceLabelBasedFields(
 
 /**
  * Main function to replace all merge tags in content
+ * @param validFieldKeys - Set of valid field keys from field_dictionary for direct matching
  */
 export function replaceMergeTags(
   content: string,
   fieldValues: Map<string, FieldValueData>,
   fieldTransforms: Map<string, string>,
   mergeTagMap: Record<string, string>,
-  labelMap: Record<string, LabelMapping>
+  labelMap: Record<string, LabelMapping>,
+  validFieldKeys?: Set<string>
 ): string {
   // First normalize the XML to handle fragmented merge fields
   let result = normalizeWordXml(content);
@@ -208,7 +210,8 @@ export function replaceMergeTags(
   const tags = parseWordMergeFields(result);
   
   for (const tag of tags) {
-    const canonicalKey = resolveFieldKeyWithMap(tag.tagName, mergeTagMap);
+    // Use validFieldKeys for direct field_key resolution
+    const canonicalKey = resolveFieldKeyWithMap(tag.tagName, mergeTagMap, validFieldKeys);
     const resolved = getFieldData(canonicalKey, fieldValues);
     const fieldData = resolved?.data;
     let resolvedValue = "";

@@ -331,7 +331,10 @@ serve(async (req) => {
     
     const allFieldKeys = (fieldDictionaryData || []).map(fd => fd.field_key);
     
-    // Build a map for quick lookup of field dictionary info
+    // Build a Set for efficient O(1) lookups (used for direct field_key matching)
+    const validFieldKeys = new Set<string>(allFieldKeys);
+    
+    // Build a map for quick lookup of field dictionary info (case-insensitive)
     const fieldDictMap = new Map<string, {
       id: string;
       label: string;
@@ -356,6 +359,8 @@ serve(async (req) => {
         description: fd.description,
       });
     }
+    
+    console.log(`[validate-template] Built validFieldKeys set with ${validFieldKeys.size} entries`);
 
     // 5. Find all tags in the document
     const foundMergeTags = findMergeTags(allRawXml);
@@ -369,7 +374,45 @@ serve(async (req) => {
 
     // Process merge tags
     for (const tag of foundMergeTags) {
-      const fieldKey = mergeTagMap.get(tag.tagName) || mergeTagMap.get(tag.tagName.toLowerCase());
+      // Priority 1: Check explicit alias mapping
+      let fieldKey = mergeTagMap.get(tag.tagName) || mergeTagMap.get(tag.tagName.toLowerCase());
+      let resolvedVia = "alias";
+      
+      // Priority 2: Check direct field_key match (new behavior)
+      if (!fieldKey) {
+        // Exact match
+        if (validFieldKeys.has(tag.tagName)) {
+          fieldKey = tag.tagName;
+          resolvedVia = "direct";
+        }
+        // Case-insensitive match
+        else {
+          const lowerTag = tag.tagName.toLowerCase();
+          for (const key of validFieldKeys) {
+            if (key.toLowerCase() === lowerTag) {
+              fieldKey = key;
+              resolvedVia = "direct_case_insensitive";
+              break;
+            }
+          }
+        }
+        // Try underscore-to-dot conversion
+        if (!fieldKey) {
+          const dotVersion = tag.tagName.replace(/_/g, ".");
+          if (validFieldKeys.has(dotVersion)) {
+            fieldKey = dotVersion;
+            resolvedVia = "direct_underscore_converted";
+          } else {
+            for (const key of validFieldKeys) {
+              if (key.toLowerCase() === dotVersion.toLowerCase()) {
+                fieldKey = key;
+                resolvedVia = "direct_underscore_case_insensitive";
+                break;
+              }
+            }
+          }
+        }
+      }
       
       if (fieldKey) {
         const dictInfo = includeFieldDictionary ? (fieldDictMap.get(fieldKey) || fieldDictMap.get(fieldKey.toLowerCase()) || null) : undefined;
@@ -381,35 +424,21 @@ serve(async (req) => {
           mapped: true,
           fieldDictionaryInfo: includeFieldDictionary ? dictInfo : undefined,
         });
-      } else {
-        // Check if it's in the field dictionary directly
-        const directMatch = allFieldKeys.find(fk => 
-          fk.toLowerCase() === tag.tagName.toLowerCase() ||
-          fk.toLowerCase().replace(/\./g, '_') === tag.tagName.toLowerCase()
-        );
         
-        if (directMatch) {
-          const dictInfo = includeFieldDictionary ? (fieldDictMap.get(directMatch) || fieldDictMap.get(directMatch.toLowerCase()) || null) : undefined;
-          mappedTags.push({
-            tag: tag.tag,
-            tagName: tag.tagName,
-            tagType: tag.tagType,
-            fieldKey: directMatch,
-            mapped: true,
-            fieldDictionaryInfo: includeFieldDictionary ? dictInfo : undefined,
-          });
-          warnings.push(`Tag "${tag.tagName}" maps directly to field "${directMatch}" but has no alias entry`);
-        } else {
-          const suggestions = findSuggestions(tag.tagName, allFieldKeys);
-          unmappedTags.push({
-            tag: tag.tag,
-            tagName: tag.tagName,
-            tagType: tag.tagType,
-            fieldKey: null,
-            mapped: false,
-            suggestions,
-          });
+        // Add info message if resolved directly (no alias needed)
+        if (resolvedVia !== "alias") {
+          warnings.push(`Tag "${tag.tagName}" resolved directly to field "${fieldKey}" (${resolvedVia}) - no alias needed`);
         }
+      } else {
+        const suggestions = findSuggestions(tag.tagName, allFieldKeys);
+        unmappedTags.push({
+          tag: tag.tag,
+          tagName: tag.tagName,
+          tagType: tag.tagType,
+          fieldKey: null,
+          mapped: false,
+          suggestions,
+        });
       }
     }
 

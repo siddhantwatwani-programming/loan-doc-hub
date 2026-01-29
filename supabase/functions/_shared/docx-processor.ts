@@ -11,13 +11,15 @@ import { replaceMergeTags } from "./tag-parser.ts";
 
 /**
  * Process a DOCX file by replacing merge tags with field values
+ * @param validFieldKeys - Set of valid field keys from field_dictionary for direct matching
  */
 export async function processDocx(
   docxBuffer: Uint8Array,
   fieldValues: Map<string, FieldValueData>,
   fieldTransforms: Map<string, string>,
   mergeTagMap: Record<string, string>,
-  labelMap: Record<string, LabelMapping>
+  labelMap: Record<string, LabelMapping>,
+  validFieldKeys?: Set<string>
 ): Promise<Uint8Array> {
   const decompressed = fflate.unzipSync(docxBuffer);
   const processedFiles: { [key: string]: Uint8Array } = {};
@@ -26,7 +28,7 @@ export async function processDocx(
     if (filename.endsWith(".xml") || filename.endsWith(".rels")) {
       const decoder = new TextDecoder("utf-8");
       let xmlContent = decoder.decode(content);
-      xmlContent = replaceMergeTags(xmlContent, fieldValues, fieldTransforms, mergeTagMap, labelMap);
+      xmlContent = replaceMergeTags(xmlContent, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
       const encoder = new TextEncoder();
       processedFiles[filename] = encoder.encode(xmlContent);
     } else {
