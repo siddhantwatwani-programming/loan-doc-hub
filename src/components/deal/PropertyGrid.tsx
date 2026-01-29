@@ -14,7 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Plus, Settings, X } from 'lucide-react';
+import { Plus, Settings, X, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface PropertyData {
@@ -35,8 +35,12 @@ export interface PropertyData {
   loanPriority: string;
 }
 
+// PropertyGridColumn interface moved below PropertyColumnKey type
+
+type PropertyColumnKey = keyof PropertyData | 'actions';
+
 interface PropertyGridColumn {
-  key: keyof PropertyData;
+  key: PropertyColumnKey;
   label: string;
   visible: boolean;
 }
@@ -56,11 +60,13 @@ const DEFAULT_COLUMNS: PropertyGridColumn[] = [
   { key: 'ltv', label: 'LTV', visible: true },
   { key: 'apn', label: 'APN', visible: true },
   { key: 'loanPriority', label: 'Loan Priority', visible: true },
+  { key: 'actions', label: 'Actions', visible: true },
 ];
 
 interface PropertyGridProps {
   properties: PropertyData[];
   onPropertySelect: (property: PropertyData) => void;
+  onEditProperty: (property: PropertyData) => void;
   onAddProperty: () => void;
   onPrimaryChange: (propertyId: string, isPrimary: boolean) => void;
   disabled?: boolean;
@@ -69,6 +75,7 @@ interface PropertyGridProps {
 export const PropertyGrid: React.FC<PropertyGridProps> = ({
   properties,
   onPropertySelect,
+  onEditProperty,
   onAddProperty,
   onPrimaryChange,
   disabled = false,
@@ -81,7 +88,7 @@ export const PropertyGrid: React.FC<PropertyGridProps> = ({
     [columns]
   );
 
-  const toggleColumn = (key: keyof PropertyData) => {
+  const toggleColumn = (key: PropertyColumnKey) => {
     setColumns((prev) =>
       prev.map((col) =>
         col.key === key ? { ...col, visible: !col.visible } : col
@@ -99,7 +106,25 @@ export const PropertyGrid: React.FC<PropertyGridProps> = ({
     property: PropertyData,
     column: PropertyGridColumn
   ): React.ReactNode => {
-    const value = property[column.key];
+    if (column.key === 'actions') {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEditProperty(property);
+          }}
+          disabled={disabled}
+          className="gap-1"
+        >
+          <Pencil className="h-4 w-4" />
+          Edit
+        </Button>
+      );
+    }
+
+    const value = property[column.key as keyof PropertyData];
 
     if (column.key === 'isPrimary') {
       return (
