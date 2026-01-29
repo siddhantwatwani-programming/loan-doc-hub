@@ -68,10 +68,40 @@ export async function fetchMergeTagMappings(supabase: any): Promise<MergeTagMapp
 
 /**
  * Resolve a tag name to its canonical field key using the mapping
+ * Priority: 1. Explicit alias 2. Direct field_key match 3. Case-insensitive fallback
  */
-export function resolveFieldKeyWithMap(tagName: string, mergeTagMap: Record<string, string>): string {
+export function resolveFieldKeyWithMap(
+  tagName: string, 
+  mergeTagMap: Record<string, string>,
+  validFieldKeys?: Set<string>
+): string {
   const cleanedTag = tagName.replace(/_+$/, "").trim();
-  return mergeTagMap[tagName] || mergeTagMap[cleanedTag] || tagName;
+  
+  // Priority 1: Explicit alias mapping
+  if (mergeTagMap[tagName]) return mergeTagMap[tagName];
+  if (mergeTagMap[cleanedTag]) return mergeTagMap[cleanedTag];
+  
+  // Priority 2: Direct field_key match (if validFieldKeys provided)
+  if (validFieldKeys) {
+    if (validFieldKeys.has(tagName)) return tagName;
+    if (validFieldKeys.has(cleanedTag)) return cleanedTag;
+    
+    // Case-insensitive check against field dictionary
+    const lowerTag = tagName.toLowerCase();
+    for (const key of validFieldKeys) {
+      if (key.toLowerCase() === lowerTag) return key;
+    }
+    
+    // Also try with underscores converted to dots
+    const dotVersion = tagName.replace(/_/g, ".");
+    if (validFieldKeys.has(dotVersion)) return dotVersion;
+    for (const key of validFieldKeys) {
+      if (key.toLowerCase() === dotVersion.toLowerCase()) return key;
+    }
+  }
+  
+  // Fallback: return as-is (might not match)
+  return tagName;
 }
 
 /**
