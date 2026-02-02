@@ -1,14 +1,19 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export type BorrowerSubSection = 'primary' | 'additional_guarantor' | 'banking' | 'tax_detail';
+export type BorrowerSubSection = 'borrowers' | 'primary' | 'additional_guarantor' | 'banking' | 'tax_detail';
 
 interface BorrowerSubNavigationProps {
   activeSubSection: BorrowerSubSection;
   onSubSectionChange: (subSection: BorrowerSubSection) => void;
+  showDetailTabs?: boolean;
 }
 
-const SUB_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
+const TABLE_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
+  { key: 'borrowers', label: 'Borrowers' },
+];
+
+const DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
   { key: 'primary', label: 'Primary' },
   { key: 'additional_guarantor', label: 'Additional Guarantor' },
   { key: 'banking', label: 'Banking' },
@@ -18,10 +23,13 @@ const SUB_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
 export const BorrowerSubNavigation: React.FC<BorrowerSubNavigationProps> = ({
   activeSubSection,
   onSubSectionChange,
+  showDetailTabs = false,
 }) => {
+  const sections = showDetailTabs ? DETAIL_SECTIONS : TABLE_SECTIONS;
+
   return (
     <div className="flex flex-col border-r border-border bg-background min-w-[180px]">
-      {SUB_SECTIONS.map((section) => (
+      {sections.map((section) => (
         <button
           key={section.key}
           onClick={() => onSubSectionChange(section.key)}
