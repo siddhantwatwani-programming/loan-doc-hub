@@ -21,7 +21,6 @@ interface BorrowerSubNavigationProps {
 
 const TABLE_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
   { key: 'borrowers', label: 'Borrowers' },
-  { key: 'co_borrowers', label: 'Co-Borrowers' },
 ];
 
 const BORROWER_DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
@@ -29,6 +28,7 @@ const BORROWER_DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
   { key: 'additional_guarantor', label: 'Additional Guarantor' },
   { key: 'banking', label: 'Banking' },
   { key: 'tax_detail', label: 'Tax Details' },
+  { key: 'co_borrowers', label: 'Co-Borrowers' },
 ];
 
 const COBORROWER_DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
