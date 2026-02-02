@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export type BorrowerSubSection = 'borrowers' | 'primary' | 'additional_guarantor' | 'banking' | 'tax_detail';
+export type BorrowerSubSection = 'borrowers' | 'co_borrowers' | 'primary' | 'additional_guarantor' | 'banking' | 'tax_detail';
 
 interface BorrowerSubNavigationProps {
   activeSubSection: BorrowerSubSection;
@@ -11,6 +11,7 @@ interface BorrowerSubNavigationProps {
 
 const TABLE_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
   { key: 'borrowers', label: 'Borrowers' },
+  { key: 'co_borrowers', label: 'Co-Borrowers' },
 ];
 
 const DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] = [

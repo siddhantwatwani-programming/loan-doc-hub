@@ -3,7 +3,9 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BorrowerSubNavigation, type BorrowerSubSection } from './BorrowerSubNavigation';
 import { BorrowersTableView, type BorrowerData } from './BorrowersTableView';
+import { CoBorrowersTableView, type CoBorrowerData } from './CoBorrowersTableView';
 import { BorrowerModal } from './BorrowerModal';
+import { CoBorrowerModal } from './CoBorrowerModal';
 import { BorrowerPrimaryForm } from './BorrowerPrimaryForm';
 import { BorrowerAdditionalGuarantorForm } from './BorrowerAdditionalGuarantorForm';
 import { BorrowerBankingForm } from './BorrowerBankingForm';
@@ -96,6 +98,92 @@ const getNextBorrowerPrefix = (values: Record<string, string>): string => {
   return `borrower${nextNum}`;
 };
 
+// Helper to extract co-borrowers from values based on coborrower prefix pattern
+const extractCoBorrowersFromValues = (values: Record<string, string>): CoBorrowerData[] => {
+  const coBorrowers: CoBorrowerData[] = [];
+  const coBorrowerPrefixes = new Set<string>();
+  
+  // Find all co-borrower prefixes (coborrower1, coborrower2, etc.)
+  Object.keys(values).forEach(key => {
+    const match = key.match(/^(coborrower\d+)\./);
+    if (match) {
+      coBorrowerPrefixes.add(match[1]);
+    }
+  });
+  
+  // Also check for base coborrower prefix (coborrower. without number)
+  const hasCoBorrowerBase = Object.keys(values).some(key => 
+    key.startsWith('coborrower.') && !key.match(/^coborrower\d+\./)
+  );
+  if (hasCoBorrowerBase) {
+    coBorrowerPrefixes.add('coborrower');
+  }
+  
+  // Build co-borrower objects from values
+  coBorrowerPrefixes.forEach(prefix => {
+    const coBorrower: CoBorrowerData = {
+      id: prefix,
+      fullName: values[`${prefix}.full_name`] || '',
+      firstName: values[`${prefix}.first_name`] || '',
+      middleName: values[`${prefix}.middle_name`] || '',
+      lastName: values[`${prefix}.last_name`] || '',
+      salutation: values[`${prefix}.salutation`] || '',
+      generation: values[`${prefix}.generation`] || '',
+      email: values[`${prefix}.email`] || '',
+      homePhone: values[`${prefix}.phone.home`] || '',
+      workPhone: values[`${prefix}.phone.work`] || '',
+      mobilePhone: values[`${prefix}.phone.mobile`] || '',
+      fax: values[`${prefix}.fax`] || '',
+      street: values[`${prefix}.address.street`] || '',
+      city: values[`${prefix}.address.city`] || '',
+      state: values[`${prefix}.state`] || '',
+      zipCode: values[`${prefix}.address.zip`] || '',
+      loanNumber: values[`${prefix}.loan_number`] || '',
+      tin: values[`${prefix}.tin`] || '',
+      relation: values[`${prefix}.relation`] || 'None',
+      type: values[`${prefix}.type`] || 'Co-Borrower',
+      dob: values[`${prefix}.dob`] || '',
+      creditReporting: values[`${prefix}.credit_reporting`] === 'true',
+      resCode: values[`${prefix}.res_code`] || '',
+      addressIndicator: values[`${prefix}.address_indicator`] || '',
+      sendBorrowerNotifications: values[`${prefix}.send_borrower_notifications`] === 'true',
+      format: values[`${prefix}.format`] || 'HTML',
+      deliveryPrint: values[`${prefix}.delivery_print`] !== 'false',
+      deliveryEmail: values[`${prefix}.delivery_email`] === 'true',
+      deliverySms: values[`${prefix}.delivery_sms`] === 'true',
+    };
+    coBorrowers.push(coBorrower);
+  });
+  
+  // Sort coborrower, coborrower1, coborrower2, etc.
+  coBorrowers.sort((a, b) => {
+    if (a.id === 'coborrower') return -1;
+    if (b.id === 'coborrower') return 1;
+    const numA = parseInt(a.id.replace('coborrower', '')) || 0;
+    const numB = parseInt(b.id.replace('coborrower', '')) || 0;
+    return numA - numB;
+  });
+  
+  return coBorrowers;
+};
+
+// Get the next available co-borrower prefix
+const getNextCoBorrowerPrefix = (values: Record<string, string>): string => {
+  const coBorrowerPrefixes = new Set<string>();
+  Object.keys(values).forEach(key => {
+    const match = key.match(/^(coborrower\d+)\./);
+    if (match) {
+      coBorrowerPrefixes.add(match[1]);
+    }
+  });
+  
+  let nextNum = 1;
+  while (coBorrowerPrefixes.has(`coborrower${nextNum}`)) {
+    nextNum++;
+  }
+  return `coborrower${nextNum}`;
+};
+
 export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   fields,
   values,
@@ -110,12 +198,20 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   const [editingBorrower, setEditingBorrower] = useState<BorrowerData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Co-Borrower state
+  const [coBorrowerModalOpen, setCoBorrowerModalOpen] = useState(false);
+  const [editingCoBorrower, setEditingCoBorrower] = useState<CoBorrowerData | null>(null);
+  const [coBorrowerCurrentPage, setCoBorrowerCurrentPage] = useState(1);
 
-  // Check if we're in detail view (any sub-section other than 'borrowers')
-  const isDetailView = activeSubSection !== 'borrowers';
+  // Check if we're in detail view (any sub-section other than 'borrowers' or 'co_borrowers')
+  const isDetailView = activeSubSection !== 'borrowers' && activeSubSection !== 'co_borrowers';
 
   // Extract borrowers from values
   const allBorrowers = useMemo(() => extractBorrowersFromValues(values), [values]);
+  
+  // Extract co-borrowers from values
+  const allCoBorrowers = useMemo(() => extractCoBorrowersFromValues(values), [values]);
   
   // Paginated borrowers
   const totalPages = Math.max(1, Math.ceil(allBorrowers.length / ITEMS_PER_PAGE));
@@ -123,6 +219,13 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return allBorrowers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [allBorrowers, currentPage]);
+  
+  // Paginated co-borrowers
+  const coBorrowerTotalPages = Math.max(1, Math.ceil(allCoBorrowers.length / ITEMS_PER_PAGE));
+  const paginatedCoBorrowers = useMemo(() => {
+    const startIndex = (coBorrowerCurrentPage - 1) * ITEMS_PER_PAGE;
+    return allCoBorrowers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [allCoBorrowers, coBorrowerCurrentPage]);
 
   // Handle adding a new borrower
   const handleAddBorrower = useCallback(() => {
@@ -202,6 +305,66 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     setCurrentPage(page);
   }, []);
 
+  // Co-Borrower handlers
+  const handleAddCoBorrower = useCallback(() => {
+    setEditingCoBorrower(null);
+    setCoBorrowerModalOpen(true);
+  }, []);
+
+  const handleEditCoBorrower = useCallback((coBorrower: CoBorrowerData) => {
+    setEditingCoBorrower(coBorrower);
+    setCoBorrowerModalOpen(true);
+  }, []);
+
+  const handleCoBorrowerRowClick = useCallback((coBorrower: CoBorrowerData) => {
+    // For now, open the edit modal when clicking a row
+    setEditingCoBorrower(coBorrower);
+    setCoBorrowerModalOpen(true);
+  }, []);
+
+  const handleSaveCoBorrower = useCallback((coBorrowerData: CoBorrowerData) => {
+    setIsLoading(true);
+    
+    const prefix = editingCoBorrower ? editingCoBorrower.id : getNextCoBorrowerPrefix(values);
+    
+    // Save all co-borrower fields
+    onValueChange(`${prefix}.full_name`, coBorrowerData.fullName);
+    onValueChange(`${prefix}.first_name`, coBorrowerData.firstName);
+    onValueChange(`${prefix}.middle_name`, coBorrowerData.middleName);
+    onValueChange(`${prefix}.last_name`, coBorrowerData.lastName);
+    onValueChange(`${prefix}.salutation`, coBorrowerData.salutation);
+    onValueChange(`${prefix}.generation`, coBorrowerData.generation);
+    onValueChange(`${prefix}.email`, coBorrowerData.email);
+    onValueChange(`${prefix}.phone.home`, coBorrowerData.homePhone);
+    onValueChange(`${prefix}.phone.work`, coBorrowerData.workPhone);
+    onValueChange(`${prefix}.phone.mobile`, coBorrowerData.mobilePhone);
+    onValueChange(`${prefix}.fax`, coBorrowerData.fax);
+    onValueChange(`${prefix}.address.street`, coBorrowerData.street);
+    onValueChange(`${prefix}.address.city`, coBorrowerData.city);
+    onValueChange(`${prefix}.state`, coBorrowerData.state);
+    onValueChange(`${prefix}.address.zip`, coBorrowerData.zipCode);
+    onValueChange(`${prefix}.loan_number`, coBorrowerData.loanNumber);
+    onValueChange(`${prefix}.tin`, coBorrowerData.tin);
+    onValueChange(`${prefix}.relation`, coBorrowerData.relation);
+    onValueChange(`${prefix}.type`, coBorrowerData.type);
+    onValueChange(`${prefix}.dob`, coBorrowerData.dob);
+    onValueChange(`${prefix}.credit_reporting`, String(coBorrowerData.creditReporting));
+    onValueChange(`${prefix}.res_code`, coBorrowerData.resCode);
+    onValueChange(`${prefix}.address_indicator`, coBorrowerData.addressIndicator);
+    onValueChange(`${prefix}.send_borrower_notifications`, String(coBorrowerData.sendBorrowerNotifications));
+    onValueChange(`${prefix}.format`, coBorrowerData.format);
+    onValueChange(`${prefix}.delivery_print`, String(coBorrowerData.deliveryPrint));
+    onValueChange(`${prefix}.delivery_email`, String(coBorrowerData.deliveryEmail));
+    onValueChange(`${prefix}.delivery_sms`, String(coBorrowerData.deliverySms));
+    
+    setCoBorrowerModalOpen(false);
+    setIsLoading(false);
+  }, [editingCoBorrower, values, onValueChange]);
+
+  const handleCoBorrowerPageChange = useCallback((page: number) => {
+    setCoBorrowerCurrentPage(page);
+  }, []);
+
   // Create borrower-specific values for the detail forms
   const getBorrowerSpecificValues = useCallback((): Record<string, string> => {
     const result: Record<string, string> = {};
@@ -246,6 +409,20 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={handlePageChange}
+          />
+        );
+      case 'co_borrowers':
+        return (
+          <CoBorrowersTableView
+            coBorrowers={paginatedCoBorrowers}
+            onAddCoBorrower={handleAddCoBorrower}
+            onEditCoBorrower={handleEditCoBorrower}
+            onRowClick={handleCoBorrowerRowClick}
+            disabled={disabled}
+            isLoading={isLoading}
+            currentPage={coBorrowerCurrentPage}
+            totalPages={coBorrowerTotalPages}
+            onPageChange={handleCoBorrowerPageChange}
           />
         );
       case 'primary':
@@ -340,6 +517,15 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
         borrower={editingBorrower}
         onSave={handleSaveBorrower}
         isEdit={!!editingBorrower}
+      />
+
+      {/* Add/Edit Co-Borrower Modal */}
+      <CoBorrowerModal
+        open={coBorrowerModalOpen}
+        onOpenChange={setCoBorrowerModalOpen}
+        coBorrower={editingCoBorrower}
+        onSave={handleSaveCoBorrower}
+        isEdit={!!editingCoBorrower}
       />
     </>
   );
