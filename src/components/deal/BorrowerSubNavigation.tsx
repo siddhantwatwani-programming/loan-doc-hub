@@ -1,12 +1,22 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export type BorrowerSubSection = 'borrowers' | 'co_borrowers' | 'primary' | 'additional_guarantor' | 'banking' | 'tax_detail';
+export type BorrowerSubSection = 
+  | 'borrowers' 
+  | 'co_borrowers' 
+  | 'primary' 
+  | 'additional_guarantor' 
+  | 'banking' 
+  | 'tax_detail'
+  | 'coborrower_primary'
+  | 'coborrower_banking'
+  | 'coborrower_tax_detail';
 
 interface BorrowerSubNavigationProps {
   activeSubSection: BorrowerSubSection;
   onSubSectionChange: (subSection: BorrowerSubSection) => void;
   showDetailTabs?: boolean;
+  isCoBorrowerDetail?: boolean;
 }
 
 const TABLE_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
@@ -14,19 +24,32 @@ const TABLE_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
   { key: 'co_borrowers', label: 'Co-Borrowers' },
 ];
 
-const DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
+const BORROWER_DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
   { key: 'primary', label: 'Primary' },
   { key: 'additional_guarantor', label: 'Additional Guarantor' },
   { key: 'banking', label: 'Banking' },
   { key: 'tax_detail', label: 'Tax Details' },
 ];
 
+const COBORROWER_DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
+  { key: 'coborrower_primary', label: 'Primary' },
+  { key: 'coborrower_banking', label: 'Banking' },
+  { key: 'coborrower_tax_detail', label: 'Tax Details' },
+];
+
 export const BorrowerSubNavigation: React.FC<BorrowerSubNavigationProps> = ({
   activeSubSection,
   onSubSectionChange,
   showDetailTabs = false,
+  isCoBorrowerDetail = false,
 }) => {
-  const sections = showDetailTabs ? DETAIL_SECTIONS : TABLE_SECTIONS;
+  let sections: { key: BorrowerSubSection; label: string }[];
+  
+  if (showDetailTabs) {
+    sections = isCoBorrowerDetail ? COBORROWER_DETAIL_SECTIONS : BORROWER_DETAIL_SECTIONS;
+  } else {
+    sections = TABLE_SECTIONS;
+  }
 
   return (
     <div className="flex flex-col border-r border-border bg-background min-w-[180px]">

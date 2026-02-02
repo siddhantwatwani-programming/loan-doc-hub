@@ -10,6 +10,9 @@ import { BorrowerPrimaryForm } from './BorrowerPrimaryForm';
 import { BorrowerAdditionalGuarantorForm } from './BorrowerAdditionalGuarantorForm';
 import { BorrowerBankingForm } from './BorrowerBankingForm';
 import { BorrowerTaxDetailForm } from './BorrowerTaxDetailForm';
+import { CoBorrowerPrimaryForm } from './CoBorrowerPrimaryForm';
+import { CoBorrowerBankingForm } from './CoBorrowerBankingForm';
+import { CoBorrowerTaxDetailForm } from './CoBorrowerTaxDetailForm';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -203,9 +206,12 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   const [coBorrowerModalOpen, setCoBorrowerModalOpen] = useState(false);
   const [editingCoBorrower, setEditingCoBorrower] = useState<CoBorrowerData | null>(null);
   const [coBorrowerCurrentPage, setCoBorrowerCurrentPage] = useState(1);
+  const [selectedCoBorrowerPrefix, setSelectedCoBorrowerPrefix] = useState<string>('coborrower');
 
   // Check if we're in detail view (any sub-section other than 'borrowers' or 'co_borrowers')
-  const isDetailView = activeSubSection !== 'borrowers' && activeSubSection !== 'co_borrowers';
+  const isBorrowerDetailView = ['primary', 'additional_guarantor', 'banking', 'tax_detail'].includes(activeSubSection);
+  const isCoBorrowerDetailView = ['coborrower_primary', 'coborrower_banking', 'coborrower_tax_detail'].includes(activeSubSection);
+  const isDetailView = isBorrowerDetailView || isCoBorrowerDetailView;
 
   // Extract borrowers from values
   const allBorrowers = useMemo(() => extractBorrowersFromValues(values), [values]);
@@ -247,8 +253,12 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
 
   // Handle back navigation
   const handleBackToTable = useCallback(() => {
-    setActiveSubSection('borrowers');
-  }, []);
+    if (isCoBorrowerDetailView) {
+      setActiveSubSection('co_borrowers');
+    } else {
+      setActiveSubSection('borrowers');
+    }
+  }, [isCoBorrowerDetailView]);
 
   // Handle primary borrower change - only one can be primary
   const handlePrimaryChange = useCallback((borrowerId: string, isPrimary: boolean) => {
@@ -317,9 +327,9 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   }, []);
 
   const handleCoBorrowerRowClick = useCallback((coBorrower: CoBorrowerData) => {
-    // For now, open the edit modal when clicking a row
-    setEditingCoBorrower(coBorrower);
-    setCoBorrowerModalOpen(true);
+    // Navigate to co-borrower detail view
+    setSelectedCoBorrowerPrefix(coBorrower.id);
+    setActiveSubSection('coborrower_primary');
   }, []);
 
   const handleSaveCoBorrower = useCallback((coBorrowerData: CoBorrowerData) => {
@@ -393,6 +403,38 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     const borrower = allBorrowers.find(b => b.id === selectedBorrowerPrefix);
     return borrower?.fullName || `${borrower?.firstName || ''} ${borrower?.lastName || ''}`.trim() || 'Borrower';
   }, [allBorrowers, selectedBorrowerPrefix]);
+
+  // Get selected co-borrower name for display
+  const selectedCoBorrowerName = useMemo(() => {
+    const coBorrower = allCoBorrowers.find(c => c.id === selectedCoBorrowerPrefix);
+    return coBorrower?.fullName || `${coBorrower?.firstName || ''} ${coBorrower?.lastName || ''}`.trim() || 'Co-Borrower';
+  }, [allCoBorrowers, selectedCoBorrowerPrefix]);
+
+  // Create co-borrower-specific values for the detail forms
+  const getCoBorrowerSpecificValues = useCallback((): Record<string, string> => {
+    const result: Record<string, string> = {};
+    Object.entries(values).forEach(([key, value]) => {
+      // Replace the current coborrower prefix with 'coborrower' for the form
+      if (key.startsWith(`${selectedCoBorrowerPrefix}.`)) {
+        const fieldName = key.replace(`${selectedCoBorrowerPrefix}.`, 'coborrower.');
+        result[fieldName] = value;
+      } else if (!key.match(/^coborrower\d+\./) && !key.startsWith('coborrower.')) {
+        // Include non-coborrower fields as-is
+        result[key] = value;
+      }
+    });
+    return result;
+  }, [values, selectedCoBorrowerPrefix]);
+
+  // Handle value change for co-borrower-specific forms
+  const handleCoBorrowerValueChange = useCallback((fieldKey: string, value: string) => {
+    // Replace 'coborrower.' with the selected coborrower prefix
+    const actualKey = fieldKey.replace('coborrower.', `${selectedCoBorrowerPrefix}.`);
+    onValueChange(actualKey, value);
+  }, [selectedCoBorrowerPrefix, onValueChange]);
+
+  // Get the display name for detail view header
+  const detailViewName = isCoBorrowerDetailView ? selectedCoBorrowerName : selectedBorrowerName;
 
   const renderSubSectionContent = () => {
     switch (activeSubSection) {
@@ -469,6 +511,39 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
             calculationResults={calculationResults}
           />
         );
+      case 'coborrower_primary':
+        return (
+          <CoBorrowerPrimaryForm
+            fields={fields}
+            values={getCoBorrowerSpecificValues()}
+            onValueChange={handleCoBorrowerValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+          />
+        );
+      case 'coborrower_banking':
+        return (
+          <CoBorrowerBankingForm
+            fields={fields}
+            values={getCoBorrowerSpecificValues()}
+            onValueChange={handleCoBorrowerValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+          />
+        );
+      case 'coborrower_tax_detail':
+        return (
+          <CoBorrowerTaxDetailForm
+            fields={fields}
+            values={getCoBorrowerSpecificValues()}
+            onValueChange={handleCoBorrowerValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+          />
+        );
       default:
         return null;
     }
@@ -477,7 +552,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   return (
     <>
       <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
-        {/* Back button and borrower name when in detail view */}
+        {/* Back button and borrower/co-borrower name when in detail view */}
         {isDetailView && (
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/20">
             <Button
@@ -490,7 +565,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
               Back
             </Button>
             <span className="text-sm font-medium text-foreground">
-              {selectedBorrowerName}
+              {detailViewName}
             </span>
           </div>
         )}
@@ -501,6 +576,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
             activeSubSection={activeSubSection}
             onSubSectionChange={setActiveSubSection}
             showDetailTabs={isDetailView}
+            isCoBorrowerDetail={isCoBorrowerDetailView}
           />
 
           {/* Sub-section content on the right */}
