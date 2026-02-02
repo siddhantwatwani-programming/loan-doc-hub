@@ -53,7 +53,6 @@ interface Deal {
 // Section labels for display (partial - only includes displayable main sections)
 const SECTION_LABELS: Partial<Record<FieldSection, string>> = {
   borrower: 'Borrower',
-  co_borrower: 'Co-Borrower',
   property: 'Property',
   loan_terms: 'Loan Terms',
   lender: 'Lenders',
