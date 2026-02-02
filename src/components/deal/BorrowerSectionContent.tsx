@@ -208,10 +208,14 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   const [coBorrowerCurrentPage, setCoBorrowerCurrentPage] = useState(1);
   const [selectedCoBorrowerPrefix, setSelectedCoBorrowerPrefix] = useState<string>('coborrower');
 
-  // Check if we're in detail view (any sub-section other than 'borrowers' or 'co_borrowers')
-  const isBorrowerDetailView = ['primary', 'additional_guarantor', 'banking', 'tax_detail'].includes(activeSubSection);
+  // Check if we're in detail view
+  // Borrower detail includes: primary, additional_guarantor, banking, tax_detail, AND co_borrowers (table within detail)
+  const isBorrowerDetailView = ['primary', 'additional_guarantor', 'banking', 'tax_detail', 'co_borrowers'].includes(activeSubSection);
   const isCoBorrowerDetailView = ['coborrower_primary', 'coborrower_banking', 'coborrower_tax_detail'].includes(activeSubSection);
   const isDetailView = isBorrowerDetailView || isCoBorrowerDetailView;
+  
+  // Check if we're viewing the co-borrowers table within borrower detail
+  const isViewingCoBorrowersTable = activeSubSection === 'co_borrowers';
 
   // Extract borrowers from values
   const allBorrowers = useMemo(() => extractBorrowersFromValues(values), [values]);
@@ -254,11 +258,16 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   // Handle back navigation
   const handleBackToTable = useCallback(() => {
     if (isCoBorrowerDetailView) {
+      // From co-borrower detail, go back to co-borrowers table (within borrower detail)
       setActiveSubSection('co_borrowers');
+    } else if (isViewingCoBorrowersTable) {
+      // From co-borrowers table, go back to borrowers table
+      setActiveSubSection('borrowers');
     } else {
+      // From borrower detail tabs, go back to borrowers table
       setActiveSubSection('borrowers');
     }
-  }, [isCoBorrowerDetailView]);
+  }, [isCoBorrowerDetailView, isViewingCoBorrowersTable]);
 
   // Handle primary borrower change - only one can be primary
   const handlePrimaryChange = useCallback((borrowerId: string, isPrimary: boolean) => {
@@ -434,7 +443,16 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   }, [selectedCoBorrowerPrefix, onValueChange]);
 
   // Get the display name for detail view header
-  const detailViewName = isCoBorrowerDetailView ? selectedCoBorrowerName : selectedBorrowerName;
+  const getDetailViewName = () => {
+    if (isCoBorrowerDetailView) {
+      return selectedCoBorrowerName;
+    } else if (isViewingCoBorrowersTable) {
+      return `${selectedBorrowerName} - Co-Borrowers`;
+    } else {
+      return selectedBorrowerName;
+    }
+  };
+  const detailViewName = getDetailViewName();
 
   const renderSubSectionContent = () => {
     switch (activeSubSection) {
