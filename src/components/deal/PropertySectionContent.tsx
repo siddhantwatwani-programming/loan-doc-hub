@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { PropertySubNavigation, type PropertySubSection } from './PropertySubNavigation';
 import { PropertyDetailsForm } from './PropertyDetailsForm';
 import { PropertyLegalDescriptionForm } from './PropertyLegalDescriptionForm';
@@ -94,8 +94,20 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<PropertyData | null>(null);
   
+  // Check if we're in detail view
+  const isDetailView = ['property_details', 'legal_description', 'liens', 'insurance', 'property_tax'].includes(activeSubSection);
+  
   // Extract properties from values
   const properties = extractPropertiesFromValues(values);
+
+  // Get the selected property name for detail view header
+  const selectedPropertyName = useMemo(() => {
+    const property = properties.find(p => p.id === selectedPropertyPrefix);
+    if (property) {
+      return property.description || property.street || `Property ${selectedPropertyPrefix.replace('property', '')}`;
+    }
+    return 'Property';
+  }, [properties, selectedPropertyPrefix]);
 
   // Handle adding a new property
   const handleAddProperty = useCallback(() => {
@@ -113,6 +125,11 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const handleRowClick = useCallback((property: PropertyData) => {
     setSelectedPropertyPrefix(property.id);
     setActiveSubSection('property_details');
+  }, []);
+
+  // Handle back navigation
+  const handleBackToTable = useCallback(() => {
+    setActiveSubSection('properties');
   }, []);
 
   // Handle primary property change - only one can be primary
@@ -264,6 +281,9 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         <PropertySubNavigation
           activeSubSection={activeSubSection}
           onSubSectionChange={setActiveSubSection}
+          isDetailView={isDetailView}
+          onBackToTable={handleBackToTable}
+          detailViewName={selectedPropertyName}
         />
 
         {/* Sub-section content on the right */}
