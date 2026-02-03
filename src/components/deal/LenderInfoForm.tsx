@@ -47,6 +47,9 @@ const FIELD_KEYS = {
   issue1099: 'lender.issue_1099',
   prepareCa881: 'lender.prepare_ca_881',
   taxedAs: 'lender.taxed_as',
+  lpLllpLlcTaxedAsCorp: 'lender.lp_lllp_llc_taxed_as_corp',
+  tinVerified: 'lender.tin_verified',
+  alternateReporting: 'lender.alternate_reporting',
   // Primary Address
   primaryStreet: 'lender.primary_address.street',
   primaryCity: 'lender.primary_address.city',
@@ -77,7 +80,15 @@ const FIELD_KEYS = {
   careOfZip: 'lender.care_of.zip',
   // Additional Details
   vesting: 'lender.vesting',
-  ford: 'lender.ford',
+  // FORD fields (8 inputs)
+  ford1: 'lender.ford.1',
+  ford2: 'lender.ford.2',
+  ford3: 'lender.ford.3',
+  ford4: 'lender.ford.4',
+  ford5: 'lender.ford.5',
+  ford6: 'lender.ford.6',
+  ford7: 'lender.ford.7',
+  ford8: 'lender.ford.8',
   loanId: 'lender.loan_id',
   loanType: 'lender.loan_type',
 } as const;
@@ -190,447 +201,517 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
 
   return (
     <div className="p-6 space-y-8">
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* Name Section */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Name</h3>
-          
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Lender Type</Label>
-              <Select
-                value={getValue('type')}
-                onValueChange={(value) => handleChange('type', value)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LENDER_TYPE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Lender ID</Label>
-              <Select
-                value={getValue('lenderId')}
-                onValueChange={(value) => handleChange('lenderId', value)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Select lender" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LENDER_ID_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Loan ID</Label>
-              <Input
-                value={getValue('loanId')}
-                disabled={true}
-                readOnly
-                className="h-8 bg-muted"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Loan Type</Label>
-              <Input
-                value={getValue('loanType')}
-                onChange={(e) => handleChange('loanType', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Full Name: If Entity, Use Entity</Label>
-              <Input
-                value={getValue('fullName')}
-                onChange={(e) => handleChange('fullName', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">First: If Entity, Use Signer</Label>
-              <Input
-                value={getValue('firstName')}
-                onChange={(e) => handleChange('firstName', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Middle</Label>
-              <Input
-                value={getValue('middleName')}
-                onChange={(e) => handleChange('middleName', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Last</Label>
-              <Input
-                value={getValue('lastName')}
-                onChange={(e) => handleChange('lastName', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Capacity</Label>
-              <Input
-                value={getValue('capacity')}
-                onChange={(e) => handleChange('capacity', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Email</Label>
-              <Input
-                type="email"
-                value={getValue('email')}
-                onChange={(e) => handleChange('email', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Tax ID Type</Label>
-              <Select
-                value={getValue('taxIdType')}
-                onValueChange={(value) => handleChange('taxIdType', value)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TAX_ID_TYPE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Tax ID</Label>
-              <Input
-                value={getValue('taxId')}
-                onChange={(e) => handleChange('taxId', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Issue 1099</Label>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={shouldForceNo1099 ? false : getBoolValue('issue1099')}
-                  onCheckedChange={(checked) => handleChange('issue1099', !!checked)}
-                  disabled={disabled || shouldForceNo1099}
-                />
-                {shouldForceNo1099 && (
-                  <span className="text-xs text-muted-foreground">
-                    (Auto: No{isAlwaysNo1099 ? ` for ${lenderType}` : ' - Taxed as Corp'})
-                  </span>
-                )}
-                {!shouldForceNo1099 && issue1099Mapping === 'Situational' && (
-                  <span className="text-xs text-muted-foreground">(Situational)</span>
-                )}
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Prepare CA 881</Label>
-              <Checkbox
-                checked={getBoolValue('prepareCa881')}
-                onCheckedChange={(checked) => handleChange('prepareCa881', !!checked)}
-                disabled={disabled}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Primary Address Section */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Primary Address</h3>
-          
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Street</Label>
-              <Input
-                value={getValue('primaryStreet')}
-                onChange={(e) => handleChange('primaryStreet', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">City</Label>
-              <Input
-                value={getValue('primaryCity')}
-                onChange={(e) => handleChange('primaryCity', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">State</Label>
-              <Input
-                value={getValue('primaryState')}
-                onChange={(e) => handleChange('primaryState', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">ZIP</Label>
-              <Input
-                value={getValue('primaryZip')}
-                onChange={(e) => handleChange('primaryZip', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-          </div>
-
-          {/* Mailing Address */}
-          <div className="flex items-center gap-4 border-b pb-2 mt-6">
-            <h3 className="text-sm font-semibold text-foreground">Mailing Address</h3>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground">(Same as Primary)</Label>
-              <Checkbox
-                checked={getBoolValue('isPrimary')}
-                onCheckedChange={handleSameAsPrimaryChange}
-                disabled={disabled}
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Street</Label>
-              <Input
-                value={getValue('mailingStreet')}
-                onChange={(e) => handleChange('mailingStreet', e.target.value)}
-                disabled={disabled || getBoolValue('isPrimary')}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">City</Label>
-              <Input
-                value={getValue('mailingCity')}
-                onChange={(e) => handleChange('mailingCity', e.target.value)}
-                disabled={disabled || getBoolValue('isPrimary')}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">State</Label>
-              <Input
-                value={getValue('mailingState')}
-                onChange={(e) => handleChange('mailingState', e.target.value)}
-                disabled={disabled || getBoolValue('isPrimary')}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">ZIP</Label>
-              <Input
-                value={getValue('mailingZip')}
-                onChange={(e) => handleChange('mailingZip', e.target.value)}
-                disabled={disabled || getBoolValue('isPrimary')}
-                className="h-8"
-              />
-            </div>
-          </div>
-
-          {/* Care Of / Attorney Address */}
-          <h3 className="text-sm font-semibold text-foreground border-b pb-2 mt-6">Care Of / Attorney Address</h3>
-          
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Street</Label>
-              <Input
-                value={getValue('careOfStreet')}
-                onChange={(e) => handleChange('careOfStreet', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">City</Label>
-              <Input
-                value={getValue('careOfCity')}
-                onChange={(e) => handleChange('careOfCity', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">State</Label>
-              <Input
-                value={getValue('careOfState')}
-                onChange={(e) => handleChange('careOfState', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">ZIP</Label>
-              <Input
-                value={getValue('careOfZip')}
-                onChange={(e) => handleChange('careOfZip', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Contact Preference Section (Phone + Preferred grouped together) */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Contact Preference</h3>
-          
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Preferred Phone</Label>
-              <Select
-                value={getValue('preferredPhone')}
-                onValueChange={(value) => handleChange('preferredPhone', value)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Select preferred" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PREFERRED_PHONE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Show only the selected phone input */}
-            {selectedPhoneOption && (
-              <div className="grid grid-cols-2 gap-2 items-center">
-                <Label className="text-sm text-muted-foreground">{selectedPhoneOption.label} Phone</Label>
-                <Input
-                  type="tel"
-                  value={getValue(selectedPhoneOption.fieldKey)}
-                  onChange={(e) => handleChange(selectedPhoneOption.fieldKey, e.target.value)}
-                  disabled={disabled}
-                  className="h-8"
-                  placeholder={`Enter ${selectedPhoneOption.label.toLowerCase()} phone`}
-                />
-              </div>
-            )}
-
-            {/* Show placeholder if no preferred selected */}
-            {!preferredPhone && (
-              <p className="text-xs text-muted-foreground italic">Select a preferred phone type above to enter the number</p>
-            )}
-          </div>
-
-          {/* Send Options - Grouped under Contact Preference */}
-          <h4 className="text-sm font-semibold text-foreground mt-6">Send:</h4>
-          
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Payment Notification</Label>
-              <Checkbox
-                checked={getBoolValue('sendPaymentNotification')}
-                onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)}
-                disabled={disabled}
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Late Notice</Label>
-              <Checkbox
-                checked={getBoolValue('sendLateNotice')}
-                onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)}
-                disabled={disabled}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Borrower Statement</Label>
-              <Checkbox
-                checked={getBoolValue('sendBorrowerStatement')}
-                onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)}
-                disabled={disabled}
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Maturity Notice</Label>
-              <Checkbox
-                checked={getBoolValue('sendMaturityNotice')}
-                onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)}
-                disabled={disabled}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Vesting Section */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Vesting</h3>
-          
-          <div className="space-y-3">
-            <Textarea
-              value={getValue('vesting')}
-              onChange={(e) => handleChange('vesting', e.target.value)}
+      {/* Name Section - Full Width */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-foreground border-b pb-2">Name</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Lender Type</Label>
+            <Select
+              value={getValue('type')}
+              onValueChange={(value) => handleChange('type', value)}
               disabled={disabled}
-              rows={4}
-              className="resize-none"
+            >
+              <SelectTrigger className="h-8">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                {LENDER_TYPE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Lender ID</Label>
+            <Select
+              value={getValue('lenderId')}
+              onValueChange={(value) => handleChange('lenderId', value)}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-8">
+                <SelectValue placeholder="Select lender" />
+              </SelectTrigger>
+              <SelectContent>
+                {LENDER_ID_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Loan ID</Label>
+            <Input
+              value={getValue('loanId')}
+              disabled={true}
+              readOnly
+              className="h-8 bg-muted"
             />
           </div>
 
-          <div className="mt-6">
-            <h4 className="text-sm font-semibold text-foreground mb-3">FORD</h4>
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Loan Type</Label>
             <Input
-              value={getValue('ford')}
-              onChange={(e) => handleChange('ford', e.target.value)}
+              value={getValue('loanType')}
+              onChange={(e) => handleChange('loanType', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Full Name: If Entity, Use Entity</Label>
+            <Input
+              value={getValue('fullName')}
+              onChange={(e) => handleChange('fullName', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">First: If Entity, Use Signer</Label>
+            <Input
+              value={getValue('firstName')}
+              onChange={(e) => handleChange('firstName', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Middle</Label>
+            <Input
+              value={getValue('middleName')}
+              onChange={(e) => handleChange('middleName', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Last</Label>
+            <Input
+              value={getValue('lastName')}
+              onChange={(e) => handleChange('lastName', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Capacity</Label>
+            <Input
+              value={getValue('capacity')}
+              onChange={(e) => handleChange('capacity', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Email</Label>
+            <Input
+              type="email"
+              value={getValue('email')}
+              onChange={(e) => handleChange('email', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Tax ID Type</Label>
+            <Select
+              value={getValue('taxIdType')}
+              onValueChange={(value) => handleChange('taxIdType', value)}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-8">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                {TAX_ID_TYPE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Tax ID</Label>
+            <Input
+              value={getValue('taxId')}
+              onChange={(e) => handleChange('taxId', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">LP/LLLP/LLC Taxed as Corp</Label>
+            <Checkbox
+              checked={getBoolValue('lpLllpLlcTaxedAsCorp')}
+              onCheckedChange={(checked) => handleChange('lpLllpLlcTaxedAsCorp', !!checked)}
+              disabled={disabled}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Issue 1099</Label>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={shouldForceNo1099 ? false : getBoolValue('issue1099')}
+                onCheckedChange={(checked) => handleChange('issue1099', !!checked)}
+                disabled={disabled || shouldForceNo1099}
+              />
+              {shouldForceNo1099 && (
+                <span className="text-xs text-muted-foreground">
+                  (Auto: No{isAlwaysNo1099 ? ` for ${lenderType}` : ' - Taxed as Corp'})
+                </span>
+              )}
+              {!shouldForceNo1099 && issue1099Mapping === 'Situational' && (
+                <span className="text-xs text-muted-foreground">(Situational)</span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">TIN Verified</Label>
+            <Checkbox
+              checked={getBoolValue('tinVerified')}
+              onCheckedChange={(checked) => handleChange('tinVerified', !!checked)}
+              disabled={disabled}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Alternate Reporting</Label>
+            <Checkbox
+              checked={getBoolValue('alternateReporting')}
+              onCheckedChange={(checked) => handleChange('alternateReporting', !!checked)}
+              disabled={disabled}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Prepare CA 881</Label>
+            <Checkbox
+              checked={getBoolValue('prepareCa881')}
+              onCheckedChange={(checked) => handleChange('prepareCa881', !!checked)}
+              disabled={disabled}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Primary Address Section - Full Width */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-foreground border-b pb-2">Primary Address</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Street</Label>
+            <Input
+              value={getValue('primaryStreet')}
+              onChange={(e) => handleChange('primaryStreet', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">City</Label>
+            <Input
+              value={getValue('primaryCity')}
+              onChange={(e) => handleChange('primaryCity', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">State</Label>
+            <Input
+              value={getValue('primaryState')}
+              onChange={(e) => handleChange('primaryState', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">ZIP</Label>
+            <Input
+              value={getValue('primaryZip')}
+              onChange={(e) => handleChange('primaryZip', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+        </div>
+
+        {/* Mailing Address */}
+        <div className="flex items-center gap-4 border-b pb-2 mt-6">
+          <h3 className="text-sm font-semibold text-foreground">Mailing Address</h3>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground">(Same as Primary)</Label>
+            <Checkbox
+              checked={getBoolValue('isPrimary')}
+              onCheckedChange={handleSameAsPrimaryChange}
+              disabled={disabled}
+            />
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Street</Label>
+            <Input
+              value={getValue('mailingStreet')}
+              onChange={(e) => handleChange('mailingStreet', e.target.value)}
+              disabled={disabled || getBoolValue('isPrimary')}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">City</Label>
+            <Input
+              value={getValue('mailingCity')}
+              onChange={(e) => handleChange('mailingCity', e.target.value)}
+              disabled={disabled || getBoolValue('isPrimary')}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">State</Label>
+            <Input
+              value={getValue('mailingState')}
+              onChange={(e) => handleChange('mailingState', e.target.value)}
+              disabled={disabled || getBoolValue('isPrimary')}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">ZIP</Label>
+            <Input
+              value={getValue('mailingZip')}
+              onChange={(e) => handleChange('mailingZip', e.target.value)}
+              disabled={disabled || getBoolValue('isPrimary')}
+              className="h-8"
+            />
+          </div>
+        </div>
+
+        {/* Care Of / Attorney Address */}
+        <h3 className="text-sm font-semibold text-foreground border-b pb-2 mt-6">Care Of / Attorney Address</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Street</Label>
+            <Input
+              value={getValue('careOfStreet')}
+              onChange={(e) => handleChange('careOfStreet', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">City</Label>
+            <Input
+              value={getValue('careOfCity')}
+              onChange={(e) => handleChange('careOfCity', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">State</Label>
+            <Input
+              value={getValue('careOfState')}
+              onChange={(e) => handleChange('careOfState', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">ZIP</Label>
+            <Input
+              value={getValue('careOfZip')}
+              onChange={(e) => handleChange('careOfZip', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Contact Preference Section - Full Width */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-foreground border-b pb-2">Contact Preference</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Preferred Phone</Label>
+            <Select
+              value={getValue('preferredPhone')}
+              onValueChange={(value) => handleChange('preferredPhone', value)}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-8">
+                <SelectValue placeholder="Select preferred" />
+              </SelectTrigger>
+              <SelectContent>
+                {PREFERRED_PHONE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Show only the selected phone input */}
+          {selectedPhoneOption && (
+            <div className="grid grid-cols-2 gap-2 items-center">
+              <Label className="text-sm text-muted-foreground">{selectedPhoneOption.label} Phone</Label>
+              <Input
+                type="tel"
+                value={getValue(selectedPhoneOption.fieldKey)}
+                onChange={(e) => handleChange(selectedPhoneOption.fieldKey, e.target.value)}
+                disabled={disabled}
+                className="h-8"
+                placeholder={`Enter ${selectedPhoneOption.label.toLowerCase()} phone`}
+              />
+            </div>
+          )}
+
+          {/* Show placeholder if no preferred selected */}
+          {!preferredPhone && (
+            <div className="grid grid-cols-2 gap-2 items-center">
+              <p className="text-xs text-muted-foreground italic col-span-2">Select a preferred phone type to enter the number</p>
+            </div>
+          )}
+        </div>
+
+        {/* Send Options - Grouped under Contact Preference */}
+        <h4 className="text-sm font-semibold text-foreground mt-6">Send:</h4>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Payment Notification</Label>
+            <Checkbox
+              checked={getBoolValue('sendPaymentNotification')}
+              onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)}
+              disabled={disabled}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Late Notice</Label>
+            <Checkbox
+              checked={getBoolValue('sendLateNotice')}
+              onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)}
+              disabled={disabled}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Borrower Statement</Label>
+            <Checkbox
+              checked={getBoolValue('sendBorrowerStatement')}
+              onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)}
+              disabled={disabled}
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <Label className="text-sm text-muted-foreground">Maturity Notice</Label>
+            <Checkbox
+              checked={getBoolValue('sendMaturityNotice')}
+              onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)}
+              disabled={disabled}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Vesting Section - Full Width */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-foreground border-b pb-2">Vesting</h3>
+        
+        <Textarea
+          value={getValue('vesting')}
+          onChange={(e) => handleChange('vesting', e.target.value)}
+          disabled={disabled}
+          rows={4}
+          className="resize-none w-full"
+        />
+
+        {/* FORD Section with 8 Inputs */}
+        <div className="mt-6">
+          <h4 className="text-sm font-semibold text-foreground mb-3">FORD</h4>
+          <div className="grid grid-cols-1 gap-2">
+            <Input
+              value={getValue('ford1')}
+              onChange={(e) => handleChange('ford1', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+            <Input
+              value={getValue('ford2')}
+              onChange={(e) => handleChange('ford2', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+            <Input
+              value={getValue('ford3')}
+              onChange={(e) => handleChange('ford3', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+            <Input
+              value={getValue('ford4')}
+              onChange={(e) => handleChange('ford4', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+            <Input
+              value={getValue('ford5')}
+              onChange={(e) => handleChange('ford5', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+            <Input
+              value={getValue('ford6')}
+              onChange={(e) => handleChange('ford6', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+            <Input
+              value={getValue('ford7')}
+              onChange={(e) => handleChange('ford7', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+            <Input
+              value={getValue('ford8')}
+              onChange={(e) => handleChange('ford8', e.target.value)}
               disabled={disabled}
               className="h-8"
             />
