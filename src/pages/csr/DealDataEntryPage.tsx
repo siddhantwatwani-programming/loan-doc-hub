@@ -768,6 +768,7 @@ export const DealDataEntryPage: React.FC = () => {
                     showValidation={showValidation}
                     disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
                     calculationResults={calculationResults}
+                    dealId={id || ''}
                   />
                 ) : section === 'lender' ? (
                   <LenderSectionContent
