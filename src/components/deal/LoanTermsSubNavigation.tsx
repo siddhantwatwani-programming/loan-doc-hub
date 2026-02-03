@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export type LoanTermsSubSection = 'balances_loan_details' | 'details' | 'funding';
+export type LoanTermsSubSection = 'balances_loan_details' | 'details' | 'funding' | 'penalties';
 
 interface LoanTermsSubNavigationProps {
   activeSubSection: LoanTermsSubSection;
@@ -12,6 +12,7 @@ const LOAN_TERMS_SECTIONS: { key: LoanTermsSubSection; label: string }[] = [
   { key: 'balances_loan_details', label: 'Balances & Loan Details' },
   { key: 'details', label: 'Details' },
   { key: 'funding', label: 'Funding' },
+  { key: 'penalties', label: 'Penalties' },
 ];
 
 export const LoanTermsSubNavigation: React.FC<LoanTermsSubNavigationProps> = ({
