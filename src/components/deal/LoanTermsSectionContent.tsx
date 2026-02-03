@@ -3,6 +3,7 @@ import { LoanTermsSubNavigation, type LoanTermsSubSection } from './LoanTermsSub
 import { LoanTermsBalancesForm } from './LoanTermsBalancesForm';
 import { LoanTermsDetailsForm } from './LoanTermsDetailsForm';
 import { LoanTermsFundingForm } from './LoanTermsFundingForm';
+import { LoanTermsPenaltiesForm } from './LoanTermsPenaltiesForm';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -61,6 +62,17 @@ export const LoanTermsSectionContent: React.FC<LoanTermsSectionContentProps> = (
             disabled={disabled}
             calculationResults={calculationResults}
             dealId={dealId}
+          />
+        );
+      case 'penalties':
+        return (
+          <LoanTermsPenaltiesForm
+            fields={fields}
+            values={values}
+            onValueChange={onValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
           />
         );
       default:
