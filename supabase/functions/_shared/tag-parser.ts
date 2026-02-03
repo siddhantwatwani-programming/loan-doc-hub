@@ -36,6 +36,16 @@ export function normalizeWordXml(xmlContent: string): string {
   const fragmentedUnderscore = /([A-Za-z0-9]+)(<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)_(<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)?([A-Za-z0-9]+)/g;
   result = result.replace(fragmentedUnderscore, "$1_$4");
   
+  // Handle fragmented curly brace patterns {{...}}
+  // Word splits tags like {{field_key}} into {{</w:t></w:r><w:r>field_key</w:t></w:r>}}
+  const curlyFragmentedPattern = /\{\{((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
+  result = result.replace(curlyFragmentedPattern, (match, pre, fieldName, post) => {
+    if (pre.includes("<") || post.includes("<")) {
+      console.log(`[tag-parser] Found fragmented curly tag, consolidating: {{${fieldName}}}`);
+    }
+    return `{{${fieldName}}}`;
+  });
+  
   return result;
 }
 
