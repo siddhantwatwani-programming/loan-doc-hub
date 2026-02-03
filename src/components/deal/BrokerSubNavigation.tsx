@@ -33,23 +33,25 @@ export const BrokerSubNavigation: React.FC<BrokerSubNavigationProps> = ({
 
   return (
     <div className="flex flex-col border-r border-border bg-background min-w-[180px]">
-      {/* Back button and detail name when in detail view */}
+      {/* Back button and detail name in breadcrumb style when in detail view */}
       {isDetailView && onBackToTable && (
         <div className="px-4 py-3 border-b border-border">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBackToTable}
-            className="gap-1 p-0 h-auto text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-          {detailViewName && (
-            <div className="mt-2 font-medium text-sm text-foreground truncate">
-              {detailViewName}
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBackToTable}
+              className="gap-1 p-0 h-auto text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            {detailViewName && (
+              <span className="font-medium text-sm text-foreground truncate">
+                {detailViewName}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
