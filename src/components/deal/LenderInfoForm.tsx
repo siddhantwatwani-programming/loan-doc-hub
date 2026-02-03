@@ -7,14 +7,35 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
-// Lender types that are Corporation-based (Issue 1099 = No)
-const CORPORATION_TYPES = ['LLC', 'C Corp / S Corp', 'IRA / ERISA', 'Investment Fund', 'Non-profit'];
+// Issue 1099 mapping based on Lender Type (per reference document)
+// Individual: Yes, Joint: Situational, Family Trust: Situational
+// LLC: Situational (if Taxed as Corp = No, otherwise Yes)
+// C Corp / S Corp: No, IRA / ERISA: No, 401K: No, Foreign Holder W-8: No, Non-profit: No
+const LENDER_TYPE_ISSUE_1099_MAP: Record<string, 'Yes' | 'No' | 'Situational'> = {
+  'Individual': 'Yes',
+  'Joint': 'Situational', // If "Taxed as Corp" is selected then No, otherwise Yes
+  'Family Trust': 'Situational', // If "Taxed as Corp" is selected then No, otherwise Yes
+  'LLC': 'Situational', // If "Taxed as Corp" is selected then No, otherwise Yes
+  'C Corp / S Corp': 'No',
+  'IRA / ERISA': 'No',
+  'Investment Fund': 'Situational', // If "Taxed as Corp" is selected then No, otherwise Yes
+  '401k': 'No',
+  'Foreign Holder W-8': 'No',
+  'Non-profit': 'No',
+};
+
+// Types that are always "No" for Issue 1099 (cannot be overridden)
+const ALWAYS_NO_1099_TYPES = ['C Corp / S Corp', 'IRA / ERISA', '401k', 'Foreign Holder W-8', 'Non-profit'];
+
+// Taxed as Corporation types (when selected, Issue 1099 = No for situational types)
+const TAXED_AS_CORP_OPTIONS = ['Corporation', 'C Corp', 'S Corp'];
 
 // Field key mapping for lender info fields
 const FIELD_KEYS = {
   // Lender Details
   type: 'lender.type',
   id: 'lender.id',
+  lenderId: 'lender.lender_id',
   fullName: 'lender.full_name',
   firstName: 'lender.first_name',
   middleName: 'lender.middle_name',
@@ -61,25 +82,34 @@ const FIELD_KEYS = {
   loanType: 'lender.loan_type',
 } as const;
 
-// Lender type options with Issue 1099 mapping
+// Lender type options
 const LENDER_TYPE_OPTIONS = [
-  { value: 'Individual', label: 'Individual', issue1099: 'Yes' },
-  { value: 'Joint', label: 'Joint', issue1099: 'Yes' },
-  { value: 'Family Trust', label: 'Family Trust', issue1099: 'Yes' },
-  { value: 'LLC', label: 'LLC', issue1099: 'No' },
-  { value: 'C Corp / S Corp', label: 'C Corp / S Corp', issue1099: 'No' },
-  { value: 'IRA / ERISA', label: 'IRA / ERISA', issue1099: 'No' },
-  { value: 'Investment Fund', label: 'Investment Fund', issue1099: 'No' },
-  { value: '401k', label: '401k', issue1099: 'No' },
-  { value: 'Pension Holder W-4', label: 'Pension Holder W-4', issue1099: 'No' },
-  { value: 'Non-profit', label: 'Non-profit', issue1099: 'No' },
+  { value: 'Individual', label: 'Individual' },
+  { value: 'Joint', label: 'Joint' },
+  { value: 'Family Trust', label: 'Family Trust' },
+  { value: 'LLC', label: 'LLC' },
+  { value: 'C Corp / S Corp', label: 'C Corp / S Corp' },
+  { value: 'IRA / ERISA', label: 'IRA / ERISA' },
+  { value: 'Investment Fund', label: 'Investment Fund' },
+  { value: '401k', label: '401k' },
+  { value: 'Foreign Holder W-8', label: 'Foreign Holder W-8' },
+  { value: 'Non-profit', label: 'Non-profit' },
 ];
 
-// Preferred phone options
-const PREFERRED_OPTIONS = [
-  { value: 'Home', label: 'Home' },
-  { value: 'Work', label: 'Work' },
-  { value: 'Cell', label: 'Cell' },
+// Preferred phone options with corresponding field keys
+const PREFERRED_PHONE_OPTIONS = [
+  { value: 'Home', label: 'Home', fieldKey: 'phoneHome' as const },
+  { value: 'Work', label: 'Work', fieldKey: 'phoneWork' as const },
+  { value: 'Cell', label: 'Cell', fieldKey: 'phoneCell' as const },
+  { value: 'Fax', label: 'Fax', fieldKey: 'phoneFax' as const },
+];
+
+// Lender ID options (primary, secondary, etc.)
+const LENDER_ID_OPTIONS = [
+  { value: 'Primary', label: 'Primary' },
+  { value: 'Secondary', label: 'Secondary' },
+  { value: 'Tertiary', label: 'Tertiary' },
+  { value: 'Quaternary', label: 'Quaternary' },
 ];
 
 // Tax ID type options
@@ -129,17 +159,33 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
     }
   };
 
-  // Auto-derive Issue 1099 based on Lender Type
+  // Auto-derive Issue 1099 based on Lender Type and Taxed As
   const lenderType = getValue('type');
-  const isCorporationType = CORPORATION_TYPES.includes(lenderType);
-  const issue1099Derived = isCorporationType ? 'No' : (getBoolValue('issue1099') ? 'Yes' : 'No');
+  const taxedAs = getValue('taxedAs');
+  const preferredPhone = getValue('preferredPhone');
+  
+  // Get the Issue 1099 mapping for this lender type
+  const issue1099Mapping = LENDER_TYPE_ISSUE_1099_MAP[lenderType] || 'Yes';
+  
+  // Determine if 1099 should be forced to No
+  const isAlwaysNo1099 = ALWAYS_NO_1099_TYPES.includes(lenderType);
+  const isTaxedAsCorp = TAXED_AS_CORP_OPTIONS.includes(taxedAs);
+  
+  // For situational types, check if taxed as corp
+  const shouldForceNo1099 = isAlwaysNo1099 || (issue1099Mapping === 'Situational' && isTaxedAsCorp);
+  
+  // Get the selected preferred phone option
+  const selectedPhoneOption = PREFERRED_PHONE_OPTIONS.find(opt => opt.value === preferredPhone);
 
-  // Update Issue 1099 automatically when lender type changes
+  // Update Issue 1099 automatically when lender type or taxed as changes
   useEffect(() => {
-    if (isCorporationType && getBoolValue('issue1099')) {
+    if (shouldForceNo1099 && getBoolValue('issue1099')) {
       handleChange('issue1099', false);
+    } else if (!shouldForceNo1099 && issue1099Mapping === 'Yes' && !getBoolValue('issue1099')) {
+      // Auto-set to Yes for Individual type
+      handleChange('issue1099', true);
     }
-  }, [lenderType]);
+  }, [lenderType, taxedAs]);
 
 
   return (
@@ -172,12 +218,22 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Lender ID</Label>
-              <Input
-                value={getValue('id')}
-                onChange={(e) => handleChange('id', e.target.value)}
+              <Select
+                value={getValue('lenderId')}
+                onValueChange={(value) => handleChange('lenderId', value)}
                 disabled={disabled}
-                className="h-8"
-              />
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="Select lender" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LENDER_ID_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-2 items-center">
@@ -295,12 +351,17 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               <Label className="text-sm text-muted-foreground">Issue 1099</Label>
               <div className="flex items-center gap-2">
                 <Checkbox
-                  checked={isCorporationType ? false : getBoolValue('issue1099')}
+                  checked={shouldForceNo1099 ? false : getBoolValue('issue1099')}
                   onCheckedChange={(checked) => handleChange('issue1099', !!checked)}
-                  disabled={disabled || isCorporationType}
+                  disabled={disabled || shouldForceNo1099}
                 />
-                {isCorporationType && (
-                  <span className="text-xs text-muted-foreground">(Auto: No for {lenderType})</span>
+                {shouldForceNo1099 && (
+                  <span className="text-xs text-muted-foreground">
+                    (Auto: No{isAlwaysNo1099 ? ` for ${lenderType}` : ' - Taxed as Corp'})
+                  </span>
+                )}
+                {!shouldForceNo1099 && issue1099Mapping === 'Situational' && (
+                  <span className="text-xs text-muted-foreground">(Situational)</span>
                 )}
               </div>
             </div>
@@ -479,7 +540,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   <SelectValue placeholder="Select preferred" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PREFERRED_OPTIONS.map((option) => (
+                  {PREFERRED_PHONE_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -487,54 +548,26 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <h4 className="text-sm font-semibold text-foreground mt-4">Phone</h4>
-          
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Home</Label>
-              <Input
-                type="tel"
-                value={getValue('phoneHome')}
-                onChange={(e) => handleChange('phoneHome', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Work</Label>
-              <Input
-                type="tel"
-                value={getValue('phoneWork')}
-                onChange={(e) => handleChange('phoneWork', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Cell</Label>
-              <Input
-                type="tel"
-                value={getValue('phoneCell')}
-                onChange={(e) => handleChange('phoneCell', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Fax</Label>
-              <Input
-                type="tel"
-                value={getValue('phoneFax')}
-                onChange={(e) => handleChange('phoneFax', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
+            {/* Show only the selected phone input */}
+            {selectedPhoneOption && (
+              <div className="grid grid-cols-2 gap-2 items-center">
+                <Label className="text-sm text-muted-foreground">{selectedPhoneOption.label} Phone</Label>
+                <Input
+                  type="tel"
+                  value={getValue(selectedPhoneOption.fieldKey)}
+                  onChange={(e) => handleChange(selectedPhoneOption.fieldKey, e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                  placeholder={`Enter ${selectedPhoneOption.label.toLowerCase()} phone`}
+                />
+              </div>
+            )}
+
+            {/* Show placeholder if no preferred selected */}
+            {!preferredPhone && (
+              <p className="text-xs text-muted-foreground italic">Select a preferred phone type above to enter the number</p>
+            )}
           </div>
 
           {/* Send Options - Grouped under Contact Preference */}
