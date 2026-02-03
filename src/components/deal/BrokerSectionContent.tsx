@@ -1,4 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { BrokerSubNavigation, BrokerSubSection } from './BrokerSubNavigation';
 import { BrokerInfoForm } from './BrokerInfoForm';
 import { BrokerBankingForm } from './BrokerBankingForm';
@@ -213,42 +215,39 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
     }
   };
 
-  // Render table view full-width (without left navigation)
-  if (activeSubSection === 'brokers') {
-    return (
-      <>
-        <div className="border border-border rounded-lg bg-background">
-          {renderSubSectionContent()}
-        </div>
-
-        {/* Add/Edit Broker Modal */}
-        <BrokerModal
-          open={modalOpen}
-          onOpenChange={setModalOpen}
-          broker={editingBroker}
-          onSave={handleSaveBroker}
-          isEdit={!!editingBroker}
-        />
-      </>
-    );
-  }
-
-  // Render detail view with left navigation
   return (
     <>
-      <div className="flex border border-border rounded-lg bg-background">
-        {/* Sub-navigation tabs on the left */}
-        <BrokerSubNavigation
-          activeSubSection={activeSubSection}
-          onSubSectionChange={setActiveSubSection}
-          isDetailView={isDetailView}
-          onBackToTable={handleBackToTable}
-          detailViewName={selectedBrokerName}
-        />
+      <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
+        {/* Full-width breadcrumb header when in detail view */}
+        {isDetailView && (
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/20">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBackToTable}
+              className="gap-1 h-8"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <span className="text-sm font-medium text-foreground">
+              {selectedBrokerName}
+            </span>
+          </div>
+        )}
 
-        {/* Sub-section content on the right */}
-        <div className="flex-1 min-w-0 overflow-auto">
-          {renderSubSectionContent()}
+        <div className="flex flex-1">
+          {/* Sub-navigation tabs on the left - only shown in detail view */}
+          <BrokerSubNavigation
+            activeSubSection={activeSubSection}
+            onSubSectionChange={setActiveSubSection}
+            isDetailView={isDetailView}
+          />
+
+          {/* Sub-section content on the right */}
+          <div className="flex-1 min-w-0 overflow-auto">
+            {renderSubSectionContent()}
+          </div>
         </div>
       </div>
 
