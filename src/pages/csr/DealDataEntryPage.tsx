@@ -16,6 +16,7 @@ import { BorrowerSectionContent } from '@/components/deal/BorrowerSectionContent
 import { LenderSectionContent } from '@/components/deal/LenderSectionContent';
 import { PropertySectionContent } from '@/components/deal/PropertySectionContent';
 import { BrokerSectionContent } from '@/components/deal/BrokerSectionContent';
+import { LoanTermsSectionContent } from '@/components/deal/LoanTermsSectionContent';
 import { 
   logDealUpdated, 
   logDealMarkedReady, 
@@ -746,6 +747,18 @@ export const DealDataEntryPage: React.FC = () => {
                   />
                 ) : section === 'property' ? (
                   <PropertySectionContent
+                    fields={isExternalUser 
+                      ? (visibleFieldsBySection[section] || [])
+                      : (fieldsBySection[section] || [])
+                    }
+                    values={values}
+                    onValueChange={updateValue}
+                    showValidation={showValidation}
+                    disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                    calculationResults={calculationResults}
+                  />
+                ) : section === 'loan_terms' ? (
+                  <LoanTermsSectionContent
                     fields={isExternalUser 
                       ? (visibleFieldsBySection[section] || [])
                       : (fieldsBySection[section] || [])
