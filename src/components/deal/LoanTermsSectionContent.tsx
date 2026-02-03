@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { LoanTermsSubNavigation, type LoanTermsSubSection } from './LoanTermsSubNavigation';
 import { LoanTermsBalancesForm } from './LoanTermsBalancesForm';
 import { LoanTermsDetailsForm } from './LoanTermsDetailsForm';
+import { LoanTermsFundingForm } from './LoanTermsFundingForm';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -12,6 +13,7 @@ interface LoanTermsSectionContentProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  dealId?: string;
 }
 
 export const LoanTermsSectionContent: React.FC<LoanTermsSectionContentProps> = ({
@@ -21,6 +23,7 @@ export const LoanTermsSectionContent: React.FC<LoanTermsSectionContentProps> = (
   showValidation = false,
   disabled = false,
   calculationResults = {},
+  dealId = '',
 }) => {
   const [activeSubSection, setActiveSubSection] = useState<LoanTermsSubSection>('balances_loan_details');
 
@@ -46,6 +49,18 @@ export const LoanTermsSectionContent: React.FC<LoanTermsSectionContentProps> = (
             showValidation={showValidation}
             disabled={disabled}
             calculationResults={calculationResults}
+          />
+        );
+      case 'funding':
+        return (
+          <LoanTermsFundingForm
+            fields={fields}
+            values={values}
+            onValueChange={onValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+            dealId={dealId}
           />
         );
       default:
