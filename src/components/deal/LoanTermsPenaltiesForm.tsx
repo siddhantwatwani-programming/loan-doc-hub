@@ -31,43 +31,40 @@ const DistributionFields: React.FC<{
 
   return (
     <div className="space-y-3">
-      <h4 className="text-sm font-medium text-foreground">Distribution</h4>
+      <h3 className="font-semibold text-foreground border-b border-border pb-2">Distribution</h3>
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Lenders</Label>
+        <div className="space-y-2">
+          <Label>Lenders</Label>
           <Input
             value={values[`${prefix}.distribution.lenders`] || ''}
             onChange={(e) => onValueChange(`${prefix}.distribution.lenders`, e.target.value)}
             disabled={disabled}
-            className="h-8 text-sm"
           />
         </div>
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Origination Vendors</Label>
+        <div className="space-y-2">
+          <Label>Origination Vendors</Label>
           <Input
             value={values[`${prefix}.distribution.origination_vendors`] || ''}
             onChange={(e) => onValueChange(`${prefix}.distribution.origination_vendors`, e.target.value)}
             disabled={disabled}
-            className="h-8 text-sm"
           />
         </div>
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Company</Label>
+        <div className="space-y-2">
+          <Label>Company</Label>
           <Input
             value={values[`${prefix}.distribution.company`] || ''}
             onChange={(e) => onValueChange(`${prefix}.distribution.company`, e.target.value)}
             disabled={disabled}
-            className="h-8 text-sm"
           />
         </div>
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Other</Label>
+        <div className="space-y-2">
+          <Label>Other</Label>
           <div className="flex gap-2">
             <Input
               value={values[`${prefix}.distribution.other`] || ''}
               onChange={(e) => onValueChange(`${prefix}.distribution.other`, e.target.value)}
               disabled={disabled}
-              className="h-8 text-sm flex-1"
+              className="flex-1"
             />
             {showOther && (
               <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
@@ -111,103 +108,103 @@ const LateChargeColumn: React.FC<{
 }> = ({ title, prefix, values, onValueChange, disabled, showTriggeredBy = false }) => {
   return (
     <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
-      {title && <h3 className="text-sm font-semibold text-foreground border-b pb-2">{title}</h3>}
+      {title && <h3 className="font-semibold text-foreground border-b border-border pb-2">{title}</h3>}
       
-      <div className="space-y-3">
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Type</Label>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor={`${prefix}.type`}>Type</Label>
           <Input
+            id={`${prefix}.type`}
             value={values[`${prefix}.type`] || ''}
             onChange={(e) => onValueChange(`${prefix}.type`, e.target.value)}
             disabled={disabled}
-            className="h-8 text-sm"
           />
         </div>
         
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Grace Period</Label>
+        <div className="space-y-2">
+          <Label htmlFor={`${prefix}.grace_period`}>Grace Period</Label>
           <Input
+            id={`${prefix}.grace_period`}
             value={values[`${prefix}.grace_period`] || ''}
             onChange={(e) => onValueChange(`${prefix}.grace_period`, e.target.value)}
             disabled={disabled}
-            className="h-8 text-sm"
           />
         </div>
         
         {!showTriggeredBy ? (
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Calendar / Actual</Label>
+          <div className="space-y-2">
+            <Label htmlFor={`${prefix}.calendar_actual`}>Calendar / Actual</Label>
             <Input
+              id={`${prefix}.calendar_actual`}
               value={values[`${prefix}.calendar_actual`] || ''}
               onChange={(e) => onValueChange(`${prefix}.calendar_actual`, e.target.value)}
               disabled={disabled}
-              className="h-8 text-sm"
             />
           </div>
         ) : (
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Flat Rate</Label>
+          <div className="space-y-2">
+            <Label htmlFor={`${prefix}.flat_rate`}>Flat Rate</Label>
             <Input
+              id={`${prefix}.flat_rate`}
               value={values[`${prefix}.flat_rate`] || ''}
               onChange={(e) => onValueChange(`${prefix}.flat_rate`, e.target.value)}
               disabled={disabled}
-              className="h-8 text-sm"
             />
           </div>
         )}
         
         {!showTriggeredBy ? (
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Minimum Late Fee</Label>
+          <div className="space-y-2">
+            <Label htmlFor={`${prefix}.minimum_late_fee`}>Minimum Late Fee</Label>
             <Input
+              id={`${prefix}.minimum_late_fee`}
               value={values[`${prefix}.minimum_late_fee`] || ''}
               onChange={(e) => onValueChange(`${prefix}.minimum_late_fee`, e.target.value)}
               disabled={disabled}
-              className="h-8 text-sm"
             />
           </div>
         ) : (
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Modifier</Label>
+          <div className="space-y-2">
+            <Label htmlFor={`${prefix}.modifier`}>Modifier</Label>
             <Input
+              id={`${prefix}.modifier`}
               value={values[`${prefix}.modifier`] || ''}
               onChange={(e) => onValueChange(`${prefix}.modifier`, e.target.value)}
               disabled={disabled}
-              className="h-8 text-sm"
             />
           </div>
         )}
         
         {!showTriggeredBy ? (
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Percentage of Payment</Label>
+          <div className="space-y-2">
+            <Label htmlFor={`${prefix}.percentage_of_payment`}>Percentage of Payment</Label>
             <Input
+              id={`${prefix}.percentage_of_payment`}
               value={values[`${prefix}.percentage_of_payment`] || ''}
               onChange={(e) => onValueChange(`${prefix}.percentage_of_payment`, e.target.value)}
               disabled={disabled}
-              className="h-8 text-sm"
             />
           </div>
         ) : (
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Active Until</Label>
+          <div className="space-y-2">
+            <Label htmlFor={`${prefix}.active_until`}>Active Until</Label>
             <Input
+              id={`${prefix}.active_until`}
               type="date"
               value={values[`${prefix}.active_until`] || ''}
               onChange={(e) => onValueChange(`${prefix}.active_until`, e.target.value)}
               disabled={disabled}
-              className="h-8 text-sm"
             />
           </div>
         )}
         
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Additional Daily Charge</Label>
+        <div className="space-y-2">
+          <Label htmlFor={`${prefix}.additional_daily_charge`}>Additional Daily Charge</Label>
           <Input
+            id={`${prefix}.additional_daily_charge`}
             value={values[`${prefix}.additional_daily_charge`] || ''}
             onChange={(e) => onValueChange(`${prefix}.additional_daily_charge`, e.target.value)}
             disabled={disabled}
-            className="h-8 text-sm"
           />
         </div>
       </div>
@@ -232,7 +229,7 @@ const TriggeredBySection: React.FC<{
 
   return (
     <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
-      <h3 className="text-sm font-semibold text-foreground border-b pb-2">Triggered By</h3>
+      <h3 className="font-semibold text-foreground border-b border-border pb-2">Triggered By</h3>
       
       <RadioGroup
         value={triggeredBy}
@@ -242,15 +239,15 @@ const TriggeredBySection: React.FC<{
       >
         <div className="flex items-center space-x-2">
           <RadioGroupItem value="late_payment_only" id="late_payment_only" />
-          <Label htmlFor="late_payment_only" className="text-sm">Late Payment Only</Label>
+          <Label htmlFor="late_payment_only" className="font-normal cursor-pointer">Late Payment Only</Label>
         </div>
         <div className="flex items-center space-x-2">
           <RadioGroupItem value="late_payment_maturity" id="late_payment_maturity" />
-          <Label htmlFor="late_payment_maturity" className="text-sm">Late Payment & Maturity</Label>
+          <Label htmlFor="late_payment_maturity" className="font-normal cursor-pointer">Late Payment & Maturity</Label>
         </div>
         <div className="flex items-center space-x-2">
           <RadioGroupItem value="maturity_only" id="maturity_only" />
-          <Label htmlFor="maturity_only" className="text-sm">Maturity Only</Label>
+          <Label htmlFor="maturity_only" className="font-normal cursor-pointer">Maturity Only</Label>
         </div>
       </RadioGroup>
     </div>
@@ -267,8 +264,8 @@ const InterestGuaranteeSection: React.FC<{
 
   return (
     <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
-      <div className="flex items-center gap-3 border-b pb-2">
-        <h3 className="text-sm font-semibold text-foreground">Interest Guarantee</h3>
+      <div className="flex items-center gap-3 border-b border-border pb-2">
+        <h3 className="font-semibold text-foreground">Interest Guarantee</h3>
         <Checkbox
           checked={isEnabled}
           onCheckedChange={(checked) => 
@@ -280,19 +277,19 @@ const InterestGuaranteeSection: React.FC<{
       
       {isEnabled && (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Months</Label>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="interest_guarantee_months">Months</Label>
               <Input
+                id="interest_guarantee_months"
                 value={values['loan_terms.penalties.interest_guarantee.months'] || ''}
                 onChange={(e) => onValueChange('loan_terms.penalties.interest_guarantee.months', e.target.value)}
                 disabled={disabled}
-                className="h-8 text-sm"
               />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Include Odd Days Interest</Label>
-              <div className="flex items-center h-8">
+            <div className="space-y-2">
+              <Label>Include Odd Days Interest</Label>
+              <div className="flex items-center h-10">
                 <Checkbox
                   checked={values['loan_terms.penalties.interest_guarantee.include_odd_days'] === 'true'}
                   onCheckedChange={(checked) => 
@@ -302,13 +299,13 @@ const InterestGuaranteeSection: React.FC<{
                 />
               </div>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Amount</Label>
+            <div className="space-y-2">
+              <Label htmlFor="interest_guarantee_amount">Amount</Label>
               <Input
+                id="interest_guarantee_amount"
                 value={values['loan_terms.penalties.interest_guarantee.amount'] || ''}
                 onChange={(e) => onValueChange('loan_terms.penalties.interest_guarantee.amount', e.target.value)}
                 disabled={disabled}
-                className="h-8 text-sm"
               />
             </div>
           </div>
@@ -335,8 +332,8 @@ const PrepaymentPenaltySection: React.FC<{
 
   return (
     <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
-      <div className="flex items-center gap-3 border-b pb-2">
-        <h3 className="text-sm font-semibold text-foreground">Pre-payment Penalty</h3>
+      <div className="flex items-center gap-3 border-b border-border pb-2">
+        <h3 className="font-semibold text-foreground">Pre-payment Penalty</h3>
         <Checkbox
           checked={penaltyType !== 'none'}
           onCheckedChange={(checked) => 
@@ -354,13 +351,13 @@ const PrepaymentPenaltySection: React.FC<{
       >
         <div className="flex items-center space-x-2">
           <RadioGroupItem value="none" id="prepay_none" />
-          <Label htmlFor="prepay_none" className="text-sm">No Prepayment Penalty</Label>
+          <Label htmlFor="prepay_none" className="font-normal cursor-pointer">No Prepayment Penalty</Label>
         </div>
         
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="any_payments" id="prepay_any" />
-            <Label htmlFor="prepay_any" className="text-sm">Any payments of principal in any calendar year in excess of</Label>
+            <Label htmlFor="prepay_any" className="font-normal cursor-pointer">Any payments of principal in any calendar year in excess of</Label>
           </div>
           
           {penaltyType === 'any_payments' && (
@@ -370,16 +367,16 @@ const PrepaymentPenaltySection: React.FC<{
                   value={values['loan_terms.penalties.prepayment.excess_amount'] || ''}
                   onChange={(e) => onValueChange('loan_terms.penalties.prepayment.excess_amount', e.target.value)}
                   disabled={disabled}
-                  className="h-8 text-sm w-24"
+                  className="w-24"
                   placeholder="%"
                 />
-                <span className="text-sm text-muted-foreground">of the</span>
+                <span className="text-foreground">of the</span>
                 <Select
                   value={values['loan_terms.penalties.prepayment.balance_type'] || 'original_balance'}
                   onValueChange={(value) => onValueChange('loan_terms.penalties.prepayment.balance_type', value)}
                   disabled={disabled}
                 >
-                  <SelectTrigger className="h-8 w-36">
+                  <SelectTrigger className="w-36">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -387,12 +384,12 @@ const PrepaymentPenaltySection: React.FC<{
                     <SelectItem value="unpaid_balance">Unpaid Balance</SelectItem>
                   </SelectContent>
                 </Select>
-                <span className="text-sm text-muted-foreground">will include a penalty not to exceed</span>
+                <span className="text-foreground">will include a penalty not to exceed</span>
                 <Input
                   value={values['loan_terms.penalties.prepayment.penalty_max'] || ''}
                   onChange={(e) => onValueChange('loan_terms.penalties.prepayment.penalty_max', e.target.value)}
                   disabled={disabled}
-                  className="h-8 text-sm w-24"
+                  className="w-24"
                 />
               </div>
               
@@ -401,15 +398,15 @@ const PrepaymentPenaltySection: React.FC<{
                   value={values['loan_terms.penalties.prepayment.months_advance'] || ''}
                   onChange={(e) => onValueChange('loan_terms.penalties.prepayment.months_advance', e.target.value)}
                   disabled={disabled}
-                  className="h-8 text-sm w-16"
+                  className="w-16"
                 />
-                <span className="text-sm text-muted-foreground">months advance interest on the</span>
+                <span className="text-foreground">months advance interest on the</span>
                 <Select
                   value={values['loan_terms.penalties.prepayment.advance_balance_type'] || 'unpaid_balance'}
                   onValueChange={(value) => onValueChange('loan_terms.penalties.prepayment.advance_balance_type', value)}
                   disabled={disabled}
                 >
-                  <SelectTrigger className="h-8 w-36">
+                  <SelectTrigger className="w-36">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -419,7 +416,7 @@ const PrepaymentPenaltySection: React.FC<{
                 </Select>
               </div>
               
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground">
                 at the note rate, but not more than the interest that would be charged if the loan were paid to maturity.
               </p>
             </div>
@@ -428,13 +425,13 @@ const PrepaymentPenaltySection: React.FC<{
         
         <div className="flex items-center space-x-2">
           <RadioGroupItem value="other" id="prepay_other" />
-          <Label htmlFor="prepay_other" className="text-sm">Other</Label>
+          <Label htmlFor="prepay_other" className="font-normal cursor-pointer">Other</Label>
           {penaltyType === 'other' && (
             <Input
               value={values['loan_terms.penalties.prepayment.other_description'] || ''}
               onChange={(e) => onValueChange('loan_terms.penalties.prepayment.other_description', e.target.value)}
               disabled={disabled}
-              className="h-8 text-sm flex-1 ml-2"
+              className="flex-1 ml-2"
               placeholder="None"
             />
           )}
@@ -442,21 +439,22 @@ const PrepaymentPenaltySection: React.FC<{
       </RadioGroup>
       
       {/* Prepayment Penalty Expires - inside this section as required */}
-      <div className="pt-3 border-t border-border">
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Prepayment Penalty Expires</Label>
+      <div className="pt-4 border-t border-border">
+        <div className="space-y-2">
+          <Label htmlFor="prepayment_expires">Prepayment Penalty Expires</Label>
           <Input
+            id="prepayment_expires"
             type="date"
             value={values['loan_terms.penalties.prepayment.expires'] || ''}
             onChange={(e) => onValueChange('loan_terms.penalties.prepayment.expires', e.target.value)}
             disabled={disabled}
-            className="h-8 text-sm w-48"
+            className="w-48"
           />
         </div>
       </div>
       
       {/* Distribution section renamed as required */}
-      <div className="pt-3 border-t border-border">
+      <div className="pt-4 border-t border-border">
         <DistributionFields
           prefix="loan_terms.penalties.prepayment"
           values={values}
@@ -478,8 +476,8 @@ const MaturityPenaltySection: React.FC<{
 
   return (
     <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
-      <div className="flex items-center gap-3 border-b pb-2">
-        <h3 className="text-sm font-semibold text-foreground">Maturity</h3>
+      <div className="flex items-center gap-3 border-b border-border pb-2">
+        <h3 className="font-semibold text-foreground">Maturity</h3>
         <Checkbox
           checked={isEnabled}
           onCheckedChange={(checked) => 
@@ -491,19 +489,19 @@ const MaturityPenaltySection: React.FC<{
       
       {isEnabled && (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Grace Period (Days)</Label>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="maturity_grace_period">Grace Period (Days)</Label>
               <Input
+                id="maturity_grace_period"
                 value={values['loan_terms.penalties.maturity.grace_period_days'] || ''}
                 onChange={(e) => onValueChange('loan_terms.penalties.maturity.grace_period_days', e.target.value)}
                 disabled={disabled}
-                className="h-8 text-sm"
               />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Standard 10% of Payment Only</Label>
-              <div className="flex items-center h-8">
+            <div className="space-y-2">
+              <Label>Standard 10% of Payment Only</Label>
+              <div className="flex items-center h-10">
                 <Checkbox
                   checked={values['loan_terms.penalties.maturity.standard_10_percent'] === 'true'}
                   onCheckedChange={(checked) => 
@@ -513,13 +511,13 @@ const MaturityPenaltySection: React.FC<{
                 />
               </div>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Additional Flat Fee</Label>
+            <div className="space-y-2">
+              <Label htmlFor="maturity_flat_fee">Additional Flat Fee</Label>
               <Input
+                id="maturity_flat_fee"
                 value={values['loan_terms.penalties.maturity.additional_flat_fee'] || ''}
                 onChange={(e) => onValueChange('loan_terms.penalties.maturity.additional_flat_fee', e.target.value)}
                 disabled={disabled}
-                className="h-8 text-sm"
               />
             </div>
           </div>
