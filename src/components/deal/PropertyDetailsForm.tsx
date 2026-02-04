@@ -39,8 +39,17 @@ const FLOOD_ZONE_OPTIONS = ['Zone A', 'Zone AE', 'Zone AO', 'Zone X', 'Zone V', 
 
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
 
+const OCCUPANCY_EXTENDED_OPTIONS = [
+  'Investor', 'Other', 'Owner', 'Primary Borrower', 'Secondary Borrower',
+  'Tenant', 'Unknown', 'Vacant', 'Non Owner Occupied'
+];
+
+const THOMAS_MAP_OPTIONS = ['Yes', 'No'];
+
 // Field key mapping as specified
 const FIELD_KEYS = {
+  // Description
+  description: 'property1.description',
   // Address
   address: 'property1.address',
   street: 'property1.street',
@@ -61,6 +70,8 @@ const FIELD_KEYS = {
   appraisedDate: 'property1.appraised_date',
   priority: 'property1.priority',
   floodZone: 'property1.flood_zone',
+  apn: 'property1.apn',
+  thomasMap: 'property1.thomas_map',
 } as const;
 
 export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
@@ -76,13 +87,23 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
     <div className="p-6 space-y-6">
       {/* Two Column Layout */}
       <div className="grid grid-cols-2 gap-8">
-        {/* Left Column - Address */}
+        {/* Left Column - Property Description & Address */}
         <div className="space-y-3">
           <div className="border-b border-border pb-2 mb-3">
-            <span className="font-semibold text-sm text-primary">Address</span>
+            <span className="font-semibold text-sm text-primary">Property Description & Address</span>
           </div>
 
           <div className="space-y-3">
+            <div>
+              <Label className="text-sm text-foreground">Description</Label>
+              <Input
+                value={getFieldValue(FIELD_KEYS.description)}
+                onChange={(e) => onValueChange(FIELD_KEYS.description, e.target.value)}
+                disabled={disabled}
+                className="h-8 text-sm mt-1"
+              />
+            </div>
+
             <div>
               <Label className="text-sm text-foreground">Street</Label>
               <Input
@@ -284,29 +305,71 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             </div>
           </div>
 
-          <div>
-            <Label className="text-sm text-foreground">Appraised Date</Label>
-            <Input
-              type="date"
-              value={getFieldValue(FIELD_KEYS.appraisedDate)}
-              onChange={(e) => onValueChange(FIELD_KEYS.appraisedDate, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm text-foreground">Appraised Date</Label>
+              <Input
+                type="date"
+                value={getFieldValue(FIELD_KEYS.appraisedDate)}
+                onChange={(e) => onValueChange(FIELD_KEYS.appraisedDate, e.target.value)}
+                disabled={disabled}
+                className="h-8 text-sm mt-1"
+              />
+            </div>
+
+            <div>
+              <Label className="text-sm text-foreground">Thomas Map</Label>
+              <Input
+                value={getFieldValue(FIELD_KEYS.thomasMap)}
+                onChange={(e) => onValueChange(FIELD_KEYS.thomasMap, e.target.value)}
+                disabled={disabled}
+                className="h-8 text-sm mt-1"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm text-foreground">APN</Label>
+              <Input
+                value={getFieldValue(FIELD_KEYS.apn)}
+                onChange={(e) => onValueChange(FIELD_KEYS.apn, e.target.value)}
+                disabled={disabled}
+                className="h-8 text-sm mt-1"
+              />
+            </div>
+
+            <div>
+              <Label className="text-sm text-foreground">Priority</Label>
+              <Select
+                value={getFieldValue(FIELD_KEYS.priority)}
+                onValueChange={(val) => onValueChange(FIELD_KEYS.priority, val)}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-8 text-sm mt-1">
+                  <SelectValue placeholder="Select priority" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  {PRIORITY_OPTIONS.map(opt => (
+                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div>
-            <Label className="text-sm text-foreground">Priority</Label>
+            <Label className="text-sm text-foreground">Flood Zone</Label>
             <Select
-              value={getFieldValue(FIELD_KEYS.priority)}
-              onValueChange={(val) => onValueChange(FIELD_KEYS.priority, val)}
+              value={getFieldValue(FIELD_KEYS.floodZone)}
+              onValueChange={(val) => onValueChange(FIELD_KEYS.floodZone, val)}
               disabled={disabled}
             >
               <SelectTrigger className="h-8 text-sm mt-1">
-                <SelectValue placeholder="Select priority" />
+                <SelectValue placeholder="Select flood zone" />
               </SelectTrigger>
               <SelectContent className="bg-background border border-border z-50">
-                {PRIORITY_OPTIONS.map(opt => (
+                {FLOOD_ZONE_OPTIONS.map(opt => (
                   <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                 ))}
               </SelectContent>
