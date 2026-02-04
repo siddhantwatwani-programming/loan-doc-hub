@@ -14,6 +14,8 @@ import { BorrowerNoteForm } from './BorrowerNoteForm';
 import { CoBorrowerPrimaryForm } from './CoBorrowerPrimaryForm';
 import { CoBorrowerBankingForm } from './CoBorrowerBankingForm';
 import { CoBorrowerTaxDetailForm } from './CoBorrowerTaxDetailForm';
+import { CoBorrowerNoteForm } from './CoBorrowerNoteForm';
+import { CoBorrowerAttachmentForm } from './CoBorrowerAttachmentForm';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -212,7 +214,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   // Check if we're in detail view
   // Borrower detail includes: primary, additional_guarantor, banking, tax_detail, note, AND co_borrowers (table within detail)
   const isBorrowerDetailView = ['primary', 'additional_guarantor', 'banking', 'tax_detail', 'note', 'co_borrowers'].includes(activeSubSection);
-  const isCoBorrowerDetailView = ['coborrower_primary', 'coborrower_banking', 'coborrower_tax_detail'].includes(activeSubSection);
+  const isCoBorrowerDetailView = ['coborrower_primary', 'coborrower_banking', 'coborrower_tax_detail', 'coborrower_note', 'coborrower_attachment'].includes(activeSubSection);
   const isDetailView = isBorrowerDetailView || isCoBorrowerDetailView;
   
   // Check if we're viewing the co-borrowers table within borrower detail
@@ -572,6 +574,29 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
             showValidation={showValidation}
             disabled={disabled}
             calculationResults={calculationResults}
+          />
+        );
+      case 'coborrower_note':
+        return (
+          <CoBorrowerNoteForm
+            fields={fields}
+            values={getCoBorrowerSpecificValues()}
+            onValueChange={handleCoBorrowerValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+          />
+        );
+      case 'coborrower_attachment':
+        return (
+          <CoBorrowerAttachmentForm
+            fields={fields}
+            values={getCoBorrowerSpecificValues()}
+            onValueChange={handleCoBorrowerValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+            coBorrowerId={selectedCoBorrowerPrefix}
           />
         );
       default:

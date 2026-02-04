@@ -11,7 +11,9 @@ export type BorrowerSubSection =
   | 'note'
   | 'coborrower_primary'
   | 'coborrower_banking'
-  | 'coborrower_tax_detail';
+  | 'coborrower_tax_detail'
+  | 'coborrower_note'
+  | 'coborrower_attachment';
 
 interface BorrowerSubNavigationProps {
   activeSubSection: BorrowerSubSection;
@@ -34,6 +36,8 @@ const COBORROWER_DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] =
   { key: 'coborrower_primary', label: 'Primary' },
   { key: 'coborrower_banking', label: 'Banking' },
   { key: 'coborrower_tax_detail', label: 'Tax Details' },
+  { key: 'coborrower_note', label: 'Note' },
+  { key: 'coborrower_attachment', label: 'Attachments' },
 ];
 
 export const BorrowerSubNavigation: React.FC<BorrowerSubNavigationProps> = ({
