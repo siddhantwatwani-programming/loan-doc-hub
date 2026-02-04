@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit } from 'lucide-react';
+import { Plus, Edit, ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -34,6 +34,7 @@ interface InsuranceTableViewProps {
   onAddInsurance: () => void;
   onEditInsurance: (insurance: InsuranceData) => void;
   onRowClick: (insurance: InsuranceData) => void;
+  onBack?: () => void;
   disabled?: boolean;
 }
 
@@ -42,6 +43,7 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
   onAddInsurance,
   onEditInsurance,
   onRowClick,
+  onBack,
   disabled = false,
 }) => {
   const formatCurrency = (value: string) => {
@@ -58,7 +60,20 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Insurance</h3>
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="gap-1 h-8"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          )}
+          <h3 className="text-lg font-semibold text-foreground">Insurance</h3>
+        </div>
         <Button
           size="sm"
           onClick={onAddInsurance}

@@ -319,6 +319,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
                 onValueChange={onValueChange}
                 disabled={disabled}
                 propertyOptions={propertyOptions}
+                onBack={handleBackToTable}
               />
             </div>
           </div>
@@ -347,6 +348,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
                 onValueChange={onValueChange}
                 disabled={disabled}
                 propertyOptions={propertyOptions}
+                onBack={handleBackToTable}
               />
             </div>
           </div>

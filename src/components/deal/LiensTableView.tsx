@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit } from 'lucide-react';
+import { Plus, Edit, ArrowLeft } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -30,6 +30,7 @@ interface LiensTableViewProps {
   onAddLien: () => void;
   onEditLien: (lien: LienData) => void;
   onRowClick: (lien: LienData) => void;
+  onBack?: () => void;
   disabled?: boolean;
 }
 
@@ -38,6 +39,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
   onAddLien,
   onEditLien,
   onRowClick,
+  onBack,
   disabled = false,
 }) => {
   const formatCurrency = (value: string) => {
@@ -54,7 +56,20 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Liens</h3>
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="gap-1 h-8"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          )}
+          <h3 className="text-lg font-semibold text-foreground">Liens</h3>
+        </div>
         <Button
           size="sm"
           onClick={onAddLien}

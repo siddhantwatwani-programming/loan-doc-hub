@@ -12,6 +12,7 @@ interface LienSectionContentProps {
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
   propertyOptions?: { id: string; label: string }[];
+  onBack?: () => void;
 }
 
 // Helper to extract liens from values based on lien prefix pattern
@@ -78,6 +79,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   onValueChange,
   disabled = false,
   propertyOptions = [],
+  onBack,
 }) => {
   const [activeSubSection, setActiveSubSection] = useState<LienSubSection>('liens');
   const [selectedLienPrefix, setSelectedLienPrefix] = useState<string>('lien1');
@@ -195,6 +197,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
             onAddLien={handleAddLien}
             onEditLien={handleEditLien}
             onRowClick={handleRowClick}
+            onBack={onBack}
             disabled={disabled}
           />
         );
