@@ -56,50 +56,46 @@ const LIEN_POSITION_OPTIONS = [
 ];
 
 const LOAN_PURPOSE_OPTIONS = [
-  { value: 'purchase', label: 'Purchase' },
-  { value: 'refinance', label: 'Refinance' },
-  { value: 'cash_out', label: 'Cash Out' },
-  { value: 'construction', label: 'Construction' },
-  { value: 'other', label: 'Other' },
+  { value: 'consumer', label: 'Consumer' },
+  { value: 'business', label: 'Business' },
 ];
 
 const RATE_STRUCTURE_OPTIONS = [
-  { value: 'fixed', label: 'Fixed' },
-  { value: 'adjustable', label: 'Adjustable' },
-  { value: 'hybrid', label: 'Hybrid' },
+  { value: 'frm_fixed_rate', label: 'FRM – Fixed Rate' },
+  { value: 'arm_adjustable_rate', label: 'ARM – Adjustable Rate' },
+  { value: 'gtm_graduated_terms', label: 'GTM – Graduated Terms' },
+  { value: 'other', label: 'Other' },
 ];
 
 const AMORTIZATION_OPTIONS = [
-  { value: 'fully_amortizing', label: 'Fully Amortizing' },
+  { value: 'fully_amortized', label: 'Fully Amortized' },
+  { value: 'partially_amortized', label: 'Partially Amortized' },
   { value: 'interest_only', label: 'Interest Only' },
-  { value: 'balloon', label: 'Balloon' },
-  { value: 'negative_amortization', label: 'Negative Amortization' },
+  { value: 'constant_amortization', label: 'Constant Amortization' },
+  { value: 'add_on_interest', label: 'Add-On Interest' },
+  { value: 'other', label: 'Other' },
 ];
 
 const INTEREST_CALCULATION_OPTIONS = [
-  { value: 'simple', label: 'Simple' },
-  { value: 'compound', label: 'Compound' },
-  { value: 'actual_360', label: 'Actual/360' },
-  { value: 'actual_365', label: 'Actual/365' },
+  { value: '360_day_period', label: '360 Day Period' },
+  { value: '365_day_period', label: '365 Day Period' },
 ];
 
 const SHORT_PAYMENTS_OPTIONS = [
-  { value: 'principal', label: 'Principal' },
-  { value: 'interest', label: 'Interest' },
-  { value: 'fees_first', label: 'Fees First' },
-  { value: 'prorated', label: 'Prorated' },
+  { value: 'principal_balance', label: 'Principal Balance' },
+  { value: 'unpaid_interest', label: 'Unpaid Interest' },
 ];
 
 const PROCESSING_UNPAID_INTEREST_OPTIONS = [
-  { value: 'capitalize', label: 'Capitalize' },
-  { value: 'waive', label: 'Waive' },
-  { value: 'collect', label: 'Collect' },
+  { value: 'include_when_calculating_interest', label: 'Include when Calculating Interest' },
+  { value: 'pay_automatically', label: 'Pay Automatically' },
+  { value: 'both', label: 'Both' },
 ];
 
 const CALCULATION_PERIOD_OPTIONS = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'annually', label: 'Annually' },
+  { value: 'regular_period', label: 'Regular Period (Due Date to Due Date)' },
+  { value: 'actual_days_due_date', label: 'Actual Days (Due Date to Due Date)' },
+  { value: 'actual_days_received_date', label: 'Actual Days (Received Date to Received Date)' },
 ];
 
 export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
