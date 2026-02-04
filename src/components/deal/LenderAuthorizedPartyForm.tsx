@@ -221,7 +221,6 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
                 onChange={(e) => handleChange('details', e.target.value)}
                 disabled={disabled}
                 className="min-h-[80px]"
-                placeholder="Additional address details..."
               />
             </div>
           </div>
@@ -277,55 +276,52 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
             </div>
           </div>
 
-          {/* FORD Section - 3-3 layout */}
+          {/* FORD Section - 3-3 layout with label */}
           <div className="mt-6 space-y-3">
-            <h4 className="text-sm font-semibold text-foreground">FORD</h4>
-            
-            <div className="grid grid-cols-3 gap-2">
-              <Input
-                value={getValue('ford1')}
-                onChange={(e) => handleChange('ford1', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-                placeholder="1"
-              />
-              <Input
-                value={getValue('ford2')}
-                onChange={(e) => handleChange('ford2', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-                placeholder="2"
-              />
-              <Input
-                value={getValue('ford3')}
-                onChange={(e) => handleChange('ford3', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-                placeholder="3"
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <Input
-                value={getValue('ford4')}
-                onChange={(e) => handleChange('ford4', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-                placeholder="4"
-              />
-              <Input
-                value={getValue('ford5')}
-                onChange={(e) => handleChange('ford5', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-                placeholder="5"
-              />
-              <Input
-                value={getValue('ford6')}
-                onChange={(e) => handleChange('ford6', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-                placeholder="6"
-              />
+            <div className="grid grid-cols-2 gap-2 items-start">
+              <Label className="text-sm text-muted-foreground pt-2">FORD</Label>
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <Input
+                    value={getValue('ford1')}
+                    onChange={(e) => handleChange('ford1', e.target.value)}
+                    disabled={disabled}
+                    className="h-8"
+                  />
+                  <Input
+                    value={getValue('ford2')}
+                    onChange={(e) => handleChange('ford2', e.target.value)}
+                    disabled={disabled}
+                    className="h-8"
+                  />
+                  <Input
+                    value={getValue('ford3')}
+                    onChange={(e) => handleChange('ford3', e.target.value)}
+                    disabled={disabled}
+                    className="h-8"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Input
+                    value={getValue('ford4')}
+                    onChange={(e) => handleChange('ford4', e.target.value)}
+                    disabled={disabled}
+                    className="h-8"
+                  />
+                  <Input
+                    value={getValue('ford5')}
+                    onChange={(e) => handleChange('ford5', e.target.value)}
+                    disabled={disabled}
+                    className="h-8"
+                  />
+                  <Input
+                    value={getValue('ford6')}
+                    onChange={(e) => handleChange('ford6', e.target.value)}
+                    disabled={disabled}
+                    className="h-8"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
