@@ -10,6 +10,7 @@ import { BorrowerPrimaryForm } from './BorrowerPrimaryForm';
 import { BorrowerAdditionalGuarantorForm } from './BorrowerAdditionalGuarantorForm';
 import { BorrowerBankingForm } from './BorrowerBankingForm';
 import { BorrowerTaxDetailForm } from './BorrowerTaxDetailForm';
+import { BorrowerNoteForm } from './BorrowerNoteForm';
 import { CoBorrowerPrimaryForm } from './CoBorrowerPrimaryForm';
 import { CoBorrowerBankingForm } from './CoBorrowerBankingForm';
 import { CoBorrowerTaxDetailForm } from './CoBorrowerTaxDetailForm';
@@ -209,8 +210,8 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   const [selectedCoBorrowerPrefix, setSelectedCoBorrowerPrefix] = useState<string>('coborrower');
 
   // Check if we're in detail view
-  // Borrower detail includes: primary, additional_guarantor, banking, tax_detail, AND co_borrowers (table within detail)
-  const isBorrowerDetailView = ['primary', 'additional_guarantor', 'banking', 'tax_detail', 'co_borrowers'].includes(activeSubSection);
+  // Borrower detail includes: primary, additional_guarantor, banking, tax_detail, note, AND co_borrowers (table within detail)
+  const isBorrowerDetailView = ['primary', 'additional_guarantor', 'banking', 'tax_detail', 'note', 'co_borrowers'].includes(activeSubSection);
   const isCoBorrowerDetailView = ['coborrower_primary', 'coborrower_banking', 'coborrower_tax_detail'].includes(activeSubSection);
   const isDetailView = isBorrowerDetailView || isCoBorrowerDetailView;
   
@@ -521,6 +522,17 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
       case 'tax_detail':
         return (
           <BorrowerTaxDetailForm
+            fields={fields}
+            values={getBorrowerSpecificValues()}
+            onValueChange={handleBorrowerValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+          />
+        );
+      case 'note':
+        return (
+          <BorrowerNoteForm
             fields={fields}
             values={getBorrowerSpecificValues()}
             onValueChange={handleBorrowerValueChange}
