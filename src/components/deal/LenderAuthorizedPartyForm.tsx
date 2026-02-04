@@ -30,13 +30,15 @@ const FIELD_KEYS = {
   phoneWork: 'lender.authorized_party.phone.work',
   phoneCell: 'lender.authorized_party.phone.cell',
   phoneFax: 'lender.authorized_party.phone.fax',
-  // FORD (6 fields in 3-3 layout)
+  // FORD (8 fields in 4x2 layout as per reference image)
   ford1: 'lender.authorized_party.ford.1',
   ford2: 'lender.authorized_party.ford.2',
   ford3: 'lender.authorized_party.ford.3',
   ford4: 'lender.authorized_party.ford.4',
   ford5: 'lender.authorized_party.ford.5',
   ford6: 'lender.authorized_party.ford.6',
+  ford7: 'lender.authorized_party.ford.7',
+  ford8: 'lender.authorized_party.ford.8',
 } as const;
 
 interface LenderAuthorizedPartyFormProps {
@@ -276,51 +278,65 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
             </div>
           </div>
 
-          {/* FORD Section - 3-3 layout with label */}
-          <div className="mt-6 space-y-3">
-            <div className="grid grid-cols-2 gap-2 items-start">
-              <Label className="text-sm text-muted-foreground pt-2">FORD</Label>
-              <div className="space-y-2">
-                <div className="grid grid-cols-3 gap-2">
-                  <Input
-                    value={getValue('ford1')}
-                    onChange={(e) => handleChange('ford1', e.target.value)}
-                    disabled={disabled}
-                    className="h-8"
-                  />
-                  <Input
-                    value={getValue('ford2')}
-                    onChange={(e) => handleChange('ford2', e.target.value)}
-                    disabled={disabled}
-                    className="h-8"
-                  />
-                  <Input
-                    value={getValue('ford3')}
-                    onChange={(e) => handleChange('ford3', e.target.value)}
-                    disabled={disabled}
-                    className="h-8"
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <Input
-                    value={getValue('ford4')}
-                    onChange={(e) => handleChange('ford4', e.target.value)}
-                    disabled={disabled}
-                    className="h-8"
-                  />
-                  <Input
-                    value={getValue('ford5')}
-                    onChange={(e) => handleChange('ford5', e.target.value)}
-                    disabled={disabled}
-                    className="h-8"
-                  />
-                  <Input
-                    value={getValue('ford6')}
-                    onChange={(e) => handleChange('ford6', e.target.value)}
-                    disabled={disabled}
-                    className="h-8"
-                  />
-                </div>
+          {/* FORD Section - 4x2 layout matching reference image */}
+          <div className="mt-6 space-y-2">
+            <Label className="text-sm text-muted-foreground">FORD</Label>
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  value={getValue('ford1')}
+                  onChange={(e) => handleChange('ford1', e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                />
+                <Input
+                  value={getValue('ford2')}
+                  onChange={(e) => handleChange('ford2', e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  value={getValue('ford3')}
+                  onChange={(e) => handleChange('ford3', e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                />
+                <Input
+                  value={getValue('ford4')}
+                  onChange={(e) => handleChange('ford4', e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  value={getValue('ford5')}
+                  onChange={(e) => handleChange('ford5', e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                />
+                <Input
+                  value={getValue('ford6')}
+                  onChange={(e) => handleChange('ford6', e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  value={getValue('ford7')}
+                  onChange={(e) => handleChange('ford7', e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                />
+                <Input
+                  value={getValue('ford8')}
+                  onChange={(e) => handleChange('ford8', e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                />
               </div>
             </div>
           </div>
