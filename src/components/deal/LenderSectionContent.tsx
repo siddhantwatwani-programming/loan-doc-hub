@@ -6,6 +6,7 @@ import { LenderInfoForm } from './LenderInfoForm';
 import { LenderAuthorizedPartyForm } from './LenderAuthorizedPartyForm';
 import { LenderFundingForm } from './LenderFundingForm';
 import { LenderBankingForm } from './LenderBankingForm';
+import { LenderTaxInfoForm } from './LenderTaxInfoForm';
 import { LendersTableView, type LenderData } from './LendersTableView';
 import { LenderModal } from './LenderModal';
 import type { FieldDefinition } from '@/hooks/useDealFields';
@@ -93,7 +94,7 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   
   // Check if we're in detail view
-  const isDetailView = ['lender', 'authorized_party', 'funding', 'banking'].includes(activeSubSection);
+  const isDetailView = ['lender', 'authorized_party', 'funding', 'banking', 'tax_info'].includes(activeSubSection);
   
   // Extract lenders from values
   const lenders = useMemo(() => extractLendersFromValues(values), [values]);
@@ -244,6 +245,17 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
       case 'banking':
         return (
           <LenderBankingForm
+            fields={fields}
+            values={getLenderSpecificValues()}
+            onValueChange={handleLenderValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+          />
+        );
+      case 'tax_info':
+        return (
+          <LenderTaxInfoForm
             fields={fields}
             values={getLenderSpecificValues()}
             onValueChange={handleLenderValueChange}
