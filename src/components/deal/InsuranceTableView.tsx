@@ -1,0 +1,142 @@
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Plus, Edit } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+
+export interface InsuranceData {
+  id: string;
+  property: string;
+  description: string;
+  insuredName: string;
+  companyName: string;
+  policyNumber: string;
+  expiration: string;
+  coverage: string;
+  active: boolean;
+  agentName: string;
+  businessAddress: string;
+  phoneNumber: string;
+  faxNumber: string;
+  email: string;
+  note: string;
+}
+
+interface InsuranceTableViewProps {
+  insurances: InsuranceData[];
+  onAddInsurance: () => void;
+  onEditInsurance: (insurance: InsuranceData) => void;
+  onRowClick: (insurance: InsuranceData) => void;
+  disabled?: boolean;
+}
+
+export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
+  insurances,
+  onAddInsurance,
+  onEditInsurance,
+  onRowClick,
+  disabled = false,
+}) => {
+  const formatCurrency = (value: string) => {
+    if (!value) return '';
+    const num = parseFloat(value.replace(/[^0-9.-]/g, ''));
+    if (isNaN(num)) return value;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+    }).format(num);
+  };
+
+  return (
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-foreground">Insurance</h3>
+        <Button
+          size="sm"
+          onClick={onAddInsurance}
+          disabled={disabled}
+          className="gap-1"
+        >
+          <Plus className="h-4 w-4" />
+          Add Insurance
+        </Button>
+      </div>
+
+      <div className="border border-border rounded-lg overflow-hidden">
+        <div className="overflow-x-auto" style={{ minWidth: '100%' }}>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="w-10"></TableHead>
+                <TableHead className="min-w-[120px]">Description</TableHead>
+                <TableHead className="min-w-[150px]">Company</TableHead>
+                <TableHead className="min-w-[120px]">Policy #</TableHead>
+                <TableHead className="min-w-[100px]">Expiration</TableHead>
+                <TableHead className="min-w-[120px] text-right">Coverage</TableHead>
+                <TableHead className="min-w-[80px]">Status</TableHead>
+                <TableHead className="min-w-[150px]">Agent</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {insurances.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    No insurance records added. Click "Add Insurance" to create one.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                insurances.map((insurance) => (
+                  <TableRow
+                    key={insurance.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => onRowClick(insurance)}
+                  >
+                    <TableCell className="w-10">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditInsurance(insurance);
+                        }}
+                        disabled={disabled}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {insurance.description || '-'}
+                    </TableCell>
+                    <TableCell>{insurance.companyName || '-'}</TableCell>
+                    <TableCell>{insurance.policyNumber || '-'}</TableCell>
+                    <TableCell>{insurance.expiration || '-'}</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(insurance.coverage) || '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={insurance.active ? 'default' : 'secondary'}>
+                        {insurance.active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{insurance.agentName || '-'}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default InsuranceTableView;
