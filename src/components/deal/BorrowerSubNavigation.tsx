@@ -8,6 +8,7 @@ export type BorrowerSubSection =
   | 'additional_guarantor' 
   | 'banking' 
   | 'tax_detail'
+  | 'note'
   | 'coborrower_primary'
   | 'coborrower_banking'
   | 'coborrower_tax_detail';
@@ -25,6 +26,7 @@ const BORROWER_DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
   { key: 'additional_guarantor', label: 'Additional Guarantor' },
   { key: 'banking', label: 'Banking' },
   { key: 'tax_detail', label: 'Tax Details' },
+  { key: 'note', label: 'Note' },
   { key: 'co_borrowers', label: 'Co-Borrowers' },
 ];
 
