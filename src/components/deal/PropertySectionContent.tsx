@@ -4,13 +4,13 @@ import { Button } from '@/components/ui/button';
 import { PropertySubNavigation, type PropertySubSection } from './PropertySubNavigation';
 import { PropertyDetailsForm } from './PropertyDetailsForm';
 import { PropertyLegalDescriptionForm } from './PropertyLegalDescriptionForm';
-import { PropertyLiensForm } from './PropertyLiensForm';
 import { PropertyInsuranceForm } from './PropertyInsuranceForm';
 import { PropertyTaxForm } from './PropertyTaxForm';
 import { PropertyAttachmentForm } from './PropertyAttachmentForm';
 import { PropertyNoteForm } from './PropertyNoteForm';
 import { PropertiesTableView, type PropertyData } from './PropertiesTableView';
 import { PropertyModal } from './PropertyModal';
+import { LienSectionContent } from './LienSectionContent';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -98,11 +98,22 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<PropertyData | null>(null);
   
-  // Check if we're in detail view
-  const isDetailView = ['property_details', 'legal_description', 'liens', 'insurance', 'property_tax', 'attachments', 'notes'].includes(activeSubSection);
+  // Check if we're in detail view (liens section is handled separately)
+  const isDetailView = ['property_details', 'legal_description', 'insurance', 'property_tax', 'attachments', 'notes'].includes(activeSubSection);
+  
+  // Check if liens section is active (rendered separately)
+  const isLiensSection = activeSubSection === 'liens';
   
   // Extract properties from values
   const properties = extractPropertiesFromValues(values);
+  
+  // Build property options for liens dropdown
+  const propertyOptions = useMemo(() => {
+    return properties.map(p => ({
+      id: p.id,
+      label: p.description || p.street || `Property ${p.id.replace('property', '')}`,
+    }));
+  }, [properties]);
 
   // Get the selected property name for detail view header
   const selectedPropertyName = useMemo(() => {
@@ -241,16 +252,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
           />
         );
       case 'liens':
-        return (
-          <PropertyLiensForm
-            fields={fields}
-            values={getPropertySpecificValues()}
-            onValueChange={handlePropertyValueChange}
-            showValidation={showValidation}
-            disabled={disabled}
-            calculationResults={calculationResults}
-          />
-        );
+        // Liens section is handled separately below
+        return null;
       case 'insurance':
         return (
           <PropertyInsuranceForm
@@ -300,6 +303,34 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         return null;
     }
   };
+
+  // Render Liens section separately (has its own table/detail view pattern)
+  if (isLiensSection) {
+    return (
+      <>
+        <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
+          <div className="flex flex-1">
+            {/* Sub-navigation tabs on the left */}
+            <PropertySubNavigation
+              activeSubSection={activeSubSection}
+              onSubSectionChange={setActiveSubSection}
+              isDetailView={false}
+            />
+
+            {/* Liens content */}
+            <div className="flex-1 min-w-0 overflow-auto">
+              <LienSectionContent
+                values={values}
+                onValueChange={onValueChange}
+                disabled={disabled}
+                propertyOptions={propertyOptions}
+              />
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
