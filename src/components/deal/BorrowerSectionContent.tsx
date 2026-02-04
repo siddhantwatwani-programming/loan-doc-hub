@@ -595,6 +595,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
             onSubSectionChange={setActiveSubSection}
             showDetailTabs={isDetailView}
             isCoBorrowerDetail={isCoBorrowerDetailView}
+            isDetailView={isDetailView}
           />
 
           {/* Sub-section content on the right */}

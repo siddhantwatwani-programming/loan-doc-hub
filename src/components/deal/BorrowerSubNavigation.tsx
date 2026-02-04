@@ -17,11 +17,8 @@ interface BorrowerSubNavigationProps {
   onSubSectionChange: (subSection: BorrowerSubSection) => void;
   showDetailTabs?: boolean;
   isCoBorrowerDetail?: boolean;
+  isDetailView?: boolean;
 }
-
-const TABLE_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
-  { key: 'borrowers', label: 'Borrowers' },
-];
 
 const BORROWER_DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
   { key: 'primary', label: 'Primary' },
@@ -42,13 +39,19 @@ export const BorrowerSubNavigation: React.FC<BorrowerSubNavigationProps> = ({
   onSubSectionChange,
   showDetailTabs = false,
   isCoBorrowerDetail = false,
+  isDetailView = false,
 }) => {
+  // Only show navigation when in detail view (matching Lender pattern)
+  if (!isDetailView) {
+    return null;
+  }
+
   let sections: { key: BorrowerSubSection; label: string }[];
   
   if (showDetailTabs) {
     sections = isCoBorrowerDetail ? COBORROWER_DETAIL_SECTIONS : BORROWER_DETAIL_SECTIONS;
   } else {
-    sections = TABLE_SECTIONS;
+    sections = BORROWER_DETAIL_SECTIONS;
   }
 
   return (
