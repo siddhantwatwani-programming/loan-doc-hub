@@ -1,4 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { PropertySubNavigation, type PropertySubSection } from './PropertySubNavigation';
 import { PropertyDetailsForm } from './PropertyDetailsForm';
 import { PropertyLegalDescriptionForm } from './PropertyLegalDescriptionForm';
@@ -276,19 +278,37 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
 
   return (
     <>
-      <div className="flex border border-border rounded-lg bg-background">
-        {/* Sub-navigation tabs on the left */}
-        <PropertySubNavigation
-          activeSubSection={activeSubSection}
-          onSubSectionChange={setActiveSubSection}
-          isDetailView={isDetailView}
-          onBackToTable={handleBackToTable}
-          detailViewName={selectedPropertyName}
-        />
+      <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
+        {/* Full-width breadcrumb header when in detail view */}
+        {isDetailView && (
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/20">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBackToTable}
+              className="gap-1 h-8"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <span className="text-sm font-medium text-foreground">
+              {selectedPropertyName}
+            </span>
+          </div>
+        )}
 
-        {/* Sub-section content on the right */}
-        <div className="flex-1 min-w-0 overflow-auto">
-          {renderSubSectionContent()}
+        <div className="flex flex-1">
+          {/* Sub-navigation tabs on the left - only shown in detail view */}
+          <PropertySubNavigation
+            activeSubSection={activeSubSection}
+            onSubSectionChange={setActiveSubSection}
+            isDetailView={isDetailView}
+          />
+
+          {/* Sub-section content on the right */}
+          <div className="flex-1 min-w-0 overflow-auto">
+            {renderSubSectionContent()}
+          </div>
         </div>
       </div>
 
