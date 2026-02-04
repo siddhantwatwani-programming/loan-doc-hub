@@ -2,6 +2,13 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -118,12 +125,21 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Type</Label>
-              <Input
+              <Select
                 value={getValue('accountType')}
-                onChange={(e) => handleChange('accountType', e.target.value)}
+                onValueChange={(value) => handleChange('accountType', value)}
                 disabled={disabled}
-                className="h-8"
-              />
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Personal Banking">Personal Banking</SelectItem>
+                  <SelectItem value="Business Banking">Business Banking</SelectItem>
+                  <SelectItem value="Personal Checking">Personal Checking</SelectItem>
+                  <SelectItem value="Business Checking">Business Checking</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="grid grid-cols-2 gap-2 items-center">
