@@ -205,30 +205,12 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
         {/* Name Section */}
+        {/* Name Section */}
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-foreground border-b pb-2">Name</h3>
           
           <div className="space-y-3">
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Lender Type</Label>
-              <Select
-                value={getValue('type')}
-                onValueChange={(value) => handleChange('type', value)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LENDER_TYPE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
+            {/* Lender ID - moved above Lender Type */}
             <div className="space-y-1">
               <Label className="text-sm text-muted-foreground">Lender ID</Label>
               <Select
@@ -241,6 +223,26 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   {LENDER_ID_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">Lender Type</Label>
+              <Select
+                value={getValue('type')}
+                onValueChange={(value) => handleChange('type', value)}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LENDER_TYPE_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
