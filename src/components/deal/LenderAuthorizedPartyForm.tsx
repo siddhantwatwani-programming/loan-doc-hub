@@ -2,33 +2,41 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 // Field key mapping for authorized party fields
 const FIELD_KEYS = {
   // Name & Contact
-  name: 'lender.authorized_party.name',
   firstName: 'lender.authorized_party.first_name',
   middleName: 'lender.authorized_party.middle_name',
   lastName: 'lender.authorized_party.last_name',
-  relationship: 'lender.authorized_party.relationship',
+  capacity: 'lender.authorized_party.capacity',
   email: 'lender.authorized_party.email',
-  ford: 'lender.authorized_party.ford',
   // Send Preferences
   sendPaymentNotification: 'lender.authorized_party.send_pref.payment_notification',
   sendLateNotice: 'lender.authorized_party.send_pref.late_notice',
   sendMaturityNotice: 'lender.authorized_party.send_pref.maturity_notice',
+  sendBorrowerStatement: 'lender.authorized_party.send_pref.borrower_statement',
   // Address
   street: 'lender.authorized_party.address.street',
   city: 'lender.authorized_party.address.city',
   state: 'lender.authorized_party.address.state',
   zip: 'lender.authorized_party.address.zip',
+  details: 'lender.authorized_party.address.details',
   // Phone
   phoneHome: 'lender.authorized_party.phone.home',
   phoneWork: 'lender.authorized_party.phone.work',
   phoneCell: 'lender.authorized_party.phone.cell',
   phoneFax: 'lender.authorized_party.phone.fax',
+  // FORD (6 fields in 3-3 layout)
+  ford1: 'lender.authorized_party.ford.1',
+  ford2: 'lender.authorized_party.ford.2',
+  ford3: 'lender.authorized_party.ford.3',
+  ford4: 'lender.authorized_party.ford.4',
+  ford5: 'lender.authorized_party.ford.5',
+  ford6: 'lender.authorized_party.ford.6',
 } as const;
 
 interface LenderAuthorizedPartyFormProps {
@@ -69,16 +77,6 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
           
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Name</Label>
-              <Input
-                value={getValue('name')}
-                onChange={(e) => handleChange('name', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">First</Label>
               <Input
                 value={getValue('firstName')}
@@ -109,10 +107,10 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
             </div>
             
             <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">Relationship</Label>
+              <Label className="text-sm text-muted-foreground">Capacity</Label>
               <Input
-                value={getValue('relationship')}
-                onChange={(e) => handleChange('relationship', e.target.value)}
+                value={getValue('capacity')}
+                onChange={(e) => handleChange('capacity', e.target.value)}
                 disabled={disabled}
                 className="h-8"
               />
@@ -124,16 +122,6 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
                 type="email"
                 value={getValue('email')}
                 onChange={(e) => handleChange('email', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 items-center">
-              <Label className="text-sm text-muted-foreground">FORD</Label>
-              <Input
-                value={getValue('ford')}
-                onChange={(e) => handleChange('ford', e.target.value)}
                 disabled={disabled}
                 className="h-8"
               />
@@ -166,6 +154,15 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
               <Checkbox
                 checked={getBoolValue('sendMaturityNotice')}
                 onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)}
+                disabled={disabled}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 items-center">
+              <Label className="text-sm text-muted-foreground">Borrower Statement</Label>
+              <Checkbox
+                checked={getBoolValue('sendBorrowerStatement')}
+                onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)}
                 disabled={disabled}
               />
             </div>
@@ -214,6 +211,17 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
                 onChange={(e) => handleChange('zip', e.target.value)}
                 disabled={disabled}
                 className="h-8"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 items-start">
+              <Label className="text-sm text-muted-foreground pt-2">Details</Label>
+              <Textarea
+                value={getValue('details')}
+                onChange={(e) => handleChange('details', e.target.value)}
+                disabled={disabled}
+                className="min-h-[80px]"
+                placeholder="Additional address details..."
               />
             </div>
           </div>
@@ -265,6 +273,58 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
                 onChange={(e) => handleChange('phoneFax', e.target.value)}
                 disabled={disabled}
                 className="h-8"
+              />
+            </div>
+          </div>
+
+          {/* FORD Section - 3-3 layout */}
+          <div className="mt-6 space-y-3">
+            <h4 className="text-sm font-semibold text-foreground">FORD</h4>
+            
+            <div className="grid grid-cols-3 gap-2">
+              <Input
+                value={getValue('ford1')}
+                onChange={(e) => handleChange('ford1', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+                placeholder="1"
+              />
+              <Input
+                value={getValue('ford2')}
+                onChange={(e) => handleChange('ford2', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+                placeholder="2"
+              />
+              <Input
+                value={getValue('ford3')}
+                onChange={(e) => handleChange('ford3', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+                placeholder="3"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Input
+                value={getValue('ford4')}
+                onChange={(e) => handleChange('ford4', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+                placeholder="4"
+              />
+              <Input
+                value={getValue('ford5')}
+                onChange={(e) => handleChange('ford5', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+                placeholder="5"
+              />
+              <Input
+                value={getValue('ford6')}
+                onChange={(e) => handleChange('ford6', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+                placeholder="6"
               />
             </div>
           </div>
