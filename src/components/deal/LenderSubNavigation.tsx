@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export type LenderSubSection = 'lenders' | 'lender' | 'authorized_party' | 'funding' | 'banking';
+export type LenderSubSection = 'lenders' | 'lender' | 'authorized_party' | 'funding' | 'banking' | 'tax_info';
 
 interface LenderSubNavigationProps {
   activeSubSection: LenderSubSection;
@@ -14,6 +14,7 @@ const LENDER_DETAIL_SECTIONS: { key: LenderSubSection; label: string }[] = [
   { key: 'authorized_party', label: 'Authorized Party' },
   { key: 'funding', label: 'Funding' },
   { key: 'banking', label: 'Banking' },
+  { key: 'tax_info', label: 'Tax Info' },
 ];
 
 export const LenderSubNavigation: React.FC<LenderSubNavigationProps> = ({
