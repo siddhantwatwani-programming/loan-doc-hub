@@ -82,6 +82,23 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   disabled = false,
 }) => {
   const getFieldValue = (key: string) => values[key] || '';
+  
+  // Sanitize numeric input - strip all non-numeric characters except decimal point and minus
+  const sanitizeNumericValue = (value: string): string => {
+    return value.replace(/[^0-9.-]/g, '');
+  };
+  
+  // Handle currency input change - store raw numeric value only
+  const handleCurrencyChange = (fieldKey: string, value: string) => {
+    const sanitized = sanitizeNumericValue(value);
+    onValueChange(fieldKey, sanitized);
+  };
+  
+  // Handle percentage input change - store raw numeric value only
+  const handlePercentageChange = (fieldKey: string, value: string) => {
+    const sanitized = sanitizeNumericValue(value);
+    onValueChange(fieldKey, sanitized);
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -253,7 +270,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
               <div className="flex items-center gap-1 mt-1">
                 <Input
                   value={getFieldValue(FIELD_KEYS.ltv)}
-                  onChange={(e) => onValueChange(FIELD_KEYS.ltv, e.target.value)}
+                  onChange={(e) => handlePercentageChange(FIELD_KEYS.ltv, e.target.value)}
                   disabled={disabled}
                   className="h-8 text-sm"
                   inputMode="decimal"
@@ -280,7 +297,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
                 <span className="text-sm text-muted-foreground">$</span>
                 <Input
                   value={getFieldValue(FIELD_KEYS.appraisedValue)}
-                  onChange={(e) => onValueChange(FIELD_KEYS.appraisedValue, e.target.value)}
+                  onChange={(e) => handleCurrencyChange(FIELD_KEYS.appraisedValue, e.target.value)}
                   disabled={disabled}
                   className="h-8 text-sm text-right"
                   inputMode="decimal"
@@ -295,7 +312,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
                 <span className="text-sm text-muted-foreground">$</span>
                 <Input
                   value={getFieldValue(FIELD_KEYS.pledgedEquity)}
-                  onChange={(e) => onValueChange(FIELD_KEYS.pledgedEquity, e.target.value)}
+                  onChange={(e) => handleCurrencyChange(FIELD_KEYS.pledgedEquity, e.target.value)}
                   disabled={disabled}
                   className="h-8 text-sm text-right"
                   inputMode="decimal"

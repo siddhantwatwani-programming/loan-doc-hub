@@ -578,7 +578,7 @@ export const DealOverviewPage: React.FC = () => {
               <History className="h-4 w-4 text-muted-foreground" />
               <h3 className="font-semibold text-foreground">Activity Log</h3>
             </div>
-            <ActivityLogViewer dealId={id!} maxHeight="300px" />
+            <ActivityLogViewer dealId={id!} maxHeight="400px" />
           </div>
 
           {/* Timestamps */}
