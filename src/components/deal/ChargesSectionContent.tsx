@@ -40,6 +40,13 @@ const extractChargesFromValues = (values: Record<string, string>): ChargeData[] 
       owedFrom: values[`${prefix}.owed_from`] || '',
       totalDue: values[`${prefix}.total_due`] || '',
       interestFrom: values[`${prefix}.interest_from`] || '',
+      dateOfCharge: values[`${prefix}.date_of_charge`] || '',
+      interestRate: values[`${prefix}.interest_rate`] || '',
+      notes: values[`${prefix}.notes`] || '',
+      reference: values[`${prefix}.reference`] || '',
+      changeType: values[`${prefix}.change_type`] || '',
+      deferred: values[`${prefix}.deferred`] || '',
+      originalAmount: values[`${prefix}.original_amount`] || '',
     };
     charges.push(charge);
   });
@@ -134,6 +141,13 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
     onValueChange(`${prefix}.owed_from`, chargeData.owedFrom);
     onValueChange(`${prefix}.total_due`, chargeData.totalDue);
     onValueChange(`${prefix}.interest_from`, chargeData.interestFrom);
+    onValueChange(`${prefix}.date_of_charge`, chargeData.dateOfCharge);
+    onValueChange(`${prefix}.interest_rate`, chargeData.interestRate);
+    onValueChange(`${prefix}.notes`, chargeData.notes);
+    onValueChange(`${prefix}.reference`, chargeData.reference);
+    onValueChange(`${prefix}.change_type`, chargeData.changeType);
+    onValueChange(`${prefix}.deferred`, chargeData.deferred);
+    onValueChange(`${prefix}.original_amount`, chargeData.originalAmount);
     
     setModalOpen(false);
   }, [editingCharge, values, onValueChange]);

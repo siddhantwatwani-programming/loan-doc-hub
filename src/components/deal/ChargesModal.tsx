@@ -30,6 +30,13 @@ const getEmptyCharge = (): ChargeData => ({
   owedFrom: '',
   totalDue: '',
   interestFrom: '',
+  dateOfCharge: '',
+  interestRate: '',
+  notes: '',
+  reference: '',
+  changeType: '',
+  deferred: '',
+  originalAmount: '',
 });
 
 export const ChargesModal: React.FC<ChargesModalProps> = ({
@@ -110,6 +117,50 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                 placeholder="0.00"
               />
             </div>
+
+            <div>
+              <Label className="text-sm text-foreground">Original Amount</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.originalAmount}
+                onChange={(e) => handleFieldChange('originalAmount', e.target.value)}
+                className="h-8 text-sm mt-1"
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <Label className="text-sm text-foreground">Date of Charge</Label>
+              <Input
+                type="date"
+                value={formData.dateOfCharge}
+                onChange={(e) => handleFieldChange('dateOfCharge', e.target.value)}
+                className="h-8 text-sm mt-1"
+              />
+            </div>
+
+            <div>
+              <Label className="text-sm text-foreground">Interest From</Label>
+              <Input
+                type="date"
+                value={formData.interestFrom}
+                onChange={(e) => handleFieldChange('interestFrom', e.target.value)}
+                className="h-8 text-sm mt-1"
+              />
+            </div>
+
+            <div>
+              <Label className="text-sm text-foreground">Interest Rate</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.interestRate}
+                onChange={(e) => handleFieldChange('interestRate', e.target.value)}
+                className="h-8 text-sm mt-1"
+                placeholder="0.00"
+              />
+            </div>
           </div>
 
           {/* Right Column */}
@@ -139,12 +190,42 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
             </div>
 
             <div>
-              <Label className="text-sm text-foreground">Interest From</Label>
+              <Label className="text-sm text-foreground">Change Type</Label>
               <Input
-                type="date"
-                value={formData.interestFrom}
-                onChange={(e) => handleFieldChange('interestFrom', e.target.value)}
+                value={formData.changeType}
+                onChange={(e) => handleFieldChange('changeType', e.target.value)}
                 className="h-8 text-sm mt-1"
+                placeholder="Enter change type"
+              />
+            </div>
+
+            <div>
+              <Label className="text-sm text-foreground">Deferred</Label>
+              <Input
+                value={formData.deferred}
+                onChange={(e) => handleFieldChange('deferred', e.target.value)}
+                className="h-8 text-sm mt-1"
+                placeholder="Enter deferred"
+              />
+            </div>
+
+            <div>
+              <Label className="text-sm text-foreground">Reference</Label>
+              <Input
+                value={formData.reference}
+                onChange={(e) => handleFieldChange('reference', e.target.value)}
+                className="h-8 text-sm mt-1"
+                placeholder="Enter reference"
+              />
+            </div>
+
+            <div>
+              <Label className="text-sm text-foreground">Notes</Label>
+              <Input
+                value={formData.notes}
+                onChange={(e) => handleFieldChange('notes', e.target.value)}
+                className="h-8 text-sm mt-1"
+                placeholder="Enter notes"
               />
             </div>
           </div>
