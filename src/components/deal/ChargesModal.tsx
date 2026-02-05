@@ -77,23 +77,13 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-6 mt-4">
-          {/* Left Column */}
-          <div className="space-y-3">
-            <div className="border-b border-border pb-2 mb-3">
-              <span className="font-semibold text-sm text-primary">Charge Information</span>
-            </div>
+        <div className="space-y-4 mt-4">
+          <div className="border-b border-border pb-2">
+            <span className="font-semibold text-sm text-primary">Charge Information</span>
+          </div>
 
-            <div>
-              <Label className="text-sm text-foreground">Description <span className="text-destructive">*</span></Label>
-              <Input
-                value={formData.description}
-                onChange={(e) => handleFieldChange('description', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter charge description"
-              />
-            </div>
-
+          {/* Row 1: Unpaid Balance | Owed To */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-sm text-foreground">Unpaid Balance</Label>
               <Input
@@ -105,7 +95,28 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                 placeholder="0.00"
               />
             </div>
+            <div>
+              <Label className="text-sm text-foreground">Owed To</Label>
+              <Input
+                value={formData.owedTo}
+                onChange={(e) => handleFieldChange('owedTo', e.target.value)}
+                className="h-8 text-sm mt-1"
+                placeholder="Enter owed to"
+              />
+            </div>
+          </div>
 
+          {/* Row 2: Owed From | Total Due */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm text-foreground">Owed From</Label>
+              <Input
+                value={formData.owedFrom}
+                onChange={(e) => handleFieldChange('owedFrom', e.target.value)}
+                className="h-8 text-sm mt-1"
+                placeholder="Enter owed from"
+              />
+            </div>
             <div>
               <Label className="text-sm text-foreground">Total Due</Label>
               <Input
@@ -117,19 +128,10 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                 placeholder="0.00"
               />
             </div>
+          </div>
 
-            <div>
-              <Label className="text-sm text-foreground">Original Amount</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.originalAmount}
-                onChange={(e) => handleFieldChange('originalAmount', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="0.00"
-              />
-            </div>
-
+          {/* Row 3: Date of Charge | Change Type */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-sm text-foreground">Date of Charge</Label>
               <Input
@@ -139,17 +141,41 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                 className="h-8 text-sm mt-1"
               />
             </div>
-
             <div>
-              <Label className="text-sm text-foreground">Interest From</Label>
+              <Label className="text-sm text-foreground">Change Type</Label>
               <Input
-                type="date"
-                value={formData.interestFrom}
-                onChange={(e) => handleFieldChange('interestFrom', e.target.value)}
+                value={formData.changeType}
+                onChange={(e) => handleFieldChange('changeType', e.target.value)}
                 className="h-8 text-sm mt-1"
+                placeholder="Enter change type"
               />
             </div>
+          </div>
 
+          {/* Row 4: Description | Deferred */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm text-foreground">Description <span className="text-destructive">*</span></Label>
+              <Input
+                value={formData.description}
+                onChange={(e) => handleFieldChange('description', e.target.value)}
+                className="h-8 text-sm mt-1"
+                placeholder="Enter charge description"
+              />
+            </div>
+            <div>
+              <Label className="text-sm text-foreground">Deferred</Label>
+              <Input
+                value={formData.deferred}
+                onChange={(e) => handleFieldChange('deferred', e.target.value)}
+                className="h-8 text-sm mt-1"
+                placeholder="Enter deferred"
+              />
+            </div>
+          </div>
+
+          {/* Row 5: Interest Rate | Interest From */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-sm text-foreground">Interest Rate</Label>
               <Input
@@ -161,64 +187,19 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                 placeholder="0.00"
               />
             </div>
+            <div>
+              <Label className="text-sm text-foreground">Interest From</Label>
+              <Input
+                type="date"
+                value={formData.interestFrom}
+                onChange={(e) => handleFieldChange('interestFrom', e.target.value)}
+                className="h-8 text-sm mt-1"
+              />
+            </div>
           </div>
 
-          {/* Right Column */}
-          <div className="space-y-3">
-            <div className="border-b border-border pb-2 mb-3">
-              <span className="font-semibold text-sm text-primary">Payment Details</span>
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">Owed To</Label>
-              <Input
-                value={formData.owedTo}
-                onChange={(e) => handleFieldChange('owedTo', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter owed to"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">Owed From</Label>
-              <Input
-                value={formData.owedFrom}
-                onChange={(e) => handleFieldChange('owedFrom', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter owed from"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">Change Type</Label>
-              <Input
-                value={formData.changeType}
-                onChange={(e) => handleFieldChange('changeType', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter change type"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">Deferred</Label>
-              <Input
-                value={formData.deferred}
-                onChange={(e) => handleFieldChange('deferred', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter deferred"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">Reference</Label>
-              <Input
-                value={formData.reference}
-                onChange={(e) => handleFieldChange('reference', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter reference"
-              />
-            </div>
-
+          {/* Row 6: Notes | Original Amount */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-sm text-foreground">Notes</Label>
               <Input
@@ -226,6 +207,30 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                 onChange={(e) => handleFieldChange('notes', e.target.value)}
                 className="h-8 text-sm mt-1"
                 placeholder="Enter notes"
+              />
+            </div>
+            <div>
+              <Label className="text-sm text-foreground">Original Amount</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.originalAmount}
+                onChange={(e) => handleFieldChange('originalAmount', e.target.value)}
+                className="h-8 text-sm mt-1"
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
+          {/* Row 7: Reference (single column) */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm text-foreground">Reference</Label>
+              <Input
+                value={formData.reference}
+                onChange={(e) => handleFieldChange('reference', e.target.value)}
+                className="h-8 text-sm mt-1"
+                placeholder="Enter reference"
               />
             </div>
           </div>
