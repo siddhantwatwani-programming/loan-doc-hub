@@ -142,7 +142,9 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
   }
 
   /* Smooth transitions for theme switching */
@@ -172,9 +174,9 @@
     @apply bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary;
   }
 
-  /* Page container */
+  /* Page container  max-w-7xl*/
   .page-container {
-    @apply p-6 lg:p-8 max-w-7xl mx-auto;
+    @apply p-6 lg:p-8 mx-auto;
   }
 
   /* Section card */
