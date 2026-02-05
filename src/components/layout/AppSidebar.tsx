@@ -2,6 +2,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, AppRole } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useSidebar } from '@/contexts/SidebarContext';
 import { getRoleDisplayName } from '@/lib/accessControl';
 import {
   LayoutDashboard,
@@ -20,6 +21,8 @@ import {
   ChevronDown,
   ChevronRight,
   Eye,
+  Menu,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
@@ -85,6 +88,7 @@ export const AppSidebar: React.FC = () => {
   const navigate = useNavigate();
   const { role, signOut, user, isExternalUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { isCollapsed, toggleSidebar } = useSidebar();
   const [openGroups, setOpenGroups] = React.useState<string[]>(['Configuration']);
 
   // Filter items based on role
@@ -125,20 +129,36 @@ export const AppSidebar: React.FC = () => {
   };
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-sidebar flex flex-col z-50">
-      {/* Logo Section */}
-      <div className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="Logo" className="h-10 w-auto" />
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-sidebar-foreground">Del Toro</span>
-            <span className="text-xs text-sidebar-foreground/70">Loan Servicing</span>
+    <aside className={cn(
+      "fixed left-0 top-0 h-full bg-sidebar flex flex-col z-50 transition-all duration-300",
+      isCollapsed ? "w-16" : "w-64"
+    )}>
+      {/* Logo Section with Hamburger */}
+      <div className="p-4 border-b border-sidebar-border">
+        <div className="flex items-center justify-between">
+          <div className={cn("flex items-center gap-3", isCollapsed && "justify-center w-full")}>
+            {!isCollapsed && (
+              <>
+                <img src={logo} alt="Logo" className="h-10 w-auto" />
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-sidebar-foreground">Del Toro</span>
+                  <span className="text-xs text-sidebar-foreground/70">Loan Servicing</span>
+                </div>
+              </>
+            )}
           </div>
+          <button
+            onClick={toggleSidebar}
+            className="p-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
+          </button>
         </div>
       </div>
 
       {/* External User Banner */}
-      {isExternalUser && (
+      {isExternalUser && !isCollapsed && (
         <div className="px-4 py-2 bg-primary/10 border-b border-sidebar-border">
           <div className="flex items-center gap-2 text-xs text-primary">
             <Eye className="h-3 w-3" />
@@ -148,7 +168,7 @@ export const AppSidebar: React.FC = () => {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
         {/* Regular Nav Items */}
         {filteredItems.map((item) => (
           <button
@@ -156,11 +176,13 @@ export const AppSidebar: React.FC = () => {
             onClick={() => navigate(item.path)}
             className={cn(
               'sidebar-item w-full',
-              isActive(item.path) && 'sidebar-item-active'
+              isActive(item.path) && 'sidebar-item-active',
+              isCollapsed && 'justify-center px-2'
             )}
+            title={isCollapsed ? item.label : undefined}
           >
-            <item.icon className="h-5 w-5" />
-            <span>{item.label}</span>
+            <item.icon className="h-5 w-5 flex-shrink-0" />
+            {!isCollapsed && <span>{item.label}</span>}
           </button>
         ))}
 
@@ -176,21 +198,23 @@ export const AppSidebar: React.FC = () => {
             onClick={() => navigate(item.path)}
             className={cn(
               'sidebar-item w-full',
-              isActive(item.path) && 'sidebar-item-active'
+              isActive(item.path) && 'sidebar-item-active',
+              isCollapsed && 'justify-center px-2'
             )}
+            title={isCollapsed ? item.label : undefined}
           >
-            <item.icon className="h-5 w-5" />
-            <span>{item.label}</span>
+            <item.icon className="h-5 w-5 flex-shrink-0" />
+            {!isCollapsed && <span>{item.label}</span>}
           </button>
         ))}
 
         {/* Separator before Configuration group */}
-        {filteredGroups.length > 0 && (
+        {filteredGroups.length > 0 && !isCollapsed && (
           <div className="my-3 border-t border-sidebar-border" />
         )}
 
-        {/* Grouped Nav Items (Configuration) */}
-        {filteredGroups.map((group) => (
+        {/* Grouped Nav Items (Configuration) - only show when not collapsed */}
+        {!isCollapsed && filteredGroups.map((group) => (
           <Collapsible
             key={group.label}
             open={openGroups.includes(group.label)}
@@ -234,27 +258,34 @@ export const AppSidebar: React.FC = () => {
       </nav>
 
       {/* User Section */}
-      <div className="p-4 border-t border-sidebar-border space-y-2">
-        <div className="px-3 py-2">
-          <p className="text-sm font-medium text-sidebar-foreground truncate">
-            {user?.email}
-          </p>
-          <p className="text-xs text-sidebar-foreground/70">
-            {getRoleDisplayName(role)}
-          </p>
-        </div>
+      <div className={cn("p-4 border-t border-sidebar-border space-y-2", isCollapsed && "p-2")}>
+        {!isCollapsed && (
+          <div className="px-3 py-2">
+            <p className="text-sm font-medium text-sidebar-foreground truncate">
+              {user?.email}
+            </p>
+            <p className="text-xs text-sidebar-foreground/70">
+              {getRoleDisplayName(role)}
+            </p>
+          </div>
+        )}
 
-        <button onClick={toggleTheme} className="sidebar-item w-full">
+        <button 
+          onClick={toggleTheme} 
+          className={cn("sidebar-item w-full", isCollapsed && "justify-center px-2")}
+          title={isCollapsed ? (theme === 'light' ? 'Dark Mode' : 'Light Mode') : undefined}
+        >
           {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-          <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+          {!isCollapsed && <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>}
         </button>
 
         <button
           onClick={handleSignOut}
-          className="sidebar-item w-full text-destructive hover:bg-destructive/10"
+          className={cn("sidebar-item w-full text-destructive hover:bg-destructive/10", isCollapsed && "justify-center px-2")}
+          title={isCollapsed ? 'Sign Out' : undefined}
         >
           <LogOut className="h-5 w-5" />
-          <span>Sign Out</span>
+          {!isCollapsed && <span>Sign Out</span>}
         </button>
       </div>
     </aside>

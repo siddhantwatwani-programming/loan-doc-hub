@@ -449,19 +449,17 @@ export const DealDataEntryPage: React.FC = () => {
     <div className="page-container">
       {/* Header */}
       <div className="mb-6">
-        {/* Back button - external users go to deals list, internal users go to deal overview */}
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate(isExternalUser ? '/deals' : `/deals/${deal.id}`)} 
-          className="gap-2 mb-4"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {isExternalUser ? 'Back to Deals' : 'Back to Deal Overview'}
-        </Button>
-        
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => navigate(isExternalUser ? '/deals' : `/deals/${deal.id}`)} 
+                className="h-8 w-8"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
               <h1 className="text-2xl font-bold text-foreground">
                 {isExternalUser ? 'Complete Your Information' : 'Enter Deal Data'}
               </h1>

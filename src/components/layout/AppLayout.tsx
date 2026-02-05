@@ -1,17 +1,20 @@
 import React from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth, AppRole } from '@/contexts/AuthContext';
+import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext';
 import { AppSidebar } from './AppSidebar';
 import { Loader2 } from 'lucide-react';
 import { isExternalRole } from '@/lib/accessControl';
+import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
   requiredRoles?: AppRole[];
   blockExternalUsers?: boolean;
 }
 
-export const AppLayout: React.FC<AppLayoutProps> = ({ requiredRoles, blockExternalUsers = false }) => {
+const LayoutContent: React.FC<AppLayoutProps> = ({ requiredRoles, blockExternalUsers = false }) => {
   const { user, role, loading, isExternalUser } = useAuth();
+  const { isCollapsed } = useSidebar();
 
   if (loading) {
     return (
@@ -58,11 +61,22 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ requiredRoles, blockExtern
   return (
     <div className="min-h-screen bg-background">
       <AppSidebar />
-      <main className="pl-64 min-h-screen">
+      <main className={cn(
+        "min-h-screen transition-all duration-300",
+        isCollapsed ? "pl-16" : "pl-64"
+      )}>
         <div className="animate-fade-in">
           <Outlet />
         </div>
       </main>
     </div>
+  );
+};
+
+export const AppLayout: React.FC<AppLayoutProps> = (props) => {
+  return (
+    <SidebarProvider>
+      <LayoutContent {...props} />
+    </SidebarProvider>
   );
 };
