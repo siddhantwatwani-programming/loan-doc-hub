@@ -19,6 +19,8 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
+import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 
 export interface BorrowerData {
   id: string;
@@ -53,6 +55,19 @@ interface BorrowersTableViewProps {
   onPageChange: (page: number) => void;
 }
 
+const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'primary', label: 'Primary', visible: true },
+  { id: 'type', label: 'Type', visible: true },
+  { id: 'fullName', label: 'Full Name', visible: true },
+  { id: 'email', label: 'Email', visible: true },
+  { id: 'phone', label: 'Phone', visible: true },
+  { id: 'city', label: 'City', visible: true },
+  { id: 'state', label: 'State', visible: true },
+  { id: 'creditScore', label: 'Credit Score', visible: true },
+  { id: 'capacity', label: 'Authorized Party', visible: true },
+  { id: 'actions', label: 'Actions', visible: true },
+];
+
 export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
   borrowers,
   onAddBorrower,
@@ -65,9 +80,64 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
   totalPages,
   onPageChange,
 }) => {
+  const [columns, setColumns] = useTableColumnConfig('borrowers', DEFAULT_COLUMNS);
+  
+  const visibleColumns = columns.filter((col) => col.visible);
+
+  const renderCellContent = (borrower: BorrowerData, columnId: string) => {
+    switch (columnId) {
+      case 'primary':
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Checkbox
+              checked={borrower.isPrimary}
+              onCheckedChange={(checked) => onPrimaryChange(borrower.id, !!checked)}
+              disabled={disabled}
+            />
+          </div>
+        );
+      case 'type':
+        return borrower.borrowerType || '-';
+      case 'fullName':
+        return (
+          <span className="font-medium">
+            {borrower.fullName || `${borrower.firstName} ${borrower.lastName}`.trim() || '-'}
+          </span>
+        );
+      case 'email':
+        return borrower.email || '-';
+      case 'phone':
+        return borrower.phone || '-';
+      case 'city':
+        return borrower.city || '-';
+      case 'state':
+        return borrower.state || '-';
+      case 'creditScore':
+        return borrower.creditScore || '-';
+      case 'capacity':
+        return borrower.capacity || '-';
+      case 'actions':
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onEditBorrower(borrower)}
+              disabled={disabled}
+              className="h-8 w-8"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          </div>
+        );
+      default:
+        return '-';
+    }
+  };
+
   const renderLoader = () => (
     <TableRow>
-      <TableCell colSpan={10} className="py-4">
+      <TableCell colSpan={visibleColumns.length} className="py-4">
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex items-center gap-4">
@@ -91,6 +161,11 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
           <h3 className="font-semibold text-lg text-foreground">Borrowers</h3>
         </div>
         <div className="flex items-center gap-2">
+          <ColumnConfigPopover
+            columns={columns}
+            onColumnsChange={setColumns}
+            disabled={disabled}
+          />
           <Button
             variant="outline"
             size="sm"
@@ -109,16 +184,18 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
         <Table className="min-w-[1000px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="w-[80px]">PRIMARY</TableHead>
-              <TableHead>TYPE</TableHead>
-              <TableHead>FULL NAME</TableHead>
-              <TableHead>EMAIL</TableHead>
-              <TableHead>PHONE</TableHead>
-              <TableHead>CITY</TableHead>
-              <TableHead>STATE</TableHead>
-              <TableHead>CREDIT SCORE</TableHead>
-              <TableHead>CAPACITY</TableHead>
-              <TableHead className="w-[80px]">ACTIONS</TableHead>
+              {visibleColumns.map((column) => (
+                <TableHead
+                  key={column.id}
+                  className={
+                    column.id === 'primary' || column.id === 'actions'
+                      ? 'w-[80px]'
+                      : undefined
+                  }
+                >
+                  {column.label.toUpperCase()}
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -126,7 +203,10 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
               renderLoader()
             ) : borrowers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={visibleColumns.length}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   No borrowers added. Click "Add Borrower" to add one.
                 </TableCell>
               </TableRow>
@@ -137,32 +217,11 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
                   className="cursor-pointer hover:bg-muted/30"
                   onClick={() => onRowClick(borrower)}
                 >
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                      checked={borrower.isPrimary}
-                      onCheckedChange={(checked) => onPrimaryChange(borrower.id, !!checked)}
-                      disabled={disabled}
-                    />
-                  </TableCell>
-                  <TableCell>{borrower.borrowerType || '-'}</TableCell>
-                  <TableCell className="font-medium">{borrower.fullName || `${borrower.firstName} ${borrower.lastName}`.trim() || '-'}</TableCell>
-                  <TableCell>{borrower.email || '-'}</TableCell>
-                  <TableCell>{borrower.phone || '-'}</TableCell>
-                  <TableCell>{borrower.city || '-'}</TableCell>
-                  <TableCell>{borrower.state || '-'}</TableCell>
-                  <TableCell>{borrower.creditScore || '-'}</TableCell>
-                  <TableCell>{borrower.capacity || '-'}</TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEditBorrower(borrower)}
-                      disabled={disabled}
-                      className="h-8 w-8"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+                  {visibleColumns.map((column) => (
+                    <TableCell key={column.id}>
+                      {renderCellContent(borrower, column.id)}
+                    </TableCell>
+                  ))}
                 </TableRow>
               ))
             )}
