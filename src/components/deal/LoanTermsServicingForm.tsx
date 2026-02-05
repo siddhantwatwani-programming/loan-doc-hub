@@ -72,24 +72,6 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
             disabled={disabled}
           />
         </div>
-        
-        <div className="flex items-center gap-3">
-          <Label className="text-sm font-medium">Dropdown for Lender Split</Label>
-          <Select
-            value={values['loan_terms.servicing.lender_split_type'] || 'fee_per_lender'}
-            onValueChange={(value) => onValueChange('loan_terms.servicing.lender_split_type', value)}
-            disabled={disabled}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="fee_per_lender">Fee Per Lender - No Split</SelectItem>
-              <SelectItem value="pro_rata">Pro Rata</SelectItem>
-              <SelectItem value="split_50_50">Split 50/50</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
       {/* Services Grid */}
@@ -137,12 +119,29 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
                   {GRID_COLUMNS.map((col) => (
                     <td key={col.key} className="px-1 py-1">
                       {!row.isSpacer && (
-                        <Input
-                          value={values[getFieldKey(row.key, col.key)] || ''}
-                          onChange={(e) => onValueChange(getFieldKey(row.key, col.key), e.target.value)}
-                          disabled={disabled}
-                          className="h-7 text-xs border-border"
-                        />
+                        col.key === 'lenders_split' ? (
+                          <Select
+                            value={values[getFieldKey(row.key, col.key)] || ''}
+                            onValueChange={(value) => onValueChange(getFieldKey(row.key, col.key), value)}
+                            disabled={disabled}
+                          >
+                            <SelectTrigger className="h-7 text-xs border-border">
+                              <SelectValue placeholder="Select..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="fee_per_lender">Fee Per Lender - No Split</SelectItem>
+                              <SelectItem value="pro_rata">Pro Rata</SelectItem>
+                              <SelectItem value="split_50_50">Split 50/50</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            value={values[getFieldKey(row.key, col.key)] || ''}
+                            onChange={(e) => onValueChange(getFieldKey(row.key, col.key), e.target.value)}
+                            disabled={disabled}
+                            className="h-7 text-xs border-border"
+                          />
+                        )
                       )}
                     </td>
                   ))}
@@ -171,12 +170,29 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
                 </td>
                 {GRID_COLUMNS.map((col) => (
                   <td key={col.key} className="px-1 py-1">
-                    <Input
-                      value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
-                      onChange={(e) => onValueChange(`loan_terms.servicing.custom.${col.key}`, e.target.value)}
-                      disabled={disabled}
-                      className="h-7 text-xs border-border"
-                    />
+                    {col.key === 'lenders_split' ? (
+                      <Select
+                        value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
+                        onValueChange={(value) => onValueChange(`loan_terms.servicing.custom.${col.key}`, value)}
+                        disabled={disabled}
+                      >
+                        <SelectTrigger className="h-7 text-xs border-border">
+                          <SelectValue placeholder="Select..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fee_per_lender">Fee Per Lender - No Split</SelectItem>
+                          <SelectItem value="pro_rata">Pro Rata</SelectItem>
+                          <SelectItem value="split_50_50">Split 50/50</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
+                        onChange={(e) => onValueChange(`loan_terms.servicing.custom.${col.key}`, e.target.value)}
+                        disabled={disabled}
+                        className="h-7 text-xs border-border"
+                      />
+                    )}
                   </td>
                 ))}
               </tr>
