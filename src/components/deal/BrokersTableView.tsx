@@ -10,6 +10,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
+import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 
 export interface BrokerData {
   id: string;
@@ -40,6 +42,17 @@ interface BrokersTableViewProps {
   onPageChange?: (page: number) => void;
 }
 
+const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'brokerId', label: 'Broker ID', visible: true },
+  { id: 'license', label: 'License', visible: true },
+  { id: 'company', label: 'Company', visible: true },
+  { id: 'name', label: 'Name', visible: true },
+  { id: 'email', label: 'Email', visible: true },
+  { id: 'address', label: 'Address', visible: true },
+  { id: 'phoneWork', label: 'Work Phone', visible: true },
+  { id: 'phoneCell', label: 'Cell Phone', visible: true },
+];
+
 export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
   brokers,
   onAddBroker,
@@ -51,6 +64,9 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
   totalPages = 1,
   onPageChange,
 }) => {
+  const [columns, setColumns] = useTableColumnConfig('brokers', DEFAULT_COLUMNS);
+  const visibleColumns = columns.filter((col) => col.visible);
+
   const getFullName = (broker: BrokerData): string => {
     const parts = [broker.firstName, broker.middleName, broker.lastName].filter(Boolean);
     return parts.length > 0 ? parts.join(' ') : '-';
@@ -61,12 +77,40 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
     return parts.length > 0 ? parts.join(', ') : '-';
   };
 
+  const renderCellValue = (broker: BrokerData, columnId: string) => {
+    switch (columnId) {
+      case 'brokerId':
+        return <span className="font-medium">{broker.brokerId || '-'}</span>;
+      case 'license':
+        return broker.license || '-';
+      case 'company':
+        return broker.company || '-';
+      case 'name':
+        return getFullName(broker);
+      case 'email':
+        return broker.email || '-';
+      case 'address':
+        return <span className="max-w-[200px] truncate block">{getAddress(broker)}</span>;
+      case 'phoneWork':
+        return broker.phoneWork || '-';
+      case 'phoneCell':
+        return broker.phoneCell || '-';
+      default:
+        return '-';
+    }
+  };
+
   return (
     <div className="p-6 space-y-4">
       {/* Header with title and actions */}
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-lg text-foreground">Brokers</h3>
         <div className="flex items-center gap-2">
+          <ColumnConfigPopover
+            columns={columns}
+            onColumnsChange={setColumns}
+            disabled={disabled}
+          />
           <Button
             variant="outline"
             size="sm"
@@ -82,17 +126,14 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
 
       {/* Brokers Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
-        <Table className="min-w-[1200px]">
+        <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead>BROKER ID</TableHead>
-              <TableHead>LICENSE</TableHead>
-              <TableHead>COMPANY</TableHead>
-              <TableHead>NAME</TableHead>
-              <TableHead>EMAIL</TableHead>
-              <TableHead>ADDRESS</TableHead>
-              <TableHead>WORK PHONE</TableHead>
-              <TableHead>CELL PHONE</TableHead>
+              {visibleColumns.map((col) => (
+                <TableHead key={col.id}>
+                  {col.label.toUpperCase()}
+                </TableHead>
+              ))}
               <TableHead className="w-[80px]">ACTIONS</TableHead>
             </TableRow>
           </TableHeader>
@@ -101,7 +142,7 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
               // Loading skeleton
               Array.from({ length: 3 }).map((_, index) => (
                 <TableRow key={`skeleton-${index}`}>
-                  {Array.from({ length: 9 }).map((_, cellIndex) => (
+                  {Array.from({ length: visibleColumns.length + 1 }).map((_, cellIndex) => (
                     <TableCell key={`skeleton-cell-${cellIndex}`}>
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
@@ -110,7 +151,7 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
               ))
             ) : brokers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
                   No brokers added. Click "Add Broker" to add one.
                 </TableCell>
               </TableRow>
@@ -121,14 +162,11 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
                   className="cursor-pointer hover:bg-muted/30"
                   onClick={() => onRowClick(broker)}
                 >
-                  <TableCell className="font-medium">{broker.brokerId || '-'}</TableCell>
-                  <TableCell>{broker.license || '-'}</TableCell>
-                  <TableCell>{broker.company || '-'}</TableCell>
-                  <TableCell>{getFullName(broker)}</TableCell>
-                  <TableCell>{broker.email || '-'}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">{getAddress(broker)}</TableCell>
-                  <TableCell>{broker.phoneWork || '-'}</TableCell>
-                  <TableCell>{broker.phoneCell || '-'}</TableCell>
+                  {visibleColumns.map((col) => (
+                    <TableCell key={col.id}>
+                      {renderCellValue(broker, col.id)}
+                    </TableCell>
+                  ))}
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="ghost"
