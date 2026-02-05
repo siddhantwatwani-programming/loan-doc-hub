@@ -74,13 +74,18 @@ interface JsonbFieldValue {
 // Extracts canonical key from indexed key
 // e.g., "lender1.first_name" -> "lender.first_name"
 // e.g., "borrower2.address.city" -> "borrower.address.city"
+//
+// IMPORTANT:
+// - Borrower/Lender/Broker/Co-Borrower sections store dictionary keys as non-indexed (borrower.*, lender.*)
+// - Property keys in the dictionary are primarily defined under property1.*
+//   so we normalize propertyN.* -> property1.* for consistent lookup.
 function getCanonicalKey(indexedKey: string): string {
   return indexedKey
     .replace(/^(borrower)\d+\./, '$1.')
     .replace(/^(coborrower)\d+\./, 'coborrower.')
     .replace(/^(co_borrower)\d+\./, 'co_borrower.')
     .replace(/^(lender)\d+\./, '$1.')
-    .replace(/^(property)\d+\./, 'property.')
+    .replace(/^(property)\d+\./, 'property1.')
     .replace(/^(broker)\d+\./, 'broker.');
 }
 
@@ -361,29 +366,61 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
 
       // Group values by section and build JSONB structure
       if (fieldKeysToSave.length > 0) {
+        // ---- Fallback dictionary lookup (ensures we can always persist even if packet-resolved fields are incomplete)
+        const candidateKeys = new Set<string>();
+        for (const fieldKey of fieldKeysToSave) {
+          candidateKeys.add(fieldKey);
+          candidateKeys.add(getCanonicalKey(fieldKey));
+        }
+
+        const keysMissingFromMap = [...candidateKeys].filter(k => !fieldIdMap[k]);
+        const fallbackMetaByKey = new Map<string, { id: string; section: FieldSection; data_type: FieldDataType }>();
+
+        if (keysMissingFromMap.length > 0) {
+          const { data: fallbackRows, error: fbError } = await supabase
+            .from('field_dictionary')
+            .select('id, field_key, section, data_type')
+            .in('field_key', keysMissingFromMap as any);
+
+          if (fbError) throw fbError;
+
+          (fallbackRows || []).forEach((r: any) => {
+            if (r?.field_key && r?.id && r?.section && r?.data_type) {
+              fallbackMetaByKey.set(r.field_key, {
+                id: r.id,
+                section: r.section,
+                data_type: r.data_type,
+              });
+            }
+          });
+        }
+
         // Build section -> field_dictionary_id -> value object mapping
         const sectionUpdates: Record<string, Record<string, JsonbFieldValue>> = {};
-        
+
         for (const fieldKey of fieldKeysToSave) {
           // Get canonical key for dictionary lookup (lender1.first_name -> lender.first_name)
           const canonicalKey = getCanonicalKey(fieldKey);
-          const fieldDictId = fieldIdMap[canonicalKey] || fieldIdMap[fieldKey];
+
+          const fallbackMeta = fallbackMetaByKey.get(canonicalKey) || fallbackMetaByKey.get(fieldKey);
+          const fieldDictId = fieldIdMap[canonicalKey] || fieldIdMap[fieldKey] || fallbackMeta?.id;
           if (!fieldDictId) continue;
-          
-          // Find the field using canonical key for metadata lookup
+
+          // Prefer resolvedFields for section/type; fall back to dictionary lookup when not present
           const field = resolvedFields?.fields.find(
             f => f.field_key === canonicalKey || f.field_key === fieldKey
           );
-          if (!field) continue;
-          
-          const section = field.section;
+
+          const section = field?.section || fallbackMeta?.section;
+          if (!section) continue;
+
           if (!sectionUpdates[section]) {
             sectionUpdates[section] = {};
           }
-          
-          const dataType = fieldDataTypes[canonicalKey] || fieldDataTypes[fieldKey] || 'text';
+
+          const dataType = (fieldDataTypes[canonicalKey] || fieldDataTypes[fieldKey] || fallbackMeta?.data_type || 'text') as FieldDataType;
           const stringValue = finalValues[fieldKey];
-          
+
           // Build the JSONB field value object
           // Store indexed_key to preserve the full key (e.g., "lender1.first_name") for multi-entity support
           const fieldValueObj: JsonbFieldValue = {
@@ -395,14 +432,15 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
             updated_at: new Date().toISOString(),
             updated_by: user.id,
           };
-          
+
           switch (dataType) {
             case 'number':
             case 'currency':
-            case 'percentage':
+            case 'percentage': {
               const numValue = parseFloat(stringValue);
               fieldValueObj.value_number = isNaN(numValue) ? null : numValue;
               break;
+            }
             case 'date':
               fieldValueObj.value_date = stringValue || null;
               break;
@@ -412,41 +450,57 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
             default:
               fieldValueObj.value_text = stringValue;
           }
-          
+
           sectionUpdates[section][fieldDictId] = fieldValueObj;
         }
 
-        // Upsert each section - merge with existing field_values using RPC or fetch-then-update
-        for (const [section, newFieldValues] of Object.entries(sectionUpdates)) {
-          // Fetch existing section values to merge
-          const { data: existingSection } = await supabase
+        const sectionsToPersist = Object.entries(sectionUpdates).filter(([, v]) => Object.keys(v).length > 0);
+        if (sectionsToPersist.length === 0) {
+          throw new Error('Nothing to save (no matching field definitions found)');
+        }
+
+        // Persist each section: insert if missing, otherwise update
+        for (const [section, newFieldValues] of sectionsToPersist) {
+          const { data: existingSection, error: existingError } = await supabase
             .from('deal_section_values')
-            .select('field_values, version')
+            .select('id, field_values, version')
             .eq('deal_id', dealId)
             .eq('section', section as FieldSection)
             .maybeSingle();
-          
+
+          if (existingError) throw existingError;
+
           // Merge new values with existing - cast through unknown for JSONB compatibility
           const existingFieldValues = (existingSection?.field_values as unknown as Record<string, JsonbFieldValue>) || {};
           const mergedFieldValues: Record<string, JsonbFieldValue> = {
             ...existingFieldValues,
-            ...newFieldValues
+            ...newFieldValues,
           };
-          
-          const newVersion = (existingSection?.version || 0) + 1;
-          
-          // Use raw upsert - cast merged values to Json for JSONB storage
-          const { error: upsertError } = await supabase
-            .from('deal_section_values')
-            .upsert([{
-              deal_id: dealId,
-              section: section as FieldSection,
-              field_values: JSON.parse(JSON.stringify(mergedFieldValues)),
-              updated_at: new Date().toISOString(),
-              version: newVersion,
-            }], { onConflict: 'deal_id,section' });
 
-          if (upsertError) throw upsertError;
+          const newVersion = (existingSection?.version || 0) + 1;
+
+          const payload = {
+            deal_id: dealId,
+            section: section as FieldSection,
+            field_values: JSON.parse(JSON.stringify(mergedFieldValues)),
+            updated_at: new Date().toISOString(),
+            version: newVersion,
+          };
+
+          if (existingSection?.id) {
+            const { error: updateError } = await supabase
+              .from('deal_section_values')
+              .update(payload)
+              .eq('id', existingSection.id);
+
+            if (updateError) throw updateError;
+          } else {
+            const { error: insertError } = await supabase
+              .from('deal_section_values')
+              .insert(payload);
+
+            if (insertError) throw insertError;
+          }
         }
       }
 
@@ -467,7 +521,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     } finally {
       setSaving(false);
     }
-  }, [dealId, values, fieldDataTypes, fieldIdMap, computeCalculatedFields, toast]);
+  }, [dealId, values, fieldDataTypes, fieldIdMap, resolvedFields, computeCalculatedFields, toast]);
 
   const getMissingRequiredFields = useCallback((section?: FieldSection): ResolvedField[] => {
     if (!resolvedFields) return [];
