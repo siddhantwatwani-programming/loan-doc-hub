@@ -403,14 +403,6 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               <Label className="text-sm text-muted-foreground">Alternate Reporting</Label>
             </div>
             
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={getBoolValue('prepareCa881')}
-                onCheckedChange={(checked) => handleChange('prepareCa881', !!checked)}
-                disabled={disabled}
-              />
-              <Label className="text-sm text-muted-foreground">Prepare CA 881</Label>
-            </div>
           </div>
         </div>
 
