@@ -10,6 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
+import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 
 export interface PropertyData {
   id: string;
@@ -38,6 +40,23 @@ interface PropertiesTableViewProps {
   disabled?: boolean;
 }
 
+const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'isPrimary', label: 'Primary', visible: true },
+  { id: 'description', label: 'Description', visible: true },
+  { id: 'street', label: 'Street', visible: true },
+  { id: 'city', label: 'City', visible: true },
+  { id: 'state', label: 'State', visible: true },
+  { id: 'zipCode', label: 'Zip Code', visible: true },
+  { id: 'county', label: 'County', visible: true },
+  { id: 'propertyType', label: 'Property Type', visible: true },
+  { id: 'occupancy', label: 'Occupancy', visible: true },
+  { id: 'appraisedValue', label: 'Appraised Value', visible: true },
+  { id: 'appraisedDate', label: 'Appraisal Date', visible: true },
+  { id: 'ltv', label: 'LTV', visible: true },
+  { id: 'apn', label: 'APN', visible: true },
+  { id: 'loanPriority', label: 'Loan Priority', visible: true },
+];
+
 export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   properties,
   onAddProperty,
@@ -46,6 +65,9 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   onPrimaryChange,
   disabled = false,
 }) => {
+  const [columns, setColumns] = useTableColumnConfig('properties', DEFAULT_COLUMNS);
+  const visibleColumns = columns.filter((col) => col.visible);
+
   const formatCurrency = (value: string) => {
     if (!value) return '$0.00';
     const num = parseFloat(value);
@@ -60,6 +82,27 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
     return `${num.toFixed(3)}%`;
   };
 
+  const renderCellValue = (property: PropertyData, columnId: string) => {
+    switch (columnId) {
+      case 'isPrimary':
+        return (
+          <Checkbox
+            checked={property.isPrimary}
+            onCheckedChange={(checked) => onPrimaryChange(property.id, !!checked)}
+            disabled={disabled}
+          />
+        );
+      case 'description':
+        return <span className="font-medium">{property.description || property.propertyType || '-'}</span>;
+      case 'appraisedValue':
+        return formatCurrency(property.appraisedValue);
+      case 'ltv':
+        return formatPercentage(property.ltv);
+      default:
+        return property[columnId as keyof PropertyData] || '-';
+    }
+  };
+
   return (
     <div className="p-6 space-y-4">
       {/* Header with title and actions */}
@@ -68,6 +111,11 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
           <h3 className="font-semibold text-lg text-foreground">Properties</h3>
         </div>
         <div className="flex items-center gap-2">
+          <ColumnConfigPopover
+            columns={columns}
+            onColumnsChange={setColumns}
+            disabled={disabled}
+          />
           <Button
             variant="outline"
             size="sm"
@@ -86,27 +134,18 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         <Table className="min-w-[1400px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="w-[80px]">PRIMARY</TableHead>
-              <TableHead>DESCRIPTION</TableHead>
-              <TableHead>STREET</TableHead>
-              <TableHead>CITY</TableHead>
-              <TableHead>STATE</TableHead>
-              <TableHead>ZIP CODE</TableHead>
-              <TableHead>COUNTY</TableHead>
-              <TableHead>PROPERTY TYPE</TableHead>
-              <TableHead>OCCUPANCY</TableHead>
-              <TableHead>APPRAISED VALUE</TableHead>
-              <TableHead>APPRAISAL DATE</TableHead>
-              <TableHead>LTV</TableHead>
-              <TableHead>APN</TableHead>
-              <TableHead>LOAN PRIORITY</TableHead>
+              {visibleColumns.map((col) => (
+                <TableHead key={col.id} className={col.id === 'isPrimary' ? 'w-[80px]' : undefined}>
+                  {col.label.toUpperCase()}
+                </TableHead>
+              ))}
               <TableHead className="w-[80px]">ACTIONS</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {properties.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={15} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
                   No properties added. Click "Add Property" to add one.
                 </TableCell>
               </TableRow>
@@ -117,26 +156,14 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
                   className="cursor-pointer hover:bg-muted/30"
                   onClick={() => onRowClick(property)}
                 >
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                      checked={property.isPrimary}
-                      onCheckedChange={(checked) => onPrimaryChange(property.id, !!checked)}
-                      disabled={disabled}
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{property.description || property.propertyType || '-'}</TableCell>
-                  <TableCell>{property.street || '-'}</TableCell>
-                  <TableCell>{property.city || '-'}</TableCell>
-                  <TableCell>{property.state || '-'}</TableCell>
-                  <TableCell>{property.zipCode || '-'}</TableCell>
-                  <TableCell>{property.county || '-'}</TableCell>
-                  <TableCell>{property.propertyType || '-'}</TableCell>
-                  <TableCell>{property.occupancy || '-'}</TableCell>
-                  <TableCell>{formatCurrency(property.appraisedValue)}</TableCell>
-                  <TableCell>{property.appraisedDate || '-'}</TableCell>
-                  <TableCell>{formatPercentage(property.ltv)}</TableCell>
-                  <TableCell>{property.apn || '-'}</TableCell>
-                  <TableCell>{property.loanPriority || '-'}</TableCell>
+                  {visibleColumns.map((col) => (
+                    <TableCell
+                      key={col.id}
+                      onClick={col.id === 'isPrimary' ? (e) => e.stopPropagation() : undefined}
+                    >
+                      {renderCellValue(property, col.id)}
+                    </TableCell>
+                  ))}
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="ghost"
