@@ -89,9 +89,6 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-semibold text-lg text-foreground">Borrowers</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage borrowers for this deal. One borrower is marked as primary.
-          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button

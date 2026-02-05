@@ -66,9 +66,6 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-semibold text-lg text-foreground">Properties</h3>
-          <p className="text-sm text-muted-foreground">
-            Can have multiple properties on an acct, one is marked primary
-          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button
