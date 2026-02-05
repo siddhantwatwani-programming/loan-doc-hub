@@ -37,18 +37,8 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
           <span className="font-semibold text-sm text-primary">Charge Information</span>
         </div>
 
+        {/* Row 1: Unpaid Balance | Owed To */}
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="text-sm text-foreground">Description</Label>
-            <Input
-              value={values[FIELD_KEYS.description] || ''}
-              onChange={(e) => onValueChange(FIELD_KEYS.description, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-              placeholder="Enter description"
-            />
-          </div>
-
           <div>
             <Label className="text-sm text-foreground">Unpaid Balance</Label>
             <Input
@@ -61,7 +51,6 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
               placeholder="0.00"
             />
           </div>
-
           <div>
             <Label className="text-sm text-foreground">Owed To</Label>
             <Input
@@ -72,7 +61,10 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
               placeholder="Enter owed to"
             />
           </div>
+        </div>
 
+        {/* Row 2: Owed From | Total Due */}
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className="text-sm text-foreground">Owed From</Label>
             <Input
@@ -83,7 +75,6 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
               placeholder="Enter owed from"
             />
           </div>
-
           <div>
             <Label className="text-sm text-foreground">Total Due</Label>
             <Input
@@ -96,20 +87,10 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
               placeholder="0.00"
             />
           </div>
+        </div>
 
-          <div>
-            <Label className="text-sm text-foreground">Original Amount</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={values[FIELD_KEYS.originalAmount] || ''}
-              onChange={(e) => onValueChange(FIELD_KEYS.originalAmount, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-              placeholder="0.00"
-            />
-          </div>
-
+        {/* Row 3: Date of Charge | Change Type */}
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className="text-sm text-foreground">Date of Charge</Label>
             <Input
@@ -120,18 +101,44 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
               className="h-8 text-sm mt-1"
             />
           </div>
-
           <div>
-            <Label className="text-sm text-foreground">Interest From</Label>
+            <Label className="text-sm text-foreground">Change Type</Label>
             <Input
-              type="date"
-              value={values[FIELD_KEYS.interestFrom] || ''}
-              onChange={(e) => onValueChange(FIELD_KEYS.interestFrom, e.target.value)}
+              value={values[FIELD_KEYS.changeType] || ''}
+              onChange={(e) => onValueChange(FIELD_KEYS.changeType, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
+              placeholder="Enter change type"
             />
           </div>
+        </div>
 
+        {/* Row 4: Description | Deferred */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-sm text-foreground">Description</Label>
+            <Input
+              value={values[FIELD_KEYS.description] || ''}
+              onChange={(e) => onValueChange(FIELD_KEYS.description, e.target.value)}
+              disabled={disabled}
+              className="h-8 text-sm mt-1"
+              placeholder="Enter description"
+            />
+          </div>
+          <div>
+            <Label className="text-sm text-foreground">Deferred</Label>
+            <Input
+              value={values[FIELD_KEYS.deferred] || ''}
+              onChange={(e) => onValueChange(FIELD_KEYS.deferred, e.target.value)}
+              disabled={disabled}
+              className="h-8 text-sm mt-1"
+              placeholder="Enter deferred"
+            />
+          </div>
+        </div>
+
+        {/* Row 5: Interest Rate | Interest From */}
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className="text-sm text-foreground">Interest Rate</Label>
             <Input
@@ -144,29 +151,46 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
               placeholder="0.00"
             />
           </div>
-
           <div>
-            <Label className="text-sm text-foreground">Change Type</Label>
+            <Label className="text-sm text-foreground">Interest From</Label>
             <Input
-              value={values[FIELD_KEYS.changeType] || ''}
-              onChange={(e) => onValueChange(FIELD_KEYS.changeType, e.target.value)}
+              type="date"
+              value={values[FIELD_KEYS.interestFrom] || ''}
+              onChange={(e) => onValueChange(FIELD_KEYS.interestFrom, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
-              placeholder="Enter change type"
             />
           </div>
+        </div>
 
+        {/* Row 6: Notes | Original Amount */}
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label className="text-sm text-foreground">Deferred</Label>
+            <Label className="text-sm text-foreground">Notes</Label>
             <Input
-              value={values[FIELD_KEYS.deferred] || ''}
-              onChange={(e) => onValueChange(FIELD_KEYS.deferred, e.target.value)}
+              value={values[FIELD_KEYS.notes] || ''}
+              onChange={(e) => onValueChange(FIELD_KEYS.notes, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
-              placeholder="Enter deferred"
+              placeholder="Enter notes"
             />
           </div>
+          <div>
+            <Label className="text-sm text-foreground">Original Amount</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={values[FIELD_KEYS.originalAmount] || ''}
+              onChange={(e) => onValueChange(FIELD_KEYS.originalAmount, e.target.value)}
+              disabled={disabled}
+              className="h-8 text-sm mt-1"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
 
+        {/* Row 7: Reference */}
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className="text-sm text-foreground">Reference</Label>
             <Input
@@ -175,17 +199,6 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
               disabled={disabled}
               className="h-8 text-sm mt-1"
               placeholder="Enter reference"
-            />
-          </div>
-
-          <div className="col-span-2">
-            <Label className="text-sm text-foreground">Notes</Label>
-            <Input
-              value={values[FIELD_KEYS.notes] || ''}
-              onChange={(e) => onValueChange(FIELD_KEYS.notes, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-              placeholder="Enter notes"
             />
           </div>
         </div>
