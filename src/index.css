@@ -174,8 +174,7 @@
 
   /* Page container */
   .page-container {
- @apply p-6 lg:p-8 max-w-7xl mx-auto;
-   // @apply p-6 lg:p-8 mx-auto;
+    @apply p-6 lg:p-8 max-w-7xl mx-auto;
   }
 
   /* Section card */
