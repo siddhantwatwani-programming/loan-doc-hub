@@ -31,6 +31,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface NavItem {
   label: string;
@@ -169,124 +175,217 @@ export const AppSidebar: React.FC = () => {
 
       {/* Navigation */}
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-        {/* Regular Nav Items */}
-        {filteredItems.map((item) => (
-          <button
-            key={item.path}
-            onClick={() => navigate(item.path)}
-            className={cn(
-              'sidebar-item w-full',
-              isActive(item.path) && 'sidebar-item-active',
-              isCollapsed && 'justify-center px-2'
-            )}
-            title={isCollapsed ? item.label : undefined}
-          >
-            <item.icon className="h-5 w-5 flex-shrink-0" />
-            {!isCollapsed && <span>{item.label}</span>}
-          </button>
-        ))}
-
-        {/* Separator before admin items */}
-        {filteredAdminItems.length > 0 && (
-          <div className="my-3 border-t border-sidebar-border" />
-        )}
-
-        {/* Top-level Admin Items */}
-        {filteredAdminItems.map((item) => (
-          <button
-            key={item.path}
-            onClick={() => navigate(item.path)}
-            className={cn(
-              'sidebar-item w-full',
-              isActive(item.path) && 'sidebar-item-active',
-              isCollapsed && 'justify-center px-2'
-            )}
-            title={isCollapsed ? item.label : undefined}
-          >
-            <item.icon className="h-5 w-5 flex-shrink-0" />
-            {!isCollapsed && <span>{item.label}</span>}
-          </button>
-        ))}
-
-        {/* Separator before Configuration group */}
-        {filteredGroups.length > 0 && !isCollapsed && (
-          <div className="my-3 border-t border-sidebar-border" />
-        )}
-
-        {/* Grouped Nav Items (Configuration) - only show when not collapsed */}
-        {!isCollapsed && filteredGroups.map((group) => (
-          <Collapsible
-            key={group.label}
-            open={openGroups.includes(group.label)}
-            onOpenChange={() => toggleGroup(group.label)}
-          >
-            <CollapsibleTrigger asChild>
+        <TooltipProvider delayDuration={0}>
+          {/* Regular Nav Items */}
+          {filteredItems.map((item) => (
+            isCollapsed ? (
+              <Tooltip key={item.path}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => navigate(item.path)}
+                    className={cn(
+                      'sidebar-item w-full justify-center px-2',
+                      isActive(item.path) && 'sidebar-item-active'
+                    )}
+                  >
+                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="font-medium">
+                  {item.label}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
               <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
                 className={cn(
-                  'sidebar-item w-full justify-between',
-                  isGroupActive(group) && 'text-sidebar-primary-foreground bg-sidebar-accent'
+                  'sidebar-item w-full',
+                  isActive(item.path) && 'sidebar-item-active'
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <group.icon className="h-5 w-5" />
-                  <span>{group.label}</span>
-                </div>
-                {openGroups.includes(group.label) ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <span>{item.label}</span>
               </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pl-4 pt-1 space-y-1">
+            )
+          ))}
+
+          {/* Separator before admin items */}
+          {filteredAdminItems.length > 0 && (
+            <div className="my-3 border-t border-sidebar-border" />
+          )}
+
+          {/* Top-level Admin Items */}
+          {filteredAdminItems.map((item) => (
+            isCollapsed ? (
+              <Tooltip key={item.path}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => navigate(item.path)}
+                    className={cn(
+                      'sidebar-item w-full justify-center px-2',
+                      isActive(item.path) && 'sidebar-item-active'
+                    )}
+                  >
+                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="font-medium">
+                  {item.label}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={cn(
+                  'sidebar-item w-full',
+                  isActive(item.path) && 'sidebar-item-active'
+                )}
+              >
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <span>{item.label}</span>
+              </button>
+            )
+          ))}
+
+          {/* Separator before Configuration group */}
+          {filteredGroups.length > 0 && !isCollapsed && (
+            <div className="my-3 border-t border-sidebar-border" />
+          )}
+
+          {/* Configuration items shown as tooltips when collapsed */}
+          {isCollapsed && filteredGroups.map((group) => (
+            <React.Fragment key={group.label}>
+              <div className="my-3 border-t border-sidebar-border" />
               {group.items.map((item) => (
+                <Tooltip key={item.path}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => navigate(item.path)}
+                      className={cn(
+                        'sidebar-item w-full justify-center px-2',
+                        location.pathname === item.path && 'sidebar-item-active'
+                      )}
+                    >
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="font-medium">
+                    {item.label}
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </React.Fragment>
+          ))}
+
+          {/* Grouped Nav Items (Configuration) - only show when not collapsed */}
+          {!isCollapsed && filteredGroups.map((group) => (
+            <Collapsible
+              key={group.label}
+              open={openGroups.includes(group.label)}
+              onOpenChange={() => toggleGroup(group.label)}
+            >
+              <CollapsibleTrigger asChild>
                 <button
-                  key={item.path}
-                  onClick={() => navigate(item.path)}
                   className={cn(
-                    'sidebar-item w-full text-sm',
-                    location.pathname === item.path && 'sidebar-item-active'
+                    'sidebar-item w-full justify-between',
+                    isGroupActive(group) && 'text-sidebar-primary-foreground bg-sidebar-accent'
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
+                  <div className="flex items-center gap-3">
+                    <group.icon className="h-5 w-5" />
+                    <span>{group.label}</span>
+                  </div>
+                  {openGroups.includes(group.label) ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
                 </button>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
-        ))}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pl-4 pt-1 space-y-1">
+                {group.items.map((item) => (
+                  <button
+                    key={item.path}
+                    onClick={() => navigate(item.path)}
+                    className={cn(
+                      'sidebar-item w-full text-sm',
+                      location.pathname === item.path && 'sidebar-item-active'
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
+          ))}
+        </TooltipProvider>
       </nav>
 
       {/* User Section */}
       <div className={cn("p-4 border-t border-sidebar-border space-y-2", isCollapsed && "p-2")}>
-        {!isCollapsed && (
-          <div className="px-3 py-2">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">
-              {user?.email}
-            </p>
-            <p className="text-xs text-sidebar-foreground/70">
-              {getRoleDisplayName(role)}
-            </p>
-          </div>
-        )}
+        <TooltipProvider delayDuration={0}>
+          {!isCollapsed && (
+            <div className="px-3 py-2">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                {user?.email}
+              </p>
+              <p className="text-xs text-sidebar-foreground/70">
+                {getRoleDisplayName(role)}
+              </p>
+            </div>
+          )}
 
-        <button 
-          onClick={toggleTheme} 
-          className={cn("sidebar-item w-full", isCollapsed && "justify-center px-2")}
-          title={isCollapsed ? (theme === 'light' ? 'Dark Mode' : 'Light Mode') : undefined}
-        >
-          {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-          {!isCollapsed && <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>}
-        </button>
+          {isCollapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  onClick={toggleTheme} 
+                  className="sidebar-item w-full justify-center px-2"
+                >
+                  {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="font-medium">
+                {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <button 
+              onClick={toggleTheme} 
+              className="sidebar-item w-full"
+            >
+              {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+            </button>
+          )}
 
-        <button
-          onClick={handleSignOut}
-          className={cn("sidebar-item w-full text-destructive hover:bg-destructive/10", isCollapsed && "justify-center px-2")}
-          title={isCollapsed ? 'Sign Out' : undefined}
-        >
-          <LogOut className="h-5 w-5" />
-          {!isCollapsed && <span>Sign Out</span>}
-        </button>
+          {isCollapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleSignOut}
+                  className="sidebar-item w-full text-destructive hover:bg-destructive/10 justify-center px-2"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="font-medium">
+                Sign Out
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <button
+              onClick={handleSignOut}
+              className="sidebar-item w-full text-destructive hover:bg-destructive/10"
+            >
+              <LogOut className="h-5 w-5" />
+              <span>Sign Out</span>
+            </button>
+          )}
+        </TooltipProvider>
       </div>
     </aside>
   );
