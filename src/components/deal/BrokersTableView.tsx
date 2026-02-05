@@ -65,12 +65,7 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
     <div className="p-6 space-y-4">
       {/* Header with title and actions */}
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-semibold text-lg text-foreground">Brokers</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage brokers associated with this deal
-          </p>
-        </div>
+        <h3 className="font-semibold text-lg text-foreground">Brokers</h3>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"

@@ -332,13 +332,17 @@ export const DealOverviewPage: React.FC = () => {
   return (
     <div className="page-container">
       <div className="mb-6">
-        <Button variant="ghost" onClick={() => navigate('/deals')} className="gap-2 mb-4">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Deals
-        </Button>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => navigate('/deals')} 
+                className="h-8 w-8"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
               <h1 className="text-2xl font-bold text-foreground">{deal.deal_number}</h1>
               <Badge 
                 variant="secondary" 

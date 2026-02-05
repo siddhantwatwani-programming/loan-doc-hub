@@ -75,12 +75,7 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
     <div className="p-6 space-y-4">
       {/* Header with title and actions */}
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-semibold text-lg text-foreground">Lenders</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage lenders for this deal. One lender can be marked as primary.
-          </p>
-        </div>
+        <h3 className="font-semibold text-lg text-foreground">Lenders</h3>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
