@@ -617,51 +617,6 @@ export const DealDataEntryPage: React.FC = () => {
         </div>
       )}
 
-      {/* CSR Missing Fields Banner */}
-      {isInternalUser && !fieldsLoading && fields.length > 0 && (
-        <div className={cn(
-          'mb-6 px-4 py-3 rounded-lg flex items-center justify-between',
-          totalMissing > 0 ? 'bg-warning/10 border border-warning/20' : 'bg-success/10 border border-success/20'
-        )}>
-          <div className="flex items-center gap-3">
-            {totalMissing > 0 ? (
-              <>
-                <AlertTriangle className="h-5 w-5 text-warning" />
-                <div>
-                  <p className="font-medium text-foreground">
-                    Missing {totalMissing} required field{totalMissing > 1 ? 's' : ''}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Complete all required fields to mark deal as ready
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="h-5 w-5 text-success" />
-                <div>
-                  <p className="font-medium text-foreground">All required fields complete</p>
-                  <p className="text-sm text-muted-foreground">
-                    {requiredFieldKeys.length} required field{requiredFieldKeys.length > 1 ? 's' : ''} filled
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-          
-          {totalMissing > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={jumpToFirstMissing}
-              className="gap-1 text-warning hover:text-warning hover:bg-warning/10"
-            >
-              Jump to first missing
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      )}
 
       {/* Content */}
       {fieldsLoading || permissionsLoading ? (
