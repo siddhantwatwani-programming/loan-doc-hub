@@ -62,12 +62,26 @@ export interface UseDealFieldsReturn extends DealFieldsData {
 
 // JSONB field value structure
 interface JsonbFieldValue {
+  indexed_key?: string; // Preserves the indexed key (e.g., "lender1.first_name") for multi-entity support
   value_text: string | null;
   value_number: number | null;
   value_date: string | null;
   value_json: any | null;
   updated_at: string;
   updated_by: string | null;
+}
+
+// Extracts canonical key from indexed key
+// e.g., "lender1.first_name" -> "lender.first_name"
+// e.g., "borrower2.address.city" -> "borrower.address.city"
+function getCanonicalKey(indexedKey: string): string {
+  return indexedKey
+    .replace(/^(borrower)\d+\./, '$1.')
+    .replace(/^(coborrower)\d+\./, 'coborrower.')
+    .replace(/^(co_borrower)\d+\./, 'co_borrower.')
+    .replace(/^(lender)\d+\./, '$1.')
+    .replace(/^(property)\d+\./, 'property.')
+    .replace(/^(broker)\d+\./, 'broker.');
 }
 
 // Map field data types to value columns
@@ -247,6 +261,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
         });
 
         // Build values map - parse JSONB field_values keyed by field_dictionary_id
+        // Use indexed_key if present to support multi-entity fields (lender1.*, borrower1.*, etc.)
         const valuesMap: Record<string, string> = {};
         ((sectionValues || []) as any[]).forEach((sv) => {
           const fieldValues = sv.field_values || {};
@@ -255,7 +270,9 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
             if (fieldMeta && fieldData) {
               const value = extractTypedValueFromJsonb(fieldData as JsonbFieldValue, fieldMeta.data_type);
               if (value) {
-                valuesMap[fieldMeta.field_key] = value;
+                // Use indexed_key if stored, otherwise fall back to canonical field_key
+                const keyToUse = (fieldData as JsonbFieldValue).indexed_key || fieldMeta.field_key;
+                valuesMap[keyToUse] = value;
               }
             }
           });
@@ -348,11 +365,15 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
         const sectionUpdates: Record<string, Record<string, JsonbFieldValue>> = {};
         
         for (const fieldKey of fieldKeysToSave) {
-          const fieldDictId = fieldIdMap[fieldKey];
+          // Get canonical key for dictionary lookup (lender1.first_name -> lender.first_name)
+          const canonicalKey = getCanonicalKey(fieldKey);
+          const fieldDictId = fieldIdMap[canonicalKey] || fieldIdMap[fieldKey];
           if (!fieldDictId) continue;
           
-          // Find the field to get its section
-          const field = resolvedFields?.fields.find(f => f.field_key === fieldKey);
+          // Find the field using canonical key for metadata lookup
+          const field = resolvedFields?.fields.find(
+            f => f.field_key === canonicalKey || f.field_key === fieldKey
+          );
           if (!field) continue;
           
           const section = field.section;
@@ -360,11 +381,13 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
             sectionUpdates[section] = {};
           }
           
-          const dataType = fieldDataTypes[fieldKey] || 'text';
+          const dataType = fieldDataTypes[canonicalKey] || fieldDataTypes[fieldKey] || 'text';
           const stringValue = finalValues[fieldKey];
           
           // Build the JSONB field value object
+          // Store indexed_key to preserve the full key (e.g., "lender1.first_name") for multi-entity support
           const fieldValueObj: JsonbFieldValue = {
+            indexed_key: fieldKey !== canonicalKey ? fieldKey : undefined, // Only store if different from canonical
             value_text: null,
             value_number: null,
             value_date: null,
