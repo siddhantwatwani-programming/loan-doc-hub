@@ -11,6 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
+import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 
 export interface LenderData {
   id: string;
@@ -39,6 +41,19 @@ interface LendersTableViewProps {
   onPageChange?: (page: number) => void;
 }
 
+const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'isPrimary', label: 'Primary', visible: true },
+  { id: 'type', label: 'Type', visible: true },
+  { id: 'fullName', label: 'Full Name', visible: true },
+  { id: 'firstName', label: 'First Name', visible: true },
+  { id: 'lastName', label: 'Last Name', visible: true },
+  { id: 'email', label: 'Email', visible: true },
+  { id: 'phone', label: 'Phone', visible: true },
+  { id: 'city', label: 'City', visible: true },
+  { id: 'state', label: 'State', visible: true },
+  { id: 'taxId', label: 'Tax ID', visible: true },
+];
+
 export const LendersTableView: React.FC<LendersTableViewProps> = ({
   lenders,
   onAddLender,
@@ -51,20 +66,33 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
   totalPages = 1,
   onPageChange,
 }) => {
+  const [columns, setColumns] = useTableColumnConfig('lenders', DEFAULT_COLUMNS);
+  const visibleColumns = columns.filter((col) => col.visible);
+
+  const renderCellValue = (lender: LenderData, columnId: string) => {
+    switch (columnId) {
+      case 'isPrimary':
+        return (
+          <Checkbox
+            checked={lender.isPrimary}
+            onCheckedChange={(checked) => onPrimaryChange(lender.id, !!checked)}
+            disabled={disabled}
+          />
+        );
+      case 'fullName':
+        return <span className="font-medium">{lender.fullName || '-'}</span>;
+      default:
+        return lender[columnId as keyof LenderData] || '-';
+    }
+  };
+
   const renderLoadingSkeleton = () => (
     <>
       {[1, 2, 3].map((i) => (
         <TableRow key={i}>
-          <TableCell><Skeleton className="h-4 w-4" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-          <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+          {visibleColumns.map((col) => (
+            <TableCell key={col.id}><Skeleton className="h-4 w-20" /></TableCell>
+          ))}
           <TableCell><Skeleton className="h-8 w-8" /></TableCell>
         </TableRow>
       ))}
@@ -77,6 +105,11 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-lg text-foreground">Lenders</h3>
         <div className="flex items-center gap-2">
+          <ColumnConfigPopover
+            columns={columns}
+            onColumnsChange={setColumns}
+            disabled={disabled}
+          />
           <Button
             variant="outline"
             size="sm"
@@ -95,16 +128,11 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
         <Table className="min-w-[1000px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="w-[80px]">PRIMARY</TableHead>
-              <TableHead>TYPE</TableHead>
-              <TableHead>FULL NAME</TableHead>
-              <TableHead>FIRST NAME</TableHead>
-              <TableHead>LAST NAME</TableHead>
-              <TableHead>EMAIL</TableHead>
-              <TableHead>PHONE</TableHead>
-              <TableHead>CITY</TableHead>
-              <TableHead>STATE</TableHead>
-              <TableHead>TAX ID</TableHead>
+              {visibleColumns.map((col) => (
+                <TableHead key={col.id} className={col.id === 'isPrimary' ? 'w-[80px]' : undefined}>
+                  {col.label.toUpperCase()}
+                </TableHead>
+              ))}
               <TableHead className="w-[80px]">ACTIONS</TableHead>
             </TableRow>
           </TableHeader>
@@ -113,7 +141,7 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
               renderLoadingSkeleton()
             ) : lenders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
                   No lenders added. Click "Add Lender" to add one.
                 </TableCell>
               </TableRow>
@@ -124,22 +152,14 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
                   className="cursor-pointer hover:bg-muted/30"
                   onClick={() => onRowClick(lender)}
                 >
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                      checked={lender.isPrimary}
-                      onCheckedChange={(checked) => onPrimaryChange(lender.id, !!checked)}
-                      disabled={disabled}
-                    />
-                  </TableCell>
-                  <TableCell>{lender.type || '-'}</TableCell>
-                  <TableCell className="font-medium">{lender.fullName || '-'}</TableCell>
-                  <TableCell>{lender.firstName || '-'}</TableCell>
-                  <TableCell>{lender.lastName || '-'}</TableCell>
-                  <TableCell>{lender.email || '-'}</TableCell>
-                  <TableCell>{lender.phone || '-'}</TableCell>
-                  <TableCell>{lender.city || '-'}</TableCell>
-                  <TableCell>{lender.state || '-'}</TableCell>
-                  <TableCell>{lender.taxId || '-'}</TableCell>
+                  {visibleColumns.map((col) => (
+                    <TableCell
+                      key={col.id}
+                      onClick={col.id === 'isPrimary' ? (e) => e.stopPropagation() : undefined}
+                    >
+                      {renderCellValue(lender, col.id)}
+                    </TableCell>
+                  ))}
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="ghost"
