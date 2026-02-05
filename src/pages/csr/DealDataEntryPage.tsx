@@ -812,6 +812,7 @@ export const DealDataEntryPage: React.FC = () => {
                     isWaitingForPrevious={isWaiting}
                     blockingRole={blockingParticipant?.role}
                     hasCompleted={hasCompleted}
+                    hideValidationStatus={['charges', 'dates', 'escrow', 'participants', 'notes', 'title', 'other'].includes(section)}
                   />
                 )}
               </TabsContent>

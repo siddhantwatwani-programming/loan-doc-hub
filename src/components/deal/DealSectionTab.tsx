@@ -23,6 +23,8 @@ interface DealSectionTabProps {
   blockingRole?: string | null;
   /** Orchestration: whether the section is already completed */
   hasCompleted?: boolean;
+  /** Hide the validation status banner (for sections that don't need it) */
+  hideValidationStatus?: boolean;
 }
 
 export const DealSectionTab: React.FC<DealSectionTabProps> = ({
@@ -36,6 +38,7 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
   isWaitingForPrevious = false,
   blockingRole = null,
   hasCompleted = false,
+  hideValidationStatus = false,
 }) => {
   const { checkCanView, checkCanEdit } = useFieldPermissions();
   const { isExternalUser } = useAuth();
@@ -120,33 +123,35 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
         </div>
       )}
 
-      {/* Section status */}
-      <div className={cn(
-        'flex items-center justify-between px-4 py-3 rounded-lg text-sm',
-        isComplete ? 'bg-success/10' : 'bg-warning/10'
-      )}>
+      {/* Section status - hidden for specific sections */}
+      {!hideValidationStatus && (
         <div className={cn(
-          'flex items-center gap-2',
-          isComplete ? 'text-success' : 'text-warning'
+          'flex items-center justify-between px-4 py-3 rounded-lg text-sm',
+          isComplete ? 'bg-success/10' : 'bg-warning/10'
         )}>
-          {isComplete ? (
-            <>
-              <CheckCircle2 className="h-4 w-4" />
-              <span>All required fields are complete</span>
-            </>
-          ) : (
-            <>
-              <AlertCircle className="h-4 w-4" />
-              <span>{visibleMissingFields.length} required field{visibleMissingFields.length > 1 ? 's' : ''} missing</span>
-            </>
+          <div className={cn(
+            'flex items-center gap-2',
+            isComplete ? 'text-success' : 'text-warning'
+          )}>
+            {isComplete ? (
+              <>
+                <CheckCircle2 className="h-4 w-4" />
+                <span>All required fields are complete</span>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-4 w-4" />
+                <span>{visibleMissingFields.length} required field{visibleMissingFields.length > 1 ? 's' : ''} missing</span>
+              </>
+            )}
+          </div>
+          {requiredFields.length > 0 && (
+            <span className="text-muted-foreground text-xs">
+              {filledRequired.length}/{requiredFields.length} required fields filled
+            </span>
           )}
         </div>
-        {requiredFields.length > 0 && (
-          <span className="text-muted-foreground text-xs">
-            {filledRequired.length}/{requiredFields.length} required fields filled
-          </span>
-        )}
-      </div>
+      )}
 
       {/* Fields grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
