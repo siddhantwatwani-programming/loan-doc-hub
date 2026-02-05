@@ -132,6 +132,23 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
   const handleFieldChange = (field: keyof PropertyData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+  
+  // Sanitize numeric input - strip all non-numeric characters except decimal point and minus
+  const sanitizeNumericValue = (value: string): string => {
+    return value.replace(/[^0-9.-]/g, '');
+  };
+  
+  // Handle currency input change - store raw numeric value only
+  const handleCurrencyChange = (field: keyof PropertyData, value: string) => {
+    const sanitized = sanitizeNumericValue(value);
+    setFormData(prev => ({ ...prev, [field]: sanitized }));
+  };
+  
+  // Handle percentage input change - store raw numeric value only
+  const handlePercentageChange = (field: keyof PropertyData, value: string) => {
+    const sanitized = sanitizeNumericValue(value);
+    setFormData(prev => ({ ...prev, [field]: sanitized }));
+  };
 
   const handleSave = () => {
     onSave(formData);
@@ -298,7 +315,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
                     <div className="flex items-center gap-1 mt-1">
                       <Input
                         value={formData.ltv}
-                        onChange={(e) => handleFieldChange('ltv', e.target.value)}
+                        onChange={(e) => handlePercentageChange('ltv', e.target.value)}
                         className="h-8 text-sm"
                         inputMode="decimal"
                       />
@@ -323,7 +340,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
                       <span className="text-sm text-muted-foreground">$</span>
                       <Input
                         value={formData.appraisedValue}
-                        onChange={(e) => handleFieldChange('appraisedValue', e.target.value)}
+                        onChange={(e) => handleCurrencyChange('appraisedValue', e.target.value)}
                         className="h-8 text-sm text-right"
                         inputMode="decimal"
                         placeholder="0.00"
