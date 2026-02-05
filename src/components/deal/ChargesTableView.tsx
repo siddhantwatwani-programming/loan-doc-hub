@@ -43,18 +43,18 @@ interface ChargesTableViewProps {
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { id: 'description', label: 'Description', visible: true },
   { id: 'unpaidBalance', label: 'Unpaid Balance', visible: true },
   { id: 'owedTo', label: 'Owed To', visible: true },
   { id: 'owedFrom', label: 'Owed From', visible: true },
   { id: 'totalDue', label: 'Total Due', visible: true },
-  { id: 'interestFrom', label: 'Interest From', visible: true },
   { id: 'dateOfCharge', label: 'Date of Charge', visible: true },
+  { id: 'description', label: 'Description', visible: true },
   { id: 'interestRate', label: 'Interest Rate', visible: true },
-  { id: 'notes', label: 'Notes', visible: false },
+  { id: 'notes', label: 'Notes', visible: true },
   { id: 'reference', label: 'Reference', visible: true },
   { id: 'changeType', label: 'Change Type', visible: true },
   { id: 'deferred', label: 'Deferred', visible: true },
+  { id: 'interestFrom', label: 'Interest From', visible: true },
   { id: 'originalAmount', label: 'Original Amount', visible: true },
 ];
 
