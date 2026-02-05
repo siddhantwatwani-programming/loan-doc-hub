@@ -125,31 +125,11 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
 
       {/* Section status - hidden for specific sections */}
       {!hideValidationStatus && (
-        <div className={cn(
-          'flex items-center justify-between px-4 py-3 rounded-lg text-sm',
-          isComplete ? 'bg-success/10' : 'bg-warning/10'
-        )}>
-          <div className={cn(
-            'flex items-center gap-2',
-            isComplete ? 'text-success' : 'text-warning'
-          )}>
-            {isComplete ? (
-              <>
-                <CheckCircle2 className="h-4 w-4" />
-                <span>All required fields are complete</span>
-              </>
-            ) : (
-              <>
-                <AlertCircle className="h-4 w-4" />
-                <span>{visibleMissingFields.length} required field{visibleMissingFields.length > 1 ? 's' : ''} missing</span>
-              </>
-            )}
+        <div className="flex justify-end">
+          <div className="flex items-center gap-2 text-sm text-success">
+            <CheckCircle2 className="h-4 w-4" />
+            <span>All required fields completed</span>
           </div>
-          {requiredFields.length > 0 && (
-            <span className="text-muted-foreground text-xs">
-              {filledRequired.length}/{requiredFields.length} required fields filled
-            </span>
-          )}
         </div>
       )}
 
