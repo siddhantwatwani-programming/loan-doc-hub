@@ -15,6 +15,13 @@ const FIELD_KEYS = {
   owedFrom: 'charges.owed_from',
   totalDue: 'charges.total_due',
   interestFrom: 'charges.interest_from',
+  dateOfCharge: 'charges.date_of_charge',
+  interestRate: 'charges.interest_rate',
+  notes: 'charges.notes',
+  reference: 'charges.reference',
+  changeType: 'charges.change_type',
+  deferred: 'charges.deferred',
+  originalAmount: 'charges.original_amount',
 };
 
 export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
@@ -91,6 +98,30 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
           </div>
 
           <div>
+            <Label className="text-sm text-foreground">Original Amount</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={values[FIELD_KEYS.originalAmount] || ''}
+              onChange={(e) => onValueChange(FIELD_KEYS.originalAmount, e.target.value)}
+              disabled={disabled}
+              className="h-8 text-sm mt-1"
+              placeholder="0.00"
+            />
+          </div>
+
+          <div>
+            <Label className="text-sm text-foreground">Date of Charge</Label>
+            <Input
+              type="date"
+              value={values[FIELD_KEYS.dateOfCharge] || ''}
+              onChange={(e) => onValueChange(FIELD_KEYS.dateOfCharge, e.target.value)}
+              disabled={disabled}
+              className="h-8 text-sm mt-1"
+            />
+          </div>
+
+          <div>
             <Label className="text-sm text-foreground">Interest From</Label>
             <Input
               type="date"
@@ -98,6 +129,63 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
               onChange={(e) => onValueChange(FIELD_KEYS.interestFrom, e.target.value)}
               disabled={disabled}
               className="h-8 text-sm mt-1"
+            />
+          </div>
+
+          <div>
+            <Label className="text-sm text-foreground">Interest Rate</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={values[FIELD_KEYS.interestRate] || ''}
+              onChange={(e) => onValueChange(FIELD_KEYS.interestRate, e.target.value)}
+              disabled={disabled}
+              className="h-8 text-sm mt-1"
+              placeholder="0.00"
+            />
+          </div>
+
+          <div>
+            <Label className="text-sm text-foreground">Change Type</Label>
+            <Input
+              value={values[FIELD_KEYS.changeType] || ''}
+              onChange={(e) => onValueChange(FIELD_KEYS.changeType, e.target.value)}
+              disabled={disabled}
+              className="h-8 text-sm mt-1"
+              placeholder="Enter change type"
+            />
+          </div>
+
+          <div>
+            <Label className="text-sm text-foreground">Deferred</Label>
+            <Input
+              value={values[FIELD_KEYS.deferred] || ''}
+              onChange={(e) => onValueChange(FIELD_KEYS.deferred, e.target.value)}
+              disabled={disabled}
+              className="h-8 text-sm mt-1"
+              placeholder="Enter deferred"
+            />
+          </div>
+
+          <div>
+            <Label className="text-sm text-foreground">Reference</Label>
+            <Input
+              value={values[FIELD_KEYS.reference] || ''}
+              onChange={(e) => onValueChange(FIELD_KEYS.reference, e.target.value)}
+              disabled={disabled}
+              className="h-8 text-sm mt-1"
+              placeholder="Enter reference"
+            />
+          </div>
+
+          <div className="col-span-2">
+            <Label className="text-sm text-foreground">Notes</Label>
+            <Input
+              value={values[FIELD_KEYS.notes] || ''}
+              onChange={(e) => onValueChange(FIELD_KEYS.notes, e.target.value)}
+              disabled={disabled}
+              className="h-8 text-sm mt-1"
+              placeholder="Enter notes"
             />
           </div>
         </div>

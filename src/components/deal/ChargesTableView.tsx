@@ -21,6 +21,13 @@ export interface ChargeData {
   owedFrom: string;
   totalDue: string;
   interestFrom: string;
+  dateOfCharge: string;
+  interestRate: string;
+  notes: string;
+  reference: string;
+  changeType: string;
+  deferred: string;
+  originalAmount: string;
 }
 
 interface ChargesTableViewProps {
@@ -42,6 +49,13 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'owedFrom', label: 'Owed From', visible: true },
   { id: 'totalDue', label: 'Total Due', visible: true },
   { id: 'interestFrom', label: 'Interest From', visible: true },
+  { id: 'dateOfCharge', label: 'Date of Charge', visible: true },
+  { id: 'interestRate', label: 'Interest Rate', visible: true },
+  { id: 'notes', label: 'Notes', visible: false },
+  { id: 'reference', label: 'Reference', visible: true },
+  { id: 'changeType', label: 'Change Type', visible: true },
+  { id: 'deferred', label: 'Deferred', visible: true },
+  { id: 'originalAmount', label: 'Original Amount', visible: true },
 ];
 
 export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
@@ -70,15 +84,20 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
       case 'description':
         return <span className="font-medium">{charge.description || '-'}</span>;
       case 'unpaidBalance':
-        return formatCurrency(charge.unpaidBalance);
       case 'totalDue':
-        return formatCurrency(charge.totalDue);
+      case 'originalAmount':
+        return formatCurrency(charge[columnId as keyof ChargeData] as string);
+      case 'interestRate':
+        return charge.interestRate ? `${charge.interestRate}%` : '-';
       case 'owedTo':
-        return charge.owedTo || '-';
       case 'owedFrom':
-        return charge.owedFrom || '-';
       case 'interestFrom':
-        return charge.interestFrom || '-';
+      case 'dateOfCharge':
+      case 'notes':
+      case 'reference':
+      case 'changeType':
+      case 'deferred':
+        return charge[columnId as keyof ChargeData] || '-';
       default:
         return charge[columnId as keyof ChargeData] || '-';
     }
