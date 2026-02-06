@@ -1,105 +1,66 @@
 
-# Fix: Charges Records Disappearing After Navigation
+
+# Fix: Charges Data Not Displaying After Save
 
 ## Problem Identified
 
-When charge data is entered via the modal and saved, the data disappears upon navigation because there is a **complete field key mismatch** between what the UI uses and what exists in the field dictionary:
+After analyzing the code and database, the issue is clear:
 
-| UI Field Key | Dictionary Field Key |
-|-------------|---------------------|
-| `charge1.date_of_charge` | `charge_date` |
-| `charge1.description` | `charge_description` |
-| `charge1.interest_rate` | `charge_interest_rate` |
-| `charge1.reference` | `charge_reference` |
-| `charge1.charge_type` | `charge_type` |
-| `charge1.notes` | `charge_notes` |
-| `charge1.original_amount` | `charge_original_amount` |
-| `charge1.deferred` | `charge_is_deferred` |
-| `charge1.interest_from` | `charge_interest_start_date` |
+1. **Missing Dictionary Entries**: Several fields entered in the Charges modal have **no corresponding entries in the `field_dictionary` table**, which means they cannot be saved to the database.
 
-Additionally:
-1. The `getCanonicalKey()` function in `useDealFields.ts` does not normalize `charge1.*` to `charge.*`
-2. The `getIndexedPrefix()` function does not recognize `charge\d+` as an indexed entity
-3. Even after normalization, `charge.date_of_charge` would not match `charge_date`
+2. **Field Key Mapping is Working**: The mapping in `useDealFields.ts` is correctly translating UI keys to dictionary keys for fields that exist, but the dictionary is missing entries for:
+   - `charge.owed_to` (mapped to display as "Owed To Account")
+   - `charge.account`
+   - `charge.borrower_full_name`
+   - `charge.accrued_interest`
+   - `charge.unpaid_balance`
+   - `charge.total_due`
+   - All distribution fields (`advanced_by_*`, `on_behalf_of_*`, `amount_owed_by_borrower`)
 
-## Solution: Add Charge Field Key Mapping
-
-Create a mapping layer in `useDealFields.ts` that translates between UI field keys and dictionary field keys for charges. This maintains backward compatibility and follows the existing architecture pattern.
-
----
-
-## Files to Modify
-
-### 1. `src/hooks/useDealFields.ts`
-
-**Add charge entity support to existing functions:**
-
-1. **Update `getCanonicalKey()` (line 82-90)** - Add charge prefix normalization:
-   ```typescript
-   .replace(/^(charge)\d+\./, 'charge.')
-   ```
-
-2. **Update `getIndexedPrefix()` (line 93-96)** - Add charge pattern:
-   ```typescript
-   const match = fieldKey.match(/^(borrower\d+|coborrower\d+|co_borrower\d+|lender\d+|property\d+|broker\d+|charge\d+)\./);
-   ```
-
-3. **Add new function: `mapChargeFieldToDict()`** - Convert UI field names to dictionary field names:
-   ```typescript
-   function mapChargeFieldToDict(fieldKey: string): string {
-     // Maps charge1.date_of_charge -> charge_date
-     const chargeFieldMap: Record<string, string> = {
-       'charge.date_of_charge': 'charge_date',
-       'charge.description': 'charge_description',
-       'charge.interest_rate': 'charge_interest_rate',
-       'charge.interest_from': 'charge_interest_start_date',
-       'charge.reference': 'charge_reference',
-       'charge.charge_type': 'charge_type',
-       'charge.notes': 'charge_notes',
-       'charge.original_amount': 'charge_original_amount',
-       'charge.deferred': 'charge_is_deferred',
-     };
-     return chargeFieldMap[fieldKey] || fieldKey;
-   }
-   ```
-
-4. **Add reverse mapping function: `mapDictToChargeField()`** - For loading data back:
-   ```typescript
-   function mapDictToChargeField(dictKey: string): string {
-     // Maps charge_date -> charge.date_of_charge
-     const reversMap: Record<string, string> = {
-       'charge_date': 'charge.date_of_charge',
-       'charge_description': 'charge.description',
-       'charge_interest_rate': 'charge.interest_rate',
-       'charge_interest_start_date': 'charge.interest_from',
-       'charge_reference': 'charge.reference',
-       'charge_type': 'charge.charge_type',
-       'charge_notes': 'charge.notes',
-       'charge_original_amount': 'charge.original_amount',
-       'charge_is_deferred': 'charge.deferred',
-     };
-     return reversMap[dictKey] || dictKey;
-   }
-   ```
-
-5. **Update save logic in `saveDraft()` (around line 415)** - Apply mapping when looking up dictionary ID:
-   - Before dictionary lookup, check if the canonical key is a charge field
-   - If so, map it to the dictionary format
-   - Use the mapped key for dictionary ID lookup
-
-6. **Update load logic in `fetchData()` (around line 280)** - Apply reverse mapping when reconstructing field keys:
-   - When loading charge section data, reverse-map dictionary keys to UI format
-   - Reconstruct indexed keys properly (e.g., `charge1.date_of_charge`)
+3. **Current Dictionary Fields (9 total)**:
+   - `charge_date` ✓
+   - `charge_description` ✓
+   - `charge_interest_rate` ✓
+   - `charge_interest_start_date` ✓
+   - `charge_is_deferred` ✓
+   - `charge_notes` ✓
+   - `charge_original_amount` ✓
+   - `charge_reference` ✓
+   - `charge_type` ✓
 
 ---
 
-## Technical Details
+## Solution
 
-### Updated Helper Functions
+Add the missing charge fields to the `field_dictionary` table so data can be persisted.
+
+### Step 1: Add Missing Fields to field_dictionary
+
+Insert new entries for:
+
+| Dictionary Key | UI Key | Data Type | Description |
+|---------------|--------|-----------|-------------|
+| `charge_owed_to` | `charge.owed_to` | text | Owed To Account |
+| `charge_account` | `charge.account` | text | Account number |
+| `charge_borrower_full_name` | `charge.borrower_full_name` | text | Borrower name |
+| `charge_accrued_interest` | `charge.accrued_interest` | currency | Accrued Interest |
+| `charge_unpaid_balance` | `charge.unpaid_balance` | currency | Unpaid Balance |
+| `charge_total_due` | `charge.total_due` | currency | Total Due |
+| `charge_advanced_by_account` | `charge.advanced_by_account` | text | Distribution: Advanced By Account |
+| `charge_advanced_by_lender_name` | `charge.advanced_by_lender_name` | text | Distribution: Advanced By Lender |
+| `charge_advanced_by_amount` | `charge.advanced_by_amount` | currency | Distribution: Advanced By Amount |
+| `charge_on_behalf_of_account` | `charge.on_behalf_of_account` | text | Distribution: On Behalf Of Account |
+| `charge_on_behalf_of_lender_name` | `charge.on_behalf_of_lender_name` | text | Distribution: On Behalf Of Lender |
+| `charge_on_behalf_of_amount` | `charge.on_behalf_of_amount` | currency | Distribution: On Behalf Of Amount |
+| `charge_amount_owed_by_borrower` | `charge.amount_owed_by_borrower` | currency | Amount Owed by Borrower |
+
+### Step 2: Update CHARGE_UI_TO_DICT Mapping
+
+Add the new mappings in `src/hooks/useDealFields.ts`:
 
 ```typescript
-// Charge field UI-to-dictionary mapping
 const CHARGE_UI_TO_DICT: Record<string, string> = {
+  // Existing mappings
   'charge.date_of_charge': 'charge_date',
   'charge.description': 'charge_description',
   'charge.interest_rate': 'charge_interest_rate',
@@ -109,50 +70,77 @@ const CHARGE_UI_TO_DICT: Record<string, string> = {
   'charge.notes': 'charge_notes',
   'charge.original_amount': 'charge_original_amount',
   'charge.deferred': 'charge_is_deferred',
-  'charge.accrued_interest': 'charge_accrued_interest',
-  'charge.unpaid_balance': 'charge_unpaid_balance',
-  'charge.total_due': 'charge_total_due',
+  
+  // NEW: Additional charge fields
   'charge.owed_to': 'charge_owed_to',
   'charge.account': 'charge_account',
   'charge.borrower_full_name': 'charge_borrower_full_name',
-};
-
-// Reverse mapping for loading
-const CHARGE_DICT_TO_UI: Record<string, string> = Object.fromEntries(
-  Object.entries(CHARGE_UI_TO_DICT).map(([ui, dict]) => [dict, ui])
-);
-
-function mapChargeFieldKey(canonicalKey: string, toDict: boolean): string {
-  if (!canonicalKey.startsWith('charge.')) return canonicalKey;
+  'charge.accrued_interest': 'charge_accrued_interest',
+  'charge.unpaid_balance': 'charge_unpaid_balance',
+  'charge.total_due': 'charge_total_due',
   
-  if (toDict) {
-    return CHARGE_UI_TO_DICT[canonicalKey] || canonicalKey;
-  } else {
-    return CHARGE_DICT_TO_UI[canonicalKey] || canonicalKey;
-  }
-}
+  // NEW: Distribution fields
+  'charge.advanced_by_account': 'charge_advanced_by_account',
+  'charge.advanced_by_lender_name': 'charge_advanced_by_lender_name',
+  'charge.advanced_by_amount': 'charge_advanced_by_amount',
+  'charge.on_behalf_of_account': 'charge_on_behalf_of_account',
+  'charge.on_behalf_of_lender_name': 'charge_on_behalf_of_lender_name',
+  'charge.on_behalf_of_amount': 'charge_on_behalf_of_amount',
+  'charge.amount_owed_by_borrower': 'charge_amount_owed_by_borrower',
+};
 ```
 
-### Save Logic Flow
+---
 
-```text
-1. UI calls onValueChange('charge1.description', 'Test')
-2. saveDraft() processes field key 'charge1.description'
-3. getCanonicalKey() normalizes to 'charge.description'
-4. mapChargeFieldKey() converts to 'charge_description'
-5. Dictionary lookup finds ID for 'charge_description'
-6. Storage key: 'charge1::uuid' with indexed_key='charge1.description'
+## Technical Details
+
+### Database Migration
+
+```sql
+-- Add missing charge fields to field_dictionary
+INSERT INTO field_dictionary (field_key, display_name, section, data_type, is_required, is_visible) VALUES
+  ('charge_owed_to', 'Owed To Account', 'charges', 'text', false, true),
+  ('charge_account', 'Account', 'charges', 'text', false, true),
+  ('charge_borrower_full_name', 'Borrower Full Name', 'charges', 'text', false, true),
+  ('charge_accrued_interest', 'Accrued Interest', 'charges', 'currency', false, true),
+  ('charge_unpaid_balance', 'Unpaid Balance', 'charges', 'currency', false, true),
+  ('charge_total_due', 'Total Due', 'charges', 'currency', false, true),
+  ('charge_advanced_by_account', 'Advanced By Account', 'charges', 'text', false, true),
+  ('charge_advanced_by_lender_name', 'Advanced By Lender Name', 'charges', 'text', false, true),
+  ('charge_advanced_by_amount', 'Advanced By Amount', 'charges', 'currency', false, true),
+  ('charge_on_behalf_of_account', 'On Behalf Of Account', 'charges', 'text', false, true),
+  ('charge_on_behalf_of_lender_name', 'On Behalf Of Lender Name', 'charges', 'text', false, true),
+  ('charge_on_behalf_of_amount', 'On Behalf Of Amount', 'charges', 'currency', false, true),
+  ('charge_amount_owed_by_borrower', 'Amount Owed by Borrower', 'charges', 'currency', false, true);
 ```
 
-### Load Logic Flow
+### Files to Modify
+
+1. **`src/hooks/useDealFields.ts`** - Update `CHARGE_UI_TO_DICT` mapping to include the new fields
+
+---
+
+## Data Flow After Fix
 
 ```text
-1. fetchData() reads deal_section_values for 'charges' section
-2. Parses storage key 'charge1::uuid' -> prefix='charge1', fieldDictId='uuid'
-3. Looks up field_key 'charge_description' from dictionary
-4. mapChargeFieldKey(reverse) converts to 'charge.description'
-5. Reconstructs indexed key: 'charge1.description'
-6. Sets values['charge1.description'] = loaded_value
+1. User enters data in Charges modal (e.g., Date of Charge: "2024-01-15")
+2. Modal calls onSave() with chargeData object
+3. ChargesSectionContent.handleSaveCharge() calls onValueChange() for each field:
+   - onValueChange('charge1.date_of_charge', '2024-01-15')
+4. useDealFields.updateValue() stores in values state
+5. User clicks "Save Draft"
+6. saveDraft() processes 'charge1.date_of_charge':
+   - getCanonicalKey() → 'charge.date_of_charge'
+   - mapChargeFieldKey(toDict=true) → 'charge_date'
+   - Dictionary lookup finds ID for 'charge_date' ✓
+   - Stores in deal_section_values with key 'charge1::uuid'
+7. On reload, fetchData() reverses the mapping:
+   - Parses 'charge1::uuid' → prefix='charge1', fieldDictId='uuid'
+   - Finds field_key 'charge_date' from dictionary
+   - mapChargeFieldKey(toDict=false) → 'charge.date_of_charge'
+   - Reconstructs → 'charge1.date_of_charge'
+8. ChargesSectionContent extracts charge from values
+9. ChargesTableView displays the data
 ```
 
 ---
@@ -160,21 +148,23 @@ function mapChargeFieldKey(canonicalKey: string, toDict: boolean): string {
 ## Testing Checklist
 
 After implementation:
-1. Open a deal and navigate to the Charges tab
-2. Click "Add Charge" and fill in all fields
-3. Click OK to save the charge
-4. Click "Save Draft" button
-5. Navigate to another tab (e.g., Borrower)
-6. Return to the Charges tab
-7. Verify the charge appears in the table with correct data
-8. Add a second charge and repeat steps 4-7
-9. Verify both charges persist correctly
-10. Reload the page and verify all charges reload
+1. Navigate to CSR Portal → Deals → Enter Deal Data → Charges
+2. Click "Add Charge"
+3. Fill in all fields: Date, Reference, Type, Description, Interest Rate, Interest From, Deferred, Original Amount
+4. Click OK to save the charge
+5. Verify the charge appears in the table with all data
+6. Click "Save Draft"
+7. Navigate to another section (e.g., Borrower)
+8. Return to the Charges section
+9. Verify all charge data persists correctly
+10. Reload the page and verify data still displays
 
 ---
 
 ## Scope
 
-- **Modified**: `src/hooks/useDealFields.ts` only
-- **No changes to**: UI components, database schema, APIs, or document generation
-- **Backward compatible**: Existing data format continues to work
+- **Database**: Add 13 new field_dictionary entries
+- **Modified**: `src/hooks/useDealFields.ts` (expand CHARGE_UI_TO_DICT)
+- **No changes to**: UI components, APIs, or document generation flow
+- **Backward compatible**: Existing charge data continues to work
+
