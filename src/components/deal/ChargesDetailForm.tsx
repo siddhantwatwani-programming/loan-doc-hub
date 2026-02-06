@@ -192,7 +192,7 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
             </div>
           </div>
 
-          {/* Row 4: Interest Rate | Notes */}
+          {/* Row 4: Interest Rate */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-sm text-foreground">Interest Rate</Label>
@@ -208,16 +208,6 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
               </div>
-            </div>
-            <div>
-              <Label className="text-sm text-foreground">Notes</Label>
-              <Textarea
-                value={values[FIELD_KEYS.notes] || ''}
-                onChange={(e) => onValueChange(FIELD_KEYS.notes, e.target.value)}
-                disabled={disabled}
-                className="text-sm mt-1 min-h-[60px]"
-                placeholder="Enter notes"
-              />
             </div>
           </div>
 
@@ -279,7 +269,19 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
             </div>
           </div>
 
-          {/* Row 7: Deferred checkbox */}
+          {/* Row 7: Notes */}
+          <div>
+            <Label className="text-sm text-foreground">Notes</Label>
+            <Textarea
+              value={values[FIELD_KEYS.notes] || ''}
+              onChange={(e) => onValueChange(FIELD_KEYS.notes, e.target.value)}
+              disabled={disabled}
+              className="text-sm mt-1 min-h-[60px]"
+              placeholder="Enter notes"
+            />
+          </div>
+
+          {/* Row 8: Deferred checkbox */}
           <div className="flex items-center gap-2">
             <Checkbox
               id="detail-deferred"
