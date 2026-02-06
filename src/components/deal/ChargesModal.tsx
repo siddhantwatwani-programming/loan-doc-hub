@@ -109,7 +109,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-primary" />
@@ -125,7 +125,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
             </div>
             <div className="space-y-3 px-1">
               <div>
-                <Label className="text-sm text-foreground">Account</Label>
+                <Label className="text-sm font-semibold text-foreground">Account</Label>
                 <Input
                   value={formData.account}
                   onChange={(e) => handleFieldChange('account', e.target.value)}
@@ -134,7 +134,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                 />
               </div>
               <div>
-                <Label className="text-sm text-foreground">Borrower Full Name</Label>
+                <Label className="text-sm font-semibold text-foreground">Borrower Full Name</Label>
                 <Input
                   value={formData.borrowerFullName}
                   onChange={(e) => handleFieldChange('borrowerFullName', e.target.value)}
@@ -154,7 +154,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
               {/* Row 1: Date of Charge | Interest From */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm text-foreground">Date of Charge</Label>
+                  <Label className="text-sm font-semibold text-foreground">Date of Charge</Label>
                   <Input
                     type="date"
                     value={formData.dateOfCharge}
@@ -163,7 +163,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                   />
                 </div>
                 <div>
-                  <Label className="text-sm text-foreground">Interest From</Label>
+                  <Label className="text-sm font-semibold text-foreground">Interest From</Label>
                   <Input
                     type="date"
                     value={formData.interestFrom}
@@ -176,7 +176,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
               {/* Row 2: Reference | Charge Type */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm text-foreground">Reference</Label>
+                  <Label className="text-sm font-semibold text-foreground">Reference</Label>
                   <Input
                     value={formData.reference}
                     onChange={(e) => handleFieldChange('reference', e.target.value)}
@@ -185,7 +185,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                   />
                 </div>
                 <div>
-                  <Label className="text-sm text-foreground">Charge Type</Label>
+                  <Label className="text-sm font-semibold text-foreground">Charge Type</Label>
                   <Select
                     value={formData.chargeType}
                     onValueChange={(value) => handleFieldChange('chargeType', value)}
@@ -207,7 +207,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
               {/* Row 3: Original Amount | Description */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm text-foreground">Original Amount</Label>
+                  <Label className="text-sm font-semibold text-foreground">Original Amount</Label>
                   <div className="relative mt-1">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                     <Input
@@ -221,7 +221,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm text-foreground">Description</Label>
+                  <Label className="text-sm font-semibold text-foreground">Description</Label>
                   <Input
                     value={formData.description}
                     onChange={(e) => handleFieldChange('description', e.target.value)}
@@ -234,7 +234,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
               {/* Row 4: Interest Rate */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm text-foreground">Interest Rate</Label>
+                  <Label className="text-sm font-semibold text-foreground">Interest Rate</Label>
                   <div className="relative mt-1">
                     <Input
                       type="number"
@@ -252,7 +252,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
               {/* Row 5: Unpaid Balance | Owed To */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm text-foreground">Unpaid Balance</Label>
+                  <Label className="text-sm font-semibold text-foreground">Unpaid Balance</Label>
                   <div className="relative mt-1">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                     <Input
@@ -266,7 +266,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                   </div>
                 </div>
                 <div>
-                  <Label className="text-sm text-foreground">Owed To</Label>
+                  <Label className="text-sm font-semibold text-foreground">Owed To</Label>
                   <Input
                     value={formData.owedTo}
                     onChange={(e) => handleFieldChange('owedTo', e.target.value)}
@@ -279,7 +279,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
               {/* Row 6: Owed From | Total Due */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm text-foreground">Owed From</Label>
+                  <Label className="text-sm font-semibold text-foreground">Owed From</Label>
                   <Input
                     value={formData.owedFrom}
                     onChange={(e) => handleFieldChange('owedFrom', e.target.value)}
@@ -288,7 +288,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                   />
                 </div>
                 <div>
-                  <Label className="text-sm text-foreground">Total Due</Label>
+                  <Label className="text-sm font-semibold text-foreground">Total Due</Label>
                   <div className="relative mt-1">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                     <Input
@@ -305,7 +305,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
 
               {/* Row 7: Notes */}
               <div>
-                <Label className="text-sm text-foreground">Notes</Label>
+                <Label className="text-sm font-semibold text-foreground">Notes</Label>
                 <Textarea
                   value={formData.notes}
                   onChange={(e) => handleFieldChange('notes', e.target.value)}
@@ -321,7 +321,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                   checked={formData.deferred === 'true'}
                   onCheckedChange={(checked) => handleFieldChange('deferred', checked ? 'true' : 'false')}
                 />
-                <Label htmlFor="deferred" className="text-sm text-foreground cursor-pointer">
+                <Label htmlFor="deferred" className="text-sm font-semibold text-foreground cursor-pointer">
                   Deferred
                 </Label>
               </div>
