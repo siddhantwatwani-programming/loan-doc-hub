@@ -223,7 +223,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                 </div>
               </div>
 
-              {/* Row 4: Interest Rate */}
+              {/* Row 4: Interest Rate | Notes */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-semibold text-foreground">Interest Rate</Label>
@@ -239,18 +239,15 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
                   </div>
                 </div>
-              </div>
-
-
-              {/* Row 7: Notes */}
-              <div>
-                <Label className="text-sm font-semibold text-foreground">Notes</Label>
-                <Textarea
-                  value={formData.notes}
-                  onChange={(e) => handleFieldChange('notes', e.target.value)}
-                  className="text-sm mt-1 min-h-[60px]"
-                  placeholder="Enter notes"
-                />
+                <div>
+                  <Label className="text-sm font-semibold text-foreground">Notes</Label>
+                  <Textarea
+                    value={formData.notes}
+                    onChange={(e) => handleFieldChange('notes', e.target.value)}
+                    className="text-sm mt-1 min-h-[60px]"
+                    placeholder="Enter notes"
+                  />
+                </div>
               </div>
 
               {/* Row 8: Deferred checkbox */}
