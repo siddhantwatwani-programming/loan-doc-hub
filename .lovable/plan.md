@@ -1,95 +1,78 @@
 
-# Document Generation Field Resolution Fix
 
-## Problem Summary
+# Charges Tab Redesign
 
-When generating the "Authority to Receive Information" document, the following merge tags appear blank:
-- `{{Lender.Name}}`
-- `{{Borrower.Name}}`
-- `{{Broker.Name}}`
-- `{{Broker.Address}}`
+## Overview
+Redesign the Charges modal and detail form to match the provided screenshot, adding three sections (Loan Information, Charge Information, Distribution), renaming "Change Type" to "Charge Type" with a dropdown, and updating the table columns accordingly.
 
-## Root Cause Analysis
+## Changes by File
 
-The document generation system has a field key mismatch between **template tags** and **stored data**:
+### 1. `ChargesTableView.tsx`
+- Add new fields to `ChargeData` interface: `account`, `borrowerFullName`, `chargeType`, `advancedBy`, `onBehalfOf`, `amountOwedByBorrower`
+- Rename `changeType` to `chargeType` in the interface
+- Update `DEFAULT_COLUMNS`: rename "Change Type" to "Charge Type", add columns for Account, Borrower Full Name, Advanced By, On Behalf Of, Amount Owed By Borrower
+- Update `renderCellValue` to handle `chargeType` instead of `changeType`, and handle new fields
 
-| Template Tag | Field Dictionary Key | Stored Data Field Key | Status |
-|--------------|---------------------|----------------------|--------|
-| `{{Lender.Name}}` | `Lender.Name` (ID: 9c81c74c...) | `lender.full_name` (ID: 007066be...) | MISMATCH |
-| `{{Borrower.Name}}` | `Borrower.Name` (ID: 8089c5fd...) | `borrower.full_name` (ID: 69d7cead...) | MISMATCH |
-| `{{Broker.Name}}` | `Broker.Name` (ID: 344d868e...) | No data in broker section | NO DATA |
-| `{{Broker.Address}}` | `Broker.Address` (ID: 5ba6924a...) | No data in broker section | NO DATA |
+### 2. `ChargesModal.tsx`
+Rebuild the modal layout to match the screenshot with three sections:
 
-The edge function logs confirm this:
-```text
-[tag-parser] No data for Lender.Name (canonical: Lender.Name)
-[tag-parser] No data for Borrower.Name (canonical: Borrower.Name)
-[tag-parser] No data for Broker.Name (canonical: Broker.Name)
-[tag-parser] No data for Broker.Address (canonical: Broker.Address)
-```
+**Loan Information** (blue section header)
+- Account (text input, full width)
+- Borrower Full Name (text input, full width)
 
-## Solution
+**Charge Information** (blue section header)
+- Row 1: Date of Charge (date) | Interest From (date)
+- Row 2: Reference (text) | Charge Type (dropdown)
+- Row 3: Original Amount (currency with $ prefix) | Description (text)
+- Row 4: Interest Rate (number with % suffix) | Notes (textarea)
+- Row 5: Deferred (checkbox)
 
-Add merge tag aliases to bridge the document template tags to the actual stored field keys. The system already supports this via the `merge_tag_aliases` table.
+**Distribution** (blue section header)
+- Advanced By: Account (input) | `-` separator | Lender Name (input) | Amount with $ prefix (input)
+- On Behalf Of: Account (input) | `-` separator | Lender Name (input) | Amount with $ prefix (input)
+- Amount Owed by Borrower: $ input
 
-### Step 1: Add Merge Tag Aliases
+Footer: OK and Cancel buttons
 
-Insert the following alias records into `merge_tag_aliases`:
+**Charge Type dropdown values** (as shown in screenshot):
+Demand Fee, Online Payment Fee, Modification Doc Prep, New Account Setup, Origination Doc Prep, Beneficiary Wire, Wire Processing, NSF Charge, Account Close Out, Extension / Modification Doc Prep, Pay By Phone, Account Maintenance, Beneficiary Origination, Administrative Services, Professional Services, Foreclosure Processing Fees - Trustee's Fees, Setup Fee, SO110-Servicing Fee, Holdback
 
-| tag_name | field_key | tag_type | is_active |
-|----------|-----------|----------|-----------|
-| `Lender.Name` | `lender.full_name` | `merge_tag` | `true` |
-| `Borrower.Name` | `borrower.full_name` | `merge_tag` | `true` |
-| `Broker.Name` | `broker.full_name` | `merge_tag` | `true` |
-| `Broker.Address` | `broker.address.street` | `merge_tag` | `true` |
+### 3. `ChargesDetailForm.tsx`
+Mirror the same three-section layout as the modal for the detail view when a row is clicked.
 
-This tells the document generation system:
-- When it encounters `{{Lender.Name}}`, resolve it using the data stored under `lender.full_name`
-- When it encounters `{{Borrower.Name}}`, resolve it using the data stored under `borrower.full_name`
-- etc.
+### 4. `ChargesSectionContent.tsx`
+- Update field key mappings: `change_type` becomes `charge_type`
+- Add new field keys: `account`, `borrower_full_name`, `advanced_by`, `on_behalf_of`, `amount_owed_by_borrower`
+- Update `extractChargesFromValues` to read new fields
+- Update `handleSaveCharge` to persist new fields
 
-### Step 2: Ensure Broker Data is Entered
+## Data Storage
+All new fields persist in the existing `deal_section_values` JSONB using the `chargeN.*` prefix pattern:
+- `charge1.account`, `charge1.borrower_full_name`, `charge1.charge_type`
+- `charge1.advanced_by`, `charge1.on_behalf_of`, `charge1.amount_owed_by_borrower`
 
-The broker section for this deal is empty. You will need to:
-1. Navigate to the deal's "Broker" section
-2. Enter the broker's name, address, and other required information
-3. Save the draft
+No database schema changes required.
 
-### Technical Implementation
+## Technical Details
 
-**File to modify:** Database migration (no code changes required)
+### Distribution Section Layout (matching screenshot)
+The Distribution section uses a table-like grid:
+- Header row: Account | Lender Name | Amount
+- "Advanced By" row: text input | text input | currency input
+- "On Behalf Of" row: text input | text input | currency input
+- Bottom row: "Amount Owed by Borrower:" label with currency input
 
-```sql
-INSERT INTO merge_tag_aliases (tag_name, field_key, tag_type, is_active)
-VALUES 
-  ('Lender.Name', 'lender.full_name', 'merge_tag', true),
-  ('Borrower.Name', 'borrower.full_name', 'merge_tag', true),
-  ('Broker.Name', 'broker.full_name', 'merge_tag', true),
-  ('Broker.Address', 'broker.address.street', 'merge_tag', true)
-ON CONFLICT (tag_name) DO UPDATE SET
-  field_key = EXCLUDED.field_key,
-  is_active = true;
-```
+All distribution fields are plain text inputs (not dropdowns) per user direction.
 
-### Why This Works
+### Files Modified
+1. `src/components/deal/ChargesTableView.tsx`
+2. `src/components/deal/ChargesModal.tsx`
+3. `src/components/deal/ChargesDetailForm.tsx`
+4. `src/components/deal/ChargesSectionContent.tsx`
 
-The `generate-document` Edge Function's `resolveFieldKeyWithMap` function (in `field-resolver.ts`) already implements the priority order:
+### No Changes To
+- Database schema
+- Backend APIs or edge functions
+- Other tabs or components
+- Document generation flow
 
-1. **Priority 1**: Explicit alias mapping (check `merge_tag_aliases` first)
-2. **Priority 2**: Direct field_key match from field_dictionary
-3. **Priority 3**: Case-insensitive fallback
-
-By adding aliases, we redirect `{{Lender.Name}}` to look up data stored under `lender.full_name` instead of the non-existent `Lender.Name` field values.
-
-### Current Data for This Deal
-
-| Section | Field Key | Value |
-|---------|-----------|-------|
-| lender | `lender.full_name` | "David Samuel" |
-| borrower | `borrower.full_name` | "Stephen Dafern" |
-| broker | (empty) | No data entered |
-
-After implementing this fix:
-- `{{Lender.Name}}` will render as "David Samuel"
-- `{{Borrower.Name}}` will render as "Stephen Dafern"
-- `{{Broker.Name}}` and `{{Broker.Address}}` will render once broker data is entered
