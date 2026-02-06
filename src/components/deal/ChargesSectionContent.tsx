@@ -22,7 +22,6 @@ const extractChargesFromValues = (values: Record<string, string>): ChargeData[] 
   const charges: ChargeData[] = [];
   const chargePrefixes = new Set<string>();
   
-  // Find all charge prefixes (charge1, charge2, etc.)
   Object.keys(values).forEach(key => {
     const match = key.match(/^(charge\d+)\./);
     if (match) {
@@ -30,7 +29,6 @@ const extractChargesFromValues = (values: Record<string, string>): ChargeData[] 
     }
   });
   
-  // Build charge objects from values
   chargePrefixes.forEach(prefix => {
     const charge: ChargeData = {
       id: prefix,
@@ -44,14 +42,22 @@ const extractChargesFromValues = (values: Record<string, string>): ChargeData[] 
       interestRate: values[`${prefix}.interest_rate`] || '',
       notes: values[`${prefix}.notes`] || '',
       reference: values[`${prefix}.reference`] || '',
-      changeType: values[`${prefix}.change_type`] || '',
+      chargeType: values[`${prefix}.charge_type`] || values[`${prefix}.change_type`] || '',
       deferred: values[`${prefix}.deferred`] || '',
       originalAmount: values[`${prefix}.original_amount`] || '',
+      account: values[`${prefix}.account`] || '',
+      borrowerFullName: values[`${prefix}.borrower_full_name`] || '',
+      advancedByAccount: values[`${prefix}.advanced_by_account`] || '',
+      advancedByLenderName: values[`${prefix}.advanced_by_lender_name`] || '',
+      advancedByAmount: values[`${prefix}.advanced_by_amount`] || '',
+      onBehalfOfAccount: values[`${prefix}.on_behalf_of_account`] || '',
+      onBehalfOfLenderName: values[`${prefix}.on_behalf_of_lender_name`] || '',
+      onBehalfOfAmount: values[`${prefix}.on_behalf_of_amount`] || '',
+      amountOwedByBorrower: values[`${prefix}.amount_owed_by_borrower`] || '',
     };
     charges.push(charge);
   });
   
-  // Sort to ensure charge1 comes first
   charges.sort((a, b) => {
     const numA = parseInt(a.id.replace('charge', ''));
     const numB = parseInt(b.id.replace('charge', ''));
@@ -92,13 +98,9 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
   const [editingCharge, setEditingCharge] = useState<ChargeData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Check if we're in detail view
   const isDetailView = activeSubSection === 'detail';
-  
-  // Extract charges from values
   const charges = extractChargesFromValues(values);
 
-  // Get the selected charge name for detail view header
   const selectedChargeName = useMemo(() => {
     const charge = charges.find(c => c.id === selectedChargePrefix);
     if (charge) {
@@ -107,34 +109,28 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
     return 'Charge';
   }, [charges, selectedChargePrefix]);
 
-  // Handle adding a new charge
   const handleAddCharge = useCallback(() => {
     setEditingCharge(null);
     setModalOpen(true);
   }, []);
 
-  // Handle editing a charge
   const handleEditCharge = useCallback((charge: ChargeData) => {
     setEditingCharge(charge);
     setModalOpen(true);
   }, []);
 
-  // Handle row click - navigate to charge details
   const handleRowClick = useCallback((charge: ChargeData) => {
     setSelectedChargePrefix(charge.id);
     setActiveSubSection('detail');
   }, []);
 
-  // Handle back navigation
   const handleBackToTable = useCallback(() => {
     setActiveSubSection('charges');
   }, []);
 
-  // Handle saving charge from modal
   const handleSaveCharge = useCallback((chargeData: ChargeData) => {
     const prefix = editingCharge ? editingCharge.id : getNextChargePrefix(values);
     
-    // Save all charge fields
     onValueChange(`${prefix}.description`, chargeData.description);
     onValueChange(`${prefix}.unpaid_balance`, chargeData.unpaidBalance);
     onValueChange(`${prefix}.owed_to`, chargeData.owedTo);
@@ -145,32 +141,36 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
     onValueChange(`${prefix}.interest_rate`, chargeData.interestRate);
     onValueChange(`${prefix}.notes`, chargeData.notes);
     onValueChange(`${prefix}.reference`, chargeData.reference);
-    onValueChange(`${prefix}.change_type`, chargeData.changeType);
+    onValueChange(`${prefix}.charge_type`, chargeData.chargeType);
     onValueChange(`${prefix}.deferred`, chargeData.deferred);
     onValueChange(`${prefix}.original_amount`, chargeData.originalAmount);
+    onValueChange(`${prefix}.account`, chargeData.account);
+    onValueChange(`${prefix}.borrower_full_name`, chargeData.borrowerFullName);
+    onValueChange(`${prefix}.advanced_by_account`, chargeData.advancedByAccount);
+    onValueChange(`${prefix}.advanced_by_lender_name`, chargeData.advancedByLenderName);
+    onValueChange(`${prefix}.advanced_by_amount`, chargeData.advancedByAmount);
+    onValueChange(`${prefix}.on_behalf_of_account`, chargeData.onBehalfOfAccount);
+    onValueChange(`${prefix}.on_behalf_of_lender_name`, chargeData.onBehalfOfLenderName);
+    onValueChange(`${prefix}.on_behalf_of_amount`, chargeData.onBehalfOfAmount);
+    onValueChange(`${prefix}.amount_owed_by_borrower`, chargeData.amountOwedByBorrower);
     
     setModalOpen(false);
   }, [editingCharge, values, onValueChange]);
 
-  // Create charge-specific values for the detail forms
   const getChargeSpecificValues = (): Record<string, string> => {
     const result: Record<string, string> = {};
     Object.entries(values).forEach(([key, value]) => {
-      // Replace the current charge prefix with charges for the form (removing the number)
       if (key.startsWith(`${selectedChargePrefix}.`)) {
         const fieldName = key.replace(`${selectedChargePrefix}.`, 'charges.');
         result[fieldName] = value;
       } else if (!key.match(/^charge\d+\./)) {
-        // Include non-charge-indexed fields
         result[key] = value;
       }
     });
     return result;
   };
 
-  // Handle value change for charge-specific forms
   const handleChargeValueChange = (fieldKey: string, value: string) => {
-    // Replace charges. with the selected charge prefix
     const actualKey = fieldKey.replace('charges.', `${selectedChargePrefix}.`);
     onValueChange(actualKey, value);
   };
@@ -206,7 +206,6 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
   return (
     <>
       <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
-        {/* Full-width breadcrumb header when in detail view */}
         {isDetailView && (
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/20">
             <Button
@@ -225,21 +224,17 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
         )}
 
         <div className="flex flex-1">
-          {/* Sub-navigation tabs on the left - only shown in detail view */}
           <ChargesSubNavigation
             activeSubSection={activeSubSection}
             onSubSectionChange={setActiveSubSection}
             isDetailView={isDetailView}
           />
-
-          {/* Sub-section content on the right */}
           <div className="flex-1 min-w-0 overflow-auto">
             {renderSubSectionContent()}
           </div>
         </div>
       </div>
 
-      {/* Add/Edit Charge Modal */}
       <ChargesModal
         open={modalOpen}
         onOpenChange={setModalOpen}
