@@ -57,6 +57,10 @@ export const SECTION_ORDER: FieldSection[] = [
   'other'
 ];
 
+// Custom UI-only sections (not in database enum)
+export const CUSTOM_UI_SECTIONS = ['origination_fees'] as const;
+export type CustomUISection = typeof CUSTOM_UI_SECTIONS[number];
+
 /**
  * Fallback resolver when no packet is assigned.
  * Loads ALL fields from field_dictionary grouped by section.
