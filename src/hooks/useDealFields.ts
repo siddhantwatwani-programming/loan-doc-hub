@@ -89,6 +89,28 @@ function getCanonicalKey(indexedKey: string): string {
     .replace(/^(broker)\d+\./, 'broker.');
 }
 
+// Extract indexed prefix from field key (e.g., "borrower1.first_name" -> "borrower1")
+function getIndexedPrefix(fieldKey: string): string | null {
+  const match = fieldKey.match(/^(borrower\d+|coborrower\d+|co_borrower\d+|lender\d+|property\d+|broker\d+)\./);
+  return match ? match[1] : null;
+}
+
+// Generate composite storage key for JSONB to support multi-entity fields
+// Returns "{prefix}::{fieldDictId}" for indexed fields, or just "{fieldDictId}" for non-indexed
+function getStorageKey(fieldKey: string, fieldDictId: string): string {
+  const prefix = getIndexedPrefix(fieldKey);
+  return prefix ? `${prefix}::${fieldDictId}` : fieldDictId;
+}
+
+// Parse composite storage key back to components
+function parseStorageKey(storageKey: string): { prefix: string | null; fieldDictId: string } {
+  if (storageKey.includes('::')) {
+    const [prefix, fieldDictId] = storageKey.split('::');
+    return { prefix, fieldDictId };
+  }
+  return { prefix: null, fieldDictId: storageKey };
+}
+
 // Map field data types to value columns
 function getValueFromRecord(record: FieldValue, dataType: FieldDataType): string {
   switch (dataType) {
@@ -265,18 +287,28 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
           fieldDictIdToMeta.set(f.field_dictionary_id, { field_key: f.field_key, data_type: f.data_type });
         });
 
-        // Build values map - parse JSONB field_values keyed by field_dictionary_id
-        // Use indexed_key if present to support multi-entity fields (lender1.*, borrower1.*, etc.)
+        // Build values map - parse JSONB field_values with composite key support
+        // Composite keys are formatted as "{prefix}::{fieldDictId}" for multi-entity fields
+        // Falls back to indexed_key property for backward compatibility
         const valuesMap: Record<string, string> = {};
         ((sectionValues || []) as any[]).forEach((sv) => {
           const fieldValues = sv.field_values || {};
-          Object.entries(fieldValues).forEach(([fieldDictId, fieldData]: [string, any]) => {
+          Object.entries(fieldValues).forEach(([storageKey, fieldData]: [string, any]) => {
+            const { prefix, fieldDictId } = parseStorageKey(storageKey);
             const fieldMeta = fieldDictIdToMeta.get(fieldDictId);
+            
             if (fieldMeta && fieldData) {
               const value = extractTypedValueFromJsonb(fieldData as JsonbFieldValue, fieldMeta.data_type);
               if (value) {
-                // Use indexed_key if stored, otherwise fall back to canonical field_key
-                const keyToUse = (fieldData as JsonbFieldValue).indexed_key || fieldMeta.field_key;
+                // Priority: 1) indexed_key property, 2) reconstruct from prefix, 3) canonical field_key
+                let keyToUse = (fieldData as JsonbFieldValue).indexed_key;
+                if (!keyToUse && prefix) {
+                  // Reconstruct indexed key from prefix and canonical field key
+                  // e.g., prefix="borrower1", field_key="borrower.first_name" -> "borrower1.first_name"
+                  const canonicalField = fieldMeta.field_key.replace(/^(borrower|coborrower|co_borrower|lender|property\d*|broker)\./, '');
+                  keyToUse = `${prefix}.${canonicalField}`;
+                }
+                keyToUse = keyToUse || fieldMeta.field_key;
                 valuesMap[keyToUse] = value;
               }
             }
@@ -451,7 +483,9 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
               fieldValueObj.value_text = stringValue;
           }
 
-          sectionUpdates[section][fieldDictId] = fieldValueObj;
+          // Use composite storage key for multi-entity fields to prevent overwrites
+          const storageKey = getStorageKey(fieldKey, fieldDictId);
+          sectionUpdates[section][storageKey] = fieldValueObj;
         }
 
         const sectionsToPersist = Object.entries(sectionUpdates).filter(([, v]) => Object.keys(v).length > 0);
