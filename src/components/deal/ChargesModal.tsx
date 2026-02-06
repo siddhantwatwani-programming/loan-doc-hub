@@ -258,7 +258,61 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                 </div>
               </div>
 
-              {/* Row 5: Deferred checkbox */}
+              {/* Row 5: Unpaid Balance | Owed To */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm text-foreground">Unpaid Balance</Label>
+                  <div className="relative mt-1">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.unpaidBalance}
+                      onChange={(e) => handleFieldChange('unpaidBalance', e.target.value)}
+                      className="h-8 text-sm pl-6"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm text-foreground">Owed To</Label>
+                  <Input
+                    value={formData.owedTo}
+                    onChange={(e) => handleFieldChange('owedTo', e.target.value)}
+                    className="h-8 text-sm mt-1"
+                    placeholder="Enter owed to"
+                  />
+                </div>
+              </div>
+
+              {/* Row 6: Owed From | Total Due */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm text-foreground">Owed From</Label>
+                  <Input
+                    value={formData.owedFrom}
+                    onChange={(e) => handleFieldChange('owedFrom', e.target.value)}
+                    className="h-8 text-sm mt-1"
+                    placeholder="Enter owed from"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm text-foreground">Total Due</Label>
+                  <div className="relative mt-1">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.totalDue}
+                      onChange={(e) => handleFieldChange('totalDue', e.target.value)}
+                      className="h-8 text-sm pl-6"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 7: Deferred checkbox */}
               <div className="flex items-center gap-2">
                 <Checkbox
                   id="deferred"
