@@ -1,42 +1,30 @@
 
-# Fix: Borrower Records Disappearing After Navigation
+# Fix: Charges Records Disappearing After Navigation
 
 ## Problem Identified
 
-When multiple borrowers are added to a deal, their data is being **overwritten** in the database. This happens because:
+When charge data is entered via the modal and saved, the data disappears upon navigation because there is a **complete field key mismatch** between what the UI uses and what exists in the field dictionary:
 
-1. The database stores field values in JSONB with `field_dictionary_id` as the key
-2. Both `borrower1.first_name` and `borrower2.first_name` map to the **same** `field_dictionary_id` 
-3. When saving, the second borrower's values overwrite the first borrower's values
+| UI Field Key | Dictionary Field Key |
+|-------------|---------------------|
+| `charge1.date_of_charge` | `charge_date` |
+| `charge1.description` | `charge_description` |
+| `charge1.interest_rate` | `charge_interest_rate` |
+| `charge1.reference` | `charge_reference` |
+| `charge1.charge_type` | `charge_type` |
+| `charge1.notes` | `charge_notes` |
+| `charge1.original_amount` | `charge_original_amount` |
+| `charge1.deferred` | `charge_is_deferred` |
+| `charge1.interest_from` | `charge_interest_start_date` |
 
-For example, when you add:
-- Borrower 1: John Smith
-- Borrower 2: Jane Doe
+Additionally:
+1. The `getCanonicalKey()` function in `useDealFields.ts` does not normalize `charge1.*` to `charge.*`
+2. The `getIndexedPrefix()` function does not recognize `charge\d+` as an indexed entity
+3. Even after normalization, `charge.date_of_charge` would not match `charge_date`
 
-After save, only "Jane Doe" (Borrower 2) data remains because it overwrote "John Smith" (Borrower 1).
+## Solution: Add Charge Field Key Mapping
 
----
-
-## Solution: Composite Key Storage
-
-Change the JSONB storage key from just `field_dictionary_id` to a **composite key** that includes the indexed prefix.
-
-### Current Storage Model (Broken)
-```json
-{
-  "26ef46a5-...": { "indexed_key": "borrower2.first_name", "value_text": "Jane" }
-}
-```
-Only stores the last borrower's data.
-
-### New Storage Model (Fixed)
-```json
-{
-  "borrower1::26ef46a5-...": { "indexed_key": "borrower1.first_name", "value_text": "John" },
-  "borrower2::26ef46a5-...": { "indexed_key": "borrower2.first_name", "value_text": "Jane" }
-}
-```
-Stores each borrower's data separately.
+Create a mapping layer in `useDealFields.ts` that translates between UI field keys and dictionary field keys for charges. This maintains backward compatibility and follows the existing architecture pattern.
 
 ---
 
@@ -44,86 +32,127 @@ Stores each borrower's data separately.
 
 ### 1. `src/hooks/useDealFields.ts`
 
-**Save Logic Changes (lines 398-455):**
-- Modify the storage key generation to use composite keys for indexed fields
-- Add helper function `getStorageKey(indexedFieldKey, fieldDictId)` that returns:
-  - `{prefix}::{fieldDictId}` for indexed fields (e.g., `borrower1::uuid`)
-  - `{fieldDictId}` for non-indexed fields (backward compatible)
+**Add charge entity support to existing functions:**
 
-**Load Logic Changes (lines 268-295):**
-- Parse composite keys when loading data
-- Extract the indexed prefix from the storage key when present
-- Fall back to using `indexed_key` property for backward compatibility
+1. **Update `getCanonicalKey()` (line 82-90)** - Add charge prefix normalization:
+   ```typescript
+   .replace(/^(charge)\d+\./, 'charge.')
+   ```
 
-### 2. Migration Helper
+2. **Update `getIndexedPrefix()` (line 93-96)** - Add charge pattern:
+   ```typescript
+   const match = fieldKey.match(/^(borrower\d+|coborrower\d+|co_borrower\d+|lender\d+|property\d+|broker\d+|charge\d+)\./);
+   ```
 
-The fix will be backward compatible:
-- **New data** uses composite keys for multi-entity fields
-- **Old data** with `indexed_key` property continues to work during load
-- No database schema changes required
+3. **Add new function: `mapChargeFieldToDict()`** - Convert UI field names to dictionary field names:
+   ```typescript
+   function mapChargeFieldToDict(fieldKey: string): string {
+     // Maps charge1.date_of_charge -> charge_date
+     const chargeFieldMap: Record<string, string> = {
+       'charge.date_of_charge': 'charge_date',
+       'charge.description': 'charge_description',
+       'charge.interest_rate': 'charge_interest_rate',
+       'charge.interest_from': 'charge_interest_start_date',
+       'charge.reference': 'charge_reference',
+       'charge.charge_type': 'charge_type',
+       'charge.notes': 'charge_notes',
+       'charge.original_amount': 'charge_original_amount',
+       'charge.deferred': 'charge_is_deferred',
+     };
+     return chargeFieldMap[fieldKey] || fieldKey;
+   }
+   ```
+
+4. **Add reverse mapping function: `mapDictToChargeField()`** - For loading data back:
+   ```typescript
+   function mapDictToChargeField(dictKey: string): string {
+     // Maps charge_date -> charge.date_of_charge
+     const reversMap: Record<string, string> = {
+       'charge_date': 'charge.date_of_charge',
+       'charge_description': 'charge.description',
+       'charge_interest_rate': 'charge.interest_rate',
+       'charge_interest_start_date': 'charge.interest_from',
+       'charge_reference': 'charge.reference',
+       'charge_type': 'charge.charge_type',
+       'charge_notes': 'charge.notes',
+       'charge_original_amount': 'charge.original_amount',
+       'charge_is_deferred': 'charge.deferred',
+     };
+     return reversMap[dictKey] || dictKey;
+   }
+   ```
+
+5. **Update save logic in `saveDraft()` (around line 415)** - Apply mapping when looking up dictionary ID:
+   - Before dictionary lookup, check if the canonical key is a charge field
+   - If so, map it to the dictionary format
+   - Use the mapped key for dictionary ID lookup
+
+6. **Update load logic in `fetchData()` (around line 280)** - Apply reverse mapping when reconstructing field keys:
+   - When loading charge section data, reverse-map dictionary keys to UI format
+   - Reconstruct indexed keys properly (e.g., `charge1.date_of_charge`)
 
 ---
 
 ## Technical Details
 
-### New Helper Functions in useDealFields.ts
+### Updated Helper Functions
 
 ```typescript
-// Extract prefix from indexed key (borrower1.first_name -> borrower1)
-function getIndexedPrefix(fieldKey: string): string | null {
-  const match = fieldKey.match(/^(borrower\d+|coborrower\d+|lender\d+|property\d+|broker\d+)\./);
-  return match ? match[1] : null;
-}
+// Charge field UI-to-dictionary mapping
+const CHARGE_UI_TO_DICT: Record<string, string> = {
+  'charge.date_of_charge': 'charge_date',
+  'charge.description': 'charge_description',
+  'charge.interest_rate': 'charge_interest_rate',
+  'charge.interest_from': 'charge_interest_start_date',
+  'charge.reference': 'charge_reference',
+  'charge.charge_type': 'charge_type',
+  'charge.notes': 'charge_notes',
+  'charge.original_amount': 'charge_original_amount',
+  'charge.deferred': 'charge_is_deferred',
+  'charge.accrued_interest': 'charge_accrued_interest',
+  'charge.unpaid_balance': 'charge_unpaid_balance',
+  'charge.total_due': 'charge_total_due',
+  'charge.owed_to': 'charge_owed_to',
+  'charge.account': 'charge_account',
+  'charge.borrower_full_name': 'charge_borrower_full_name',
+};
 
-// Generate storage key for JSONB
-function getStorageKey(fieldKey: string, fieldDictId: string): string {
-  const prefix = getIndexedPrefix(fieldKey);
-  return prefix ? `${prefix}::${fieldDictId}` : fieldDictId;
-}
+// Reverse mapping for loading
+const CHARGE_DICT_TO_UI: Record<string, string> = Object.fromEntries(
+  Object.entries(CHARGE_UI_TO_DICT).map(([ui, dict]) => [dict, ui])
+);
 
-// Parse storage key back to components
-function parseStorageKey(storageKey: string): { prefix: string | null; fieldDictId: string } {
-  if (storageKey.includes('::')) {
-    const [prefix, fieldDictId] = storageKey.split('::');
-    return { prefix, fieldDictId };
-  }
-  return { prefix: null, fieldDictId: storageKey };
-}
-```
-
-### Save Logic Update
-
-```typescript
-// Line 454: Change from
-sectionUpdates[section][fieldDictId] = fieldValueObj;
-
-// To:
-const storageKey = getStorageKey(fieldKey, fieldDictId);
-sectionUpdates[section][storageKey] = fieldValueObj;
-```
-
-### Load Logic Update
-
-```typescript
-// Line 273: Update to handle composite keys
-Object.entries(fieldValues).forEach(([storageKey, fieldData]) => {
-  const { prefix, fieldDictId } = parseStorageKey(storageKey);
-  const fieldMeta = fieldDictIdToMeta.get(fieldDictId);
+function mapChargeFieldKey(canonicalKey: string, toDict: boolean): string {
+  if (!canonicalKey.startsWith('charge.')) return canonicalKey;
   
-  if (fieldMeta && fieldData) {
-    const value = extractTypedValueFromJsonb(fieldData, fieldMeta.data_type);
-    if (value) {
-      // Use indexed_key if stored, reconstruct from prefix+canonical, or use canonical
-      let keyToUse = fieldData.indexed_key;
-      if (!keyToUse && prefix) {
-        const canonicalField = fieldMeta.field_key.replace(/^(borrower|lender|property|broker)\./, '');
-        keyToUse = `${prefix}.${canonicalField}`;
-      }
-      keyToUse = keyToUse || fieldMeta.field_key;
-      valuesMap[keyToUse] = value;
-    }
+  if (toDict) {
+    return CHARGE_UI_TO_DICT[canonicalKey] || canonicalKey;
+  } else {
+    return CHARGE_DICT_TO_UI[canonicalKey] || canonicalKey;
   }
-});
+}
+```
+
+### Save Logic Flow
+
+```text
+1. UI calls onValueChange('charge1.description', 'Test')
+2. saveDraft() processes field key 'charge1.description'
+3. getCanonicalKey() normalizes to 'charge.description'
+4. mapChargeFieldKey() converts to 'charge_description'
+5. Dictionary lookup finds ID for 'charge_description'
+6. Storage key: 'charge1::uuid' with indexed_key='charge1.description'
+```
+
+### Load Logic Flow
+
+```text
+1. fetchData() reads deal_section_values for 'charges' section
+2. Parses storage key 'charge1::uuid' -> prefix='charge1', fieldDictId='uuid'
+3. Looks up field_key 'charge_description' from dictionary
+4. mapChargeFieldKey(reverse) converts to 'charge.description'
+5. Reconstructs indexed key: 'charge1.description'
+6. Sets values['charge1.description'] = loaded_value
 ```
 
 ---
@@ -131,13 +160,16 @@ Object.entries(fieldValues).forEach(([storageKey, fieldData]) => {
 ## Testing Checklist
 
 After implementation:
-1. Add Borrower 1 with test data
-2. Add Borrower 2 with different data
-3. Click "Save Draft"
-4. Navigate to another tab (e.g., Property)
-5. Return to Borrower tab
-6. Verify both borrowers appear in the table with correct data
-7. Reload the page and verify data persists
+1. Open a deal and navigate to the Charges tab
+2. Click "Add Charge" and fill in all fields
+3. Click OK to save the charge
+4. Click "Save Draft" button
+5. Navigate to another tab (e.g., Borrower)
+6. Return to the Charges tab
+7. Verify the charge appears in the table with correct data
+8. Add a second charge and repeat steps 4-7
+9. Verify both charges persist correctly
+10. Reload the page and verify all charges reload
 
 ---
 
@@ -145,4 +177,4 @@ After implementation:
 
 - **Modified**: `src/hooks/useDealFields.ts` only
 - **No changes to**: UI components, database schema, APIs, or document generation
-- **Backward compatible**: Existing data with `indexed_key` continues to load correctly
+- **Backward compatible**: Existing data format continues to work
