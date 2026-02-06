@@ -174,19 +174,12 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
 
                 <div>
                   <Label className="text-sm text-foreground">Borrower Type</Label>
-                  <Select
+                  <Input
                     value={formData.borrowerType}
-                    onValueChange={(val) => handleFieldChange('borrowerType', val)}
-                  >
-                    <SelectTrigger className="h-8 text-sm mt-1">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50">
-                      {BORROWER_TYPE_OPTIONS.map(opt => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(e) => handleFieldChange('borrowerType', e.target.value)}
+                    className="h-8 text-sm mt-1"
+                    placeholder="Enter borrower type"
+                  />
                 </div>
 
                 <div>
@@ -227,19 +220,12 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
 
                 <div>
                   <Label className="text-sm text-foreground">Capacity</Label>
-                  <Select
+                  <Input
                     value={formData.capacity}
-                    onValueChange={(val) => handleFieldChange('capacity', val)}
-                  >
-                    <SelectTrigger className="h-8 text-sm mt-1">
-                      <SelectValue placeholder="Select capacity" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50">
-                      {CAPACITY_OPTIONS.map(opt => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(e) => handleFieldChange('capacity', e.target.value)}
+                    className="h-8 text-sm mt-1"
+                    placeholder="Enter capacity"
+                  />
                 </div>
 
                 <div>
