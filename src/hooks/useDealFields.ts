@@ -74,6 +74,7 @@ interface JsonbFieldValue {
 // Charge field UI-to-dictionary mapping
 // Maps UI field keys (charge.date_of_charge) to dictionary keys (charge_date)
 const CHARGE_UI_TO_DICT: Record<string, string> = {
+  // Core charge fields
   'charge.date_of_charge': 'charge_date',
   'charge.description': 'charge_description',
   'charge.interest_rate': 'charge_interest_rate',
@@ -83,12 +84,21 @@ const CHARGE_UI_TO_DICT: Record<string, string> = {
   'charge.notes': 'charge_notes',
   'charge.original_amount': 'charge_original_amount',
   'charge.deferred': 'charge_is_deferred',
+  // Additional charge fields
   'charge.accrued_interest': 'charge_accrued_interest',
   'charge.unpaid_balance': 'charge_unpaid_balance',
   'charge.total_due': 'charge_total_due',
   'charge.owed_to': 'charge_owed_to',
   'charge.account': 'charge_account',
   'charge.borrower_full_name': 'charge_borrower_full_name',
+  // Distribution fields
+  'charge.advanced_by_account': 'charge_advanced_by_account',
+  'charge.advanced_by_lender_name': 'charge_advanced_by_lender_name',
+  'charge.advanced_by_amount': 'charge_advanced_by_amount',
+  'charge.on_behalf_of_account': 'charge_on_behalf_of_account',
+  'charge.on_behalf_of_lender_name': 'charge_on_behalf_of_lender_name',
+  'charge.on_behalf_of_amount': 'charge_on_behalf_of_amount',
+  'charge.amount_owed_by_borrower': 'charge_amount_owed_by_borrower',
 };
 
 // Reverse mapping for loading (dictionary key -> UI key)
