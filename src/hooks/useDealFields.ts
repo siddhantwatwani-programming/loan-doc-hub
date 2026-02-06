@@ -71,14 +71,52 @@ interface JsonbFieldValue {
   updated_by: string | null;
 }
 
+// Charge field UI-to-dictionary mapping
+// Maps UI field keys (charge.date_of_charge) to dictionary keys (charge_date)
+const CHARGE_UI_TO_DICT: Record<string, string> = {
+  'charge.date_of_charge': 'charge_date',
+  'charge.description': 'charge_description',
+  'charge.interest_rate': 'charge_interest_rate',
+  'charge.interest_from': 'charge_interest_start_date',
+  'charge.reference': 'charge_reference',
+  'charge.charge_type': 'charge_type',
+  'charge.notes': 'charge_notes',
+  'charge.original_amount': 'charge_original_amount',
+  'charge.deferred': 'charge_is_deferred',
+  'charge.accrued_interest': 'charge_accrued_interest',
+  'charge.unpaid_balance': 'charge_unpaid_balance',
+  'charge.total_due': 'charge_total_due',
+  'charge.owed_to': 'charge_owed_to',
+  'charge.account': 'charge_account',
+  'charge.borrower_full_name': 'charge_borrower_full_name',
+};
+
+// Reverse mapping for loading (dictionary key -> UI key)
+const CHARGE_DICT_TO_UI: Record<string, string> = Object.fromEntries(
+  Object.entries(CHARGE_UI_TO_DICT).map(([ui, dict]) => [dict, ui])
+);
+
+// Maps charge field keys between UI format and dictionary format
+function mapChargeFieldKey(canonicalKey: string, toDict: boolean): string {
+  if (toDict) {
+    // UI -> Dictionary (e.g., charge.date_of_charge -> charge_date)
+    return CHARGE_UI_TO_DICT[canonicalKey] || canonicalKey;
+  } else {
+    // Dictionary -> UI (e.g., charge_date -> charge.date_of_charge)
+    return CHARGE_DICT_TO_UI[canonicalKey] || canonicalKey;
+  }
+}
+
 // Extracts canonical key from indexed key
 // e.g., "lender1.first_name" -> "lender.first_name"
 // e.g., "borrower2.address.city" -> "borrower.address.city"
+// e.g., "charge1.date_of_charge" -> "charge.date_of_charge"
 //
 // IMPORTANT:
 // - Borrower/Lender/Broker/Co-Borrower sections store dictionary keys as non-indexed (borrower.*, lender.*)
 // - Property keys in the dictionary are primarily defined under property1.*
 //   so we normalize propertyN.* -> property1.* for consistent lookup.
+// - Charge keys use a different format in the dictionary (charge_date vs charge.date_of_charge)
 function getCanonicalKey(indexedKey: string): string {
   return indexedKey
     .replace(/^(borrower)\d+\./, '$1.')
@@ -86,12 +124,13 @@ function getCanonicalKey(indexedKey: string): string {
     .replace(/^(co_borrower)\d+\./, 'co_borrower.')
     .replace(/^(lender)\d+\./, '$1.')
     .replace(/^(property)\d+\./, 'property1.')
-    .replace(/^(broker)\d+\./, 'broker.');
+    .replace(/^(broker)\d+\./, 'broker.')
+    .replace(/^(charge)\d+\./, 'charge.');
 }
 
-// Extract indexed prefix from field key (e.g., "borrower1.first_name" -> "borrower1")
+// Extract indexed prefix from field key (e.g., "borrower1.first_name" -> "borrower1", "charge1.date_of_charge" -> "charge1")
 function getIndexedPrefix(fieldKey: string): string | null {
-  const match = fieldKey.match(/^(borrower\d+|coborrower\d+|co_borrower\d+|lender\d+|property\d+|broker\d+)\./);
+  const match = fieldKey.match(/^(borrower\d+|coborrower\d+|co_borrower\d+|lender\d+|property\d+|broker\d+|charge\d+)\./);
   return match ? match[1] : null;
 }
 
@@ -293,6 +332,8 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
         const valuesMap: Record<string, string> = {};
         ((sectionValues || []) as any[]).forEach((sv) => {
           const fieldValues = sv.field_values || {};
+          const isChargeSection = sv.section === 'charges';
+          
           Object.entries(fieldValues).forEach(([storageKey, fieldData]: [string, any]) => {
             const { prefix, fieldDictId } = parseStorageKey(storageKey);
             const fieldMeta = fieldDictIdToMeta.get(fieldDictId);
@@ -304,9 +345,21 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
                 let keyToUse = (fieldData as JsonbFieldValue).indexed_key;
                 if (!keyToUse && prefix) {
                   // Reconstruct indexed key from prefix and canonical field key
-                  // e.g., prefix="borrower1", field_key="borrower.first_name" -> "borrower1.first_name"
-                  const canonicalField = fieldMeta.field_key.replace(/^(borrower|coborrower|co_borrower|lender|property\d*|broker)\./, '');
-                  keyToUse = `${prefix}.${canonicalField}`;
+                  // For charge fields, we need to reverse-map dictionary keys to UI format
+                  // e.g., prefix="charge1", field_key="charge_date" -> "charge1.date_of_charge"
+                  if (isChargeSection && prefix.startsWith('charge')) {
+                    const uiCanonicalKey = mapChargeFieldKey(fieldMeta.field_key, false);
+                    if (uiCanonicalKey.startsWith('charge.')) {
+                      const fieldSuffix = uiCanonicalKey.replace(/^charge\./, '');
+                      keyToUse = `${prefix}.${fieldSuffix}`;
+                    } else {
+                      keyToUse = `${prefix}.${fieldMeta.field_key}`;
+                    }
+                  } else {
+                    // For other entities (borrower, lender, etc.)
+                    const canonicalField = fieldMeta.field_key.replace(/^(borrower|coborrower|co_borrower|lender|property\d*|broker)\./, '');
+                    keyToUse = `${prefix}.${canonicalField}`;
+                  }
                 }
                 keyToUse = keyToUse || fieldMeta.field_key;
                 valuesMap[keyToUse] = value;
@@ -401,8 +454,13 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
         // ---- Fallback dictionary lookup (ensures we can always persist even if packet-resolved fields are incomplete)
         const candidateKeys = new Set<string>();
         for (const fieldKey of fieldKeysToSave) {
+          const canonical = getCanonicalKey(fieldKey);
           candidateKeys.add(fieldKey);
-          candidateKeys.add(getCanonicalKey(fieldKey));
+          candidateKeys.add(canonical);
+          // For charge fields, also add the dictionary-format key
+          if (canonical.startsWith('charge.')) {
+            candidateKeys.add(mapChargeFieldKey(canonical, true));
+          }
         }
 
         const keysMissingFromMap = [...candidateKeys].filter(k => !fieldIdMap[k]);
@@ -433,14 +491,24 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
         for (const fieldKey of fieldKeysToSave) {
           // Get canonical key for dictionary lookup (lender1.first_name -> lender.first_name)
           const canonicalKey = getCanonicalKey(fieldKey);
+          
+          // For charge fields, also try the dictionary-format key (charge.date_of_charge -> charge_date)
+          const dictMappedKey = canonicalKey.startsWith('charge.') 
+            ? mapChargeFieldKey(canonicalKey, true) 
+            : null;
 
-          const fallbackMeta = fallbackMetaByKey.get(canonicalKey) || fallbackMetaByKey.get(fieldKey);
-          const fieldDictId = fieldIdMap[canonicalKey] || fieldIdMap[fieldKey] || fallbackMeta?.id;
+          const fallbackMeta = fallbackMetaByKey.get(canonicalKey) 
+            || fallbackMetaByKey.get(fieldKey) 
+            || (dictMappedKey ? fallbackMetaByKey.get(dictMappedKey) : null);
+          const fieldDictId = fieldIdMap[canonicalKey] 
+            || fieldIdMap[fieldKey] 
+            || (dictMappedKey ? fieldIdMap[dictMappedKey] : null)
+            || fallbackMeta?.id;
           if (!fieldDictId) continue;
 
           // Prefer resolvedFields for section/type; fall back to dictionary lookup when not present
           const field = resolvedFields?.fields.find(
-            f => f.field_key === canonicalKey || f.field_key === fieldKey
+            f => f.field_key === canonicalKey || f.field_key === fieldKey || (dictMappedKey && f.field_key === dictMappedKey)
           );
 
           const section = field?.section || fallbackMeta?.section;
