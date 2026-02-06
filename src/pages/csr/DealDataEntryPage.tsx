@@ -18,6 +18,7 @@ import { PropertySectionContent } from '@/components/deal/PropertySectionContent
 import { BrokerSectionContent } from '@/components/deal/BrokerSectionContent';
 import { LoanTermsSectionContent } from '@/components/deal/LoanTermsSectionContent';
 import { ChargesSectionContent } from '@/components/deal/ChargesSectionContent';
+import { OriginationFeesSectionContent } from '@/components/deal/OriginationFeesSectionContent';
 import { 
   logDealUpdated, 
   logDealMarkedReady, 
@@ -53,7 +54,7 @@ interface Deal {
 }
 
 // Section labels for display (partial - only includes displayable main sections)
-const SECTION_LABELS: Partial<Record<FieldSection, string>> = {
+const SECTION_LABELS: Partial<Record<FieldSection | 'origination_fees', string>> = {
   borrower: 'Borrower',
   property: 'Property',
   loan_terms: 'Loan Terms',
@@ -67,6 +68,7 @@ const SECTION_LABELS: Partial<Record<FieldSection, string>> = {
   seller: 'Seller',
   title: 'Titles',
   other: 'Other',
+  origination_fees: 'Origination Fees',
   system: 'System',
 };
 
@@ -682,6 +684,16 @@ export const DealDataEntryPage: React.FC = () => {
                   </TabsTrigger>
                 );
               })}
+              
+              {/* Origination Fees - Custom UI Tab (always visible for internal users) */}
+              {isInternalUser && (
+                <TabsTrigger
+                  value="origination_fees"
+                  className="gap-2 data-[state=active]:bg-background relative"
+                >
+                  {SECTION_LABELS['origination_fees']}
+                </TabsTrigger>
+              )}
             </TabsList>
 
             {(isExternalUser ? visibleSections : sections).map(section => (
@@ -785,6 +797,20 @@ export const DealDataEntryPage: React.FC = () => {
                 )}
               </TabsContent>
             ))}
+            
+            {/* Origination Fees - Custom UI Tab Content */}
+            {isInternalUser && (
+              <TabsContent value="origination_fees" className="animate-fade-in">
+                <OriginationFeesSectionContent
+                  fields={[]}
+                  values={values}
+                  onValueChange={updateValue}
+                  showValidation={showValidation}
+                  disabled={false}
+                  calculationResults={calculationResults}
+                />
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       )}
