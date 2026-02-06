@@ -54,6 +54,7 @@ const extractChargesFromValues = (values: Record<string, string>): ChargeData[] 
       onBehalfOfLenderName: values[`${prefix}.on_behalf_of_lender_name`] || '',
       onBehalfOfAmount: values[`${prefix}.on_behalf_of_amount`] || '',
       amountOwedByBorrower: values[`${prefix}.amount_owed_by_borrower`] || '',
+      accruedInterest: values[`${prefix}.accrued_interest`] || '',
     };
     charges.push(charge);
   });
@@ -153,6 +154,7 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
     onValueChange(`${prefix}.on_behalf_of_lender_name`, chargeData.onBehalfOfLenderName);
     onValueChange(`${prefix}.on_behalf_of_amount`, chargeData.onBehalfOfAmount);
     onValueChange(`${prefix}.amount_owed_by_borrower`, chargeData.amountOwedByBorrower);
+    onValueChange(`${prefix}.accrued_interest`, chargeData.accruedInterest);
     
     setModalOpen(false);
   }, [editingCharge, values, onValueChange]);

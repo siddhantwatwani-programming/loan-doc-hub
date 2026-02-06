@@ -37,6 +37,7 @@ export interface ChargeData {
   onBehalfOfLenderName: string;
   onBehalfOfAmount: string;
   amountOwedByBorrower: string;
+  accruedInterest: string;
 }
 
 interface ChargesTableViewProps {
@@ -52,22 +53,18 @@ interface ChargesTableViewProps {
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { id: 'account', label: 'Account', visible: true },
-  { id: 'borrowerFullName', label: 'Borrower Full Name', visible: true },
-  { id: 'chargeType', label: 'Charge Type', visible: true },
-  { id: 'dateOfCharge', label: 'Date of Charge', visible: true },
+  { id: 'dateOfCharge', label: 'Date', visible: true },
+  { id: 'reference', label: 'Reference', visible: true },
+  { id: 'chargeType', label: 'Type', visible: true },
   { id: 'description', label: 'Description', visible: true },
-  { id: 'originalAmount', label: 'Original Amount', visible: true },
   { id: 'interestRate', label: 'Interest Rate', visible: true },
+  { id: 'interestFrom', label: 'Interest From', visible: true },
+  { id: 'deferred', label: 'Deferred', visible: true },
+  { id: 'owedTo', label: 'Owed To Account', visible: true },
+  { id: 'originalAmount', label: 'Original Balance', visible: true },
   { id: 'unpaidBalance', label: 'Unpaid Balance', visible: true },
-  { id: 'owedTo', label: 'Owed To', visible: false },
-  { id: 'owedFrom', label: 'Owed From', visible: false },
+  { id: 'accruedInterest', label: 'Accrued Interest', visible: true },
   { id: 'totalDue', label: 'Total Due', visible: true },
-  { id: 'reference', label: 'Reference', visible: false },
-  { id: 'deferred', label: 'Deferred', visible: false },
-  { id: 'interestFrom', label: 'Interest From', visible: false },
-  { id: 'notes', label: 'Notes', visible: false },
-  { id: 'amountOwedByBorrower', label: 'Amount Owed By Borrower', visible: false },
 ];
 
 export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
@@ -98,6 +95,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
       case 'unpaidBalance':
       case 'totalDue':
       case 'originalAmount':
+      case 'accruedInterest':
       case 'amountOwedByBorrower':
         return formatCurrency(charge[columnId as keyof ChargeData] as string);
       case 'interestRate':
