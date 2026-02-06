@@ -25,9 +25,18 @@ export interface ChargeData {
   interestRate: string;
   notes: string;
   reference: string;
-  changeType: string;
+  chargeType: string;
   deferred: string;
   originalAmount: string;
+  account: string;
+  borrowerFullName: string;
+  advancedByAccount: string;
+  advancedByLenderName: string;
+  advancedByAmount: string;
+  onBehalfOfAccount: string;
+  onBehalfOfLenderName: string;
+  onBehalfOfAmount: string;
+  amountOwedByBorrower: string;
 }
 
 interface ChargesTableViewProps {
@@ -43,19 +52,22 @@ interface ChargesTableViewProps {
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { id: 'unpaidBalance', label: 'Unpaid Balance', visible: true },
-  { id: 'owedTo', label: 'Owed To', visible: true },
-  { id: 'owedFrom', label: 'Owed From', visible: true },
-  { id: 'totalDue', label: 'Total Due', visible: true },
+  { id: 'account', label: 'Account', visible: true },
+  { id: 'borrowerFullName', label: 'Borrower Full Name', visible: true },
+  { id: 'chargeType', label: 'Charge Type', visible: true },
   { id: 'dateOfCharge', label: 'Date of Charge', visible: true },
   { id: 'description', label: 'Description', visible: true },
-  { id: 'interestRate', label: 'Interest Rate', visible: true },
-  { id: 'notes', label: 'Notes', visible: true },
-  { id: 'reference', label: 'Reference', visible: true },
-  { id: 'changeType', label: 'Change Type', visible: true },
-  { id: 'deferred', label: 'Deferred', visible: true },
-  { id: 'interestFrom', label: 'Interest From', visible: true },
   { id: 'originalAmount', label: 'Original Amount', visible: true },
+  { id: 'interestRate', label: 'Interest Rate', visible: true },
+  { id: 'unpaidBalance', label: 'Unpaid Balance', visible: true },
+  { id: 'owedTo', label: 'Owed To', visible: false },
+  { id: 'owedFrom', label: 'Owed From', visible: false },
+  { id: 'totalDue', label: 'Total Due', visible: true },
+  { id: 'reference', label: 'Reference', visible: false },
+  { id: 'deferred', label: 'Deferred', visible: false },
+  { id: 'interestFrom', label: 'Interest From', visible: false },
+  { id: 'notes', label: 'Notes', visible: false },
+  { id: 'amountOwedByBorrower', label: 'Amount Owed By Borrower', visible: false },
 ];
 
 export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
@@ -86,18 +98,10 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
       case 'unpaidBalance':
       case 'totalDue':
       case 'originalAmount':
+      case 'amountOwedByBorrower':
         return formatCurrency(charge[columnId as keyof ChargeData] as string);
       case 'interestRate':
         return charge.interestRate ? `${charge.interestRate}%` : '-';
-      case 'owedTo':
-      case 'owedFrom':
-      case 'interestFrom':
-      case 'dateOfCharge':
-      case 'notes':
-      case 'reference':
-      case 'changeType':
-      case 'deferred':
-        return charge[columnId as keyof ChargeData] || '-';
       default:
         return charge[columnId as keyof ChargeData] || '-';
     }
@@ -142,7 +146,6 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              // Loading skeleton
               Array.from({ length: 3 }).map((_, index) => (
                 <TableRow key={`skeleton-${index}`}>
                   {Array.from({ length: visibleColumns.length + 1 }).map((_, cellIndex) => (
