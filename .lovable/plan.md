@@ -1,78 +1,148 @@
 
+# Fix: Borrower Records Disappearing After Navigation
 
-# Charges Tab Redesign
+## Problem Identified
 
-## Overview
-Redesign the Charges modal and detail form to match the provided screenshot, adding three sections (Loan Information, Charge Information, Distribution), renaming "Change Type" to "Charge Type" with a dropdown, and updating the table columns accordingly.
+When multiple borrowers are added to a deal, their data is being **overwritten** in the database. This happens because:
 
-## Changes by File
+1. The database stores field values in JSONB with `field_dictionary_id` as the key
+2. Both `borrower1.first_name` and `borrower2.first_name` map to the **same** `field_dictionary_id` 
+3. When saving, the second borrower's values overwrite the first borrower's values
 
-### 1. `ChargesTableView.tsx`
-- Add new fields to `ChargeData` interface: `account`, `borrowerFullName`, `chargeType`, `advancedBy`, `onBehalfOf`, `amountOwedByBorrower`
-- Rename `changeType` to `chargeType` in the interface
-- Update `DEFAULT_COLUMNS`: rename "Change Type" to "Charge Type", add columns for Account, Borrower Full Name, Advanced By, On Behalf Of, Amount Owed By Borrower
-- Update `renderCellValue` to handle `chargeType` instead of `changeType`, and handle new fields
+For example, when you add:
+- Borrower 1: John Smith
+- Borrower 2: Jane Doe
 
-### 2. `ChargesModal.tsx`
-Rebuild the modal layout to match the screenshot with three sections:
+After save, only "Jane Doe" (Borrower 2) data remains because it overwrote "John Smith" (Borrower 1).
 
-**Loan Information** (blue section header)
-- Account (text input, full width)
-- Borrower Full Name (text input, full width)
+---
 
-**Charge Information** (blue section header)
-- Row 1: Date of Charge (date) | Interest From (date)
-- Row 2: Reference (text) | Charge Type (dropdown)
-- Row 3: Original Amount (currency with $ prefix) | Description (text)
-- Row 4: Interest Rate (number with % suffix) | Notes (textarea)
-- Row 5: Deferred (checkbox)
+## Solution: Composite Key Storage
 
-**Distribution** (blue section header)
-- Advanced By: Account (input) | `-` separator | Lender Name (input) | Amount with $ prefix (input)
-- On Behalf Of: Account (input) | `-` separator | Lender Name (input) | Amount with $ prefix (input)
-- Amount Owed by Borrower: $ input
+Change the JSONB storage key from just `field_dictionary_id` to a **composite key** that includes the indexed prefix.
 
-Footer: OK and Cancel buttons
+### Current Storage Model (Broken)
+```json
+{
+  "26ef46a5-...": { "indexed_key": "borrower2.first_name", "value_text": "Jane" }
+}
+```
+Only stores the last borrower's data.
 
-**Charge Type dropdown values** (as shown in screenshot):
-Demand Fee, Online Payment Fee, Modification Doc Prep, New Account Setup, Origination Doc Prep, Beneficiary Wire, Wire Processing, NSF Charge, Account Close Out, Extension / Modification Doc Prep, Pay By Phone, Account Maintenance, Beneficiary Origination, Administrative Services, Professional Services, Foreclosure Processing Fees - Trustee's Fees, Setup Fee, SO110-Servicing Fee, Holdback
+### New Storage Model (Fixed)
+```json
+{
+  "borrower1::26ef46a5-...": { "indexed_key": "borrower1.first_name", "value_text": "John" },
+  "borrower2::26ef46a5-...": { "indexed_key": "borrower2.first_name", "value_text": "Jane" }
+}
+```
+Stores each borrower's data separately.
 
-### 3. `ChargesDetailForm.tsx`
-Mirror the same three-section layout as the modal for the detail view when a row is clicked.
+---
 
-### 4. `ChargesSectionContent.tsx`
-- Update field key mappings: `change_type` becomes `charge_type`
-- Add new field keys: `account`, `borrower_full_name`, `advanced_by`, `on_behalf_of`, `amount_owed_by_borrower`
-- Update `extractChargesFromValues` to read new fields
-- Update `handleSaveCharge` to persist new fields
+## Files to Modify
 
-## Data Storage
-All new fields persist in the existing `deal_section_values` JSONB using the `chargeN.*` prefix pattern:
-- `charge1.account`, `charge1.borrower_full_name`, `charge1.charge_type`
-- `charge1.advanced_by`, `charge1.on_behalf_of`, `charge1.amount_owed_by_borrower`
+### 1. `src/hooks/useDealFields.ts`
 
-No database schema changes required.
+**Save Logic Changes (lines 398-455):**
+- Modify the storage key generation to use composite keys for indexed fields
+- Add helper function `getStorageKey(indexedFieldKey, fieldDictId)` that returns:
+  - `{prefix}::{fieldDictId}` for indexed fields (e.g., `borrower1::uuid`)
+  - `{fieldDictId}` for non-indexed fields (backward compatible)
+
+**Load Logic Changes (lines 268-295):**
+- Parse composite keys when loading data
+- Extract the indexed prefix from the storage key when present
+- Fall back to using `indexed_key` property for backward compatibility
+
+### 2. Migration Helper
+
+The fix will be backward compatible:
+- **New data** uses composite keys for multi-entity fields
+- **Old data** with `indexed_key` property continues to work during load
+- No database schema changes required
+
+---
 
 ## Technical Details
 
-### Distribution Section Layout (matching screenshot)
-The Distribution section uses a table-like grid:
-- Header row: Account | Lender Name | Amount
-- "Advanced By" row: text input | text input | currency input
-- "On Behalf Of" row: text input | text input | currency input
-- Bottom row: "Amount Owed by Borrower:" label with currency input
+### New Helper Functions in useDealFields.ts
 
-All distribution fields are plain text inputs (not dropdowns) per user direction.
+```typescript
+// Extract prefix from indexed key (borrower1.first_name -> borrower1)
+function getIndexedPrefix(fieldKey: string): string | null {
+  const match = fieldKey.match(/^(borrower\d+|coborrower\d+|lender\d+|property\d+|broker\d+)\./);
+  return match ? match[1] : null;
+}
 
-### Files Modified
-1. `src/components/deal/ChargesTableView.tsx`
-2. `src/components/deal/ChargesModal.tsx`
-3. `src/components/deal/ChargesDetailForm.tsx`
-4. `src/components/deal/ChargesSectionContent.tsx`
+// Generate storage key for JSONB
+function getStorageKey(fieldKey: string, fieldDictId: string): string {
+  const prefix = getIndexedPrefix(fieldKey);
+  return prefix ? `${prefix}::${fieldDictId}` : fieldDictId;
+}
 
-### No Changes To
-- Database schema
-- Backend APIs or edge functions
-- Other tabs or components
-- Document generation flow
+// Parse storage key back to components
+function parseStorageKey(storageKey: string): { prefix: string | null; fieldDictId: string } {
+  if (storageKey.includes('::')) {
+    const [prefix, fieldDictId] = storageKey.split('::');
+    return { prefix, fieldDictId };
+  }
+  return { prefix: null, fieldDictId: storageKey };
+}
+```
 
+### Save Logic Update
+
+```typescript
+// Line 454: Change from
+sectionUpdates[section][fieldDictId] = fieldValueObj;
+
+// To:
+const storageKey = getStorageKey(fieldKey, fieldDictId);
+sectionUpdates[section][storageKey] = fieldValueObj;
+```
+
+### Load Logic Update
+
+```typescript
+// Line 273: Update to handle composite keys
+Object.entries(fieldValues).forEach(([storageKey, fieldData]) => {
+  const { prefix, fieldDictId } = parseStorageKey(storageKey);
+  const fieldMeta = fieldDictIdToMeta.get(fieldDictId);
+  
+  if (fieldMeta && fieldData) {
+    const value = extractTypedValueFromJsonb(fieldData, fieldMeta.data_type);
+    if (value) {
+      // Use indexed_key if stored, reconstruct from prefix+canonical, or use canonical
+      let keyToUse = fieldData.indexed_key;
+      if (!keyToUse && prefix) {
+        const canonicalField = fieldMeta.field_key.replace(/^(borrower|lender|property|broker)\./, '');
+        keyToUse = `${prefix}.${canonicalField}`;
+      }
+      keyToUse = keyToUse || fieldMeta.field_key;
+      valuesMap[keyToUse] = value;
+    }
+  }
+});
+```
+
+---
+
+## Testing Checklist
+
+After implementation:
+1. Add Borrower 1 with test data
+2. Add Borrower 2 with different data
+3. Click "Save Draft"
+4. Navigate to another tab (e.g., Property)
+5. Return to Borrower tab
+6. Verify both borrowers appear in the table with correct data
+7. Reload the page and verify data persists
+
+---
+
+## Scope
+
+- **Modified**: `src/hooks/useDealFields.ts` only
+- **No changes to**: UI components, database schema, APIs, or document generation
+- **Backward compatible**: Existing data with `indexed_key` continues to load correctly
