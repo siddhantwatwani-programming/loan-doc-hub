@@ -77,6 +77,7 @@ const getEmptyCharge = (): ChargeData => ({
   onBehalfOfLenderName: '',
   onBehalfOfAmount: '',
   amountOwedByBorrower: '',
+  accruedInterest: '',
 });
 
 export const ChargesModal: React.FC<ChargesModalProps> = ({
@@ -113,7 +114,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-primary" />
-            {isEdit ? 'Edit Charge' : 'Add New Charge'}
+            {isEdit ? 'Edit Charge' : 'New Charge'}
           </DialogTitle>
         </DialogHeader>
 
@@ -186,21 +187,12 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                 </div>
                 <div>
                   <Label className="text-sm font-semibold text-foreground">Charge Type</Label>
-                  <Select
+                  <Input
                     value={formData.chargeType}
-                    onValueChange={(value) => handleFieldChange('chargeType', value)}
-                  >
-                    <SelectTrigger className="h-8 text-sm mt-1 bg-background">
-                      <SelectValue placeholder="Select charge type" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background z-50">
-                      {CHARGE_TYPE_OPTIONS.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(e) => handleFieldChange('chargeType', e.target.value)}
+                    className="h-8 text-sm mt-1"
+                    placeholder="Enter charge type"
+                  />
                 </div>
               </div>
 
@@ -249,59 +241,6 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                 </div>
               </div>
 
-              {/* Row 5: Unpaid Balance | Owed To */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Unpaid Balance</Label>
-                  <div className="relative mt-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.unpaidBalance}
-                      onChange={(e) => handleFieldChange('unpaidBalance', e.target.value)}
-                      className="h-8 text-sm pl-6"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Owed To</Label>
-                  <Input
-                    value={formData.owedTo}
-                    onChange={(e) => handleFieldChange('owedTo', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                    placeholder="Enter owed to"
-                  />
-                </div>
-              </div>
-
-              {/* Row 6: Owed From | Total Due */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Owed From</Label>
-                  <Input
-                    value={formData.owedFrom}
-                    onChange={(e) => handleFieldChange('owedFrom', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                    placeholder="Enter owed from"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Total Due</Label>
-                  <div className="relative mt-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.totalDue}
-                      onChange={(e) => handleFieldChange('totalDue', e.target.value)}
-                      className="h-8 text-sm pl-6"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-              </div>
 
               {/* Row 7: Notes */}
               <div>
