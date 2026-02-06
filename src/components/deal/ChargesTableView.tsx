@@ -78,7 +78,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   totalPages = 1,
   onPageChange,
 }) => {
-  const [columns, setColumns] = useTableColumnConfig('charges', DEFAULT_COLUMNS);
+  const [columns, setColumns] = useTableColumnConfig('charges_v2', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const formatCurrency = (value: string) => {
