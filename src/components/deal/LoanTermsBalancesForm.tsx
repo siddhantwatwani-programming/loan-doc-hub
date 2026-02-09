@@ -195,7 +195,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     value={getValue(FIELD_KEYS.originatingVendorPct)}
                     onChange={(e) => setValue(FIELD_KEYS.originatingVendorPct, e.target.value)}
                     disabled={disabled || !isChecked(FIELD_KEYS.originatingVendorEnabled)}
-                    placeholder="%"
+                    placeholder=""
                     className="text-center pr-6"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
@@ -237,7 +237,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     value={getValue(FIELD_KEYS.companyPct)}
                     onChange={(e) => setValue(FIELD_KEYS.companyPct, e.target.value)}
                     disabled={disabled || !isChecked(FIELD_KEYS.companyEnabled)}
-                    placeholder="%"
+                    placeholder=""
                     className="text-center pr-6"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
@@ -279,7 +279,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     value={getValue('loan_terms.other_1_pct')}
                     onChange={(e) => setValue('loan_terms.other_1_pct', e.target.value)}
                     disabled={disabled || !isChecked(FIELD_KEYS.otherClient1Enabled)}
-                    placeholder="%"
+                    placeholder=""
                     className="text-center pr-6"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
@@ -321,7 +321,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     value={getValue('loan_terms.other_2_pct')}
                     onChange={(e) => setValue('loan_terms.other_2_pct', e.target.value)}
                     disabled={disabled || !isChecked(FIELD_KEYS.otherClient2Enabled)}
-                    placeholder="%"
+                    placeholder=""
                     className="text-center pr-6"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
@@ -408,13 +408,6 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             <div className="grid grid-cols-2 gap-2 items-end">
               <div className="space-y-2">
                 <Label htmlFor={FIELD_KEYS.impoundedPayments}>Impounded Payments</Label>
-                <Input
-                  id={FIELD_KEYS.impoundedPayments}
-                  value={getValue(FIELD_KEYS.impoundedPayments)}
-                  onChange={(e) => setValue(FIELD_KEYS.impoundedPayments, e.target.value)}
-                  disabled={disabled}
-                  placeholder=""
-                />
               </div>
               <div className="space-y-2">
                 <Label>Number of Months</Label>
