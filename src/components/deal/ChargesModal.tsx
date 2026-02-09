@@ -224,7 +224,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                 </div>
               </div>
 
-              {/* Row 4: Interest Rate | Notes */}
+              {/* Row 4: Interest Rate | Owed To Account */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-semibold text-foreground">Interest Rate</Label>
@@ -238,6 +238,65 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                       placeholder="0.00"
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold text-foreground">Owed To Account</Label>
+                  <Input
+                    value={formData.owedTo}
+                    onChange={(e) => handleFieldChange('owedTo', e.target.value)}
+                    className="h-8 text-sm mt-1"
+                    placeholder="Enter owed to account"
+                  />
+                </div>
+              </div>
+
+              {/* Row 5: Unpaid Balance | Accrued Interest */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-semibold text-foreground">Unpaid Balance</Label>
+                  <div className="relative mt-1">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.unpaidBalance}
+                      onChange={(e) => handleFieldChange('unpaidBalance', e.target.value)}
+                      className="h-8 text-sm pl-6"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold text-foreground">Accrued Interest</Label>
+                  <div className="relative mt-1">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.accruedInterest}
+                      onChange={(e) => handleFieldChange('accruedInterest', e.target.value)}
+                      className="h-8 text-sm pl-6"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 6: Total Due | Notes */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-semibold text-foreground">Total Due</Label>
+                  <div className="relative mt-1">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.totalDue}
+                      onChange={(e) => handleFieldChange('totalDue', e.target.value)}
+                      className="h-8 text-sm pl-6"
+                      placeholder="0.00"
+                    />
                   </div>
                 </div>
                 <div>

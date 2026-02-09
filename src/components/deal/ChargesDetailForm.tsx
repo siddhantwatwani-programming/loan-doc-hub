@@ -34,6 +34,7 @@ const FIELD_KEYS = {
   onBehalfOfLenderName: 'charges.on_behalf_of_lender_name',
   onBehalfOfAmount: 'charges.on_behalf_of_amount',
   amountOwedByBorrower: 'charges.amount_owed_by_borrower',
+  accruedInterest: 'charges.accrued_interest',
   distributeBetweenAllLenders: 'charges.distribute_between_all_lenders',
 };
 
@@ -156,7 +157,7 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
             </div>
           </div>
 
-          {/* Row 4: Interest Rate */}
+          {/* Row 4: Interest Rate | Owed To Account */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-sm text-foreground">Interest Rate</Label>
@@ -173,8 +174,70 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
               </div>
             </div>
+            <div>
+              <Label className="text-sm text-foreground">Owed To Account</Label>
+              <Input
+                value={values[FIELD_KEYS.owedTo] || ''}
+                onChange={(e) => onValueChange(FIELD_KEYS.owedTo, e.target.value)}
+                disabled={disabled}
+                className="h-8 text-sm mt-1"
+                placeholder="Enter owed to account"
+              />
+            </div>
           </div>
 
+          {/* Row 5: Unpaid Balance | Accrued Interest */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm text-foreground">Unpaid Balance</Label>
+              <div className="relative mt-1">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={values[FIELD_KEYS.unpaidBalance] || ''}
+                  onChange={(e) => onValueChange(FIELD_KEYS.unpaidBalance, e.target.value)}
+                  disabled={disabled}
+                  className="h-8 text-sm pl-6"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm text-foreground">Accrued Interest</Label>
+              <div className="relative mt-1">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={values[FIELD_KEYS.accruedInterest] || ''}
+                  onChange={(e) => onValueChange(FIELD_KEYS.accruedInterest, e.target.value)}
+                  disabled={disabled}
+                  className="h-8 text-sm pl-6"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Row 6: Total Due */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm text-foreground">Total Due</Label>
+              <div className="relative mt-1">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={values[FIELD_KEYS.totalDue] || ''}
+                  onChange={(e) => onValueChange(FIELD_KEYS.totalDue, e.target.value)}
+                  disabled={disabled}
+                  className="h-8 text-sm pl-6"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Row 7: Notes */}
           <div>
