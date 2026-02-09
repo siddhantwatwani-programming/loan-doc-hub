@@ -82,11 +82,23 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   const [columns, setColumns] = useTableColumnConfig('charges_v5', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
 
-  const formatCurrency = (value: string) => {
-    if (!value) return '$0.00';
+  const parseCurrency = (value: string): number => {
+    if (!value) return 0;
     const num = parseFloat(value);
+    return isNaN(num) ? 0 : num;
+  };
+
+  const formatCurrency = (value: string | number) => {
+    const num = typeof value === 'number' ? value : parseFloat(value as string);
     if (isNaN(num)) return '$0.00';
     return `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const totals = {
+    originalAmount: charges.reduce((sum, c) => sum + parseCurrency(c.originalAmount), 0),
+    unpaidBalance: charges.reduce((sum, c) => sum + parseCurrency(c.unpaidBalance), 0),
+    totalDue: charges.reduce((sum, c) => sum + parseCurrency(c.totalDue), 0),
+    accruedInterest: charges.reduce((sum, c) => sum + parseCurrency(c.accruedInterest), 0),
   };
 
   const renderCellValue = (charge: ChargeData, columnId: string) => {
