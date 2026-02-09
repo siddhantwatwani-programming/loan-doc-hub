@@ -124,7 +124,7 @@ const LateFeeColumn: React.FC<{
           <Input
             value={values[`${prefix}.type`] || ''}
             onChange={(e) => onValueChange(`${prefix}.type`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || !isEnabled}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -132,7 +132,7 @@ const LateFeeColumn: React.FC<{
           <Input
             value={values[`${prefix}.grace_period`] || ''}
             onChange={(e) => onValueChange(`${prefix}.grace_period`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || !isEnabled}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -140,7 +140,7 @@ const LateFeeColumn: React.FC<{
           <Input
             value={values[`${prefix}.calendar_actual`] || ''}
             onChange={(e) => onValueChange(`${prefix}.calendar_actual`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || !isEnabled}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -148,7 +148,7 @@ const LateFeeColumn: React.FC<{
           <Input
             value={values[`${prefix}.minimum_late_fee`] || ''}
             onChange={(e) => onValueChange(`${prefix}.minimum_late_fee`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || !isEnabled}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -156,7 +156,7 @@ const LateFeeColumn: React.FC<{
           <Input
             value={values[`${prefix}.percentage_of_payment`] || ''}
             onChange={(e) => onValueChange(`${prefix}.percentage_of_payment`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || !isEnabled}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -164,7 +164,7 @@ const LateFeeColumn: React.FC<{
           <Input
             value={values[`${prefix}.additional_daily_charge`] || ''}
             onChange={(e) => onValueChange(`${prefix}.additional_daily_charge`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || !isEnabled}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -174,7 +174,7 @@ const LateFeeColumn: React.FC<{
         prefix={prefix}
         values={values}
         onValueChange={onValueChange}
-        disabled={disabled}
+        disabled={disabled || !isEnabled}
       />
     </div>
   );
@@ -206,7 +206,7 @@ const DefaultInterestColumn: React.FC<{
           <Select
             value={values[`${prefix}.triggered_by`] || ''}
             onValueChange={(val) => onValueChange(`${prefix}.triggered_by`, val)}
-            disabled={disabled}
+            disabled={disabled || !isEnabled}
           >
             <SelectTrigger className="h-7 text-sm">
               <SelectValue placeholder="Select..." />
@@ -222,7 +222,7 @@ const DefaultInterestColumn: React.FC<{
           <Input
             value={values[`${prefix}.grace_period`] || ''}
             onChange={(e) => onValueChange(`${prefix}.grace_period`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || !isEnabled}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -230,12 +230,12 @@ const DefaultInterestColumn: React.FC<{
           label="Flat Rate"
           checkboxValue={values[`${prefix}.flat_rate_enabled`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.flat_rate_enabled`, checked ? 'true' : 'false')}
-          disabled={disabled}
+          disabled={disabled || !isEnabled}
         >
           <Input
             value={values[`${prefix}.flat_rate`] || ''}
             onChange={(e) => onValueChange(`${prefix}.flat_rate`, e.target.value)}
-            disabled={disabled || values[`${prefix}.flat_rate_enabled`] !== 'true'}
+            disabled={disabled || !isEnabled || values[`${prefix}.flat_rate_enabled`] !== 'true'}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -243,12 +243,12 @@ const DefaultInterestColumn: React.FC<{
           label="Modifier"
           checkboxValue={values[`${prefix}.modifier_enabled`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.modifier_enabled`, checked ? 'true' : 'false')}
-          disabled={disabled}
+          disabled={disabled || !isEnabled}
         >
           <Input
             value={values[`${prefix}.modifier`] || ''}
             onChange={(e) => onValueChange(`${prefix}.modifier`, e.target.value)}
-            disabled={disabled || values[`${prefix}.modifier_enabled`] !== 'true'}
+            disabled={disabled || !isEnabled || values[`${prefix}.modifier_enabled`] !== 'true'}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -257,7 +257,7 @@ const DefaultInterestColumn: React.FC<{
             type="date"
             value={values[`${prefix}.active_until`] || ''}
             onChange={(e) => onValueChange(`${prefix}.active_until`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || !isEnabled}
             className="h-7 text-sm w-full max-w-full overflow-hidden"
           />
         </FieldRow>
@@ -265,7 +265,7 @@ const DefaultInterestColumn: React.FC<{
           <Input
             value={values[`${prefix}.additional_daily_charge`] || ''}
             onChange={(e) => onValueChange(`${prefix}.additional_daily_charge`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || !isEnabled}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -275,7 +275,7 @@ const DefaultInterestColumn: React.FC<{
         prefix={prefix}
         values={values}
         onValueChange={onValueChange}
-        disabled={disabled}
+        disabled={disabled || !isEnabled}
       />
     </div>
   );
@@ -307,12 +307,12 @@ const InterestGuaranteeSection: React.FC<{
           label="Months"
           checkboxValue={values[`${prefix}.months_enabled`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.months_enabled`, checked ? 'true' : 'false')}
-          disabled={disabled}
+          disabled={disabled || !isEnabled}
         >
           <Input
             value={values[`${prefix}.months`] || ''}
             onChange={(e) => onValueChange(`${prefix}.months`, e.target.value)}
-            disabled={disabled || values[`${prefix}.months_enabled`] !== 'true'}
+            disabled={disabled || !isEnabled || values[`${prefix}.months_enabled`] !== 'true'}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -320,7 +320,7 @@ const InterestGuaranteeSection: React.FC<{
           label="Include Odd Days Interest"
           checkboxValue={values[`${prefix}.include_odd_days`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.include_odd_days`, checked ? 'true' : 'false')}
-          disabled={disabled}
+          disabled={disabled || !isEnabled}
         >
           <span />
         </FieldRow>
@@ -328,12 +328,12 @@ const InterestGuaranteeSection: React.FC<{
           label="Amount"
           checkboxValue={values[`${prefix}.amount_enabled`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.amount_enabled`, checked ? 'true' : 'false')}
-          disabled={disabled}
+          disabled={disabled || !isEnabled}
         >
           <Input
             value={values[`${prefix}.amount`] || ''}
             onChange={(e) => onValueChange(`${prefix}.amount`, e.target.value)}
-            disabled={disabled || values[`${prefix}.amount_enabled`] !== 'true'}
+            disabled={disabled || !isEnabled || values[`${prefix}.amount_enabled`] !== 'true'}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -343,7 +343,7 @@ const InterestGuaranteeSection: React.FC<{
         prefix={prefix}
         values={values}
         onValueChange={onValueChange}
-        disabled={disabled}
+        disabled={disabled || !isEnabled}
       />
     </div>
   );
@@ -376,21 +376,21 @@ const PrepaymentPenaltySection: React.FC<{
           <Input
             value={values[`${prefix}.first_years`] || ''}
             onChange={(e) => onValueChange(`${prefix}.first_years`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || !isEnabled}
             className="h-7 text-sm w-14 inline-block"
           />
           <span>years, greater than</span>
           <Input
             value={values[`${prefix}.greater_than`] || ''}
             onChange={(e) => onValueChange(`${prefix}.greater_than`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || !isEnabled}
             className="h-7 text-sm w-14 inline-block"
           />
           <span>of the</span>
           <Select
             value={values[`${prefix}.of_the`] || ''}
             onValueChange={(val) => onValueChange(`${prefix}.of_the`, val)}
-            disabled={disabled}
+            disabled={disabled || !isEnabled}
           >
             <SelectTrigger className="h-7 text-sm w-28 inline-flex">
               <SelectValue placeholder="Select..." />
@@ -407,7 +407,7 @@ const PrepaymentPenaltySection: React.FC<{
           <Input
             value={values[`${prefix}.penalty_months`] || ''}
             onChange={(e) => onValueChange(`${prefix}.penalty_months`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || !isEnabled}
             className="h-7 text-sm w-14 inline-block"
           />
           <span>months of interest at note rate.</span>
@@ -418,7 +418,7 @@ const PrepaymentPenaltySection: React.FC<{
         prefix={prefix}
         values={values}
         onValueChange={onValueChange}
-        disabled={disabled}
+        disabled={disabled || !isEnabled}
       />
     </div>
   );
@@ -450,7 +450,7 @@ const MaturitySection: React.FC<{
           <Input
             value={values[`${prefix}.grace_period_days`] || ''}
             onChange={(e) => onValueChange(`${prefix}.grace_period_days`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || !isEnabled}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -458,7 +458,7 @@ const MaturitySection: React.FC<{
           label="Standard 10% of Payment Only"
           checkboxValue={values[`${prefix}.standard_10_percent`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.standard_10_percent`, checked ? 'true' : 'false')}
-          disabled={disabled}
+          disabled={disabled || !isEnabled}
         >
           <span />
         </FieldRow>
@@ -466,12 +466,12 @@ const MaturitySection: React.FC<{
           label="Additional Flat Fee"
           checkboxValue={values[`${prefix}.additional_flat_fee_enabled`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.additional_flat_fee_enabled`, checked ? 'true' : 'false')}
-          disabled={disabled}
+          disabled={disabled || !isEnabled}
         >
           <Input
             value={values[`${prefix}.additional_flat_fee`] || ''}
             onChange={(e) => onValueChange(`${prefix}.additional_flat_fee`, e.target.value)}
-            disabled={disabled || values[`${prefix}.additional_flat_fee_enabled`] !== 'true'}
+            disabled={disabled || !isEnabled || values[`${prefix}.additional_flat_fee_enabled`] !== 'true'}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -481,7 +481,7 @@ const MaturitySection: React.FC<{
         prefix={prefix}
         values={values}
         onValueChange={onValueChange}
-        disabled={disabled}
+        disabled={disabled || !isEnabled}
       />
     </div>
   );
