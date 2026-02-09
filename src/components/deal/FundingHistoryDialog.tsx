@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FundingHistoryRecord {
@@ -38,43 +37,25 @@ interface FundingHistoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   dealId: string;
+  historyRecords?: FundingHistoryRecord[];
 }
 
 export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
   open,
   onOpenChange,
   dealId,
+  historyRecords = [],
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [records, setRecords] = useState<FundingHistoryRecord[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [totalPages, setTotalPages] = useState(1);
   const [selectedRecord, setSelectedRecord] = useState<FundingHistoryRecord | null>(null);
 
-  // Simulated data fetch - in production, this would fetch from existing APIs
-  useEffect(() => {
-    if (open && dealId) {
-      setIsLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        // Sample data - would come from existing loan/property tables
-        setRecords([
-          {
-            id: '1',
-            fundingDate: '01/06/2014',
-            reference: '0002174937',
-            lenderAccount: 'MLP',
-            lenderName: 'Mobile Loan Partners, LLC -',
-            amountFunded: 18374.76,
-            notes: 'No Funding History in SUG. Created default record',
-          },
-        ]);
-        setTotalPages(1);
-        setIsLoading(false);
-      }, 500);
-    }
-  }, [open, dealId, currentPage, pageSize]);
+  const totalPages = Math.max(1, Math.ceil(historyRecords.length / pageSize));
+
+  const paginatedRecords = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return historyRecords.slice(start, start + pageSize);
+  }, [historyRecords, currentPage, pageSize]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -105,57 +86,51 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
         <div className="space-y-4">
           {/* Grid */}
           <div className="border rounded-lg overflow-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center min-h-[200px]">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold">FUNDING DATE</TableHead>
-                    <TableHead className="font-semibold">REFERENCE</TableHead>
-                    <TableHead className="font-semibold">LENDER ACCOUNT</TableHead>
-                    <TableHead className="font-semibold">LENDER NAME</TableHead>
-                    <TableHead className="font-semibold text-right">AMOUNT FUNDED</TableHead>
-                    <TableHead className="font-semibold">NOTES</TableHead>
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="font-semibold">FUNDING DATE</TableHead>
+                  <TableHead className="font-semibold">REFERENCE</TableHead>
+                  <TableHead className="font-semibold">LENDER ACCOUNT</TableHead>
+                  <TableHead className="font-semibold">LENDER NAME</TableHead>
+                  <TableHead className="font-semibold text-right">AMOUNT FUNDED</TableHead>
+                  <TableHead className="font-semibold">NOTES</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedRecords.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      No data available
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {records.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                        No funding history records found.
+                ) : (
+                  paginatedRecords.map((record) => (
+                    <TableRow
+                      key={record.id}
+                      className={cn(
+                        'cursor-pointer hover:bg-primary/5',
+                        selectedRecord?.id === record.id && 'bg-primary/10'
+                      )}
+                      onClick={() => setSelectedRecord(record)}
+                    >
+                      <TableCell>{record.fundingDate}</TableCell>
+                      <TableCell>{record.reference}</TableCell>
+                      <TableCell className="text-primary font-medium">
+                        {record.lenderAccount}
+                      </TableCell>
+                      <TableCell>{record.lenderName}</TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(record.amountFunded)}
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate" title={record.notes}>
+                        {record.notes}
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    records.map((record) => (
-                      <TableRow
-                        key={record.id}
-                        className={cn(
-                          'cursor-pointer hover:bg-primary/5',
-                          selectedRecord?.id === record.id && 'bg-primary/10'
-                        )}
-                        onClick={() => setSelectedRecord(record)}
-                      >
-                        <TableCell>{record.fundingDate}</TableCell>
-                        <TableCell>{record.reference}</TableCell>
-                        <TableCell className="text-primary font-medium">
-                          {record.lenderAccount}
-                        </TableCell>
-                        <TableCell>{record.lenderName}</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(record.amountFunded)}
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate" title={record.notes}>
-                          {record.notes}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            )}
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
 
           {/* Pagination */}
