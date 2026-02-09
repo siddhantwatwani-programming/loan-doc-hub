@@ -226,7 +226,12 @@ const DefaultInterestColumn: React.FC<{
             className="h-7 text-sm"
           />
         </FieldRow>
-        <FieldRow label="Flat Rate">
+        <FieldRow
+          label="Flat Rate"
+          checkboxValue={values[`${prefix}.flat_rate_enabled`] === 'true'}
+          onCheckboxChange={(checked) => onValueChange(`${prefix}.flat_rate_enabled`, checked ? 'true' : 'false')}
+          disabled={disabled}
+        >
           <Input
             value={values[`${prefix}.flat_rate`] || ''}
             onChange={(e) => onValueChange(`${prefix}.flat_rate`, e.target.value)}
@@ -234,7 +239,12 @@ const DefaultInterestColumn: React.FC<{
             className="h-7 text-sm"
           />
         </FieldRow>
-        <FieldRow label="Modifier">
+        <FieldRow
+          label="Modifier"
+          checkboxValue={values[`${prefix}.modifier_enabled`] === 'true'}
+          onCheckboxChange={(checked) => onValueChange(`${prefix}.modifier_enabled`, checked ? 'true' : 'false')}
+          disabled={disabled}
+        >
           <Input
             value={values[`${prefix}.modifier`] || ''}
             onChange={(e) => onValueChange(`${prefix}.modifier`, e.target.value)}
@@ -248,7 +258,7 @@ const DefaultInterestColumn: React.FC<{
             value={values[`${prefix}.active_until`] || ''}
             onChange={(e) => onValueChange(`${prefix}.active_until`, e.target.value)}
             disabled={disabled}
-            className="h-7 text-sm"
+            className="h-7 text-sm w-full max-w-full overflow-hidden"
           />
         </FieldRow>
         <FieldRow label="Additional Daily Charge">
@@ -293,7 +303,12 @@ const InterestGuaranteeSection: React.FC<{
       </div>
 
       <div className="space-y-2">
-        <FieldRow label="Months">
+        <FieldRow
+          label="Months"
+          checkboxValue={values[`${prefix}.months_enabled`] === 'true'}
+          onCheckboxChange={(checked) => onValueChange(`${prefix}.months_enabled`, checked ? 'true' : 'false')}
+          disabled={disabled}
+        >
           <Input
             value={values[`${prefix}.months`] || ''}
             onChange={(e) => onValueChange(`${prefix}.months`, e.target.value)}
@@ -307,14 +322,14 @@ const InterestGuaranteeSection: React.FC<{
           onCheckboxChange={(checked) => onValueChange(`${prefix}.include_odd_days`, checked ? 'true' : 'false')}
           disabled={disabled}
         >
-          <Input
-            value={values[`${prefix}.include_odd_days_value`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.include_odd_days_value`, e.target.value)}
-            disabled={disabled}
-            className="h-7 text-sm"
-          />
+          <span />
         </FieldRow>
-        <FieldRow label="Amount">
+        <FieldRow
+          label="Amount"
+          checkboxValue={values[`${prefix}.amount_enabled`] === 'true'}
+          onCheckboxChange={(checked) => onValueChange(`${prefix}.amount_enabled`, checked ? 'true' : 'false')}
+          disabled={disabled}
+        >
           <Input
             value={values[`${prefix}.amount`] || ''}
             onChange={(e) => onValueChange(`${prefix}.amount`, e.target.value)}
@@ -445,14 +460,14 @@ const MaturitySection: React.FC<{
           onCheckboxChange={(checked) => onValueChange(`${prefix}.standard_10_percent`, checked ? 'true' : 'false')}
           disabled={disabled}
         >
-          <Input
-            value={values[`${prefix}.standard_10_percent_value`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.standard_10_percent_value`, e.target.value)}
-            disabled={disabled}
-            className="h-7 text-sm"
-          />
+          <span />
         </FieldRow>
-        <FieldRow label="Additional Flat Fee">
+        <FieldRow
+          label="Additional Flat Fee"
+          checkboxValue={values[`${prefix}.additional_flat_fee_enabled`] === 'true'}
+          onCheckboxChange={(checked) => onValueChange(`${prefix}.additional_flat_fee_enabled`, checked ? 'true' : 'false')}
+          disabled={disabled}
+        >
           <Input
             value={values[`${prefix}.additional_flat_fee`] || ''}
             onChange={(e) => onValueChange(`${prefix}.additional_flat_fee`, e.target.value)}
