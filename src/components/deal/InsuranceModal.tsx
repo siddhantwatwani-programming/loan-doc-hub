@@ -9,9 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -68,7 +66,6 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({
   propertyOptions = [],
 }) => {
   const [formData, setFormData] = useState<InsuranceData>(getDefaultInsurance());
-  const [activeTab, setActiveTab] = useState('general');
 
   useEffect(() => {
     if (open) {
@@ -77,7 +74,7 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({
       } else {
         setFormData(getDefaultInsurance());
       }
-      setActiveTab('general');
+      // Reset form state
     }
   }, [open, insurance]);
 
@@ -100,186 +97,167 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="notes">Notes</TabsTrigger>
-          </TabsList>
+        <div className="mt-4">
+          <div className="grid grid-cols-2 gap-6">
+            {/* Left Column - Insurance Policy Information */}
+            <div className="space-y-4">
+              <div className="border-b border-border pb-2">
+                <span className="font-semibold text-sm text-primary">Insurance Policy Information</span>
+              </div>
 
-          <TabsContent value="general" className="mt-4">
-            <div className="grid grid-cols-2 gap-6">
-              {/* Left Column - Insurance Policy Information */}
-              <div className="space-y-4">
-                <div className="border-b border-border pb-2">
-                  <span className="font-semibold text-sm text-primary">Insurance Policy Information</span>
-                </div>
+              <div>
+                <Label className="text-sm text-foreground">Property</Label>
+                <Select
+                  value={formData.property}
+                  onValueChange={(val) => handleChange('property', val)}
+                >
+                  <SelectTrigger className="h-9 text-sm mt-1">
+                    <SelectValue placeholder="Unassigned" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-50">
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {propertyOptions.map(opt => (
+                      <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div>
-                  <Label className="text-sm text-foreground">Property</Label>
-                  <Select
-                    value={formData.property}
-                    onValueChange={(val) => handleChange('property', val)}
-                  >
-                    <SelectTrigger className="h-9 text-sm mt-1">
-                      <SelectValue placeholder="Unassigned" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50">
-                      <SelectItem value="unassigned">Unassigned</SelectItem>
-                      {propertyOptions.map(opt => (
-                        <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label className="text-sm text-foreground">Description</Label>
+                <Select
+                  value={formData.description}
+                  onValueChange={(val) => handleChange('description', val)}
+                >
+                  <SelectTrigger className="h-9 text-sm mt-1">
+                    <SelectValue placeholder="Select description" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-50">
+                    {INSURANCE_DESCRIPTION_OPTIONS.map(opt => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div>
-                  <Label className="text-sm text-foreground">Description</Label>
-                  <Select
-                    value={formData.description}
-                    onValueChange={(val) => handleChange('description', val)}
-                  >
-                    <SelectTrigger className="h-9 text-sm mt-1">
-                      <SelectValue placeholder="Select description" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50">
-                      {INSURANCE_DESCRIPTION_OPTIONS.map(opt => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label className="text-sm text-foreground">Insured's Name</Label>
+                <Input
+                  value={formData.insuredName}
+                  onChange={(e) => handleChange('insuredName', e.target.value)}
+                  className="h-9 text-sm mt-1"
+                />
+              </div>
 
-                <div>
-                  <Label className="text-sm text-foreground">Insured's Name</Label>
+              <div>
+                <Label className="text-sm text-foreground">Company Name</Label>
+                <Input
+                  value={formData.companyName}
+                  onChange={(e) => handleChange('companyName', e.target.value)}
+                  className="h-9 text-sm mt-1"
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm text-foreground">Policy Number</Label>
+                <Input
+                  value={formData.policyNumber}
+                  onChange={(e) => handleChange('policyNumber', e.target.value)}
+                  className="h-9 text-sm mt-1"
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm text-foreground">Expiration</Label>
+                <Input
+                  type="date"
+                  value={formData.expiration}
+                  onChange={(e) => handleChange('expiration', e.target.value)}
+                  className="h-9 text-sm mt-1"
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm text-foreground">Coverage</Label>
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="text-sm text-muted-foreground">$</span>
                   <Input
-                    value={formData.insuredName}
-                    onChange={(e) => handleChange('insuredName', e.target.value)}
-                    className="h-9 text-sm mt-1"
+                    value={formData.coverage}
+                    onChange={(e) => handleChange('coverage', e.target.value)}
+                    className="h-9 text-sm text-right"
+                    inputMode="decimal"
+                    placeholder="0.00"
                   />
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Company Name</Label>
-                  <Input
-                    value={formData.companyName}
-                    onChange={(e) => handleChange('companyName', e.target.value)}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Policy Number</Label>
-                  <Input
-                    value={formData.policyNumber}
-                    onChange={(e) => handleChange('policyNumber', e.target.value)}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Expiration</Label>
-                  <Input
-                    type="date"
-                    value={formData.expiration}
-                    onChange={(e) => handleChange('expiration', e.target.value)}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Coverage</Label>
-                  <div className="flex items-center gap-1 mt-1">
-                    <span className="text-sm text-muted-foreground">$</span>
-                    <Input
-                      value={formData.coverage}
-                      onChange={(e) => handleChange('coverage', e.target.value)}
-                      className="h-9 text-sm text-right"
-                      inputMode="decimal"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 pt-2">
-                  <Checkbox
-                    id="modal-insurance-active"
-                    checked={formData.active}
-                    onCheckedChange={(checked) => handleChange('active', !!checked)}
-                    className="h-4 w-4"
-                  />
-                  <Label htmlFor="modal-insurance-active" className="text-sm text-foreground">
-                    Active
-                  </Label>
                 </div>
               </div>
 
-              {/* Right Column - Insurance Agent Information */}
-              <div className="space-y-4">
-                <div className="border-b border-border pb-2">
-                  <span className="font-semibold text-sm text-primary">Insurance Agent Information</span>
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Agent's Name</Label>
-                  <Input
-                    value={formData.agentName}
-                    onChange={(e) => handleChange('agentName', e.target.value)}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Bus. Address</Label>
-                  <Input
-                    value={formData.businessAddress}
-                    onChange={(e) => handleChange('businessAddress', e.target.value)}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Phone Number</Label>
-                  <Input
-                    value={formData.phoneNumber}
-                    onChange={(e) => handleChange('phoneNumber', e.target.value)}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Fax Number</Label>
-                  <Input
-                    value={formData.faxNumber}
-                    onChange={(e) => handleChange('faxNumber', e.target.value)}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">E-mail</Label>
-                  <Input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleChange('email', e.target.value)}
-                    className="h-9 text-sm mt-1"
-                  />
-                </div>
+              <div className="flex items-center gap-2 pt-2">
+                <Checkbox
+                  id="modal-insurance-active"
+                  checked={formData.active}
+                  onCheckedChange={(checked) => handleChange('active', !!checked)}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="modal-insurance-active" className="text-sm text-foreground">
+                  Active
+                </Label>
               </div>
             </div>
-          </TabsContent>
 
-          <TabsContent value="notes" className="mt-4">
-            <div className="border-b border-border pb-2 mb-4">
-              <span className="font-semibold text-sm text-primary">Notes</span>
+            {/* Right Column - Insurance Agent Information */}
+            <div className="space-y-4">
+              <div className="border-b border-border pb-2">
+                <span className="font-semibold text-sm text-primary">Insurance Agent Information</span>
+              </div>
+
+              <div>
+                <Label className="text-sm text-foreground">Agent's Name</Label>
+                <Input
+                  value={formData.agentName}
+                  onChange={(e) => handleChange('agentName', e.target.value)}
+                  className="h-9 text-sm mt-1"
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm text-foreground">Bus. Address</Label>
+                <Input
+                  value={formData.businessAddress}
+                  onChange={(e) => handleChange('businessAddress', e.target.value)}
+                  className="h-9 text-sm mt-1"
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm text-foreground">Phone Number</Label>
+                <Input
+                  value={formData.phoneNumber}
+                  onChange={(e) => handleChange('phoneNumber', e.target.value)}
+                  className="h-9 text-sm mt-1"
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm text-foreground">Fax Number</Label>
+                <Input
+                  value={formData.faxNumber}
+                  onChange={(e) => handleChange('faxNumber', e.target.value)}
+                  className="h-9 text-sm mt-1"
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm text-foreground">E-mail</Label>
+                <Input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  className="h-9 text-sm mt-1"
+                />
+              </div>
             </div>
-            <Textarea
-              value={formData.note}
-              onChange={(e) => handleChange('note', e.target.value)}
-              placeholder="Enter notes about this insurance policy..."
-              className="min-h-[200px]"
-            />
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
 
         <div className="flex justify-end gap-2 pt-4 border-t border-border">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
