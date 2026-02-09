@@ -64,8 +64,8 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'owedTo', label: 'Owed To Account', visible: true },
   { id: 'originalAmount', label: 'Original Balance', visible: true },
   { id: 'unpaidBalance', label: 'Unpaid Balance', visible: true },
-  { id: 'accruedInterest', label: 'Accrued Interest', visible: true },
   { id: 'totalDue', label: 'Total Due', visible: true },
+  { id: 'accruedInterest', label: 'Accrued Interest', visible: true },
 ];
 
 export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
@@ -82,11 +82,23 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   const [columns, setColumns] = useTableColumnConfig('charges_v5', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
 
-  const formatCurrency = (value: string) => {
-    if (!value) return '$0.00';
+  const parseCurrency = (value: string): number => {
+    if (!value) return 0;
     const num = parseFloat(value);
+    return isNaN(num) ? 0 : num;
+  };
+
+  const formatCurrency = (value: string | number) => {
+    const num = typeof value === 'number' ? value : parseFloat(value as string);
     if (isNaN(num)) return '$0.00';
     return `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const totals = {
+    originalAmount: charges.reduce((sum, c) => sum + parseCurrency(c.originalAmount), 0),
+    unpaidBalance: charges.reduce((sum, c) => sum + parseCurrency(c.unpaidBalance), 0),
+    totalDue: charges.reduce((sum, c) => sum + parseCurrency(c.totalDue), 0),
+    accruedInterest: charges.reduce((sum, c) => sum + parseCurrency(c.accruedInterest), 0),
   };
 
   const renderCellValue = (charge: ChargeData, columnId: string) => {
@@ -185,6 +197,22 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
                   </TableCell>
                 </TableRow>
               ))
+            )}
+            {charges.length > 0 && (
+              <TableRow className="bg-muted/50 font-semibold border-t-2 border-border">
+                {visibleColumns.map((col) => {
+                  const totalKey = col.id as keyof typeof totals;
+                  if (totalKey in totals) {
+                    return (
+                      <TableCell key={col.id}>
+                        {formatCurrency(totals[totalKey])}
+                      </TableCell>
+                    );
+                  }
+                  return <TableCell key={col.id}>{col.id === visibleColumns[0]?.id ? 'TOTALS' : ''}</TableCell>;
+                })}
+                <TableCell />
+              </TableRow>
             )}
           </TableBody>
         </Table>

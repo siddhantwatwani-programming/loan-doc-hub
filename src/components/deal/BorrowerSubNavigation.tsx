@@ -27,7 +27,7 @@ interface BorrowerSubNavigationProps {
 
 const BORROWER_DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
   { key: 'primary', label: 'Primary' },
-  { key: 'co_borrowers', label: 'Co-Borrower' },
+  { key: 'co_borrowers', label: 'Co-borrower' },
   { key: 'additional_guarantor', label: 'Additional Guarantor' },
   { key: 'authorized_party', label: 'Authorized Party' },
   { key: 'trust_ledger', label: 'Trust Ledger' },
