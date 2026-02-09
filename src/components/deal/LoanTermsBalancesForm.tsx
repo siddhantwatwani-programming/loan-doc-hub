@@ -422,14 +422,6 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label className="text-muted-foreground text-xs">Need Dropdown Info</Label>
-                <Input
-                  value=""
-                  disabled
-                  className="bg-muted"
-                />
-              </div>
             </div>
 
             <div className="space-y-2">
@@ -532,24 +524,18 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 items-end">
-              <div className="space-y-2">
-                <Label htmlFor={FIELD_KEYS.toEscrowImpounds} className="text-primary font-medium">To Escrow Impounds</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
-                  <Input
-                    id={FIELD_KEYS.toEscrowImpounds}
-                    value={getValue(FIELD_KEYS.toEscrowImpounds)}
-                    onChange={(e) => setValue(FIELD_KEYS.toEscrowImpounds, e.target.value)}
-                    disabled={disabled}
-                    className="pl-7"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">See Properties</Label>
-                <Input value="" disabled className="bg-muted" />
+            <div className="space-y-2">
+              <Label htmlFor={FIELD_KEYS.toEscrowImpounds} className="text-primary font-medium">To Escrow Impounds</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                <Input
+                  id={FIELD_KEYS.toEscrowImpounds}
+                  value={getValue(FIELD_KEYS.toEscrowImpounds)}
+                  onChange={(e) => setValue(FIELD_KEYS.toEscrowImpounds, e.target.value)}
+                  disabled={disabled}
+                  className="pl-7"
+                  placeholder="0.00"
+                />
               </div>
             </div>
 
