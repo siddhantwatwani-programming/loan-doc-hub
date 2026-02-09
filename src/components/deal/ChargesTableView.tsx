@@ -198,6 +198,22 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
                 </TableRow>
               ))
             )}
+            {charges.length > 0 && (
+              <TableRow className="bg-muted/50 font-semibold border-t-2 border-border">
+                {visibleColumns.map((col) => {
+                  const totalKey = col.id as keyof typeof totals;
+                  if (totalKey in totals) {
+                    return (
+                      <TableCell key={col.id}>
+                        {formatCurrency(totals[totalKey])}
+                      </TableCell>
+                    );
+                  }
+                  return <TableCell key={col.id}>{col.id === visibleColumns[0]?.id ? 'TOTALS' : ''}</TableCell>;
+                })}
+                <TableCell />
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
