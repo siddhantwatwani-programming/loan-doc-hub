@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export type InsuranceSubSection = 'insurances' | 'insurance_details' | 'notes';
+export type InsuranceSubSection = 'insurances' | 'insurance_details';
 
 interface InsuranceSubNavigationProps {
   activeSubSection: InsuranceSubSection;
@@ -11,7 +11,6 @@ interface InsuranceSubNavigationProps {
 
 const DETAIL_TABS: { id: InsuranceSubSection; label: string }[] = [
   { id: 'insurance_details', label: 'General' },
-  { id: 'notes', label: 'Notes' },
 ];
 
 export const InsuranceSubNavigation: React.FC<InsuranceSubNavigationProps> = ({

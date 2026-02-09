@@ -5,7 +5,6 @@ import { InsuranceSubNavigation, type InsuranceSubSection } from './InsuranceSub
 import { InsuranceTableView, type InsuranceData } from './InsuranceTableView';
 import { InsuranceModal } from './InsuranceModal';
 import { InsuranceDetailForm } from './InsuranceDetailForm';
-import { InsuranceNoteForm } from './InsuranceNoteForm';
 
 interface InsuranceSectionContentProps {
   values: Record<string, string>;
@@ -90,7 +89,7 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
   const [editingInsurance, setEditingInsurance] = useState<InsuranceData | null>(null);
   
   // Check if we're in detail view
-  const isDetailView = ['insurance_details', 'notes'].includes(activeSubSection);
+  const isDetailView = activeSubSection === 'insurance_details';
   
   // Extract insurances from values
   const insurances = extractInsurancesFromValues(values);
@@ -198,11 +197,6 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
     }
   }, [selectedInsurancePrefix, onValueChange]);
 
-  // Handle note change
-  const handleNoteChange = useCallback((value: string) => {
-    onValueChange(`${selectedInsurancePrefix}.note`, value);
-  }, [selectedInsurancePrefix, onValueChange]);
-
   const renderSubSectionContent = () => {
     switch (activeSubSection) {
       case 'insurances':
@@ -223,14 +217,6 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
             onChange={handleInsuranceFieldChange}
             disabled={disabled}
             propertyOptions={propertyOptions}
-          />
-        );
-      case 'notes':
-        return (
-          <InsuranceNoteForm
-            value={selectedInsurance.note}
-            onChange={handleNoteChange}
-            disabled={disabled}
           />
         );
       default:
