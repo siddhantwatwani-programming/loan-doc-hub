@@ -135,12 +135,14 @@ function getCanonicalKey(indexedKey: string): string {
     .replace(/^(lender)\d+\./, '$1.')
     .replace(/^(property)\d+\./, 'property1.')
     .replace(/^(broker)\d+\./, 'broker.')
-    .replace(/^(charge)\d+\./, 'charge.');
+    .replace(/^(charge)\d+\./, 'charge.')
+    .replace(/^(lien)\d+\./, 'lien.')
+    .replace(/^(insurance)\d+\./, 'insurance.');
 }
 
 // Extract indexed prefix from field key (e.g., "borrower1.first_name" -> "borrower1", "charge1.date_of_charge" -> "charge1")
 function getIndexedPrefix(fieldKey: string): string | null {
-  const match = fieldKey.match(/^(borrower\d+|coborrower\d+|co_borrower\d+|lender\d+|property\d+|broker\d+|charge\d+)\./);
+  const match = fieldKey.match(/^(borrower\d+|coborrower\d+|co_borrower\d+|lender\d+|property\d+|broker\d+|charge\d+|lien\d+|insurance\d+)\./);
   return match ? match[1] : null;
 }
 
@@ -389,7 +391,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
                     }
                   } else {
                     // For other entities (borrower, lender, etc.)
-                    const canonicalField = fieldMeta.field_key.replace(/^(borrower|coborrower|co_borrower|lender|property\d*|broker)\./, '');
+                    const canonicalField = fieldMeta.field_key.replace(/^(borrower|coborrower|co_borrower|lender|property\d*|broker|lien|insurance)\./, '');
                     keyToUse = `${prefix}.${canonicalField}`;
                   }
                 }
