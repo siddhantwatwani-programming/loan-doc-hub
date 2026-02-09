@@ -38,7 +38,7 @@ const BORROWER_DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
 const COBORROWER_DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
   { key: 'coborrower_primary', label: 'Primary' },
   { key: 'coborrower_banking', label: 'Banking' },
-  { key: 'coborrower_tax_detail', label: 'Tax Details' },
+  { key: 'coborrower_tax_detail', label: '1098' },
   { key: 'coborrower_note', label: 'Note' },
   { key: 'coborrower_attachment', label: 'Attachments' },
 ];
