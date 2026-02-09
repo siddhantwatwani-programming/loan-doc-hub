@@ -96,6 +96,10 @@ const getEmptyProperty = (): PropertyData => ({
   ltv: '',
   apn: '',
   loanPriority: '',
+  floodZone: '',
+  pledgedEquity: '',
+  zoning: '',
+  performedBy: '',
 });
 
 export const PropertyModal: React.FC<PropertyModalProps> = ({
@@ -108,24 +112,17 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
   const [formData, setFormData] = useState<PropertyData>(getEmptyProperty());
   const [activeTab, setActiveTab] = useState('general');
   
-  // Additional form fields not in PropertyData
-  const [performedBy, setPerformedBy] = useState('');
-  const [zoning, setZoning] = useState('');
-  const [pledgedEquity, setPledgedEquity] = useState('');
-  const [floodZone, setFloodZone] = useState('');
-
   useEffect(() => {
     if (open) {
       if (property) {
-        setFormData(property);
+        setFormData({
+          ...getEmptyProperty(),
+          ...property,
+        });
       } else {
         setFormData(getEmptyProperty());
       }
       setActiveTab('general');
-      setPerformedBy('');
-      setZoning('');
-      setPledgedEquity('');
-      setFloodZone('');
     }
   }, [open, property]);
 
@@ -261,8 +258,8 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
                 <div>
                   <Label className="text-sm text-foreground">Performed By:</Label>
                   <Select
-                    value={performedBy}
-                    onValueChange={setPerformedBy}
+                    value={formData.performedBy || ''}
+                    onValueChange={(val) => handleFieldChange('performedBy', val)}
                   >
                     <SelectTrigger className="h-8 text-sm mt-1">
                       <SelectValue placeholder="Select..." />
@@ -326,8 +323,8 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
                   <div>
                     <Label className="text-sm text-foreground">Zoning</Label>
                     <Input
-                      value={zoning}
-                      onChange={(e) => setZoning(e.target.value)}
+                      value={formData.zoning || ''}
+                      onChange={(e) => handleFieldChange('zoning', e.target.value)}
                       className="h-8 text-sm mt-1"
                     />
                   </div>
@@ -353,8 +350,8 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
                     <div className="flex items-center gap-1 mt-1">
                       <span className="text-sm text-muted-foreground">$</span>
                       <Input
-                        value={pledgedEquity}
-                        onChange={(e) => setPledgedEquity(e.target.value)}
+                        value={formData.pledgedEquity || ''}
+                        onChange={(e) => handleCurrencyChange('pledgedEquity', e.target.value)}
                         className="h-8 text-sm text-right"
                         inputMode="decimal"
                         placeholder="0.00"
@@ -364,7 +361,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
                 </div>
 
                 <div>
-                  <Label className="text-sm text-foreground">Appraised Date</Label>
+                  <Label className="text-sm text-foreground">Appraisal Date</Label>
                   <Input
                     type="date"
                     value={formData.appraisedDate}
@@ -393,8 +390,8 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({
                 <div>
                   <Label className="text-sm text-foreground">Flood Zone</Label>
                   <Select
-                    value={floodZone}
-                    onValueChange={setFloodZone}
+                    value={formData.floodZone || ''}
+                    onValueChange={(val) => handleFieldChange('floodZone', val)}
                   >
                     <SelectTrigger className="h-8 text-sm mt-1">
                       <SelectValue placeholder="Select flood zone" />
