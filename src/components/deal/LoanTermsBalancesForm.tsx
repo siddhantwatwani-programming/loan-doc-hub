@@ -21,22 +21,34 @@ const FIELD_KEYS = {
   loanAmount: 'loan_terms.loan_amount',
   noteRate: 'loan_terms.note_rate',
   soldRate: 'loan_terms.sold_rate',
+  soldRateEnabled: 'loan_terms.sold_rate_enabled',
   originatingVendor: 'loan_terms.originating_vendor',
+  originatingVendorEnabled: 'loan_terms.originating_vendor_enabled',
   company: 'loan_terms.company',
+  companyEnabled: 'loan_terms.company_enabled',
   otherClient1: 'loan_terms.other_client_1',
+  otherClient1Enabled: 'loan_terms.other_client_1_enabled',
   otherClient1Pct: 'loan_terms.other_client_1_pct',
   otherClient1Amt: 'loan_terms.other_client_1_amt',
   otherClient2: 'loan_terms.other_client_2',
+  otherClient2Enabled: 'loan_terms.other_client_2_enabled',
   otherClient2Pct: 'loan_terms.other_client_2_pct',
   otherClient2Amt: 'loan_terms.other_client_2_amt',
   interestSplit: 'loan_terms.interest_split',
+  interestSplitEnabled: 'loan_terms.interest_split_enabled',
+  originatingVendorPct: 'loan_terms.originating_vendor_pct',
+  originatingVendorAmt: 'loan_terms.originating_vendor_amt',
+  companyPct: 'loan_terms.company_pct',
+  companyAmt: 'loan_terms.company_amt',
   unearnedDiscountBalance: 'loan_terms.unearned_discount_balance',
   accrualMethod: 'loan_terms.accrual_method',
   prepaidPayments: 'loan_terms.prepaid_payments',
+  prepaidPaymentsEnabled: 'loan_terms.prepaid_payments_enabled',
   prepaidPaymentsMonths: 'loan_terms.prepaid_payments_months',
   impoundedPayments: 'loan_terms.impounded_payments',
   impoundedPaymentsMonths: 'loan_terms.impounded_payments_months',
   fundingHoldback: 'loan_terms.funding_holdback',
+  fundingHoldbackEnabled: 'loan_terms.funding_holdback_enabled',
   fundingHoldbackHeldBy: 'loan_terms.funding_holdback_held_by',
 
   // Payments column
@@ -94,11 +106,13 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
   const getValue = (key: string) => values[key] || '';
   const setValue = (key: string, value: string) => onValueChange(key, value);
 
+  const isChecked = (key: string) => getValue(key) === 'true';
+  const toggleCheck = (key: string) => setValue(key, isChecked(key) ? '' : 'true');
+
   return (
     <div className="p-6 space-y-8">
       {/* Three Column Layout: Terms | Payments | Balances */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
         {/* Terms Column */}
         <div className="space-y-6">
           <h3 className="font-semibold text-foreground border-b border-border pb-2">Terms</h3>
@@ -135,13 +149,21 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor={FIELD_KEYS.soldRate} className="text-primary font-medium">Sold Rate</Label>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`${FIELD_KEYS.soldRateEnabled}-cb`}
+                  checked={isChecked(FIELD_KEYS.soldRateEnabled)}
+                  onCheckedChange={() => toggleCheck(FIELD_KEYS.soldRateEnabled)}
+                  disabled={disabled}
+                />
+                <Label htmlFor={`${FIELD_KEYS.soldRateEnabled}-cb`} className="text-primary font-medium">Sold Rate</Label>
+              </div>
               <div className="relative">
                 <Input
                   id={FIELD_KEYS.soldRate}
                   value={getValue(FIELD_KEYS.soldRate)}
                   onChange={(e) => setValue(FIELD_KEYS.soldRate, e.target.value)}
-                  disabled={disabled}
+                  disabled={disabled || !isChecked(FIELD_KEYS.soldRateEnabled)}
                   className="pr-8"
                   placeholder="0.000"
                 />
@@ -149,85 +171,114 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 items-end">
-              <div className="col-span-1 space-y-2">
-                <Label htmlFor={FIELD_KEYS.originatingVendor}>Originating Vendor</Label>
+            {/* Originating Vendor with checkbox */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`${FIELD_KEYS.originatingVendorEnabled}-cb`}
+                  checked={isChecked(FIELD_KEYS.originatingVendorEnabled)}
+                  onCheckedChange={() => toggleCheck(FIELD_KEYS.originatingVendorEnabled)}
+                  disabled={disabled}
+                />
+                <Label htmlFor={`${FIELD_KEYS.originatingVendorEnabled}-cb`}>Originating Vendor</Label>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
                 <Input
                   id={FIELD_KEYS.originatingVendor}
                   value={getValue(FIELD_KEYS.originatingVendor)}
                   onChange={(e) => setValue(FIELD_KEYS.originatingVendor, e.target.value)}
-                  disabled={disabled}
+                  disabled={disabled || !isChecked(FIELD_KEYS.originatingVendorEnabled)}
                   placeholder=""
                 />
-              </div>
-              <div className="space-y-2">
-                <Input
-                  value={getValue(FIELD_KEYS.otherClient1Pct)}
-                  onChange={(e) => setValue(FIELD_KEYS.otherClient1Pct, e.target.value)}
-                  disabled={disabled}
-                  placeholder="%"
-                  className="text-center"
-                />
-              </div>
-              <div className="relative space-y-2">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
-                <Input
-                  value={getValue(FIELD_KEYS.otherClient1Amt)}
-                  onChange={(e) => setValue(FIELD_KEYS.otherClient1Amt, e.target.value)}
-                  disabled={disabled}
-                  placeholder="0.00"
-                  className="pl-7"
-                />
+                <div className="relative">
+                  <Input
+                    value={getValue(FIELD_KEYS.originatingVendorPct)}
+                    onChange={(e) => setValue(FIELD_KEYS.originatingVendorPct, e.target.value)}
+                    disabled={disabled || !isChecked(FIELD_KEYS.originatingVendorEnabled)}
+                    placeholder="%"
+                    className="text-center pr-6"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                  <Input
+                    value={getValue(FIELD_KEYS.originatingVendorAmt)}
+                    onChange={(e) => setValue(FIELD_KEYS.originatingVendorAmt, e.target.value)}
+                    disabled={disabled || !isChecked(FIELD_KEYS.originatingVendorEnabled)}
+                    placeholder="0.00"
+                    className="pl-7"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 items-end">
-              <div className="col-span-1 space-y-2">
-                <Label htmlFor={FIELD_KEYS.company}>Company</Label>
+            {/* Company with checkbox */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`${FIELD_KEYS.companyEnabled}-cb`}
+                  checked={isChecked(FIELD_KEYS.companyEnabled)}
+                  onCheckedChange={() => toggleCheck(FIELD_KEYS.companyEnabled)}
+                  disabled={disabled}
+                />
+                <Label htmlFor={`${FIELD_KEYS.companyEnabled}-cb`}>Company</Label>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
                 <Input
                   id={FIELD_KEYS.company}
                   value={getValue(FIELD_KEYS.company)}
                   onChange={(e) => setValue(FIELD_KEYS.company, e.target.value)}
-                  disabled={disabled}
+                  disabled={disabled || !isChecked(FIELD_KEYS.companyEnabled)}
                   placeholder=""
                 />
-              </div>
-              <div className="space-y-2">
-                <Input
-                  value={getValue(FIELD_KEYS.otherClient2Pct)}
-                  onChange={(e) => setValue(FIELD_KEYS.otherClient2Pct, e.target.value)}
-                  disabled={disabled}
-                  placeholder="%"
-                  className="text-center"
-                />
-              </div>
-              <div className="relative space-y-2">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
-                <Input
-                  value={getValue(FIELD_KEYS.otherClient2Amt)}
-                  onChange={(e) => setValue(FIELD_KEYS.otherClient2Amt, e.target.value)}
-                  disabled={disabled}
-                  placeholder="0.00"
-                  className="pl-7"
-                />
+                <div className="relative">
+                  <Input
+                    value={getValue(FIELD_KEYS.companyPct)}
+                    onChange={(e) => setValue(FIELD_KEYS.companyPct, e.target.value)}
+                    disabled={disabled || !isChecked(FIELD_KEYS.companyEnabled)}
+                    placeholder="%"
+                    className="text-center pr-6"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                  <Input
+                    value={getValue(FIELD_KEYS.companyAmt)}
+                    onChange={(e) => setValue(FIELD_KEYS.companyAmt, e.target.value)}
+                    disabled={disabled || !isChecked(FIELD_KEYS.companyEnabled)}
+                    placeholder="0.00"
+                    className="pl-7"
+                  />
+                </div>
               </div>
             </div>
 
+            {/* Other - Select from Client List (First) with checkbox */}
             <div className="space-y-2">
-              <Label htmlFor={FIELD_KEYS.otherClient1}>Other - Select from Client List</Label>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`${FIELD_KEYS.otherClient1Enabled}-cb`}
+                  checked={isChecked(FIELD_KEYS.otherClient1Enabled)}
+                  onCheckedChange={() => toggleCheck(FIELD_KEYS.otherClient1Enabled)}
+                  disabled={disabled}
+                />
+                <Label htmlFor={`${FIELD_KEYS.otherClient1Enabled}-cb`}>Other - Select from Client List</Label>
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 <Input
                   id={FIELD_KEYS.otherClient1}
                   value={getValue(FIELD_KEYS.otherClient1)}
                   onChange={(e) => setValue(FIELD_KEYS.otherClient1, e.target.value)}
-                  disabled={disabled}
+                  disabled={disabled || !isChecked(FIELD_KEYS.otherClient1Enabled)}
                   placeholder=""
                 />
                 <div className="relative">
                   <Input
                     value={getValue('loan_terms.other_1_pct')}
                     onChange={(e) => setValue('loan_terms.other_1_pct', e.target.value)}
-                    disabled={disabled}
+                    disabled={disabled || !isChecked(FIELD_KEYS.otherClient1Enabled)}
                     placeholder="%"
                     className="text-center pr-6"
                   />
@@ -238,7 +289,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   <Input
                     value={getValue('loan_terms.other_1_amt')}
                     onChange={(e) => setValue('loan_terms.other_1_amt', e.target.value)}
-                    disabled={disabled}
+                    disabled={disabled || !isChecked(FIELD_KEYS.otherClient1Enabled)}
                     placeholder="0.00"
                     className="pl-7"
                   />
@@ -246,21 +297,30 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
             </div>
 
+            {/* Other - Select from Client List (Second) with checkbox */}
             <div className="space-y-2">
-              <Label htmlFor={FIELD_KEYS.otherClient2}>Other - Select from Client List</Label>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={`${FIELD_KEYS.otherClient2Enabled}-cb`}
+                  checked={isChecked(FIELD_KEYS.otherClient2Enabled)}
+                  onCheckedChange={() => toggleCheck(FIELD_KEYS.otherClient2Enabled)}
+                  disabled={disabled}
+                />
+                <Label htmlFor={`${FIELD_KEYS.otherClient2Enabled}-cb`}>Other - Select from Client List</Label>
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 <Input
                   id={FIELD_KEYS.otherClient2}
                   value={getValue(FIELD_KEYS.otherClient2)}
                   onChange={(e) => setValue(FIELD_KEYS.otherClient2, e.target.value)}
-                  disabled={disabled}
+                  disabled={disabled || !isChecked(FIELD_KEYS.otherClient2Enabled)}
                   placeholder=""
                 />
                 <div className="relative">
                   <Input
                     value={getValue('loan_terms.other_2_pct')}
                     onChange={(e) => setValue('loan_terms.other_2_pct', e.target.value)}
-                    disabled={disabled}
+                    disabled={disabled || !isChecked(FIELD_KEYS.otherClient2Enabled)}
                     placeholder="%"
                     className="text-center pr-6"
                   />
@@ -271,7 +331,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   <Input
                     value={getValue('loan_terms.other_2_amt')}
                     onChange={(e) => setValue('loan_terms.other_2_amt', e.target.value)}
-                    disabled={disabled}
+                    disabled={disabled || !isChecked(FIELD_KEYS.otherClient2Enabled)}
                     placeholder="0.00"
                     className="pl-7"
                   />
@@ -279,15 +339,15 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor={FIELD_KEYS.interestSplit} className="text-primary font-medium">Interest Split</Label>
-              <Input
-                id={FIELD_KEYS.interestSplit}
-                value={getValue(FIELD_KEYS.interestSplit)}
-                onChange={(e) => setValue(FIELD_KEYS.interestSplit, e.target.value)}
+            {/* Interest Split as checkbox */}
+            <div className="flex items-center gap-2 py-2">
+              <Checkbox
+                id={`${FIELD_KEYS.interestSplitEnabled}-cb`}
+                checked={isChecked(FIELD_KEYS.interestSplitEnabled)}
+                onCheckedChange={() => toggleCheck(FIELD_KEYS.interestSplitEnabled)}
                 disabled={disabled}
-                placeholder=""
               />
+              <Label htmlFor={`${FIELD_KEYS.interestSplitEnabled}-cb`} className="text-primary font-medium">Interest Split</Label>
             </div>
 
             <div className="space-y-2">
@@ -321,14 +381,23 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </Select>
             </div>
 
+            {/* Prepaid Payments with checkbox */}
             <div className="grid grid-cols-2 gap-2 items-end">
               <div className="space-y-2">
-                <Label htmlFor={FIELD_KEYS.prepaidPayments}>Prepaid Payments</Label>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id={`${FIELD_KEYS.prepaidPaymentsEnabled}-cb`}
+                    checked={isChecked(FIELD_KEYS.prepaidPaymentsEnabled)}
+                    onCheckedChange={() => toggleCheck(FIELD_KEYS.prepaidPaymentsEnabled)}
+                    disabled={disabled}
+                  />
+                  <Label htmlFor={`${FIELD_KEYS.prepaidPaymentsEnabled}-cb`}>Prepaid Payments</Label>
+                </div>
                 <Input
                   id={FIELD_KEYS.prepaidPayments}
                   value={getValue(FIELD_KEYS.prepaidPayments)}
                   onChange={(e) => setValue(FIELD_KEYS.prepaidPayments, e.target.value)}
-                  disabled={disabled}
+                  disabled={disabled || !isChecked(FIELD_KEYS.prepaidPaymentsEnabled)}
                   placeholder=""
                 />
               </div>
@@ -337,7 +406,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 <Input
                   value={getValue(FIELD_KEYS.prepaidPaymentsMonths)}
                   onChange={(e) => setValue(FIELD_KEYS.prepaidPaymentsMonths, e.target.value)}
-                  disabled={disabled}
+                  disabled={disabled || !isChecked(FIELD_KEYS.prepaidPaymentsEnabled)}
                   placeholder=""
                 />
               </div>
@@ -365,14 +434,23 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
             </div>
 
+            {/* Funding Holdback with checkbox */}
             <div className="grid grid-cols-2 gap-2 items-end">
               <div className="space-y-2">
-                <Label htmlFor={FIELD_KEYS.fundingHoldback}>Funding Holdback</Label>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id={`${FIELD_KEYS.fundingHoldbackEnabled}-cb`}
+                    checked={isChecked(FIELD_KEYS.fundingHoldbackEnabled)}
+                    onCheckedChange={() => toggleCheck(FIELD_KEYS.fundingHoldbackEnabled)}
+                    disabled={disabled}
+                  />
+                  <Label htmlFor={`${FIELD_KEYS.fundingHoldbackEnabled}-cb`}>Funding Holdback</Label>
+                </div>
                 <Input
                   id={FIELD_KEYS.fundingHoldback}
                   value={getValue(FIELD_KEYS.fundingHoldback)}
                   onChange={(e) => setValue(FIELD_KEYS.fundingHoldback, e.target.value)}
-                  disabled={disabled}
+                  disabled={disabled || !isChecked(FIELD_KEYS.fundingHoldbackEnabled)}
                   placeholder=""
                 />
               </div>
@@ -381,7 +459,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 <Select
                   value={getValue(FIELD_KEYS.fundingHoldbackHeldBy)}
                   onValueChange={(value) => setValue(FIELD_KEYS.fundingHoldbackHeldBy, value)}
-                  disabled={disabled}
+                  disabled={disabled || !isChecked(FIELD_KEYS.fundingHoldbackEnabled)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
