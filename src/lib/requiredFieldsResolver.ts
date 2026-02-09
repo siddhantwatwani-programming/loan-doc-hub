@@ -50,10 +50,8 @@ export const SECTION_ORDER: FieldSection[] = [
   'charges',
   'dates',
   'escrow',
-  'participants',
   'notes',
   'seller',
-  'title',
   'other'
 ];
 
