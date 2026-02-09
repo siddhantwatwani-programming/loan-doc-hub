@@ -371,13 +371,20 @@ const PrepaymentPenaltySection: React.FC<{
             disabled={disabled}
             className="h-7 text-sm w-14 inline-block"
           />
-          <span>of th</span>
-          <Input
+          <span>of the</span>
+          <Select
             value={values[`${prefix}.of_the`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.of_the`, e.target.value)}
+            onValueChange={(val) => onValueChange(`${prefix}.of_the`, val)}
             disabled={disabled}
-            className="h-7 text-sm w-28 inline-block"
-          />
+          >
+            <SelectTrigger className="h-7 text-sm w-28 inline-flex">
+              <SelectValue placeholder="Select..." />
+            </SelectTrigger>
+            <SelectContent className="bg-background border border-border z-50">
+              <SelectItem value="original">Original</SelectItem>
+              <SelectItem value="unpaid">Unpaid</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex items-center gap-1 flex-wrap text-sm text-foreground">
