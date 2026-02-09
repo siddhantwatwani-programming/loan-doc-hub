@@ -173,16 +173,6 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
                   className="h-7 text-xs flex-1"
                 />
               </div>
-              <div className="flex items-center gap-2 pt-2">
-                <Checkbox
-                  id="guarantor-issue1098"
-                  checked={getBoolValue('issue1098')}
-                  onCheckedChange={(checked) => handleChange('issue1098', !!checked)}
-                  disabled={disabled}
-                  className="h-4 w-4"
-                />
-                <Label htmlFor="guarantor-issue1098" className="text-xs text-foreground">Issue 1098</Label>
-              </div>
             </div>
           </div>
         </div>

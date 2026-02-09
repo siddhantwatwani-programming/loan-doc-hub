@@ -64,8 +64,8 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'owedTo', label: 'Owed To Account', visible: true },
   { id: 'originalAmount', label: 'Original Balance', visible: true },
   { id: 'unpaidBalance', label: 'Unpaid Balance', visible: true },
-  { id: 'accruedInterest', label: 'Accrued Interest', visible: true },
   { id: 'totalDue', label: 'Total Due', visible: true },
+  { id: 'accruedInterest', label: 'Accrued Interest', visible: true },
 ];
 
 export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
