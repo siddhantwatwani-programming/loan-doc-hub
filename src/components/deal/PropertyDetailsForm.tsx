@@ -324,7 +324,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-sm text-foreground">Appraised Date</Label>
+              <Label className="text-sm text-foreground">Appraisal Date</Label>
               <Input
                 type="date"
                 value={getFieldValue(FIELD_KEYS.appraisedDate)}
@@ -393,23 +393,6 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             </Select>
           </div>
 
-          <div>
-            <Label className="text-sm text-foreground">Flood Zone</Label>
-            <Select
-              value={getFieldValue(FIELD_KEYS.floodZone)}
-              onValueChange={(val) => onValueChange(FIELD_KEYS.floodZone, val)}
-              disabled={disabled}
-            >
-              <SelectTrigger className="h-8 text-sm mt-1">
-                <SelectValue placeholder="Select flood zone" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border border-border z-50">
-                {FLOOD_ZONE_OPTIONS.map(opt => (
-                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </div>
       </div>
     </div>

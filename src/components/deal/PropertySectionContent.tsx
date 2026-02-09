@@ -5,8 +5,6 @@ import { PropertySubNavigation, type PropertySubSection } from './PropertySubNav
 import { PropertyDetailsForm } from './PropertyDetailsForm';
 import { PropertyLegalDescriptionForm } from './PropertyLegalDescriptionForm';
 import { PropertyTaxForm } from './PropertyTaxForm';
-import { PropertyAttachmentForm } from './PropertyAttachmentForm';
-import { PropertyNoteForm } from './PropertyNoteForm';
 import { PropertiesTableView, type PropertyData } from './PropertiesTableView';
 import { PropertyModal } from './PropertyModal';
 import { LienSectionContent } from './LienSectionContent';
@@ -99,7 +97,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const [editingProperty, setEditingProperty] = useState<PropertyData | null>(null);
   
   // Check if we're in detail view (liens and insurance sections are handled separately)
-  const isDetailView = ['property_details', 'legal_description', 'property_tax', 'attachments', 'notes'].includes(activeSubSection);
+  const isDetailView = ['property_details', 'legal_description', 'property_tax'].includes(activeSubSection);
   
   // Check if liens section is active (rendered separately)
   const isLiensSection = activeSubSection === 'liens';
@@ -263,29 +261,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
       case 'property_tax':
         return (
           <PropertyTaxForm
-            fields={fields}
-            values={getPropertySpecificValues()}
-            onValueChange={handlePropertyValueChange}
-            showValidation={showValidation}
-            disabled={disabled}
-            calculationResults={calculationResults}
-          />
-        );
-      case 'attachments':
-        return (
-          <PropertyAttachmentForm
-            fields={fields}
-            values={getPropertySpecificValues()}
-            onValueChange={handlePropertyValueChange}
-            showValidation={showValidation}
-            disabled={disabled}
-            calculationResults={calculationResults}
-            propertyId={selectedPropertyPrefix}
-          />
-        );
-      case 'notes':
-        return (
-          <PropertyNoteForm
             fields={fields}
             values={getPropertySpecificValues()}
             onValueChange={handlePropertyValueChange}

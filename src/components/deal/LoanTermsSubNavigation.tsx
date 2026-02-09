@@ -9,7 +9,7 @@ interface LoanTermsSubNavigationProps {
 }
 
 const LOAN_TERMS_SECTIONS: { key: LoanTermsSubSection; label: string }[] = [
-  { key: 'balances_loan_details', label: 'Balances & Loan Details' },
+  { key: 'balances_loan_details', label: 'Terms & Balances' },
   { key: 'details', label: 'Details' },
   { key: 'funding', label: 'Funding' },
   { key: 'penalties', label: 'Penalties' },
