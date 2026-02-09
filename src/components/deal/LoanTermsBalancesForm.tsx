@@ -182,14 +182,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 />
                 <Label htmlFor={`${FIELD_KEYS.originatingVendorEnabled}-cb`}>Originating Vendor</Label>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                <Input
-                  id={FIELD_KEYS.originatingVendor}
-                  value={getValue(FIELD_KEYS.originatingVendor)}
-                  onChange={(e) => setValue(FIELD_KEYS.originatingVendor, e.target.value)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.originatingVendorEnabled)}
-                  placeholder=""
-                />
+              <div className="grid grid-cols-2 gap-2">
                 <div className="relative">
                   <Input
                     value={getValue(FIELD_KEYS.originatingVendorPct)}
@@ -224,14 +217,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 />
                 <Label htmlFor={`${FIELD_KEYS.companyEnabled}-cb`}>Company</Label>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                <Input
-                  id={FIELD_KEYS.company}
-                  value={getValue(FIELD_KEYS.company)}
-                  onChange={(e) => setValue(FIELD_KEYS.company, e.target.value)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.companyEnabled)}
-                  placeholder=""
-                />
+              <div className="grid grid-cols-2 gap-2">
                 <div className="relative">
                   <Input
                     value={getValue(FIELD_KEYS.companyPct)}
@@ -266,14 +252,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 />
                 <Label htmlFor={`${FIELD_KEYS.otherClient1Enabled}-cb`}>Other - Select from Client List</Label>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                <Input
-                  id={FIELD_KEYS.otherClient1}
-                  value={getValue(FIELD_KEYS.otherClient1)}
-                  onChange={(e) => setValue(FIELD_KEYS.otherClient1, e.target.value)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.otherClient1Enabled)}
-                  placeholder=""
-                />
+              <div className="grid grid-cols-2 gap-2">
                 <div className="relative">
                   <Input
                     value={getValue('loan_terms.other_1_pct')}
@@ -308,14 +287,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 />
                 <Label htmlFor={`${FIELD_KEYS.otherClient2Enabled}-cb`}>Other - Select from Client List</Label>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                <Input
-                  id={FIELD_KEYS.otherClient2}
-                  value={getValue(FIELD_KEYS.otherClient2)}
-                  onChange={(e) => setValue(FIELD_KEYS.otherClient2, e.target.value)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.otherClient2Enabled)}
-                  placeholder=""
-                />
+              <div className="grid grid-cols-2 gap-2">
                 <div className="relative">
                   <Input
                     value={getValue('loan_terms.other_2_pct')}
