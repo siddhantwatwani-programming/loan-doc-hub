@@ -3,13 +3,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
 interface ChargesDetailFormProps {
   values: Record<string, string>;
@@ -17,27 +10,6 @@ interface ChargesDetailFormProps {
   disabled?: boolean;
 }
 
-const CHARGE_TYPE_OPTIONS = [
-  'Account Close Out',
-  'Account Maintenance',
-  'Administrative Services',
-  'Beneficiary Origination',
-  'Beneficiary Wire',
-  'Demand Fee',
-  'Extension / Modification Doc Prep',
-  'Foreclosure Processing Fees - Trustee\'s Fees',
-  'Holdback',
-  'Modification Doc Prep',
-  'New Account Setup',
-  'NSF Charge',
-  'Online Payment Fee',
-  'Origination Doc Prep',
-  'Pay By Phone',
-  'Professional Services',
-  'Setup Fee',
-  'SO110-Servicing Fee',
-  'Wire Processing',
-];
 
 const FIELD_KEYS = {
   description: 'charges.description',
@@ -144,22 +116,13 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
             </div>
             <div>
               <Label className="text-sm text-foreground">Charge Type</Label>
-              <Select
+              <Input
                 value={values[FIELD_KEYS.chargeType] || ''}
-                onValueChange={(value) => onValueChange(FIELD_KEYS.chargeType, value)}
+                onChange={(e) => onValueChange(FIELD_KEYS.chargeType, e.target.value)}
                 disabled={disabled}
-              >
-                <SelectTrigger className="h-8 text-sm mt-1 bg-background">
-                  <SelectValue placeholder="Select charge type" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  {CHARGE_TYPE_OPTIONS.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                className="h-8 text-sm mt-1"
+                placeholder="Enter charge type"
+              />
             </div>
           </div>
 
