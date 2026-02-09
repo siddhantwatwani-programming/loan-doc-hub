@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export type LienSubSection = 'liens' | 'lien_details' | 'notes';
+export type LienSubSection = 'liens' | 'lien_details';
 
 interface LienSubNavigationProps {
   activeSubSection: LienSubSection;
@@ -11,7 +11,6 @@ interface LienSubNavigationProps {
 
 const DETAIL_TABS: { id: LienSubSection; label: string }[] = [
   { id: 'lien_details', label: 'General' },
-  { id: 'notes', label: 'Notes' },
 ];
 
 export const LienSubNavigation: React.FC<LienSubNavigationProps> = ({

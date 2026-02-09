@@ -5,7 +5,6 @@ import { LienSubNavigation, type LienSubSection } from './LienSubNavigation';
 import { LiensTableView, type LienData } from './LiensTableView';
 import { LienModal } from './LienModal';
 import { LienDetailForm } from './LienDetailForm';
-import { LienNoteForm } from './LienNoteForm';
 
 interface LienSectionContentProps {
   values: Record<string, string>;
@@ -87,7 +86,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   const [editingLien, setEditingLien] = useState<LienData | null>(null);
   
   // Check if we're in detail view
-  const isDetailView = ['lien_details', 'notes'].includes(activeSubSection);
+  const isDetailView = activeSubSection === 'lien_details';
   
   // Extract liens from values
   const liens = extractLiensFromValues(values);
@@ -183,11 +182,6 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
     }
   }, [selectedLienPrefix, onValueChange]);
 
-  // Handle note change
-  const handleNoteChange = useCallback((value: string) => {
-    onValueChange(`${selectedLienPrefix}.note`, value);
-  }, [selectedLienPrefix, onValueChange]);
-
   const renderSubSectionContent = () => {
     switch (activeSubSection) {
       case 'liens':
@@ -208,14 +202,6 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
             onChange={handleLienFieldChange}
             disabled={disabled}
             propertyOptions={propertyOptions}
-          />
-        );
-      case 'notes':
-        return (
-          <LienNoteForm
-            value={selectedLien.note}
-            onChange={handleNoteChange}
-            disabled={disabled}
           />
         );
       default:
