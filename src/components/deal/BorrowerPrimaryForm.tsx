@@ -418,15 +418,6 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
               </div>
             </div>
             
-            <div className="flex items-center gap-2 pt-2">
-              <Checkbox
-                id="issue1098"
-                checked={getBoolValue('issue1098')}
-                onCheckedChange={(checked) => handleChange('issue1098', !!checked)}
-                disabled={disabled}
-              />
-              <Label htmlFor="issue1098" className="text-sm text-muted-foreground">Issue 1098</Label>
-            </div>
           </div>
         </div>
 

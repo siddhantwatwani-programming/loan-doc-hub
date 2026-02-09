@@ -62,7 +62,7 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
   return (
     <div className="p-6 space-y-6">
       <div className="border-b border-border pb-2 mb-4">
-        <span className="font-semibold text-base text-foreground">Tax Details</span>
+        <span className="font-semibold text-base text-foreground">1098</span>
       </div>
 
       <div className="space-y-3">
