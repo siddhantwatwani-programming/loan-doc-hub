@@ -382,7 +382,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             </div>
 
             {/* Prepaid Payments with checkbox */}
-            <div className="grid grid-cols-2 gap-2 items-end">
+            <div className="grid grid-cols-2 gap-2 items-center">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Checkbox
@@ -421,7 +421,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             </div>
 
             {/* Funding Holdback with checkbox */}
-            <div className="grid grid-cols-2 gap-2 items-end">
+            <div className="grid grid-cols-2 gap-2 items-center">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Checkbox
