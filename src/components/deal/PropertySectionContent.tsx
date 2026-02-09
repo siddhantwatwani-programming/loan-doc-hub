@@ -52,6 +52,10 @@ const extractPropertiesFromValues = (values: Record<string, string>): PropertyDa
       ltv: values[`${prefix}.ltv`] || '',
       apn: values[`${prefix}.apn`] || '',
       loanPriority: values[`${prefix}.priority`] || '',
+      floodZone: values[`${prefix}.flood_zone`] || '',
+      pledgedEquity: values[`${prefix}.pledged_equity`] || '',
+      zoning: values[`${prefix}.zoning`] || '',
+      performedBy: values[`${prefix}.performed_by`] || '',
     };
     properties.push(property);
   });
@@ -180,6 +184,10 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     onValueChange(`${prefix}.ltv`, propertyData.ltv);
     onValueChange(`${prefix}.apn`, propertyData.apn);
     onValueChange(`${prefix}.priority`, propertyData.loanPriority);
+    onValueChange(`${prefix}.flood_zone`, propertyData.floodZone || '');
+    onValueChange(`${prefix}.pledged_equity`, propertyData.pledgedEquity || '');
+    onValueChange(`${prefix}.zoning`, propertyData.zoning || '');
+    onValueChange(`${prefix}.performed_by`, propertyData.performedBy || '');
     
     // If this is marked as primary, unset others
     if (propertyData.isPrimary) {
