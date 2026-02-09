@@ -1,11 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Users } from 'lucide-react';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -31,7 +28,6 @@ const DistributionFields: React.FC<{
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
 }> = ({ prefix, values, onValueChange, disabled }) => {
-  const [contactDialogOpen, setContactDialogOpen] = useState(false);
 
   return (
     <div className="space-y-2 pt-3">
@@ -66,31 +62,12 @@ const DistributionFields: React.FC<{
         </div>
         <div className="flex items-center gap-3">
           <Label className="text-sm min-w-[120px]">Other</Label>
-          <div className="flex gap-1 flex-1">
-            <Input
-              value={values[`${prefix}.distribution.other`] || ''}
-              onChange={(e) => onValueChange(`${prefix}.distribution.other`, e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-            <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="h-7 px-2" disabled={disabled}>
-                  <Users className="h-3 w-3" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Select Contact</DialogTitle>
-                </DialogHeader>
-                <div className="py-4">
-                  <p className="text-sm text-muted-foreground">
-                    Select a contact from the existing contacts list to distribute to.
-                  </p>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <Input
+            value={values[`${prefix}.distribution.other`] || ''}
+            onChange={(e) => onValueChange(`${prefix}.distribution.other`, e.target.value)}
+            disabled={disabled}
+            className="h-7 text-sm flex-1"
+          />
         </div>
       </div>
     </div>
