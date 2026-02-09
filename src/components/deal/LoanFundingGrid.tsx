@@ -38,6 +38,7 @@ interface LoanFundingGridProps {
   loanNumber?: string;
   borrowerName?: string;
   fundingRecords: FundingRecord[];
+  historyRecords?: any[];
   onAddFunding: (data: any) => void;
   onUpdateRecord: (id: string, data: Partial<FundingRecord>) => void;
   isLoading?: boolean;
@@ -53,6 +54,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   loanNumber,
   borrowerName,
   fundingRecords,
+  historyRecords = [],
   onAddFunding,
   onUpdateRecord,
   isLoading = false,
@@ -274,6 +276,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         open={isHistoryOpen}
         onOpenChange={setIsHistoryOpen}
         dealId={dealId}
+        historyRecords={historyRecords}
       />
     </div>
   );

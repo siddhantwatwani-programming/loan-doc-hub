@@ -62,6 +62,19 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     return [];
   }, [values]);
 
+  // Parse funding history from stored JSON value
+  const historyRecords = useMemo(() => {
+    const storedValue = values[FIELD_KEYS.fundingHistory];
+    if (storedValue) {
+      try {
+        return JSON.parse(storedValue);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }, [values]);
+
   // Calculate total pages
   const totalPages = Math.max(1, Math.ceil(fundingRecords.length / pageSize));
 
@@ -130,6 +143,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
         loanNumber={loanNumber}
         borrowerName={borrowerName}
         fundingRecords={paginatedRecords}
+        historyRecords={historyRecords}
         onAddFunding={handleAddFunding}
         onUpdateRecord={handleUpdateRecord}
         isLoading={isLoading}
