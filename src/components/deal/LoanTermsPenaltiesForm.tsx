@@ -235,7 +235,7 @@ const DefaultInterestColumn: React.FC<{
           <Input
             value={values[`${prefix}.flat_rate`] || ''}
             onChange={(e) => onValueChange(`${prefix}.flat_rate`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || values[`${prefix}.flat_rate_enabled`] !== 'true'}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -248,7 +248,7 @@ const DefaultInterestColumn: React.FC<{
           <Input
             value={values[`${prefix}.modifier`] || ''}
             onChange={(e) => onValueChange(`${prefix}.modifier`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || values[`${prefix}.modifier_enabled`] !== 'true'}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -312,7 +312,7 @@ const InterestGuaranteeSection: React.FC<{
           <Input
             value={values[`${prefix}.months`] || ''}
             onChange={(e) => onValueChange(`${prefix}.months`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || values[`${prefix}.months_enabled`] !== 'true'}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -333,7 +333,7 @@ const InterestGuaranteeSection: React.FC<{
           <Input
             value={values[`${prefix}.amount`] || ''}
             onChange={(e) => onValueChange(`${prefix}.amount`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || values[`${prefix}.amount_enabled`] !== 'true'}
             className="h-7 text-sm"
           />
         </FieldRow>
@@ -471,7 +471,7 @@ const MaturitySection: React.FC<{
           <Input
             value={values[`${prefix}.additional_flat_fee`] || ''}
             onChange={(e) => onValueChange(`${prefix}.additional_flat_fee`, e.target.value)}
-            disabled={disabled}
+            disabled={disabled || values[`${prefix}.additional_flat_fee_enabled`] !== 'true'}
             className="h-7 text-sm"
           />
         </FieldRow>
