@@ -38,6 +38,7 @@ export interface ChargeData {
   onBehalfOfAmount: string;
   amountOwedByBorrower: string;
   accruedInterest: string;
+  distributeBetweenAllLenders: string;
 }
 
 interface ChargesTableViewProps {

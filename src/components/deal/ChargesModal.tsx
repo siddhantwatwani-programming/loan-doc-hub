@@ -78,6 +78,7 @@ const getEmptyCharge = (): ChargeData => ({
   onBehalfOfAmount: '',
   amountOwedByBorrower: '',
   accruedInterest: '',
+  distributeBetweenAllLenders: '',
 });
 
 export const ChargesModal: React.FC<ChargesModalProps> = ({
@@ -348,9 +349,19 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({
                   </div>
                 </div>
 
-                {/* Amount Owed by Borrower row */}
+                {/* Distribute Between All Lenders + Amount Owed by Borrower row */}
                 <div className="grid grid-cols-[140px_1fr_1fr_1fr] items-center">
-                  <div className="px-3 py-2 text-sm font-medium text-foreground col-span-3 text-right pr-4">
+                  <div className="px-3 py-2 flex items-center gap-2">
+                    <Checkbox
+                      id="distributeBetweenAllLenders"
+                      checked={formData.distributeBetweenAllLenders === 'true'}
+                      onCheckedChange={(checked) => handleFieldChange('distributeBetweenAllLenders', checked ? 'true' : 'false')}
+                    />
+                    <Label htmlFor="distributeBetweenAllLenders" className="text-sm font-medium text-foreground cursor-pointer whitespace-nowrap">
+                      Distribute Between All Lenders
+                    </Label>
+                  </div>
+                  <div className="px-3 py-2 text-sm font-medium text-foreground col-span-2 text-right pr-4">
                     Amount Owed by Borrower:
                   </div>
                   <div className="px-2 py-1.5">
