@@ -184,9 +184,9 @@ function extractTypedValueFromJsonb(fieldData: JsonbFieldValue, dataType: FieldD
     case 'number':
     case 'currency':
     case 'percentage':
-      return fieldData.value_number?.toString() || '';
+      return fieldData.value_number?.toString() || fieldData.value_text || '';
     case 'date':
-      return fieldData.value_date || '';
+      return fieldData.value_date || fieldData.value_text || '';
     case 'boolean':
       return fieldData.value_text || '';
     default:
