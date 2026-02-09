@@ -61,11 +61,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'interestRate', label: 'Interest Rate', visible: true },
   { id: 'interestFrom', label: 'Interest From', visible: true },
   { id: 'deferred', label: 'Deferred', visible: true },
-  { id: 'owedTo', label: 'Owed To Account', visible: true },
   { id: 'originalAmount', label: 'Original Balance', visible: true },
-  { id: 'unpaidBalance', label: 'Unpaid Balance', visible: true },
-  { id: 'accruedInterest', label: 'Accrued Interest', visible: true },
-  { id: 'totalDue', label: 'Total Due', visible: true },
 ];
 
 export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
@@ -221,10 +217,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
       {charges.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
-            Total Charges: {charges.length} | 
-            Total Due: {formatCurrency(
-              charges.reduce((sum, c) => sum + (parseFloat(c.totalDue) || 0), 0).toString()
-            )}
+            Total Charges: {charges.length}
           </div>
         </div>
       )}
