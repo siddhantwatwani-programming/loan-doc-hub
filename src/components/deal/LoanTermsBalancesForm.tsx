@@ -378,12 +378,20 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
               <div className="space-y-2">
                 <Label>Held By</Label>
-                <Input
+                <Select
                   value={getValue(FIELD_KEYS.fundingHoldbackHeldBy)}
-                  onChange={(e) => setValue(FIELD_KEYS.fundingHoldbackHeldBy, e.target.value)}
+                  onValueChange={(value) => setValue(FIELD_KEYS.fundingHoldbackHeldBy, value)}
                   disabled={disabled}
-                  placeholder=""
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lender">Lender</SelectItem>
+                    <SelectItem value="company">Company</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
