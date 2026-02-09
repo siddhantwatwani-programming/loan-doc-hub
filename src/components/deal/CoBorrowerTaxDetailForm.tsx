@@ -46,7 +46,7 @@ export const CoBorrowerTaxDetailForm: React.FC<CoBorrowerTaxDetailFormProps> = (
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h3 className="font-semibold text-lg text-foreground">Tax Details</h3>
+        <h3 className="font-semibold text-lg text-foreground">1098</h3>
         <p className="text-sm text-muted-foreground">
           Co-borrower tax identification and filing information.
         </p>
