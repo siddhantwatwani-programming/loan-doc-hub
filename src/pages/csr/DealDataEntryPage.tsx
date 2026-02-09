@@ -57,16 +57,14 @@ interface Deal {
 const SECTION_LABELS: Partial<Record<FieldSection | 'origination_fees', string>> = {
   borrower: 'Borrower',
   property: 'Property',
-  loan_terms: 'Loan Terms',
+  loan_terms: 'Loan',
   lender: 'Lenders',
   broker: 'Broker',
   charges: 'Charges',
   dates: 'Dates',
-  escrow: 'Escrow',
-  participants: 'Participants',
+  escrow: 'Escrow Impound',
   notes: 'Notes',
   seller: 'Seller',
-  title: 'Titles',
   other: 'Other',
   origination_fees: 'Origination Fees',
   system: 'System',
@@ -792,7 +790,7 @@ export const DealDataEntryPage: React.FC = () => {
                     isWaitingForPrevious={isWaiting}
                     blockingRole={blockingParticipant?.role}
                     hasCompleted={hasCompleted}
-                    hideValidationStatus={['charges', 'dates', 'escrow', 'participants', 'notes', 'title', 'other'].includes(section)}
+                    hideValidationStatus={['charges', 'dates', 'escrow', 'notes', 'other'].includes(section)}
                   />
                 )}
               </TabsContent>

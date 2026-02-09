@@ -244,6 +244,9 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
         'other'
       ];
 
+      // Sections whose fields should be merged into 'other' tab instead of showing as separate tabs
+      const MERGE_INTO_OTHER: FieldSection[] = ['participants', 'title'];
+
       let mergedResolved = resolved;
       try {
         const { data: tmoFields, error: tmoError } = await supabase
@@ -283,16 +286,17 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
           // Merge fields
           const mergedFields = [...resolved.fields, ...appendedFields];
 
-          // Rebuild groups
+          // Rebuild groups, remapping MERGE_INTO_OTHER sections into 'other'
           const mergedFieldsBySection = mergedFields.reduce((acc, field) => {
-            (acc[field.section] ||= []).push(field);
+            const displaySection = MERGE_INTO_OTHER.includes(field.section) ? 'other' as FieldSection : field.section;
+            (acc[displaySection] ||= []).push(field);
             return acc;
           }, {} as Record<FieldSection, ResolvedField[]>);
 
           // Use TMO_TAB_SECTIONS order for consistent tab display
-          // Filter to sections that have fields in the merged set
+          // Filter out merged sections and only show sections that have fields
           const mergedSections = TMO_TAB_SECTIONS.filter(
-            (s) => (mergedFieldsBySection[s]?.length || 0) > 0
+            (s) => !MERGE_INTO_OTHER.includes(s) && (mergedFieldsBySection[s]?.length || 0) > 0
           );
 
           mergedResolved = {
@@ -308,6 +312,24 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
         // Non-blocking: if the dictionary lookup fails, fall back to the packet-resolved set
         console.warn('Unable to load additional TMO tab sections from field_dictionary:', e);
       }
+
+      // Remap participants/title fields into 'other' for the final resolved set
+      // (handles the case where no appended fields were added but resolved already has participants/title)
+      const finalFieldsBySection = { ...mergedResolved.fieldsBySection } as Record<FieldSection, ResolvedField[]>;
+      for (const mergeSection of MERGE_INTO_OTHER) {
+        if (finalFieldsBySection[mergeSection]?.length) {
+          finalFieldsBySection['other'] = [...(finalFieldsBySection['other'] || []), ...finalFieldsBySection[mergeSection]];
+          delete finalFieldsBySection[mergeSection];
+        }
+      }
+      const finalSections = SECTION_ORDER.filter(
+        (s) => (finalFieldsBySection[s]?.length || 0) > 0
+      );
+      mergedResolved = {
+        ...mergedResolved,
+        fieldsBySection: finalFieldsBySection,
+        sections: finalSections,
+      };
 
       setResolvedFields(mergedResolved);
 
