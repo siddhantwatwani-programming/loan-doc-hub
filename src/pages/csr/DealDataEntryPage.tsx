@@ -641,7 +641,7 @@ export const DealDataEntryPage: React.FC = () => {
         <div className="section-card">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6 flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
-              {(isExternalUser ? visibleSections : sections).map(section => {
+              {(isExternalUser ? visibleSections : sections).filter(s => SECTION_LABELS[s]).map(section => {
                 // For external users, use their filtered fields
                 const sectionFields = isExternalUser 
                   ? (visibleFieldsBySection[section] || [])
@@ -694,7 +694,7 @@ export const DealDataEntryPage: React.FC = () => {
               )}
             </TabsList>
 
-            {(isExternalUser ? visibleSections : sections).map(section => (
+            {(isExternalUser ? visibleSections : sections).filter(s => SECTION_LABELS[s]).map(section => (
               <TabsContent key={section} value={section} className="animate-fade-in">
                 {/* Use BorrowerSectionContent for the borrower section to show sub-navigation */}
                 {section === 'borrower' ? (
