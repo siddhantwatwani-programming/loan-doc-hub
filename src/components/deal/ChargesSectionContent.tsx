@@ -55,6 +55,7 @@ const extractChargesFromValues = (values: Record<string, string>): ChargeData[] 
       onBehalfOfAmount: values[`${prefix}.on_behalf_of_amount`] || '',
       amountOwedByBorrower: values[`${prefix}.amount_owed_by_borrower`] || '',
       accruedInterest: values[`${prefix}.accrued_interest`] || '',
+      distributeBetweenAllLenders: values[`${prefix}.distribute_between_all_lenders`] || '',
     };
     charges.push(charge);
   });

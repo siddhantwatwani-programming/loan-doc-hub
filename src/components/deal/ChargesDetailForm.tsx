@@ -34,6 +34,7 @@ const FIELD_KEYS = {
   onBehalfOfLenderName: 'charges.on_behalf_of_lender_name',
   onBehalfOfAmount: 'charges.on_behalf_of_amount',
   amountOwedByBorrower: 'charges.amount_owed_by_borrower',
+  distributeBetweenAllLenders: 'charges.distribute_between_all_lenders',
 };
 
 export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
@@ -344,9 +345,20 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
               </div>
             </div>
 
-            {/* Amount Owed by Borrower row */}
+            {/* Distribute Between All Lenders + Amount Owed by Borrower row */}
             <div className="grid grid-cols-[140px_1fr_1fr_1fr] items-center">
-              <div className="px-3 py-2 text-sm font-medium text-foreground col-span-3 text-right pr-4">
+              <div className="px-3 py-2 flex items-center gap-2">
+                <Checkbox
+                  id="distributeBetweenAllLendersDetail"
+                  checked={values[FIELD_KEYS.distributeBetweenAllLenders] === 'true'}
+                  onCheckedChange={(checked) => onValueChange(FIELD_KEYS.distributeBetweenAllLenders, checked ? 'true' : 'false')}
+                  disabled={disabled}
+                />
+                <Label htmlFor="distributeBetweenAllLendersDetail" className="text-sm font-medium text-foreground cursor-pointer whitespace-nowrap">
+                  Distribute Between All Lenders
+                </Label>
+              </div>
+              <div className="px-3 py-2 text-sm font-medium text-foreground col-span-2 text-right pr-4">
                 Amount Owed by Borrower:
               </div>
               <div className="px-2 py-1.5">
