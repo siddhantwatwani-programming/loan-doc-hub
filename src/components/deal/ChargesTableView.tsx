@@ -62,9 +62,9 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'interestFrom', label: 'Interest From', visible: true },
   { id: 'deferred', label: 'Deferred', visible: true },
   { id: 'owedTo', label: 'Owed To Account', visible: true },
+  { id: 'owedFrom', label: 'Owed From', visible: true },
   { id: 'originalAmount', label: 'Original Balance', visible: true },
   { id: 'unpaidBalance', label: 'Unpaid Balance', visible: true },
-  { id: 'accruedInterest', label: 'Accrued Interest', visible: true },
   { id: 'totalDue', label: 'Total Due', visible: true },
 ];
 
@@ -79,7 +79,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   totalPages = 1,
   onPageChange,
 }) => {
-  const [columns, setColumns] = useTableColumnConfig('charges_v3', DEFAULT_COLUMNS);
+  const [columns, setColumns] = useTableColumnConfig('charges_v4', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const formatCurrency = (value: string) => {
@@ -96,7 +96,6 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
       case 'unpaidBalance':
       case 'totalDue':
       case 'originalAmount':
-      case 'accruedInterest':
       case 'amountOwedByBorrower':
         return formatCurrency(charge[columnId as keyof ChargeData] as string);
       case 'interestRate':
