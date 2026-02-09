@@ -393,13 +393,6 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   />
                   <Label htmlFor={`${FIELD_KEYS.prepaidPaymentsEnabled}-cb`}>Prepaid Payments</Label>
                 </div>
-                <Input
-                  id={FIELD_KEYS.prepaidPayments}
-                  value={getValue(FIELD_KEYS.prepaidPayments)}
-                  onChange={(e) => setValue(FIELD_KEYS.prepaidPayments, e.target.value)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.prepaidPaymentsEnabled)}
-                  placeholder=""
-                />
               </div>
               <div className="space-y-2">
                 <Label>Number of Months</Label>
@@ -446,13 +439,6 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   />
                   <Label htmlFor={`${FIELD_KEYS.fundingHoldbackEnabled}-cb`}>Funding Holdback</Label>
                 </div>
-                <Input
-                  id={FIELD_KEYS.fundingHoldback}
-                  value={getValue(FIELD_KEYS.fundingHoldback)}
-                  onChange={(e) => setValue(FIELD_KEYS.fundingHoldback, e.target.value)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.fundingHoldbackEnabled)}
-                  placeholder=""
-                />
               </div>
               <div className="space-y-2">
                 <Label>Held By</Label>
