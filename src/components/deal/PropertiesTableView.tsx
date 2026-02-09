@@ -29,6 +29,10 @@ export interface PropertyData {
   ltv: string;
   apn: string;
   loanPriority: string;
+  floodZone?: string;
+  pledgedEquity?: string;
+  zoning?: string;
+  performedBy?: string;
 }
 
 interface PropertiesTableViewProps {
