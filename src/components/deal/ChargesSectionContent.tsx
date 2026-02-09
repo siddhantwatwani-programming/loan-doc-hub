@@ -121,8 +121,8 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
   }, []);
 
   const handleRowClick = useCallback((charge: ChargeData) => {
-    setEditingCharge(charge);
-    setModalOpen(true);
+    setSelectedChargePrefix(charge.id);
+    setActiveSubSection('detail');
   }, []);
 
   const handleBackToTable = useCallback(() => {
