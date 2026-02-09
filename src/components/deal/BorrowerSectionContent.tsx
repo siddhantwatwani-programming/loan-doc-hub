@@ -213,7 +213,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
 
   // Check if we're in detail view
   // Borrower detail includes: primary, additional_guarantor, banking, tax_detail, note, AND co_borrowers (table within detail)
-  const isBorrowerDetailView = ['primary', 'additional_guarantor', 'banking', 'tax_detail', 'note', 'co_borrowers'].includes(activeSubSection);
+  const isBorrowerDetailView = ['primary', 'additional_guarantor', 'authorized_party', 'trust_ledger', 'banking', 'tax_detail', 'note', 'co_borrowers'].includes(activeSubSection);
   const isCoBorrowerDetailView = ['coborrower_primary', 'coborrower_banking', 'coborrower_tax_detail', 'coborrower_note', 'coborrower_attachment'].includes(activeSubSection);
   const isDetailView = isBorrowerDetailView || isCoBorrowerDetailView;
   
@@ -520,6 +520,24 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
             disabled={disabled}
             calculationResults={calculationResults}
           />
+        );
+      case 'authorized_party':
+        return (
+          <div className="p-6 flex items-center justify-center min-h-[300px]">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">Authorized Party</h3>
+              <p className="text-muted-foreground">Coming Soon</p>
+            </div>
+          </div>
+        );
+      case 'trust_ledger':
+        return (
+          <div className="p-6 flex items-center justify-center min-h-[300px]">
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">Trust Ledger</h3>
+              <p className="text-muted-foreground">Coming Soon</p>
+            </div>
+          </div>
         );
       case 'tax_detail':
         return (

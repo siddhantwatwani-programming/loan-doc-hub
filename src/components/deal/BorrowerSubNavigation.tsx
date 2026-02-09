@@ -6,6 +6,8 @@ export type BorrowerSubSection =
   | 'co_borrowers' 
   | 'primary' 
   | 'additional_guarantor' 
+  | 'authorized_party'
+  | 'trust_ledger'
   | 'banking' 
   | 'tax_detail'
   | 'note'
@@ -25,11 +27,12 @@ interface BorrowerSubNavigationProps {
 
 const BORROWER_DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
   { key: 'primary', label: 'Primary' },
+  { key: 'co_borrowers', label: 'Co-Borrower' },
   { key: 'additional_guarantor', label: 'Additional Guarantor' },
+  { key: 'authorized_party', label: 'Authorized Party' },
+  { key: 'trust_ledger', label: 'Trust Ledger' },
   { key: 'banking', label: 'Banking' },
-  { key: 'tax_detail', label: 'Tax Details' },
-  { key: 'note', label: 'Note' },
-  { key: 'co_borrowers', label: 'Co-Borrowers' },
+  { key: 'tax_detail', label: '1098' },
 ];
 
 const COBORROWER_DETAIL_SECTIONS: { key: BorrowerSubSection; label: string }[] = [
