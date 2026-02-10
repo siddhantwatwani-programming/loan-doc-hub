@@ -255,9 +255,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               <Label className="text-sm text-muted-foreground">Loan ID</Label>
               <Input
                 value={getValue('loanId')}
-                disabled={true}
-                readOnly
-                className="h-8 bg-muted"
+                onChange={(e) => handleChange('loanId', e.target.value)}
+                disabled={disabled}
+                className="h-8"
               />
             </div>
 
