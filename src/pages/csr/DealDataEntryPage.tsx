@@ -707,7 +707,6 @@ export const DealDataEntryPage: React.FC = () => {
                     values={values}
                     onValueChange={updateValue}
                     onRemoveValuesByPrefix={removeValuesByPrefix}
-                    onSaveDraft={saveDraft}
                     showValidation={showValidation}
                     disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
                     calculationResults={calculationResults}
