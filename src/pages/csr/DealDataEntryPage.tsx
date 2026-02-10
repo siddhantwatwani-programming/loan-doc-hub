@@ -123,6 +123,7 @@ export const DealDataEntryPage: React.FC = () => {
     saving,
     isDirty,
     updateValue,
+    removeValuesByPrefix,
     saveDraft,
     getMissingRequiredFields,
     isSectionComplete,
@@ -705,6 +706,7 @@ export const DealDataEntryPage: React.FC = () => {
                     }
                     values={values}
                     onValueChange={updateValue}
+                    onRemoveValuesByPrefix={removeValuesByPrefix}
                     showValidation={showValidation}
                     disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
                     calculationResults={calculationResults}
