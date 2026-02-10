@@ -19,6 +19,7 @@ interface LoanTermsBalancesFormProps {
 const FIELD_KEYS = {
   // Terms column
   loanAmount: 'loan_terms.loan_amount',
+  originalAmount: 'loan.original_amount',
   noteRate: 'loan_terms.note_rate',
   soldRate: 'loan_terms.sold_rate',
   soldRateEnabled: 'loan_terms.sold_rate_enabled',
@@ -126,6 +127,21 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   id={FIELD_KEYS.loanAmount}
                   value={getValue(FIELD_KEYS.loanAmount)}
                   onChange={(e) => setValue(FIELD_KEYS.loanAmount, e.target.value)}
+                  disabled={disabled}
+                  className="pl-7"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor={FIELD_KEYS.originalAmount}>Original Amount</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                <Input
+                  id={FIELD_KEYS.originalAmount}
+                  value={getValue(FIELD_KEYS.originalAmount)}
+                  onChange={(e) => setValue(FIELD_KEYS.originalAmount, e.target.value)}
                   disabled={disabled}
                   className="pl-7"
                   placeholder="0.00"
