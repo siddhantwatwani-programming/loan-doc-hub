@@ -23,6 +23,7 @@ interface BorrowerSectionContentProps {
   fields: FieldDefinition[];
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
+  onRemoveValuesByPrefix?: (prefix: string) => void;
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
@@ -194,6 +195,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   fields,
   values,
   onValueChange,
+  onRemoveValuesByPrefix,
   showValidation = false,
   disabled = false,
   calculationResults = {},
@@ -322,16 +324,19 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     setIsLoading(false);
   }, [editingBorrower, values, onValueChange, allBorrowers]);
 
-  // Handle deleting a borrower - clear all prefixed values
+  // Handle deleting a borrower - remove all prefixed values from state and mark for backend cleanup
   const handleDeleteBorrower = useCallback((borrower: BorrowerData) => {
-    const prefix = borrower.id;
-    // Find all keys with this borrower's prefix and set them to empty
-    Object.keys(values).forEach(key => {
-      if (key.startsWith(`${prefix}.`)) {
-        onValueChange(key, '');
-      }
-    });
-  }, [values, onValueChange]);
+    if (onRemoveValuesByPrefix) {
+      onRemoveValuesByPrefix(borrower.id);
+    } else {
+      // Fallback: set values to empty (will be filtered out on save)
+      Object.keys(values).forEach(key => {
+        if (key.startsWith(`${borrower.id}.`)) {
+          onValueChange(key, '');
+        }
+      });
+    }
+  }, [values, onValueChange, onRemoveValuesByPrefix]);
 
   // Handle page change
   const handlePageChange = useCallback((page: number) => {

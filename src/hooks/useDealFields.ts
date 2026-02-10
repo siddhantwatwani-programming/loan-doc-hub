@@ -48,6 +48,7 @@ export interface DealFieldsData {
 
 export interface UseDealFieldsReturn extends DealFieldsData {
   updateValue: (fieldKey: string, value: string, isRequiredField?: boolean) => void;
+  removeValuesByPrefix: (prefix: string) => void;
   saveDraft: () => Promise<boolean>;
   getValidationErrors: (section?: FieldSection) => string[];
   getMissingRequiredFields: (section?: FieldSection) => ResolvedField[];
@@ -205,6 +206,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
   const [error, setError] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [requiredFieldChanged, setRequiredFieldChanged] = useState(false);
+  const [deletedPrefixes, setDeletedPrefixes] = useState<string[]>([]);
 
   // Fetch resolved fields and values
   useEffect(() => {
@@ -437,6 +439,21 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     }
   }, [resolvedFields]);
 
+  // Remove all values with a given prefix (e.g., "borrower2") from state and track for backend cleanup
+  const removeValuesByPrefix = useCallback((prefix: string) => {
+    setValues(prev => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach(key => {
+        if (key.startsWith(`${prefix}.`)) {
+          delete updated[key];
+        }
+      });
+      return updated;
+    });
+    setDeletedPrefixes(prev => [...prev, prefix]);
+    setIsDirty(true);
+  }, []);
+
   // Memoize calculated fields list
   const calculatedFieldsList = useMemo((): CalculatedField[] => {
     if (!resolvedFields) return [];
@@ -591,8 +608,58 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
         }
 
         const sectionsToPersist = Object.entries(sectionUpdates).filter(([, v]) => Object.keys(v).length > 0);
-        if (sectionsToPersist.length === 0) {
+        
+        // If we have deleted prefixes but no sections to persist, we still need to clean up existing JSONB
+        if (sectionsToPersist.length === 0 && deletedPrefixes.length === 0) {
           throw new Error('Nothing to save (no matching field definitions found)');
+        }
+
+        // Also clean deleted prefixes from sections not in sectionsToPersist
+        if (deletedPrefixes.length > 0) {
+          const { data: allSections, error: allSectionsError } = await supabase
+            .from('deal_section_values')
+            .select('id, section, field_values, version')
+            .eq('deal_id', dealId);
+
+          if (!allSectionsError && allSections) {
+            for (const sv of allSections) {
+              const sectionKey = sv.section;
+              // Skip sections already in sectionsToPersist (handled below)
+              if (sectionUpdates[sectionKey] && Object.keys(sectionUpdates[sectionKey]).length > 0) continue;
+
+              const existingFieldValues = (sv.field_values as unknown as Record<string, JsonbFieldValue>) || {};
+              let modified = false;
+
+              Object.keys(existingFieldValues).forEach(storageKey => {
+                const { prefix } = parseStorageKey(storageKey);
+                if (prefix && deletedPrefixes.includes(prefix)) {
+                  delete existingFieldValues[storageKey];
+                  modified = true;
+                }
+                const val = existingFieldValues[storageKey];
+                if (val?.indexed_key) {
+                  for (const dp of deletedPrefixes) {
+                    if (val.indexed_key.startsWith(`${dp}.`)) {
+                      delete existingFieldValues[storageKey];
+                      modified = true;
+                      break;
+                    }
+                  }
+                }
+              });
+
+              if (modified) {
+                await supabase
+                  .from('deal_section_values')
+                  .update({
+                    field_values: JSON.parse(JSON.stringify(existingFieldValues)),
+                    updated_at: new Date().toISOString(),
+                    version: (sv.version || 0) + 1,
+                  })
+                  .eq('id', sv.id);
+              }
+            }
+          }
         }
 
         // Persist each section: insert if missing, otherwise update
@@ -612,6 +679,26 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
             ...existingFieldValues,
             ...newFieldValues,
           };
+
+          // Remove composite keys belonging to deleted prefixes (e.g., "borrower2::uuid")
+          if (deletedPrefixes.length > 0) {
+            Object.keys(mergedFieldValues).forEach(storageKey => {
+              const { prefix } = parseStorageKey(storageKey);
+              if (prefix && deletedPrefixes.includes(prefix)) {
+                delete mergedFieldValues[storageKey];
+              }
+              // Also check indexed_key inside the value
+              const val = mergedFieldValues[storageKey];
+              if (val?.indexed_key) {
+                for (const dp of deletedPrefixes) {
+                  if (val.indexed_key.startsWith(`${dp}.`)) {
+                    delete mergedFieldValues[storageKey];
+                    break;
+                  }
+                }
+              }
+            });
+          }
 
           const newVersion = (existingSection?.version || 0) + 1;
 
@@ -640,6 +727,9 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
         }
       }
 
+      // Clear deleted prefixes after successful save
+      setDeletedPrefixes([]);
+
       toast({
         title: 'Saved',
         description: 'Deal data saved successfully',
@@ -657,7 +747,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     } finally {
       setSaving(false);
     }
-  }, [dealId, values, fieldDataTypes, fieldIdMap, resolvedFields, computeCalculatedFields, toast]);
+  }, [dealId, values, fieldDataTypes, fieldIdMap, resolvedFields, computeCalculatedFields, deletedPrefixes, toast]);
 
   const getMissingRequiredFields = useCallback((section?: FieldSection): ResolvedField[] => {
     if (!resolvedFields) return [];
@@ -698,6 +788,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     error,
     isDirty,
     updateValue,
+    removeValuesByPrefix,
     saveDraft,
     getValidationErrors,
     getMissingRequiredFields,
