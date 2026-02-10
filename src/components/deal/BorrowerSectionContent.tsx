@@ -24,7 +24,6 @@ interface BorrowerSectionContentProps {
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   onRemoveValuesByPrefix?: (prefix: string) => void;
-  onSaveDraft?: () => Promise<boolean>;
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
@@ -197,7 +196,6 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   values,
   onValueChange,
   onRemoveValuesByPrefix,
-  onSaveDraft,
   showValidation = false,
   disabled = false,
   calculationResults = {},
@@ -326,26 +324,19 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     setIsLoading(false);
   }, [editingBorrower, values, onValueChange, allBorrowers]);
 
-  // Handle deleting a borrower - remove all prefixed values from state, mark for backend cleanup, and auto-save
-  const handleDeleteBorrower = useCallback(async (borrower: BorrowerData) => {
+  // Handle deleting a borrower - remove all prefixed values from state and mark for backend cleanup
+  // Auto-save is handled reactively inside useDealFields when deletedPrefixes changes
+  const handleDeleteBorrower = useCallback((borrower: BorrowerData) => {
     if (onRemoveValuesByPrefix) {
       onRemoveValuesByPrefix(borrower.id);
     } else {
-      // Fallback: set values to empty (will be filtered out on save)
       Object.keys(values).forEach(key => {
         if (key.startsWith(`${borrower.id}.`)) {
           onValueChange(key, '');
         }
       });
     }
-    // Auto-save to persist deletion to backend
-    if (onSaveDraft) {
-      // Use setTimeout to allow state to settle before saving
-      setTimeout(async () => {
-        await onSaveDraft();
-      }, 100);
-    }
-  }, [values, onValueChange, onRemoveValuesByPrefix, onSaveDraft]);
+  }, [values, onValueChange, onRemoveValuesByPrefix]);
 
   // Handle page change
   const handlePageChange = useCallback((page: number) => {

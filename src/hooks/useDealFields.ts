@@ -439,8 +439,8 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     }
   }, [resolvedFields]);
 
-  // Remove all values with a given prefix (e.g., "borrower2") from state and track for backend cleanup
-  const removeValuesByPrefix = useCallback((prefix: string) => {
+  // Remove all values with a given prefix (e.g., "borrower2") from state and persist deletion to backend
+  const removeValuesByPrefix = useCallback(async (prefix: string) => {
     setValues(prev => {
       const updated = { ...prev };
       Object.keys(updated).forEach(key => {
@@ -452,7 +452,60 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
     });
     setDeletedPrefixes(prev => [...prev, prefix]);
     setIsDirty(true);
-  }, []);
+
+    // Immediately persist the deletion to backend by cleaning JSONB storage
+    try {
+      const { data: allSections, error: fetchError } = await supabase
+        .from('deal_section_values')
+        .select('id, section, field_values, version')
+        .eq('deal_id', dealId);
+
+      if (fetchError) throw fetchError;
+
+      for (const sv of (allSections || [])) {
+        const existingFieldValues = (sv.field_values as unknown as Record<string, JsonbFieldValue>) || {};
+        let modified = false;
+
+        Object.keys(existingFieldValues).forEach(storageKey => {
+          // Check composite key prefix (e.g., "borrower2::uuid")
+          const { prefix: keyPrefix } = parseStorageKey(storageKey);
+          if (keyPrefix && keyPrefix === prefix) {
+            delete existingFieldValues[storageKey];
+            modified = true;
+          }
+          // Also check indexed_key inside the value
+          const val = existingFieldValues[storageKey];
+          if (val?.indexed_key && val.indexed_key.startsWith(`${prefix}.`)) {
+            delete existingFieldValues[storageKey];
+            modified = true;
+          }
+        });
+
+        if (modified) {
+          await supabase
+            .from('deal_section_values')
+            .update({
+              field_values: JSON.parse(JSON.stringify(existingFieldValues)),
+              updated_at: new Date().toISOString(),
+              version: (sv.version || 0) + 1,
+            })
+            .eq('id', sv.id);
+        }
+      }
+
+      toast({
+        title: 'Deleted',
+        description: 'Record deleted successfully',
+      });
+    } catch (err: any) {
+      console.error('Error persisting deletion:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to persist deletion',
+        variant: 'destructive',
+      });
+    }
+  }, [dealId, toast]);
 
   // Memoize calculated fields list
   const calculatedFieldsList = useMemo((): CalculatedField[] => {
