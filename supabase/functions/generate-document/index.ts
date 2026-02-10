@@ -118,10 +118,12 @@ async function generateSingleDocument(
       .eq("deal_id", dealId);
 
     // Get all field_dictionary_ids from JSONB keys
+    // Handle composite keys like "borrower1::uuid" used by multi-entity sections
     const allFieldDictIds: string[] = [];
     (sectionValues || []).forEach((sv: any) => {
-      Object.keys(sv.field_values || {}).forEach((id: string) => {
-        if (!allFieldDictIds.includes(id)) allFieldDictIds.push(id);
+      Object.keys(sv.field_values || {}).forEach((key: string) => {
+        const fieldDictId = key.includes("::") ? key.split("::")[1] : key;
+        if (fieldDictId && !allFieldDictIds.includes(fieldDictId)) allFieldDictIds.push(fieldDictId);
       });
     });
     
@@ -137,12 +139,21 @@ async function generateSingleDocument(
 
     const fieldValues = new Map<string, FieldValueData>();
     (sectionValues || []).forEach((sv: any) => {
-      Object.entries(sv.field_values || {}).forEach(([fieldDictId, data]: [string, any]) => {
+      Object.entries(sv.field_values || {}).forEach(([key, data]: [string, any]) => {
+        // Extract actual field_dictionary_id from composite keys (e.g., "borrower1::uuid" -> "uuid")
+        const fieldDictId = key.includes("::") ? key.split("::")[1] : key;
         const fieldDict = allFieldDictMap.get(fieldDictId);
         if (fieldDict) {
           const dataType = fieldDict.data_type || "text";
           const rawValue = extractRawValueFromJsonb(data, dataType);
-          fieldValues.set(fieldDict.field_key, { rawValue, dataType });
+          // Use indexed_key if available for more specific field mapping, otherwise use canonical field_key
+          const indexedKey = (data as any)?.indexed_key;
+          const resolvedKey = indexedKey || fieldDict.field_key;
+          fieldValues.set(resolvedKey, { rawValue, dataType });
+          // Also set the canonical field_key so merge tags can match either way
+          if (indexedKey && indexedKey !== fieldDict.field_key) {
+            fieldValues.set(fieldDict.field_key, { rawValue, dataType });
+          }
         }
       });
     });
