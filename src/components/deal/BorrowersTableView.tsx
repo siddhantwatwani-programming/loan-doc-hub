@@ -1,5 +1,5 @@
-import React from 'react';
-import { Plus, Pencil } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,6 +19,16 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 
@@ -48,6 +58,7 @@ interface BorrowersTableViewProps {
   onEditBorrower: (borrower: BorrowerData) => void;
   onRowClick: (borrower: BorrowerData) => void;
   onPrimaryChange: (borrowerId: string, isPrimary: boolean) => void;
+  onDeleteBorrower?: (borrower: BorrowerData) => void;
   disabled?: boolean;
   isLoading?: boolean;
   currentPage: number;
@@ -74,6 +85,7 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
   onEditBorrower,
   onRowClick,
   onPrimaryChange,
+  onDeleteBorrower,
   disabled = false,
   isLoading = false,
   currentPage,
@@ -81,6 +93,7 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
   onPageChange,
 }) => {
   const [columns, setColumns] = useTableColumnConfig('borrowers', DEFAULT_COLUMNS);
+  const [borrowerToDelete, setBorrowerToDelete] = useState<BorrowerData | null>(null);
   
   const visibleColumns = columns.filter((col) => col.visible);
 
@@ -118,7 +131,7 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
         return borrower.capacity || '-';
       case 'actions':
         return (
-          <div onClick={(e) => e.stopPropagation()}>
+          <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="icon"
@@ -128,6 +141,17 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
             >
               <Pencil className="h-4 w-4" />
             </Button>
+            {onDeleteBorrower && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setBorrowerToDelete(borrower)}
+                disabled={disabled}
+                className="h-8 w-8 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         );
       default:
@@ -268,6 +292,35 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
           </div>
         </div>
       )}
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!borrowerToDelete} onOpenChange={(open) => !open && setBorrowerToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Borrower</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{' '}
+              <span className="font-medium">
+                {borrowerToDelete?.fullName || `${borrowerToDelete?.firstName || ''} ${borrowerToDelete?.lastName || ''}`.trim() || 'this borrower'}
+              </span>
+              ? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (borrowerToDelete && onDeleteBorrower) {
+                  onDeleteBorrower(borrowerToDelete);
+                }
+                setBorrowerToDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

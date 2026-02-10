@@ -322,6 +322,17 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     setIsLoading(false);
   }, [editingBorrower, values, onValueChange, allBorrowers]);
 
+  // Handle deleting a borrower - clear all prefixed values
+  const handleDeleteBorrower = useCallback((borrower: BorrowerData) => {
+    const prefix = borrower.id;
+    // Find all keys with this borrower's prefix and set them to empty
+    Object.keys(values).forEach(key => {
+      if (key.startsWith(`${prefix}.`)) {
+        onValueChange(key, '');
+      }
+    });
+  }, [values, onValueChange]);
+
   // Handle page change
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
@@ -467,6 +478,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
             onEditBorrower={handleEditBorrower}
             onRowClick={handleRowClick}
             onPrimaryChange={handlePrimaryChange}
+            onDeleteBorrower={handleDeleteBorrower}
             disabled={disabled}
             isLoading={isLoading}
             currentPage={currentPage}
