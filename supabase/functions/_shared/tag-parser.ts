@@ -36,6 +36,28 @@ export function normalizeWordXml(xmlContent: string): string {
   const fragmentedUnderscore = /([A-Za-z0-9]+)(<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)_(<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)?([A-Za-z0-9]+)/g;
   result = result.replace(fragmentedUnderscore, "$1_$4");
   
+  // Handle split opening braces: {</w:t></w:r><w:r><w:t>{ -> {{
+  const splitOpenBraces = /\{((?:<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>)+)\{/g;
+  result = result.replace(splitOpenBraces, (match) => {
+    console.log(`[tag-parser] Consolidated fragmented opening braces {{`);
+    return '{{';
+  });
+  
+  // Handle split closing braces: }</w:t></w:r><w:r><w:t>} -> }}
+  const splitCloseBraces = /\}((?:<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>)+)\}/g;
+  result = result.replace(splitCloseBraces, (match) => {
+    console.log(`[tag-parser] Consolidated fragmented closing braces }}`);
+    return '}}';
+  });
+
+  // Handle dots fragmented across runs: field</w:t></w:r><w:r><w:t>.name -> field.name
+  const fragmentedDot = /([A-Za-z0-9_]+)((?:<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>)+)\.([A-Za-z0-9_]+)/g;
+  result = result.replace(fragmentedDot, (match, before, xmlTags, after) => {
+    // Only consolidate if this looks like it's inside a merge tag context
+    console.log(`[tag-parser] Consolidated fragmented dot: ${before}.${after}`);
+    return `${before}.${after}`;
+  });
+
   // Handle fragmented curly brace patterns {{...}}
   // Word splits tags like {{field_key}} into {{</w:t></w:r><w:r>field_key</w:t></w:r>}}
   const curlyFragmentedPattern = /\{\{((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
@@ -44,6 +66,15 @@ export function normalizeWordXml(xmlContent: string): string {
       console.log(`[tag-parser] Found fragmented curly tag, consolidating: {{${fieldName}}}`);
     }
     return `{{${fieldName}}}`;
+  });
+
+  // Handle curly tags with inline transforms after consolidation: {{field|transform}}
+  const curlyTransformFragmented = /\{\{((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\|((?:<[^>]*>|\s)*?)([A-Za-z0-9_]+)((?:<[^>]*>|\s)*?)\}\}/g;
+  result = result.replace(curlyTransformFragmented, (match, pre1, fieldName, mid1, mid2, transform, post) => {
+    if (pre1.includes("<") || mid1.includes("<") || mid2.includes("<") || post.includes("<")) {
+      console.log(`[tag-parser] Found fragmented curly tag with transform, consolidating: {{${fieldName}|${transform}}}`);
+    }
+    return `{{${fieldName}|${transform}}}`;
   });
   
   return result;
