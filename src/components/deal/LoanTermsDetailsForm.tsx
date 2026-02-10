@@ -19,7 +19,7 @@ interface LoanTermsDetailsFormProps {
 const FIELD_KEYS = {
   // Details column
   company: 'loan_terms.details_company',
-  loanCode: 'loan_terms.loan_code',
+  loanNumber: 'Terms.LoanNumber',
   assignedCsr: 'loan_terms.assigned_csr',
   originatingVendor: 'loan_terms.details_originating_vendor',
   origination: 'loan_terms.origination',
@@ -131,11 +131,11 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor={FIELD_KEYS.loanCode}>Loan Code</Label>
+              <Label htmlFor={FIELD_KEYS.loanNumber}>Loan Number</Label>
               <Input
-                id={FIELD_KEYS.loanCode}
-                value={getValue(FIELD_KEYS.loanCode)}
-                onChange={(e) => setValue(FIELD_KEYS.loanCode, e.target.value)}
+                id={FIELD_KEYS.loanNumber}
+                value={getValue(FIELD_KEYS.loanNumber)}
+                onChange={(e) => setValue(FIELD_KEYS.loanNumber, e.target.value)}
                 disabled={disabled}
                 placeholder=""
               />
