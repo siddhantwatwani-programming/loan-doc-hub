@@ -175,10 +175,18 @@ export function replaceLabelBasedFields(
         const replaceNextPattern = new RegExp(`\\b${escapedText}\\b`, "gi");
         if (replaceNextPattern.test(result)) {
           result = result.replace(new RegExp(`\\b${escapedText}\\b`, "gi"), (match, offset) => {
-            // Check if this occurrence is followed by a merge tag (within ~200 chars, allowing XML between)
+            // Check if this occurrence is followed by a merge tag or by resolved text content
+            // (merge tags may already be replaced at this point, leaving the value inline)
             const after = result.substring(offset + match.length, offset + match.length + 200);
             if (/^\s*(?:<[^>]*>\s*)*\{\{/.test(after)) {
               console.log(`[tag-parser] Label "${label}" -> skipped blanking (adjacent to merge tag)`);
+              return match; // Keep static title
+            }
+            // Also skip if followed by non-whitespace text content (already-resolved merge tag value)
+            // Extract first text content after any XML tags
+            const textAfter = after.replace(/<[^>]*>/g, '').trim();
+            if (textAfter.length > 0) {
+              console.log(`[tag-parser] Label "${label}" -> skipped blanking (followed by text content "${textAfter.substring(0, 30)}")`);
               return match; // Keep static title
             }
             return "";
