@@ -16,6 +16,10 @@ import { resolveFieldKeyWithMap, getFieldData } from "./field-resolver.ts";
 export function normalizeWordXml(xmlContent: string): string {
   let result = xmlContent;
   
+  // Strip Word spell-check markers (proofErr) that fragment merge tags
+  // These self-closing elements have no content value and break tag detection
+  result = result.replace(/<w:proofErr[^/]*\/>/g, '');
+  
   // Handle fragmented merge fields
   const fragmentedPattern = /«((?:<[^>]*>|\s)*?)([A-Za-z0-9_]+)((?:<[^>]*>|\s)*?)»/g;
   result = result.replace(fragmentedPattern, (match, pre, fieldName, post) => {
@@ -143,19 +147,27 @@ export function replaceLabelBasedFields(
   content: string,
   fieldValues: Map<string, FieldValueData>,
   fieldTransforms: Map<string, string>,
-  labelMap: Record<string, LabelMapping>
+  labelMap: Record<string, LabelMapping>,
+  replacedFieldKeys?: Set<string>
 ): { content: string; replacementCount: number } {
   let result = content;
   let replacementCount = 0;
   
   for (const [label, mapping] of Object.entries(labelMap)) {
+    // Skip labels for fields that were already replaced by merge tags
+    if (replacedFieldKeys?.has(mapping.fieldKey)) {
+      console.log(`[tag-parser] Label "${label}" -> skipped (field ${mapping.fieldKey} already replaced by merge tag)`);
+      continue;
+    }
+    
     const fieldData = fieldValues.get(mapping.fieldKey);
     if (!fieldData || fieldData.rawValue === null) {
       // If mapped field is empty, leave the document field blank
       if (mapping.replaceNext) {
         const textToReplace = mapping.replaceNext;
         const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const replaceNextPattern = new RegExp(escapedText, "gi");
+        // Use word boundaries to prevent partial word matches (e.g., "Date" matching "Dated")
+        const replaceNextPattern = new RegExp(`\\b${escapedText}\\b`, "gi");
         if (replaceNextPattern.test(result)) {
           result = result.replace(replaceNextPattern, "");
           replacementCount++;
@@ -197,7 +209,8 @@ export function replaceLabelBasedFields(
     if (mapping.replaceNext) {
       const textToReplace = mapping.replaceNext;
       const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const replaceNextPattern = new RegExp(escapedText, 'gi');
+      // Use word boundaries to prevent partial word matches
+      const replaceNextPattern = new RegExp(`\\b${escapedText}\\b`, 'gi');
       
       if (replaceNextPattern.test(result)) {
         result = result.replace(replaceNextPattern, formattedValue);
@@ -250,6 +263,11 @@ export function replaceMergeTags(
   // Parse and replace merge tags
   const tags = parseWordMergeFields(result);
   
+  // Track which field keys were successfully replaced by merge tags
+  // so label-based replacement can skip them (prevents label aliases from
+  // damaging static document titles like "Loan No", "Current Lender", etc.)
+  const replacedFieldKeys = new Set<string>();
+  
   for (const tag of tags) {
     // Use validFieldKeys for direct field_key resolution
     const canonicalKey = resolveFieldKeyWithMap(tag.tagName, mergeTagMap, validFieldKeys);
@@ -267,6 +285,12 @@ export function replaceMergeTags(
         resolvedValue = formatByDataType(fieldData.rawValue, fieldData.dataType);
       }
       console.log(`[tag-parser] Replacing ${tag.tagName} -> ${transformKey} = "${resolvedValue}"`);
+      
+      // Track all resolved keys so labels don't re-replace them
+      replacedFieldKeys.add(canonicalKey);
+      if (resolved?.key && resolved.key !== canonicalKey) {
+        replacedFieldKeys.add(resolved.key);
+      }
     } else {
       console.log(`[tag-parser] No data for ${tag.tagName} (canonical: ${canonicalKey})`);
     }
@@ -275,8 +299,8 @@ export function replaceMergeTags(
   }
   
   // Always run label-based replacement after merge tag replacement
-  console.log(`[tag-parser] Running label-based replacement (${tags.length} merge tags were processed)`);
-  const labelResult = replaceLabelBasedFields(result, fieldValues, fieldTransforms, labelMap);
+  console.log(`[tag-parser] Running label-based replacement (${tags.length} merge tags were processed, ${replacedFieldKeys.size} fields already resolved)`);
+  const labelResult = replaceLabelBasedFields(result, fieldValues, fieldTransforms, labelMap, replacedFieldKeys);
   result = labelResult.content;
   console.log(`[tag-parser] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
   
