@@ -20,6 +20,10 @@ export function normalizeWordXml(xmlContent: string): string {
   // These self-closing elements have no content value and break tag detection
   result = result.replace(/<w:proofErr[^/]*\/>/g, '');
   
+  // Common pattern for a Word XML run boundary: </w:t></w:r><w:r ...><w:rPr>...</w:rPr>?<w:t ...>
+  // <w:rPr> contains formatting children like <w:rFonts/>, <w:sz/>, <w:b/> etc.
+  const RUN_BREAK = `<\\/w:t><\\/w:r><w:r[^>]*>(?:<w:rPr>(?:<[^>]*\\/?>)*<\\/w:rPr>)?<w:t[^>]*>`;
+  
   // Handle fragmented merge fields
   const fragmentedPattern = /«((?:<[^>]*>|\s)*?)([A-Za-z0-9_]+)((?:<[^>]*>|\s)*?)»/g;
   result = result.replace(fragmentedPattern, (match, pre, fieldName, post) => {
@@ -30,34 +34,33 @@ export function normalizeWordXml(xmlContent: string): string {
   });
   
   // Handle XML-fragmented chevron patterns
-  const leftChevronFragmented = /«((?:<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)+)/g;
+  const leftChevronFragmented = new RegExp(`«((?:${RUN_BREAK})+)`, 'g');
   result = result.replace(leftChevronFragmented, () => "«");
   
-  const rightChevronFragmented = /((?:<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)+)»/g;
+  const rightChevronFragmented = new RegExp(`((?:${RUN_BREAK})+)»`, 'g');
   result = result.replace(rightChevronFragmented, () => "»");
   
   // Handle underscores that get their own text runs
-  const fragmentedUnderscore = /([A-Za-z0-9]+)(<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)_(<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)?([A-Za-z0-9]+)/g;
+  const fragmentedUnderscore = new RegExp(`([A-Za-z0-9]+)(${RUN_BREAK})_(${RUN_BREAK})?([A-Za-z0-9]+)`, 'g');
   result = result.replace(fragmentedUnderscore, "$1_$4");
   
-  // Handle split opening braces: {</w:t></w:r><w:r><w:t>{ -> {{
-  const splitOpenBraces = /\{((?:<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>)+)\{/g;
+  // Handle split opening braces: {</w:t></w:r><w:r><w:rPr>...</w:rPr><w:t>{ -> {{
+  const splitOpenBraces = new RegExp(`\\{((?:${RUN_BREAK})+)\\{`, 'g');
   result = result.replace(splitOpenBraces, (match) => {
     console.log(`[tag-parser] Consolidated fragmented opening braces {{`);
     return '{{';
   });
   
-  // Handle split closing braces: }</w:t></w:r><w:r><w:t>} -> }}
-  const splitCloseBraces = /\}((?:<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>)+)\}/g;
+  // Handle split closing braces: }</w:t></w:r><w:r><w:rPr>...</w:rPr><w:t>} -> }}
+  const splitCloseBraces = new RegExp(`\\}((?:${RUN_BREAK})+)\\}`, 'g');
   result = result.replace(splitCloseBraces, (match) => {
     console.log(`[tag-parser] Consolidated fragmented closing braces }}`);
     return '}}';
   });
 
   // Handle dots fragmented across runs: field</w:t></w:r><w:r><w:t>.name -> field.name
-  const fragmentedDot = /([A-Za-z0-9_]+)((?:<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>)+)\.([A-Za-z0-9_]+)/g;
+  const fragmentedDot = new RegExp(`([A-Za-z0-9_]+)((?:${RUN_BREAK})+)\\.([A-Za-z0-9_]+)`, 'g');
   result = result.replace(fragmentedDot, (match, before, xmlTags, after) => {
-    // Only consolidate if this looks like it's inside a merge tag context
     console.log(`[tag-parser] Consolidated fragmented dot: ${before}.${after}`);
     return `${before}.${after}`;
   });
@@ -167,9 +170,18 @@ export function replaceLabelBasedFields(
         const textToReplace = mapping.replaceNext;
         const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         // Use word boundaries to prevent partial word matches (e.g., "Date" matching "Dated")
+        // Also skip if the match is immediately followed by a merge tag {{...}}
         const replaceNextPattern = new RegExp(`\\b${escapedText}\\b`, "gi");
         if (replaceNextPattern.test(result)) {
-          result = result.replace(replaceNextPattern, "");
+          result = result.replace(new RegExp(`\\b${escapedText}\\b`, "gi"), (match, offset) => {
+            // Check if this occurrence is followed by a merge tag (within ~200 chars, allowing XML between)
+            const after = result.substring(offset + match.length, offset + match.length + 200);
+            if (/^\s*(?:<[^>]*>\s*)*\{\{/.test(after)) {
+              console.log(`[tag-parser] Label "${label}" -> skipped blanking (adjacent to merge tag)`);
+              return match; // Keep static title
+            }
+            return "";
+          });
           replacementCount++;
           console.log(`[tag-parser] Label "${label}" -> No data; blanked "${textToReplace}"`);
         }
@@ -210,10 +222,18 @@ export function replaceLabelBasedFields(
       const textToReplace = mapping.replaceNext;
       const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       // Use word boundaries to prevent partial word matches
+      // Also skip if the match is immediately followed by a merge tag {{...}}
       const replaceNextPattern = new RegExp(`\\b${escapedText}\\b`, 'gi');
       
       if (replaceNextPattern.test(result)) {
-        result = result.replace(replaceNextPattern, formattedValue);
+        result = result.replace(new RegExp(`\\b${escapedText}\\b`, 'gi'), (match, offset) => {
+          const after = result.substring(offset + match.length, offset + match.length + 200);
+          if (/^\s*(?:<[^>]*>\s*)*\{\{/.test(after)) {
+            console.log(`[tag-parser] Label "${label}" -> skipped (adjacent to merge tag)`);
+            return match; // Keep static title
+          }
+          return formattedValue;
+        });
         replacementCount++;
         console.log(`[tag-parser] Label-replaced "${textToReplace}" -> "${formattedValue}"`);
       }
@@ -275,6 +295,12 @@ export function replaceMergeTags(
     const fieldData = resolved?.data;
     let resolvedValue = "";
     
+    // Always track merge tag fields so labels don't overwrite static titles
+    replacedFieldKeys.add(canonicalKey);
+    if (resolved?.key && resolved.key !== canonicalKey) {
+      replacedFieldKeys.add(resolved.key);
+    }
+    
     if (fieldData) {
       const transformKey = resolved?.key || canonicalKey;
       const transform = tag.inlineTransform || fieldTransforms.get(transformKey);
@@ -285,12 +311,6 @@ export function replaceMergeTags(
         resolvedValue = formatByDataType(fieldData.rawValue, fieldData.dataType);
       }
       console.log(`[tag-parser] Replacing ${tag.tagName} -> ${transformKey} = "${resolvedValue}"`);
-      
-      // Track all resolved keys so labels don't re-replace them
-      replacedFieldKeys.add(canonicalKey);
-      if (resolved?.key && resolved.key !== canonicalKey) {
-        replacedFieldKeys.add(resolved.key);
-      }
     } else {
       console.log(`[tag-parser] No data for ${tag.tagName} (canonical: ${canonicalKey})`);
     }
