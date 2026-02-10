@@ -20,9 +20,10 @@ export function normalizeWordXml(xmlContent: string): string {
   // These self-closing elements have no content value and break tag detection
   result = result.replace(/<w:proofErr[^/]*\/>/g, '');
   
-  // Common pattern for a Word XML run boundary: </w:t></w:r><w:r ...><w:rPr>...</w:rPr>?<w:t ...>
-  // <w:rPr> contains formatting children like <w:rFonts/>, <w:sz/>, <w:b/> etc.
-  const RUN_BREAK = `<\\/w:t><\\/w:r><w:r[^>]*>(?:<w:rPr>(?:<[^>]*\\/?>)*<\\/w:rPr>)?<w:t[^>]*>`;
+  // Strip run property blocks (<w:rPr>...</w:rPr>) that sit between <w:r> and <w:t>.
+  // These contain formatting metadata (fonts, sizes, bold, etc.) but no text content.
+  // Removing them lets the simple run-boundary regex work for styled runs too.
+  result = result.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g, '');
   
   // Handle fragmented merge fields
   const fragmentedPattern = /«((?:<[^>]*>|\s)*?)([A-Za-z0-9_]+)((?:<[^>]*>|\s)*?)»/g;
@@ -34,32 +35,32 @@ export function normalizeWordXml(xmlContent: string): string {
   });
   
   // Handle XML-fragmented chevron patterns
-  const leftChevronFragmented = new RegExp(`«((?:${RUN_BREAK})+)`, 'g');
+  const leftChevronFragmented = /«((?:<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)+)/g;
   result = result.replace(leftChevronFragmented, () => "«");
   
-  const rightChevronFragmented = new RegExp(`((?:${RUN_BREAK})+)»`, 'g');
+  const rightChevronFragmented = /((?:<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)+)»/g;
   result = result.replace(rightChevronFragmented, () => "»");
   
   // Handle underscores that get their own text runs
-  const fragmentedUnderscore = new RegExp(`([A-Za-z0-9]+)(${RUN_BREAK})_(${RUN_BREAK})?([A-Za-z0-9]+)`, 'g');
+  const fragmentedUnderscore = /([A-Za-z0-9]+)(<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)_(<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)?([A-Za-z0-9]+)/g;
   result = result.replace(fragmentedUnderscore, "$1_$4");
   
-  // Handle split opening braces: {</w:t></w:r><w:r><w:rPr>...</w:rPr><w:t>{ -> {{
-  const splitOpenBraces = new RegExp(`\\{((?:${RUN_BREAK})+)\\{`, 'g');
+  // Handle split opening braces: {</w:t></w:r><w:r><w:t>{ -> {{
+  const splitOpenBraces = /\{((?:<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>)+)\{/g;
   result = result.replace(splitOpenBraces, (match) => {
     console.log(`[tag-parser] Consolidated fragmented opening braces {{`);
     return '{{';
   });
   
-  // Handle split closing braces: }</w:t></w:r><w:r><w:rPr>...</w:rPr><w:t>} -> }}
-  const splitCloseBraces = new RegExp(`\\}((?:${RUN_BREAK})+)\\}`, 'g');
+  // Handle split closing braces: }</w:t></w:r><w:r><w:t>} -> }}
+  const splitCloseBraces = /\}((?:<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>)+)\}/g;
   result = result.replace(splitCloseBraces, (match) => {
     console.log(`[tag-parser] Consolidated fragmented closing braces }}`);
     return '}}';
   });
 
   // Handle dots fragmented across runs: field</w:t></w:r><w:r><w:t>.name -> field.name
-  const fragmentedDot = new RegExp(`([A-Za-z0-9_]+)((?:${RUN_BREAK})+)\\.([A-Za-z0-9_]+)`, 'g');
+  const fragmentedDot = /([A-Za-z0-9_]+)((?:<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>)+)\.([A-Za-z0-9_]+)/g;
   result = result.replace(fragmentedDot, (match, before, xmlTags, after) => {
     console.log(`[tag-parser] Consolidated fragmented dot: ${before}.${after}`);
     return `${before}.${after}`;
