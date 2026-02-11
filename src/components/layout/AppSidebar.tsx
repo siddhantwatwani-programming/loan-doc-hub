@@ -40,6 +40,7 @@ import {
 import { BrokerServicesNav } from '@/components/layout/BrokerServicesNav';
 import { AccountingNav } from '@/components/layout/AccountingNav';
 import { SystemAdminNav } from '@/components/layout/SystemAdminNav';
+import { CLevelModuleNav } from '@/components/layout/CLevelModuleNav';
 import {
   Tooltip,
   TooltipContent,
@@ -320,6 +321,11 @@ export const AppSidebar: React.FC = () => {
           {/* System Administration Section */}
           {!isCollapsed && (
             <SystemAdminNav isCollapsed={isCollapsed} searchQuery={searchQuery} />
+          )}
+
+          {/* C Level Module Section */}
+          {!isCollapsed && (
+            <CLevelModuleNav isCollapsed={isCollapsed} searchQuery={searchQuery} />
           )}
 
           {/* Regular Nav Items */}
