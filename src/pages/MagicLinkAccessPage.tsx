@@ -128,7 +128,7 @@ export const MagicLinkAccessPage: React.FC = () => {
             <div className="flex items-center gap-3">
               <FileText className="h-5 w-5 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium text-foreground">Deal Number</p>
+                <p className="text-sm font-medium text-foreground">File Number</p>
                 <p className="text-sm text-muted-foreground">{dealInfo?.dealNumber}</p>
               </div>
             </div>
@@ -151,7 +151,7 @@ export const MagicLinkAccessPage: React.FC = () => {
           </div>
 
           <Button onClick={handleContinue} className="w-full">
-            Continue to Deal
+            Continue to File
           </Button>
         </CardContent>
       </Card>

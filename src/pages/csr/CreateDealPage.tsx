@@ -47,13 +47,13 @@ export const CreateDealPage: React.FC = () => {
         mode: 'doc_prep',
       });
 
-      toast({ title: 'Deal created successfully' });
+      toast({ title: 'File created successfully' });
       navigate(`/deals/${data.id}`);
     } catch (error: any) {
       console.error('Error creating deal:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create deal',
+        description: error.message || 'Failed to create file',
         variant: 'destructive',
       });
     } finally {
@@ -66,15 +66,15 @@ export const CreateDealPage: React.FC = () => {
       <div className="mb-6">
         <Button variant="ghost" onClick={() => navigate('/deals')} className="gap-2 mb-4">
           <ArrowLeft className="h-4 w-4" />
-          Back to Deals
+          Back to Files
         </Button>
-        <h1 className="text-2xl font-bold text-foreground">Create New Deal</h1>
+        <h1 className="text-2xl font-bold text-foreground">Create New File</h1>
         <p className="text-muted-foreground mt-1">Start a new loan document package</p>
       </div>
 
       <div className="section-card">
         <p className="text-muted-foreground mb-6">
-          Click the button below to create a new deal. You'll be taken to the deal page where you can fill in all the required information.
+          Click the button below to create a new file. You'll be taken to the file page where you can fill in all the required information.
         </p>
 
         <div className="flex gap-3">
@@ -90,7 +90,7 @@ export const CreateDealPage: React.FC = () => {
             ) : (
               <>
                 <FolderOpen className="h-4 w-4" />
-                Create Deal
+                Create File
               </>
             )}
           </Button>

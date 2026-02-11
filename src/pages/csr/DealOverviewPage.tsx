@@ -221,7 +221,7 @@ export const DealOverviewPage: React.FC = () => {
       console.error('Error fetching deal:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load deal',
+        description: 'Failed to load file',
         variant: 'destructive',
       });
     } finally {
@@ -269,9 +269,9 @@ export const DealOverviewPage: React.FC = () => {
     return (
       <div className="page-container text-center py-16">
         <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
-        <h2 className="text-xl font-semibold text-foreground mb-2">Deal Not Found</h2>
-        <p className="text-muted-foreground mb-4">The deal you're looking for doesn't exist.</p>
-        <Button onClick={() => navigate('/deals')}>Back to Deals</Button>
+        <h2 className="text-xl font-semibold text-foreground mb-2">File Not Found</h2>
+        <p className="text-muted-foreground mb-4">The file you're looking for doesn't exist.</p>
+        <Button onClick={() => navigate('/deals')}>Back to Files</Button>
       </div>
     );
   }
@@ -300,14 +300,14 @@ export const DealOverviewPage: React.FC = () => {
 
       setDeal({ ...deal, status: 'ready' });
       toast({
-        title: 'Deal Marked Ready',
-        description: 'You can now generate documents for this deal.',
+        title: 'File Marked Ready',
+        description: 'You can now generate documents for this file.',
       });
     } catch (error) {
       console.error('Error marking deal ready:', error);
       toast({
         title: 'Error',
-        description: 'Failed to mark deal as ready',
+        description: 'Failed to mark file as ready',
         variant: 'destructive',
       });
     } finally {
@@ -392,7 +392,7 @@ export const DealOverviewPage: React.FC = () => {
                     {totalMissingRequired} required field{totalMissingRequired > 1 ? 's' : ''} missing
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Complete all required fields to mark deal as ready
+                    Complete all required fields to mark file as ready
                   </p>
                 </div>
               </>
@@ -401,7 +401,7 @@ export const DealOverviewPage: React.FC = () => {
                 <CheckCircle2 className="h-5 w-5 text-success" />
                 <div>
                   <p className="font-medium text-foreground">
-                    {isReady || isGenerated ? 'Deal is ready for document generation' : 'All required fields complete'}
+                    {isReady || isGenerated ? 'File is ready for document generation' : 'All required fields complete'}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {totalRequiredFields} required field{totalRequiredFields > 1 ? 's' : ''} filled
@@ -514,7 +514,7 @@ export const DealOverviewPage: React.FC = () => {
           {!packet && (
             <div className="section-card text-center py-8">
               <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">No packet assigned to this deal</p>
+              <p className="text-muted-foreground">No packet assigned to this file</p>
             </div>
           )}
         </div>
@@ -523,10 +523,10 @@ export const DealOverviewPage: React.FC = () => {
         <div className="space-y-6">
           {/* Deal Info */}
           <div className="section-card">
-            <h3 className="font-semibold text-foreground mb-4">Deal Information</h3>
+            <h3 className="font-semibold text-foreground mb-4">File Information</h3>
             <dl className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Deal Number</dt>
+                <dt className="text-muted-foreground">File Number</dt>
                 <dd className="font-medium text-foreground">{deal.deal_number}</dd>
               </div>
               <div className="flex justify-between">
@@ -596,7 +596,7 @@ export const DealOverviewPage: React.FC = () => {
                 </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Deal Updated</dt>
+                <dt className="text-muted-foreground">File Updated</dt>
                 <dd className="text-foreground">
                   {formatDateTime(deal.updated_at)}
                 </dd>

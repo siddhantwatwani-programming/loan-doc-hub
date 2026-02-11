@@ -69,7 +69,7 @@ const csrItems: NavItem[] = [];
 // External user items - limited view
 const externalItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['borrower', 'broker', 'lender'] },
-  { label: 'My Deals', icon: FolderOpen, path: '/deals', roles: ['borrower', 'broker', 'lender'] },
+  { label: 'My Files', icon: FolderOpen, path: '/deals', roles: ['borrower', 'broker', 'lender'] },
 ];
 
 // Top-level admin items
