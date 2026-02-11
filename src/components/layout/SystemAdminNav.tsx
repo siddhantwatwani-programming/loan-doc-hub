@@ -41,7 +41,9 @@ const systemAdminData: ChildSection[] = [
   },
   {
     label: 'User Management',
-    items: [],
+    items: [
+      { label: 'User Management', path: '/system-admin/user-management' },
+    ],
   },
   {
     label: 'Configuration',
@@ -178,14 +180,16 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                   )}
                 >
                   <span className="font-semibold text-xs">{section.label}</span>
-                  {openChildren.includes(section.label) ? (
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  ) : (
-                    <ChevronRight className="h-3.5 w-3.5" />
+                  {section.items.length > 0 && (
+                    openChildren.includes(section.label) ? (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    )
                   )}
                 </button>
               </CollapsibleTrigger>
-              {section.items.length > 0 && (
+              {section.items.length > 0 ? (
                 <CollapsibleContent className="pl-4 pt-0.5 space-y-0.5">
                   {section.items.map((item) =>
                     item.children && item.children.length > 0 ? (
@@ -240,7 +244,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                     )
                   )}
                 </CollapsibleContent>
-              )}
+              ) : null}
             </Collapsible>
           ))}
         </CollapsibleContent>
