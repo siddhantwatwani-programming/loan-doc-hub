@@ -186,17 +186,6 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor={FIELD_KEYS.maturity}>Maturity</Label>
-              <Input
-                id={FIELD_KEYS.maturity}
-                value={getValue(FIELD_KEYS.maturity)}
-                onChange={(e) => setValue(FIELD_KEYS.maturity, e.target.value)}
-                disabled={disabled}
-                placeholder=""
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor={FIELD_KEYS.maturityDate}>Maturity Date</Label>
               <Input
                 id={FIELD_KEYS.maturityDate}

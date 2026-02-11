@@ -17,6 +17,7 @@ import { LenderSectionContent } from '@/components/deal/LenderSectionContent';
 import { PropertySectionContent } from '@/components/deal/PropertySectionContent';
 import { BrokerSectionContent } from '@/components/deal/BrokerSectionContent';
 import { LoanTermsSectionContent } from '@/components/deal/LoanTermsSectionContent';
+import { LoanTermsFundingForm } from '@/components/deal/LoanTermsFundingForm';
 import { ChargesSectionContent } from '@/components/deal/ChargesSectionContent';
 import { OriginationFeesSectionContent } from '@/components/deal/OriginationFeesSectionContent';
 import { 
@@ -54,21 +55,40 @@ interface Deal {
 }
 
 // Section labels for display (partial - only includes displayable main sections)
-const SECTION_LABELS: Partial<Record<FieldSection | 'origination_fees', string>> = {
+const SECTION_LABELS: Partial<Record<FieldSection | 'origination_fees' | 'funding' | 'conversation_log' | 'event_journal', string>> = {
   borrower: 'Borrower',
   property: 'Property',
   loan_terms: 'Loan',
-  lender: 'Lenders',
+  funding: 'Funding',
   broker: 'Broker',
   charges: 'Charges',
-  dates: 'Dates',
   escrow: 'Escrow Impound',
+  conversation_log: 'Conversation Log',
   notes: 'Notes',
+  event_journal: 'Event Journal',
+  lender: 'Lenders',
   seller: 'Seller',
   other: 'Other',
   origination_fees: 'Origination Fees',
   system: 'System',
 };
+
+// Custom ordering for top navbar tabs
+const SECTION_ORDER: string[] = [
+  'borrower',
+  'property',
+  'loan_terms',
+  'funding',
+  'broker',
+  'charges',
+  'escrow',
+  'conversation_log',
+  'notes',
+  'event_journal',
+  'lender',
+  'other',
+  'seller',
+];
 
 export const DealDataEntryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -642,47 +662,64 @@ export const DealDataEntryPage: React.FC = () => {
         <div className="section-card">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6 flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
-              {(isExternalUser ? visibleSections : sections).filter(s => SECTION_LABELS[s]).map(section => {
-                // For external users, use their filtered fields
-                const sectionFields = isExternalUser 
-                  ? (visibleFieldsBySection[section] || [])
-                  : (fieldsBySection[section] || []);
+              {(() => {
+                // Get base sections, filter out 'dates' (merged into other) and apply custom order
+                const baseSections = (isExternalUser ? visibleSections : sections)
+                  .filter(s => SECTION_LABELS[s] && s !== 'dates');
                 
-                // Calculate missing for this section based on visible fields
-                const sectionMissing = sectionFields.filter(f => 
-                  f.is_required && !values[f.field_key]?.trim()
-                ).length;
-                const isComplete = sectionMissing === 0;
-                const hasRequiredFields = sectionFields.some(f => f.is_required);
+                // Add virtual tabs for internal users
+                const allTabs = [...baseSections];
+                if (isInternalUser) {
+                  if (!allTabs.includes('funding' as any)) allTabs.push('funding' as any);
+                  if (!allTabs.includes('conversation_log' as any)) allTabs.push('conversation_log' as any);
+                  if (!allTabs.includes('event_journal' as any)) allTabs.push('event_journal' as any);
+                }
                 
-                return (
-                  <TabsTrigger
-                    key={section}
-                    value={section}
-                    className={cn(
-                      'gap-2 data-[state=active]:bg-background relative',
-                      !isComplete && hasRequiredFields && showValidation && 'text-warning'
-                    )}
-                  >
-                    {SECTION_LABELS[section]}
-                    
-                    {/* Badge with missing count */}
-                    {!isComplete && hasRequiredFields && (
-                      <Badge 
-                        variant="destructive" 
-                        className="h-5 min-w-[20px] px-1.5 text-xs font-medium"
-                      >
-                        {sectionMissing}
-                      </Badge>
-                    )}
-                    
-                    {/* Checkmark when complete */}
-                    {isComplete && hasRequiredFields && (
-                      <CheckCircle2 className="h-4 w-4 text-success" />
-                    )}
-                  </TabsTrigger>
-                );
-              })}
+                // Sort by SECTION_ORDER
+                allTabs.sort((a, b) => {
+                  const idxA = SECTION_ORDER.indexOf(a);
+                  const idxB = SECTION_ORDER.indexOf(b);
+                  return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+                });
+                
+                return allTabs.map(section => {
+                  const sectionFields = isExternalUser 
+                    ? (visibleFieldsBySection[section as FieldSection] || [])
+                    : (fieldsBySection[section as FieldSection] || []);
+                  
+                  const sectionMissing = sectionFields.filter(f => 
+                    f.is_required && !values[f.field_key]?.trim()
+                  ).length;
+                  const isComplete = sectionMissing === 0;
+                  const hasRequiredFields = sectionFields.some(f => f.is_required);
+                  
+                  return (
+                    <TabsTrigger
+                      key={section}
+                      value={section}
+                      className={cn(
+                        'gap-2 data-[state=active]:bg-background relative',
+                        !isComplete && hasRequiredFields && showValidation && 'text-warning'
+                      )}
+                    >
+                      {SECTION_LABELS[section as keyof typeof SECTION_LABELS]}
+                      
+                      {!isComplete && hasRequiredFields && (
+                        <Badge 
+                          variant="destructive" 
+                          className="h-5 min-w-[20px] px-1.5 text-xs font-medium"
+                        >
+                          {sectionMissing}
+                        </Badge>
+                      )}
+                      
+                      {isComplete && hasRequiredFields && (
+                        <CheckCircle2 className="h-4 w-4 text-success" />
+                      )}
+                    </TabsTrigger>
+                  );
+                });
+              })()}
               
               {/* Origination Fees - Custom UI Tab (always visible for internal users) */}
               {isInternalUser && (
@@ -695,9 +732,8 @@ export const DealDataEntryPage: React.FC = () => {
               )}
             </TabsList>
 
-            {(isExternalUser ? visibleSections : sections).filter(s => SECTION_LABELS[s]).map(section => (
+            {(isExternalUser ? visibleSections : sections).filter(s => SECTION_LABELS[s] && s !== 'dates').map(section => (
               <TabsContent key={section} value={section} className="animate-fade-in">
-                {/* Use BorrowerSectionContent for the borrower section to show sub-navigation */}
                 {section === 'borrower' ? (
                   <BorrowerSectionContent
                     fields={isExternalUser 
@@ -772,6 +808,40 @@ export const DealDataEntryPage: React.FC = () => {
                     disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
                     calculationResults={calculationResults}
                   />
+                ) : section === 'other' ? (
+                  <DealSectionTab
+                    fields={[
+                      ...(isExternalUser 
+                        ? (visibleFieldsBySection[section] || [])
+                        : (fieldsBySection[section] || [])
+                      ),
+                      ...(isExternalUser 
+                        ? (visibleFieldsBySection['dates' as FieldSection] || [])
+                        : (fieldsBySection['dates' as FieldSection] || [])
+                      ),
+                    ]}
+                    values={values}
+                    onValueChange={updateValue}
+                    missingRequiredFields={
+                      [
+                        ...(isExternalUser 
+                          ? (visibleFieldsBySection[section] || [])
+                          : (fieldsBySection[section] || [])
+                        ),
+                        ...(isExternalUser 
+                          ? (visibleFieldsBySection['dates' as FieldSection] || [])
+                          : (fieldsBySection['dates' as FieldSection] || [])
+                        ),
+                      ].filter(f => f.is_required && !values[f.field_key]?.trim())
+                    }
+                    showValidation={showValidation}
+                    calculationResults={calculationResults}
+                    orchestrationCanEdit={orchestrationCanEdit}
+                    isWaitingForPrevious={isWaiting}
+                    blockingRole={blockingParticipant?.role}
+                    hasCompleted={hasCompleted}
+                    hideValidationStatus={true}
+                  />
                 ) : (
                   <DealSectionTab
                     fields={isExternalUser 
@@ -797,6 +867,41 @@ export const DealDataEntryPage: React.FC = () => {
                 )}
               </TabsContent>
             ))}
+
+            {/* Funding - standalone top-level tab */}
+            <TabsContent value="funding" className="animate-fade-in">
+              <LoanTermsFundingForm
+                fields={fieldsBySection['loan_terms' as FieldSection] || []}
+                values={values}
+                onValueChange={updateValue}
+                showValidation={showValidation}
+                disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                calculationResults={calculationResults}
+                dealId={id || ''}
+              />
+            </TabsContent>
+
+            {/* Conversation Log - Coming Soon */}
+            <TabsContent value="conversation_log" className="animate-fade-in">
+              <div className="flex items-center justify-center min-h-[300px]">
+                <div className="text-center">
+                  <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Conversation Log</h3>
+                  <p className="text-muted-foreground">Coming Soon</p>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Event Journal - Coming Soon */}
+            <TabsContent value="event_journal" className="animate-fade-in">
+              <div className="flex items-center justify-center min-h-[300px]">
+                <div className="text-center">
+                  <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Event Journal</h3>
+                  <p className="text-muted-foreground">Coming Soon</p>
+                </div>
+              </div>
+            </TabsContent>
             
             {/* Origination Fees - Custom UI Tab Content */}
             {isInternalUser && (

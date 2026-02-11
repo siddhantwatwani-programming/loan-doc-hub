@@ -210,25 +210,16 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           <h3 className="text-sm font-semibold text-foreground border-b pb-2">Name</h3>
           
           <div className="space-y-3">
-            {/* Lender ID - moved above Lender Type */}
+            {/* Lender ID - input field */}
             <div className="space-y-1">
               <Label className="text-sm text-muted-foreground">Lender ID</Label>
-              <Select
+              <Input
                 value={getValue('lenderId')}
-                onValueChange={(value) => handleChange('lenderId', value)}
+                onChange={(e) => handleChange('lenderId', e.target.value)}
                 disabled={disabled}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Select lender" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LENDER_ID_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                className="h-8"
+                placeholder="Enter lender ID"
+              />
             </div>
 
             <div className="space-y-1">
@@ -249,16 +240,6 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Loan ID</Label>
-              <Input
-                value={getValue('loanId')}
-                onChange={(e) => handleChange('loanId', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
             </div>
 
             <div className="space-y-1">
@@ -576,25 +557,20 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               </Select>
             </div>
 
-            {/* Show only the selected phone input */}
-            {selectedPhoneOption && (
-              <div className="space-y-1">
-                <Label className="text-sm text-muted-foreground">{selectedPhoneOption.label} Phone</Label>
+            {/* Show all phone number fields */}
+            {PREFERRED_PHONE_OPTIONS.map((option) => (
+              <div key={option.value} className="space-y-1">
+                <Label className="text-sm text-muted-foreground">{option.label} Phone</Label>
                 <Input
                   type="tel"
-                  value={getValue(selectedPhoneOption.fieldKey)}
-                  onChange={(e) => handleChange(selectedPhoneOption.fieldKey, e.target.value)}
+                  value={getValue(option.fieldKey)}
+                  onChange={(e) => handleChange(option.fieldKey, e.target.value)}
                   disabled={disabled}
                   className="h-8"
-                  placeholder={`Enter ${selectedPhoneOption.label.toLowerCase()} phone`}
+                  placeholder={`Enter ${option.label.toLowerCase()} phone`}
                 />
               </div>
-            )}
-
-            {/* Show placeholder if no preferred selected */}
-            {!preferredPhone && (
-              <p className="text-xs text-muted-foreground italic">Select a preferred phone type to enter the number</p>
-            )}
+            ))}
           </div>
 
           {/* Send Options */}
@@ -651,58 +627,18 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             className="resize-none w-full"
           />
 
-          {/* FORD Section with 8 Inputs */}
+          {/* FORD Section with 8 Inputs in 4 rows x 2 columns */}
           <div className="mt-6">
             <h4 className="text-sm font-semibold text-foreground mb-3">FORD</h4>
-            <div className="space-y-2">
-              <Input
-                value={getValue('ford1')}
-                onChange={(e) => handleChange('ford1', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-              <Input
-                value={getValue('ford2')}
-                onChange={(e) => handleChange('ford2', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-              <Input
-                value={getValue('ford3')}
-                onChange={(e) => handleChange('ford3', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-              <Input
-                value={getValue('ford4')}
-                onChange={(e) => handleChange('ford4', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-              <Input
-                value={getValue('ford5')}
-                onChange={(e) => handleChange('ford5', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-              <Input
-                value={getValue('ford6')}
-                onChange={(e) => handleChange('ford6', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-              <Input
-                value={getValue('ford7')}
-                onChange={(e) => handleChange('ford7', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-              <Input
-                value={getValue('ford8')}
-                onChange={(e) => handleChange('ford8', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
+            <div className="grid grid-cols-2 gap-2">
+              <Input value={getValue('ford1')} onChange={(e) => handleChange('ford1', e.target.value)} disabled={disabled} className="h-8" />
+              <Input value={getValue('ford2')} onChange={(e) => handleChange('ford2', e.target.value)} disabled={disabled} className="h-8" />
+              <Input value={getValue('ford3')} onChange={(e) => handleChange('ford3', e.target.value)} disabled={disabled} className="h-8" />
+              <Input value={getValue('ford4')} onChange={(e) => handleChange('ford4', e.target.value)} disabled={disabled} className="h-8" />
+              <Input value={getValue('ford5')} onChange={(e) => handleChange('ford5', e.target.value)} disabled={disabled} className="h-8" />
+              <Input value={getValue('ford6')} onChange={(e) => handleChange('ford6', e.target.value)} disabled={disabled} className="h-8" />
+              <Input value={getValue('ford7')} onChange={(e) => handleChange('ford7', e.target.value)} disabled={disabled} className="h-8" />
+              <Input value={getValue('ford8')} onChange={(e) => handleChange('ford8', e.target.value)} disabled={disabled} className="h-8" />
             </div>
           </div>
         </div>
