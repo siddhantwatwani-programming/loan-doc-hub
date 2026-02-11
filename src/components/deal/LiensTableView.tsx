@@ -105,7 +105,6 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="w-10"></TableHead>
                 <TableHead className="min-w-[120px]">Related Property</TableHead>
                 <TableHead className="min-w-[100px]">Lien Holder</TableHead>
                 <TableHead className="min-w-[100px]">Loan Type</TableHead>
@@ -117,6 +116,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                 <TableHead className="min-w-[120px] text-right">Regular Payment</TableHead>
                 <TableHead className="min-w-[100px]">Recording Number</TableHead>
                 <TableHead className="min-w-[100px]">Last Verified</TableHead>
+                <TableHead className="w-10">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -133,20 +133,6 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() => onRowClick(lien)}
                   >
-                    <TableCell className="w-10">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEditLien(lien);
-                        }}
-                        disabled={disabled}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
                     <TableCell className="font-medium">
                       {lien.property || 'Unassigned'}
                     </TableCell>
@@ -166,6 +152,20 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                     </TableCell>
                     <TableCell>{lien.recordingNumber || '-'}</TableCell>
                     <TableCell>{lien.lastVerified || '-'}</TableCell>
+                    <TableCell className="w-10">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditLien(lien);
+                        }}
+                        disabled={disabled}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               )}

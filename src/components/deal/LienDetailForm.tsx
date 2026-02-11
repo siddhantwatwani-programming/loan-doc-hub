@@ -144,17 +144,14 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           <div>
             <Label className="text-sm text-foreground">Recording Number</Label>
             <div className="flex items-center gap-2 mt-1">
-              <Input value={lien.recordingNumber} onChange={(e) => onChange('recordingNumber', e.target.value)} disabled={disabled} className="h-8 text-sm" />
+              <Input value={lien.recordingNumber} onChange={(e) => onChange('recordingNumber', e.target.value)} disabled={disabled} className="h-8 text-sm flex-1" />
+              <Checkbox
+                id="recordingNumberFlag"
+                checked={lien.recordingNumberFlag === 'true'}
+                onCheckedChange={(checked) => onChange('recordingNumberFlag', checked ? 'true' : 'false')}
+                disabled={disabled}
+              />
             </div>
-          </div>
-          <div className="flex items-center gap-2 mt-6">
-            <Checkbox
-              id="recordingNumberFlag"
-              checked={lien.recordingNumberFlag === 'true'}
-              onCheckedChange={(checked) => onChange('recordingNumberFlag', checked ? 'true' : 'false')}
-              disabled={disabled}
-            />
-            <Label htmlFor="recordingNumberFlag" className="text-sm text-foreground">Recording Number Flag</Label>
           </div>
 
           <div className="flex items-center gap-2">
@@ -171,40 +168,21 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
             <Input type="date" value={lien.recordingDate} onChange={(e) => onChange('recordingDate', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
           </div>
 
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="existingPaydown"
-              checked={lien.existingPaydown === 'true'}
-              onCheckedChange={(checked) => onChange('existingPaydown', checked ? 'true' : 'false')}
-              disabled={disabled}
-            />
-            <Label htmlFor="existingPaydown" className="text-sm text-foreground">Existing - Paydown</Label>
-          </div>
           <div>
-            <Label className="text-sm text-foreground">Paydown Amount</Label>
-            <div className="flex items-center gap-1 mt-1">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="existingPaydown"
+                checked={lien.existingPaydown === 'true'}
+                onCheckedChange={(checked) => onChange('existingPaydown', checked ? 'true' : 'false')}
+                disabled={disabled}
+              />
+              <Label htmlFor="existingPaydown" className="text-sm text-foreground">Existing - Paydown</Label>
+            </div>
+            <div className="flex items-center gap-1 mt-2">
               <span className="text-sm text-muted-foreground">$</span>
               <Input value={lien.existingPaydownAmount} onChange={(e) => onChange('existingPaydownAmount', e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.00" />
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="existingPayoff"
-              checked={lien.existingPayoff === 'true'}
-              onCheckedChange={(checked) => onChange('existingPayoff', checked ? 'true' : 'false')}
-              disabled={disabled}
-            />
-            <Label htmlFor="existingPayoff" className="text-sm text-foreground">Existing - Payoff</Label>
-          </div>
-          <div>
-            <Label className="text-sm text-foreground">Payoff Amount</Label>
-            <div className="flex items-center gap-1 mt-1">
-              <span className="text-sm text-muted-foreground">$</span>
-              <Input value={lien.existingPayoffAmount} onChange={(e) => onChange('existingPayoffAmount', e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.00" />
-            </div>
-          </div>
-
           <div className="flex items-center gap-2">
             <Checkbox
               id="seniorLienTracking"
@@ -216,7 +194,20 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           </div>
 
           <div>
-        </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="existingPayoff"
+                checked={lien.existingPayoff === 'true'}
+                onCheckedChange={(checked) => onChange('existingPayoff', checked ? 'true' : 'false')}
+                disabled={disabled}
+              />
+              <Label htmlFor="existingPayoff" className="text-sm text-foreground">Existing - Payoff</Label>
+            </div>
+            <div className="flex items-center gap-1 mt-2">
+              <span className="text-sm text-muted-foreground">$</span>
+              <Input value={lien.existingPayoffAmount} onChange={(e) => onChange('existingPayoffAmount', e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+            </div>
+          </div>
           <div>
             <Label className="text-sm text-foreground">Last Verified</Label>
             <Input type="date" value={lien.lastVerified} onChange={(e) => onChange('lastVerified', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />

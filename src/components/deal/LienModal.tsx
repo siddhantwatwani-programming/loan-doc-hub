@@ -198,11 +198,10 @@ export const LienModal: React.FC<LienModalProps> = ({
             </div>
             <div>
               <Label className="text-sm text-foreground">Recording Number</Label>
-              <Input value={formData.recordingNumber} onChange={(e) => handleChange('recordingNumber', e.target.value)} className="h-9 text-sm mt-1" />
-            </div>
-            <div className="flex items-center gap-2 mt-6">
-              <Checkbox id="modal-recordingNumberFlag" checked={formData.recordingNumberFlag === 'true'} onCheckedChange={(c) => handleChange('recordingNumberFlag', c ? 'true' : 'false')} />
-              <Label htmlFor="modal-recordingNumberFlag" className="text-sm text-foreground">Recording Number Flag</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input value={formData.recordingNumber} onChange={(e) => handleChange('recordingNumber', e.target.value)} className="h-9 text-sm flex-1" />
+                <Checkbox id="modal-recordingNumberFlag" checked={formData.recordingNumberFlag === 'true'} onCheckedChange={(c) => handleChange('recordingNumberFlag', c ? 'true' : 'false')} />
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
@@ -214,33 +213,30 @@ export const LienModal: React.FC<LienModalProps> = ({
               <Input type="date" value={formData.recordingDate} onChange={(e) => handleChange('recordingDate', e.target.value)} className="h-9 text-sm mt-1" />
             </div>
 
-            <div className="flex items-center gap-2">
-              <Checkbox id="modal-existingPaydown" checked={formData.existingPaydown === 'true'} onCheckedChange={(c) => handleChange('existingPaydown', c ? 'true' : 'false')} />
-              <Label htmlFor="modal-existingPaydown" className="text-sm text-foreground">Existing - Paydown</Label>
-            </div>
             <div>
-              <Label className="text-sm text-foreground">Paydown Amount</Label>
-              <div className="flex items-center gap-1 mt-1">
+              <div className="flex items-center gap-2">
+                <Checkbox id="modal-existingPaydown" checked={formData.existingPaydown === 'true'} onCheckedChange={(c) => handleChange('existingPaydown', c ? 'true' : 'false')} />
+                <Label htmlFor="modal-existingPaydown" className="text-sm text-foreground">Existing - Paydown</Label>
+              </div>
+              <div className="flex items-center gap-1 mt-2">
                 <span className="text-sm text-muted-foreground">$</span>
                 <Input value={formData.existingPaydownAmount} onChange={(e) => handleChange('existingPaydownAmount', e.target.value)} className="h-9 text-sm text-right" inputMode="decimal" placeholder="0.00" />
               </div>
             </div>
-
-            <div className="flex items-center gap-2">
-              <Checkbox id="modal-existingPayoff" checked={formData.existingPayoff === 'true'} onCheckedChange={(c) => handleChange('existingPayoff', c ? 'true' : 'false')} />
-              <Label htmlFor="modal-existingPayoff" className="text-sm text-foreground">Existing - Payoff</Label>
-            </div>
-            <div>
-              <Label className="text-sm text-foreground">Payoff Amount</Label>
-              <div className="flex items-center gap-1 mt-1">
-                <span className="text-sm text-muted-foreground">$</span>
-                <Input value={formData.existingPayoffAmount} onChange={(e) => handleChange('existingPayoffAmount', e.target.value)} className="h-9 text-sm text-right" inputMode="decimal" placeholder="0.00" />
-              </div>
-            </div>
-
             <div className="flex items-center gap-2">
               <Checkbox id="modal-seniorLienTracking" checked={formData.seniorLienTracking === 'true'} onCheckedChange={(c) => handleChange('seniorLienTracking', c ? 'true' : 'false')} />
               <Label htmlFor="modal-seniorLienTracking" className="text-sm text-foreground">Senior Lien Tracking</Label>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="modal-existingPayoff" checked={formData.existingPayoff === 'true'} onCheckedChange={(c) => handleChange('existingPayoff', c ? 'true' : 'false')} />
+                <Label htmlFor="modal-existingPayoff" className="text-sm text-foreground">Existing - Payoff</Label>
+              </div>
+              <div className="flex items-center gap-1 mt-2">
+                <span className="text-sm text-muted-foreground">$</span>
+                <Input value={formData.existingPayoffAmount} onChange={(e) => handleChange('existingPayoffAmount', e.target.value)} className="h-9 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+              </div>
             </div>
             <div>
               <Label className="text-sm text-foreground">Last Verified</Label>
