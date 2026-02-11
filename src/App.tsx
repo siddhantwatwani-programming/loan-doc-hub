@@ -53,6 +53,7 @@ const App = () => (
                 <Route path="/my-work/alerts" element={<Dashboard />} />
                 <Route path="/broker-services/*" element={<Dashboard />} />
                 <Route path="/accounting/*" element={<Dashboard />} />
+                <Route path="/system-admin/*" element={<Dashboard />} />
               </Route>
 
               {/* Deal viewing - accessible by CSR, Admin, and external users (via RLS) */}

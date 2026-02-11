@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/collapsible';
 import { BrokerServicesNav } from '@/components/layout/BrokerServicesNav';
 import { AccountingNav } from '@/components/layout/AccountingNav';
+import { SystemAdminNav } from '@/components/layout/SystemAdminNav';
 import {
   Tooltip,
   TooltipContent,
@@ -314,6 +315,11 @@ export const AppSidebar: React.FC = () => {
           {/* Accounting Section */}
           {!isCollapsed && (
             <AccountingNav isCollapsed={isCollapsed} searchQuery={searchQuery} />
+          )}
+
+          {/* System Administration Section */}
+          {!isCollapsed && (
+            <SystemAdminNav isCollapsed={isCollapsed} searchQuery={searchQuery} />
           )}
 
           {/* Regular Nav Items */}
