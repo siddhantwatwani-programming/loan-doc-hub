@@ -20,6 +20,19 @@ import { Plus, History, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal } from './AddFundingModal';
 import { FundingHistoryDialog } from './FundingHistoryDialog';
+import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
+import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+
+const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'lenderAccount', label: 'Lender Account', visible: true },
+  { id: 'lenderName', label: 'Lender Name', visible: true },
+  { id: 'pctOwned', label: 'Pct Owned', visible: true },
+  { id: 'lenderRate', label: 'Lender Rate', visible: true },
+  { id: 'principalBalance', label: 'Principal Balance', visible: true },
+  { id: 'originalAmount', label: 'Original Amount', visible: true },
+  { id: 'regularPayment', label: 'Regular Payment', visible: true },
+  { id: 'roundingError', label: 'Rounding Error', visible: true },
+];
 
 interface FundingRecord {
   id: string;
@@ -67,6 +80,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<FundingRecord | null>(null);
+  const [columns, setColumns] = useTableColumnConfig('funding', DEFAULT_COLUMNS);
+  const visibleColumns = columns.filter((col) => col.visible);
 
   // Calculate totals
   const totalOwnership = fundingRecords.reduce((sum, r) => sum + r.pctOwned, 0);
@@ -88,12 +103,49 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
     setSelectedRecord(record);
   };
 
+  const renderCellValue = (record: FundingRecord, columnId: string) => {
+    switch (columnId) {
+      case 'lenderAccount':
+        return <span className="font-medium">{record.lenderAccount || '-'}</span>;
+      case 'lenderName':
+        return record.lenderName || '-';
+      case 'pctOwned':
+        return <span className="text-right block">{formatPercentage(record.pctOwned)}</span>;
+      case 'lenderRate':
+        return <span className="text-right block">{formatPercentage(record.lenderRate)}</span>;
+      case 'principalBalance':
+        return <span className="text-right block">{formatCurrency(record.principalBalance)}</span>;
+      case 'originalAmount':
+        return <span className="text-right block">{formatCurrency(record.originalAmount)}</span>;
+      case 'regularPayment':
+        return <span className="text-right block">{formatCurrency(record.regularPayment)}</span>;
+      case 'roundingError':
+        return (
+          <div className="text-center">
+            <Checkbox
+              checked={record.roundingError}
+              onCheckedChange={(checked) => {
+                onUpdateRecord(record.id, { roundingError: !!checked });
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        );
+      default:
+        return '-';
+    }
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="p-6 space-y-4">
       {/* Header with title and actions */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground">Loan Funding</h3>
+        <h3 className="font-semibold text-lg text-foreground">Loan Funding</h3>
         <div className="flex items-center gap-2">
+          <ColumnConfigPopover
+            columns={columns}
+            onColumnsChange={setColumns}
+          />
           <Button
             variant="outline"
             size="sm"
@@ -101,7 +153,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
             className="gap-1"
           >
             <Plus className="h-4 w-4" />
-            Add
+            Add Funding
           </Button>
           <Button
             variant="outline"
@@ -116,30 +168,27 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       </div>
 
       {/* Grid */}
-      <div className="border rounded-lg">
+      <div className="border border-border rounded-lg overflow-x-auto">
         {isLoading ? (
           <div className="flex items-center justify-center min-h-[200px]">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <Table>
+          <Table className="min-w-[900px]">
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="font-semibold">LENDER ACCOUNT</TableHead>
-                <TableHead className="font-semibold">LENDER NAME</TableHead>
-                <TableHead className="font-semibold text-right">PCT OWNED</TableHead>
-                <TableHead className="font-semibold text-right">LENDER RATE</TableHead>
-                <TableHead className="font-semibold text-right">PRINCIPAL BALANCE</TableHead>
-                <TableHead className="font-semibold text-right">ORIGINAL AMOUNT</TableHead>
-                <TableHead className="font-semibold text-right">REGULAR PAYMENT</TableHead>
-                <TableHead className="font-semibold text-center">ROUNDING ERROR</TableHead>
+                {visibleColumns.map((col) => (
+                  <TableHead key={col.id}>
+                    {col.label.toUpperCase()}
+                  </TableHead>
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {fundingRecords.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                    No funding records found. Click "Add" to add a new funding record.
+                  <TableCell colSpan={visibleColumns.length} className="text-center text-muted-foreground py-8">
+                    No funding records found. Click "Add Funding" to add a new funding record.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -147,48 +196,44 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                   <TableRow
                     key={record.id}
                     className={cn(
-                      'cursor-pointer hover:bg-primary/5',
+                      'cursor-pointer hover:bg-muted/30',
                       selectedRecord?.id === record.id && 'bg-primary/10'
                     )}
                     onClick={() => handleRowClick(record)}
                   >
-                    <TableCell className="text-primary font-medium">
-                      {record.lenderAccount}
-                    </TableCell>
-                    <TableCell>{record.lenderName}</TableCell>
-                    <TableCell className="text-right">{formatPercentage(record.pctOwned)}</TableCell>
-                    <TableCell className="text-right">{formatPercentage(record.lenderRate)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(record.principalBalance)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(record.originalAmount)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(record.regularPayment)}</TableCell>
-                    <TableCell className="text-center">
-                      <Checkbox
-                        checked={record.roundingError}
-                        onCheckedChange={(checked) => {
-                          onUpdateRecord(record.id, { roundingError: !!checked });
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </TableCell>
+                    {visibleColumns.map((col) => (
+                      <TableCell key={col.id}>
+                        {renderCellValue(record, col.id)}
+                      </TableCell>
+                    ))}
                   </TableRow>
                 ))
               )}
               {/* Totals Row */}
               {fundingRecords.length > 0 && (
                 <TableRow className="bg-muted/30 font-semibold border-t-2">
-                  <TableCell colSpan={2} className="text-right">
-                    Totals:
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <span className={cn(totalOwnership !== 100 && 'text-destructive')}>
-                      {formatPercentage(totalOwnership)}
-                    </span>
-                  </TableCell>
-                  <TableCell></TableCell>
-                  <TableCell className="text-right">{formatCurrency(totalPrincipalBalance)}</TableCell>
-                  <TableCell></TableCell>
-                  <TableCell className="text-right">{formatCurrency(totalPayment)}</TableCell>
-                  <TableCell></TableCell>
+                  {visibleColumns.map((col, idx) => {
+                    if (col.id === 'pctOwned') {
+                      return (
+                        <TableCell key={col.id} className="text-right">
+                          <span className={cn(totalOwnership !== 100 && 'text-destructive')}>
+                            {formatPercentage(totalOwnership)}
+                          </span>
+                        </TableCell>
+                      );
+                    }
+                    if (col.id === 'principalBalance') {
+                      return <TableCell key={col.id} className="text-right">{formatCurrency(totalPrincipalBalance)}</TableCell>;
+                    }
+                    if (col.id === 'regularPayment') {
+                      return <TableCell key={col.id} className="text-right">{formatCurrency(totalPayment)}</TableCell>;
+                    }
+                    // First two visible columns show "Totals:" label
+                    if (idx === 0) {
+                      return <TableCell key={col.id} className="text-right font-semibold">Totals:</TableCell>;
+                    }
+                    return <TableCell key={col.id}></TableCell>;
+                  })}
                 </TableRow>
               )}
             </TableBody>
