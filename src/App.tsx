@@ -26,6 +26,7 @@ import FieldDictionaryPage from "./pages/admin/FieldDictionaryPage";
 import FieldMapEditorPage from "./pages/admin/FieldMapEditorPage";
 import SystemSettingsPage from "./pages/admin/SystemSettingsPage";
 import MagicLinkAccessPage from "./pages/MagicLinkAccessPage";
+import MyWorkPage from "./pages/MyWorkPage";
 
 const queryClient = new QueryClient();
 
@@ -47,10 +48,11 @@ const App = () => (
               {/* Protected routes with layout - all authenticated users */}
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/my-work/messages" element={<Dashboard />} />
-                <Route path="/my-work/queue" element={<Dashboard />} />
-                <Route path="/my-work/action-items" element={<Dashboard />} />
-                <Route path="/my-work/alerts" element={<Dashboard />} />
+                <Route path="/my-work/messages" element={<MyWorkPage />} />
+                <Route path="/my-work/queue" element={<MyWorkPage />} />
+                <Route path="/my-work/action-items" element={<MyWorkPage />} />
+                <Route path="/my-work/alerts" element={<MyWorkPage />} />
+                <Route path="/my-work/*" element={<MyWorkPage />} />
               </Route>
 
               {/* Deal viewing - accessible by CSR, Admin, and external users (via RLS) */}
