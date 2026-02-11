@@ -68,8 +68,8 @@ const csrItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['admin', 'csr', 'borrower', 'broker', 'lender'] },
   { label: 'Deals', icon: FolderOpen, path: '/deals', roles: ['csr', 'borrower', 'broker', 'lender'] },
   { label: 'Create Deal', icon: Plus, path: '/deals/new', roles: ['csr'], internalOnly: true },
-  { label: 'Users', icon: Users, path: '/users', roles: ['csr'], internalOnly: true },
-  { label: 'Documents', icon: FileText, path: '/documents', roles: ['csr'], internalOnly: true },
+  { label: 'User Management', icon: Users, path: '/users', roles: ['csr'], internalOnly: true },
+  { label: 'Document Vault', icon: FileText, path: '/documents', roles: ['csr'], internalOnly: true },
 ];
 
 // External user items - limited view

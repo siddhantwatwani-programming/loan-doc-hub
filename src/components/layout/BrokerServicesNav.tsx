@@ -36,6 +36,10 @@ interface ChildSection {
   items: SubItem[];
 }
 
+const brokerServicesTopItems = [
+  { label: 'Management Dashboard', path: '/dashboard' },
+];
+
 const brokerServicesData: ChildSection[] = [
   {
     label: 'Loan Origination Services',
@@ -49,7 +53,7 @@ const brokerServicesData: ChildSection[] = [
     label: 'Loan Documents Processing',
     items: [
       { label: 'Department Dashboard', path: '/broker-services/documents/dashboard' },
-      { label: 'All Loan Document Files', path: '/broker-services/documents/files' },
+      { label: 'All Loan Document Files', path: '/deals' },
       { label: 'Loan Documents', path: '/broker-services/documents/loan-documents' },
       { label: 'Document Packets', path: '/broker-services/documents/packets' },
       { label: 'Activity Journal', path: '/broker-services/documents/activity' },
@@ -59,7 +63,7 @@ const brokerServicesData: ChildSection[] = [
     label: 'New Account Intake',
     items: [
       { label: 'Department Dashboard', path: '/broker-services/intake/dashboard' },
-      { label: 'All Loan Servicing Files', path: '/broker-services/intake/files' },
+      { label: 'All Loan Document Files', path: '/deals' },
       { label: 'Messages', path: '/broker-services/intake/messages' },
       { label: 'Activity Journal', path: '/broker-services/intake/activity' },
     ],
@@ -70,7 +74,7 @@ const brokerServicesData: ChildSection[] = [
       { label: 'Management Dashboard', path: '/broker-services/servicing/management' },
       { label: 'Department Alerts', path: '/broker-services/servicing/alerts' },
       { label: 'Department Dashboard', path: '/broker-services/servicing/dashboard' },
-      { label: 'All Loan Servicing Files', path: '/broker-services/servicing/files' },
+      { label: 'All Loan Document Files', path: '/deals' },
       { label: 'Custom Views', path: '/broker-services/servicing/custom-views' },
       { label: 'Activity Journal', path: '/broker-services/servicing/activity' },
     ],
@@ -172,6 +176,20 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent className="pl-3 pt-1 space-y-0.5">
+          {brokerServicesTopItems
+            .filter((item) => !searchQuery || item.label.toLowerCase().includes(searchQuery.toLowerCase()))
+            .map((item) => (
+              <button
+                key={item.path + item.label}
+                onClick={() => navigate(item.path)}
+                className={cn(
+                  'sidebar-item w-full text-xs',
+                  location.pathname === item.path && 'sidebar-item-active'
+                )}
+              >
+                <span>{item.label}</span>
+              </button>
+            ))}
           {filteredSections.map((section) => (
             <Collapsible
               key={section.label}
