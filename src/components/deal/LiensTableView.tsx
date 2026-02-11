@@ -18,9 +18,25 @@ export interface LienData {
   account: string;
   contact: string;
   phone: string;
+  fax: string;
+  email: string;
+  loanType: string;
+  anticipated: string;
+  existingRemain: string;
+  existingPaydown: string;
+  existingPayoff: string;
+  lienPriorityNow: string;
+  lienPriorityAfter: string;
+  interestRate: string;
+  maturityDate: string;
   originalBalance: string;
+  balanceAfter: string;
   currentBalance: string;
   regularPayment: string;
+  recordingNumber: string;
+  recordingDate: string;
+  seniorLienTracking: string;
+  lastVerified: string;
   lastChecked: string;
   note: string;
 }
@@ -87,19 +103,23 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="w-10"></TableHead>
-                <TableHead className="min-w-[120px]">Property</TableHead>
-                <TableHead className="min-w-[80px]">Priority</TableHead>
-                <TableHead className="min-w-[150px]">Lien Holder</TableHead>
-                <TableHead className="min-w-[120px]">Account</TableHead>
+                <TableHead className="min-w-[120px]">Related Property</TableHead>
+                <TableHead className="min-w-[100px]">Lien Holder</TableHead>
+                <TableHead className="min-w-[100px]">Loan Type</TableHead>
+                <TableHead className="min-w-[80px]">Priority Now</TableHead>
+                <TableHead className="min-w-[80px]">Priority After</TableHead>
+                <TableHead className="min-w-[100px]">Interest Rate</TableHead>
                 <TableHead className="min-w-[120px] text-right">Original Balance</TableHead>
-                <TableHead className="min-w-[120px] text-right">Current Balance</TableHead>
-                <TableHead className="min-w-[100px]">Last Checked</TableHead>
+                <TableHead className="min-w-[120px] text-right">Balance After</TableHead>
+                <TableHead className="min-w-[120px] text-right">Regular Payment</TableHead>
+                <TableHead className="min-w-[100px]">Recording Number</TableHead>
+                <TableHead className="min-w-[100px]">Last Verified</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {liens.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                     No liens added. Click "Add Lien" to create one.
                   </TableCell>
                 </TableRow>
@@ -127,16 +147,22 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                     <TableCell className="font-medium">
                       {lien.property || 'Unassigned'}
                     </TableCell>
-                    <TableCell>{lien.priority || '-'}</TableCell>
                     <TableCell>{lien.holder || '-'}</TableCell>
-                    <TableCell>{lien.account || '-'}</TableCell>
+                    <TableCell>{lien.loanType || '-'}</TableCell>
+                    <TableCell>{lien.lienPriorityNow || '-'}</TableCell>
+                    <TableCell>{lien.lienPriorityAfter || '-'}</TableCell>
+                    <TableCell>{lien.interestRate ? `${lien.interestRate}%` : '-'}</TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(lien.originalBalance) || '-'}
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatCurrency(lien.currentBalance) || '-'}
+                      {formatCurrency(lien.balanceAfter) || '-'}
                     </TableCell>
-                    <TableCell>{lien.lastChecked || '-'}</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(lien.regularPayment) || '-'}
+                    </TableCell>
+                    <TableCell>{lien.recordingNumber || '-'}</TableCell>
+                    <TableCell>{lien.lastVerified || '-'}</TableCell>
                   </TableRow>
                 ))
               )}
