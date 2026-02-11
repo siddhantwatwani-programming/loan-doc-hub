@@ -118,7 +118,7 @@ export const DealsPage: React.FC = () => {
       console.error('Error fetching deals:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load deals',
+        description: 'Failed to load files',
         variant: 'destructive',
       });
     } finally {
@@ -153,17 +153,17 @@ export const DealsPage: React.FC = () => {
   };
 
   const handleDelete = async (deal: Deal) => {
-    if (!confirm(`Delete deal ${deal.deal_number}?`)) return;
+    if (!confirm(`Delete file ${deal.deal_number}?`)) return;
 
     try {
       const { error } = await supabase.from('deals').delete().eq('id', deal.id);
       if (error) throw error;
-      toast({ title: 'Deal deleted' });
+      toast({ title: 'File deleted' });
       fetchDeals(currentPage);
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to delete deal',
+        description: error.message || 'Failed to delete file',
         variant: 'destructive',
       });
     }
@@ -209,15 +209,15 @@ export const DealsPage: React.FC = () => {
     <div className="page-container">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Deals</h1>
+           <h1 className="text-2xl font-bold text-foreground">Files</h1>
           <p className="text-muted-foreground mt-1">
-            {filteredDeals.length} {filteredDeals.length === 1 ? 'deal' : 'deals'}
+            {filteredDeals.length} {filteredDeals.length === 1 ? 'file' : 'files'}
             {hasActiveFilters && ' (filtered)'}
           </p>
         </div>
         <Button onClick={() => navigate('/deals/new')} className="gap-2">
           <Plus className="h-4 w-4" />
-          Create Deal
+          Create File
         </Button>
       </div>
 
@@ -227,7 +227,7 @@ export const DealsPage: React.FC = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by deal #, borrower, or address..."
+                placeholder="Search by file #, borrower, or address..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -296,16 +296,16 @@ export const DealsPage: React.FC = () => {
       {filteredDeals.length === 0 ? (
         <div className="section-card text-center py-12">
           <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">No deals found</h3>
+          <h3 className="text-lg font-medium text-foreground mb-2">No files found</h3>
           <p className="text-muted-foreground mb-4">
             {hasActiveFilters || searchQuery
               ? 'Try adjusting your filters or search'
-              : 'Create your first deal to get started'}
+              : 'Create your first file to get started'}
           </p>
           {!hasActiveFilters && !searchQuery && (
             <Button onClick={() => navigate('/deals/new')}>
               <Plus className="h-4 w-4 mr-2" />
-              Create Deal
+              Create File
             </Button>
           )}
         </div>
@@ -315,7 +315,7 @@ export const DealsPage: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Deal #</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">File #</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Borrower</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">State</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Product</th>
@@ -405,7 +405,7 @@ export const DealsPage: React.FC = () => {
           {totalPages > 1 && (
             <div className="flex items-center justify-between pt-4 border-t border-border mt-4">
               <p className="text-sm text-muted-foreground">
-                Showing {((currentPage - 1) * PAGE_SIZE) + 1}-{Math.min(currentPage * PAGE_SIZE, totalCount)} of {totalCount} deals
+                Showing {((currentPage - 1) * PAGE_SIZE) + 1}-{Math.min(currentPage * PAGE_SIZE, totalCount)} of {totalCount} files
               </p>
               <div className="flex items-center gap-2">
                 <Button

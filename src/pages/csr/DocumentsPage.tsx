@@ -189,7 +189,7 @@ export const DocumentsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Documents</h1>
-          <p className="text-muted-foreground mt-1">Download generated documents for completed deals</p>
+          <p className="text-muted-foreground mt-1">Download generated documents for completed files</p>
         </div>
       </div>
 
@@ -197,7 +197,7 @@ export const DocumentsPage: React.FC = () => {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by deal number or borrower..."
+            placeholder="Search by file number or borrower..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -216,12 +216,12 @@ export const DocumentsPage: React.FC = () => {
           <h3 className="text-xl font-semibold text-foreground mb-2">No Documents Available</h3>
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             {searchQuery 
-              ? 'No deals match your search criteria.' 
-              : 'Complete a deal and generate documents to see them here.'}
+              ? 'No files match your search criteria.' 
+              : 'Complete a file and generate documents to see them here.'}
           </p>
           <Button onClick={() => navigate('/deals')} variant="outline" className="gap-2">
             <FolderOpen className="h-4 w-4" />
-            View Deals
+            View Files
           </Button>
         </div>
       ) : (
@@ -229,7 +229,7 @@ export const DocumentsPage: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Deal Number</TableHead>
+                <TableHead>File Number</TableHead>
                 <TableHead>Borrower</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Documents</TableHead>

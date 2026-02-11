@@ -47,7 +47,7 @@ const ACTION_CONFIG: Record<ActionType, {
 }> = {
   DealCreated: {
     icon: FileText,
-    label: 'Deal Created',
+    label: 'File Created',
     color: 'text-blue-600',
     bgColor: 'bg-blue-100',
   },
@@ -218,7 +218,7 @@ export const ActivityLogViewer: React.FC<ActivityLogViewerProps> = ({
     
     switch (actionType) {
       case 'DealCreated':
-        return d.dealNumber ? `Deal #${d.dealNumber}` : null;
+        return d.dealNumber ? `File #${d.dealNumber}` : null;
       case 'DealUpdated':
         if (d.fieldsUpdated !== undefined) {
           return `${d.fieldsUpdated} of ${d.fieldsTotal || '?'} fields saved`;
@@ -250,7 +250,7 @@ export const ActivityLogViewer: React.FC<ActivityLogViewerProps> = ({
       case 'ParticipantCompleted':
         return d.role ? `${d.role} completed their section` : null;
       case 'MagicLinkAccessed':
-        return d.role ? `${d.role} accessed the deal` : null;
+        return d.role ? `${d.role} accessed the file` : null;
       case 'AccessRevoked':
         return d.role ? `${d.role}'s access was revoked${d.email ? ` (${d.email})` : ''}` : null;
       case 'AccessExpired':

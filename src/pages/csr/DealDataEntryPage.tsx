@@ -124,7 +124,7 @@ export const DealDataEntryPage: React.FC = () => {
       console.error('Error fetching deal:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load deal',
+        description: 'Failed to load file',
         variant: 'destructive',
       });
     } finally {
@@ -278,8 +278,8 @@ export const DealDataEntryPage: React.FC = () => {
       toast({
         title: 'Status changed to Draft',
         description: wasGenerated
-          ? 'Deal status was reverted because a required field was modified. Documents should be regenerated.'
-          : 'Deal status was reverted because a required field was modified',
+           ? 'File status was reverted because a required field was modified. Documents should be regenerated.'
+           : 'File status was reverted because a required field was modified',
         variant: wasGenerated ? 'destructive' : 'default',
       });
     } catch (error) {
@@ -352,7 +352,7 @@ export const DealDataEntryPage: React.FC = () => {
 
       resetDirty();
       toast({
-        title: 'Deal marked as ready',
+        title: 'File marked as ready',
         description: 'All required fields are complete',
       });
 
@@ -361,7 +361,7 @@ export const DealDataEntryPage: React.FC = () => {
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to mark deal as ready',
+        description: error.message || 'Failed to mark file as ready',
         variant: 'destructive',
       });
     } finally {
@@ -458,9 +458,9 @@ export const DealDataEntryPage: React.FC = () => {
     return (
       <div className="page-container text-center py-16">
         <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
-        <h2 className="text-xl font-semibold text-foreground mb-2">Deal Not Found</h2>
-        <p className="text-muted-foreground mb-4">The deal you're looking for doesn't exist.</p>
-        <Button onClick={() => navigate('/deals')}>Back to Deals</Button>
+        <h2 className="text-xl font-semibold text-foreground mb-2">File Not Found</h2>
+        <p className="text-muted-foreground mb-4">The file you're looking for doesn't exist.</p>
+        <Button onClick={() => navigate('/deals')}>Back to Files</Button>
       </div>
     );
   }
@@ -483,7 +483,7 @@ export const DealDataEntryPage: React.FC = () => {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <h1 className="text-2xl font-bold text-foreground">
-                {isExternalUser ? 'Complete Your Information' : 'Enter Deal Data'}
+                {isExternalUser ? 'Complete Your Information' : 'Enter File Data'}
               </h1>
               {/* Show deal status for CSR only */}
               {isInternalUser && deal.status !== 'draft' && (
@@ -527,7 +527,7 @@ export const DealDataEntryPage: React.FC = () => {
                 ) : (
                   <CheckCircle2 className="h-4 w-4" />
                 )}
-                Mark Deal Ready
+                Mark File Ready
               </Button>
             )}
 

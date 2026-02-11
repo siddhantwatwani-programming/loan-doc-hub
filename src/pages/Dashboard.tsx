@@ -166,7 +166,7 @@ const CSRDashboard: React.FC = () => {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total Deals" value={stats.totalDeals} icon={FolderOpen} loading={loading} />
+        <StatCard label="Total Files" value={stats.totalDeals} icon={FolderOpen} loading={loading} />
         <StatCard label="Draft" value={stats.draftDeals} icon={Clock} loading={loading} />
         <StatCard label="Ready" value={stats.readyDeals} icon={CheckCircle2} loading={loading} />
         <StatCard label="Generated" value={stats.generatedDeals} icon={FileText} loading={loading} />
@@ -174,13 +174,13 @@ const CSRDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="section-card">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Recent Deals</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4">Recent Files</h3>
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : recentDeals.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No deals yet</p>
+            <p className="text-muted-foreground text-center py-8">No files yet</p>
           ) : (
             <div className="space-y-3">
               {recentDeals.map((deal) => {
@@ -216,7 +216,7 @@ const CSRDashboard: React.FC = () => {
               className="p-4 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors text-left group"
             >
               <FolderOpen className="h-6 w-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
-              <p className="font-medium text-foreground">New Deal</p>
+              <p className="font-medium text-foreground">New File</p>
               <p className="text-sm text-muted-foreground">Start a new loan application</p>
             </button>
             <button 
@@ -240,8 +240,8 @@ const CSRDashboard: React.FC = () => {
               className="p-4 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors text-left group"
             >
               <Clock className="h-6 w-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
-              <p className="font-medium text-foreground">All Deals</p>
-              <p className="text-sm text-muted-foreground">View all deals</p>
+              <p className="font-medium text-foreground">All Files</p>
+              <p className="text-sm text-muted-foreground">View all files</p>
             </button>
           </div>
         </div>
@@ -324,7 +324,7 @@ export const Dashboard: React.FC = () => {
         <p className="text-muted-foreground mt-1">
           {role === 'admin' 
             ? 'Manage system configuration and users'
-            : 'Here\'s what\'s happening with your deals today'
+            : 'Here\'s what\'s happening with your files today'
           }
         </p>
       </div>

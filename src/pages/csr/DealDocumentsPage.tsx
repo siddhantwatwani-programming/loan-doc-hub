@@ -488,8 +488,8 @@ export const DealDocumentsPage: React.FC = () => {
     return (
       <div className="page-container text-center py-16">
         <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
-        <h2 className="text-xl font-semibold text-foreground mb-2">Deal Not Found</h2>
-        <Button onClick={() => navigate('/deals')}>Back to Deals</Button>
+        <h2 className="text-xl font-semibold text-foreground mb-2">File Not Found</h2>
+        <Button onClick={() => navigate('/deals')}>Back to Files</Button>
       </div>
     );
   }
@@ -500,11 +500,11 @@ export const DealDocumentsPage: React.FC = () => {
       <div className="mb-6">
         <Button variant="ghost" onClick={() => navigate(`/deals/${id}`)} className="gap-2 mb-4">
           <ArrowLeft className="h-4 w-4" />
-          Back to Deal
+          Back to File
         </Button>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Deal Documents</h1>
+            <h1 className="text-2xl font-bold text-foreground">File Documents</h1>
             <p className="text-muted-foreground mt-1">
               {deal.deal_number} • {deal.state} • {deal.product_type}
             </p>
@@ -535,9 +535,9 @@ export const DealDocumentsPage: React.FC = () => {
         <div className="mb-6 px-4 py-3 rounded-lg bg-warning/10 border border-warning/20 flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 text-warning" />
           <div>
-            <p className="font-medium text-foreground">Deal Not Ready</p>
+            <p className="font-medium text-foreground">File Not Ready</p>
             <p className="text-sm text-muted-foreground">
-              Complete all required fields and mark the deal as Ready before generating documents.
+              Complete all required fields and mark the file as Ready before generating documents.
             </p>
           </div>
           <Button 
