@@ -198,7 +198,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
           >
             <div className="flex items-center gap-3">
               <Calculator className="h-5 w-5" />
-              <span className="font-semibold text-sm">Accounting</span>
+              <span>Accounting</span>
             </div>
             {openParent ? (
               <ChevronDown className="h-4 w-4" />
@@ -218,7 +218,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                   location.pathname === section.path && 'text-sidebar-primary-foreground bg-sidebar-accent'
                 )}
               >
-                <span className="font-medium text-xs">{section.label}</span>
+                <span>{section.label}</span>
               </button>
             ) : (
             <Collapsible
@@ -234,7 +234,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                       'text-sidebar-primary-foreground bg-sidebar-accent'
                   )}
                 >
-                  <span className="font-medium text-xs">{section.label}</span>
+                  <span>{section.label}</span>
                   {openChildren.includes(section.label) ? (
                     <ChevronDown className="h-3.5 w-3.5" />
                   ) : (
@@ -254,7 +254,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                         <CollapsibleTrigger asChild>
                           <button
                             className={cn(
-                              'sidebar-item w-full justify-between text-xs',
+                              'sidebar-item w-full justify-between text-sm',
                               location.pathname.startsWith(item.path) &&
                                 'text-sidebar-primary-foreground bg-sidebar-accent'
                             )}
@@ -278,7 +278,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                                 <CollapsibleTrigger asChild>
                                   <button
                                     className={cn(
-                                      'sidebar-item w-full justify-between text-xs',
+                                      'sidebar-item w-full justify-between text-sm',
                                       location.pathname.startsWith(child.path) &&
                                         'text-sidebar-primary-foreground bg-sidebar-accent'
                                     )}
@@ -302,7 +302,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                                         <CollapsibleTrigger asChild>
                                           <button
                                             className={cn(
-                                              'sidebar-item w-full justify-between text-xs',
+                                              'sidebar-item w-full justify-between text-sm',
                                               location.pathname.startsWith(nested.path) &&
                                                 'text-sidebar-primary-foreground bg-sidebar-accent'
                                             )}
@@ -321,7 +321,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                                               key={leaf.path}
                                               onClick={() => navigate(leaf.path)}
                                               className={cn(
-                                                'sidebar-item w-full text-xs',
+                                                'sidebar-item w-full text-sm',
                                                 location.pathname === leaf.path && 'sidebar-item-active'
                                               )}
                                             >
@@ -335,7 +335,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                                         key={nested.path}
                                         onClick={() => navigate(nested.path)}
                                         className={cn(
-                                          'sidebar-item w-full text-xs',
+                                          'sidebar-item w-full text-sm',
                                           location.pathname === nested.path && 'sidebar-item-active'
                                         )}
                                       >
@@ -350,7 +350,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                                 key={child.path}
                                 onClick={() => navigate(child.path)}
                                 className={cn(
-                                  'sidebar-item w-full text-xs',
+                                  'sidebar-item w-full text-sm',
                                   location.pathname === child.path && 'sidebar-item-active'
                                 )}
                               >
@@ -365,7 +365,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                         key={item.path}
                         onClick={() => navigate(item.path)}
                         className={cn(
-                          'sidebar-item w-full text-xs',
+                          'sidebar-item w-full text-sm',
                           location.pathname === item.path && 'sidebar-item-active'
                         )}
                       >
