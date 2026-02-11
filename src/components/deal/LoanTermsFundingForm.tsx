@@ -137,23 +137,21 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   };
 
   return (
-    <div className="p-6">
-      <LoanFundingGrid
-        dealId={dealId}
-        loanNumber={loanNumber}
-        borrowerName={borrowerName}
-        fundingRecords={paginatedRecords}
-        historyRecords={historyRecords}
-        onAddFunding={handleAddFunding}
-        onUpdateRecord={handleUpdateRecord}
-        isLoading={isLoading}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        pageSize={pageSize}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-      />
-    </div>
+    <LoanFundingGrid
+      dealId={dealId}
+      loanNumber={loanNumber}
+      borrowerName={borrowerName}
+      fundingRecords={paginatedRecords}
+      historyRecords={historyRecords}
+      onAddFunding={handleAddFunding}
+      onUpdateRecord={handleUpdateRecord}
+      isLoading={isLoading}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      pageSize={pageSize}
+      onPageChange={handlePageChange}
+      onPageSizeChange={handlePageSizeChange}
+    />
   );
 };
 
