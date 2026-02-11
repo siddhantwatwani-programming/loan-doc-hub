@@ -91,7 +91,7 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
       <Collapsible open={openParent} onOpenChange={setOpenParent}>
         <CollapsibleTrigger asChild>
           <button className="sidebar-item w-full justify-between px-3 py-2">
-            <span className="font-bold text-xs tracking-wide uppercase text-sidebar-foreground">
+            <span className="font-bold tracking-wide uppercase text-sidebar-foreground">
               C Level Module
             </span>
             {openParent ? (
