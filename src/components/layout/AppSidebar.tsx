@@ -37,6 +37,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { BrokerServicesNav } from '@/components/layout/BrokerServicesNav';
 import {
   Tooltip,
   TooltipContent,
@@ -302,6 +303,11 @@ export const AppSidebar: React.FC = () => {
                 <div className="my-3 border-t border-sidebar-border" />
               </React.Fragment>
             )
+          )}
+
+          {/* Broker Services Section */}
+          {!isCollapsed && (
+            <BrokerServicesNav isCollapsed={isCollapsed} searchQuery={searchQuery} />
           )}
 
           {/* Regular Nav Items */}
