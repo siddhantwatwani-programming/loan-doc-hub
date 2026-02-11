@@ -23,6 +23,12 @@ import {
   Eye,
   Menu,
   X,
+  Search,
+  Briefcase,
+  MessageSquare,
+  ListTodo,
+  CheckCircle2,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
@@ -89,13 +95,22 @@ const adminGroups: NavGroup[] = [
   },
 ];
 
+// My Work items
+const myWorkItems: NavItem[] = [
+  { label: 'Messages', icon: MessageSquare, path: '/my-work/messages', roles: ['admin', 'csr', 'borrower', 'broker', 'lender'] },
+  { label: 'Queue', icon: ListTodo, path: '/my-work/queue', roles: ['admin', 'csr', 'borrower', 'broker', 'lender'] },
+  { label: 'Action Items', icon: CheckCircle2, path: '/my-work/action-items', roles: ['admin', 'csr', 'borrower', 'broker', 'lender'] },
+  { label: 'Alerts', icon: Bell, path: '/my-work/alerts', roles: ['admin', 'csr', 'borrower', 'broker', 'lender'] },
+];
+
 export const AppSidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { role, signOut, user, isExternalUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { isCollapsed, toggleSidebar } = useSidebar();
-  const [openGroups, setOpenGroups] = React.useState<string[]>(['Configuration']);
+  const [openGroups, setOpenGroups] = React.useState<string[]>(['Configuration', 'My Work']);
+  const [searchQuery, setSearchQuery] = React.useState('');
 
   // Filter items based on role
   const getFilteredItems = (): NavItem[] => {
@@ -108,6 +123,19 @@ export const AppSidebar: React.FC = () => {
   const filteredItems = getFilteredItems();
   const filteredAdminItems = adminItems.filter((item) => role && item.roles.includes(role));
   const filteredGroups = adminGroups.filter((group) => role && group.roles.includes(role));
+  const filteredMyWorkItems = myWorkItems.filter((item) => role && item.roles.includes(role));
+
+  // Apply search filter
+  const searchFilter = (item: NavItem) =>
+    !searchQuery || item.label.toLowerCase().includes(searchQuery.toLowerCase());
+
+  const searchedItems = filteredItems.filter(searchFilter);
+  const searchedAdminItems = filteredAdminItems.filter(searchFilter);
+  const searchedMyWorkItems = filteredMyWorkItems.filter(searchFilter);
+  const searchedGroups = filteredGroups.map((group) => ({
+    ...group,
+    items: group.items.filter(searchFilter),
+  })).filter((group) => group.items.length > 0);
 
   const handleSignOut = async () => {
     await signOut();
@@ -173,11 +201,111 @@ export const AppSidebar: React.FC = () => {
         </div>
       )}
 
+      {/* Search Bar */}
+      {!isCollapsed ? (
+        <div className="px-3 py-2 border-b border-sidebar-border">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-sidebar-foreground/50" />
+            <input
+              type="text"
+              placeholder="Site Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-sidebar-border bg-sidebar text-sidebar-foreground placeholder:text-sidebar-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="px-2 py-2 border-b border-sidebar-border">
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button className="sidebar-item w-full justify-center px-2">
+                  <Search className="h-5 w-5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="font-medium">
+                Site Search
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
         <TooltipProvider delayDuration={0}>
+          {/* My Work Section */}
+          {searchedMyWorkItems.length > 0 && (
+            isCollapsed ? (
+              <React.Fragment>
+                {searchedMyWorkItems.map((item) => (
+                  <Tooltip key={item.path}>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => navigate(item.path)}
+                        className={cn(
+                          'sidebar-item w-full justify-center px-2',
+                          isActive(item.path) && 'sidebar-item-active'
+                        )}
+                      >
+                        <item.icon className="h-5 w-5 flex-shrink-0" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="font-medium">
+                      {item.label}
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+                <div className="my-3 border-t border-sidebar-border" />
+              </React.Fragment>
+            ) : (
+              <React.Fragment>
+                <Collapsible
+                  open={openGroups.includes('My Work')}
+                  onOpenChange={() => toggleGroup('My Work')}
+                >
+                  <CollapsibleTrigger asChild>
+                    <button
+                      className={cn(
+                        'sidebar-item w-full justify-between',
+                        searchedMyWorkItems.some((item) => isActive(item.path)) && 'text-sidebar-primary-foreground bg-sidebar-accent'
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Briefcase className="h-5 w-5" />
+                        <span>My Work</span>
+                      </div>
+                      {openGroups.includes('My Work') ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pl-4 pt-1 space-y-1">
+                    {searchedMyWorkItems.map((item) => (
+                      <button
+                        key={item.path}
+                        onClick={() => navigate(item.path)}
+                        className={cn(
+                          'sidebar-item w-full text-sm',
+                          isActive(item.path) && 'sidebar-item-active'
+                        )}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </button>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+                <div className="my-3 border-t border-sidebar-border" />
+              </React.Fragment>
+            )
+          )}
+
           {/* Regular Nav Items */}
-          {filteredItems.map((item) => (
+          {searchedItems.map((item) => (
             isCollapsed ? (
               <Tooltip key={item.path}>
                 <TooltipTrigger asChild>
@@ -211,12 +339,12 @@ export const AppSidebar: React.FC = () => {
           ))}
 
           {/* Separator before admin items */}
-          {filteredAdminItems.length > 0 && (
+          {searchedAdminItems.length > 0 && (
             <div className="my-3 border-t border-sidebar-border" />
           )}
 
           {/* Top-level Admin Items */}
-          {filteredAdminItems.map((item) => (
+          {searchedAdminItems.map((item) => (
             isCollapsed ? (
               <Tooltip key={item.path}>
                 <TooltipTrigger asChild>
@@ -250,12 +378,12 @@ export const AppSidebar: React.FC = () => {
           ))}
 
           {/* Separator before Configuration group */}
-          {filteredGroups.length > 0 && !isCollapsed && (
+          {searchedGroups.length > 0 && !isCollapsed && (
             <div className="my-3 border-t border-sidebar-border" />
           )}
 
           {/* Configuration items shown as tooltips when collapsed */}
-          {isCollapsed && filteredGroups.map((group) => (
+          {isCollapsed && searchedGroups.map((group) => (
             <React.Fragment key={group.label}>
               <div className="my-3 border-t border-sidebar-border" />
               {group.items.map((item) => (
@@ -280,7 +408,7 @@ export const AppSidebar: React.FC = () => {
           ))}
 
           {/* Grouped Nav Items (Configuration) - only show when not collapsed */}
-          {!isCollapsed && filteredGroups.map((group) => (
+          {!isCollapsed && searchedGroups.map((group) => (
             <Collapsible
               key={group.label}
               open={openGroups.includes(group.label)}
