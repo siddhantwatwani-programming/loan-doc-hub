@@ -54,7 +54,6 @@ const App = () => (
                 <Route path="/broker-services/*" element={<Dashboard />} />
                 <Route path="/accounting/*" element={<Dashboard />} />
                 <Route path="/system-admin/*" element={<Dashboard />} />
-                <Route path="/users" element={<UsersPage />} />
                 <Route path="/c-level/*" element={<Dashboard />} />
               </Route>
 
