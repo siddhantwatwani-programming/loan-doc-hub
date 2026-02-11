@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { LoanTermsSubNavigation, type LoanTermsSubSection } from './LoanTermsSubNavigation';
 import { LoanTermsBalancesForm } from './LoanTermsBalancesForm';
 import { LoanTermsDetailsForm } from './LoanTermsDetailsForm';
-import { LoanTermsFundingForm } from './LoanTermsFundingForm';
 import { LoanTermsPenaltiesForm } from './LoanTermsPenaltiesForm';
 import { LoanTermsServicingForm } from './LoanTermsServicingForm';
 import type { FieldDefinition } from '@/hooks/useDealFields';
@@ -51,18 +50,6 @@ export const LoanTermsSectionContent: React.FC<LoanTermsSectionContentProps> = (
             showValidation={showValidation}
             disabled={disabled}
             calculationResults={calculationResults}
-          />
-        );
-      case 'funding':
-        return (
-          <LoanTermsFundingForm
-            fields={fields}
-            values={values}
-            onValueChange={onValueChange}
-            showValidation={showValidation}
-            disabled={disabled}
-            calculationResults={calculationResults}
-            dealId={dealId}
           />
         );
       case 'penalties':
