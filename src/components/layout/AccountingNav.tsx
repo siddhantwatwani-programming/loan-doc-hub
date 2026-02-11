@@ -20,6 +20,7 @@ interface SubItem {
 
 interface ChildSection {
   label: string;
+  path?: string;
   items: SubItem[];
 }
 
@@ -116,6 +117,11 @@ const accountingData: ChildSection[] = [
     ],
   },
   {
+    label: 'Documents Vault',
+    path: '/documents',
+    items: [],
+  },
+  {
     label: 'Contacts',
     items: [],
   },
@@ -171,6 +177,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
   }
 
   const isAnyActive = accountingData.some((s) =>
+    (s.path && location.pathname === s.path) ||
     s.items.some((i) => location.pathname === i.path)
   );
 
@@ -201,7 +208,19 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent className="pl-3 pt-1 space-y-0.5">
-          {filteredSections.map((section) => (
+          {filteredSections.map((section) =>
+            section.path && section.items.length === 0 ? (
+              <button
+                key={section.label}
+                onClick={() => navigate(section.path!)}
+                className={cn(
+                  'sidebar-item w-full text-sm',
+                  location.pathname === section.path && 'text-sidebar-primary-foreground bg-sidebar-accent'
+                )}
+              >
+                <span className="font-semibold text-xs">{section.label}</span>
+              </button>
+            ) : (
             <Collapsible
               key={section.label}
               open={openChildren.includes(section.label)}
@@ -357,7 +376,8 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                 </CollapsibleContent>
               )}
             </Collapsible>
-          ))}
+            )
+          )}
         </CollapsibleContent>
       </Collapsible>
     </>
