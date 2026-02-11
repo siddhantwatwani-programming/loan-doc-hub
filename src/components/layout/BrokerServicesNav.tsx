@@ -37,7 +37,6 @@ interface ChildSection {
 }
 
 const brokerServicesTopItems = [
-  { label: 'Management Dashboard', path: '/dashboard' },
   { label: 'Department Alerts', path: '/broker-services/department-alerts' },
 ];
 
