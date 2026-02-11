@@ -265,29 +265,19 @@ export const AppSidebar: React.FC = () => {
               </React.Fragment>
             ) : (
               <React.Fragment>
-                <Collapsible
-                  open={openGroups.includes('My Work')}
-                  onOpenChange={() => toggleGroup('My Work')}
-                >
-                  <CollapsibleTrigger asChild>
-                    <button
-                      className={cn(
-                        'sidebar-item w-full justify-between',
-                        searchedMyWorkItems.some((item) => isActive(item.path)) && 'text-sidebar-primary-foreground bg-sidebar-accent'
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Briefcase className="h-5 w-5" />
-                        <span>My Work</span>
-                      </div>
-                      {openGroups.includes('My Work') ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pl-4 pt-1 space-y-1">
+                <div>
+                  <button
+                    className={cn(
+                      'sidebar-item w-full',
+                      searchedMyWorkItems.some((item) => isActive(item.path)) && 'text-sidebar-primary-foreground bg-sidebar-accent'
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Briefcase className="h-5 w-5" />
+                      <span>My Work</span>
+                    </div>
+                  </button>
+                  <div className="pl-4 pt-1 space-y-1">
                     {searchedMyWorkItems.map((item) => (
                       <button
                         key={item.path}
@@ -301,8 +291,8 @@ export const AppSidebar: React.FC = () => {
                         <span>{item.label}</span>
                       </button>
                     ))}
-                  </CollapsibleContent>
-                </Collapsible>
+                  </div>
+                </div>
                 <div className="my-3 border-t border-sidebar-border" />
               </React.Fragment>
             )
