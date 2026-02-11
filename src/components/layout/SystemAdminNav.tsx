@@ -41,9 +41,7 @@ const systemAdminData: ChildSection[] = [
   },
   {
     label: 'User Management',
-    items: [
-      { label: 'User Management', path: '/system-admin/user-management' },
-    ],
+    items: [],
   },
   {
     label: 'Configuration',
@@ -162,7 +160,30 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent className="pl-3 pt-1 space-y-0.5">
-          {filteredSections.map((section) => (
+          {filteredSections.map((section) =>
+            section.items.length === 0 ? (
+              <button
+                key={section.label}
+                onClick={() => {
+                  const sectionPaths: Record<string, string> = {
+                    'User Management': '/system-admin/user-management',
+                  };
+                  const path = sectionPaths[section.label];
+                  if (path) navigate(path);
+                }}
+                className={cn(
+                  'sidebar-item w-full text-sm',
+                  (() => {
+                    const sectionPaths: Record<string, string> = {
+                      'User Management': '/system-admin/user-management',
+                    };
+                    return location.pathname === sectionPaths[section.label];
+                  })() && 'sidebar-item-active'
+                )}
+              >
+                <span className="font-semibold text-xs">{section.label}</span>
+              </button>
+            ) : (
             <Collapsible
               key={section.label}
               open={openChildren.includes(section.label)}
@@ -180,73 +201,70 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                   )}
                 >
                   <span className="font-semibold text-xs">{section.label}</span>
-                  {section.items.length > 0 && (
-                    openChildren.includes(section.label) ? (
-                      <ChevronDown className="h-3.5 w-3.5" />
-                    ) : (
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    )
+                  {openChildren.includes(section.label) ? (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5" />
                   )}
                 </button>
               </CollapsibleTrigger>
-              {section.items.length > 0 ? (
-                <CollapsibleContent className="pl-4 pt-0.5 space-y-0.5">
-                  {section.items.map((item) =>
-                    item.children && item.children.length > 0 ? (
-                      <Collapsible
-                        key={item.path}
-                        open={openSubNav.includes(item.label)}
-                        onOpenChange={() => toggleSubNav(item.label)}
-                      >
-                        <CollapsibleTrigger asChild>
+              <CollapsibleContent className="pl-4 pt-0.5 space-y-0.5">
+                {section.items.map((item) =>
+                  item.children && item.children.length > 0 ? (
+                    <Collapsible
+                      key={item.path}
+                      open={openSubNav.includes(item.label)}
+                      onOpenChange={() => toggleSubNav(item.label)}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <button
+                          className={cn(
+                            'sidebar-item w-full justify-between text-xs',
+                            (location.pathname === item.path ||
+                              item.children.some((c) => location.pathname === c.path)) &&
+                              'sidebar-item-active'
+                          )}
+                        >
+                          <span>{item.label}</span>
+                          {openSubNav.includes(item.label) ? (
+                            <ChevronDown className="h-3 w-3" />
+                          ) : (
+                            <ChevronRight className="h-3 w-3" />
+                          )}
+                        </button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pl-4 pt-0.5 space-y-0.5">
+                        {item.children.map((child) => (
                           <button
+                            key={child.path}
+                            onClick={() => navigate(child.path)}
                             className={cn(
-                              'sidebar-item w-full justify-between text-xs',
-                              (location.pathname === item.path ||
-                                item.children.some((c) => location.pathname === c.path)) &&
-                                'sidebar-item-active'
+                              'sidebar-item w-full text-xs',
+                              location.pathname === child.path && 'sidebar-item-active'
                             )}
                           >
-                            <span>{item.label}</span>
-                            {openSubNav.includes(item.label) ? (
-                              <ChevronDown className="h-3 w-3" />
-                            ) : (
-                              <ChevronRight className="h-3 w-3" />
-                            )}
+                            <span>{child.label}</span>
                           </button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="pl-4 pt-0.5 space-y-0.5">
-                          {item.children.map((child) => (
-                            <button
-                              key={child.path}
-                              onClick={() => navigate(child.path)}
-                              className={cn(
-                                'sidebar-item w-full text-xs',
-                                location.pathname === child.path && 'sidebar-item-active'
-                              )}
-                            >
-                              <span>{child.label}</span>
-                            </button>
-                          ))}
-                        </CollapsibleContent>
-                      </Collapsible>
-                    ) : (
-                      <button
-                        key={item.path}
-                        onClick={() => navigate(item.path)}
-                        className={cn(
-                          'sidebar-item w-full text-xs',
-                          location.pathname === item.path && 'sidebar-item-active'
-                        )}
-                      >
-                        <span>{item.label}</span>
-                      </button>
-                    )
-                  )}
-                </CollapsibleContent>
-              ) : null}
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ) : (
+                    <button
+                      key={item.path}
+                      onClick={() => navigate(item.path)}
+                      className={cn(
+                        'sidebar-item w-full text-xs',
+                        location.pathname === item.path && 'sidebar-item-active'
+                      )}
+                    >
+                      <span>{item.label}</span>
+                    </button>
+                  )
+                )}
+              </CollapsibleContent>
             </Collapsible>
-          ))}
+            )
+          )}
         </CollapsibleContent>
       </Collapsible>
     </>
