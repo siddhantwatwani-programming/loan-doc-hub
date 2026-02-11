@@ -51,6 +51,7 @@ const App = () => (
                 <Route path="/my-work/queue" element={<Dashboard />} />
                 <Route path="/my-work/action-items" element={<Dashboard />} />
                 <Route path="/my-work/alerts" element={<Dashboard />} />
+                <Route path="/broker-services/*" element={<Dashboard />} />
               </Route>
 
               {/* Deal viewing - accessible by CSR, Admin, and external users (via RLS) */}
