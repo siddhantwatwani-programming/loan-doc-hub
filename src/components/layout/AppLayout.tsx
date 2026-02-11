@@ -3,6 +3,7 @@ import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth, AppRole } from '@/contexts/AuthContext';
 import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext';
 import { AppSidebar } from './AppSidebar';
+import { AppHeader } from './AppHeader';
 import { Loader2 } from 'lucide-react';
 import { isExternalRole } from '@/lib/accessControl';
 import { cn } from '@/lib/utils';
@@ -61,8 +62,9 @@ const LayoutContent: React.FC<AppLayoutProps> = ({ requiredRoles, blockExternalU
   return (
     <div className="min-h-screen bg-background">
       <AppSidebar />
+      <AppHeader />
       <main className={cn(
-        "min-h-screen transition-all duration-300",
+        "min-h-screen pt-12 transition-all duration-300",
         isCollapsed ? "pl-16" : "pl-64"
       )}>
         <div className="animate-fade-in">
