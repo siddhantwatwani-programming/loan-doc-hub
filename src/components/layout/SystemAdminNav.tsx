@@ -41,7 +41,9 @@ const systemAdminData: ChildSection[] = [
   },
   {
     label: 'User Management',
-    items: [],
+    items: [
+      { label: 'All Users', path: '/users' },
+    ],
   },
   {
     label: 'Configuration',
