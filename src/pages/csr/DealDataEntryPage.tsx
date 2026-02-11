@@ -65,7 +65,7 @@ const SECTION_LABELS: Partial<Record<FieldSection | 'origination_fees' | 'fundin
   escrow: 'Escrow Impound',
   conversation_log: 'Conversation Log',
   notes: 'Notes',
-  event_journal: 'Event Journal',
+  event_journal: 'Events Journal',
   lender: 'Lenders',
   seller: 'Seller',
   other: 'Other',
@@ -897,7 +897,7 @@ export const DealDataEntryPage: React.FC = () => {
               <div className="flex items-center justify-center min-h-[300px]">
                 <div className="text-center">
                   <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Event Journal</h3>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Events Journal</h3>
                   <p className="text-muted-foreground">Coming Soon</p>
                 </div>
               </div>
