@@ -38,6 +38,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { BrokerServicesNav } from '@/components/layout/BrokerServicesNav';
+import { AccountingNav } from '@/components/layout/AccountingNav';
 import {
   Tooltip,
   TooltipContent,
@@ -308,6 +309,11 @@ export const AppSidebar: React.FC = () => {
           {/* Broker Services Section */}
           {!isCollapsed && (
             <BrokerServicesNav isCollapsed={isCollapsed} searchQuery={searchQuery} />
+          )}
+
+          {/* Accounting Section */}
+          {!isCollapsed && (
+            <AccountingNav isCollapsed={isCollapsed} searchQuery={searchQuery} />
           )}
 
           {/* Regular Nav Items */}
