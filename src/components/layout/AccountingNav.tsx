@@ -15,6 +15,7 @@ import {
 interface SubItem {
   label: string;
   path: string;
+  children?: SubItem[];
 }
 
 interface ChildSection {
@@ -71,7 +72,15 @@ const accountingData: ChildSection[] = [
     items: [
       { label: 'Department Dashboard', path: '/accounting/regulatory/dashboard' },
       { label: 'Calendar', path: '/accounting/regulatory/calendar' },
-      { label: 'Prepare Reports', path: '/accounting/regulatory/reports' },
+      { label: 'Prepare Reports', path: '/accounting/regulatory/reports', children: [
+        { label: 'State / Authority', path: '/accounting/regulatory/reports/state-authority', children: [
+          { label: 'California DRE', path: '/accounting/regulatory/reports/state-authority/california-dre', children: [
+            { label: 'Quarterly', path: '/accounting/regulatory/reports/state-authority/california-dre/quarterly' },
+            { label: 'Multi-lender', path: '/accounting/regulatory/reports/state-authority/california-dre/multi-lender' },
+            { label: 'Annual 881', path: '/accounting/regulatory/reports/state-authority/california-dre/annual-881' },
+          ]},
+        ]},
+      ]},
       { label: 'Activity Journal', path: '/accounting/regulatory/activity' },
     ],
   },
@@ -127,8 +136,16 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
   const [openParent, setOpenParent] = React.useState(false);
   const [openChildren, setOpenChildren] = React.useState<string[]>([]);
 
+  const [openNestedItems, setOpenNestedItems] = React.useState<string[]>([]);
+
   const toggleChild = (label: string) => {
     setOpenChildren((prev) =>
+      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
+    );
+  };
+
+  const toggleNestedItem = (label: string) => {
+    setOpenNestedItems((prev) =>
       prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
     );
   };
@@ -208,18 +225,135 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
               </CollapsibleTrigger>
               {section.items.length > 0 && (
                 <CollapsibleContent className="pl-4 pt-0.5 space-y-0.5">
-                  {section.items.map((item) => (
-                    <button
-                      key={item.path}
-                      onClick={() => navigate(item.path)}
-                      className={cn(
-                        'sidebar-item w-full text-xs',
-                        location.pathname === item.path && 'sidebar-item-active'
-                      )}
-                    >
-                      <span>{item.label}</span>
-                    </button>
-                  ))}
+                  {section.items.map((item) =>
+                    item.children ? (
+                      <Collapsible
+                        key={item.path}
+                        open={openNestedItems.includes(item.label)}
+                        onOpenChange={() => toggleNestedItem(item.label)}
+                      >
+                        <CollapsibleTrigger asChild>
+                          <button
+                            className={cn(
+                              'sidebar-item w-full justify-between text-xs',
+                              location.pathname.startsWith(item.path) &&
+                                'text-sidebar-primary-foreground bg-sidebar-accent'
+                            )}
+                          >
+                            <span>{item.label}</span>
+                            {openNestedItems.includes(item.label) ? (
+                              <ChevronDown className="h-3 w-3" />
+                            ) : (
+                              <ChevronRight className="h-3 w-3" />
+                            )}
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="pl-4 pt-0.5 space-y-0.5">
+                          {item.children.map((child) =>
+                            child.children ? (
+                              <Collapsible
+                                key={child.path}
+                                open={openNestedItems.includes(child.label)}
+                                onOpenChange={() => toggleNestedItem(child.label)}
+                              >
+                                <CollapsibleTrigger asChild>
+                                  <button
+                                    className={cn(
+                                      'sidebar-item w-full justify-between text-xs',
+                                      location.pathname.startsWith(child.path) &&
+                                        'text-sidebar-primary-foreground bg-sidebar-accent'
+                                    )}
+                                  >
+                                    <span>{child.label}</span>
+                                    {openNestedItems.includes(child.label) ? (
+                                      <ChevronDown className="h-3 w-3" />
+                                    ) : (
+                                      <ChevronRight className="h-3 w-3" />
+                                    )}
+                                  </button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="pl-4 pt-0.5 space-y-0.5">
+                                  {child.children.map((nested) =>
+                                    nested.children ? (
+                                      <Collapsible
+                                        key={nested.path}
+                                        open={openNestedItems.includes(nested.label)}
+                                        onOpenChange={() => toggleNestedItem(nested.label)}
+                                      >
+                                        <CollapsibleTrigger asChild>
+                                          <button
+                                            className={cn(
+                                              'sidebar-item w-full justify-between text-xs',
+                                              location.pathname.startsWith(nested.path) &&
+                                                'text-sidebar-primary-foreground bg-sidebar-accent'
+                                            )}
+                                          >
+                                            <span>{nested.label}</span>
+                                            {openNestedItems.includes(nested.label) ? (
+                                              <ChevronDown className="h-3 w-3" />
+                                            ) : (
+                                              <ChevronRight className="h-3 w-3" />
+                                            )}
+                                          </button>
+                                        </CollapsibleTrigger>
+                                        <CollapsibleContent className="pl-4 pt-0.5 space-y-0.5">
+                                          {nested.children.map((leaf) => (
+                                            <button
+                                              key={leaf.path}
+                                              onClick={() => navigate(leaf.path)}
+                                              className={cn(
+                                                'sidebar-item w-full text-xs',
+                                                location.pathname === leaf.path && 'sidebar-item-active'
+                                              )}
+                                            >
+                                              <span>{leaf.label}</span>
+                                            </button>
+                                          ))}
+                                        </CollapsibleContent>
+                                      </Collapsible>
+                                    ) : (
+                                      <button
+                                        key={nested.path}
+                                        onClick={() => navigate(nested.path)}
+                                        className={cn(
+                                          'sidebar-item w-full text-xs',
+                                          location.pathname === nested.path && 'sidebar-item-active'
+                                        )}
+                                      >
+                                        <span>{nested.label}</span>
+                                      </button>
+                                    )
+                                  )}
+                                </CollapsibleContent>
+                              </Collapsible>
+                            ) : (
+                              <button
+                                key={child.path}
+                                onClick={() => navigate(child.path)}
+                                className={cn(
+                                  'sidebar-item w-full text-xs',
+                                  location.pathname === child.path && 'sidebar-item-active'
+                                )}
+                              >
+                                <span>{child.label}</span>
+                              </button>
+                            )
+                          )}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ) : (
+                      <button
+                        key={item.path}
+                        onClick={() => navigate(item.path)}
+                        className={cn(
+                          'sidebar-item w-full text-xs',
+                          location.pathname === item.path && 'sidebar-item-active'
+                        )}
+                      >
+                        <span>{item.label}</span>
+                      </button>
+                    )
+                  )}
                 </CollapsibleContent>
               )}
             </Collapsible>
