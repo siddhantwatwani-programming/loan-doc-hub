@@ -1,6 +1,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Home } from 'lucide-react';
 import {
   Select,
@@ -18,6 +19,7 @@ interface LienDetailFormProps {
   propertyOptions?: { id: string; label: string }[];
 }
 
+const LOAN_TYPE_OPTIONS = ['Conventional', 'Private Lender', 'Judgement', 'Other'];
 const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
 
 export const LienDetailForm: React.FC<LienDetailFormProps> = ({
@@ -28,149 +30,213 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
 }) => {
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-2">
         <Home className="h-5 w-5 text-primary" />
         <span className="font-semibold text-lg text-foreground">General</span>
       </div>
 
-      {/* Property Lien Information */}
-      <div className="space-y-4 max-w-xl">
+      <div className="space-y-4">
         <div className="border-b border-border pb-2">
           <span className="font-semibold text-sm text-primary">Property Lien Information</span>
         </div>
 
-        <div>
-          <Label className="text-sm text-foreground">Property</Label>
-          <Select
-            value={lien.property}
-            onValueChange={(val) => onChange('property', val)}
-            disabled={disabled}
-          >
-            <SelectTrigger className="h-8 text-sm mt-1">
-              <SelectValue placeholder="Unassigned" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border border-border z-50">
-              <SelectItem value="unassigned">Unassigned</SelectItem>
-              {propertyOptions.map(opt => (
-                <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label className="text-sm text-foreground">Priority</Label>
-          <Select
-            value={lien.priority}
-            onValueChange={(val) => onChange('priority', val)}
-            disabled={disabled}
-          >
-            <SelectTrigger className="h-8 text-sm mt-1">
-              <SelectValue placeholder="Select priority" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border border-border z-50">
-              {PRIORITY_OPTIONS.map(opt => (
-                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label className="text-sm text-foreground">Lien Holder</Label>
-          <Input
-            value={lien.holder}
-            onChange={(e) => onChange('holder', e.target.value)}
-            disabled={disabled}
-            className="h-8 text-sm mt-1"
-          />
-        </div>
-
-        <div>
-          <Label className="text-sm text-foreground">Account</Label>
-          <Input
-            value={lien.account}
-            onChange={(e) => onChange('account', e.target.value)}
-            disabled={disabled}
-            className="h-8 text-sm mt-1"
-          />
-        </div>
-
-        <div>
-          <Label className="text-sm text-foreground">Contact</Label>
-          <Input
-            value={lien.contact}
-            onChange={(e) => onChange('contact', e.target.value)}
-            disabled={disabled}
-            className="h-8 text-sm mt-1"
-          />
-        </div>
-
-        <div>
-          <Label className="text-sm text-foreground">Phone</Label>
-          <Input
-            value={lien.phone}
-            onChange={(e) => onChange('phone', e.target.value)}
-            disabled={disabled}
-            className="h-8 text-sm mt-1"
-          />
-        </div>
-
-        <div>
-          <Label className="text-sm text-foreground">Original Balance</Label>
-          <div className="flex items-center gap-1 mt-1">
-            <span className="text-sm text-muted-foreground">$</span>
-            <Input
-              value={lien.originalBalance}
-              onChange={(e) => onChange('originalBalance', e.target.value)}
+        <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+          {/* Left Column */}
+          <div>
+            <Label className="text-sm text-foreground">Related Property</Label>
+            <Select
+              value={lien.property}
+              onValueChange={(val) => onChange('property', val)}
               disabled={disabled}
-              className="h-8 text-sm text-right"
-              inputMode="decimal"
-              placeholder="0.00"
-            />
+            >
+              <SelectTrigger className="h-8 text-sm mt-1">
+                <SelectValue placeholder="Unassigned" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border z-50">
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {propertyOptions.map(opt => (
+                  <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Right Column */}
+          <div>
+            <Label className="text-sm text-foreground">Lien Priority Now</Label>
+            <Select
+              value={lien.lienPriorityNow}
+              onValueChange={(val) => onChange('lienPriorityNow', val)}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-8 text-sm mt-1">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border z-50">
+                {PRIORITY_OPTIONS.map(opt => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-sm text-foreground">Lien Holder</Label>
+            <Input value={lien.holder} onChange={(e) => onChange('holder', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+          </div>
+          <div>
+            <Label className="text-sm text-foreground">Lien Priority After</Label>
+            <Select
+              value={lien.lienPriorityAfter}
+              onValueChange={(val) => onChange('lienPriorityAfter', val)}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-8 text-sm mt-1">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border z-50">
+                {PRIORITY_OPTIONS.map(opt => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-sm text-foreground">Account Number</Label>
+            <Input value={lien.account} onChange={(e) => onChange('account', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+          </div>
+          <div>
+            <Label className="text-sm text-foreground">Interest Rate</Label>
+            <div className="flex items-center gap-1 mt-1">
+              <Input value={lien.interestRate} onChange={(e) => onChange('interestRate', e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.000" />
+              <span className="text-sm text-muted-foreground">%</span>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-sm text-foreground">Phone</Label>
+            <Input value={lien.phone} onChange={(e) => onChange('phone', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+          </div>
+          <div>
+            <Label className="text-sm text-foreground">Maturity Date</Label>
+            <Input type="date" value={lien.maturityDate} onChange={(e) => onChange('maturityDate', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+          </div>
+
+          <div>
+            <Label className="text-sm text-foreground">Fax</Label>
+            <Input value={lien.fax} onChange={(e) => onChange('fax', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+          </div>
+          <div>
+            <Label className="text-sm text-foreground">Original Balance</Label>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-sm text-muted-foreground">$</span>
+              <Input value={lien.originalBalance} onChange={(e) => onChange('originalBalance', e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-sm text-foreground">Email</Label>
+            <Input value={lien.email} onChange={(e) => onChange('email', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+          </div>
+          <div>
+            <Label className="text-sm text-foreground">Balance After</Label>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-sm text-muted-foreground">$</span>
+              <Input value={lien.balanceAfter} onChange={(e) => onChange('balanceAfter', e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+            </div>
+          </div>
+
+          {/* Loan Type row */}
+          <div>
+            <Label className="text-sm text-foreground">Loan Type</Label>
+            <Select
+              value={lien.loanType}
+              onValueChange={(val) => onChange('loanType', val)}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-8 text-sm mt-1">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border z-50">
+                {LOAN_TYPE_OPTIONS.map(opt => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm text-foreground">Regular Payment</Label>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-sm text-muted-foreground">$</span>
+              <Input value={lien.regularPayment} onChange={(e) => onChange('regularPayment', e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+            </div>
           </div>
         </div>
 
-        <div>
-          <Label className="text-sm text-foreground">Current Balance</Label>
-          <div className="flex items-center gap-1 mt-1">
-            <span className="text-sm text-muted-foreground">$</span>
-            <Input
-              value={lien.currentBalance}
-              onChange={(e) => onChange('currentBalance', e.target.value)}
+        {/* Checkbox rows + right-side fields */}
+        <div className="grid grid-cols-2 gap-x-8 gap-y-3 mt-2">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="anticipated"
+              checked={lien.anticipated === 'true'}
+              onCheckedChange={(checked) => onChange('anticipated', checked ? 'true' : 'false')}
               disabled={disabled}
-              className="h-8 text-sm text-right"
-              inputMode="decimal"
-              placeholder="0.00"
             />
+            <Label htmlFor="anticipated" className="text-sm text-foreground">Anticipated</Label>
           </div>
-        </div>
+          <div>
+            <Label className="text-sm text-foreground">Recording Number</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <Input value={lien.recordingNumber} onChange={(e) => onChange('recordingNumber', e.target.value)} disabled={disabled} className="h-8 text-sm" />
+            </div>
+          </div>
 
-        <div>
-          <Label className="text-sm text-foreground">Regular Payment</Label>
-          <div className="flex items-center gap-1 mt-1">
-            <span className="text-sm text-muted-foreground">$</span>
-            <Input
-              value={lien.regularPayment}
-              onChange={(e) => onChange('regularPayment', e.target.value)}
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="existingRemain"
+              checked={lien.existingRemain === 'true'}
+              onCheckedChange={(checked) => onChange('existingRemain', checked ? 'true' : 'false')}
               disabled={disabled}
-              className="h-8 text-sm text-right"
-              inputMode="decimal"
-              placeholder="0.00"
             />
+            <Label htmlFor="existingRemain" className="text-sm text-foreground">Existing - Remain</Label>
           </div>
-        </div>
+          <div>
+            <Label className="text-sm text-foreground">Recording Date</Label>
+            <Input type="date" value={lien.recordingDate} onChange={(e) => onChange('recordingDate', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+          </div>
 
-        <div>
-          <Label className="text-sm text-foreground">Last Checked</Label>
-          <Input
-            type="date"
-            value={lien.lastChecked}
-            onChange={(e) => onChange('lastChecked', e.target.value)}
-            disabled={disabled}
-            className="h-8 text-sm mt-1"
-          />
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="existingPaydown"
+              checked={lien.existingPaydown === 'true'}
+              onCheckedChange={(checked) => onChange('existingPaydown', checked ? 'true' : 'false')}
+              disabled={disabled}
+            />
+            <Label htmlFor="existingPaydown" className="text-sm text-foreground">Existing - Paydown</Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="seniorLienTracking"
+              checked={lien.seniorLienTracking === 'true'}
+              onCheckedChange={(checked) => onChange('seniorLienTracking', checked ? 'true' : 'false')}
+              disabled={disabled}
+            />
+            <Label htmlFor="seniorLienTracking" className="text-sm text-foreground">Senior Lien Tracking</Label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="existingPayoff"
+              checked={lien.existingPayoff === 'true'}
+              onCheckedChange={(checked) => onChange('existingPayoff', checked ? 'true' : 'false')}
+              disabled={disabled}
+            />
+            <Label htmlFor="existingPayoff" className="text-sm text-foreground">Existing - Payoff</Label>
+          </div>
+          <div>
+            <Label className="text-sm text-foreground">Last Verified</Label>
+            <Input type="date" value={lien.lastVerified} onChange={(e) => onChange('lastVerified', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+          </div>
         </div>
       </div>
 
