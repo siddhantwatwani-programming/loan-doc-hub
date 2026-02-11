@@ -29,7 +29,6 @@ interface LienModalProps {
 }
 
 const LOAN_TYPE_OPTIONS = ['Conventional', 'Private Lender', 'Judgement', 'Other'];
-const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
 
 const getDefaultLien = (): LienData => ({
   id: '',
@@ -46,6 +45,8 @@ const getDefaultLien = (): LienData => ({
   existingRemain: 'false',
   existingPaydown: 'false',
   existingPayoff: 'false',
+  existingPaydownAmount: '',
+  existingPayoffAmount: '',
   lienPriorityNow: '',
   lienPriorityAfter: '',
   interestRate: '',
@@ -55,6 +56,7 @@ const getDefaultLien = (): LienData => ({
   currentBalance: '',
   regularPayment: '',
   recordingNumber: '',
+  recordingNumberFlag: 'false',
   recordingDate: '',
   seniorLienTracking: 'false',
   lastVerified: '',
@@ -109,22 +111,11 @@ export const LienModal: React.FC<LienModalProps> = ({
           <div className="grid grid-cols-2 gap-x-6 gap-y-3">
             <div>
               <Label className="text-sm text-foreground">Related Property</Label>
-              <Select value={formData.property} onValueChange={(val) => handleChange('property', val)}>
-                <SelectTrigger className="h-9 text-sm mt-1"><SelectValue placeholder="Unassigned" /></SelectTrigger>
-                <SelectContent className="bg-background border border-border z-50">
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
-                  {propertyOptions.map(opt => (<SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>))}
-                </SelectContent>
-              </Select>
+              <Input value={formData.property} onChange={(e) => handleChange('property', e.target.value)} className="h-9 text-sm mt-1" placeholder="Enter property" />
             </div>
             <div>
               <Label className="text-sm text-foreground">Lien Priority Now</Label>
-              <Select value={formData.lienPriorityNow} onValueChange={(val) => handleChange('lienPriorityNow', val)}>
-                <SelectTrigger className="h-9 text-sm mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                <SelectContent className="bg-background border border-border z-50">
-                  {PRIORITY_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-                </SelectContent>
-              </Select>
+              <Input value={formData.lienPriorityNow} onChange={(e) => handleChange('lienPriorityNow', e.target.value)} className="h-9 text-sm mt-1" placeholder="Enter priority" />
             </div>
 
             <div>
@@ -133,12 +124,7 @@ export const LienModal: React.FC<LienModalProps> = ({
             </div>
             <div>
               <Label className="text-sm text-foreground">Lien Priority After</Label>
-              <Select value={formData.lienPriorityAfter} onValueChange={(val) => handleChange('lienPriorityAfter', val)}>
-                <SelectTrigger className="h-9 text-sm mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                <SelectContent className="bg-background border border-border z-50">
-                  {PRIORITY_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-                </SelectContent>
-              </Select>
+              <Input value={formData.lienPriorityAfter} onChange={(e) => handleChange('lienPriorityAfter', e.target.value)} className="h-9 text-sm mt-1" placeholder="Enter priority" />
             </div>
 
             <div>
@@ -214,6 +200,10 @@ export const LienModal: React.FC<LienModalProps> = ({
               <Label className="text-sm text-foreground">Recording Number</Label>
               <Input value={formData.recordingNumber} onChange={(e) => handleChange('recordingNumber', e.target.value)} className="h-9 text-sm mt-1" />
             </div>
+            <div className="flex items-center gap-2 mt-6">
+              <Checkbox id="modal-recordingNumberFlag" checked={formData.recordingNumberFlag === 'true'} onCheckedChange={(c) => handleChange('recordingNumberFlag', c ? 'true' : 'false')} />
+              <Label htmlFor="modal-recordingNumberFlag" className="text-sm text-foreground">Recording Number Flag</Label>
+            </div>
 
             <div className="flex items-center gap-2">
               <Checkbox id="modal-existingRemain" checked={formData.existingRemain === 'true'} onCheckedChange={(c) => handleChange('existingRemain', c ? 'true' : 'false')} />
@@ -228,14 +218,29 @@ export const LienModal: React.FC<LienModalProps> = ({
               <Checkbox id="modal-existingPaydown" checked={formData.existingPaydown === 'true'} onCheckedChange={(c) => handleChange('existingPaydown', c ? 'true' : 'false')} />
               <Label htmlFor="modal-existingPaydown" className="text-sm text-foreground">Existing - Paydown</Label>
             </div>
-            <div className="flex items-center gap-2">
-              <Checkbox id="modal-seniorLienTracking" checked={formData.seniorLienTracking === 'true'} onCheckedChange={(c) => handleChange('seniorLienTracking', c ? 'true' : 'false')} />
-              <Label htmlFor="modal-seniorLienTracking" className="text-sm text-foreground">Senior Lien Tracking</Label>
+            <div>
+              <Label className="text-sm text-foreground">Paydown Amount</Label>
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-sm text-muted-foreground">$</span>
+                <Input value={formData.existingPaydownAmount} onChange={(e) => handleChange('existingPaydownAmount', e.target.value)} className="h-9 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
               <Checkbox id="modal-existingPayoff" checked={formData.existingPayoff === 'true'} onCheckedChange={(c) => handleChange('existingPayoff', c ? 'true' : 'false')} />
               <Label htmlFor="modal-existingPayoff" className="text-sm text-foreground">Existing - Payoff</Label>
+            </div>
+            <div>
+              <Label className="text-sm text-foreground">Payoff Amount</Label>
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-sm text-muted-foreground">$</span>
+                <Input value={formData.existingPayoffAmount} onChange={(e) => handleChange('existingPayoffAmount', e.target.value)} className="h-9 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Checkbox id="modal-seniorLienTracking" checked={formData.seniorLienTracking === 'true'} onCheckedChange={(c) => handleChange('seniorLienTracking', c ? 'true' : 'false')} />
+              <Label htmlFor="modal-seniorLienTracking" className="text-sm text-foreground">Senior Lien Tracking</Label>
             </div>
             <div>
               <Label className="text-sm text-foreground">Last Verified</Label>

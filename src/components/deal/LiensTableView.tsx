@@ -25,6 +25,8 @@ export interface LienData {
   existingRemain: string;
   existingPaydown: string;
   existingPayoff: string;
+  existingPaydownAmount: string;
+  existingPayoffAmount: string;
   lienPriorityNow: string;
   lienPriorityAfter: string;
   interestRate: string;
@@ -34,6 +36,7 @@ export interface LienData {
   currentBalance: string;
   regularPayment: string;
   recordingNumber: string;
+  recordingNumberFlag: string;
   recordingDate: string;
   seniorLienTracking: string;
   lastVerified: string;

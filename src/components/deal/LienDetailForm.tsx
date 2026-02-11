@@ -20,7 +20,6 @@ interface LienDetailFormProps {
 }
 
 const LOAN_TYPE_OPTIONS = ['Conventional', 'Private Lender', 'Judgement', 'Other'];
-const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
 
 export const LienDetailForm: React.FC<LienDetailFormProps> = ({
   lien,
@@ -41,42 +40,13 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
         </div>
 
         <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-          {/* Left Column */}
           <div>
             <Label className="text-sm text-foreground">Related Property</Label>
-            <Select
-              value={lien.property}
-              onValueChange={(val) => onChange('property', val)}
-              disabled={disabled}
-            >
-              <SelectTrigger className="h-8 text-sm mt-1">
-                <SelectValue placeholder="Unassigned" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border border-border z-50">
-                <SelectItem value="unassigned">Unassigned</SelectItem>
-                {propertyOptions.map(opt => (
-                  <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input value={lien.property} onChange={(e) => onChange('property', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" placeholder="Enter property" />
           </div>
-          {/* Right Column */}
           <div>
             <Label className="text-sm text-foreground">Lien Priority Now</Label>
-            <Select
-              value={lien.lienPriorityNow}
-              onValueChange={(val) => onChange('lienPriorityNow', val)}
-              disabled={disabled}
-            >
-              <SelectTrigger className="h-8 text-sm mt-1">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border border-border z-50">
-                {PRIORITY_OPTIONS.map(opt => (
-                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input value={lien.lienPriorityNow} onChange={(e) => onChange('lienPriorityNow', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" placeholder="Enter priority" />
           </div>
 
           <div>
@@ -85,20 +55,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           </div>
           <div>
             <Label className="text-sm text-foreground">Lien Priority After</Label>
-            <Select
-              value={lien.lienPriorityAfter}
-              onValueChange={(val) => onChange('lienPriorityAfter', val)}
-              disabled={disabled}
-            >
-              <SelectTrigger className="h-8 text-sm mt-1">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border border-border z-50">
-                {PRIORITY_OPTIONS.map(opt => (
-                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input value={lien.lienPriorityAfter} onChange={(e) => onChange('lienPriorityAfter', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" placeholder="Enter priority" />
           </div>
 
           <div>
@@ -190,6 +147,15 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
               <Input value={lien.recordingNumber} onChange={(e) => onChange('recordingNumber', e.target.value)} disabled={disabled} className="h-8 text-sm" />
             </div>
           </div>
+          <div className="flex items-center gap-2 mt-6">
+            <Checkbox
+              id="recordingNumberFlag"
+              checked={lien.recordingNumberFlag === 'true'}
+              onCheckedChange={(checked) => onChange('recordingNumberFlag', checked ? 'true' : 'false')}
+              disabled={disabled}
+            />
+            <Label htmlFor="recordingNumberFlag" className="text-sm text-foreground">Recording Number Flag</Label>
+          </div>
 
           <div className="flex items-center gap-2">
             <Checkbox
@@ -214,14 +180,12 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
             />
             <Label htmlFor="existingPaydown" className="text-sm text-foreground">Existing - Paydown</Label>
           </div>
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="seniorLienTracking"
-              checked={lien.seniorLienTracking === 'true'}
-              onCheckedChange={(checked) => onChange('seniorLienTracking', checked ? 'true' : 'false')}
-              disabled={disabled}
-            />
-            <Label htmlFor="seniorLienTracking" className="text-sm text-foreground">Senior Lien Tracking</Label>
+          <div>
+            <Label className="text-sm text-foreground">Paydown Amount</Label>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-sm text-muted-foreground">$</span>
+              <Input value={lien.existingPaydownAmount} onChange={(e) => onChange('existingPaydownAmount', e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -233,6 +197,26 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
             />
             <Label htmlFor="existingPayoff" className="text-sm text-foreground">Existing - Payoff</Label>
           </div>
+          <div>
+            <Label className="text-sm text-foreground">Payoff Amount</Label>
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-sm text-muted-foreground">$</span>
+              <Input value={lien.existingPayoffAmount} onChange={(e) => onChange('existingPayoffAmount', e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="seniorLienTracking"
+              checked={lien.seniorLienTracking === 'true'}
+              onCheckedChange={(checked) => onChange('seniorLienTracking', checked ? 'true' : 'false')}
+              disabled={disabled}
+            />
+            <Label htmlFor="seniorLienTracking" className="text-sm text-foreground">Senior Lien Tracking</Label>
+          </div>
+
+          <div>
+        </div>
           <div>
             <Label className="text-sm text-foreground">Last Verified</Label>
             <Input type="date" value={lien.lastVerified} onChange={(e) => onChange('lastVerified', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
