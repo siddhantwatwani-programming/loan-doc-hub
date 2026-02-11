@@ -109,6 +109,11 @@ export const AppSidebar: React.FC = () => {
   const { isCollapsed, toggleSidebar } = useSidebar();
   const [openGroups, setOpenGroups] = React.useState<string[]>(['Configuration', 'My Work']);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [activeSection, setActiveSection] = React.useState<string | null>(null);
+
+  const handleSectionToggle = (section: string) => (open: boolean) => {
+    setActiveSection(open ? section : null);
+  };
 
   // Filter items based on role
   const getFilteredItems = (): NavItem[] => {
@@ -294,22 +299,22 @@ export const AppSidebar: React.FC = () => {
 
           {/* Broker Services Section */}
           {!isCollapsed && (
-            <BrokerServicesNav isCollapsed={isCollapsed} searchQuery={searchQuery} />
+            <BrokerServicesNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'broker'} onOpenChange={handleSectionToggle('broker')} />
           )}
 
           {/* Accounting Section */}
           {!isCollapsed && (
-            <AccountingNav isCollapsed={isCollapsed} searchQuery={searchQuery} />
+            <AccountingNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'accounting'} onOpenChange={handleSectionToggle('accounting')} />
           )}
 
           {/* System Administration Section */}
           {!isCollapsed && (
-            <SystemAdminNav isCollapsed={isCollapsed} searchQuery={searchQuery} />
+            <SystemAdminNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'sysadmin'} onOpenChange={handleSectionToggle('sysadmin')} />
           )}
 
           {/* C Level Module Section */}
           {!isCollapsed && (
-            <CLevelModuleNav isCollapsed={isCollapsed} searchQuery={searchQuery} />
+            <CLevelModuleNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'clevel'} onOpenChange={handleSectionToggle('clevel')} />
           )}
 
           {/* Regular Nav Items */}
