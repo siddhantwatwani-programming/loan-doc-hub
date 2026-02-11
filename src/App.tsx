@@ -47,6 +47,10 @@ const App = () => (
               {/* Protected routes with layout - all authenticated users */}
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/my-work/messages" element={<Dashboard />} />
+                <Route path="/my-work/queue" element={<Dashboard />} />
+                <Route path="/my-work/action-items" element={<Dashboard />} />
+                <Route path="/my-work/alerts" element={<Dashboard />} />
               </Route>
 
               {/* Deal viewing - accessible by CSR, Admin, and external users (via RLS) */}
