@@ -72,6 +72,8 @@ const systemAdminData: ChildSection[] = [
 interface SystemAdminNavProps {
   isCollapsed: boolean;
   searchQuery: string;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 function getAllPaths(sections: ChildSection[]): string[] {
@@ -92,10 +94,12 @@ function getAllPaths(sections: ChildSection[]): string[] {
   return paths;
 }
 
-export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, searchQuery }) => {
+export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, searchQuery, isOpen, onOpenChange }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [openParent, setOpenParent] = React.useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  const openParent = isOpen !== undefined ? isOpen : internalOpen;
+  const handleOpenChange = onOpenChange || setInternalOpen;
   const [openChildren, setOpenChildren] = React.useState<string[]>([]);
   const [openSubNav, setOpenSubNav] = React.useState<string[]>([]);
 
@@ -145,7 +149,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
   return (
     <>
       <div className="my-3 border-t border-sidebar-border" />
-      <Collapsible open={openParent} onOpenChange={setOpenParent}>
+      <Collapsible open={openParent} onOpenChange={handleOpenChange}>
         <CollapsibleTrigger asChild>
           <button
             className={cn(

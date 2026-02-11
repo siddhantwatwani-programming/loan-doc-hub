@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Collapsible,
@@ -45,12 +45,16 @@ const childSections: ChildSection[] = [
 interface CLevelModuleNavProps {
   isCollapsed: boolean;
   searchQuery: string;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, searchQuery }) => {
+export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, searchQuery, isOpen, onOpenChange }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [openParent, setOpenParent] = React.useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  const openParent = isOpen !== undefined ? isOpen : internalOpen;
+  const handleOpenChange = onOpenChange || setInternalOpen;
   const [openSections, setOpenSections] = React.useState<string[]>([]);
   const [openSubNavs, setOpenSubNavs] = React.useState<string[]>([]);
 
@@ -88,12 +92,13 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
 
   return (
     <React.Fragment>
-      <Collapsible open={openParent} onOpenChange={setOpenParent}>
+      <Collapsible open={openParent} onOpenChange={handleOpenChange}>
         <CollapsibleTrigger asChild>
           <button className="sidebar-item w-full justify-between px-3 py-2">
-            <span className="text-sidebar-foreground">
-              C Level Module
-            </span>
+            <div className="flex items-center gap-3">
+              <Crown className="h-5 w-5" />
+              <span className="text-sidebar-foreground">C Level Module</span>
+            </div>
             {openParent ? (
               <ChevronDown className="h-4 w-4 text-sidebar-foreground/70" />
             ) : (

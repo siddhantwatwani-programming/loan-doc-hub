@@ -111,12 +111,16 @@ const brokerServicesData: ChildSection[] = [
 interface BrokerServicesNavProps {
   isCollapsed: boolean;
   searchQuery: string;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapsed, searchQuery }) => {
+export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapsed, searchQuery, isOpen, onOpenChange }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [openParent, setOpenParent] = React.useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  const openParent = isOpen !== undefined ? isOpen : internalOpen;
+  const handleOpenChange = onOpenChange || setInternalOpen;
   const [openChildren, setOpenChildren] = React.useState<string[]>([]);
 
   const toggleChild = (label: string) => {
@@ -157,7 +161,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
   return (
     <>
       <div className="my-3 border-t border-sidebar-border" />
-      <Collapsible open={openParent} onOpenChange={setOpenParent}>
+      <Collapsible open={openParent} onOpenChange={handleOpenChange}>
         <CollapsibleTrigger asChild>
           <button
             className={cn(
