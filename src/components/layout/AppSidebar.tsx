@@ -465,69 +465,6 @@ export const AppSidebar: React.FC = () => {
         </TooltipProvider>
       </nav>
 
-      {/* User Section */}
-      <div className={cn("p-4 border-t border-sidebar-border space-y-2", isCollapsed && "p-2")}>
-        <TooltipProvider delayDuration={0}>
-          {!isCollapsed && (
-            <div className="px-3 py-2">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
-                {user?.email}
-              </p>
-              <p className="text-xs text-sidebar-foreground/70">
-                {getRoleDisplayName(role)}
-              </p>
-            </div>
-          )}
-
-          {isCollapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button 
-                  onClick={toggleTheme} 
-                  className="sidebar-item w-full justify-center px-2"
-                >
-                  {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="font-medium">
-                {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <button 
-              onClick={toggleTheme} 
-              className="sidebar-item w-full"
-            >
-              {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-              <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
-            </button>
-          )}
-
-          {isCollapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={handleSignOut}
-                  className="sidebar-item w-full text-destructive hover:bg-destructive/10 justify-center px-2"
-                >
-                  <LogOut className="h-5 w-5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="font-medium">
-                Sign Out
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <button
-              onClick={handleSignOut}
-              className="sidebar-item w-full text-destructive hover:bg-destructive/10"
-            >
-              <LogOut className="h-5 w-5" />
-              <span>Sign Out</span>
-            </button>
-          )}
-        </TooltipProvider>
-      </div>
     </aside>
   );
 };
