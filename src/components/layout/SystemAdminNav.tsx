@@ -20,6 +20,7 @@ interface SubItem {
 
 interface ChildSection {
   label: string;
+  path?: string;
   items: SubItem[];
 }
 
@@ -41,9 +42,8 @@ const systemAdminData: ChildSection[] = [
   },
   {
     label: 'User Management',
-    items: [
-      { label: 'All Users', path: '/users' },
-    ],
+    path: '/users',
+    items: [],
   },
   {
     label: 'Configuration',
@@ -77,6 +77,9 @@ interface SystemAdminNavProps {
 function getAllPaths(sections: ChildSection[]): string[] {
   const paths: string[] = [];
   for (const s of sections) {
+    if (s.path) {
+      paths.push(s.path);
+    }
     for (const item of s.items) {
       paths.push(item.path);
       if (item.children) {
@@ -162,7 +165,19 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent className="pl-3 pt-1 space-y-0.5">
-          {filteredSections.map((section) => (
+          {filteredSections.map((section) =>
+            section.path && section.items.length === 0 ? (
+              <button
+                key={section.label}
+                onClick={() => navigate(section.path!)}
+                className={cn(
+                  'sidebar-item w-full text-sm',
+                  location.pathname === section.path && 'text-sidebar-primary-foreground bg-sidebar-accent'
+                )}
+              >
+                <span className="font-semibold text-xs">{section.label}</span>
+              </button>
+            ) : (
             <Collapsible
               key={section.label}
               open={openChildren.includes(section.label)}
@@ -244,7 +259,8 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                 </CollapsibleContent>
               )}
             </Collapsible>
-          ))}
+            )
+          )}
         </CollapsibleContent>
       </Collapsible>
     </>
