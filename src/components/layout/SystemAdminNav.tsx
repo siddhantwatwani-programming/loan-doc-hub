@@ -155,7 +155,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
           >
             <div className="flex items-center gap-3">
               <ShieldCheck className="h-5 w-5" />
-              <span className="font-semibold text-sm">System Administration</span>
+              <span>System Administration</span>
             </div>
             {openParent ? (
               <ChevronDown className="h-4 w-4" />
@@ -175,7 +175,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                   location.pathname === section.path && 'text-sidebar-primary-foreground bg-sidebar-accent'
                 )}
               >
-                <span className="font-medium text-xs">{section.label}</span>
+                <span>{section.label}</span>
               </button>
             ) : (
             <Collapsible
@@ -194,7 +194,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                     ) && 'text-sidebar-primary-foreground bg-sidebar-accent'
                   )}
                 >
-                  <span className="font-medium text-xs">{section.label}</span>
+                  <span>{section.label}</span>
                   {openChildren.includes(section.label) ? (
                     <ChevronDown className="h-3.5 w-3.5" />
                   ) : (
@@ -214,7 +214,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                         <CollapsibleTrigger asChild>
                           <button
                             className={cn(
-                              'sidebar-item w-full justify-between text-xs',
+                              'sidebar-item w-full justify-between text-sm',
                               (location.pathname === item.path ||
                                 item.children.some((c) => location.pathname === c.path)) &&
                                 'sidebar-item-active'
@@ -234,7 +234,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                               key={child.path}
                               onClick={() => navigate(child.path)}
                               className={cn(
-                                'sidebar-item w-full text-xs',
+                                'sidebar-item w-full text-sm',
                                 location.pathname === child.path && 'sidebar-item-active'
                               )}
                             >
@@ -248,7 +248,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                         key={item.path}
                         onClick={() => navigate(item.path)}
                         className={cn(
-                          'sidebar-item w-full text-xs',
+                          'sidebar-item w-full text-sm',
                           location.pathname === item.path && 'sidebar-item-active'
                         )}
                       >

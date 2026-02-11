@@ -167,7 +167,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
           >
             <div className="flex items-center gap-3">
               <Building2 className="h-5 w-5" />
-              <span className="font-semibold text-sm">Broker Services</span>
+              <span>Broker Services</span>
             </div>
             {openParent ? (
               <ChevronDown className="h-4 w-4" />
@@ -184,7 +184,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
                 key={item.path + item.label}
                 onClick={() => navigate(item.path)}
                 className={cn(
-                  'sidebar-item w-full text-xs',
+                  'sidebar-item w-full text-sm',
                   location.pathname === item.path && 'sidebar-item-active'
                 )}
               >
@@ -205,7 +205,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
                       'text-sidebar-primary-foreground bg-sidebar-accent'
                   )}
                 >
-                  <span className="font-medium text-xs">{section.label}</span>
+                  <span>{section.label}</span>
                   {openChildren.includes(section.label) ? (
                     <ChevronDown className="h-3.5 w-3.5" />
                   ) : (
@@ -219,7 +219,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
                     key={item.path}
                     onClick={() => navigate(item.path)}
                     className={cn(
-                      'sidebar-item w-full text-xs',
+                      'sidebar-item w-full text-sm',
                       location.pathname === item.path && 'sidebar-item-active'
                     )}
                   >
