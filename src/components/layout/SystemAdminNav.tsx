@@ -155,7 +155,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
           >
             <div className="flex items-center gap-3">
               <ShieldCheck className="h-5 w-5" />
-              <span className="font-bold text-xs tracking-wide uppercase">System Administration</span>
+              <span className="font-bold tracking-wide uppercase">System Administration</span>
             </div>
             {openParent ? (
               <ChevronDown className="h-4 w-4" />
@@ -175,7 +175,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                   location.pathname === section.path && 'text-sidebar-primary-foreground bg-sidebar-accent'
                 )}
               >
-                <span className="font-semibold text-xs">{section.label}</span>
+                <span className="font-semibold text-sm">{section.label}</span>
               </button>
             ) : (
             <Collapsible
@@ -194,7 +194,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                     ) && 'text-sidebar-primary-foreground bg-sidebar-accent'
                   )}
                 >
-                  <span className="font-semibold text-xs">{section.label}</span>
+                  <span className="font-semibold text-sm">{section.label}</span>
                   {openChildren.includes(section.label) ? (
                     <ChevronDown className="h-3.5 w-3.5" />
                   ) : (

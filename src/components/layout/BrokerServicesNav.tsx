@@ -167,7 +167,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
           >
             <div className="flex items-center gap-3">
               <Building2 className="h-5 w-5" />
-              <span className="font-bold text-xs tracking-wide uppercase">Broker Services</span>
+              <span className="font-bold tracking-wide uppercase">Broker Services</span>
             </div>
             {openParent ? (
               <ChevronDown className="h-4 w-4" />
@@ -205,7 +205,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
                       'text-sidebar-primary-foreground bg-sidebar-accent'
                   )}
                 >
-                  <span className="font-semibold text-xs">{section.label}</span>
+                  <span className="font-semibold text-sm">{section.label}</span>
                   {openChildren.includes(section.label) ? (
                     <ChevronDown className="h-3.5 w-3.5" />
                   ) : (
