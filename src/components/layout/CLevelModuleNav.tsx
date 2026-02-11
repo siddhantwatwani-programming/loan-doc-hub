@@ -91,7 +91,7 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
       <Collapsible open={openParent} onOpenChange={setOpenParent}>
         <CollapsibleTrigger asChild>
           <button className="sidebar-item w-full justify-between px-3 py-2">
-            <span className="font-bold tracking-wide uppercase text-sidebar-foreground">
+            <span className="font-semibold text-sm text-sidebar-foreground">
               C Level Module
             </span>
             {openParent ? (
@@ -165,7 +165,7 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
             >
               <CollapsibleTrigger asChild>
                 <button className="sidebar-item w-full justify-between pl-2 py-1.5">
-                  <span className="font-semibold text-xs text-sidebar-foreground">
+                  <span className="font-medium text-xs text-sidebar-foreground">
                     {section.label}
                   </span>
                   {openSections.includes(section.label) ? (
