@@ -1,11 +1,9 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
-// Field key mapping for tax detail fields
 const FIELD_KEYS = {
   taxIdType: 'borrower.tax_id_type',
   taxId: 'borrower.tax_id',
@@ -30,9 +28,7 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
   showValidation = false,
   disabled = false,
 }) => {
-  const getValue = (key: keyof typeof FIELD_KEYS): string => {
-    return values[FIELD_KEYS[key]] || '';
-  };
+  const getValue = (key: keyof typeof FIELD_KEYS): string => values[FIELD_KEYS[key]] || '';
 
   const handleChange = (key: keyof typeof FIELD_KEYS, value: string) => {
     onValueChange(FIELD_KEYS[key], value);
@@ -45,27 +41,25 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
     const showError = showValidation && isRequired && !value.trim();
 
     return (
-      <div key={key} className="flex items-center gap-4">
-        <Label className="w-40 text-sm text-foreground flex-shrink-0">
-          {label}
-        </Label>
+      <div key={key} className="flex items-center gap-2">
+        <Label className="w-28 min-w-[7rem] text-xs text-muted-foreground flex-shrink-0">{label}</Label>
         <Input
           value={value}
           onChange={(e) => handleChange(key, e.target.value)}
           disabled={disabled}
-          className={`h-8 text-sm flex-1 max-w-md ${showError ? 'border-destructive' : ''}`}
+          className={`h-7 text-xs flex-1 min-w-0 max-w-sm ${showError ? 'border-destructive' : ''}`}
         />
       </div>
     );
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="border-b border-border pb-2 mb-4">
-        <span className="font-semibold text-base text-foreground">1098</span>
+    <div className="p-4 space-y-4">
+      <div className="border-b border-border pb-1 mb-3">
+        <span className="font-semibold text-xs text-foreground">1098</span>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {renderField('taxIdType', 'Tax ID Type')}
         {renderField('taxId', 'TIN / SSN')}
         {renderField('filingStatus', 'Filing Status')}
@@ -73,8 +67,8 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
         {renderField('taxYear', 'Tax Year')}
       </div>
 
-      <div className="pt-6 border-t border-border">
-        <p className="text-sm text-muted-foreground">
+      <div className="pt-4 border-t border-border">
+        <p className="text-xs text-muted-foreground">
           Tax information is used for 1098 form generation and IRS reporting requirements.
         </p>
       </div>
