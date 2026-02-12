@@ -90,7 +90,7 @@ export const FieldMapEditorPage: React.FC = () => {
     try {
       const [templatesRes, fieldsRes] = await Promise.all([
         supabase.from('templates').select('*').eq('is_active', true).order('name'),
-        supabase.from('field_dictionary').select('*').order('section, label'),
+        supabase.from('field_dictionary').select('*').order('section, label').limit(5000),
       ]);
 
       if (templatesRes.error) throw templatesRes.error;

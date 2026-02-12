@@ -258,7 +258,8 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
           .select(
             'id, field_key, label, section, data_type, description, default_value, is_calculated, is_repeatable, validation_rule, calculation_formula, calculation_dependencies'
           )
-          .in('section', TMO_TAB_SECTIONS as any);
+          .in('section', TMO_TAB_SECTIONS as any)
+          .limit(5000);
 
         if (tmoError) throw tmoError;
 
