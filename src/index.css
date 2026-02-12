@@ -147,13 +147,13 @@
   /* Scale root font-size for large screens */
   @media (min-width: 1920px) {
     html {
-      font-size: clamp(18px, 1vw, 22px);
+      font-size: clamp(19px, 1.1vw, 24px);
     }
   }
 
   @media (min-width: 2560px) {
     html {
-      font-size: clamp(20px, 0.9vw, 26px);
+      font-size: clamp(22px, 1vw, 28px);
     }
   }
 
