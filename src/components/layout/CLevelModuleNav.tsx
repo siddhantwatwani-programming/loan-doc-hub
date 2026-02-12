@@ -97,12 +97,15 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
 
   return (
     <React.Fragment>
+      <div className="my-3 border-t border-sidebar-border" />
       <Collapsible open={openParent} onOpenChange={handleOpenChange}>
         <CollapsibleTrigger asChild>
-          <button className="sidebar-item w-full justify-between px-3 py-2">
+          <button className={cn(
+            'sidebar-item w-full justify-between',
+          )}>
             <div className="flex items-center gap-3">
               <Crown className="h-5 w-5" />
-              <span className="text-sidebar-foreground">C Level Module</span>
+              <span>C Level Module</span>
             </div>
             {openParent ? (
               <ChevronDown className="h-4 w-4 text-sidebar-foreground/70" />
@@ -203,7 +206,6 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
           ))}
         </CollapsibleContent>
       </Collapsible>
-      <div className="my-3 border-t border-sidebar-border" />
     </React.Fragment>
   );
 };
