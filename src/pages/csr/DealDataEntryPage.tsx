@@ -69,7 +69,7 @@ const SECTION_LABELS: Partial<Record<FieldSection | 'origination_fees' | 'fundin
   lender: 'Lenders',
   seller: 'Seller',
   other: 'Other',
-  origination_fees: 'Origination Fees',
+  origination_fees: 'Other Originations',
   system: 'System',
 };
 
