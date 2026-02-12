@@ -15,7 +15,6 @@ interface PropertyLegalDescriptionFormProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
-// Field key mapping as specified
 const FIELD_KEYS = {
   apn: 'property1.apn',
   legalDescription: 'property1.legal_description',
@@ -26,97 +25,47 @@ const FIELD_KEYS = {
 } as const;
 
 export const PropertyLegalDescriptionForm: React.FC<PropertyLegalDescriptionFormProps> = ({
-  fields,
-  values,
-  onValueChange,
-  showValidation = false,
-  disabled = false,
+  fields, values, onValueChange, showValidation = false, disabled = false,
 }) => {
   const getFieldValue = (key: string) => values[key] || '';
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
+    <div className="p-4 space-y-4">
       <div className="flex items-center gap-2">
         <Home className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-lg text-foreground">New Property</span>
+        <span className="font-semibold text-base text-foreground">New Property</span>
       </div>
 
-      {/* Property Legal Description Section */}
-      <div className="space-y-4">
-        <div className="border-b border-border pb-2">
-          <span className="font-semibold text-sm text-primary">Property Legal Description</span>
+      <div className="form-section-header">Property Legal Description</div>
+      <div className="form-grid-compact">
+        <div className="inline-field">
+          <Label className="inline-label">APN</Label>
+          <Input value={getFieldValue(FIELD_KEYS.apn)} onChange={(e) => onValueChange(FIELD_KEYS.apn, e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter APN" />
         </div>
-
-        <div>
-          <Label className="text-sm text-foreground">APN (Assessor's Parcel Number)</Label>
-          <Input
-            value={getFieldValue(FIELD_KEYS.apn)}
-            onChange={(e) => onValueChange(FIELD_KEYS.apn, e.target.value)}
-            disabled={disabled}
-            className="h-8 text-sm mt-1 max-w-md"
-            placeholder="Enter APN"
-          />
+        <div className="inline-field">
+          <Label className="inline-label">Lot</Label>
+          <Input value={getFieldValue(FIELD_KEYS.lot)} onChange={(e) => onValueChange(FIELD_KEYS.lot, e.target.value)} disabled={disabled} className="h-7 text-sm" />
         </div>
-
-        <div>
-          <Label className="text-sm text-foreground">Legal Description</Label>
-          <Textarea
-            value={getFieldValue(FIELD_KEYS.legalDescription)}
-            onChange={(e) => onValueChange(FIELD_KEYS.legalDescription, e.target.value)}
-            disabled={disabled}
-            className="mt-1 min-h-[200px] text-sm"
-            placeholder="Enter the legal description of the property..."
-          />
+        <div className="inline-field">
+          <Label className="inline-label">Block</Label>
+          <Input value={getFieldValue(FIELD_KEYS.block)} onChange={(e) => onValueChange(FIELD_KEYS.block, e.target.value)} disabled={disabled} className="h-7 text-sm" />
         </div>
-
-        <div className="grid grid-cols-2 gap-4 max-w-2xl">
-          <div>
-            <Label className="text-sm text-foreground">Lot</Label>
-            <Input
-              value={getFieldValue(FIELD_KEYS.lot)}
-              onChange={(e) => onValueChange(FIELD_KEYS.lot, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-            />
-          </div>
-
-          <div>
-            <Label className="text-sm text-foreground">Block</Label>
-            <Input
-              value={getFieldValue(FIELD_KEYS.block)}
-              onChange={(e) => onValueChange(FIELD_KEYS.block, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-            />
-          </div>
-
-          <div>
-            <Label className="text-sm text-foreground">Tract</Label>
-            <Input
-              value={getFieldValue(FIELD_KEYS.tract)}
-              onChange={(e) => onValueChange(FIELD_KEYS.tract, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-            />
-          </div>
-
-          <div>
-            <Label className="text-sm text-foreground">Unit</Label>
-            <Input
-              value={getFieldValue(FIELD_KEYS.unit)}
-              onChange={(e) => onValueChange(FIELD_KEYS.unit, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-            />
-          </div>
+        <div className="inline-field">
+          <Label className="inline-label">Tract</Label>
+          <Input value={getFieldValue(FIELD_KEYS.tract)} onChange={(e) => onValueChange(FIELD_KEYS.tract, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">Unit</Label>
+          <Input value={getFieldValue(FIELD_KEYS.unit)} onChange={(e) => onValueChange(FIELD_KEYS.unit, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+        </div>
+        <div className="inline-field col-span-full">
+          <Label className="inline-label">Legal Desc</Label>
+          <Textarea value={getFieldValue(FIELD_KEYS.legalDescription)} onChange={(e) => onValueChange(FIELD_KEYS.legalDescription, e.target.value)} disabled={disabled} className="min-h-[120px] text-sm" placeholder="Enter the legal description of the property..." />
         </div>
       </div>
 
-      <div className="pt-6 border-t border-border">
-        <p className="text-sm text-muted-foreground">
-          The legal description is used to identify the property in legal documents such as deeds and mortgages.
-        </p>
+      <div className="pt-4 border-t border-border">
+        <p className="text-xs text-muted-foreground">The legal description identifies the property in legal documents such as deeds and mortgages.</p>
       </div>
     </div>
   );
