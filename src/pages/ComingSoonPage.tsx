@@ -10,6 +10,9 @@ const ComingSoonPage: React.FC = () => {
         <p className="text-3xl font-extrabold uppercase tracking-widest text-foreground/80">
           SOON
         </p>
+        <p className="text-sm text-muted-foreground pt-2">
+          This module is under development. Data will be available soon.
+        </p>
       </div>
     </div>
   );
