@@ -59,16 +59,28 @@ export const AlternateTaxInfoModal: React.FC<AlternateTaxInfoModalProps> = ({
   onSave,
 }) => {
   const [formData, setFormData] = useState({
-    ssn: '', name: '', street: '', city: '', state: '', zip: '',
-    account: '', recipientType: '2-SSN', autoSync: false,
+    ssn: '',
+    name: '',
+    street: '',
+    city: '',
+    state: '',
+    zip: '',
+    account: '',
+    recipientType: '2-SSN',
+    autoSync: false,
   });
 
   useEffect(() => {
     if (open) {
       setFormData({
-        ssn: values.ssn || '', name: values.name || '', street: values.street || '',
-        city: values.city || '', state: values.state || '', zip: values.zip || '',
-        account: values.account || '', recipientType: values.recipientType || '2-SSN',
+        ssn: values.ssn || '',
+        name: values.name || '',
+        street: values.street || '',
+        city: values.city || '',
+        state: values.state || '',
+        zip: values.zip || '',
+        account: values.account || '',
+        recipientType: values.recipientType || '2-SSN',
         autoSync: values.autoSync || false,
       });
     }
@@ -78,61 +90,151 @@ export const AlternateTaxInfoModal: React.FC<AlternateTaxInfoModalProps> = ({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => { onSave(formData); onOpenChange(false); };
+  const handleSave = () => {
+    onSave(formData);
+    onOpenChange(false);
+  };
 
-  const renderInline = (label: string, children: React.ReactNode) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-28 min-w-[7rem] text-xs text-muted-foreground flex-shrink-0 truncate">{label}</Label>
-      {children}
-    </div>
-  );
+  const handleCancel = () => {
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="text-sm">Tax Payer 1098</DialogTitle>
+          <DialogTitle>Tax Payer 1098</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-2 py-3">
-          {renderInline("Taxpayer's SSN", (
-            <Input value={formData.ssn} onChange={(e) => handleChange('ssn', e.target.value)} className="h-7 text-xs flex-1 min-w-0" />
-          ))}
-          {renderInline("Taxpayer's Name", (
-            <Input value={formData.name} onChange={(e) => handleChange('name', e.target.value)} className="h-7 text-xs flex-1 min-w-0" />
-          ))}
-          {renderInline('Street Address', (
-            <Input value={formData.street} onChange={(e) => handleChange('street', e.target.value)} className="h-7 text-xs flex-1 min-w-0" />
-          ))}
-          <div className="flex items-center gap-2">
-            <Label className="w-28 min-w-[7rem] text-xs text-muted-foreground flex-shrink-0">City / State / Zip</Label>
-            <div className="flex gap-1.5 flex-1 min-w-0">
-              <Input value={formData.city} onChange={(e) => handleChange('city', e.target.value)} className="h-7 text-xs flex-1 min-w-0" placeholder="City" />
-              <Select value={formData.state} onValueChange={(value) => handleChange('state', value)}>
-                <SelectTrigger className="h-7 text-xs w-16"><SelectValue placeholder="ST" /></SelectTrigger>
-                <SelectContent>{STATE_OPTIONS.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}</SelectContent>
+        <div className="space-y-4 py-4">
+          {/* SSN */}
+          <div className="space-y-2">
+            <Label className="text-sm text-muted-foreground">
+              TAX PAYER'S social security number
+            </Label>
+            <Input
+              value={formData.ssn}
+              onChange={(e) => handleChange('ssn', e.target.value)}
+              className="h-9"
+            />
+          </div>
+
+          {/* Name */}
+          <div className="space-y-2">
+            <Label className="text-sm text-muted-foreground">
+              TAX PAYER'S name
+            </Label>
+            <Input
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              className="h-9"
+            />
+          </div>
+
+          {/* Street Address */}
+          <div className="space-y-2">
+            <Label className="text-sm text-muted-foreground">
+              Street address (including apt no.)
+            </Label>
+            <Input
+              value={formData.street}
+              onChange={(e) => handleChange('street', e.target.value)}
+              className="h-9"
+            />
+          </div>
+
+          {/* City, State, Zip */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">City</Label>
+              <Input
+                value={formData.city}
+                onChange={(e) => handleChange('city', e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">State</Label>
+              <Select
+                value={formData.state}
+                onValueChange={(value) => handleChange('state', value)}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATE_OPTIONS.map((state) => (
+                    <SelectItem key={state} value={state}>
+                      {state}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
-              <Input value={formData.zip} onChange={(e) => handleChange('zip', e.target.value)} className="h-7 text-xs w-20" placeholder="Zip" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Zip Code</Label>
+              <Input
+                value={formData.zip}
+                onChange={(e) => handleChange('zip', e.target.value)}
+                className="h-9"
+              />
             </div>
           </div>
-          {renderInline('Account #', (
-            <Input value={formData.account} onChange={(e) => handleChange('account', e.target.value)} className="h-7 text-xs flex-1 min-w-0" />
-          ))}
-          {renderInline('Recipient Type', (
-            <Select value={formData.recipientType} onValueChange={(value) => handleChange('recipientType', value)}>
-              <SelectTrigger className="h-7 text-xs flex-1 min-w-0"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>{RECIPIENT_TYPE_OPTIONS.map((o) => (<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>))}</SelectContent>
-            </Select>
-          ))}
-          <div className="flex items-center gap-2 pt-1">
-            <Checkbox id="autoSync" checked={formData.autoSync} onCheckedChange={(checked) => handleChange('autoSync', !!checked)} className="h-3.5 w-3.5" />
-            <Label htmlFor="autoSync" className="text-xs text-foreground">Auto-Synchronize</Label>
+
+          {/* Account Number and Recipient Type */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">
+                Account number (optional)
+              </Label>
+              <Input
+                value={formData.account}
+                onChange={(e) => handleChange('account', e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">
+                Recipient Type
+              </Label>
+              <Select
+                value={formData.recipientType}
+                onValueChange={(value) => handleChange('recipientType', value)}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {RECIPIENT_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Auto-Synchronize */}
+          <div className="flex items-center gap-2 pt-2">
+            <Checkbox
+              id="autoSync"
+              checked={formData.autoSync}
+              onCheckedChange={(checked) => handleChange('autoSync', !!checked)}
+            />
+            <Label htmlFor="autoSync" className="text-sm text-foreground">
+              Auto-Synchronize
+            </Label>
           </div>
         </div>
 
         <DialogFooter>
-          <Button size="sm" onClick={handleSave}>OK</Button>
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="default" onClick={handleSave}>
+            OK
+          </Button>
+          <Button variant="outline" onClick={handleCancel}>
+            Cancel
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

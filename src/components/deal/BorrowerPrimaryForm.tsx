@@ -89,129 +89,381 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
     }
   };
 
-  const renderInlineField = (key: keyof typeof FIELD_KEYS, label: string, opts?: { type?: string }) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-32 min-w-[8rem] text-xs text-muted-foreground flex-shrink-0 truncate">{label}</Label>
-      <Input
-        value={getValue(key)}
-        onChange={(e) => handleChange(key, e.target.value)}
-        disabled={disabled}
-        type={opts?.type}
-        className="h-7 text-xs flex-1 min-w-0"
-      />
-    </div>
-  );
-
-  const renderPhoneRow = (key: keyof typeof FIELD_KEYS, prefKey: keyof typeof FIELD_KEYS, label: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-12 min-w-[3rem] text-xs text-muted-foreground flex-shrink-0">{label}</Label>
-      <Input
-        value={getValue(key)}
-        onChange={(e) => handleChange(key, e.target.value)}
-        disabled={disabled}
-        className="h-7 text-xs flex-1 min-w-0"
-      />
-      <div className="flex items-center gap-1 flex-shrink-0">
-        <Checkbox
-          checked={getBoolValue(prefKey)}
-          onCheckedChange={(checked) => handleChange(prefKey, !!checked)}
-          disabled={disabled}
-          className="h-3.5 w-3.5"
-        />
-        <Label className="text-[10px] text-muted-foreground">Pref</Label>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="p-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-x-6 gap-y-4">
+    <div className="p-6">
+      {/* Horizontal 4-column layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
         {/* Column 1: Name Section */}
-        <div className="space-y-1.5">
-          <h3 className="text-xs font-semibold text-foreground border-b border-border pb-1 mb-2">Name</h3>
-          {renderInlineField('borrowerType', 'Borrower Type')}
-          {renderInlineField('borrowerId', 'Borrower ID')}
-          {renderInlineField('fullName', 'Full Name')}
-          {renderInlineField('firstName', 'First Name')}
-          {renderInlineField('middleName', 'Middle')}
-          {renderInlineField('lastName', 'Last')}
-          {renderInlineField('capacity', 'Capacity')}
-          {renderInlineField('email', 'Email', { type: 'email' })}
-          {renderInlineField('creditScore', 'Credit Score')}
-          {renderInlineField('taxIdType', 'Tax ID Type')}
-          {renderInlineField('taxId', 'TIN')}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground border-b border-border pb-2">Name</h3>
+          
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">Borrower Type</Label>
+              <Input
+                value={getValue('borrowerType')}
+                onChange={(e) => handleChange('borrowerType', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">Borrower ID</Label>
+              <Input
+                value={getValue('borrowerId')}
+                onChange={(e) => handleChange('borrowerId', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">Full Name: If Entity, Use Entity</Label>
+              <Input
+                value={getValue('fullName')}
+                onChange={(e) => handleChange('fullName', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">First: If Entity, Use Signer</Label>
+              <Input
+                value={getValue('firstName')}
+                onChange={(e) => handleChange('firstName', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">Middle</Label>
+              <Input
+                value={getValue('middleName')}
+                onChange={(e) => handleChange('middleName', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">Last</Label>
+              <Input
+                value={getValue('lastName')}
+                onChange={(e) => handleChange('lastName', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">Capacity</Label>
+              <Input
+                value={getValue('capacity')}
+                onChange={(e) => handleChange('capacity', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">Email</Label>
+              <Input
+                type="email"
+                value={getValue('email')}
+                onChange={(e) => handleChange('email', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">Credit Score</Label>
+              <Input
+                value={getValue('creditScore')}
+                onChange={(e) => handleChange('creditScore', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">Tax ID Type</Label>
+              <Input
+                value={getValue('taxIdType')}
+                onChange={(e) => handleChange('taxIdType', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">TIN</Label>
+              <Input
+                value={getValue('taxId')}
+                onChange={(e) => handleChange('taxId', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Column 2: Addresses */}
         <div className="space-y-4">
-          <div className="space-y-1.5">
-            <h3 className="text-xs font-semibold text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
-            {renderInlineField('primaryStreet', 'Street')}
-            {renderInlineField('primaryCity', 'City')}
-            {renderInlineField('primaryState', 'State')}
-            {renderInlineField('primaryZip', 'ZIP')}
+          {/* Primary Address */}
+          <h3 className="text-sm font-semibold text-foreground border-b border-border pb-2">Primary Address</h3>
+          
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">Street</Label>
+              <Input
+                value={getValue('primaryStreet')}
+                onChange={(e) => handleChange('primaryStreet', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">City</Label>
+              <Input
+                value={getValue('primaryCity')}
+                onChange={(e) => handleChange('primaryCity', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">State</Label>
+              <Input
+                value={getValue('primaryState')}
+                onChange={(e) => handleChange('primaryState', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">ZIP</Label>
+              <Input
+                value={getValue('primaryZip')}
+                onChange={(e) => handleChange('primaryZip', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
           </div>
 
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 border-b border-border pb-1 mb-2">
-              <h3 className="text-xs font-semibold text-foreground">Mailing Address</h3>
-              <Checkbox
-                checked={getBoolValue('mailingSameAsPrimary')}
-                onCheckedChange={(checked) => handleSameAsPrimaryChange(!!checked)}
-                disabled={disabled}
-                className="h-3.5 w-3.5"
+          {/* Mailing Address */}
+          <div className="flex items-center gap-2 border-b border-border pb-2 mt-6">
+            <h4 className="text-sm font-semibold text-foreground">Mailing Address</h4>
+            <Checkbox
+              checked={getBoolValue('mailingSameAsPrimary')}
+              onCheckedChange={(checked) => handleSameAsPrimaryChange(!!checked)}
+              disabled={disabled}
+            />
+            <Label className="text-xs text-muted-foreground">Same as Primary</Label>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">Street</Label>
+              <Input
+                value={getValue('mailingStreet')}
+                onChange={(e) => handleChange('mailingStreet', e.target.value)}
+                disabled={disabled || getBoolValue('mailingSameAsPrimary')}
+                className="h-8"
               />
-              <Label className="text-[10px] text-muted-foreground">Same as Primary</Label>
             </div>
-            <div className="flex items-center gap-2">
-              <Label className="w-32 min-w-[8rem] text-xs text-muted-foreground flex-shrink-0">Street</Label>
-              <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs flex-1 min-w-0" />
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">City</Label>
+              <Input
+                value={getValue('mailingCity')}
+                onChange={(e) => handleChange('mailingCity', e.target.value)}
+                disabled={disabled || getBoolValue('mailingSameAsPrimary')}
+                className="h-8"
+              />
             </div>
-            <div className="flex items-center gap-2">
-              <Label className="w-32 min-w-[8rem] text-xs text-muted-foreground flex-shrink-0">City</Label>
-              <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs flex-1 min-w-0" />
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">State</Label>
+              <Input
+                value={getValue('mailingState')}
+                onChange={(e) => handleChange('mailingState', e.target.value)}
+                disabled={disabled || getBoolValue('mailingSameAsPrimary')}
+                className="h-8"
+              />
             </div>
-            <div className="flex items-center gap-2">
-              <Label className="w-32 min-w-[8rem] text-xs text-muted-foreground flex-shrink-0">State</Label>
-              <Input value={getValue('mailingState')} onChange={(e) => handleChange('mailingState', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs flex-1 min-w-0" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="w-32 min-w-[8rem] text-xs text-muted-foreground flex-shrink-0">ZIP</Label>
-              <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs flex-1 min-w-0" />
+            
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground">ZIP</Label>
+              <Input
+                value={getValue('mailingZip')}
+                onChange={(e) => handleChange('mailingZip', e.target.value)}
+                disabled={disabled || getBoolValue('mailingSameAsPrimary')}
+                className="h-8"
+              />
             </div>
           </div>
         </div>
 
-        {/* Column 3: Phone */}
-        <div className="space-y-1.5">
-          <h3 className="text-xs font-semibold text-foreground border-b border-border pb-1 mb-2">Phone</h3>
-          {renderPhoneRow('phoneHome', 'preferredHome', 'Home')}
-          {renderPhoneRow('phoneHome2', 'preferredHome2', 'Home')}
-          {renderPhoneRow('phoneWork', 'preferredWork', 'Work')}
-          {renderPhoneRow('phoneCell', 'preferredCell', 'Cell')}
-          {renderPhoneRow('phoneFax', 'preferredFax', 'Fax')}
+        {/* Column 3: Phone Section */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground border-b border-border pb-2">Phone</h3>
+          
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 space-y-1">
+                <Label className="text-sm text-muted-foreground">Home</Label>
+                <Input
+                  value={getValue('phoneHome')}
+                  onChange={(e) => handleChange('phoneHome', e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                />
+              </div>
+              <div className="flex items-center gap-1 pt-5">
+                <Checkbox
+                  checked={getBoolValue('preferredHome')}
+                  onCheckedChange={(checked) => handleChange('preferredHome', !!checked)}
+                  disabled={disabled}
+                />
+                <Label className="text-xs text-muted-foreground">Preferred</Label>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex-1 space-y-1">
+                <Label className="text-sm text-muted-foreground">Home</Label>
+                <Input
+                  value={getValue('phoneHome2')}
+                  onChange={(e) => handleChange('phoneHome2', e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                />
+              </div>
+              <div className="flex items-center gap-1 pt-5">
+                <Checkbox
+                  checked={getBoolValue('preferredHome2')}
+                  onCheckedChange={(checked) => handleChange('preferredHome2', !!checked)}
+                  disabled={disabled}
+                />
+                <Label className="text-xs text-muted-foreground">Preferred</Label>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex-1 space-y-1">
+                <Label className="text-sm text-muted-foreground">Work</Label>
+                <Input
+                  value={getValue('phoneWork')}
+                  onChange={(e) => handleChange('phoneWork', e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                />
+              </div>
+              <div className="flex items-center gap-1 pt-5">
+                <Checkbox
+                  checked={getBoolValue('preferredWork')}
+                  onCheckedChange={(checked) => handleChange('preferredWork', !!checked)}
+                  disabled={disabled}
+                />
+                <Label className="text-xs text-muted-foreground">Preferred</Label>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex-1 space-y-1">
+                <Label className="text-sm text-muted-foreground">Cell</Label>
+                <Input
+                  value={getValue('phoneCell')}
+                  onChange={(e) => handleChange('phoneCell', e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                />
+              </div>
+              <div className="flex items-center gap-1 pt-5">
+                <Checkbox
+                  checked={getBoolValue('preferredCell')}
+                  onCheckedChange={(checked) => handleChange('preferredCell', !!checked)}
+                  disabled={disabled}
+                />
+                <Label className="text-xs text-muted-foreground">Preferred</Label>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex-1 space-y-1">
+                <Label className="text-sm text-muted-foreground">Fax</Label>
+                <Input
+                  value={getValue('phoneFax')}
+                  onChange={(e) => handleChange('phoneFax', e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                />
+              </div>
+              <div className="flex items-center gap-1 pt-5">
+                <Checkbox
+                  checked={getBoolValue('preferredFax')}
+                  onCheckedChange={(checked) => handleChange('preferredFax', !!checked)}
+                  disabled={disabled}
+                />
+                <Label className="text-xs text-muted-foreground">Preferred</Label>
+              </div>
+            </div>
+            
+          </div>
         </div>
 
         {/* Column 4: Vesting & FORD */}
         <div className="space-y-4">
-          <div className="space-y-1.5">
-            <h3 className="text-xs font-semibold text-foreground border-b border-border pb-1 mb-2">Vesting</h3>
-            <Textarea
-              value={getValue('vesting')}
-              onChange={(e) => handleChange('vesting', e.target.value)}
-              disabled={disabled}
-              className="min-h-[80px] text-xs"
-            />
-          </div>
+          {/* Vesting Section */}
+          <h3 className="text-sm font-semibold text-foreground border-b border-border pb-2">Vesting</h3>
+          
+          <Textarea
+            value={getValue('vesting')}
+            onChange={(e) => handleChange('vesting', e.target.value)}
+            disabled={disabled}
+            className="min-h-[100px] text-sm"
+          />
 
-          <div className="space-y-1.5">
-            <h3 className="text-xs font-semibold text-foreground border-b border-border pb-1 mb-2">FORD</h3>
-            <div className="grid grid-cols-2 gap-1.5">
-              <Input value={getValue('ford1')} onChange={(e) => handleChange('ford1', e.target.value)} disabled={disabled} className="h-7 text-xs" />
-              <Input value={getValue('ford2')} onChange={(e) => handleChange('ford2', e.target.value)} disabled={disabled} className="h-7 text-xs" />
-              <Input value={getValue('ford3')} onChange={(e) => handleChange('ford3', e.target.value)} disabled={disabled} className="h-7 text-xs" />
-              <Input value={getValue('ford4')} onChange={(e) => handleChange('ford4', e.target.value)} disabled={disabled} className="h-7 text-xs" />
+          {/* FORD Section */}
+          <h4 className="text-sm font-semibold text-foreground border-b border-border pb-2 mt-6">FORD</h4>
+          
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                value={getValue('ford1')}
+                onChange={(e) => handleChange('ford1', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+              <Input
+                value={getValue('ford2')}
+                onChange={(e) => handleChange('ford2', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                value={getValue('ford3')}
+                onChange={(e) => handleChange('ford3', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+              <Input
+                value={getValue('ford4')}
+                onChange={(e) => handleChange('ford4', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
             </div>
           </div>
         </div>
