@@ -12,6 +12,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchAllRows } from '@/lib/supabasePagination';
 import { 
   Search, 
   Loader2, 
@@ -88,16 +89,17 @@ export const FieldMapEditorPage: React.FC = () => {
 
   const fetchInitialData = async () => {
     try {
-      const [templatesRes, fieldsRes] = await Promise.all([
+      const [templatesRes, allFields] = await Promise.all([
         supabase.from('templates').select('*').eq('is_active', true).order('name'),
-        supabase.from('field_dictionary').select('*').order('section, label').limit(5000),
+        fetchAllRows((client) =>
+          client.from('field_dictionary').select('*').order('section, label')
+        ),
       ]);
 
       if (templatesRes.error) throw templatesRes.error;
-      if (fieldsRes.error) throw fieldsRes.error;
 
       setTemplates(templatesRes.data || []);
-      setFields(fieldsRes.data || []);
+      setFields(allFields || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({

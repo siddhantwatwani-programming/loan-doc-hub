@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { fetchAllRows } from '@/lib/supabasePagination';
 import { AppRole, EXTERNAL_ROLES, INTERNAL_ROLES } from '@/contexts/AuthContext';
 
 export interface FieldPermission {
@@ -73,22 +74,23 @@ export interface FieldVisibility {
  * Fetch field visibility settings from field_dictionary
  */
 export const fetchFieldVisibility = async (): Promise<Map<string, FieldVisibility>> => {
-  const { data, error } = await supabase
-    .from('field_dictionary')
-    .select('field_key, allowed_roles, read_only_roles, is_calculated')
-    .limit(5000);
+  try {
+    const data = await fetchAllRows((client) =>
+      client
+        .from('field_dictionary')
+        .select('field_key, allowed_roles, read_only_roles, is_calculated')
+    );
 
-  if (error) {
-    console.error('Error fetching field visibility:', error);
-    return new Map();
-  }
-
-  return new Map((data || []).map(fv => [fv.field_key, {
+    return new Map(data.map(fv => [fv.field_key, {
     field_key: fv.field_key,
     allowed_roles: fv.allowed_roles || ['admin', 'csr'],
     read_only_roles: fv.read_only_roles || [],
-    is_calculated: fv.is_calculated,
-  }]));
+      is_calculated: fv.is_calculated,
+    }]));
+  } catch (error) {
+    console.error('Error fetching field visibility:', error);
+    return new Map();
+  }
 };
 
 /**
