@@ -37,163 +37,68 @@ const US_STATES = [
 ];
 
 export const LenderTaxInfoForm: React.FC<LenderTaxInfoFormProps> = ({
-  values,
-  onValueChange,
-  disabled = false,
+  values, onValueChange, disabled = false,
 }) => {
-  const getValue = (key: string): string => {
-    return values[`lender.tax_payer.${key}`] || '';
-  };
-
-  const handleChange = (key: string, value: string) => {
-    onValueChange(`lender.tax_payer.${key}`, value);
-  };
-
-  const handleCheckboxChange = (key: string, checked: boolean) => {
-    onValueChange(`lender.tax_payer.${key}`, checked ? 'true' : 'false');
-  };
+  const getValue = (key: string): string => values[`lender.tax_payer.${key}`] || '';
+  const handleChange = (key: string, value: string) => onValueChange(`lender.tax_payer.${key}`, value);
+  const handleCheckboxChange = (key: string, checked: boolean) => onValueChange(`lender.tax_payer.${key}`, checked ? 'true' : 'false');
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <h2 className="text-lg font-semibold text-foreground">Tax Payer</h2>
-        <span className="text-lg font-semibold text-primary underline">1099</span>
+    <div className="p-4 space-y-4">
+      <div className="flex items-center gap-3">
+        <h2 className="text-base font-semibold text-foreground">Tax Payer</h2>
+        <span className="text-base font-semibold text-primary underline">1099</span>
       </div>
 
-      <div className="space-y-6">
-        {/* TAX PAYER'S social security number */}
-        <div className="space-y-1">
-          <Label className="text-sm text-muted-foreground">TAX PAYER'S social security number</Label>
-          <Input
-            value={getValue('ssn')}
-            onChange={(e) => handleChange('ssn', e.target.value)}
-            disabled={disabled}
-            className="h-9 bg-muted/30"
-          />
+      <div className="form-grid-compact">
+        <div className="inline-field">
+          <Label className="inline-label">SSN</Label>
+          <Input value={getValue('ssn')} onChange={(e) => handleChange('ssn', e.target.value)} disabled={disabled} className="h-7 text-sm" />
         </div>
-
-        {/* TAX PAYER'S name */}
-        <div className="space-y-1">
-          <Label className="text-sm text-muted-foreground">TAX PAYER'S name</Label>
-          <Input
-            value={getValue('name')}
-            onChange={(e) => handleChange('name', e.target.value)}
-            disabled={disabled}
-            className="h-9 bg-muted/30"
-          />
+        <div className="inline-field">
+          <Label className="inline-label">Name</Label>
+          <Input value={getValue('name')} onChange={(e) => handleChange('name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
         </div>
-
-        {/* Street address */}
-        <div className="space-y-1">
-          <Label className="text-sm text-muted-foreground">Street address (including apt no.)</Label>
-          <Input
-            value={getValue('street_address')}
-            onChange={(e) => handleChange('street_address', e.target.value)}
-            disabled={disabled}
-            className="h-9 bg-muted/30"
-          />
+        <div className="inline-field col-span-full md:col-span-2">
+          <Label className="inline-label">Street Address</Label>
+          <Input value={getValue('street_address')} onChange={(e) => handleChange('street_address', e.target.value)} disabled={disabled} className="h-7 text-sm" />
         </div>
-
-        {/* City, State, Zip Code row */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <Label className="text-sm text-muted-foreground">City</Label>
-            <Input
-              value={getValue('city')}
-              onChange={(e) => handleChange('city', e.target.value)}
-              disabled={disabled}
-              className="h-9 bg-muted/30"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-sm text-muted-foreground">State</Label>
-            <Select
-              value={getValue('state')}
-              onValueChange={(value) => handleChange('state', value)}
-              disabled={disabled}
-            >
-              <SelectTrigger className="h-9 bg-muted/30">
-                <SelectValue placeholder="Select state" />
-              </SelectTrigger>
-              <SelectContent>
-                {US_STATES.map((state) => (
-                  <SelectItem key={state} value={state}>
-                    {state}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-sm text-muted-foreground">Zip Code</Label>
-            <Input
-              value={getValue('zip_code')}
-              onChange={(e) => handleChange('zip_code', e.target.value)}
-              disabled={disabled}
-              className="h-9 bg-muted/30"
-            />
+        <div className="inline-field">
+          <Label className="inline-label">City</Label>
+          <Input value={getValue('city')} onChange={(e) => handleChange('city', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">State</Label>
+          <Select value={getValue('state')} onValueChange={(value) => handleChange('state', value)} disabled={disabled}>
+            <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+            <SelectContent>{US_STATES.map((state) => (<SelectItem key={state} value={state}>{state}</SelectItem>))}</SelectContent>
+          </Select>
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">Zip Code</Label>
+          <Input value={getValue('zip_code')} onChange={(e) => handleChange('zip_code', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">Account #</Label>
+          <Input value={getValue('account_number')} onChange={(e) => handleChange('account_number', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">Recipient Type</Label>
+          <Select value={getValue('recipient_type')} onValueChange={(value) => handleChange('recipient_type', value)} disabled={disabled}>
+            <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+            <SelectContent>{RECIPIENT_TYPE_OPTIONS.map((option) => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent>
+          </Select>
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label"></Label>
+          <div className="flex items-center gap-1.5 flex-1">
+            <Checkbox id="auto_synchronize" checked={getValue('auto_synchronize') === 'true'} onCheckedChange={(checked) => handleCheckboxChange('auto_synchronize', checked === true)} disabled={disabled} />
+            <Label htmlFor="auto_synchronize" className="text-sm cursor-pointer">Auto-Synchronize</Label>
           </div>
         </div>
-
-        {/* Account number and Recipient Type row */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label className="text-sm text-muted-foreground">Account number (optional)</Label>
-            <Input
-              value={getValue('account_number')}
-              onChange={(e) => handleChange('account_number', e.target.value)}
-              disabled={disabled}
-              className="h-9 bg-muted/30"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-sm text-muted-foreground">Recipient Type</Label>
-            <Select
-              value={getValue('recipient_type')}
-              onValueChange={(value) => handleChange('recipient_type', value)}
-              disabled={disabled}
-            >
-              <SelectTrigger className="h-9 bg-muted/30">
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                {RECIPIENT_TYPE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Auto-Synchronize checkbox */}
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="auto_synchronize"
-            checked={getValue('auto_synchronize') === 'true'}
-            onCheckedChange={(checked) => handleCheckboxChange('auto_synchronize', checked === true)}
-            disabled={disabled}
-          />
-          <Label htmlFor="auto_synchronize" className="text-sm text-muted-foreground cursor-pointer">
-            Auto-Synchronize
-          </Label>
-        </div>
-
-        {/* Notes field */}
-        <div className="space-y-1">
-          <Label className="text-sm text-muted-foreground">Notes</Label>
-          <Textarea
-            value={getValue('notes')}
-            onChange={(e) => handleChange('notes', e.target.value)}
-            disabled={disabled}
-            className="min-h-[100px] bg-muted/30 resize-none"
-            placeholder="Enter notes..."
-          />
+        <div className="inline-field col-span-full md:col-span-2">
+          <Label className="inline-label">Notes</Label>
+          <Textarea value={getValue('notes')} onChange={(e) => handleChange('notes', e.target.value)} disabled={disabled} className="min-h-[60px] text-sm resize-none" placeholder="Enter notes..." />
         </div>
       </div>
     </div>

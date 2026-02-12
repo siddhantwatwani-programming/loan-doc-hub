@@ -3,7 +3,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 
-// Field key mapping for broker banking fields
 const FIELD_KEYS = {
   achStatus: 'broker.banking.ach_status',
   bank: 'broker.banking.bank',
@@ -33,271 +32,106 @@ interface BrokerBankingFormProps {
 }
 
 export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({ 
-  disabled = false,
-  values = {},
-  onValueChange,
+  disabled = false, values = {}, onValueChange,
 }) => {
-  const getValue = (key: keyof typeof FIELD_KEYS): string => {
-    return values[FIELD_KEYS[key]] || '';
-  };
-
-  const getBoolValue = (key: keyof typeof FIELD_KEYS): boolean => {
-    return values[FIELD_KEYS[key]] === 'true';
-  };
-
+  const getValue = (key: keyof typeof FIELD_KEYS): string => values[FIELD_KEYS[key]] || '';
+  const getBoolValue = (key: keyof typeof FIELD_KEYS): boolean => values[FIELD_KEYS[key]] === 'true';
   const handleChange = (key: keyof typeof FIELD_KEYS, value: string | boolean) => {
-    if (onValueChange) {
-      onValueChange(FIELD_KEYS[key], String(value));
-    }
+    if (onValueChange) onValueChange(FIELD_KEYS[key], String(value));
   };
 
   return (
-    <div className="space-y-6">
-      {/* Three column layout matching screenshot */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Column 1 - ACH Section */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-sm text-foreground border-b border-border pb-2">ACH / Banking</h3>
-          
-          <div className="space-y-2">
-            <Label htmlFor="achStatus" className="text-sm">ACH Status</Label>
-            <Input
-              id="achStatus"
-              value={getValue('achStatus')}
-              onChange={(e) => handleChange('achStatus', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter ACH status"
-            />
-          </div>
+    <div className="p-4 space-y-4">
+      <div className="form-section-header">ACH / Banking</div>
+      <div className="form-grid-compact">
+        <div className="inline-field">
+          <Label className="inline-label">ACH Status</Label>
+          <Input value={getValue('achStatus')} onChange={(e) => handleChange('achStatus', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter ACH status" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">Bank</Label>
+          <Input value={getValue('bank')} onChange={(e) => handleChange('bank', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter bank name" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">Routing #</Label>
+          <Input value={getValue('routingNumber')} onChange={(e) => handleChange('routingNumber', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter routing number" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">Account #</Label>
+          <Input value={getValue('accountNumber')} onChange={(e) => handleChange('accountNumber', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter account number" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">Type</Label>
+          <Input value={getValue('accountType')} onChange={(e) => handleChange('accountType', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter type" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">Name</Label>
+          <Input value={getValue('accountName')} onChange={(e) => handleChange('accountName', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter name" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">ID</Label>
+          <Input value={getValue('accountId')} onChange={(e) => handleChange('accountId', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter ID" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">Further Credit</Label>
+          <Input value={getValue('furtherCreditTo')} onChange={(e) => handleChange('furtherCreditTo', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter further credit info" />
+        </div>
+      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="bank" className="text-sm">Bank</Label>
-            <Input
-              id="bank"
-              value={getValue('bank')}
-              onChange={(e) => handleChange('bank', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter bank name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="routingNumber" className="text-sm">Routing Number</Label>
-            <Input
-              id="routingNumber"
-              value={getValue('routingNumber')}
-              onChange={(e) => handleChange('routingNumber', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter routing number"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="accountNumber" className="text-sm">Account Number</Label>
-            <Input
-              id="accountNumber"
-              value={getValue('accountNumber')}
-              onChange={(e) => handleChange('accountNumber', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter account number"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="accountType" className="text-sm">Type</Label>
-            <Input
-              id="accountType"
-              value={getValue('accountType')}
-              onChange={(e) => handleChange('accountType', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter account type"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="accountName" className="text-sm">Name</Label>
-            <Input
-              id="accountName"
-              value={getValue('accountName')}
-              onChange={(e) => handleChange('accountName', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter account name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="accountId" className="text-sm">ID</Label>
-            <Input
-              id="accountId"
-              value={getValue('accountId')}
-              onChange={(e) => handleChange('accountId', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter ID"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="furtherCreditTo" className="text-sm">Further Credit To</Label>
-            <Input
-              id="furtherCreditTo"
-              value={getValue('furtherCreditTo')}
-              onChange={(e) => handleChange('furtherCreditTo', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter further credit info"
-            />
+      <div className="form-section-header">Check / Mailing</div>
+      <div className="form-grid-compact">
+        <div className="inline-field">
+          <Label className="inline-label"></Label>
+          <div className="flex items-center gap-4 flex-1">
+            <div className="flex items-center gap-1.5">
+              <Checkbox id="byCheck" checked={getBoolValue('byCheck')} onCheckedChange={(checked) => handleChange('byCheck', !!checked)} disabled={disabled} />
+              <Label htmlFor="byCheck" className="text-sm font-normal">By Check</Label>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Checkbox id="checkSameAsMailing" checked={getBoolValue('checkSameAsMailing')} onCheckedChange={(checked) => handleChange('checkSameAsMailing', !!checked)} disabled={disabled} />
+              <Label htmlFor="checkSameAsMailing" className="text-sm font-normal">Same as Mailing</Label>
+            </div>
           </div>
         </div>
-
-        {/* Column 2 - Check/Mailing Section */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-sm text-foreground border-b border-border pb-2">Check / Mailing</h3>
-          
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="byCheck"
-              checked={getBoolValue('byCheck')}
-              onCheckedChange={(checked) => handleChange('byCheck', !!checked)}
-              disabled={disabled}
-            />
-            <Label htmlFor="byCheck" className="text-sm font-normal cursor-pointer">
-              By Check
-            </Label>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="checkSameAsMailing"
-              checked={getBoolValue('checkSameAsMailing')}
-              onCheckedChange={(checked) => handleChange('checkSameAsMailing', !!checked)}
-              disabled={disabled}
-            />
-            <Label htmlFor="checkSameAsMailing" className="text-sm font-normal cursor-pointer">
-              Same as Mailing
-            </Label>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="checkAddress" className="text-sm">Address</Label>
-            <Input
-              id="checkAddress"
-              value={getValue('checkAddress')}
-              onChange={(e) => handleChange('checkAddress', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter mailing address"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="checkCity" className="text-sm">City</Label>
-            <Input
-              id="checkCity"
-              value={getValue('checkCity')}
-              onChange={(e) => handleChange('checkCity', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter city"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="checkZip" className="text-sm">Zip Code</Label>
-            <Input
-              id="checkZip"
-              value={getValue('checkZip')}
-              onChange={(e) => handleChange('checkZip', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter ZIP code"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="achEmail" className="text-sm">Add ACH Email</Label>
-            <Input
-              id="achEmail"
-              type="email"
-              value={getValue('achEmail')}
-              onChange={(e) => handleChange('achEmail', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter ACH email"
-            />
-          </div>
+        <div className="inline-field">
+          <Label className="inline-label">Address</Label>
+          <Input value={getValue('checkAddress')} onChange={(e) => handleChange('checkAddress', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter mailing address" />
         </div>
+        <div className="inline-field">
+          <Label className="inline-label">City</Label>
+          <Input value={getValue('checkCity')} onChange={(e) => handleChange('checkCity', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter city" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">Zip Code</Label>
+          <Input value={getValue('checkZip')} onChange={(e) => handleChange('checkZip', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter ZIP" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">ACH Email</Label>
+          <Input type="email" value={getValue('achEmail')} onChange={(e) => handleChange('achEmail', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter ACH email" />
+        </div>
+      </div>
 
-        {/* Column 3 - Credit Card Section */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-sm text-foreground border-b border-border pb-2">Credit Card</h3>
-          
-          <div className="space-y-2">
-            <Label htmlFor="ccName" className="text-sm">Name</Label>
-            <Input
-              id="ccName"
-              value={getValue('ccName')}
-              onChange={(e) => handleChange('ccName', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter cardholder name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="ccNumber" className="text-sm">Card Number</Label>
-            <Input
-              id="ccNumber"
-              value={getValue('ccNumber')}
-              onChange={(e) => handleChange('ccNumber', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter card number"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="ccSecurityCode" className="text-sm">Security Code</Label>
-            <Input
-              id="ccSecurityCode"
-              value={getValue('ccSecurityCode')}
-              onChange={(e) => handleChange('ccSecurityCode', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              type="password"
-              placeholder="Enter CVV"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="ccExpiration" className="text-sm">Expiration</Label>
-            <Input
-              id="ccExpiration"
-              value={getValue('ccExpiration')}
-              onChange={(e) => handleChange('ccExpiration', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="MM/YY"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="ccZip" className="text-sm">Zip Code</Label>
-            <Input
-              id="ccZip"
-              value={getValue('ccZip')}
-              onChange={(e) => handleChange('ccZip', e.target.value)}
-              disabled={disabled}
-              className="h-9"
-              placeholder="Enter billing ZIP"
-            />
-          </div>
+      <div className="form-section-header">Credit Card</div>
+      <div className="form-grid-compact">
+        <div className="inline-field">
+          <Label className="inline-label">Name</Label>
+          <Input value={getValue('ccName')} onChange={(e) => handleChange('ccName', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter cardholder" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">Card Number</Label>
+          <Input value={getValue('ccNumber')} onChange={(e) => handleChange('ccNumber', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter card number" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">Security Code</Label>
+          <Input value={getValue('ccSecurityCode')} onChange={(e) => handleChange('ccSecurityCode', e.target.value)} disabled={disabled} className="h-7 text-sm" type="password" placeholder="CVV" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">Expiration</Label>
+          <Input value={getValue('ccExpiration')} onChange={(e) => handleChange('ccExpiration', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="MM/YY" />
+        </div>
+        <div className="inline-field">
+          <Label className="inline-label">Zip Code</Label>
+          <Input value={getValue('ccZip')} onChange={(e) => handleChange('ccZip', e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Billing ZIP" />
         </div>
       </div>
     </div>
