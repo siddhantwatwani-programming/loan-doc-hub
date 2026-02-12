@@ -123,6 +123,10 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
   const handleOpenChange = onOpenChange || setInternalOpen;
   const [openChildren, setOpenChildren] = React.useState<string[]>([]);
 
+  const collapseAll = () => {
+    setOpenChildren([]);
+  };
+
   const toggleChild = (label: string) => {
     setOpenChildren((prev) =>
       prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
@@ -186,7 +190,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
             .map((item) => (
               <button
                 key={item.path + item.label}
-                onClick={() => navigate(item.path)}
+                onClick={() => { collapseAll(); navigate(item.path); }}
                 className={cn(
                   'sidebar-item w-full text-sm',
                   location.pathname === item.path && 'sidebar-item-active'
@@ -221,7 +225,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
                 {section.items.map((item) => (
                   <button
                     key={item.path}
-                    onClick={() => navigate(item.path)}
+                    onClick={() => { collapseAll(); navigate(item.path); }}
                     className={cn(
                       'sidebar-item w-full text-sm',
                       location.pathname === item.path && 'sidebar-item-active'
