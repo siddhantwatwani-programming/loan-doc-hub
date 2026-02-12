@@ -125,6 +125,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
 
   const collapseAll = () => {
     setOpenChildren([]);
+    handleOpenChange(false);
   };
 
   const toggleChild = (label: string) => {
