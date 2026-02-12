@@ -91,7 +91,7 @@ const App = () => (
 
                 <Route path="/accounting/*" element={<ComingSoonPage />} />
                 <Route path="/system-admin/*" element={<Dashboard />} />
-                <Route path="/c-level/*" element={<Dashboard />} />
+                <Route path="/c-level/*" element={<ComingSoonPage />} />
               </Route>
 
               {/* Deal viewing - accessible by CSR, Admin, and external users (via RLS) */}
