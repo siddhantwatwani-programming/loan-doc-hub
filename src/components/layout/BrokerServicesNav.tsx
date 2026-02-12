@@ -225,7 +225,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
                 {section.items.map((item) => (
                   <button
                     key={item.path}
-                    onClick={() => { collapseAll(); navigate(item.path); }}
+                    onClick={() => { setOpenChildren([section.label]); navigate(item.path); }}
                     className={cn(
                       'sidebar-item w-full text-sm',
                       location.pathname === item.path && 'sidebar-item-active'
