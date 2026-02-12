@@ -83,14 +83,13 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
 
   const toggleSection = (label: string) => {
     setOpenSections(prev =>
-      prev.includes(label) ? [] : [label]
+      prev.includes(label) ? prev.filter(s => s !== label) : [...prev, label]
     );
-    setOpenSubNavs([]);
   };
 
   const toggleSubNav = (label: string) => {
     setOpenSubNavs(prev =>
-      prev.includes(label) ? [] : [label]
+      prev.includes(label) ? prev.filter(s => s !== label) : [...prev, label]
     );
   };
 
