@@ -33,8 +33,15 @@ const ComingSoonPage: React.FC = () => {
   return (
     <div className="flex flex-col min-h-[60vh]">
       {sectionTitle && (
-        <div className="px-6 pt-6 pb-2">
-          <h2 className="text-lg font-semibold text-foreground text-left">{sectionTitle}</h2>
+        <div className="px-6 pt-6 pb-2 text-left">
+          {sectionTitle.includes('→') ? (
+            <>
+              <p className="text-sm text-muted-foreground">{sectionTitle.split('→')[0].trim()}</p>
+              <h2 className="text-lg font-semibold text-foreground">{sectionTitle.split('→')[1].trim()}</h2>
+            </>
+          ) : (
+            <h2 className="text-lg font-semibold text-foreground">{sectionTitle}</h2>
+          )}
         </div>
       )}
       <div className="flex items-center justify-center flex-1">
