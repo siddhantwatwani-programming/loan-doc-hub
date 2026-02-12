@@ -236,7 +236,7 @@ export const AppSidebar: React.FC = () => {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-2 space-y-1 overflow-y-auto sidebar-scrollbar">
         <TooltipProvider delayDuration={0}>
           {/* My Work Section */}
           {searchedMyWorkItems.length > 0 && (
