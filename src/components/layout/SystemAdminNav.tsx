@@ -241,7 +241,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                           {item.children.map((child) => (
                             <button
                               key={child.path}
-                              onClick={() => { collapseAll(); navigate(child.path); }}
+                              onClick={() => { setOpenChildren([section.label]); setOpenSubNav([item.label]); navigate(child.path); }}
                               className={cn(
                                 'sidebar-item w-full text-sm',
                                 location.pathname === child.path && 'sidebar-item-active'
@@ -255,7 +255,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                     ) : (
                       <button
                         key={item.path}
-                        onClick={() => { collapseAll(); navigate(item.path); }}
+                        onClick={() => { setOpenChildren([section.label]); setOpenSubNav([]); navigate(item.path); }}
                         className={cn(
                           'sidebar-item w-full text-sm',
                           location.pathname === item.path && 'sidebar-item-active'

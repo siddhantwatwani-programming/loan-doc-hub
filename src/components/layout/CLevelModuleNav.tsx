@@ -141,7 +141,7 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
                     .map(child => (
                       <button
                         key={child.path}
-                        onClick={() => { collapseAll(); navigate(child.path); }}
+                        onClick={() => { setOpenSections([]); setOpenSubNavs([item.label]); navigate(child.path); }}
                         className={cn(
                           'sidebar-item w-full text-sm pl-2',
                           isActive(child.path) && 'sidebar-item-active'
@@ -155,7 +155,7 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
             ) : (
               <button
                 key={item.path}
-                onClick={() => { collapseAll(); navigate(item.path); }}
+                onClick={() => { setOpenSections([]); setOpenSubNavs([]); navigate(item.path); }}
                 className={cn(
                   'sidebar-item w-full text-sm pl-2',
                   isActive(item.path) && 'sidebar-item-active'
@@ -189,7 +189,7 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
                 {section.items.map(item => (
                   <button
                     key={item.path}
-                    onClick={() => { collapseAll(); navigate(item.path); }}
+                    onClick={() => { setOpenSections([section.label]); setOpenSubNavs([]); navigate(item.path); }}
                     className={cn(
                       'sidebar-item w-full text-sm pl-2',
                       isActive(item.path) && 'sidebar-item-active'
