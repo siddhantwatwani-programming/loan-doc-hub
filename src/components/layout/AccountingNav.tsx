@@ -155,13 +155,14 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
 
   const toggleChild = (label: string) => {
     setOpenChildren((prev) =>
-      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
+      prev.includes(label) ? [] : [label]
     );
+    setOpenNestedItems([]);
   };
 
   const toggleNestedItem = (label: string) => {
     setOpenNestedItems((prev) =>
-      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
+      prev.includes(label) ? prev.filter((l) => l !== label) : [label]
     );
   };
 

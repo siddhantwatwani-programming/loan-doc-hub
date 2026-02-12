@@ -110,13 +110,14 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
 
   const toggleChild = (label: string) => {
     setOpenChildren((prev) =>
-      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
+      prev.includes(label) ? [] : [label]
     );
+    setOpenSubNav([]);
   };
 
   const toggleSubNav = (label: string) => {
     setOpenSubNav((prev) =>
-      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
+      prev.includes(label) ? [] : [label]
     );
   };
 
