@@ -116,7 +116,8 @@ export const FieldDictionaryPage: React.FC = () => {
       const { data, error } = await supabase
         .from('field_dictionary')
         .select('*')
-        .order('section, label');
+        .order('section, label')
+        .limit(5000);
 
       if (error) throw error;
       setFields(data || []);

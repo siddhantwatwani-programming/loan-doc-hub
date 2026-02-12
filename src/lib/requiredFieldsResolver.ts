@@ -68,7 +68,8 @@ export async function resolveAllFields(): Promise<ResolvedFieldSet> {
   const { data: fieldDictEntries, error } = await supabase
     .from('field_dictionary')
     .select('*')
-    .in('section', SECTION_ORDER as any);
+    .in('section', SECTION_ORDER as any)
+    .limit(5000);
 
   if (error) throw error;
 

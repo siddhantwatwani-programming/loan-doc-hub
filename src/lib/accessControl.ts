@@ -75,7 +75,8 @@ export interface FieldVisibility {
 export const fetchFieldVisibility = async (): Promise<Map<string, FieldVisibility>> => {
   const { data, error } = await supabase
     .from('field_dictionary')
-    .select('field_key, allowed_roles, read_only_roles, is_calculated');
+    .select('field_key, allowed_roles, read_only_roles, is_calculated')
+    .limit(5000);
 
   if (error) {
     console.error('Error fetching field visibility:', error);
