@@ -26,6 +26,7 @@ import FieldDictionaryPage from "./pages/admin/FieldDictionaryPage";
 import FieldMapEditorPage from "./pages/admin/FieldMapEditorPage";
 import SystemSettingsPage from "./pages/admin/SystemSettingsPage";
 import MagicLinkAccessPage from "./pages/MagicLinkAccessPage";
+import ComingSoonPage from "./pages/ComingSoonPage";
 
 const queryClient = new QueryClient();
 
@@ -47,11 +48,47 @@ const App = () => (
               {/* Protected routes with layout - all authenticated users */}
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/my-work/messages" element={<Dashboard />} />
-                <Route path="/my-work/queue" element={<Dashboard />} />
-                <Route path="/my-work/action-items" element={<Dashboard />} />
-                <Route path="/my-work/alerts" element={<Dashboard />} />
-                <Route path="/broker-services/*" element={<Dashboard />} />
+
+                {/* My Work */}
+                <Route path="/my-work/messages" element={<ComingSoonPage />} />
+                <Route path="/my-work/queue" element={<ComingSoonPage />} />
+                <Route path="/my-work/action-items" element={<ComingSoonPage />} />
+                <Route path="/my-work/alerts" element={<ComingSoonPage />} />
+
+                {/* Broker Services */}
+                <Route path="/broker-services/department-alerts" element={<ComingSoonPage />} />
+                <Route path="/broker-services/origination/dashboard" element={<ComingSoonPage />} />
+                <Route path="/broker-services/origination/activity" element={<ComingSoonPage />} />
+                <Route path="/broker-services/documents/dashboard" element={<ComingSoonPage />} />
+                <Route path="/broker-services/documents/activity" element={<ComingSoonPage />} />
+                <Route path="/broker-services/documents/packets" element={<ComingSoonPage />} />
+                <Route path="/broker-services/documents/loan-documents" element={<ComingSoonPage />} />
+                <Route path="/broker-services/intake/dashboard" element={<ComingSoonPage />} />
+                <Route path="/broker-services/intake/activity" element={<ComingSoonPage />} />
+                <Route path="/broker-services/intake/messages" element={<ComingSoonPage />} />
+                <Route path="/broker-services/servicing/management" element={<ComingSoonPage />} />
+                <Route path="/broker-services/servicing/alerts" element={<ComingSoonPage />} />
+                <Route path="/broker-services/servicing/dashboard" element={<ComingSoonPage />} />
+                <Route path="/broker-services/servicing/activity" element={<ComingSoonPage />} />
+                <Route path="/broker-services/servicing/custom-views" element={<ComingSoonPage />} />
+                <Route path="/broker-services/operations/management" element={<ComingSoonPage />} />
+                <Route path="/broker-services/operations/alerts" element={<ComingSoonPage />} />
+                <Route path="/broker-services/operations/dashboard" element={<ComingSoonPage />} />
+                <Route path="/broker-services/operations/activity" element={<ComingSoonPage />} />
+                <Route path="/broker-services/operations/senior-lien" element={<ComingSoonPage />} />
+                <Route path="/broker-services/operations/insurance" element={<ComingSoonPage />} />
+                <Route path="/broker-services/operations/tax" element={<ComingSoonPage />} />
+                <Route path="/broker-services/operations/maintenance" element={<ComingSoonPage />} />
+                <Route path="/broker-services/operations/outstanding" element={<ComingSoonPage />} />
+                <Route path="/broker-services/default/management" element={<ComingSoonPage />} />
+                <Route path="/broker-services/default/alerts" element={<ComingSoonPage />} />
+                <Route path="/broker-services/default/dashboard" element={<ComingSoonPage />} />
+                <Route path="/broker-services/default/activity" element={<ComingSoonPage />} />
+                <Route path="/broker-services/default/mod-forbearance" element={<ComingSoonPage />} />
+                <Route path="/broker-services/default/foreclosure" element={<ComingSoonPage />} />
+                <Route path="/broker-services/default/bankruptcy" element={<ComingSoonPage />} />
+                <Route path="/broker-services/*" element={<ComingSoonPage />} />
+
                 <Route path="/accounting/*" element={<Dashboard />} />
                 <Route path="/system-admin/*" element={<Dashboard />} />
                 <Route path="/c-level/*" element={<Dashboard />} />
