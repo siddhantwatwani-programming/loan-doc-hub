@@ -170,13 +170,13 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
         </CollapsibleTrigger>
         <CollapsibleContent className="pl-3 pt-1 space-y-0.5">
           {filteredSections.map((section) =>
-            section.path && section.items.length === 0 ? (
+            section.items.length === 0 ? (
               <button
                 key={section.label}
-                onClick={() => navigate(section.path!)}
+                onClick={() => section.path && navigate(section.path!)}
                 className={cn(
                   'sidebar-item w-full text-sm',
-                  location.pathname === section.path && 'text-sidebar-primary-foreground bg-sidebar-accent'
+                  section.path && location.pathname === section.path && 'text-sidebar-primary-foreground bg-sidebar-accent'
                 )}
               >
                 <span>{section.label}</span>
