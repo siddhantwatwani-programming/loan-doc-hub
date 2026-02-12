@@ -123,8 +123,8 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
   const handleOpenChange = onOpenChange || setInternalOpen;
   const [openChildren, setOpenChildren] = React.useState<string[]>([]);
 
-  const collapseAll = () => {
-    setOpenChildren([]);
+  const collapseAllExcept = (keepLabel?: string) => {
+    setOpenChildren(keepLabel ? [keepLabel] : []);
   };
 
   const toggleChild = (label: string) => {
@@ -164,7 +164,6 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
 
   return (
     <>
-      <div className="my-3 border-t border-sidebar-border" />
       <Collapsible open={openParent} onOpenChange={handleOpenChange}>
         <CollapsibleTrigger asChild>
           <button
@@ -190,7 +189,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
             .map((item) => (
               <button
                 key={item.path + item.label}
-                onClick={() => { collapseAll(); navigate(item.path); }}
+                onClick={() => { collapseAllExcept(); navigate(item.path); }}
                 className={cn(
                   'sidebar-item w-full text-sm',
                   location.pathname === item.path && 'sidebar-item-active'
@@ -225,7 +224,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
                 {section.items.map((item) => (
                   <button
                     key={item.path}
-                    onClick={() => { collapseAll(); navigate(item.path); }}
+                    onClick={() => { collapseAllExcept(section.label); navigate(item.path); }}
                     className={cn(
                       'sidebar-item w-full text-sm',
                       location.pathname === item.path && 'sidebar-item-active'
