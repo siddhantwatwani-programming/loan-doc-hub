@@ -211,8 +211,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           
           <div className="space-y-3">
             {/* Lender ID - input field */}
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Lender ID</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Lender ID</Label>
               <Input
                 value={getValue('lenderId')}
                 onChange={(e) => handleChange('lenderId', e.target.value)}
@@ -222,8 +222,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Lender Type</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Lender Type</Label>
               <Select
                 value={getValue('type')}
                 onValueChange={(value) => handleChange('type', value)}
@@ -242,8 +242,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Loan Type</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Loan Type</Label>
               <Input
                 value={getValue('loanType')}
                 onChange={(e) => handleChange('loanType', e.target.value)}
@@ -252,8 +252,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Full Name: If Entity, Use Entity</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Full Name</Label>
               <Input
                 value={getValue('fullName')}
                 onChange={(e) => handleChange('fullName', e.target.value)}
@@ -262,8 +262,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">First: If Entity, Use Signer</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">First</Label>
               <Input
                 value={getValue('firstName')}
                 onChange={(e) => handleChange('firstName', e.target.value)}
@@ -272,8 +272,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Middle</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Middle</Label>
               <Input
                 value={getValue('middleName')}
                 onChange={(e) => handleChange('middleName', e.target.value)}
@@ -282,8 +282,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Last</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Last</Label>
               <Input
                 value={getValue('lastName')}
                 onChange={(e) => handleChange('lastName', e.target.value)}
@@ -292,8 +292,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Capacity</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Capacity</Label>
               <Input
                 value={getValue('capacity')}
                 onChange={(e) => handleChange('capacity', e.target.value)}
@@ -302,8 +302,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Email</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Email</Label>
               <Input
                 type="email"
                 value={getValue('email')}
@@ -313,8 +313,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Tax ID Type</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Tax ID Type</Label>
               <Select
                 value={getValue('taxIdType')}
                 onValueChange={(value) => handleChange('taxIdType', value)}
@@ -333,8 +333,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               </Select>
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Tax ID</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Tax ID</Label>
               <Input
                 value={getValue('taxId')}
                 onChange={(e) => handleChange('taxId', e.target.value)}
@@ -392,8 +392,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           <h3 className="text-sm font-semibold text-foreground border-b pb-2">Primary Address</h3>
           
           <div className="space-y-3">
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Street</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">Street</Label>
               <Input
                 value={getValue('primaryStreet')}
                 onChange={(e) => handleChange('primaryStreet', e.target.value)}
@@ -402,8 +402,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">City</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">City</Label>
               <Input
                 value={getValue('primaryCity')}
                 onChange={(e) => handleChange('primaryCity', e.target.value)}
@@ -412,8 +412,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">State</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">State</Label>
               <Input
                 value={getValue('primaryState')}
                 onChange={(e) => handleChange('primaryState', e.target.value)}
@@ -422,8 +422,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">ZIP</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">ZIP</Label>
               <Input
                 value={getValue('primaryZip')}
                 onChange={(e) => handleChange('primaryZip', e.target.value)}
@@ -445,8 +445,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           </div>
           
           <div className="space-y-3">
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Street</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">Street</Label>
               <Input
                 value={getValue('mailingStreet')}
                 onChange={(e) => handleChange('mailingStreet', e.target.value)}
@@ -455,8 +455,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">City</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">City</Label>
               <Input
                 value={getValue('mailingCity')}
                 onChange={(e) => handleChange('mailingCity', e.target.value)}
@@ -465,8 +465,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">State</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">State</Label>
               <Input
                 value={getValue('mailingState')}
                 onChange={(e) => handleChange('mailingState', e.target.value)}
@@ -475,8 +475,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">ZIP</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">ZIP</Label>
               <Input
                 value={getValue('mailingZip')}
                 onChange={(e) => handleChange('mailingZip', e.target.value)}
@@ -490,8 +490,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           <h4 className="text-sm font-semibold text-foreground border-b pb-2 mt-6">Care Of / Attorney Address</h4>
           
           <div className="space-y-3">
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Street</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">Street</Label>
               <Input
                 value={getValue('careOfStreet')}
                 onChange={(e) => handleChange('careOfStreet', e.target.value)}
@@ -500,8 +500,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">City</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">City</Label>
               <Input
                 value={getValue('careOfCity')}
                 onChange={(e) => handleChange('careOfCity', e.target.value)}
@@ -510,8 +510,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">State</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">State</Label>
               <Input
                 value={getValue('careOfState')}
                 onChange={(e) => handleChange('careOfState', e.target.value)}
@@ -520,8 +520,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">ZIP</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">ZIP</Label>
               <Input
                 value={getValue('careOfZip')}
                 onChange={(e) => handleChange('careOfZip', e.target.value)}
@@ -537,8 +537,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           <h3 className="text-sm font-semibold text-foreground border-b pb-2">Contact Preference</h3>
           
           <div className="space-y-3">
-            <div className="space-y-1">
-              <Label className="text-sm text-muted-foreground">Preferred Phone</Label>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Preferred Phone</Label>
               <Select
                 value={getValue('preferredPhone')}
                 onValueChange={(value) => handleChange('preferredPhone', value)}
@@ -559,8 +559,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
 
             {/* Show all phone number fields */}
             {PREFERRED_PHONE_OPTIONS.map((option) => (
-              <div key={option.value} className="space-y-1">
-                <Label className="text-sm text-muted-foreground">{option.label} Phone</Label>
+              <div key={option.value} className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{option.label} Phone</Label>
                 <Input
                   type="tel"
                   value={getValue(option.fieldKey)}
