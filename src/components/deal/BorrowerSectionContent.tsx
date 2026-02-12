@@ -483,7 +483,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
             onEditBorrower={handleEditBorrower}
             onRowClick={handleRowClick}
             onPrimaryChange={handlePrimaryChange}
-            onDeleteBorrower={handleDeleteBorrower}
+            
             disabled={disabled}
             isLoading={isLoading}
             currentPage={currentPage}
