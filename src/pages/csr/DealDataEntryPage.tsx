@@ -55,7 +55,7 @@ interface Deal {
 }
 
 // Section labels for display (partial - only includes displayable main sections)
-const SECTION_LABELS: Partial<Record<FieldSection | 'origination_fees' | 'funding' | 'conversation_log' | 'event_journal', string>> = {
+const SECTION_LABELS: Partial<Record<FieldSection | 'origination_fees' | 'other_originations' | 'funding' | 'conversation_log' | 'event_journal', string>> = {
   borrower: 'Borrower',
   property: 'Property',
   loan_terms: 'Loan',
@@ -69,6 +69,7 @@ const SECTION_LABELS: Partial<Record<FieldSection | 'origination_fees' | 'fundin
   lender: 'Lenders',
   seller: 'Seller',
   other: 'Other',
+  other_originations: 'Other Originations',
   origination_fees: 'Origination Fees',
   system: 'System',
 };
@@ -721,14 +722,22 @@ export const DealDataEntryPage: React.FC = () => {
                 });
               })()}
               
-              {/* Origination Fees - Custom UI Tab (always visible for internal users) */}
+              {/* Other Originations & Origination Fees - Custom UI Tabs (always visible for internal users) */}
               {isInternalUser && (
-                <TabsTrigger
-                  value="origination_fees"
-                  className="gap-2 data-[state=active]:bg-background relative"
-                >
-                  {SECTION_LABELS['origination_fees']}
-                </TabsTrigger>
+                <>
+                  <TabsTrigger
+                    value="other_originations"
+                    className="gap-2 data-[state=active]:bg-background relative"
+                  >
+                    {SECTION_LABELS['other_originations']}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="origination_fees"
+                    className="gap-2 data-[state=active]:bg-background relative"
+                  >
+                    {SECTION_LABELS['origination_fees']}
+                  </TabsTrigger>
+                </>
               )}
             </TabsList>
 
@@ -903,9 +912,9 @@ export const DealDataEntryPage: React.FC = () => {
               </div>
             </TabsContent>
             
-            {/* Origination Fees - Custom UI Tab Content */}
+            {/* Other Originations - Custom UI Tab Content (renamed from Origination Fees) */}
             {isInternalUser && (
-              <TabsContent value="origination_fees" className="animate-fade-in">
+              <TabsContent value="other_originations" className="animate-fade-in">
                 <OriginationFeesSectionContent
                   fields={[]}
                   values={values}
@@ -914,6 +923,19 @@ export const DealDataEntryPage: React.FC = () => {
                   disabled={false}
                   calculationResults={calculationResults}
                 />
+              </TabsContent>
+            )}
+
+            {/* Origination Fees - New Sub-Navigation Tab */}
+            {isInternalUser && (
+              <TabsContent value="origination_fees" className="animate-fade-in">
+                <div className="flex items-center justify-center min-h-[300px]">
+                  <div className="text-center">
+                    <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Origination Fees</h3>
+                    <p className="text-muted-foreground">Coming Soon</p>
+                  </div>
+                </div>
               </TabsContent>
             )}
           </Tabs>
