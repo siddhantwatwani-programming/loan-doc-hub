@@ -148,9 +148,9 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
 
   const [openNestedItems, setOpenNestedItems] = React.useState<string[]>([]);
 
-  const collapseAllExcept = (keepChild?: string, keepNested?: string[]) => {
-    setOpenChildren(keepChild ? [keepChild] : []);
-    setOpenNestedItems(keepNested && keepNested.length > 0 ? keepNested : []);
+  const collapseAll = () => {
+    setOpenChildren([]);
+    setOpenNestedItems([]);
   };
 
   const toggleChild = (label: string) => {
@@ -221,7 +221,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
             section.items.length === 0 ? (
               <button
                 key={section.label}
-                onClick={() => section.path ? (collapseAllExcept(), navigate(section.path)) : undefined}
+                onClick={() => section.path ? (collapseAll(), navigate(section.path)) : undefined}
                 className={cn(
                   'sidebar-item w-full text-sm',
                   section.path && location.pathname === section.path && 'text-sidebar-primary-foreground bg-sidebar-accent'
@@ -328,7 +328,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                                           {nested.children.map((leaf) => (
                                             <button
                                               key={leaf.path}
-                                              onClick={() => { collapseAllExcept(section.label, [item.label, child.label, nested.label]); navigate(leaf.path); }}
+                                              onClick={() => { collapseAll(); navigate(leaf.path); }}
                                               className={cn(
                                                 'sidebar-item w-full text-sm',
                                                 location.pathname === leaf.path && 'sidebar-item-active'
@@ -342,10 +342,10 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                                     ) : (
                                       <button
                                         key={nested.path}
-                                       onClick={() => { collapseAllExcept(section.label, [item.label, child.label]); navigate(nested.path); }}
-                                       className={cn(
-                                         'sidebar-item w-full text-sm',
-                                         location.pathname === nested.path && 'sidebar-item-active'
+                                        onClick={() => { collapseAll(); navigate(nested.path); }}
+                                        className={cn(
+                                          'sidebar-item w-full text-sm',
+                                          location.pathname === nested.path && 'sidebar-item-active'
                                         )}
                                       >
                                         <span>{nested.label}</span>
@@ -357,10 +357,10 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                             ) : (
                               <button
                                 key={child.path}
-                               onClick={() => { collapseAllExcept(section.label, [item.label]); navigate(child.path); }}
-                               className={cn(
-                                 'sidebar-item w-full text-sm',
-                                 location.pathname === child.path && 'sidebar-item-active'
+                                onClick={() => { collapseAll(); navigate(child.path); }}
+                                className={cn(
+                                  'sidebar-item w-full text-sm',
+                                  location.pathname === child.path && 'sidebar-item-active'
                                 )}
                               >
                                 <span>{child.label}</span>
@@ -372,10 +372,10 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                     ) : (
                       <button
                         key={item.path}
-                       onClick={() => { collapseAllExcept(section.label); navigate(item.path); }}
-                       className={cn(
-                         'sidebar-item w-full text-sm',
-                         location.pathname === item.path && 'sidebar-item-active'
+                        onClick={() => { collapseAll(); navigate(item.path); }}
+                        className={cn(
+                          'sidebar-item w-full text-sm',
+                          location.pathname === item.path && 'sidebar-item-active'
                         )}
                       >
                         <span>{item.label}</span>

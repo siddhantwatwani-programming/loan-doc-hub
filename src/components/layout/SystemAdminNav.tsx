@@ -103,9 +103,9 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
   const [openChildren, setOpenChildren] = React.useState<string[]>([]);
   const [openSubNav, setOpenSubNav] = React.useState<string[]>([]);
 
-  const collapseAllExcept = (keepChild?: string, keepSubNav?: string) => {
-    setOpenChildren(keepChild ? [keepChild] : []);
-    setOpenSubNav(keepSubNav ? [keepSubNav] : []);
+  const collapseAll = () => {
+    setOpenChildren([]);
+    setOpenSubNav([]);
   };
 
   const toggleChild = (label: string) => {
@@ -178,7 +178,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
             section.items.length === 0 ? (
               <button
                 key={section.label}
-                onClick={() => section.path ? (collapseAllExcept(), navigate(section.path)) : undefined}
+                onClick={() => section.path ? (collapseAll(), navigate(section.path)) : undefined}
                 className={cn(
                   'sidebar-item w-full text-sm',
                   section.path && location.pathname === section.path && 'text-sidebar-primary-foreground bg-sidebar-accent'
@@ -241,7 +241,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                           {item.children.map((child) => (
                             <button
                               key={child.path}
-                              onClick={() => { collapseAllExcept(section.label, item.label); navigate(child.path); }}
+                              onClick={() => { collapseAll(); navigate(child.path); }}
                               className={cn(
                                 'sidebar-item w-full text-sm',
                                 location.pathname === child.path && 'sidebar-item-active'
@@ -255,7 +255,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                     ) : (
                       <button
                         key={item.path}
-                        onClick={() => { collapseAllExcept(section.label); navigate(item.path); }}
+                        onClick={() => { collapseAll(); navigate(item.path); }}
                         className={cn(
                           'sidebar-item w-full text-sm',
                           location.pathname === item.path && 'sidebar-item-active'
