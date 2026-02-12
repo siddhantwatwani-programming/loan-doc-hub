@@ -16,6 +16,7 @@ import {
   type CalculatedField,
   type CalculationResult
 } from '@/lib/calculationEngine';
+import { fetchAllRows } from '@/lib/supabasePagination';
 import type { Database } from '@/integrations/supabase/types';
 
 type FieldSection = Database['public']['Enums']['field_section'];
@@ -253,15 +254,14 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
 
       let mergedResolved = resolved;
       try {
-        const { data: tmoFields, error: tmoError } = await supabase
-          .from('field_dictionary')
-          .select(
-            'id, field_key, label, section, data_type, description, default_value, is_calculated, is_repeatable, validation_rule, calculation_formula, calculation_dependencies'
-          )
-          .in('section', TMO_TAB_SECTIONS as any)
-          .limit(5000);
-
-        if (tmoError) throw tmoError;
+        const tmoFields = await fetchAllRows((client) =>
+          client
+            .from('field_dictionary')
+            .select(
+              'id, field_key, label, section, data_type, description, default_value, is_calculated, is_repeatable, validation_rule, calculation_formula, calculation_dependencies'
+            )
+            .in('section', TMO_TAB_SECTIONS as any)
+        );
 
         const existingIds = new Set(resolved.fields.map(f => f.field_dictionary_id));
         const existingKeys = new Set(resolved.fields.map(f => f.field_key));

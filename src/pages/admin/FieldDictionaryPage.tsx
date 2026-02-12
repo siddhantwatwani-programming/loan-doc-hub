@@ -21,6 +21,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchAllRows } from '@/lib/supabasePagination';
 import { 
   Plus, 
   Search, 
@@ -113,13 +114,12 @@ export const FieldDictionaryPage: React.FC = () => {
 
   const fetchFields = async () => {
     try {
-      const { data, error } = await supabase
-        .from('field_dictionary')
-        .select('*')
-        .order('section, label')
-        .limit(5000);
-
-      if (error) throw error;
+      const data = await fetchAllRows((client) =>
+        client
+          .from('field_dictionary')
+          .select('*')
+          .order('section, label')
+      );
       setFields(data || []);
     } catch (error) {
       console.error('Error fetching fields:', error);

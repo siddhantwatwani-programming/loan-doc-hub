@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { fetchAllRows } from '@/lib/supabasePagination';
 import type { Database } from '@/integrations/supabase/types';
 
 type FieldSection = Database['public']['Enums']['field_section'];
@@ -65,13 +66,12 @@ export type CustomUISection = typeof CUSTOM_UI_SECTIONS[number];
  * No fields are marked as required since there's no template mapping.
  */
 export async function resolveAllFields(): Promise<ResolvedFieldSet> {
-  const { data: fieldDictEntries, error } = await supabase
-    .from('field_dictionary')
-    .select('*')
-    .in('section', SECTION_ORDER as any)
-    .limit(5000);
-
-  if (error) throw error;
+  const fieldDictEntries = await fetchAllRows((client) =>
+    client
+      .from('field_dictionary')
+      .select('*')
+      .in('section', SECTION_ORDER as any)
+  );
 
   const fields: ResolvedField[] = (fieldDictEntries || []).map(fd => ({
     field_dictionary_id: fd.id,
@@ -198,13 +198,13 @@ export async function resolvePacketFields(packetId: string): Promise<ResolvedFie
     };
   }
 
-  // 3. Load field dictionary entries for those IDs
-  const { data: fieldDictEntries, error: fdError } = await supabase
-    .from('field_dictionary')
-    .select('*')
-    .in('id', fieldDictIds);
-
-  if (fdError) throw fdError;
+  // 3. Load field dictionary entries for those IDs (paginated for safety)
+  const fieldDictEntries = await fetchAllRows((client) =>
+    client
+      .from('field_dictionary')
+      .select('*')
+      .in('id', fieldDictIds)
+  );
 
   // Create lookup map for field dictionary by ID
   const fieldDictMap = new Map<string, any>();
