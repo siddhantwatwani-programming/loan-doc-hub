@@ -27,195 +27,116 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
   disabled = false,
   propertyOptions = [],
 }) => {
+  const renderField = (field: keyof LienData, label: string, props: Record<string, any> = {}) => (
+    <div className="flex items-center gap-3">
+      <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
+      <Input value={lien[field]} onChange={(e) => onChange(field, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" {...props} />
+    </div>
+  );
+
+  const renderCurrency = (field: keyof LienData, label: string) => (
+    <div className="flex items-center gap-3">
+      <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
+      <div className="flex items-center gap-1 flex-1">
+        <span className="text-sm text-muted-foreground">$</span>
+        <Input value={lien[field]} onChange={(e) => onChange(field, e.target.value)} disabled={disabled} className="h-7 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+      </div>
+    </div>
+  );
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 space-y-4">
       <div className="flex items-center gap-2">
         <Home className="h-5 w-5 text-primary" />
         <span className="font-semibold text-lg text-foreground">General</span>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="border-b border-border pb-2">
           <span className="font-semibold text-sm text-primary">Property Lien Information</span>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-          <div>
-            <Label className="text-sm text-foreground">Related Property</Label>
-            <Input value={lien.property} onChange={(e) => onChange('property', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" placeholder="Enter property" />
-          </div>
-          <div>
-            <Label className="text-sm text-foreground">Lien Priority Now</Label>
-            <Input value={lien.lienPriorityNow} onChange={(e) => onChange('lienPriorityNow', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" placeholder="Enter priority" />
-          </div>
-
-          <div>
-            <Label className="text-sm text-foreground">Lien Holder</Label>
-            <Input value={lien.holder} onChange={(e) => onChange('holder', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
-          </div>
-          <div>
-            <Label className="text-sm text-foreground">Lien Priority After</Label>
-            <Input value={lien.lienPriorityAfter} onChange={(e) => onChange('lienPriorityAfter', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" placeholder="Enter priority" />
-          </div>
-
-          <div>
-            <Label className="text-sm text-foreground">Account Number</Label>
-            <Input value={lien.account} onChange={(e) => onChange('account', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
-          </div>
-          <div>
-            <Label className="text-sm text-foreground">Interest Rate</Label>
-            <div className="flex items-center gap-1 mt-1">
-              <Input value={lien.interestRate} onChange={(e) => onChange('interestRate', e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.000" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+          {renderField('property', 'Related Property', { placeholder: 'Enter property' })}
+          {renderField('lienPriorityNow', 'Priority Now', { placeholder: 'Enter priority' })}
+          {renderField('holder', 'Lien Holder')}
+          {renderField('lienPriorityAfter', 'Priority After', { placeholder: 'Enter priority' })}
+          {renderField('account', 'Account Number')}
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Interest Rate</Label>
+            <div className="flex items-center gap-1 flex-1">
+              <Input value={lien.interestRate} onChange={(e) => onChange('interestRate', e.target.value)} disabled={disabled} className="h-7 text-sm text-right" inputMode="decimal" placeholder="0.000" />
               <span className="text-sm text-muted-foreground">%</span>
             </div>
           </div>
-
-          <div>
-            <Label className="text-sm text-foreground">Phone</Label>
-            <Input value={lien.phone} onChange={(e) => onChange('phone', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
-          </div>
-          <div>
-            <Label className="text-sm text-foreground">Maturity Date</Label>
-            <Input type="date" value={lien.maturityDate} onChange={(e) => onChange('maturityDate', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
-          </div>
-
-          <div>
-            <Label className="text-sm text-foreground">Fax</Label>
-            <Input value={lien.fax} onChange={(e) => onChange('fax', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
-          </div>
-          <div>
-            <Label className="text-sm text-foreground">Original Balance</Label>
-            <div className="flex items-center gap-1 mt-1">
-              <span className="text-sm text-muted-foreground">$</span>
-              <Input value={lien.originalBalance} onChange={(e) => onChange('originalBalance', e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.00" />
-            </div>
-          </div>
-
-          <div>
-            <Label className="text-sm text-foreground">Email</Label>
-            <Input value={lien.email} onChange={(e) => onChange('email', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
-          </div>
-          <div>
-            <Label className="text-sm text-foreground">Balance After</Label>
-            <div className="flex items-center gap-1 mt-1">
-              <span className="text-sm text-muted-foreground">$</span>
-              <Input value={lien.balanceAfter} onChange={(e) => onChange('balanceAfter', e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.00" />
-            </div>
-          </div>
-
-          {/* Loan Type row */}
-          <div>
-            <Label className="text-sm text-foreground">Loan Type</Label>
-            <Select
-              value={lien.loanType}
-              onValueChange={(val) => onChange('loanType', val)}
-              disabled={disabled}
-            >
-              <SelectTrigger className="h-8 text-sm mt-1">
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
+          {renderField('phone', 'Phone')}
+          {renderField('maturityDate', 'Maturity Date', { type: 'date' })}
+          {renderField('fax', 'Fax')}
+          {renderCurrency('originalBalance', 'Original Balance')}
+          {renderField('email', 'Email')}
+          {renderCurrency('balanceAfter', 'Balance After')}
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Loan Type</Label>
+            <Select value={lien.loanType} onValueChange={(val) => onChange('loanType', val)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select type" /></SelectTrigger>
               <SelectContent className="bg-background border border-border z-50">
-                {LOAN_TYPE_OPTIONS.map(opt => (
-                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                ))}
+                {LOAN_TYPE_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label className="text-sm text-foreground">Regular Payment</Label>
-            <div className="flex items-center gap-1 mt-1">
-              <span className="text-sm text-muted-foreground">$</span>
-              <Input value={lien.regularPayment} onChange={(e) => onChange('regularPayment', e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.00" />
-            </div>
-          </div>
+          {renderCurrency('regularPayment', 'Regular Payment')}
         </div>
 
         {/* Checkbox rows + right-side fields */}
-        <div className="grid grid-cols-2 gap-x-8 gap-y-3 mt-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mt-2">
           <div className="flex items-center gap-2">
-            <Checkbox
-              id="anticipated"
-              checked={lien.anticipated === 'true'}
-              onCheckedChange={(checked) => onChange('anticipated', checked ? 'true' : 'false')}
-              disabled={disabled}
-            />
+            <Checkbox id="anticipated" checked={lien.anticipated === 'true'} onCheckedChange={(checked) => onChange('anticipated', checked ? 'true' : 'false')} disabled={disabled} />
             <Label htmlFor="anticipated" className="text-sm text-foreground">Anticipated</Label>
           </div>
-          <div>
-            <Label className="text-sm text-foreground">Recording Number</Label>
-            <div className="flex items-center gap-2 mt-1">
-              <Input value={lien.recordingNumber} onChange={(e) => onChange('recordingNumber', e.target.value)} disabled={disabled} className="h-8 text-sm flex-1" />
-              <Checkbox
-                id="recordingNumberFlag"
-                checked={lien.recordingNumberFlag === 'true'}
-                onCheckedChange={(checked) => onChange('recordingNumberFlag', checked ? 'true' : 'false')}
-                disabled={disabled}
-              />
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Recording #</Label>
+            <div className="flex items-center gap-2 flex-1">
+              <Input value={lien.recordingNumber} onChange={(e) => onChange('recordingNumber', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              <Checkbox id="recordingNumberFlag" checked={lien.recordingNumberFlag === 'true'} onCheckedChange={(checked) => onChange('recordingNumberFlag', checked ? 'true' : 'false')} disabled={disabled} />
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Checkbox
-              id="existingRemain"
-              checked={lien.existingRemain === 'true'}
-              onCheckedChange={(checked) => onChange('existingRemain', checked ? 'true' : 'false')}
-              disabled={disabled}
-            />
+            <Checkbox id="existingRemain" checked={lien.existingRemain === 'true'} onCheckedChange={(checked) => onChange('existingRemain', checked ? 'true' : 'false')} disabled={disabled} />
             <Label htmlFor="existingRemain" className="text-sm text-foreground">Existing - Remain</Label>
           </div>
-          <div>
-            <Label className="text-sm text-foreground">Recording Date</Label>
-            <Input type="date" value={lien.recordingDate} onChange={(e) => onChange('recordingDate', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
-          </div>
+          {renderField('recordingDate', 'Recording Date', { type: 'date' })}
 
           <div>
             <div className="flex items-center gap-2">
-              <Checkbox
-                id="existingPaydown"
-                checked={lien.existingPaydown === 'true'}
-                onCheckedChange={(checked) => onChange('existingPaydown', checked ? 'true' : 'false')}
-                disabled={disabled}
-              />
+              <Checkbox id="existingPaydown" checked={lien.existingPaydown === 'true'} onCheckedChange={(checked) => onChange('existingPaydown', checked ? 'true' : 'false')} disabled={disabled} />
               <Label htmlFor="existingPaydown" className="text-sm text-foreground">Existing - Paydown</Label>
             </div>
-            <div className="flex items-center gap-1 mt-2">
+            <div className="flex items-center gap-1 mt-1 pl-6">
               <span className="text-sm text-muted-foreground">$</span>
-              <Input value={lien.existingPaydownAmount} onChange={(e) => onChange('existingPaydownAmount', e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+              <Input value={lien.existingPaydownAmount} onChange={(e) => onChange('existingPaydownAmount', e.target.value)} disabled={disabled} className="h-7 text-sm text-right" inputMode="decimal" placeholder="0.00" />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Checkbox
-              id="seniorLienTracking"
-              checked={lien.seniorLienTracking === 'true'}
-              onCheckedChange={(checked) => onChange('seniorLienTracking', checked ? 'true' : 'false')}
-              disabled={disabled}
-            />
+            <Checkbox id="seniorLienTracking" checked={lien.seniorLienTracking === 'true'} onCheckedChange={(checked) => onChange('seniorLienTracking', checked ? 'true' : 'false')} disabled={disabled} />
             <Label htmlFor="seniorLienTracking" className="text-sm text-foreground">Senior Lien Tracking</Label>
           </div>
 
           <div>
             <div className="flex items-center gap-2">
-              <Checkbox
-                id="existingPayoff"
-                checked={lien.existingPayoff === 'true'}
-                onCheckedChange={(checked) => onChange('existingPayoff', checked ? 'true' : 'false')}
-                disabled={disabled}
-              />
+              <Checkbox id="existingPayoff" checked={lien.existingPayoff === 'true'} onCheckedChange={(checked) => onChange('existingPayoff', checked ? 'true' : 'false')} disabled={disabled} />
               <Label htmlFor="existingPayoff" className="text-sm text-foreground">Existing - Payoff</Label>
             </div>
-            <div className="flex items-center gap-1 mt-2">
+            <div className="flex items-center gap-1 mt-1 pl-6">
               <span className="text-sm text-muted-foreground">$</span>
-              <Input value={lien.existingPayoffAmount} onChange={(e) => onChange('existingPayoffAmount', e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+              <Input value={lien.existingPayoffAmount} onChange={(e) => onChange('existingPayoffAmount', e.target.value)} disabled={disabled} className="h-7 text-sm text-right" inputMode="decimal" placeholder="0.00" />
             </div>
           </div>
-          <div>
-            <Label className="text-sm text-foreground">Last Verified</Label>
-            <Input type="date" value={lien.lastVerified} onChange={(e) => onChange('lastVerified', e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
-          </div>
+          {renderField('lastVerified', 'Last Verified', { type: 'date' })}
         </div>
       </div>
 
-      <div className="pt-6 border-t border-border">
+      <div className="pt-4 border-t border-border">
         <p className="text-sm text-muted-foreground">
           Property liens are used to track existing encumbrances on the property.
         </p>

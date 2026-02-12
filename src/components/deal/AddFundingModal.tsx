@@ -46,16 +46,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   onSubmit,
 }) => {
   const [formData, setFormData] = useState<FundingFormData>({
-    loan: loanNumber,
-    borrower: borrowerName,
-    lenderId: '',
-    lenderFullName: '',
-    lenderRate: '',
-    fundingAmount: '',
-    fundingDate: '',
-    interestFrom: '',
-    notes: '',
-    brokerParticipates: false,
+    loan: loanNumber, borrower: borrowerName, lenderId: '', lenderFullName: '',
+    lenderRate: '', fundingAmount: '', fundingDate: '', interestFrom: '', notes: '', brokerParticipates: false,
   });
 
   const [fundingDate, setFundingDate] = useState<Date | undefined>();
@@ -73,231 +65,105 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
       fundingDate: fundingDate ? format(fundingDate, 'yyyy-MM-dd') : '',
       interestFrom: interestFromDate ? format(interestFromDate, 'yyyy-MM-dd') : '',
     });
-    // Reset form
-    setFormData({
-      loan: loanNumber,
-      borrower: borrowerName,
-      lenderId: '',
-      lenderFullName: '',
-      lenderRate: '',
-      fundingAmount: '',
-      fundingDate: '',
-      interestFrom: '',
-      notes: '',
-      brokerParticipates: false,
-    });
+    setFormData({ loan: loanNumber, borrower: borrowerName, lenderId: '', lenderFullName: '', lenderRate: '', fundingAmount: '', fundingDate: '', interestFrom: '', notes: '', brokerParticipates: false });
     setFundingDate(undefined);
     setInterestFromDate(undefined);
     onOpenChange(false);
   };
 
-  const handleCancel = () => {
-    onOpenChange(false);
-  };
+  const handleCancel = () => { onOpenChange(false); };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Funding</DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-4">
-          {/* Left Column - Form Fields */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              {/* Loan */}
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Loan</Label>
-                <Input
-                  value={loanNumber || formData.loan}
-                  disabled
-                  className="bg-muted/50"
-                  placeholder="Auto-populate"
-                />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-3">
+          <div className="lg:col-span-2 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Loan</Label>
+                <Input value={loanNumber || formData.loan} disabled className="h-7 text-sm bg-muted/50" />
               </div>
-
-              {/* Borrower */}
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Borrower</Label>
-                <Input
-                  value={borrowerName || formData.borrower}
-                  disabled
-                  className="bg-muted/50"
-                  placeholder="Auto-populate"
-                />
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Borrower</Label>
+                <Input value={borrowerName || formData.borrower} disabled className="h-7 text-sm bg-muted/50" />
               </div>
-
-              {/* Lender ID */}
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Lender ID</Label>
-                <div className="relative">
-                  <Input
-                    value={formData.lenderId}
-                    onChange={(e) => handleChange('lenderId', e.target.value)}
-                    placeholder="Search"
-                  />
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender ID</Label>
+                <div className="relative flex-1">
+                  <Input value={formData.lenderId} onChange={(e) => handleChange('lenderId', e.target.value)} placeholder="Search" className="h-7 text-sm" />
+                  <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 </div>
               </div>
-
-              {/* Funding Amount */}
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Funding Amount</Label>
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Funding Amount</Label>
+                <div className="flex items-center gap-1 flex-1">
                   <span className="text-sm font-medium">$</span>
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    value={formData.fundingAmount}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^0-9.]/g, '');
-                      handleChange('fundingAmount', value);
-                    }}
-                    placeholder="0.00"
-                    className="flex-1"
-                  />
+                  <Input type="text" inputMode="decimal" value={formData.fundingAmount} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('fundingAmount', v); }} placeholder="0.00" className="h-7 text-sm" />
                 </div>
               </div>
-
-              {/* Lender Full Name */}
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Lender Full Name</Label>
-                <Input
-                  value={formData.lenderFullName}
-                  onChange={(e) => handleChange('lenderFullName', e.target.value)}
-                />
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender Name</Label>
+                <Input value={formData.lenderFullName} onChange={(e) => handleChange('lenderFullName', e.target.value)} className="h-7 text-sm" />
               </div>
-
-              {/* Funding Date */}
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Funding Date</Label>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Funding Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !fundingDate && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
+                    <Button variant="outline" className={cn('h-7 text-sm w-full justify-start text-left font-normal flex-1', !fundingDate && 'text-muted-foreground')}>
+                      <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                       {fundingDate ? format(fundingDate, 'MM/dd/yyyy') : 'Select date'}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={fundingDate}
-                      onSelect={setFundingDate}
-                      initialFocus
-                    />
-                  </PopoverContent>
+                  <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={fundingDate} onSelect={setFundingDate} initialFocus /></PopoverContent>
                 </Popover>
               </div>
-
-              {/* Lender Rate */}
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Lender Rate*</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    value={formData.lenderRate}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^0-9.]/g, '');
-                      handleChange('lenderRate', value);
-                    }}
-                    placeholder="0.000"
-                    className="flex-1"
-                  />
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender Rate*</Label>
+                <div className="flex items-center gap-1 flex-1">
+                  <Input type="text" inputMode="decimal" value={formData.lenderRate} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('lenderRate', v); }} placeholder="0.000" className="h-7 text-sm" />
                   <span className="text-sm font-medium">%</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  * This is for Interest Differential, Not Sold Rate
-                </p>
               </div>
-
-              {/* Interest From */}
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Interest From</Label>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Interest From</Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !interestFromDate && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
+                    <Button variant="outline" className={cn('h-7 text-sm w-full justify-start text-left font-normal flex-1', !interestFromDate && 'text-muted-foreground')}>
+                      <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                       {interestFromDate ? format(interestFromDate, 'MM/dd/yyyy') : 'Select date'}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={interestFromDate}
-                      onSelect={setInterestFromDate}
-                      initialFocus
-                    />
-                  </PopoverContent>
+                  <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={interestFromDate} onSelect={setInterestFromDate} initialFocus /></PopoverContent>
                 </Popover>
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">* Interest Differential, Not Sold Rate</p>
 
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">Notes:</Label>
-              <Textarea
-                value={formData.notes}
-                onChange={(e) => handleChange('notes', e.target.value)}
-                rows={3}
-                className="resize-none"
-              />
+            <div className="flex items-start gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0 pt-2">Notes</Label>
+              <Textarea value={formData.notes} onChange={(e) => handleChange('notes', e.target.value)} rows={2} className="resize-none text-sm" />
             </div>
           </div>
 
-          {/* Right Column - Checkbox and Notes */}
-          <div className="space-y-4">
-            {/* Broker Participates Checkbox */}
-            <div className="flex items-start gap-3 p-4 border rounded-lg bg-muted/20">
-              <Checkbox
-                id="brokerParticipates"
-                checked={formData.brokerParticipates}
-                onCheckedChange={(checked) => handleChange('brokerParticipates', !!checked)}
-              />
-              <Label
-                htmlFor="brokerParticipates"
-                className="text-sm font-medium leading-tight cursor-pointer"
-              >
-                Broker or family will participate in funding
-              </Label>
+          <div className="space-y-3">
+            <div className="flex items-start gap-3 p-3 border rounded-lg bg-muted/20">
+              <Checkbox id="brokerParticipates" checked={formData.brokerParticipates} onCheckedChange={(checked) => handleChange('brokerParticipates', !!checked)} />
+              <Label htmlFor="brokerParticipates" className="text-sm font-medium leading-tight cursor-pointer">Broker or family will participate in funding</Label>
             </div>
-
-            {/* Informational Notes */}
-            <div className="space-y-3 p-4 border rounded-lg bg-muted/10">
-              <div>
-                <p className="text-sm font-semibold text-primary">NOTE:</p>
-                <p className="text-sm text-muted-foreground">
-                  If Multi-lender loan, docs should reflect "See Attached Lender Schedule"
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  *Interest Differential (similar to Sold Rate this is used where lenders receive
-                  different splits with Broker)
-                </p>
-              </div>
+            <div className="space-y-2 p-3 border rounded-lg bg-muted/10">
+              <p className="text-sm font-semibold text-primary">NOTE:</p>
+              <p className="text-xs text-muted-foreground">If Multi-lender loan, docs should reflect "See Attached Lender Schedule"</p>
             </div>
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleCancel}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit}>Save Funding</Button>
+          <Button variant="outline" size="sm" onClick={handleCancel}>Cancel</Button>
+          <Button size="sm" onClick={handleSubmit}>Save Funding</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -33,147 +33,44 @@ export const CoBorrowerBankingForm: React.FC<CoBorrowerBankingFormProps> = ({
     onValueChange(`coborrower.${key}`, value);
   };
 
+  const renderField = (id: string, key: string, label: string, props: Record<string, any> = {}) => (
+    <div className="flex items-center gap-3">
+      <Label htmlFor={id} className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
+      <Input id={id} value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" {...props} />
+    </div>
+  );
+
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h3 className="font-semibold text-lg text-foreground">Banking Information</h3>
-        <p className="text-sm text-muted-foreground">
-          Co-borrower bank account and payment details.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-6">
+    <div className="p-4 space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left Column - Primary Bank Account */}
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <h4 className="font-medium text-sm text-muted-foreground border-b pb-2">Primary Bank Account</h4>
-            
-            <div className="space-y-2">
-              <Label htmlFor="bankName">Bank Name</Label>
-              <Input
-                id="bankName"
-                value={getValue('bank.name')}
-                onChange={(e) => handleChange('bank.name', e.target.value)}
-                placeholder="Enter bank name"
-                disabled={disabled}
-              />
-            </div>
+        <div className="space-y-3">
+          <h4 className="font-semibold text-sm text-foreground border-b border-border pb-2">Primary Bank Account</h4>
+          
+          {renderField('bankName', 'bank.name', 'Bank Name', { placeholder: 'Enter bank name' })}
 
-            <div className="space-y-2">
-              <Label htmlFor="accountType">Account Type</Label>
-              <Select
-                value={getValue('bank.account_type')}
-                onValueChange={(value) => handleChange('bank.account_type', value)}
-                disabled={disabled}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select account type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ACCOUNT_TYPE_OPTIONS.map((type) => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="routingNumber">Routing Number</Label>
-              <Input
-                id="routingNumber"
-                value={getValue('bank.routing_number')}
-                onChange={(e) => handleChange('bank.routing_number', e.target.value)}
-                placeholder="Enter routing number"
-                disabled={disabled}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="accountNumber">Account Number</Label>
-              <Input
-                id="accountNumber"
-                value={getValue('bank.account_number')}
-                onChange={(e) => handleChange('bank.account_number', e.target.value)}
-                placeholder="Enter account number"
-                disabled={disabled}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="accountHolder">Account Holder Name</Label>
-              <Input
-                id="accountHolder"
-                value={getValue('bank.account_holder')}
-                onChange={(e) => handleChange('bank.account_holder', e.target.value)}
-                placeholder="Enter account holder name"
-                disabled={disabled}
-              />
-            </div>
+          <div className="flex items-center gap-3">
+            <Label htmlFor="accountType" className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Account Type</Label>
+            <Select value={getValue('bank.account_type')} onValueChange={(value) => handleChange('bank.account_type', value)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm flex-1"><SelectValue placeholder="Select type" /></SelectTrigger>
+              <SelectContent>{ACCOUNT_TYPE_OPTIONS.map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent>
+            </Select>
           </div>
+
+          {renderField('routingNumber', 'bank.routing_number', 'Routing Number', { placeholder: 'Enter routing number' })}
+          {renderField('accountNumber', 'bank.account_number', 'Account Number', { placeholder: 'Enter account number' })}
+          {renderField('accountHolder', 'bank.account_holder', 'Account Holder', { placeholder: 'Enter holder name' })}
         </div>
 
         {/* Right Column - Bank Address */}
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <h4 className="font-medium text-sm text-muted-foreground border-b pb-2">Bank Address</h4>
-            
-            <div className="space-y-2">
-              <Label htmlFor="bankStreet">Street Address</Label>
-              <Input
-                id="bankStreet"
-                value={getValue('bank.address.street')}
-                onChange={(e) => handleChange('bank.address.street', e.target.value)}
-                placeholder="Enter bank street address"
-                disabled={disabled}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bankCity">City</Label>
-              <Input
-                id="bankCity"
-                value={getValue('bank.address.city')}
-                onChange={(e) => handleChange('bank.address.city', e.target.value)}
-                placeholder="Enter city"
-                disabled={disabled}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="bankState">State</Label>
-                <Input
-                  id="bankState"
-                  value={getValue('bank.address.state')}
-                  onChange={(e) => handleChange('bank.address.state', e.target.value)}
-                  placeholder="Enter state"
-                  disabled={disabled}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bankZip">Zip Code</Label>
-                <Input
-                  id="bankZip"
-                  value={getValue('bank.address.zip')}
-                  onChange={(e) => handleChange('bank.address.zip', e.target.value)}
-                  placeholder="Enter zip code"
-                  disabled={disabled}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bankPhone">Bank Phone</Label>
-              <Input
-                id="bankPhone"
-                value={getValue('bank.phone')}
-                onChange={(e) => handleChange('bank.phone', e.target.value)}
-                placeholder="Enter bank phone"
-                disabled={disabled}
-              />
-            </div>
-          </div>
+        <div className="space-y-3">
+          <h4 className="font-semibold text-sm text-foreground border-b border-border pb-2">Bank Address</h4>
+          
+          {renderField('bankStreet', 'bank.address.street', 'Street Address', { placeholder: 'Enter street' })}
+          {renderField('bankCity', 'bank.address.city', 'City', { placeholder: 'Enter city' })}
+          {renderField('bankState', 'bank.address.state', 'State', { placeholder: 'Enter state' })}
+          {renderField('bankZip', 'bank.address.zip', 'Zip Code', { placeholder: 'Enter zip' })}
+          {renderField('bankPhone', 'bank.phone', 'Bank Phone', { placeholder: 'Enter phone' })}
         </div>
       </div>
     </div>
