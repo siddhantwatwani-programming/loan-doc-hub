@@ -90,7 +90,7 @@ const App = () => (
                 <Route path="/broker-services/*" element={<ComingSoonPage />} />
 
                 <Route path="/accounting/*" element={<ComingSoonPage />} />
-                <Route path="/system-admin/*" element={<Dashboard />} />
+                <Route path="/system-admin/*" element={<ComingSoonPage />} />
                 <Route path="/c-level/*" element={<ComingSoonPage />} />
               </Route>
 
