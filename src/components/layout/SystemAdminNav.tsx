@@ -158,13 +158,13 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
         <CollapsibleTrigger asChild>
           <button
             className={cn(
-              'sidebar-item w-full justify-between',
+              'sidebar-item w-full justify-between text-left',
               isAnyActive && 'text-sidebar-primary-foreground bg-sidebar-accent'
             )}
           >
             <div className="flex items-center gap-3">
-              <ShieldCheck className="h-5 w-5" />
-              <span>System Administration</span>
+              <ShieldCheck className="h-5 w-5 shrink-0" />
+              <span className="text-left">System Administration</span>
             </div>
             {openParent ? (
               <ChevronDown className="h-4 w-4" />
