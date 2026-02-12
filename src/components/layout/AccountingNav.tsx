@@ -151,7 +151,6 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
   const collapseAll = () => {
     setOpenChildren([]);
     setOpenNestedItems([]);
-    handleOpenChange(false);
   };
 
   const toggleChild = (label: string) => {
