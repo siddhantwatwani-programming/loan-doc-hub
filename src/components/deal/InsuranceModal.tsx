@@ -1,21 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Shield } from 'lucide-react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import type { InsuranceData } from './InsuranceTableView';
 
@@ -29,243 +22,102 @@ interface InsuranceModalProps {
 }
 
 const INSURANCE_DESCRIPTION_OPTIONS = [
-  'Earthquake Insurance',
-  'Fire Insurance',
-  'Flood Insurance',
-  'Hurricane',
-  'Force-Placed CPI',
-  'Hazard',
-  'Flood',
-  'Wind'
+  'Earthquake Insurance', 'Fire Insurance', 'Flood Insurance', 'Hurricane',
+  'Force-Placed CPI', 'Hazard', 'Flood', 'Wind'
 ];
 
 const getDefaultInsurance = (): InsuranceData => ({
-  id: '',
-  property: '',
-  description: '',
-  insuredName: '',
-  companyName: '',
-  policyNumber: '',
-  expiration: '',
-  coverage: '',
-  active: true,
-  agentName: '',
-  businessAddress: '',
-  phoneNumber: '',
-  faxNumber: '',
-  email: '',
-  note: '',
+  id: '', property: '', description: '', insuredName: '', companyName: '', policyNumber: '',
+  expiration: '', coverage: '', active: true, agentName: '', businessAddress: '',
+  phoneNumber: '', faxNumber: '', email: '', note: '',
 });
 
-export const InsuranceModal: React.FC<InsuranceModalProps> = ({
-  open,
-  onOpenChange,
-  insurance,
-  onSave,
-  isEdit,
-  propertyOptions = [],
-}) => {
+export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChange, insurance, onSave, isEdit, propertyOptions = [] }) => {
   const [formData, setFormData] = useState<InsuranceData>(getDefaultInsurance());
 
   useEffect(() => {
-    if (open) {
-      if (insurance) {
-        setFormData(insurance);
-      } else {
-        setFormData(getDefaultInsurance());
-      }
-      // Reset form state
-    }
+    if (open) setFormData(insurance ? insurance : getDefaultInsurance());
   }, [open, insurance]);
 
-  const handleChange = (field: keyof InsuranceData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  const handleChange = (field: keyof InsuranceData, value: string | boolean) => setFormData(prev => ({ ...prev, [field]: value }));
+  const handleSave = () => { onSave(formData); onOpenChange(false); };
 
-  const handleSave = () => {
-    onSave(formData);
-    onOpenChange(false);
-  };
+  const renderInlineField = (field: keyof InsuranceData, label: string, props: Record<string, any> = {}) => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+      <Input value={String(formData[field] || '')} onChange={(e) => handleChange(field, e.target.value)} className="h-7 text-xs flex-1" {...props} />
+    </div>
+  );
+
+  const renderInlineSelect = (field: keyof InsuranceData, label: string, options: string[] | { id: string; label: string }[], placeholder: string) => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+      <Select value={String(formData[field] || '')} onValueChange={(val) => handleChange(field, val)}>
+        <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder={placeholder} /></SelectTrigger>
+        <SelectContent className="bg-background border border-border z-50">
+          {options.map(opt => {
+            const v = typeof opt === 'string' ? opt : opt.id;
+            const l = typeof opt === 'string' ? opt : opt.label;
+            return <SelectItem key={v} value={v}>{l}</SelectItem>;
+          })}
+        </SelectContent>
+      </Select>
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-sm">
+            <Shield className="h-4 w-4 text-primary" />
             {isEdit ? 'Edit Insurance' : 'New Insurance'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="mt-4">
-          <div className="grid grid-cols-2 gap-6">
-            {/* Left Column - Insurance Policy Information */}
-            <div className="space-y-4">
-              <div className="border-b border-border pb-2">
-                <span className="font-semibold text-sm text-primary">Insurance Policy Information</span>
+        <div className="mt-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
+            {/* Left Column */}
+            <div className="space-y-1.5">
+              <div className="border-b border-border pb-1 mb-2">
+                <span className="font-semibold text-xs text-primary">Insurance Policy Information</span>
               </div>
-
-              <div>
-                <Label className="text-sm text-foreground">Property</Label>
-                <Select
-                  value={formData.property}
-                  onValueChange={(val) => handleChange('property', val)}
-                >
-                  <SelectTrigger className="h-9 text-sm mt-1">
-                    <SelectValue placeholder="Unassigned" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border border-border z-50">
-                    <SelectItem value="unassigned">Unassigned</SelectItem>
-                    {propertyOptions.map(opt => (
-                      <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-sm text-foreground">Description</Label>
-                <Select
-                  value={formData.description}
-                  onValueChange={(val) => handleChange('description', val)}
-                >
-                  <SelectTrigger className="h-9 text-sm mt-1">
-                    <SelectValue placeholder="Select description" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border border-border z-50">
-                    {INSURANCE_DESCRIPTION_OPTIONS.map(opt => (
-                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-sm text-foreground">Insured's Name</Label>
-                <Input
-                  value={formData.insuredName}
-                  onChange={(e) => handleChange('insuredName', e.target.value)}
-                  className="h-9 text-sm mt-1"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm text-foreground">Company Name</Label>
-                <Input
-                  value={formData.companyName}
-                  onChange={(e) => handleChange('companyName', e.target.value)}
-                  className="h-9 text-sm mt-1"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm text-foreground">Policy Number</Label>
-                <Input
-                  value={formData.policyNumber}
-                  onChange={(e) => handleChange('policyNumber', e.target.value)}
-                  className="h-9 text-sm mt-1"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm text-foreground">Expiration</Label>
-                <Input
-                  type="date"
-                  value={formData.expiration}
-                  onChange={(e) => handleChange('expiration', e.target.value)}
-                  className="h-9 text-sm mt-1"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm text-foreground">Coverage</Label>
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="text-sm text-muted-foreground">$</span>
-                  <Input
-                    value={formData.coverage}
-                    onChange={(e) => handleChange('coverage', e.target.value)}
-                    className="h-9 text-sm text-right"
-                    inputMode="decimal"
-                    placeholder="0.00"
-                  />
+              {renderInlineSelect('property', 'Property', [{ id: 'unassigned', label: 'Unassigned' }, ...propertyOptions], 'Unassigned')}
+              {renderInlineSelect('description', 'Description', INSURANCE_DESCRIPTION_OPTIONS, 'Select')}
+              {renderInlineField('insuredName', "Insured's Name")}
+              {renderInlineField('companyName', 'Company Name')}
+              {renderInlineField('policyNumber', 'Policy Number')}
+              {renderInlineField('expiration', 'Expiration', { type: 'date' })}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs text-foreground">Coverage</Label>
+                <div className="flex items-center gap-1 flex-1">
+                  <span className="text-xs text-muted-foreground">$</span>
+                  <Input value={String(formData.coverage || '')} onChange={(e) => handleChange('coverage', e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
                 </div>
               </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <Checkbox
-                  id="modal-insurance-active"
-                  checked={formData.active}
-                  onCheckedChange={(checked) => handleChange('active', !!checked)}
-                  className="h-4 w-4"
-                />
-                <Label htmlFor="modal-insurance-active" className="text-sm text-foreground">
-                  Active
-                </Label>
+              <div className="flex items-center gap-2 pt-1">
+                <Checkbox id="modal-insurance-active" checked={formData.active} onCheckedChange={(checked) => handleChange('active', !!checked)} className="h-3.5 w-3.5" />
+                <Label htmlFor="modal-insurance-active" className="text-xs text-foreground">Active</Label>
               </div>
             </div>
 
-            {/* Right Column - Insurance Agent Information */}
-            <div className="space-y-4">
-              <div className="border-b border-border pb-2">
-                <span className="font-semibold text-sm text-primary">Insurance Agent Information</span>
+            {/* Right Column */}
+            <div className="space-y-1.5">
+              <div className="border-b border-border pb-1 mb-2">
+                <span className="font-semibold text-xs text-primary">Insurance Agent Information</span>
               </div>
-
-              <div>
-                <Label className="text-sm text-foreground">Agent's Name</Label>
-                <Input
-                  value={formData.agentName}
-                  onChange={(e) => handleChange('agentName', e.target.value)}
-                  className="h-9 text-sm mt-1"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm text-foreground">Bus. Address</Label>
-                <Input
-                  value={formData.businessAddress}
-                  onChange={(e) => handleChange('businessAddress', e.target.value)}
-                  className="h-9 text-sm mt-1"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm text-foreground">Phone Number</Label>
-                <Input
-                  value={formData.phoneNumber}
-                  onChange={(e) => handleChange('phoneNumber', e.target.value)}
-                  className="h-9 text-sm mt-1"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm text-foreground">Fax Number</Label>
-                <Input
-                  value={formData.faxNumber}
-                  onChange={(e) => handleChange('faxNumber', e.target.value)}
-                  className="h-9 text-sm mt-1"
-                />
-              </div>
-
-              <div>
-                <Label className="text-sm text-foreground">E-mail</Label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleChange('email', e.target.value)}
-                  className="h-9 text-sm mt-1"
-                />
-              </div>
+              {renderInlineField('agentName', "Agent's Name")}
+              {renderInlineField('businessAddress', 'Bus. Address')}
+              {renderInlineField('phoneNumber', 'Phone Number')}
+              {renderInlineField('faxNumber', 'Fax Number')}
+              {renderInlineField('email', 'E-mail', { type: 'email' })}
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t border-border">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>
-            OK
-          </Button>
+        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button size="sm" onClick={handleSave}>OK</Button>
         </div>
       </DialogContent>
     </Dialog>

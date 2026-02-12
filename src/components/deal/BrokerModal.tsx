@@ -1,21 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Users } from 'lucide-react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import type { BrokerData } from './BrokersTableView';
 
@@ -58,223 +50,74 @@ const US_STATES = [
 const generateBrokerId = () => `broker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 const getEmptyBroker = (): BrokerData => ({
-  id: generateBrokerId(),
-  brokerId: '',
-  license: '',
-  company: '',
-  firstName: '',
-  middleName: '',
-  lastName: '',
-  email: '',
-  street: '',
-  city: '',
-  state: '',
-  zip: '',
-  phoneWork: '',
-  phoneCell: '',
+  id: generateBrokerId(), brokerId: '', license: '', company: '', firstName: '',
+  middleName: '', lastName: '', email: '', street: '', city: '', state: '', zip: '',
+  phoneWork: '', phoneCell: '',
 });
 
-export const BrokerModal: React.FC<BrokerModalProps> = ({
-  open,
-  onOpenChange,
-  broker,
-  onSave,
-  isEdit = false,
-}) => {
+export const BrokerModal: React.FC<BrokerModalProps> = ({ open, onOpenChange, broker, onSave, isEdit = false }) => {
   const [formData, setFormData] = useState<BrokerData>(getEmptyBroker());
 
   useEffect(() => {
-    if (open) {
-      if (broker) {
-        setFormData(broker);
-      } else {
-        setFormData(getEmptyBroker());
-      }
-    }
+    if (open) setFormData(broker ? broker : getEmptyBroker());
   }, [open, broker]);
 
-  const handleFieldChange = (field: keyof BrokerData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  const handleFieldChange = (field: keyof BrokerData, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
+  const handleSave = () => { onSave(formData); onOpenChange(false); };
 
-  const handleSave = () => {
-    onSave(formData);
-    onOpenChange(false);
-  };
+  const renderInlineField = (field: keyof BrokerData, label: string, props: Record<string, any> = {}) => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+      <Input value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value)} className="h-7 text-xs flex-1" {...props} />
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-sm">
+            <Users className="h-4 w-4 text-primary" />
             {isEdit ? 'Edit Broker' : 'Add New Broker'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-8 mt-4">
-          {/* Left Column - Name & Contact */}
-          <div className="space-y-3">
-            <div className="border-b border-border pb-2 mb-3">
-              <span className="font-semibold text-sm text-primary">Broker Information</span>
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">Broker ID <span className="text-destructive">*</span></Label>
-              <Input
-                value={formData.brokerId}
-                onChange={(e) => handleFieldChange('brokerId', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter broker ID"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">License</Label>
-              <Input
-                value={formData.license}
-                onChange={(e) => handleFieldChange('license', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter license number"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">Company</Label>
-              <Input
-                value={formData.company}
-                onChange={(e) => handleFieldChange('company', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter company name"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">First Name</Label>
-              <Input
-                value={formData.firstName}
-                onChange={(e) => handleFieldChange('firstName', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter first name"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">Middle Name</Label>
-              <Input
-                value={formData.middleName}
-                onChange={(e) => handleFieldChange('middleName', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter middle name"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">Last Name</Label>
-              <Input
-                value={formData.lastName}
-                onChange={(e) => handleFieldChange('lastName', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter last name"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">Email</Label>
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleFieldChange('email', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter email address"
-              />
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0 mt-3">
+          {/* Left Column */}
+          <div className="space-y-1.5">
+            <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Broker Information</span></div>
+            {renderInlineField('brokerId', 'Broker ID *')}
+            {renderInlineField('license', 'License')}
+            {renderInlineField('company', 'Company')}
+            {renderInlineField('firstName', 'First Name')}
+            {renderInlineField('middleName', 'Middle Name')}
+            {renderInlineField('lastName', 'Last Name')}
+            {renderInlineField('email', 'Email', { type: 'email' })}
           </div>
 
-          {/* Right Column - Address & Phone */}
-          <div className="space-y-3">
-            <div className="border-b border-border pb-2 mb-3">
-              <span className="font-semibold text-sm text-primary">Address & Contact</span>
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">Street</Label>
-              <Input
-                value={formData.street}
-                onChange={(e) => handleFieldChange('street', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter street address"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">City</Label>
-              <Input
-                value={formData.city}
-                onChange={(e) => handleFieldChange('city', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter city"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">State</Label>
-              <Select
-                value={formData.state}
-                onValueChange={(val) => handleFieldChange('state', val)}
-              >
-                <SelectTrigger className="h-8 text-sm mt-1">
-                  <SelectValue placeholder="Select state" />
-                </SelectTrigger>
+          {/* Right Column */}
+          <div className="space-y-1.5">
+            <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Address & Contact</span></div>
+            {renderInlineField('street', 'Street')}
+            {renderInlineField('city', 'City')}
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs text-foreground">State</Label>
+              <Select value={formData.state} onValueChange={(val) => handleFieldChange('state', val)}>
+                <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent className="bg-background border border-border z-50 max-h-60">
-                  {US_STATES.map(state => (
-                    <SelectItem key={state.value} value={state.value}>{state.label}</SelectItem>
-                  ))}
+                  {US_STATES.map(s => (<SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
-
-            <div>
-              <Label className="text-sm text-foreground">ZIP Code</Label>
-              <Input
-                value={formData.zip}
-                onChange={(e) => handleFieldChange('zip', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter ZIP code"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">Work Phone</Label>
-              <Input
-                type="tel"
-                value={formData.phoneWork}
-                onChange={(e) => handleFieldChange('phoneWork', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter work phone"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-foreground">Cell Phone</Label>
-              <Input
-                type="tel"
-                value={formData.phoneCell}
-                onChange={(e) => handleFieldChange('phoneCell', e.target.value)}
-                className="h-8 text-sm mt-1"
-                placeholder="Enter cell phone"
-              />
-            </div>
+            {renderInlineField('zip', 'ZIP Code')}
+            {renderInlineField('phoneWork', 'Work Phone', { type: 'tel' })}
+            {renderInlineField('phoneCell', 'Cell Phone', { type: 'tel' })}
           </div>
         </div>
 
-        <DialogFooter className="mt-6">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>
-            OK
-          </Button>
+        <DialogFooter className="mt-4">
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button size="sm" onClick={handleSave}>OK</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

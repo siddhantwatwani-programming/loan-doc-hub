@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User } from 'lucide-react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,11 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import type { BorrowerData } from './BorrowersTableView';
 
@@ -29,32 +21,7 @@ interface BorrowerModalProps {
   isEdit?: boolean;
 }
 
-const BORROWER_TYPE_OPTIONS = [
-  'Individual',
-  'Corporation',
-  'LLC',
-  'Partnership',
-  'Trust',
-  'Estate',
-  'Other',
-];
-
-const CAPACITY_OPTIONS = [
-  'Borrower',
-  'Co-Borrower',
-  'Guarantor',
-  'Co-Signer',
-  'Power of Attorney',
-  'Trustee',
-  'Other',
-];
-
-const TAX_ID_TYPE_OPTIONS = [
-  'SSN',
-  'EIN',
-  'ITIN',
-  'Other',
-];
+const TAX_ID_TYPE_OPTIONS = ['SSN', 'EIN', 'ITIN', 'Other'];
 
 const US_STATES = [
   { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' },
@@ -87,36 +54,17 @@ const US_STATES = [
 const generateBorrowerId = () => `borrower_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 const getEmptyBorrower = (): BorrowerData => ({
-  id: generateBorrowerId(),
-  isPrimary: false,
-  borrowerType: '',
-  fullName: '',
-  firstName: '',
-  middleName: '',
-  lastName: '',
-  email: '',
-  phone: '',
-  street: '',
-  city: '',
-  state: '',
-  zipCode: '',
-  taxIdType: '',
-  taxId: '',
-  creditScore: '',
-  capacity: '',
+  id: generateBorrowerId(), isPrimary: false, borrowerType: '', fullName: '',
+  firstName: '', middleName: '', lastName: '', email: '', phone: '',
+  street: '', city: '', state: '', zipCode: '', taxIdType: '', taxId: '',
+  creditScore: '', capacity: '',
 });
 
 export const BorrowerModal: React.FC<BorrowerModalProps> = ({
-  open,
-  onOpenChange,
-  borrower,
-  onSave,
-  isEdit = false,
+  open, onOpenChange, borrower, onSave, isEdit = false,
 }) => {
   const [formData, setFormData] = useState<BorrowerData>(getEmptyBorrower());
   const [activeTab, setActiveTab] = useState('general');
-  
-  // Additional phone fields
   const [phoneHome, setPhoneHome] = useState('');
   const [phoneWork, setPhoneWork] = useState('');
   const [phoneCell, setPhoneCell] = useState('');
@@ -124,16 +72,8 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
 
   useEffect(() => {
     if (open) {
-      if (borrower) {
-        setFormData(borrower);
-        setPhoneHome(borrower.phone || '');
-      } else {
-        setFormData(getEmptyBorrower());
-        setPhoneHome('');
-        setPhoneWork('');
-        setPhoneCell('');
-        setPhoneFax('');
-      }
+      if (borrower) { setFormData(borrower); setPhoneHome(borrower.phone || ''); }
+      else { setFormData(getEmptyBorrower()); setPhoneHome(''); setPhoneWork(''); setPhoneCell(''); setPhoneFax(''); }
       setActiveTab('general');
     }
   }, [open, borrower]);
@@ -143,249 +83,106 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
   };
 
   const handleSave = () => {
-    // Set primary phone from the first available phone
     const primaryPhone = phoneCell || phoneHome || phoneWork || '';
     onSave({ ...formData, phone: primaryPhone });
     onOpenChange(false);
   };
 
+  const renderInlineField = (field: keyof BorrowerData, label: string, type = 'text') => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+      <Input value={String(formData[field] || '')} onChange={(e) => handleFieldChange(field, e.target.value)} className="h-7 text-xs flex-1" type={type} />
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <User className="h-5 w-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-sm">
+            <User className="h-4 w-4 text-primary" />
             {isEdit ? 'Edit Borrower' : 'Add New Borrower'}
           </DialogTitle>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-1">
-            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="general" className="text-xs">General</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="general" className="mt-4">
-            <div className="grid grid-cols-2 gap-8">
-              {/* Left Column - Borrower Details */}
-              <div className="space-y-3">
-                <div className="border-b border-border pb-2 mb-3">
-                  <span className="font-semibold text-sm text-primary">Borrower Details</span>
+          <TabsContent value="general" className="mt-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
+              {/* Left Column */}
+              <div className="space-y-1.5">
+                <div className="border-b border-border pb-1 mb-2">
+                  <span className="font-semibold text-xs text-primary">Borrower Details</span>
                 </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Borrower Type</Label>
-                  <Input
-                    value={formData.borrowerType}
-                    onChange={(e) => handleFieldChange('borrowerType', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                    placeholder="Enter borrower type"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Full Name (If Entity, Use Entity Name)</Label>
-                  <Input
-                    value={formData.fullName}
-                    onChange={(e) => handleFieldChange('fullName', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <Label className="text-sm text-foreground">First Name</Label>
-                    <Input
-                      value={formData.firstName}
-                      onChange={(e) => handleFieldChange('firstName', e.target.value)}
-                      className="h-8 text-sm mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm text-foreground">Middle</Label>
-                    <Input
-                      value={formData.middleName}
-                      onChange={(e) => handleFieldChange('middleName', e.target.value)}
-                      className="h-8 text-sm mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm text-foreground">Last Name</Label>
-                    <Input
-                      value={formData.lastName}
-                      onChange={(e) => handleFieldChange('lastName', e.target.value)}
-                      className="h-8 text-sm mt-1"
-                    />
+                {renderInlineField('borrowerType', 'Borrower Type')}
+                {renderInlineField('fullName', 'Full Name')}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Name</Label>
+                  <div className="flex-1 grid grid-cols-3 gap-1">
+                    <Input value={formData.firstName} onChange={(e) => handleFieldChange('firstName', e.target.value)} className="h-7 text-xs" placeholder="First" />
+                    <Input value={formData.middleName} onChange={(e) => handleFieldChange('middleName', e.target.value)} className="h-7 text-xs" placeholder="Middle" />
+                    <Input value={formData.lastName} onChange={(e) => handleFieldChange('lastName', e.target.value)} className="h-7 text-xs" placeholder="Last" />
                   </div>
                 </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Capacity</Label>
-                  <Input
-                    value={formData.capacity}
-                    onChange={(e) => handleFieldChange('capacity', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                    placeholder="Enter capacity"
-                  />
+                {renderInlineField('capacity', 'Capacity')}
+                {renderInlineField('email', 'Email')}
+                {renderInlineField('creditScore', 'Credit Score')}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Tax ID Type</Label>
+                  <Select value={formData.taxIdType} onValueChange={(val) => handleFieldChange('taxIdType', val)}>
+                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent className="bg-background border border-border z-50">
+                      {TAX_ID_TYPE_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
                 </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Email</Label>
-                  <Input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleFieldChange('email', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Credit Score</Label>
-                  <Input
-                    value={formData.creditScore}
-                    onChange={(e) => handleFieldChange('creditScore', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                    inputMode="numeric"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-foreground">Tax ID Type</Label>
-                    <Select
-                      value={formData.taxIdType}
-                      onValueChange={(val) => handleFieldChange('taxIdType', val)}
-                    >
-                      <SelectTrigger className="h-8 text-sm mt-1">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border border-border z-50">
-                        {TAX_ID_TYPE_OPTIONS.map(opt => (
-                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-foreground">Tax ID / TIN</Label>
-                    <Input
-                      value={formData.taxId}
-                      onChange={(e) => handleFieldChange('taxId', e.target.value)}
-                      className="h-8 text-sm mt-1"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 pt-2">
-                  <Checkbox
-                    id="modal-primary-borrower"
-                    checked={formData.isPrimary}
-                    onCheckedChange={(checked) => handleFieldChange('isPrimary', !!checked)}
-                    className="h-4 w-4"
-                  />
-                  <Label htmlFor="modal-primary-borrower" className="text-sm text-foreground">
-                    Primary Borrower
-                  </Label>
+                {renderInlineField('taxId', 'Tax ID / TIN')}
+                <div className="flex items-center gap-2 pt-1">
+                  <Checkbox id="modal-primary-borrower" checked={formData.isPrimary} onCheckedChange={(checked) => handleFieldChange('isPrimary', !!checked)} className="h-3.5 w-3.5" />
+                  <Label htmlFor="modal-primary-borrower" className="text-xs text-foreground">Primary Borrower</Label>
                 </div>
               </div>
 
-              {/* Right Column - Address & Phone */}
-              <div className="space-y-4">
-                {/* Address Section */}
-                <div>
-                  <div className="border-b border-border pb-2 mb-3">
-                    <span className="font-semibold text-sm text-primary">Primary Address</span>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div>
-                      <Label className="text-sm text-foreground">Street</Label>
-                      <Input
-                        value={formData.street}
-                        onChange={(e) => handleFieldChange('street', e.target.value)}
-                        className="h-8 text-sm mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <Label className="text-sm text-foreground">City</Label>
-                      <Input
-                        value={formData.city}
-                        onChange={(e) => handleFieldChange('city', e.target.value)}
-                        className="h-8 text-sm mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <Label className="text-sm text-foreground">State</Label>
-                      <Select
-                        value={formData.state}
-                        onValueChange={(val) => handleFieldChange('state', val)}
-                      >
-                        <SelectTrigger className="h-8 text-sm mt-1">
-                          <SelectValue placeholder="Select state" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background border border-border z-50 max-h-60">
-                          {US_STATES.map(state => (
-                            <SelectItem key={state.value} value={state.value}>{state.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm text-foreground">Zip Code</Label>
-                      <Input
-                        value={formData.zipCode}
-                        onChange={(e) => handleFieldChange('zipCode', e.target.value)}
-                        className="h-8 text-sm mt-1"
-                      />
-                    </div>
-                  </div>
+              {/* Right Column */}
+              <div className="space-y-1.5">
+                <div className="border-b border-border pb-1 mb-2">
+                  <span className="font-semibold text-xs text-primary">Primary Address</span>
                 </div>
+                {renderInlineField('street', 'Street')}
+                {renderInlineField('city', 'City')}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">State</Label>
+                  <Select value={formData.state} onValueChange={(val) => handleFieldChange('state', val)}>
+                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent className="bg-background border border-border z-50 max-h-60">
+                      {US_STATES.map(s => (<SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {renderInlineField('zipCode', 'Zip Code')}
 
-                {/* Phone Section */}
-                <div>
-                  <div className="border-b border-border pb-2 mb-3">
-                    <span className="font-semibold text-sm text-primary">Phone Numbers</span>
+                <div className="border-b border-border pb-1 mt-3 mb-2">
+                  <span className="font-semibold text-xs text-primary">Phone Numbers</span>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Label className="w-10 shrink-0 text-xs">Home</Label>
+                    <Input value={phoneHome} onChange={(e) => setPhoneHome(e.target.value)} className="h-7 text-xs flex-1" />
                   </div>
-
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-sm text-foreground">Home</Label>
-                        <Input
-                          value={phoneHome}
-                          onChange={(e) => setPhoneHome(e.target.value)}
-                          className="h-8 text-sm mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-sm text-foreground">Work</Label>
-                        <Input
-                          value={phoneWork}
-                          onChange={(e) => setPhoneWork(e.target.value)}
-                          className="h-8 text-sm mt-1"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-sm text-foreground">Cell</Label>
-                        <Input
-                          value={phoneCell}
-                          onChange={(e) => setPhoneCell(e.target.value)}
-                          className="h-8 text-sm mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-sm text-foreground">Fax</Label>
-                        <Input
-                          value={phoneFax}
-                          onChange={(e) => setPhoneFax(e.target.value)}
-                          className="h-8 text-sm mt-1"
-                        />
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="w-10 shrink-0 text-xs">Work</Label>
+                    <Input value={phoneWork} onChange={(e) => setPhoneWork(e.target.value)} className="h-7 text-xs flex-1" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="w-10 shrink-0 text-xs">Cell</Label>
+                    <Input value={phoneCell} onChange={(e) => setPhoneCell(e.target.value)} className="h-7 text-xs flex-1" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="w-10 shrink-0 text-xs">Fax</Label>
+                    <Input value={phoneFax} onChange={(e) => setPhoneFax(e.target.value)} className="h-7 text-xs flex-1" />
                   </div>
                 </div>
               </div>
@@ -393,13 +190,9 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="mt-6">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>
-            OK
-          </Button>
+        <DialogFooter className="mt-4">
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button size="sm" onClick={handleSave}>OK</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

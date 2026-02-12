@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign } from 'lucide-react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,11 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import type { ChargeData } from './ChargesTableView';
 
@@ -29,421 +21,142 @@ interface ChargesModalProps {
   isEdit?: boolean;
 }
 
-const CHARGE_TYPE_OPTIONS = [
-  'Account Close Out',
-  'Account Maintenance',
-  'Administrative Services',
-  'Beneficiary Origination',
-  'Beneficiary Wire',
-  'Demand Fee',
-  'Extension / Modification Doc Prep',
-  'Foreclosure Processing Fees - Trustee\'s Fees',
-  'Holdback',
-  'Modification Doc Prep',
-  'New Account Setup',
-  'NSF Charge',
-  'Online Payment Fee',
-  'Origination Doc Prep',
-  'Pay By Phone',
-  'Professional Services',
-  'Setup Fee',
-  'SO110-Servicing Fee',
-  'Wire Processing',
-];
-
 const generateChargeId = () => `charge_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 const getEmptyCharge = (): ChargeData => ({
-  id: generateChargeId(),
-  description: '',
-  unpaidBalance: '',
-  owedTo: '',
-  owedFrom: '',
-  totalDue: '',
-  interestFrom: '',
-  dateOfCharge: '',
-  interestRate: '',
-  notes: '',
-  reference: '',
-  chargeType: '',
-  deferred: '',
-  originalAmount: '',
-  account: '',
-  borrowerFullName: '',
-  advancedByAccount: '',
-  advancedByLenderName: '',
-  advancedByAmount: '',
-  onBehalfOfAccount: '',
-  onBehalfOfLenderName: '',
-  onBehalfOfAmount: '',
-  amountOwedByBorrower: '',
-  accruedInterest: '',
-  distributeBetweenAllLenders: '',
+  id: generateChargeId(), description: '', unpaidBalance: '', owedTo: '', owedFrom: '', totalDue: '',
+  interestFrom: '', dateOfCharge: '', interestRate: '', notes: '', reference: '', chargeType: '',
+  deferred: '', originalAmount: '', account: '', borrowerFullName: '', advancedByAccount: '',
+  advancedByLenderName: '', advancedByAmount: '', onBehalfOfAccount: '', onBehalfOfLenderName: '',
+  onBehalfOfAmount: '', amountOwedByBorrower: '', accruedInterest: '', distributeBetweenAllLenders: '',
 });
 
-export const ChargesModal: React.FC<ChargesModalProps> = ({
-  open,
-  onOpenChange,
-  charge,
-  onSave,
-  isEdit = false,
-}) => {
+export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, charge, onSave, isEdit = false }) => {
   const [formData, setFormData] = useState<ChargeData>(getEmptyCharge());
 
   useEffect(() => {
-    if (open) {
-      if (charge) {
-        setFormData(charge);
-      } else {
-        setFormData(getEmptyCharge());
-      }
-    }
+    if (open) setFormData(charge ? charge : getEmptyCharge());
   }, [open, charge]);
 
-  const handleFieldChange = (field: keyof ChargeData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  const handleFieldChange = (field: keyof ChargeData, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
+  const handleSave = () => { onSave(formData); onOpenChange(false); };
 
-  const handleSave = () => {
-    onSave(formData);
-    onOpenChange(false);
-  };
+  const renderInlineField = (field: keyof ChargeData, label: string, type = 'text') => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[110px] shrink-0 text-xs font-semibold text-foreground">{label}</Label>
+      <Input value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value)} className="h-7 text-xs flex-1" type={type} />
+    </div>
+  );
+
+  const renderCurrencyField = (field: keyof ChargeData, label: string) => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[110px] shrink-0 text-xs font-semibold text-foreground">{label}</Label>
+      <div className="relative flex-1">
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+        <Input type="number" step="0.01" value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value)} className="h-7 text-xs pl-5" placeholder="0.00" />
+      </div>
+    </div>
+  );
+
+  const renderPercentageField = (field: keyof ChargeData, label: string) => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[110px] shrink-0 text-xs font-semibold text-foreground">{label}</Label>
+      <div className="relative flex-1">
+        <Input type="number" step="0.01" value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value)} className="h-7 text-xs pr-5" placeholder="0.00" />
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+      </div>
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-sm">
+            <DollarSign className="h-4 w-4 text-primary" />
             {isEdit ? 'Edit Charge' : 'New Charge'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-5 mt-4">
-          {/* === Loan Information Section === */}
+        <div className="space-y-4 mt-3">
+          {/* Loan Information */}
           <div>
-            <div className="bg-primary/10 border border-primary/20 rounded px-3 py-1.5 mb-3">
-              <span className="font-semibold text-sm text-primary">Loan Information</span>
+            <div className="bg-primary/10 border border-primary/20 rounded px-2 py-1 mb-2">
+              <span className="font-semibold text-xs text-primary">Loan Information</span>
             </div>
-            <div className="space-y-3 px-1">
-              <div>
-                <Label className="text-sm font-semibold text-foreground">Account</Label>
-                <Input
-                  value={formData.account}
-                  onChange={(e) => handleFieldChange('account', e.target.value)}
-                  className="h-8 text-sm mt-1"
-                  placeholder="Enter account"
-                />
-              </div>
-              <div>
-                <Label className="text-sm font-semibold text-foreground">Borrower Full Name</Label>
-                <Input
-                  value={formData.borrowerFullName}
-                  onChange={(e) => handleFieldChange('borrowerFullName', e.target.value)}
-                  className="h-8 text-sm mt-1"
-                  placeholder="Enter borrower full name"
-                />
-              </div>
+            <div className="space-y-1.5 px-1">
+              {renderInlineField('account', 'Account')}
+              {renderInlineField('borrowerFullName', 'Borrower Name')}
             </div>
           </div>
 
-          {/* === Charge Information Section === */}
+          {/* Charge Information */}
           <div>
-            <div className="bg-primary/10 border border-primary/20 rounded px-3 py-1.5 mb-3">
-              <span className="font-semibold text-sm text-primary">Charge Information</span>
+            <div className="bg-primary/10 border border-primary/20 rounded px-2 py-1 mb-2">
+              <span className="font-semibold text-xs text-primary">Charge Information</span>
             </div>
-            <div className="space-y-3 px-1">
-              {/* Row 1: Date of Charge | Interest From */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Date of Charge</Label>
-                  <Input
-                    type="date"
-                    value={formData.dateOfCharge}
-                    onChange={(e) => handleFieldChange('dateOfCharge', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Interest From</Label>
-                  <Input
-                    type="date"
-                    value={formData.interestFrom}
-                    onChange={(e) => handleFieldChange('interestFrom', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                  />
-                </div>
-              </div>
-
-              {/* Row 2: Reference | Charge Type */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Reference</Label>
-                  <Input
-                    value={formData.reference}
-                    onChange={(e) => handleFieldChange('reference', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                    placeholder="Enter reference"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Charge Type</Label>
-                  <Input
-                    value={formData.chargeType}
-                    onChange={(e) => handleFieldChange('chargeType', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                    placeholder="Enter charge type"
-                  />
-                </div>
-              </div>
-
-              {/* Row 3: Original Amount | Description */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Original Amount</Label>
-                  <div className="relative mt-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.originalAmount}
-                      onChange={(e) => handleFieldChange('originalAmount', e.target.value)}
-                      className="h-8 text-sm pl-6"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Description</Label>
-                  <Input
-                    value={formData.description}
-                    onChange={(e) => handleFieldChange('description', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                    placeholder="Enter description"
-                  />
-                </div>
-              </div>
-
-              {/* Row 4: Interest Rate | Owed To Account */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Interest Rate</Label>
-                  <div className="relative mt-1">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.interestRate}
-                      onChange={(e) => handleFieldChange('interestRate', e.target.value)}
-                      className="h-8 text-sm pr-6"
-                      placeholder="0.00"
-                    />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Owed To Account</Label>
-                  <Input
-                    value={formData.owedTo}
-                    onChange={(e) => handleFieldChange('owedTo', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                    placeholder="Enter owed to account"
-                  />
-                </div>
-              </div>
-
-              {/* Row 5: Owed From | Unpaid Balance */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Owed From</Label>
-                  <Input
-                    value={formData.owedFrom}
-                    onChange={(e) => handleFieldChange('owedFrom', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                    placeholder="Enter owed from"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Unpaid Balance</Label>
-                  <div className="relative mt-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.unpaidBalance}
-                      onChange={(e) => handleFieldChange('unpaidBalance', e.target.value)}
-                      className="h-8 text-sm pl-6"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 6: Total Due | Notes */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Total Due</Label>
-                  <div className="relative mt-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.totalDue}
-                      onChange={(e) => handleFieldChange('totalDue', e.target.value)}
-                      className="h-8 text-sm pl-6"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-sm font-semibold text-foreground">Notes</Label>
-                  <Textarea
-                    value={formData.notes}
-                    onChange={(e) => handleFieldChange('notes', e.target.value)}
-                    className="text-sm mt-1 min-h-[60px]"
-                    placeholder="Enter notes"
-                  />
-                </div>
-              </div>
-
-              {/* Row 8: Deferred checkbox */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 px-1">
+              {renderInlineField('dateOfCharge', 'Date of Charge', 'date')}
+              {renderInlineField('interestFrom', 'Interest From', 'date')}
+              {renderInlineField('reference', 'Reference')}
+              {renderInlineField('chargeType', 'Charge Type')}
+              {renderCurrencyField('originalAmount', 'Original Amount')}
+              {renderInlineField('description', 'Description')}
+              {renderPercentageField('interestRate', 'Interest Rate')}
+              {renderInlineField('owedTo', 'Owed To')}
+              {renderInlineField('owedFrom', 'Owed From')}
+              {renderCurrencyField('unpaidBalance', 'Unpaid Balance')}
+              {renderCurrencyField('totalDue', 'Total Due')}
               <div className="flex items-center gap-2">
-                <Checkbox
-                  id="deferred"
-                  checked={formData.deferred === 'true'}
-                  onCheckedChange={(checked) => handleFieldChange('deferred', checked ? 'true' : 'false')}
-                />
-                <Label htmlFor="deferred" className="text-sm font-semibold text-foreground cursor-pointer">
-                  Deferred
-                </Label>
+                <Label className="w-[110px] shrink-0 text-xs font-semibold text-foreground">Notes</Label>
+                <Textarea value={formData.notes} onChange={(e) => handleFieldChange('notes', e.target.value)} className="text-xs min-h-[40px] flex-1" />
               </div>
+            </div>
+            <div className="flex items-center gap-2 px-1 pt-1.5">
+              <Checkbox id="deferred" checked={formData.deferred === 'true'} onCheckedChange={(checked) => handleFieldChange('deferred', checked ? 'true' : 'false')} className="h-3.5 w-3.5" />
+              <Label htmlFor="deferred" className="text-xs font-semibold text-foreground cursor-pointer">Deferred</Label>
             </div>
           </div>
 
-          {/* === Distribution Section === */}
+          {/* Distribution */}
           <div>
-            <div className="bg-primary/10 border border-primary/20 rounded px-3 py-1.5 mb-3">
-              <span className="font-semibold text-sm text-primary">Distribution</span>
+            <div className="bg-primary/10 border border-primary/20 rounded px-2 py-1 mb-2">
+              <span className="font-semibold text-xs text-primary">Distribution</span>
             </div>
-            <div className="px-1">
-              {/* Distribution table-like grid */}
-              <div className="border border-border rounded-lg overflow-hidden">
-                {/* Header row */}
-                <div className="grid grid-cols-[140px_1fr_1fr_1fr] bg-muted/50 border-b border-border">
-                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground"></div>
-                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">ACCOUNT</div>
-                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">LENDER NAME</div>
-                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">AMOUNT</div>
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="grid grid-cols-[120px_1fr_1fr_1fr] bg-muted/50 border-b border-border">
+                <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground"></div>
+                <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground">ACCOUNT</div>
+                <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground">LENDER NAME</div>
+                <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground">AMOUNT</div>
+              </div>
+              <div className="grid grid-cols-[120px_1fr_1fr_1fr] border-b border-border items-center">
+                <div className="px-2 py-1 text-xs font-medium text-foreground">Advanced By</div>
+                <div className="px-1.5 py-1"><Input value={formData.advancedByAccount} onChange={(e) => handleFieldChange('advancedByAccount', e.target.value)} className="h-6 text-xs" /></div>
+                <div className="px-1.5 py-1"><Input value={formData.advancedByLenderName} onChange={(e) => handleFieldChange('advancedByLenderName', e.target.value)} className="h-6 text-xs" /></div>
+                <div className="px-1.5 py-1"><div className="relative"><span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span><Input type="number" step="0.01" value={formData.advancedByAmount} onChange={(e) => handleFieldChange('advancedByAmount', e.target.value)} className="h-6 text-xs pl-4" placeholder="0.00" /></div></div>
+              </div>
+              <div className="grid grid-cols-[120px_1fr_1fr_1fr] border-b border-border items-center">
+                <div className="px-2 py-1 text-xs font-medium text-foreground">On Behalf Of</div>
+                <div className="px-1.5 py-1"><Input value={formData.onBehalfOfAccount} onChange={(e) => handleFieldChange('onBehalfOfAccount', e.target.value)} className="h-6 text-xs" /></div>
+                <div className="px-1.5 py-1"><Input value={formData.onBehalfOfLenderName} onChange={(e) => handleFieldChange('onBehalfOfLenderName', e.target.value)} className="h-6 text-xs" /></div>
+                <div className="px-1.5 py-1"><div className="relative"><span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span><Input type="number" step="0.01" value={formData.onBehalfOfAmount} onChange={(e) => handleFieldChange('onBehalfOfAmount', e.target.value)} className="h-6 text-xs pl-4" placeholder="0.00" /></div></div>
+              </div>
+              <div className="grid grid-cols-[120px_1fr_1fr_1fr] items-center">
+                <div className="px-2 py-1 flex items-center gap-1">
+                  <Checkbox id="distributeAll" checked={formData.distributeBetweenAllLenders === 'true'} onCheckedChange={(checked) => handleFieldChange('distributeBetweenAllLenders', checked ? 'true' : 'false')} className="h-3 w-3" />
+                  <Label htmlFor="distributeAll" className="text-[10px] font-medium text-foreground cursor-pointer whitespace-nowrap">Distribute All</Label>
                 </div>
-
-                {/* Advanced By row */}
-                <div className="grid grid-cols-[140px_1fr_1fr_1fr] border-b border-border items-center">
-                  <div className="px-3 py-2 text-sm font-medium text-foreground">Advanced By</div>
-                  <div className="px-2 py-1.5">
-                    <Input
-                      value={formData.advancedByAccount}
-                      onChange={(e) => handleFieldChange('advancedByAccount', e.target.value)}
-                      className="h-7 text-sm"
-                      placeholder=""
-                    />
-                  </div>
-                  <div className="px-2 py-1.5">
-                    <Input
-                      value={formData.advancedByLenderName}
-                      onChange={(e) => handleFieldChange('advancedByLenderName', e.target.value)}
-                      className="h-7 text-sm"
-                      placeholder=""
-                    />
-                  </div>
-                  <div className="px-2 py-1.5">
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formData.advancedByAmount}
-                        onChange={(e) => handleFieldChange('advancedByAmount', e.target.value)}
-                        className="h-7 text-sm pl-6"
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* On Behalf Of row */}
-                <div className="grid grid-cols-[140px_1fr_1fr_1fr] border-b border-border items-center">
-                  <div className="px-3 py-2 text-sm font-medium text-foreground">On Behalf Of</div>
-                  <div className="px-2 py-1.5">
-                    <Input
-                      value={formData.onBehalfOfAccount}
-                      onChange={(e) => handleFieldChange('onBehalfOfAccount', e.target.value)}
-                      className="h-7 text-sm"
-                      placeholder=""
-                    />
-                  </div>
-                  <div className="px-2 py-1.5">
-                    <Input
-                      value={formData.onBehalfOfLenderName}
-                      onChange={(e) => handleFieldChange('onBehalfOfLenderName', e.target.value)}
-                      className="h-7 text-sm"
-                      placeholder=""
-                    />
-                  </div>
-                  <div className="px-2 py-1.5">
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formData.onBehalfOfAmount}
-                        onChange={(e) => handleFieldChange('onBehalfOfAmount', e.target.value)}
-                        className="h-7 text-sm pl-6"
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Distribute Between All Lenders + Amount Owed by Borrower row */}
-                <div className="grid grid-cols-[140px_1fr_1fr_1fr] items-center">
-                  <div className="px-3 py-2 flex items-center gap-2">
-                    <Checkbox
-                      id="distributeBetweenAllLenders"
-                      checked={formData.distributeBetweenAllLenders === 'true'}
-                      onCheckedChange={(checked) => handleFieldChange('distributeBetweenAllLenders', checked ? 'true' : 'false')}
-                    />
-                    <Label htmlFor="distributeBetweenAllLenders" className="text-sm font-medium text-foreground cursor-pointer whitespace-nowrap">
-                      Distribute Between All Lenders
-                    </Label>
-                  </div>
-                  <div className="px-3 py-2 text-sm font-medium text-foreground col-span-2 text-right pr-4">
-                    Amount Owed by Borrower:
-                  </div>
-                  <div className="px-2 py-1.5">
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formData.amountOwedByBorrower}
-                        onChange={(e) => handleFieldChange('amountOwedByBorrower', e.target.value)}
-                        className="h-7 text-sm pl-6"
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </div>
-                </div>
+                <div className="px-2 py-1 text-xs font-medium text-foreground col-span-2 text-right pr-3">Amt Owed by Borrower:</div>
+                <div className="px-1.5 py-1"><div className="relative"><span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span><Input type="number" step="0.01" value={formData.amountOwedByBorrower} onChange={(e) => handleFieldChange('amountOwedByBorrower', e.target.value)} className="h-6 text-xs pl-4" placeholder="0.00" /></div></div>
               </div>
             </div>
           </div>
         </div>
 
-        <DialogFooter className="mt-6">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>
-            OK
-          </Button>
+        <DialogFooter className="mt-4">
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button size="sm" onClick={handleSave}>OK</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
