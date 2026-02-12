@@ -278,29 +278,4 @@
   .focus-ring {
     @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background;
   }
-
-  /* Compact inline-label form field */
-  .inline-field {
-    @apply flex items-center gap-2;
-  }
-  .inline-field > label,
-  .inline-field > .inline-label {
-    @apply text-sm text-muted-foreground shrink-0 w-[130px] text-right;
-  }
-  .inline-field > input,
-  .inline-field > select,
-  .inline-field > .inline-input {
-    @apply flex-1 min-w-0;
-  }
-
-  /* Compact form grid - responsive columns */
-  .form-grid-compact {
-    @apply grid gap-x-6 gap-y-2;
-    @apply grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4;
-  }
-
-  /* Form section header */
-  .form-section-header {
-    @apply text-sm font-semibold text-primary border-b border-border pb-1.5 mb-3 col-span-full;
-  }
 }
