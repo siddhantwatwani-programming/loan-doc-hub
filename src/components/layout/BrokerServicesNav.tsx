@@ -208,16 +208,16 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
               <CollapsibleTrigger asChild>
                 <button
                   className={cn(
-                    'sidebar-item w-full justify-between text-sm',
+                    'sidebar-item w-full justify-between text-sm text-left',
                     section.items.some((i) => location.pathname === i.path) &&
                       'text-sidebar-primary-foreground bg-sidebar-accent'
                   )}
                 >
-                  <span>{section.label}</span>
+                  <span className="text-left">{section.label}</span>
                   {openChildren.includes(section.label) ? (
-                    <ChevronDown className="h-3.5 w-3.5" />
+                    <ChevronDown className="h-3.5 w-3.5 shrink-0" />
                   ) : (
-                    <ChevronRight className="h-3.5 w-3.5" />
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0" />
                   )}
                 </button>
               </CollapsibleTrigger>
