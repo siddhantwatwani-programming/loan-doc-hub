@@ -36,22 +36,16 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
   const isComputed = calculationResult?.computed === true;
   const hasCalculationError = calculationResult?.error !== undefined;
   
-  // Local display value for formatted inputs
   const [isFocused, setIsFocused] = useState(false);
 
-  // Handle text/number input changes - store canonical values
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const rawValue = e.target.value;
-    
-    // Parse to canonical form based on data type
     const canonicalValue = parseToCanonical(rawValue, field.data_type);
     onChange(canonicalValue);
   };
 
-  // Handle blur - validate and format
   const handleBlur = () => {
     setIsFocused(false);
-    
     if (!value) return;
 
     let formattedValue = value;
@@ -72,7 +66,6 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
       case 'number':
         const num = parseFloat(value);
         if (!isNaN(num)) {
-          // Keep as number, no formatting changes
           formattedValue = num.toString();
         }
         break;
@@ -87,24 +80,17 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     setIsFocused(true);
   };
 
-  // Handle date picker selection
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
-      // Store as ISO date string (canonical format: YYYY-MM-DD)
       onChange(format(date, 'yyyy-MM-dd'));
     } else {
       onChange('');
     }
   };
 
-  // Get display value - formatted for viewing, raw for editing
   const getDisplayValue = (): string => {
     if (!value) return '';
-    
-    // When focused, show raw canonical value for editing
     if (isFocused) return value;
-    
-    // When not focused, show formatted value
     return formatForDisplay(value, field.data_type);
   };
 
@@ -139,13 +125,13 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
             variant="outline"
             disabled={isDisabled}
             className={cn(
-              'w-full justify-start text-left font-normal',
+              'w-full justify-start text-left font-normal h-7 text-xs',
               !value && 'text-muted-foreground',
               showError && 'border-destructive focus:ring-destructive bg-destructive/5',
               isDisabled && 'bg-muted cursor-not-allowed'
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
+            <CalendarIcon className="mr-1.5 h-3 w-3" />
             {isValidDate ? format(selectedDate, 'MM/dd/yyyy') : <span>Pick a date</span>}
           </Button>
         </PopoverTrigger>
@@ -172,7 +158,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
       onFocus={handleFocus}
       disabled={isDisabled}
       className={cn(
-        'resize-none transition-colors',
+        'resize-none transition-colors text-xs min-h-[48px]',
         showError && 'border-destructive focus:ring-destructive bg-destructive/5',
         isDisabled && 'bg-muted cursor-not-allowed'
       )}
@@ -181,7 +167,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     />
   );
 
-  // Render standard input (text, number, currency, percentage, decimal)
+  // Render standard input
   const renderInput = () => {
     const prefix = getInputPrefix();
     const suffix = getInputSuffix();
@@ -189,7 +175,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     return (
       <div className="relative">
         {prefix && (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
             {prefix}
           </span>
         )}
@@ -203,16 +189,16 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
           onFocus={handleFocus}
           disabled={isDisabled}
           className={cn(
-            'transition-colors',
-            prefix && 'pl-7',
-            suffix && 'pr-8',
+            'transition-colors h-7 text-xs',
+            prefix && 'pl-5',
+            suffix && 'pr-6',
             showError && 'border-destructive focus:ring-destructive bg-destructive/5',
             isDisabled && 'bg-muted cursor-not-allowed'
           )}
           placeholder={field.description || undefined}
         />
         {suffix && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
             {suffix}
           </span>
         )}
@@ -232,7 +218,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
       onFocus={handleFocus}
       disabled={isDisabled}
       className={cn(
-        'transition-colors',
+        'transition-colors h-7 text-xs',
         showError && 'border-destructive focus:ring-destructive bg-destructive/5',
         isDisabled && 'bg-muted cursor-not-allowed'
       )}
@@ -242,14 +228,14 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
 
   // Render section header (non-input)
   const renderSectionHeader = () => (
-    <div className="col-span-2 border-b border-border pb-2 mt-4 first:mt-0">
-      <span className="font-semibold text-sm text-foreground">{field.label}</span>
+    <div className="col-span-full border-b border-border pb-1.5 mt-3 first:mt-0">
+      <span className="font-semibold text-xs text-foreground">{field.label}</span>
     </div>
   );
 
   // Render label (static text, non-input)
   const renderLabel = () => (
-    <p className="text-sm text-muted-foreground italic">{field.label}</p>
+    <p className="text-xs text-muted-foreground italic">{field.label}</p>
   );
 
   // Render template button
@@ -258,9 +244,8 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
       variant="outline"
       size="sm"
       disabled={isDisabled}
-      className="justify-start text-left h-auto py-2"
+      className="justify-start text-left h-7 py-1 text-xs"
       onClick={() => {
-        // Template click handler - can be extended later
         console.log('Template clicked:', field.field_key);
       }}
     >
@@ -274,8 +259,8 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
       variant="default"
       size="sm"
       disabled={isDisabled}
+      className="h-7 text-xs"
       onClick={() => {
-        // Action click handler - can be extended later
         console.log('Action clicked:', field.field_key);
       }}
     >
@@ -290,7 +275,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
       type="file"
       disabled={isDisabled}
       className={cn(
-        'transition-colors cursor-pointer',
+        'transition-colors cursor-pointer h-7 text-xs',
         showError && 'border-destructive focus:ring-destructive bg-destructive/5',
         isDisabled && 'bg-muted cursor-not-allowed'
       )}
@@ -299,43 +284,18 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
 
   // Choose the right input based on data type
   const renderFieldInput = () => {
-    // Handle non-input data types first
-    if (field.data_type === 'section') {
-      return renderSectionHeader();
-    }
-    
-    if (field.data_type === 'label') {
-      return renderLabel();
-    }
-    
-    if (field.data_type === 'template') {
-      return renderTemplateButton();
-    }
-    
-    if (field.data_type === 'action') {
-      return renderActionButton();
-    }
-    
-    if (field.data_type === 'file') {
-      return renderFileInput();
-    }
-    
-    if (field.data_type === 'phone') {
-      return renderPhoneInput();
-    }
-
-    if (field.data_type === 'date') {
-      return renderDatePicker();
-    }
-    
-    if (field.data_type === 'text' && field.field_key.includes('address')) {
-      return renderTextarea();
-    }
-    
+    if (field.data_type === 'section') return renderSectionHeader();
+    if (field.data_type === 'label') return renderLabel();
+    if (field.data_type === 'template') return renderTemplateButton();
+    if (field.data_type === 'action') return renderActionButton();
+    if (field.data_type === 'file') return renderFileInput();
+    if (field.data_type === 'phone') return renderPhoneInput();
+    if (field.data_type === 'date') return renderDatePicker();
+    if (field.data_type === 'text' && field.field_key.includes('address')) return renderTextarea();
     return renderInput();
   };
 
-  // For non-input types (section, label, template, action), render without the label wrapper
+  // For non-input types (section, label), render without the label wrapper
   const isNonInputType = ['section', 'label'].includes(field.data_type);
   
   if (isNonInputType) {
@@ -347,65 +307,70 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
   }
 
   return (
-    <div className="space-y-2" id={`field-${field.field_key}`}>
-      <div className="flex items-center gap-2">
-        <Label
-          htmlFor={field.field_key}
-          className={cn(
-            'text-sm font-medium flex items-center gap-1',
-            showError && 'text-destructive'
-          )}
-        >
-          {field.label}
-          {field.is_required && (
-            <span className="text-destructive" title="Required field">
-              <Asterisk className="h-3 w-3" />
-            </span>
-          )}
-        </Label>
-        {field.is_calculated && (
-          <span 
-            title={isComputed ? "Calculated - value computed" : "Calculated field (waiting for dependencies)"} 
+    <div className="space-y-0.5" id={`field-${field.field_key}`}>
+      {/* Inline label + input row */}
+      <div className="flex items-start gap-2">
+        <div className="flex items-center gap-1 w-[140px] shrink-0 pt-1.5">
+          <Label
+            htmlFor={field.field_key}
             className={cn(
-              "flex items-center gap-1",
-              isComputed ? "text-green-600" : "text-muted-foreground"
+              'text-xs font-medium leading-tight flex items-center gap-0.5',
+              showError && 'text-destructive'
             )}
           >
-            <Calculator className="h-3.5 w-3.5" />
-            {isComputed && <CheckCircle2 className="h-3 w-3" />}
-          </span>
-        )}
-        {isDisabled && !field.is_calculated && (
-          <span title="Read-only" className="text-muted-foreground">
-            <Lock className="h-3.5 w-3.5" />
-          </span>
-        )}
+            {field.label}
+            {field.is_required && (
+              <span className="text-destructive" title="Required field">
+                <Asterisk className="h-2.5 w-2.5" />
+              </span>
+            )}
+          </Label>
+          {field.is_calculated && (
+            <span 
+              title={isComputed ? "Calculated - value computed" : "Calculated field (waiting for dependencies)"} 
+              className={cn(
+                "flex items-center gap-0.5",
+                isComputed ? "text-green-600" : "text-muted-foreground"
+              )}
+            >
+              <Calculator className="h-3 w-3" />
+              {isComputed && <CheckCircle2 className="h-2.5 w-2.5" />}
+            </span>
+          )}
+          {isDisabled && !field.is_calculated && (
+            <span title="Read-only" className="text-muted-foreground">
+              <Lock className="h-3 w-3" />
+            </span>
+          )}
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          {renderFieldInput()}
+        </div>
       </div>
       
-      {renderFieldInput()}
-      
       {showError && (
-        <p className="text-xs text-destructive flex items-center gap-1 animate-fade-in">
-          <AlertCircle className="h-3 w-3 flex-shrink-0" />
+        <p className="text-[10px] text-destructive flex items-center gap-0.5 animate-fade-in pl-[148px]">
+          <AlertCircle className="h-2.5 w-2.5 flex-shrink-0" />
           This field is required
         </p>
       )}
       
       {hasCalculationError && (
-        <p className="text-xs text-amber-600 flex items-center gap-1">
-          <AlertCircle className="h-3 w-3 flex-shrink-0" />
+        <p className="text-[10px] text-amber-600 flex items-center gap-0.5 pl-[148px]">
+          <AlertCircle className="h-2.5 w-2.5 flex-shrink-0" />
           {calculationResult?.error}
         </p>
       )}
       
       {field.is_calculated && !isComputed && !hasCalculationError && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[10px] text-muted-foreground pl-[148px]">
           Waiting for: {field.calculation_dependencies.join(', ')}
         </p>
       )}
       
       {field.transform_rules.length > 0 && !showError && !field.is_calculated && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[10px] text-muted-foreground pl-[148px]">
           Format: {field.transform_rules.join(', ')}
         </p>
       )}

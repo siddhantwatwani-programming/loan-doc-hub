@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Home } from 'lucide-react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,11 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import type { PropertyData } from './PropertiesTableView';
 
@@ -37,17 +29,9 @@ const PROPERTY_TYPE_OPTIONS = [
   'Two Family Res', 'Two to Four Family Res', 'Unsecured', 'Vacant', 'Industrial Condo',
   'Restaurant/Bar'
 ];
-
-const OCCUPANCY_OPTIONS = [
-  'Owner Occupied', 'Investment', 'Second Home', 'Vacant',
-  'Investor', 'Other', 'Primary Borrower', 'Secondary Borrower',
-  'Tenant', 'Unknown', 'Non Owner Occupied'
-];
-
+const OCCUPANCY_OPTIONS = ['Owner Occupied', 'Investment', 'Second Home', 'Vacant', 'Investor', 'Other', 'Primary Borrower', 'Secondary Borrower', 'Tenant', 'Unknown', 'Non Owner Occupied'];
 const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
-
 const FLOOD_ZONE_OPTIONS = ['Zone A', 'Zone AE', 'Zone AO', 'Zone X', 'Zone V', 'Zone VE', 'Zone D', 'Unknown'];
-
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
 
 const US_STATES = [
@@ -81,340 +65,121 @@ const US_STATES = [
 const generatePropertyId = () => `property_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 const getEmptyProperty = (): PropertyData => ({
-  id: generatePropertyId(),
-  isPrimary: false,
-  description: '',
-  street: '',
-  city: '',
-  state: '',
-  zipCode: '',
-  county: '',
-  propertyType: '',
-  occupancy: '',
-  appraisedValue: '',
-  appraisedDate: '',
-  ltv: '',
-  apn: '',
-  loanPriority: '',
-  floodZone: '',
-  pledgedEquity: '',
-  zoning: '',
-  performedBy: '',
+  id: generatePropertyId(), isPrimary: false, description: '', street: '', city: '', state: '', zipCode: '', county: '',
+  propertyType: '', occupancy: '', appraisedValue: '', appraisedDate: '', ltv: '', apn: '',
+  loanPriority: '', floodZone: '', pledgedEquity: '', zoning: '', performedBy: '',
 });
 
-export const PropertyModal: React.FC<PropertyModalProps> = ({
-  open,
-  onOpenChange,
-  property,
-  onSave,
-  isEdit = false,
-}) => {
+export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange, property, onSave, isEdit = false }) => {
   const [formData, setFormData] = useState<PropertyData>(getEmptyProperty());
   const [activeTab, setActiveTab] = useState('general');
-  
+
   useEffect(() => {
     if (open) {
-      if (property) {
-        setFormData({
-          ...getEmptyProperty(),
-          ...property,
-        });
-      } else {
-        setFormData(getEmptyProperty());
-      }
+      setFormData(property ? { ...getEmptyProperty(), ...property } : getEmptyProperty());
       setActiveTab('general');
     }
   }, [open, property]);
 
-  const handleFieldChange = (field: keyof PropertyData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-  
-  // Sanitize numeric input - strip all non-numeric characters except decimal point and minus
-  const sanitizeNumericValue = (value: string): string => {
-    return value.replace(/[^0-9.-]/g, '');
-  };
-  
-  // Handle currency input change - store raw numeric value only
-  const handleCurrencyChange = (field: keyof PropertyData, value: string) => {
-    const sanitized = sanitizeNumericValue(value);
-    setFormData(prev => ({ ...prev, [field]: sanitized }));
-  };
-  
-  // Handle percentage input change - store raw numeric value only
-  const handlePercentageChange = (field: keyof PropertyData, value: string) => {
-    const sanitized = sanitizeNumericValue(value);
-    setFormData(prev => ({ ...prev, [field]: sanitized }));
-  };
+  const handleFieldChange = (field: keyof PropertyData, value: string | boolean) => setFormData(prev => ({ ...prev, [field]: value }));
+  const sanitizeNumericValue = (value: string): string => value.replace(/[^0-9.-]/g, '');
+  const handleCurrencyChange = (field: keyof PropertyData, value: string) => setFormData(prev => ({ ...prev, [field]: sanitizeNumericValue(value) }));
+  const handlePercentageChange = (field: keyof PropertyData, value: string) => setFormData(prev => ({ ...prev, [field]: sanitizeNumericValue(value) }));
 
-  const handleSave = () => {
-    onSave(formData);
-    onOpenChange(false);
-  };
+  const handleSave = () => { onSave(formData); onOpenChange(false); };
+
+  const renderInlineField = (field: keyof PropertyData, label: string, type = 'text') => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+      <Input value={String(formData[field] || '')} onChange={(e) => handleFieldChange(field, e.target.value)} className="h-7 text-xs flex-1" type={type} />
+    </div>
+  );
+
+  const renderInlineSelect = (field: keyof PropertyData, label: string, options: string[] | { value: string; label: string }[], placeholder: string) => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+      <Select value={String(formData[field] || '')} onValueChange={(val) => handleFieldChange(field, val)}>
+        <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder={placeholder} /></SelectTrigger>
+        <SelectContent className="bg-background border border-border z-50 max-h-60">
+          {options.map(opt => {
+            const v = typeof opt === 'string' ? opt : opt.value;
+            const l = typeof opt === 'string' ? opt : opt.label;
+            return <SelectItem key={v} value={v}>{l}</SelectItem>;
+          })}
+        </SelectContent>
+      </Select>
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Home className="h-5 w-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-sm">
+            <Home className="h-4 w-4 text-primary" />
             {isEdit ? 'Edit Property' : 'Add New Property'}
           </DialogTitle>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-1">
-            <TabsTrigger value="general">General</TabsTrigger>
-          </TabsList>
+          <TabsList className="grid w-full grid-cols-1"><TabsTrigger value="general" className="text-xs">General</TabsTrigger></TabsList>
 
-          <TabsContent value="general" className="mt-4">
-            <div className="grid grid-cols-2 gap-8">
-              {/* Left Column - Address */}
-              <div className="space-y-3">
-                <div className="border-b border-border pb-2 mb-3">
-                  <span className="font-semibold text-sm text-primary">Address</span>
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Street</Label>
-                  <Input
-                    value={formData.street}
-                    onChange={(e) => handleFieldChange('street', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">City</Label>
-                  <Input
-                    value={formData.city}
-                    onChange={(e) => handleFieldChange('city', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">State</Label>
-                  <Select
-                    value={formData.state}
-                    onValueChange={(val) => handleFieldChange('state', val)}
-                  >
-                    <SelectTrigger className="h-8 text-sm mt-1">
-                      <SelectValue placeholder="Select state" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50 max-h-60">
-                      {US_STATES.map(state => (
-                        <SelectItem key={state.value} value={state.value}>{state.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Zip Code</Label>
-                  <Input
-                    value={formData.zipCode}
-                    onChange={(e) => handleFieldChange('zipCode', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">County</Label>
-                  <Input
-                    value={formData.county}
-                    onChange={(e) => handleFieldChange('county', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                  />
-                </div>
-
-                <Button
-                  variant="link"
-                  className="text-primary p-0 h-auto text-sm"
-                  type="button"
-                >
-                  Copy Borrower's Address
-                </Button>
-
+          <TabsContent value="general" className="mt-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
+              {/* Left Column */}
+              <div className="space-y-1.5">
+                <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Address</span></div>
+                {renderInlineField('street', 'Street')}
+                {renderInlineField('city', 'City')}
+                {renderInlineSelect('state', 'State', US_STATES, 'Select state')}
+                {renderInlineField('zipCode', 'Zip Code')}
+                {renderInlineField('county', 'County')}
+                <Button variant="link" className="text-primary p-0 h-auto text-xs" type="button">Copy Borrower's Address</Button>
                 <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="modal-primary-property"
-                    checked={formData.isPrimary}
-                    onCheckedChange={(checked) => handleFieldChange('isPrimary', !!checked)}
-                    className="h-4 w-4"
-                  />
-                  <Label htmlFor="modal-primary-property" className="text-sm text-foreground">
-                    Primary Property
-                  </Label>
+                  <Checkbox id="modal-primary-property" checked={formData.isPrimary} onCheckedChange={(checked) => handleFieldChange('isPrimary', !!checked)} className="h-3.5 w-3.5" />
+                  <Label htmlFor="modal-primary-property" className="text-xs text-foreground">Primary Property</Label>
                 </div>
               </div>
 
-              {/* Right Column - Appraisal Information */}
-              <div className="space-y-3">
-                <div className="border-b border-border pb-2 mb-3">
-                  <span className="font-semibold text-sm text-primary">Appraisal / Broker Price Opinion</span>
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Performed By:</Label>
-                  <Select
-                    value={formData.performedBy || ''}
-                    onValueChange={(val) => handleFieldChange('performedBy', val)}
-                  >
-                    <SelectTrigger className="h-8 text-sm mt-1">
-                      <SelectValue placeholder="Select..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50">
-                      {PERFORMED_BY_OPTIONS.map(opt => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Property Type</Label>
-                  <Select
-                    value={formData.propertyType}
-                    onValueChange={(val) => handleFieldChange('propertyType', val)}
-                  >
-                    <SelectTrigger className="h-8 text-sm mt-1">
-                      <SelectValue placeholder="Select property type" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50 max-h-60">
-                      {PROPERTY_TYPE_OPTIONS.map(opt => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Occupancy</Label>
-                  <Select
-                    value={formData.occupancy}
-                    onValueChange={(val) => handleFieldChange('occupancy', val)}
-                  >
-                    <SelectTrigger className="h-8 text-sm mt-1">
-                      <SelectValue placeholder="Select occupancy" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50 max-h-60">
-                      {OCCUPANCY_OPTIONS.map(opt => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-foreground">Loan To Value</Label>
-                    <div className="flex items-center gap-1 mt-1">
-                      <Input
-                        value={formData.ltv}
-                        onChange={(e) => handlePercentageChange('ltv', e.target.value)}
-                        className="h-8 text-sm"
-                        inputMode="decimal"
-                      />
-                      <span className="text-sm text-muted-foreground">%</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm text-foreground">Zoning</Label>
-                    <Input
-                      value={formData.zoning || ''}
-                      onChange={(e) => handleFieldChange('zoning', e.target.value)}
-                      className="h-8 text-sm mt-1"
-                    />
+              {/* Right Column */}
+              <div className="space-y-1.5">
+                <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Appraisal / Broker Price Opinion</span></div>
+                {renderInlineSelect('performedBy', 'Performed By', PERFORMED_BY_OPTIONS, 'Select')}
+                {renderInlineSelect('propertyType', 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
+                {renderInlineSelect('occupancy', 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">LTV</Label>
+                  <div className="flex items-center gap-1 flex-1">
+                    <Input value={formData.ltv} onChange={(e) => handlePercentageChange('ltv', e.target.value)} className="h-7 text-xs" inputMode="decimal" />
+                    <span className="text-xs text-muted-foreground">%</span>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-foreground">Appraised Value</Label>
-                    <div className="flex items-center gap-1 mt-1">
-                      <span className="text-sm text-muted-foreground">$</span>
-                      <Input
-                        value={formData.appraisedValue}
-                        onChange={(e) => handleCurrencyChange('appraisedValue', e.target.value)}
-                        className="h-8 text-sm text-right"
-                        inputMode="decimal"
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm text-foreground">Pledged Equity</Label>
-                    <div className="flex items-center gap-1 mt-1">
-                      <span className="text-sm text-muted-foreground">$</span>
-                      <Input
-                        value={formData.pledgedEquity || ''}
-                        onChange={(e) => handleCurrencyChange('pledgedEquity', e.target.value)}
-                        className="h-8 text-sm text-right"
-                        inputMode="decimal"
-                        placeholder="0.00"
-                      />
-                    </div>
+                {renderInlineField('zoning', 'Zoning')}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Appraised Value</Label>
+                  <div className="flex items-center gap-1 flex-1">
+                    <span className="text-xs text-muted-foreground">$</span>
+                    <Input value={formData.appraisedValue} onChange={(e) => handleCurrencyChange('appraisedValue', e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
                   </div>
                 </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Appraisal Date</Label>
-                  <Input
-                    type="date"
-                    value={formData.appraisedDate}
-                    onChange={(e) => handleFieldChange('appraisedDate', e.target.value)}
-                    className="h-8 text-sm mt-1"
-                  />
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Pledged Equity</Label>
+                  <div className="flex items-center gap-1 flex-1">
+                    <span className="text-xs text-muted-foreground">$</span>
+                    <Input value={formData.pledgedEquity || ''} onChange={(e) => handleCurrencyChange('pledgedEquity', e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
+                  </div>
                 </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Priority</Label>
-                  <Select
-                    value={formData.loanPriority}
-                    onValueChange={(val) => handleFieldChange('loanPriority', val)}
-                  >
-                    <SelectTrigger className="h-8 text-sm mt-1">
-                      <SelectValue placeholder="Select priority" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50">
-                      {PRIORITY_OPTIONS.map(opt => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="text-sm text-foreground">Flood Zone</Label>
-                  <Select
-                    value={formData.floodZone || ''}
-                    onValueChange={(val) => handleFieldChange('floodZone', val)}
-                  >
-                    <SelectTrigger className="h-8 text-sm mt-1">
-                      <SelectValue placeholder="Select flood zone" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50">
-                      {FLOOD_ZONE_OPTIONS.map(opt => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {renderInlineField('appraisedDate', 'Appraisal Date', 'date')}
+                {renderInlineSelect('loanPriority', 'Priority', PRIORITY_OPTIONS, 'Select')}
+                {renderInlineSelect('floodZone', 'Flood Zone', FLOOD_ZONE_OPTIONS, 'Select')}
               </div>
             </div>
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="mt-6">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>
-            OK
-          </Button>
+        <DialogFooter className="mt-4">
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button size="sm" onClick={handleSave}>OK</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

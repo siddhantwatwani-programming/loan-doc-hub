@@ -83,7 +83,7 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
   const filledRequired = requiredFields.filter(f => !missingFieldKeys.has(f.field_key));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Waiting/Locked banner for sequential mode */}
       {isExternalUser && isWaitingForPrevious && blockingRole && (
         <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-muted border border-border">
@@ -133,8 +133,8 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
         </div>
       )}
 
-      {/* Fields grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Fields grid - responsive from 1 to 4 columns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-6 gap-y-1.5">
         {visibleFields.map(field => {
           // Non-input types (section, label, template, action) render differently
           const isNonInputType = ['section', 'label', 'template', 'action'].includes(field.data_type);
