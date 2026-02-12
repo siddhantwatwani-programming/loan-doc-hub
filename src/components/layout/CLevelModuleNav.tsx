@@ -76,6 +76,11 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
 
   if (filteredTopItems.length === 0 && filteredSections.length === 0) return null;
 
+  const collapseAll = () => {
+    setOpenSections([]);
+    setOpenSubNavs([]);
+  };
+
   const toggleSection = (label: string) => {
     setOpenSections(prev =>
       prev.includes(label) ? prev.filter(s => s !== label) : [...prev, label]
@@ -136,7 +141,7 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
                     .map(child => (
                       <button
                         key={child.path}
-                        onClick={() => navigate(child.path)}
+                        onClick={() => { collapseAll(); navigate(child.path); }}
                         className={cn(
                           'sidebar-item w-full text-sm pl-2',
                           isActive(child.path) && 'sidebar-item-active'
@@ -150,7 +155,7 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
             ) : (
               <button
                 key={item.path}
-                onClick={() => navigate(item.path)}
+                onClick={() => { collapseAll(); navigate(item.path); }}
                 className={cn(
                   'sidebar-item w-full text-sm pl-2',
                   isActive(item.path) && 'sidebar-item-active'
@@ -184,7 +189,7 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
                 {section.items.map(item => (
                   <button
                     key={item.path}
-                    onClick={() => navigate(item.path)}
+                    onClick={() => { collapseAll(); navigate(item.path); }}
                     className={cn(
                       'sidebar-item w-full text-sm pl-2',
                       isActive(item.path) && 'sidebar-item-active'
