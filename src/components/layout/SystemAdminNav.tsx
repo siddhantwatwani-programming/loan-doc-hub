@@ -272,6 +272,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
           )}
         </CollapsibleContent>
       </Collapsible>
+      <div className="my-3 border-t border-sidebar-border" />
     </>
   );
 };
