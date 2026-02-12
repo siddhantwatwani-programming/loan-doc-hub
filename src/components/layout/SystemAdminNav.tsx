@@ -106,6 +106,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
   const collapseAll = () => {
     setOpenChildren([]);
     setOpenSubNav([]);
+    handleOpenChange(false);
   };
 
   const toggleChild = (label: string) => {
