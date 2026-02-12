@@ -140,6 +140,23 @@
     @apply border-border;
   }
 
+  html {
+    font-size: 16px;
+  }
+
+  /* Scale root font-size for large screens */
+  @media (min-width: 1920px) {
+    html {
+      font-size: clamp(16px, 0.85vw, 20px);
+    }
+  }
+
+  @media (min-width: 2560px) {
+    html {
+      font-size: clamp(18px, 0.78vw, 22px);
+    }
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings:
@@ -177,6 +194,7 @@
   /* Page container  max-w-7xl*/
   .page-container {
     @apply p-6 lg:p-8 mx-auto;
+    padding: clamp(1.5rem, 2vw, 3rem);
   }
 
   /* Section card */
