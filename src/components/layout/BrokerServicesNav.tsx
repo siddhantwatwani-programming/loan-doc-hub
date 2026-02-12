@@ -164,6 +164,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
 
   return (
     <>
+      <div className="my-3 border-t border-sidebar-border" />
       <Collapsible open={openParent} onOpenChange={handleOpenChange}>
         <CollapsibleTrigger asChild>
           <button

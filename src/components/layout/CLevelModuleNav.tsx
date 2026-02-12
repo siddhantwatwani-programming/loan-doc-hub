@@ -99,15 +99,15 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
     <React.Fragment>
       <Collapsible open={openParent} onOpenChange={handleOpenChange}>
         <CollapsibleTrigger asChild>
-          <button className="sidebar-item w-full justify-between">
+          <button className="sidebar-item w-full justify-between px-3 py-2">
             <div className="flex items-center gap-3">
               <Crown className="h-5 w-5" />
-              <span>C Level Module</span>
+              <span className="text-sidebar-foreground">C Level Module</span>
             </div>
             {openParent ? (
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-4 w-4 text-sidebar-foreground/70" />
             ) : (
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4 text-sidebar-foreground/70" />
             )}
           </button>
         </CollapsibleTrigger>
@@ -123,7 +123,7 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
                 <CollapsibleTrigger asChild>
                   <button
                     className={cn(
-                      'sidebar-item w-full justify-between text-sm',
+                      'sidebar-item w-full justify-between text-sm pl-2',
                       isActive(item.path) && 'sidebar-item-active'
                     )}
                   >
@@ -143,7 +143,7 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
                         key={child.path}
                         onClick={() => { collapseAll(); navigate(child.path); }}
                         className={cn(
-                          'sidebar-item w-full text-sm',
+                          'sidebar-item w-full text-sm pl-2',
                           isActive(child.path) && 'sidebar-item-active'
                         )}
                       >
@@ -157,7 +157,7 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
                 key={item.path}
                 onClick={() => { collapseAll(); navigate(item.path); }}
                 className={cn(
-                  'sidebar-item w-full text-sm',
+                  'sidebar-item w-full text-sm pl-2',
                   isActive(item.path) && 'sidebar-item-active'
                 )}
               >
@@ -174,8 +174,10 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
               onOpenChange={() => toggleSection(section.label)}
             >
               <CollapsibleTrigger asChild>
-                <button className="sidebar-item w-full justify-between text-sm">
-                  <span>{section.label}</span>
+                <button className="sidebar-item w-full justify-between pl-2 py-1.5">
+                  <span className="text-sidebar-foreground">
+                    {section.label}
+                  </span>
                   {openSections.includes(section.label) ? (
                     <ChevronDown className="h-3.5 w-3.5 text-sidebar-foreground/70" />
                   ) : (
@@ -189,7 +191,7 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
                     key={item.path}
                     onClick={() => { collapseAll(); navigate(item.path); }}
                     className={cn(
-                      'sidebar-item w-full text-sm',
+                      'sidebar-item w-full text-sm pl-2',
                       isActive(item.path) && 'sidebar-item-active'
                     )}
                   >
@@ -201,6 +203,7 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
           ))}
         </CollapsibleContent>
       </Collapsible>
+      <div className="my-3 border-t border-sidebar-border" />
     </React.Fragment>
   );
 };
