@@ -61,136 +61,211 @@ export const LenderTaxInfoForm: React.FC<LenderTaxInfoFormProps> = ({
         <span className="text-lg font-semibold text-primary underline">1099</span>
       </div>
 
-      <div className="space-y-4">
-        {/* TAX PAYER'S social security number */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[180px] text-left shrink-0">Social Security Number</Label>
-          <Input
-            value={getValue('ssn')}
-            onChange={(e) => handleChange('ssn', e.target.value)}
-            disabled={disabled}
-            className="h-8"
-          />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Column 1: Tax Payer Info */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Tax Payer Info</h3>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Social Security Number</Label>
+            <Input
+              value={getValue('ssn')}
+              onChange={(e) => handleChange('ssn', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">EIN</Label>
+            <Input
+              value={getValue('ein')}
+              onChange={(e) => handleChange('ein', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Name</Label>
+            <Input
+              value={getValue('name')}
+              onChange={(e) => handleChange('name', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Recipient Name</Label>
+            <Input
+              value={getValue('recipient_name')}
+              onChange={(e) => handleChange('recipient_name', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Street Address</Label>
+            <Input
+              value={getValue('street_address')}
+              onChange={(e) => handleChange('street_address', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Address 2</Label>
+            <Input
+              value={getValue('address_2')}
+              onChange={(e) => handleChange('address_2', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">City</Label>
+            <Input
+              value={getValue('city')}
+              onChange={(e) => handleChange('city', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">State</Label>
+            <Select
+              value={getValue('state')}
+              onValueChange={(value) => handleChange('state', value)}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-8">
+                <SelectValue placeholder="Select state" />
+              </SelectTrigger>
+              <SelectContent>
+                {US_STATES.map((state) => (
+                  <SelectItem key={state} value={state}>
+                    {state}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Zip Code</Label>
+            <Input
+              value={getValue('zip_code')}
+              onChange={(e) => handleChange('zip_code', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
         </div>
 
-        {/* TAX PAYER'S name */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[180px] text-left shrink-0">Name</Label>
-          <Input
-            value={getValue('name')}
-            onChange={(e) => handleChange('name', e.target.value)}
-            disabled={disabled}
-            className="h-8"
-          />
+        {/* Column 2: Account & Contact */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Account & Contact</h3>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Account Number</Label>
+            <Input
+              value={getValue('account_number')}
+              onChange={(e) => handleChange('account_number', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Recipient Type</Label>
+            <Select
+              value={getValue('recipient_type')}
+              onValueChange={(value) => handleChange('recipient_type', value)}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-8">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                {RECIPIENT_TYPE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Phone</Label>
+            <Input
+              type="tel"
+              value={getValue('phone')}
+              onChange={(e) => handleChange('phone', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Fax</Label>
+            <Input
+              type="tel"
+              value={getValue('fax')}
+              onChange={(e) => handleChange('fax', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Email</Label>
+            <Input
+              type="email"
+              value={getValue('email')}
+              onChange={(e) => handleChange('email', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Contact Name</Label>
+            <Input
+              value={getValue('contact_name')}
+              onChange={(e) => handleChange('contact_name', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 mt-4">
+            <Checkbox
+              id="auto_synchronize"
+              checked={getValue('auto_synchronize') === 'true'}
+              onCheckedChange={(checked) => handleCheckboxChange('auto_synchronize', checked === true)}
+              disabled={disabled}
+            />
+            <Label htmlFor="auto_synchronize" className="text-sm text-muted-foreground cursor-pointer">
+              Auto-Synchronize
+            </Label>
+          </div>
         </div>
 
-        {/* Street address */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[180px] text-left shrink-0">Street Address</Label>
-          <Input
-            value={getValue('street_address')}
-            onChange={(e) => handleChange('street_address', e.target.value)}
-            disabled={disabled}
-            className="h-8"
-          />
-        </div>
+        {/* Column 3: Notes */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Notes</h3>
 
-        {/* City */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[180px] text-left shrink-0">City</Label>
-          <Input
-            value={getValue('city')}
-            onChange={(e) => handleChange('city', e.target.value)}
-            disabled={disabled}
-            className="h-8"
-          />
-        </div>
-
-        {/* State */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[180px] text-left shrink-0">State</Label>
-          <Select
-            value={getValue('state')}
-            onValueChange={(value) => handleChange('state', value)}
-            disabled={disabled}
-          >
-            <SelectTrigger className="h-8">
-              <SelectValue placeholder="Select state" />
-            </SelectTrigger>
-            <SelectContent>
-              {US_STATES.map((state) => (
-                <SelectItem key={state} value={state}>
-                  {state}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Zip Code */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[180px] text-left shrink-0">Zip Code</Label>
-          <Input
-            value={getValue('zip_code')}
-            onChange={(e) => handleChange('zip_code', e.target.value)}
-            disabled={disabled}
-            className="h-8"
-          />
-        </div>
-
-        {/* Account number */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[180px] text-left shrink-0">Account Number</Label>
-          <Input
-            value={getValue('account_number')}
-            onChange={(e) => handleChange('account_number', e.target.value)}
-            disabled={disabled}
-            className="h-8"
-          />
-        </div>
-
-        {/* Recipient Type */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[180px] text-left shrink-0">Recipient Type</Label>
-          <Select
-            value={getValue('recipient_type')}
-            onValueChange={(value) => handleChange('recipient_type', value)}
-            disabled={disabled}
-          >
-            <SelectTrigger className="h-8">
-              <SelectValue placeholder="Select type" />
-            </SelectTrigger>
-            <SelectContent>
-              {RECIPIENT_TYPE_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Auto-Synchronize checkbox */}
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="auto_synchronize"
-            checked={getValue('auto_synchronize') === 'true'}
-            onCheckedChange={(checked) => handleCheckboxChange('auto_synchronize', checked === true)}
-            disabled={disabled}
-          />
-          <Label htmlFor="auto_synchronize" className="text-sm text-muted-foreground cursor-pointer">
-            Auto-Synchronize
-          </Label>
-        </div>
-
-        {/* Notes field */}
-        <div className="flex items-start gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[180px] text-left shrink-0 pt-2">Notes</Label>
           <Textarea
             value={getValue('notes')}
             onChange={(e) => handleChange('notes', e.target.value)}
             disabled={disabled}
-            className="min-h-[100px] resize-none"
+            className="min-h-[200px] resize-none"
             placeholder="Enter notes..."
           />
         </div>

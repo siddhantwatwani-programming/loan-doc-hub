@@ -216,8 +216,8 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2 items-start">
-              <Label className="text-sm text-muted-foreground pt-2">Details</Label>
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Details</Label>
               <Textarea
                 value={getValue('details')}
                 onChange={(e) => handleChange('details', e.target.value)}
@@ -320,20 +320,6 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
                 <Input
                   value={getValue('ford6')}
                   onChange={(e) => handleChange('ford6', e.target.value)}
-                  disabled={disabled}
-                  className="h-8"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Input
-                  value={getValue('ford7')}
-                  onChange={(e) => handleChange('ford7', e.target.value)}
-                  disabled={disabled}
-                  className="h-8"
-                />
-                <Input
-                  value={getValue('ford8')}
-                  onChange={(e) => handleChange('ford8', e.target.value)}
                   disabled={disabled}
                   className="h-8"
                 />
