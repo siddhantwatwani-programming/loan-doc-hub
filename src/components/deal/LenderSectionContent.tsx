@@ -94,7 +94,7 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   
   // Check if we're in detail view
-  const isDetailView = ['lender', 'authorized_party', 'funding', 'banking', 'disbursements', 'tax_info'].includes(activeSubSection);
+  const isDetailView = ['lender', 'authorized_party', 'funding', 'banking', 'tax_info'].includes(activeSubSection);
   
   // Extract lenders from values
   const lenders = useMemo(() => extractLendersFromValues(values), [values]);
@@ -263,13 +263,6 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
             disabled={disabled}
             calculationResults={calculationResults}
           />
-        );
-      case 'disbursements':
-        return (
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Disbursements</h3>
-            <p className="text-sm text-muted-foreground">Coming soon.</p>
-          </div>
         );
       default:
         return null;
