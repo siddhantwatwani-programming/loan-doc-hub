@@ -78,102 +78,109 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+      <DialogContent className="max-w-5xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="text-sm">{isEdit ? 'Edit Co-Borrower' : 'Add Co-Borrower'}</DialogTitle>
         </DialogHeader>
         
         <ScrollArea className="max-h-[calc(90vh-120px)] pr-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-0 py-3">
+          {/* Top section - 4 column grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-0 py-2">
             {/* Column 1 - Name */}
-            <div className="space-y-1.5">
-              <h4 className="font-medium text-xs text-muted-foreground border-b pb-1 mb-2">Name</h4>
+            <div className="space-y-1">
+              <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1.5">Name</div>
               {renderInlineField('borrowerId', 'Borrower ID')}
               {renderInlineSelect('borrowerType', 'Borrower Type', BORROWER_TYPE_OPTIONS, 'Select')}
-              {renderInlineField('fullName', 'Full Name')}
-              {renderInlineField('firstName', 'First')}
+              {renderInlineField('fullName', 'Full Name: If Entity, Use Entity')}
+              {renderInlineField('firstName', 'First: If Entity, Use Signer')}
               {renderInlineField('middleName', 'Middle')}
               {renderInlineField('lastName', 'Last')}
               {renderInlineField('capacity', 'Capacity')}
               {renderInlineField('email', 'Email', { type: 'email' })}
+              <div className="h-1" />
               {renderInlineField('creditScore', 'Credit Score')}
             </div>
 
             {/* Column 2 - Primary & Mailing Address */}
-            <div className="space-y-1.5">
-              <h4 className="font-medium text-xs text-muted-foreground border-b pb-1 mb-2">Primary Address</h4>
+            <div className="space-y-1">
+              <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1.5">Primary Address</div>
               {renderInlineField('primaryStreet', 'Street')}
               {renderInlineField('primaryCity', 'City')}
               {renderInlineSelect('primaryState', 'State', STATE_OPTIONS, 'State')}
               {renderInlineField('primaryZip', 'ZIP')}
 
-              <h4 className="font-medium text-xs text-muted-foreground border-b pb-1 mt-3 mb-2 flex items-center gap-2">
+              <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mt-2 mb-1.5 flex items-center gap-2">
                 Mailing Address
-                <div className="flex items-center gap-1 ml-2">
+                <div className="flex items-center gap-1.5 ml-auto">
                   <Checkbox id="modal-mailingSame" checked={formData.mailingSameAsPrimary} onCheckedChange={(checked) => handleInputChange('mailingSameAsPrimary', !!checked)} className="h-3 w-3" />
                   <Label htmlFor="modal-mailingSame" className="font-normal text-[10px]">Same as Primary</Label>
                 </div>
-              </h4>
+              </div>
               {renderInlineField('mailingStreet', 'Street', { disabled: formData.mailingSameAsPrimary })}
               {renderInlineField('mailingCity', 'City', { disabled: formData.mailingSameAsPrimary })}
               {renderInlineSelect('mailingState', 'State', STATE_OPTIONS, 'State')}
               {renderInlineField('mailingZip', 'ZIP', { disabled: formData.mailingSameAsPrimary })}
             </div>
 
-            {/* Column 3 - Phone & Vesting & FORD */}
-            <div className="space-y-1.5">
-              <h4 className="font-medium text-xs text-muted-foreground border-b pb-1 mb-2">Phone</h4>
+            {/* Column 3 - Phone */}
+            <div className="space-y-1">
+              <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1.5">Phone</div>
               {renderInlineField('homePhone', 'Home')}
               {renderInlineField('homePhone2', 'Home')}
               {renderInlineField('workPhone', 'Work')}
               {renderInlineField('mobilePhone', 'Cell')}
               {renderInlineField('fax', 'Fax')}
 
-              <h4 className="font-medium text-xs text-muted-foreground border-b pb-1 mt-3 mb-2">Vesting</h4>
-              {renderInlineField('vesting', 'Vesting')}
+              <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mt-2 mb-1.5">Vesting</div>
+              <Input value={String(formData.vesting || '')} onChange={(e) => handleInputChange('vesting', e.target.value)} className="h-7 text-xs w-full" />
 
-              <h4 className="font-medium text-xs text-muted-foreground border-b pb-1 mt-3 mb-2">FORD</h4>
-              {renderInlineField('ford', 'FORD')}
+              <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mt-2 mb-1.5">FORD</div>
+              <Input value={String(formData.ford || '')} onChange={(e) => handleInputChange('ford', e.target.value)} className="h-7 text-xs w-full" />
             </div>
 
             {/* Column 4 - Preferred */}
-            <div className="space-y-1.5">
-              <h4 className="font-medium text-xs text-muted-foreground border-b pb-1 mb-2">Preferred</h4>
+            <div className="space-y-1">
+              <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1.5">Preferred</div>
               {(['preferredHome', 'preferredHome2', 'preferredWork', 'preferredCell', 'preferredFax'] as const).map(key => (
-                <div key={key} className="flex items-center gap-1 h-7">
+                <div key={key} className="flex items-center justify-end gap-1.5 h-7">
                   <Checkbox id={`modal-${key}`} checked={!!formData[key]} onCheckedChange={(checked) => handleInputChange(key, !!checked)} className="h-3 w-3" />
-                  <Label htmlFor={`modal-${key}`} className="font-normal text-[10px]">{key.replace('preferred', '')}</Label>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Bottom section - Tax & Delivery */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0 py-3 border-t border-border mt-2">
-            <div className="space-y-1.5">
-              <h4 className="font-medium text-xs text-muted-foreground border-b pb-1 mb-2">Tax & Reporting</h4>
-              {renderInlineSelect('taxIdType', 'Tax ID Type', TAX_ID_TYPE_OPTIONS, 'Select')}
-              {renderInlineField('tin', 'TIN')}
-              <div className="flex items-center gap-2">
-                <Checkbox id="modal-issue1098" checked={formData.issue1098} onCheckedChange={(checked) => handleInputChange('issue1098', !!checked)} className="h-3 w-3" />
-                <Label htmlFor="modal-issue1098" className="font-normal text-xs">Issue 1098</Label>
+          {/* Bottom section - Tax, Delivery, extra fields */}
+          <div className="border-t border-border mt-2 pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-0">
+              {/* Tax & Reporting */}
+              <div className="space-y-1">
+                {renderInlineSelect('taxIdType', 'Tax ID Type', TAX_ID_TYPE_OPTIONS, 'Select')}
+                {renderInlineField('tin', 'TIN')}
+                <div className="flex items-center gap-2 h-7">
+                  <Checkbox id="modal-issue1098" checked={formData.issue1098} onCheckedChange={(checked) => handleInputChange('issue1098', !!checked)} className="h-3 w-3" />
+                  <Label htmlFor="modal-issue1098" className="font-normal text-xs">Issue 1098</Label>
+                </div>
+                <div className="flex items-center gap-2 h-7">
+                  <Checkbox id="modal-altReporting" checked={formData.alternateReporting} onCheckedChange={(checked) => handleInputChange('alternateReporting', !!checked)} className="h-3 w-3" />
+                  <Label htmlFor="modal-altReporting" className="font-normal text-xs">Alternate Reporting</Label>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="modal-altReporting" checked={formData.alternateReporting} onCheckedChange={(checked) => handleInputChange('alternateReporting', !!checked)} className="h-3 w-3" />
-                <Label htmlFor="modal-altReporting" className="font-normal text-xs">Alternate Reporting</Label>
-              </div>
-            </div>
 
-            <div className="space-y-1.5">
-              <h4 className="font-medium text-xs text-muted-foreground border-b pb-1 mb-2">Delivery</h4>
-              <div className="flex items-center gap-2">
-                <Checkbox id="modal-deliveryOnline" checked={formData.deliveryOnline} onCheckedChange={(checked) => handleInputChange('deliveryOnline', !!checked)} className="h-3 w-3" />
-                <Label htmlFor="modal-deliveryOnline" className="font-normal text-xs">Online</Label>
+              {/* Delivery */}
+              <div className="space-y-1">
+                <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1.5">Delivery</div>
+                <div className="flex items-center gap-2 h-7">
+                  <Label className="w-[140px] shrink-0 text-xs">Online</Label>
+                  <Checkbox id="modal-deliveryOnline" checked={formData.deliveryOnline} onCheckedChange={(checked) => handleInputChange('deliveryOnline', !!checked)} className="h-3 w-3" />
+                </div>
+                <div className="flex items-center gap-2 h-7">
+                  <Label className="w-[140px] shrink-0 text-xs">Mail</Label>
+                  <Checkbox id="modal-deliveryMail" checked={formData.deliveryMail} onCheckedChange={(checked) => handleInputChange('deliveryMail', !!checked)} className="h-3 w-3" />
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="modal-deliveryMail" checked={formData.deliveryMail} onCheckedChange={(checked) => handleInputChange('deliveryMail', !!checked)} className="h-3 w-3" />
-                <Label htmlFor="modal-deliveryMail" className="font-normal text-xs">Mail</Label>
-              </div>
+
+              {/* Empty column for alignment */}
+              <div />
             </div>
           </div>
         </ScrollArea>
