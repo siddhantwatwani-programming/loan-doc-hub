@@ -20,6 +20,7 @@ import { LoanTermsSectionContent } from '@/components/deal/LoanTermsSectionConte
 import { LoanTermsFundingForm } from '@/components/deal/LoanTermsFundingForm';
 import { ChargesSectionContent } from '@/components/deal/ChargesSectionContent';
 import { OriginationFeesSectionContent } from '@/components/deal/OriginationFeesSectionContent';
+import { NotesSectionContent } from '@/components/deal/NotesSectionContent';
 import { 
   logDealUpdated, 
   logDealMarkedReady, 
@@ -807,6 +808,19 @@ export const DealDataEntryPage: React.FC = () => {
                     showValidation={showValidation}
                     disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
                     calculationResults={calculationResults}
+                  />
+                ) : section === 'notes' ? (
+                  <NotesSectionContent
+                    fields={isExternalUser 
+                      ? (visibleFieldsBySection[section] || [])
+                      : (fieldsBySection[section] || [])
+                    }
+                    values={values}
+                    onValueChange={updateValue}
+                    showValidation={showValidation}
+                    disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                    calculationResults={calculationResults}
+                    dealNumber={deal.deal_number}
                   />
                 ) : section === 'other' ? (
                   <DealSectionTab
