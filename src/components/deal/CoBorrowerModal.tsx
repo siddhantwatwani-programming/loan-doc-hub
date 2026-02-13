@@ -5,6 +5,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -42,7 +43,8 @@ const emptyCoBorrower: CoBorrowerData = {
   mailingStreet: '', mailingCity: '', mailingState: '', mailingZip: '', mailingSameAsPrimary: false,
   loanNumber: '', tin: '', relation: '', type: 'Co-Borrower',
   borrowerId: '', borrowerType: '', capacity: '', creditScore: '',
-  vesting: '', ford: '', taxIdType: '', issue1098: false, alternateReporting: false,
+  vesting: '', ford: '', ford1: '', ford2: '', ford3: '', ford4: '', ford5: '', ford6: '', ford7: '', ford8: '',
+  taxIdType: '', issue1098: false, alternateReporting: false,
   deliveryOnline: false, deliveryMail: false,
   dob: '', creditReporting: false, resCode: '', addressIndicator: '',
   sendBorrowerNotifications: false, format: 'HTML',
@@ -88,7 +90,7 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-0 py-2">
             {/* Column 1 - Name */}
             <div className="space-y-1">
-              <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1.5">Name</div>
+              <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Name</div>
               {renderInlineField('borrowerId', 'Borrower ID')}
               {renderInlineSelect('borrowerType', 'Borrower Type', BORROWER_TYPE_OPTIONS, 'Select')}
               {renderInlineField('fullName', 'Full Name: If Entity, Use Entity')}
@@ -103,13 +105,13 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
 
             {/* Column 2 - Primary & Mailing Address */}
             <div className="space-y-1">
-              <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1.5">Primary Address</div>
+              <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Primary Address</div>
               {renderInlineField('primaryStreet', 'Street')}
               {renderInlineField('primaryCity', 'City')}
               {renderInlineSelect('primaryState', 'State', STATE_OPTIONS, 'State')}
               {renderInlineField('primaryZip', 'ZIP')}
 
-              <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mt-2 mb-1.5 flex items-center gap-2">
+              <div className="font-semibold text-xs text-foreground pb-1 mt-2 mb-1.5 flex items-center gap-2">
                 Mailing Address
                 <div className="flex items-center gap-1.5 ml-auto">
                   <Checkbox id="modal-mailingSame" checked={formData.mailingSameAsPrimary} onCheckedChange={(checked) => handleInputChange('mailingSameAsPrimary', !!checked)} className="h-3 w-3" />
@@ -122,35 +124,43 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
               {renderInlineField('mailingZip', 'ZIP', { disabled: formData.mailingSameAsPrimary })}
             </div>
 
-            {/* Column 3 - Phone */}
+            {/* Column 3 - Phone + Preferred */}
             <div className="space-y-1">
-              <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1.5">Phone</div>
-              {renderInlineField('homePhone', 'Home')}
-              {renderInlineField('homePhone2', 'Home')}
-              {renderInlineField('workPhone', 'Work')}
-              {renderInlineField('mobilePhone', 'Cell')}
-              {renderInlineField('fax', 'Fax')}
-
-              <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mt-2 mb-1.5">Vesting</div>
-              <Input value={String(formData.vesting || '')} onChange={(e) => handleInputChange('vesting', e.target.value)} className="h-7 text-xs w-full" />
-
-              <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mt-2 mb-1.5">FORD</div>
-              <Input value={String(formData.ford || '')} onChange={(e) => handleInputChange('ford', e.target.value)} className="h-7 text-xs w-full" />
+              <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Phone</div>
+              {(['homePhone', 'homePhone2', 'workPhone', 'mobilePhone', 'fax'] as const).map((phoneKey, idx) => {
+                const prefKey = (['preferredHome', 'preferredHome2', 'preferredWork', 'preferredCell', 'preferredFax'] as const)[idx];
+                const phoneLabel = ['Home', 'Home', 'Work', 'Cell', 'Fax'][idx];
+                return (
+                  <div key={phoneKey} className="flex items-center gap-2">
+                    <Label className="w-[50px] shrink-0 text-xs">{phoneLabel}</Label>
+                    <Input value={String(formData[phoneKey] || '')} onChange={(e) => handleInputChange(phoneKey, e.target.value)} className="h-7 text-xs flex-1" />
+                    <Checkbox id={`modal-${prefKey}`} checked={!!formData[prefKey]} onCheckedChange={(checked) => handleInputChange(prefKey, !!checked)} className="h-3 w-3 shrink-0" />
+                  </div>
+                );
+              })}
             </div>
 
-            {/* Column 4 - Preferred */}
+            {/* Column 4 - Vesting & FORD */}
             <div className="space-y-1">
-              <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1.5">Preferred</div>
-              {(['preferredHome', 'preferredHome2', 'preferredWork', 'preferredCell', 'preferredFax'] as const).map(key => (
-                <div key={key} className="flex items-center justify-end gap-1.5 h-7">
-                  <Checkbox id={`modal-${key}`} checked={!!formData[key]} onCheckedChange={(checked) => handleInputChange(key, !!checked)} className="h-3 w-3" />
-                </div>
-              ))}
+              <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Vesting</div>
+              <Textarea value={String(formData.vesting || '')} onChange={(e) => handleInputChange('vesting', e.target.value)} className="text-xs w-full min-h-[80px] resize-none" />
+
+              <div className="font-semibold text-xs text-foreground pb-1 mt-2 mb-1.5">FORD</div>
+              <div className="grid grid-cols-2 gap-1">
+                <Input value={String(formData.ford1 || '')} onChange={(e) => handleInputChange('ford1', e.target.value)} className="h-7 text-xs" />
+                <Input value={String(formData.ford2 || '')} onChange={(e) => handleInputChange('ford2', e.target.value)} className="h-7 text-xs" />
+                <Input value={String(formData.ford3 || '')} onChange={(e) => handleInputChange('ford3', e.target.value)} className="h-7 text-xs" />
+                <Input value={String(formData.ford4 || '')} onChange={(e) => handleInputChange('ford4', e.target.value)} className="h-7 text-xs" />
+                <Input value={String(formData.ford5 || '')} onChange={(e) => handleInputChange('ford5', e.target.value)} className="h-7 text-xs" />
+                <Input value={String(formData.ford6 || '')} onChange={(e) => handleInputChange('ford6', e.target.value)} className="h-7 text-xs" />
+                <Input value={String(formData.ford7 || '')} onChange={(e) => handleInputChange('ford7', e.target.value)} className="h-7 text-xs" />
+                <Input value={String(formData.ford8 || '')} onChange={(e) => handleInputChange('ford8', e.target.value)} className="h-7 text-xs" />
+              </div>
             </div>
           </div>
 
           {/* Bottom section - Tax, Delivery, extra fields */}
-          <div className="border-t border-border mt-2 pt-2">
+          <div className="mt-2 pt-2">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-0">
               {/* Tax & Reporting */}
               <div className="space-y-1">
@@ -168,7 +178,7 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
 
               {/* Delivery */}
               <div className="space-y-1">
-                <div className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1.5">Delivery</div>
+                <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Delivery</div>
                 <div className="flex items-center gap-2 h-7">
                   <Label className="w-[140px] shrink-0 text-xs">Online</Label>
                   <Checkbox id="modal-deliveryOnline" checked={formData.deliveryOnline} onCheckedChange={(checked) => handleInputChange('deliveryOnline', !!checked)} className="h-3 w-3" />
