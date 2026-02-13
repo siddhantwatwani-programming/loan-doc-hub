@@ -11,6 +11,7 @@ import { BorrowerAdditionalGuarantorForm } from './BorrowerAdditionalGuarantorFo
 import { BorrowerBankingForm } from './BorrowerBankingForm';
 import { BorrowerTaxDetailForm } from './BorrowerTaxDetailForm';
 import { BorrowerNoteForm } from './BorrowerNoteForm';
+import { BorrowerAuthorizedPartyForm } from './BorrowerAuthorizedPartyForm';
 import { CoBorrowerPrimaryForm } from './CoBorrowerPrimaryForm';
 import { CoBorrowerBankingForm } from './CoBorrowerBankingForm';
 import { CoBorrowerTaxDetailForm } from './CoBorrowerTaxDetailForm';
@@ -540,12 +541,14 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
         );
       case 'authorized_party':
         return (
-          <div className="p-6 flex items-center justify-center min-h-[300px]">
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-foreground">Authorized Party</h3>
-              <p className="text-muted-foreground">Coming Soon</p>
-            </div>
-          </div>
+          <BorrowerAuthorizedPartyForm
+            fields={fields}
+            values={getBorrowerSpecificValues()}
+            onValueChange={handleBorrowerValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+          />
         );
       case 'trust_ledger':
         return (
