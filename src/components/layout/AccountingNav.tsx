@@ -96,39 +96,6 @@ const accountingData: ChildSection[] = [
       { label: 'Activity Journal', path: '/accounting/tax/activity' },
     ],
   },
-  {
-    label: 'Knowledge Center',
-    items: [
-      { label: 'Fee Sheet', path: '/accounting/knowledge/fee-sheet' },
-      { label: 'Policies & Processes', path: '/accounting/knowledge/policies' },
-      { label: 'Industry News', path: '/accounting/knowledge/news' },
-      { label: 'Smart AI', path: '/accounting/knowledge/smart-ai' },
-    ],
-  },
-  {
-    label: 'Legal',
-    items: [
-      { label: 'Management Dashboard', path: '/accounting/legal/management' },
-      { label: 'Department Alerts', path: '/accounting/legal/alerts' },
-      { label: 'Department Dashboard', path: '/accounting/legal/dashboard' },
-      { label: 'Accounts', path: '/accounting/legal/accounts' },
-      { label: 'Calendar', path: '/accounting/legal/calendar' },
-      { label: 'Activity Journal', path: '/accounting/legal/activity' },
-    ],
-  },
-  {
-    label: 'Documents Vault',
-    path: '/documents',
-    items: [],
-  },
-  {
-    label: 'Contacts',
-    items: [],
-  },
-  {
-    label: 'Statements & Reports',
-    items: [],
-  },
 ];
 
 interface AccountingNavProps {
