@@ -8,31 +8,23 @@ import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 // Issue 1099 mapping based on Lender Type (per reference document)
-// Individual: Yes, Joint: Situational, Family Trust: Situational
-// LLC: Situational (if Taxed as Corp = No, otherwise Yes)
-// C Corp / S Corp: No, IRA / ERISA: No, 401K: No, Foreign Holder W-8: No, Non-profit: No
 const LENDER_TYPE_ISSUE_1099_MAP: Record<string, 'Yes' | 'No' | 'Situational'> = {
   'Individual': 'Yes',
-  'Joint': 'Situational', // If "Taxed as Corp" is selected then No, otherwise Yes
-  'Family Trust': 'Situational', // If "Taxed as Corp" is selected then No, otherwise Yes
-  'LLC': 'Situational', // If "Taxed as Corp" is selected then No, otherwise Yes
+  'Joint': 'Situational',
+  'Family Trust': 'Situational',
+  'LLC': 'Situational',
   'C Corp / S Corp': 'No',
   'IRA / ERISA': 'No',
-  'Investment Fund': 'Situational', // If "Taxed as Corp" is selected then No, otherwise Yes
+  'Investment Fund': 'Situational',
   '401k': 'No',
   'Foreign Holder W-8': 'No',
   'Non-profit': 'No',
 };
 
-// Types that are always "No" for Issue 1099 (cannot be overridden)
 const ALWAYS_NO_1099_TYPES = ['C Corp / S Corp', 'IRA / ERISA', '401k', 'Foreign Holder W-8', 'Non-profit'];
-
-// Taxed as Corporation types (when selected, Issue 1099 = No for situational types)
 const TAXED_AS_CORP_OPTIONS = ['Corporation', 'C Corp', 'S Corp'];
 
-// Field key mapping for lender info fields
 const FIELD_KEYS = {
-  // Lender Details
   type: 'lender.type',
   id: 'lender.id',
   lenderId: 'lender.lender_id',
@@ -50,37 +42,29 @@ const FIELD_KEYS = {
   lpLllpLlcTaxedAsCorp: 'lender.lp_lllp_llc_taxed_as_corp',
   tinVerified: 'lender.tin_verified',
   alternateReporting: 'lender.alternate_reporting',
-  // Primary Address
   primaryStreet: 'lender.primary_address.street',
   primaryCity: 'lender.primary_address.city',
   primaryState: 'lender.primary_address.state',
   primaryZip: 'lender.primary_address.zip',
-  // Phone
   phoneHome: 'lender.phone.home',
   phoneWork: 'lender.phone.work',
   phoneCell: 'lender.phone.cell',
   phoneFax: 'lender.phone.fax',
-  // Send Preferences
   sendPaymentNotification: 'lender.send_pref.payment_notification',
   sendLateNotice: 'lender.send_pref.late_notice',
   sendBorrowerStatement: 'lender.send_pref.borrower_statement',
   sendMaturityNotice: 'lender.send_pref.maturity_notice',
-  // Preferred Contact
   preferredPhone: 'lender.preferred.phone',
-  // Mailing Address
   isPrimary: 'lender.isPrimary',
   mailingStreet: 'lender.street',
   mailingCity: 'lender.city',
   mailingState: 'lender.state',
   mailingZip: 'lender.zip',
-  // Care Of / Attorney Address
   careOfStreet: 'lender.care_of.street',
   careOfCity: 'lender.care_of.city',
   careOfState: 'lender.care_of.state',
   careOfZip: 'lender.care_of.zip',
-  // Additional Details
   vesting: 'lender.vesting',
-  // FORD fields (8 inputs)
   ford1: 'lender.ford.1',
   ford2: 'lender.ford.2',
   ford3: 'lender.ford.3',
@@ -91,10 +75,8 @@ const FIELD_KEYS = {
   ford8: 'lender.ford.8',
   loanId: 'lender.loan_id',
   loanType: 'lender.loan_type',
-  // Delivery
   deliveryOnline: 'lender.delivery.online',
   deliveryMail: 'lender.delivery.mail',
-  // If Entity, sign line
   entitySignBorrower: 'lender.entity_sign.borrower',
   entitySignBy: 'lender.entity_sign.by',
   entitySignIts: 'lender.entity_sign.its',
@@ -103,7 +85,6 @@ const FIELD_KEYS = {
   entitySignCapacity: 'lender.entity_sign.capacity',
 } as const;
 
-// Lender type options
 const LENDER_TYPE_OPTIONS = [
   { value: 'Individual', label: 'Individual' },
   { value: 'Joint', label: 'Joint' },
@@ -117,23 +98,13 @@ const LENDER_TYPE_OPTIONS = [
   { value: 'Non-profit', label: 'Non-profit' },
 ];
 
-// Preferred phone options with corresponding field keys
-const PREFERRED_PHONE_OPTIONS = [
-  { value: 'Home', label: 'Home', fieldKey: 'phoneHome' as const },
-  { value: 'Work', label: 'Work', fieldKey: 'phoneWork' as const },
-  { value: 'Cell', label: 'Cell', fieldKey: 'phoneCell' as const },
-  { value: 'Fax', label: 'Fax', fieldKey: 'phoneFax' as const },
+const PHONE_FIELDS = [
+  { label: 'Home', fieldKey: 'phoneHome' as const },
+  { label: 'Work', fieldKey: 'phoneWork' as const },
+  { label: 'Cell', fieldKey: 'phoneCell' as const },
+  { label: 'Fax', fieldKey: 'phoneFax' as const },
 ];
 
-// Lender ID options (primary, secondary, etc.)
-const LENDER_ID_OPTIONS = [
-  { value: 'Primary', label: 'Primary' },
-  { value: 'Secondary', label: 'Secondary' },
-  { value: 'Tertiary', label: 'Tertiary' },
-  { value: 'Quaternary', label: 'Quaternary' },
-];
-
-// Tax ID type options
 const TAX_ID_TYPE_OPTIONS = [
   { value: '0', label: '0 - Unknown' },
   { value: '1', label: '1 - EIN' },
@@ -172,7 +143,6 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
   const handleSameAsPrimaryChange = (checked: boolean) => {
     handleChange('isPrimary', checked);
     if (checked) {
-      // Copy primary address to mailing address
       handleChange('mailingStreet', getValue('primaryStreet'));
       handleChange('mailingCity', getValue('primaryCity'));
       handleChange('mailingState', getValue('primaryState'));
@@ -180,58 +150,32 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
     }
   };
 
-  // Auto-derive Issue 1099 based on Lender Type and Taxed As
   const lenderType = getValue('type');
   const taxedAs = getValue('taxedAs');
   const preferredPhone = getValue('preferredPhone');
   
-  // Get the Issue 1099 mapping for this lender type
   const issue1099Mapping = LENDER_TYPE_ISSUE_1099_MAP[lenderType] || 'Yes';
-  
-  // Determine if 1099 should be forced to No
   const isAlwaysNo1099 = ALWAYS_NO_1099_TYPES.includes(lenderType);
   const isTaxedAsCorp = TAXED_AS_CORP_OPTIONS.includes(taxedAs);
-  
-  // For situational types, check if taxed as corp
   const shouldForceNo1099 = isAlwaysNo1099 || (issue1099Mapping === 'Situational' && isTaxedAsCorp);
-  
-  // Get the selected preferred phone option
-  const selectedPhoneOption = PREFERRED_PHONE_OPTIONS.find(opt => opt.value === preferredPhone);
 
-  // Update Issue 1099 automatically when lender type or taxed as changes
   useEffect(() => {
     if (shouldForceNo1099 && getBoolValue('issue1099')) {
       handleChange('issue1099', false);
     } else if (!shouldForceNo1099 && issue1099Mapping === 'Yes' && !getBoolValue('issue1099')) {
-      // Auto-set to Yes for Individual type
       handleChange('issue1099', true);
     }
   }, [lenderType, taxedAs]);
 
-
   return (
     <div className="p-6">
-      {/* Horizontal layout: Name | Primary Address | Contact Preference | Vesting */}
+      {/* 4-column layout: Name | Primary Address | Phone + Preferred + Send | Mailing Address + Vesting + FORD */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
-        {/* Name Section */}
-        {/* Name Section */}
+        {/* Column 1: Name */}
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-foreground border-b pb-2">Name</h3>
-          
           <div className="space-y-3">
-            {/* Lender ID - input field */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Lender ID</Label>
-              <Input
-                value={getValue('lenderId')}
-                onChange={(e) => handleChange('lenderId', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-                placeholder="Enter lender ID"
-              />
-            </div>
-
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Lender Type</Label>
               <Select
@@ -250,6 +194,17 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Lender ID</Label>
+              <Input
+                value={getValue('lenderId')}
+                onChange={(e) => handleChange('lenderId', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+                placeholder="Enter lender ID"
+              />
             </div>
 
             <div className="flex items-center gap-3">
@@ -344,21 +299,21 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">LP/LLLP/LLC Taxed as Corp</Label>
               <Checkbox
                 checked={getBoolValue('lpLllpLlcTaxedAsCorp')}
                 onCheckedChange={(checked) => handleChange('lpLllpLlcTaxedAsCorp', !!checked)}
                 disabled={disabled}
               />
-              <Label className="text-sm text-muted-foreground">LP/LLLP/LLC Taxed as Corp</Label>
             </div>
             
             <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Issue 1099</Label>
               <Checkbox
                 checked={shouldForceNo1099 ? false : getBoolValue('issue1099')}
                 onCheckedChange={(checked) => handleChange('issue1099', !!checked)}
                 disabled={disabled || shouldForceNo1099}
               />
-              <Label className="text-sm text-muted-foreground">Issue 1099</Label>
               {shouldForceNo1099 && (
                 <span className="text-xs text-muted-foreground">
                   (Auto: No{isAlwaysNo1099 ? ` for ${lenderType}` : ' - Taxed as Corp'})
@@ -367,75 +322,129 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">TIN Verified</Label>
               <Checkbox
                 checked={getBoolValue('tinVerified')}
                 onCheckedChange={(checked) => handleChange('tinVerified', !!checked)}
                 disabled={disabled}
               />
-              <Label className="text-sm text-muted-foreground">TIN Verified</Label>
             </div>
 
             <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Alternate Reporting</Label>
               <Checkbox
                 checked={getBoolValue('alternateReporting')}
                 onCheckedChange={(checked) => handleChange('alternateReporting', !!checked)}
                 disabled={disabled}
               />
-              <Label className="text-sm text-muted-foreground">Alternate Reporting</Label>
             </div>
-            
           </div>
         </div>
 
-        {/* Primary Address Section */}
+        {/* Column 2: Primary Address */}
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-foreground border-b pb-2">Primary Address</h3>
-          
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">Street</Label>
-              <Input
-                value={getValue('primaryStreet')}
-                onChange={(e) => handleChange('primaryStreet', e.target.value)}
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Street</Label>
+              <Input value={getValue('primaryStreet')} onChange={(e) => handleChange('primaryStreet', e.target.value)} disabled={disabled} className="h-8" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">City</Label>
+              <Input value={getValue('primaryCity')} onChange={(e) => handleChange('primaryCity', e.target.value)} disabled={disabled} className="h-8" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">State</Label>
+              <Input value={getValue('primaryState')} onChange={(e) => handleChange('primaryState', e.target.value)} disabled={disabled} className="h-8" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">ZIP</Label>
+              <Input value={getValue('primaryZip')} onChange={(e) => handleChange('primaryZip', e.target.value)} disabled={disabled} className="h-8" />
+            </div>
+          </div>
+        </div>
+
+        {/* Column 3: Phone + Preferred + Send */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Phone</h3>
+          <div className="space-y-3">
+            {PHONE_FIELDS.map((phone) => (
+              <div key={phone.label} className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[50px] text-left shrink-0">{phone.label}</Label>
+                <Input
+                  type="tel"
+                  value={getValue(phone.fieldKey)}
+                  onChange={(e) => handleChange(phone.fieldKey, e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Preferred section */}
+          <h4 className="text-sm font-semibold text-foreground mt-4 border-b pb-1">Preferred</h4>
+          <div className="space-y-2">
+            {PHONE_FIELDS.map((phone) => (
+              <div key={phone.label} className="flex items-center gap-2">
+                <Checkbox
+                  checked={preferredPhone === phone.label}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      handleChange('preferredPhone', phone.label);
+                    } else if (preferredPhone === phone.label) {
+                      handleChange('preferredPhone', '');
+                    }
+                  }}
+                  disabled={disabled}
+                />
+                <Label className="text-sm text-muted-foreground">{phone.label}</Label>
+              </div>
+            ))}
+          </div>
+
+          {/* Send Options */}
+          <h4 className="text-sm font-semibold text-foreground mt-4 border-b pb-1">Send:</h4>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Payment Notification</Label>
+              <Checkbox
+                checked={getBoolValue('sendPaymentNotification')}
+                onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)}
                 disabled={disabled}
-                className="h-8"
               />
             </div>
-            
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">City</Label>
-              <Input
-                value={getValue('primaryCity')}
-                onChange={(e) => handleChange('primaryCity', e.target.value)}
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Borrower Statement</Label>
+              <Checkbox
+                checked={getBoolValue('sendBorrowerStatement')}
+                onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)}
                 disabled={disabled}
-                className="h-8"
               />
             </div>
-            
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">State</Label>
-              <Input
-                value={getValue('primaryState')}
-                onChange={(e) => handleChange('primaryState', e.target.value)}
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Late Notice</Label>
+              <Checkbox
+                checked={getBoolValue('sendLateNotice')}
+                onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)}
                 disabled={disabled}
-                className="h-8"
               />
             </div>
-            
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">ZIP</Label>
-              <Input
-                value={getValue('primaryZip')}
-                onChange={(e) => handleChange('primaryZip', e.target.value)}
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Maturity Notice</Label>
+              <Checkbox
+                checked={getBoolValue('sendMaturityNotice')}
+                onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)}
                 disabled={disabled}
-                className="h-8"
               />
             </div>
           </div>
+        </div>
 
-          {/* Mailing Address */}
-          <div className="flex items-center gap-2 border-b pb-2 mt-6">
-            <h4 className="text-sm font-semibold text-foreground">Mailing Address</h4>
+        {/* Column 4: Mailing Address + Vesting + FORD */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 border-b pb-2">
+            <h3 className="text-sm font-semibold text-foreground">Mailing Address</h3>
             <Checkbox
               checked={getBoolValue('isPrimary')}
               onCheckedChange={handleSameAsPrimaryChange}
@@ -443,287 +452,100 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             />
             <Label className="text-xs text-muted-foreground">(Same as Primary)</Label>
           </div>
-          
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">Street</Label>
-              <Input
-                value={getValue('mailingStreet')}
-                onChange={(e) => handleChange('mailingStreet', e.target.value)}
-                disabled={disabled || getBoolValue('isPrimary')}
-                className="h-8"
-              />
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Street</Label>
+              <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || getBoolValue('isPrimary')} className="h-8" />
             </div>
-            
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">City</Label>
-              <Input
-                value={getValue('mailingCity')}
-                onChange={(e) => handleChange('mailingCity', e.target.value)}
-                disabled={disabled || getBoolValue('isPrimary')}
-                className="h-8"
-              />
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">City</Label>
+              <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || getBoolValue('isPrimary')} className="h-8" />
             </div>
-            
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">State</Label>
-              <Input
-                value={getValue('mailingState')}
-                onChange={(e) => handleChange('mailingState', e.target.value)}
-                disabled={disabled || getBoolValue('isPrimary')}
-                className="h-8"
-              />
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">State</Label>
+              <Input value={getValue('mailingState')} onChange={(e) => handleChange('mailingState', e.target.value)} disabled={disabled || getBoolValue('isPrimary')} className="h-8" />
             </div>
-            
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">ZIP</Label>
-              <Input
-                value={getValue('mailingZip')}
-                onChange={(e) => handleChange('mailingZip', e.target.value)}
-                disabled={disabled || getBoolValue('isPrimary')}
-                className="h-8"
-              />
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">ZIP</Label>
+              <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('isPrimary')} className="h-8" />
             </div>
           </div>
 
-          {/* Care Of / Attorney Address */}
-          <h4 className="text-sm font-semibold text-foreground border-b pb-2 mt-6">Care Of / Attorney Address</h4>
-          
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">Street</Label>
-              <Input
-                value={getValue('careOfStreet')}
-                onChange={(e) => handleChange('careOfStreet', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">City</Label>
-              <Input
-                value={getValue('careOfCity')}
-                onChange={(e) => handleChange('careOfCity', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">State</Label>
-              <Input
-                value={getValue('careOfState')}
-                onChange={(e) => handleChange('careOfState', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">ZIP</Label>
-              <Input
-                value={getValue('careOfZip')}
-                onChange={(e) => handleChange('careOfZip', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Contact Preference Section */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Contact Preference</h3>
-          
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Preferred Phone</Label>
-              <Select
-                value={getValue('preferredPhone')}
-                onValueChange={(value) => handleChange('preferredPhone', value)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Select preferred" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PREFERRED_PHONE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Show all phone number fields */}
-            {PREFERRED_PHONE_OPTIONS.map((option) => (
-              <div key={option.value} className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{option.label} Phone</Label>
-                <Input
-                  type="tel"
-                  value={getValue(option.fieldKey)}
-                  onChange={(e) => handleChange(option.fieldKey, e.target.value)}
-                  disabled={disabled}
-                  className="h-8"
-                  placeholder={`Enter ${option.label.toLowerCase()} phone`}
-                />
-              </div>
-            ))}
-          </div>
-
-          {/* Send Options */}
-          <h4 className="text-sm font-semibold text-foreground mt-6">Send:</h4>
-          
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={getBoolValue('sendPaymentNotification')}
-                onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)}
-                disabled={disabled}
-              />
-              <Label className="text-sm text-muted-foreground">Payment Notification</Label>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={getBoolValue('sendLateNotice')}
-                onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)}
-                disabled={disabled}
-              />
-              <Label className="text-sm text-muted-foreground">Late Notice</Label>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={getBoolValue('sendBorrowerStatement')}
-                onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)}
-                disabled={disabled}
-              />
-              <Label className="text-sm text-muted-foreground">Borrower Statement</Label>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={getBoolValue('sendMaturityNotice')}
-                onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)}
-                disabled={disabled}
-              />
-              <Label className="text-sm text-muted-foreground">Maturity Notice</Label>
-            </div>
-          </div>
-
-          {/* Delivery Section */}
-          <h4 className="text-sm font-semibold text-foreground mt-6 border-b pb-1 text-destructive">Delivery</h4>
-          
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={getBoolValue('deliveryOnline')}
-                onCheckedChange={(checked) => handleChange('deliveryOnline', !!checked)}
-                disabled={disabled}
-              />
-              <Label className="text-sm text-muted-foreground">Online</Label>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={getBoolValue('deliveryMail')}
-                onCheckedChange={(checked) => handleChange('deliveryMail', !!checked)}
-                disabled={disabled}
-              />
-              <Label className="text-sm text-muted-foreground">Mail</Label>
-            </div>
-          </div>
-        </div>
-
-        {/* Vesting Section */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Vesting</h3>
-          
+          {/* Vesting */}
+          <h4 className="text-sm font-semibold text-foreground border-b pb-2 mt-6">Vesting</h4>
           <Textarea
             value={getValue('vesting')}
             onChange={(e) => handleChange('vesting', e.target.value)}
             disabled={disabled}
-            rows={4}
+            rows={3}
             className="resize-none w-full"
           />
 
-          {/* FORD Section with 8 Inputs in 4 rows x 2 columns */}
-          <div className="mt-6">
-            <h4 className="text-sm font-semibold text-foreground mb-3">FORD</h4>
-            <div className="grid grid-cols-2 gap-2">
-              <Input value={getValue('ford1')} onChange={(e) => handleChange('ford1', e.target.value)} disabled={disabled} className="h-8" />
-              <Input value={getValue('ford2')} onChange={(e) => handleChange('ford2', e.target.value)} disabled={disabled} className="h-8" />
-              <Input value={getValue('ford3')} onChange={(e) => handleChange('ford3', e.target.value)} disabled={disabled} className="h-8" />
-              <Input value={getValue('ford4')} onChange={(e) => handleChange('ford4', e.target.value)} disabled={disabled} className="h-8" />
-              <Input value={getValue('ford5')} onChange={(e) => handleChange('ford5', e.target.value)} disabled={disabled} className="h-8" />
-              <Input value={getValue('ford6')} onChange={(e) => handleChange('ford6', e.target.value)} disabled={disabled} className="h-8" />
-              <Input value={getValue('ford7')} onChange={(e) => handleChange('ford7', e.target.value)} disabled={disabled} className="h-8" />
-              <Input value={getValue('ford8')} onChange={(e) => handleChange('ford8', e.target.value)} disabled={disabled} className="h-8" />
-            </div>
+          {/* FORD */}
+          <h4 className="text-sm font-semibold text-foreground mt-4 mb-2">FORD</h4>
+          <div className="grid grid-cols-2 gap-2">
+            <Input value={getValue('ford1')} onChange={(e) => handleChange('ford1', e.target.value)} disabled={disabled} className="h-8" />
+            <Input value={getValue('ford2')} onChange={(e) => handleChange('ford2', e.target.value)} disabled={disabled} className="h-8" />
+            <Input value={getValue('ford3')} onChange={(e) => handleChange('ford3', e.target.value)} disabled={disabled} className="h-8" />
+            <Input value={getValue('ford4')} onChange={(e) => handleChange('ford4', e.target.value)} disabled={disabled} className="h-8" />
+            <Input value={getValue('ford5')} onChange={(e) => handleChange('ford5', e.target.value)} disabled={disabled} className="h-8" />
+            <Input value={getValue('ford6')} onChange={(e) => handleChange('ford6', e.target.value)} disabled={disabled} className="h-8" />
+            <Input value={getValue('ford7')} onChange={(e) => handleChange('ford7', e.target.value)} disabled={disabled} className="h-8" />
+            <Input value={getValue('ford8')} onChange={(e) => handleChange('ford8', e.target.value)} disabled={disabled} className="h-8" />
           </div>
         </div>
       </div>
 
-      {/* If Entity, sign line should be: section */}
+      {/* Delivery Section */}
+      <div className="mt-6 border-t pt-4">
+        <h3 className="text-sm font-semibold text-destructive mb-3">Delivery</h3>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground">Online</Label>
+            <Checkbox
+              checked={getBoolValue('deliveryOnline')}
+              onCheckedChange={(checked) => handleChange('deliveryOnline', !!checked)}
+              disabled={disabled}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground">Mail</Label>
+            <Checkbox
+              checked={getBoolValue('deliveryMail')}
+              onCheckedChange={(checked) => handleChange('deliveryMail', !!checked)}
+              disabled={disabled}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* If Entity, sig line should be: */}
       <div className="mt-6 border-t pt-4">
         <h3 className="text-sm font-semibold text-destructive mb-3">If Entity, sig line should be:</h3>
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Borrower:</Label>
-            <Input
-              value={getValue('entitySignBorrower')}
-              onChange={(e) => handleChange('entitySignBorrower', e.target.value)}
-              disabled={disabled}
-              className="h-8"
-            />
+            <Input value={getValue('entitySignBorrower')} onChange={(e) => handleChange('entitySignBorrower', e.target.value)} disabled={disabled} className="h-8" />
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">By:</Label>
-            <Input
-              value={getValue('entitySignBy')}
-              onChange={(e) => handleChange('entitySignBy', e.target.value)}
-              disabled={disabled}
-              className="h-8"
-            />
+            <Input value={getValue('entitySignBy')} onChange={(e) => handleChange('entitySignBy', e.target.value)} disabled={disabled} className="h-8" />
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Its:</Label>
-            <Input
-              value={getValue('entitySignIts')}
-              onChange={(e) => handleChange('entitySignIts', e.target.value)}
-              disabled={disabled}
-              className="h-8"
-            />
+            <Input value={getValue('entitySignIts')} onChange={(e) => handleChange('entitySignIts', e.target.value)} disabled={disabled} className="h-8" />
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Entity Name</Label>
-            <Input
-              value={getValue('entitySignEntityName')}
-              onChange={(e) => handleChange('entitySignEntityName', e.target.value)}
-              disabled={disabled}
-              className="h-8"
-            />
+            <Input value={getValue('entitySignEntityName')} onChange={(e) => handleChange('entitySignEntityName', e.target.value)} disabled={disabled} className="h-8" />
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">First, Last</Label>
-            <Input
-              value={getValue('entitySignFirstLast')}
-              onChange={(e) => handleChange('entitySignFirstLast', e.target.value)}
-              disabled={disabled}
-              className="h-8"
-            />
+            <Input value={getValue('entitySignFirstLast')} onChange={(e) => handleChange('entitySignFirstLast', e.target.value)} disabled={disabled} className="h-8" />
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Capacity</Label>
-            <Input
-              value={getValue('entitySignCapacity')}
-              onChange={(e) => handleChange('entitySignCapacity', e.target.value)}
-              disabled={disabled}
-              className="h-8"
-            />
+            <Input value={getValue('entitySignCapacity')} onChange={(e) => handleChange('entitySignCapacity', e.target.value)} disabled={disabled} className="h-8" />
           </div>
         </div>
       </div>
