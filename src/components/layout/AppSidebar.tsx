@@ -29,6 +29,13 @@ import {
   ListTodo,
   CheckCircle2,
   Bell,
+  Landmark,
+  AlertTriangle,
+  Workflow,
+  BookOpen,
+  Scale,
+  FolderLock,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import logo from '@/assets/logo.png';
@@ -41,6 +48,7 @@ import { BrokerServicesNav } from '@/components/layout/BrokerServicesNav';
 import { AccountingNav } from '@/components/layout/AccountingNav';
 import { SystemAdminNav } from '@/components/layout/SystemAdminNav';
 import { CLevelModuleNav } from '@/components/layout/CLevelModuleNav';
+import { PromotedNavSection } from '@/components/layout/PromotedNavSection';
 import {
   Tooltip,
   TooltipContent,
@@ -302,9 +310,145 @@ export const AppSidebar: React.FC = () => {
             <BrokerServicesNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'broker'} onOpenChange={handleSectionToggle('broker')} />
           )}
 
+          {/* Loan Servicing (promoted from Broker Services) */}
+          {!isCollapsed && (
+            <PromotedNavSection
+              label="Loan Servicing"
+              icon={Landmark}
+              items={[
+                { label: 'Management Dashboard', path: '/broker-services/servicing/management' },
+                { label: 'Department Alerts', path: '/broker-services/servicing/alerts' },
+                { label: 'Department Dashboard', path: '/broker-services/servicing/dashboard' },
+                { label: 'All Loan Document Files', path: '/deals' },
+                { label: 'Custom Views', path: '/broker-services/servicing/custom-views' },
+                { label: 'Activity Journal', path: '/broker-services/servicing/activity' },
+              ]}
+              isCollapsed={isCollapsed}
+              searchQuery={searchQuery}
+              isOpen={activeSection === 'loan-servicing'}
+              onOpenChange={handleSectionToggle('loan-servicing')}
+            />
+          )}
+
+          {/* Default Services (promoted from Broker Services) */}
+          {!isCollapsed && (
+            <PromotedNavSection
+              label="Default Services"
+              icon={AlertTriangle}
+              items={[
+                { label: 'Management Dashboard', path: '/broker-services/default/management' },
+                { label: 'Department Alerts', path: '/broker-services/default/alerts' },
+                { label: 'Department Dashboard', path: '/broker-services/default/dashboard' },
+                { label: 'Mod & Forbearance Wizard', path: '/broker-services/default/mod-forbearance' },
+                { label: 'Foreclosure Processing', path: '/broker-services/default/foreclosure' },
+                { label: 'Bankruptcy Monitoring', path: '/broker-services/default/bankruptcy' },
+                { label: 'Activity Journal', path: '/broker-services/default/activity' },
+              ]}
+              isCollapsed={isCollapsed}
+              searchQuery={searchQuery}
+              isOpen={activeSection === 'default-services'}
+              onOpenChange={handleSectionToggle('default-services')}
+            />
+          )}
+
+          {/* Operations (promoted from Broker Services) */}
+          {!isCollapsed && (
+            <PromotedNavSection
+              label="Operations"
+              icon={Workflow}
+              items={[
+                { label: 'Management Dashboard', path: '/broker-services/operations/management' },
+                { label: 'Department Alerts', path: '/broker-services/operations/alerts' },
+                { label: 'Department Dashboard', path: '/broker-services/operations/dashboard' },
+                { label: 'Senior Lien Tracking', path: '/broker-services/operations/senior-lien' },
+                { label: 'Insurance Tracking', path: '/broker-services/operations/insurance' },
+                { label: 'Tax Tracking', path: '/broker-services/operations/tax' },
+                { label: 'Account Maintenance', path: '/broker-services/operations/maintenance' },
+                { label: 'Outstanding / Missing Items', path: '/broker-services/operations/outstanding' },
+                { label: 'Activity Journal', path: '/broker-services/operations/activity' },
+              ]}
+              isCollapsed={isCollapsed}
+              searchQuery={searchQuery}
+              isOpen={activeSection === 'operations'}
+              onOpenChange={handleSectionToggle('operations')}
+            />
+          )}
+
           {/* Accounting Section */}
           {!isCollapsed && (
             <AccountingNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'accounting'} onOpenChange={handleSectionToggle('accounting')} />
+          )}
+
+          {/* Knowledge Center (promoted from Accounting) */}
+          {!isCollapsed && (
+            <PromotedNavSection
+              label="Knowledge Center"
+              icon={BookOpen}
+              items={[
+                { label: 'Fee Sheet', path: '/accounting/knowledge/fee-sheet' },
+                { label: 'Policies & Processes', path: '/accounting/knowledge/policies' },
+                { label: 'Industry News', path: '/accounting/knowledge/news' },
+                { label: 'Smart AI', path: '/accounting/knowledge/smart-ai' },
+              ]}
+              isCollapsed={isCollapsed}
+              searchQuery={searchQuery}
+              isOpen={activeSection === 'knowledge-center'}
+              onOpenChange={handleSectionToggle('knowledge-center')}
+            />
+          )}
+
+          {/* Legal (promoted from Accounting) */}
+          {!isCollapsed && (
+            <PromotedNavSection
+              label="Legal"
+              icon={Scale}
+              items={[
+                { label: 'Management Dashboard', path: '/accounting/legal/management' },
+                { label: 'Department Alerts', path: '/accounting/legal/alerts' },
+                { label: 'Department Dashboard', path: '/accounting/legal/dashboard' },
+                { label: 'Accounts', path: '/accounting/legal/accounts' },
+                { label: 'Calendar', path: '/accounting/legal/calendar' },
+                { label: 'Activity Journal', path: '/accounting/legal/activity' },
+              ]}
+              isCollapsed={isCollapsed}
+              searchQuery={searchQuery}
+              isOpen={activeSection === 'legal'}
+              onOpenChange={handleSectionToggle('legal')}
+            />
+          )}
+
+          {/* Documents Vault (promoted from Accounting - direct link) */}
+          {!isCollapsed && (
+            <PromotedNavSection
+              label="Documents Vault"
+              icon={FolderLock}
+              items={[]}
+              directPath="/documents"
+              isCollapsed={isCollapsed}
+              searchQuery={searchQuery}
+            />
+          )}
+
+          {/* Contacts (promoted from Accounting - direct link) */}
+          {!isCollapsed && (
+            <PromotedNavSection
+              label="Contacts"
+              icon={Users}
+              items={[]}
+              isCollapsed={isCollapsed}
+              searchQuery={searchQuery}
+            />
+          )}
+
+          {/* Statements & Reports (promoted from Accounting - direct link) */}
+          {!isCollapsed && (
+            <PromotedNavSection
+              label="Statements & Reports"
+              icon={BarChart3}
+              items={[]}
+              isCollapsed={isCollapsed}
+              searchQuery={searchQuery}
+            />
           )}
 
           {/* System Administration Section */}

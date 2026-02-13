@@ -69,43 +69,6 @@ const brokerServicesData: ChildSection[] = [
       { label: 'Activity Journal', path: '/broker-services/intake/activity' },
     ],
   },
-  {
-    label: 'Loan Servicing',
-    items: [
-      { label: 'Management Dashboard', path: '/broker-services/servicing/management' },
-      { label: 'Department Alerts', path: '/broker-services/servicing/alerts' },
-      { label: 'Department Dashboard', path: '/broker-services/servicing/dashboard' },
-      { label: 'All Loan Document Files', path: '/deals' },
-      { label: 'Custom Views', path: '/broker-services/servicing/custom-views' },
-      { label: 'Activity Journal', path: '/broker-services/servicing/activity' },
-    ],
-  },
-  {
-    label: 'Operations',
-    items: [
-      { label: 'Management Dashboard', path: '/broker-services/operations/management' },
-      { label: 'Department Alerts', path: '/broker-services/operations/alerts' },
-      { label: 'Department Dashboard', path: '/broker-services/operations/dashboard' },
-      { label: 'Senior Lien Tracking', path: '/broker-services/operations/senior-lien' },
-      { label: 'Insurance Tracking', path: '/broker-services/operations/insurance' },
-      { label: 'Tax Tracking', path: '/broker-services/operations/tax' },
-      { label: 'Account Maintenance', path: '/broker-services/operations/maintenance' },
-      { label: 'Outstanding / Missing Items', path: '/broker-services/operations/outstanding' },
-      { label: 'Activity Journal', path: '/broker-services/operations/activity' },
-    ],
-  },
-  {
-    label: 'Default Services',
-    items: [
-      { label: 'Management Dashboard', path: '/broker-services/default/management' },
-      { label: 'Department Alerts', path: '/broker-services/default/alerts' },
-      { label: 'Department Dashboard', path: '/broker-services/default/dashboard' },
-      { label: 'Mod & Forbearance Wizard', path: '/broker-services/default/mod-forbearance' },
-      { label: 'Foreclosure Processing', path: '/broker-services/default/foreclosure' },
-      { label: 'Bankruptcy Monitoring', path: '/broker-services/default/bankruptcy' },
-      { label: 'Activity Journal', path: '/broker-services/default/activity' },
-    ],
-  },
 ];
 
 interface BrokerServicesNavProps {
