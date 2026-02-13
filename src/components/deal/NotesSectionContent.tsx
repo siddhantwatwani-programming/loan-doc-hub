@@ -1,9 +1,4 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Menubar, MenubarMenu, MenubarTrigger, MenubarContent, MenubarItem,
-} from '@/components/ui/menubar';
 import { NotesTableView, type NoteData } from './NotesTableView';
 import { NotesModal } from './NotesModal';
 import type { FieldDefinition } from '@/hooks/useDealFields';
@@ -99,37 +94,14 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
 
   return (
     <>
-      <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
-        {/* Toolbar */}
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-muted/20">
-          <Menubar className="border-none bg-transparent shadow-none p-0 h-auto">
-            {['File', 'Edit', 'View', 'Insert', 'Format'].map(menu => (
-              <MenubarMenu key={menu}>
-                <MenubarTrigger className="text-xs px-2 py-1 h-auto cursor-pointer">{menu}</MenubarTrigger>
-                <MenubarContent>
-                  <MenubarItem className="text-xs">{menu} option 1</MenubarItem>
-                  <MenubarItem className="text-xs">{menu} option 2</MenubarItem>
-                </MenubarContent>
-              </MenubarMenu>
-            ))}
-          </Menubar>
-          <Button variant="outline" size="sm" onClick={handleExport} disabled={notes.length === 0} className="gap-1 ml-auto text-xs h-7">
-            <Download className="h-3 w-3" />
-            Export
-          </Button>
-        </div>
-
-        {/* Table */}
-        <div className="p-6">
-          <NotesTableView
-            notes={notes}
-            onAddNote={handleAddNote}
-            onEditNote={handleEditNote}
-            onRowClick={handleRowClick}
-            disabled={disabled}
-          />
-        </div>
-      </div>
+      <NotesTableView
+        notes={notes}
+        onAddNote={handleAddNote}
+        onEditNote={handleEditNote}
+        onRowClick={handleRowClick}
+        onExport={handleExport}
+        disabled={disabled}
+      />
 
       <NotesModal
         open={modalOpen}

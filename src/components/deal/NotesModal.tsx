@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from './RichTextEditor';
 import type { NoteData } from './NotesTableView';
 
 interface NotesModalProps {
@@ -78,14 +78,14 @@ export const NotesModal: React.FC<NotesModalProps> = ({
           {renderInlineField('name', 'Name')}
           {renderInlineField('reference', 'Reference')}
 
-          {/* Notes content */}
+          {/* Notes content - Rich Text Editor */}
           <div className="space-y-1">
             <Label className="text-xs text-foreground">Notes</Label>
-            <Textarea
+            <RichTextEditor
               value={formData.content}
-              onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-              className="min-h-[150px] text-xs"
+              onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
               placeholder="Enter note content..."
+              minHeight="200px"
             />
           </div>
         </div>

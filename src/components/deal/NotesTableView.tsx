@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -23,6 +23,7 @@ interface NotesTableViewProps {
   onAddNote: () => void;
   onEditNote: (note: NoteData) => void;
   onRowClick: (note: NoteData) => void;
+  onExport?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
 }
@@ -35,7 +36,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
 ];
 
 export const NotesTableView: React.FC<NotesTableViewProps> = ({
-  notes, onAddNote, onEditNote, onRowClick, disabled = false, isLoading = false,
+  notes, onAddNote, onEditNote, onRowClick, onExport, disabled = false, isLoading = false,
 }) => {
   const [columns, setColumns] = useTableColumnConfig('notes', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
@@ -56,6 +57,10 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-lg text-foreground">Notes</h3>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={onExport} disabled={disabled || notes.length === 0} className="gap-1">
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
           <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} disabled={disabled} />
           <Button variant="outline" size="sm" onClick={onAddNote} disabled={disabled} className="gap-1">
             <Plus className="h-4 w-4" />
