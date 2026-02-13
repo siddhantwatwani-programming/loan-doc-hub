@@ -77,7 +77,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
   ];
 
   return (
-    <div className="p-4 space-y-2">
+    <div className="p-4 space-y-0">
       {/* Top section - 4 visual columns using custom grid */}
       <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: '1.2fr 1.2fr 1.2fr auto' }}>
         {/* Column 1 - Name */}
