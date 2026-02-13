@@ -12,6 +12,8 @@ import { BorrowerBankingForm } from './BorrowerBankingForm';
 import { BorrowerTaxDetailForm } from './BorrowerTaxDetailForm';
 import { BorrowerNoteForm } from './BorrowerNoteForm';
 import { BorrowerAuthorizedPartyForm } from './BorrowerAuthorizedPartyForm';
+import { TrustLedgerTableView, type TrustLedgerEntry } from './TrustLedgerTableView';
+import { TrustLedgerModal } from './TrustLedgerModal';
 import { CoBorrowerPrimaryForm } from './CoBorrowerPrimaryForm';
 import { CoBorrowerBankingForm } from './CoBorrowerBankingForm';
 import { CoBorrowerTaxDetailForm } from './CoBorrowerTaxDetailForm';
@@ -213,6 +215,10 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   const [editingCoBorrower, setEditingCoBorrower] = useState<CoBorrowerData | null>(null);
   const [coBorrowerCurrentPage, setCoBorrowerCurrentPage] = useState(1);
   const [selectedCoBorrowerPrefix, setSelectedCoBorrowerPrefix] = useState<string>('coborrower');
+
+  // Trust Ledger state
+  const [trustLedgerModalOpen, setTrustLedgerModalOpen] = useState(false);
+  const [editingTrustLedgerEntry, setEditingTrustLedgerEntry] = useState<TrustLedgerEntry | null>(null);
 
   // Check if we're in detail view
   // Borrower detail includes: primary, additional_guarantor, banking, tax_detail, note, AND co_borrowers (table within detail)
@@ -474,6 +480,80 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   };
   const detailViewName = getDetailViewName();
 
+  // Trust Ledger helpers
+  const extractTrustLedgerEntries = useMemo((): TrustLedgerEntry[] => {
+    const entries: TrustLedgerEntry[] = [];
+    const prefixes = new Set<string>();
+    Object.keys(values).forEach(key => {
+      const match = key.match(/^(trust_ledger\d+)\./);
+      if (match) prefixes.add(match[1]);
+    });
+    prefixes.forEach(prefix => {
+      entries.push({
+        id: prefix,
+        date: values[`${prefix}.date`] || '',
+        reference: values[`${prefix}.reference`] || '',
+        fromWhomReceivedPaid: values[`${prefix}.from_whom`] || '',
+        memo: values[`${prefix}.memo`] || '',
+        payment: values[`${prefix}.payment`] || '',
+        clr: values[`${prefix}.clr`] || '',
+        deposit: values[`${prefix}.deposit`] || '',
+        balance: values[`${prefix}.balance`] || '',
+        category: (values[`${prefix}.category`] as TrustLedgerEntry['category']) || 'all',
+      });
+    });
+    entries.sort((a, b) => {
+      const numA = parseInt(a.id.replace('trust_ledger', ''));
+      const numB = parseInt(b.id.replace('trust_ledger', ''));
+      return numA - numB;
+    });
+    return entries;
+  }, [values]);
+
+  const getNextTrustLedgerPrefix = useCallback((): string => {
+    const prefixes = new Set<string>();
+    Object.keys(values).forEach(key => {
+      const match = key.match(/^(trust_ledger\d+)\./);
+      if (match) prefixes.add(match[1]);
+    });
+    let n = 1;
+    while (prefixes.has(`trust_ledger${n}`)) n++;
+    return `trust_ledger${n}`;
+  }, [values]);
+
+  const handleSaveTrustLedgerEntry = useCallback((entryData: TrustLedgerEntry) => {
+    const prefix = editingTrustLedgerEntry ? editingTrustLedgerEntry.id : getNextTrustLedgerPrefix();
+    onValueChange(`${prefix}.date`, entryData.date);
+    onValueChange(`${prefix}.reference`, entryData.reference);
+    onValueChange(`${prefix}.from_whom`, entryData.fromWhomReceivedPaid);
+    onValueChange(`${prefix}.memo`, entryData.memo);
+    onValueChange(`${prefix}.payment`, entryData.payment);
+    onValueChange(`${prefix}.clr`, entryData.clr);
+    onValueChange(`${prefix}.deposit`, entryData.deposit);
+    onValueChange(`${prefix}.balance`, entryData.balance);
+    onValueChange(`${prefix}.category`, entryData.category);
+    setTrustLedgerModalOpen(false);
+  }, [editingTrustLedgerEntry, getNextTrustLedgerPrefix, onValueChange]);
+
+  const renderTrustLedger = () => (
+    <>
+      <TrustLedgerTableView
+        entries={extractTrustLedgerEntries}
+        onAddEntry={() => { setEditingTrustLedgerEntry(null); setTrustLedgerModalOpen(true); }}
+        onEditEntry={(entry) => { setEditingTrustLedgerEntry(entry); setTrustLedgerModalOpen(true); }}
+        onRowClick={(entry) => { setEditingTrustLedgerEntry(entry); setTrustLedgerModalOpen(true); }}
+        disabled={disabled}
+      />
+      <TrustLedgerModal
+        open={trustLedgerModalOpen}
+        onOpenChange={setTrustLedgerModalOpen}
+        entry={editingTrustLedgerEntry}
+        onSave={handleSaveTrustLedgerEntry}
+        isEdit={!!editingTrustLedgerEntry}
+      />
+    </>
+  );
+
   const renderSubSectionContent = () => {
     switch (activeSubSection) {
       case 'borrowers':
@@ -551,14 +631,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
           />
         );
       case 'trust_ledger':
-        return (
-          <div className="p-6 flex items-center justify-center min-h-[300px]">
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-foreground">Trust Ledger</h3>
-              <p className="text-muted-foreground">Coming Soon</p>
-            </div>
-          </div>
-        );
+        return renderTrustLedger();
       case 'tax_detail':
         return (
           <BorrowerTaxDetailForm
