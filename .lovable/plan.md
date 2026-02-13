@@ -1,51 +1,89 @@
 
-## Fix: Lender, Charges, and Notes Tabs Missing
 
-### Root Cause
+## Update Notes Section with Table-Based UI
 
-The `field_dictionary` table now contains 1,330+ rows. The Supabase PostgREST server enforces a hard `max-rows` cap of 1,000, which overrides the client-side `.limit(5000)`. Both the `resolveAllFields()` query and the TMO tab-sections query return only 1,000 rows (confirmed by `content-range: 0-999/*` in network responses). Fields for `lender`, `broker`, `charges`, and `notes` sections are cut off because they fall beyond the 1,000-row boundary.
+### Overview
 
-### Solution
-
-Create a paginated fetch helper that retrieves all rows using `.range()` calls in batches of 1,000, then apply it to every `field_dictionary` query that may exceed 1,000 rows.
+Replace the current generic `DealSectionTab` rendering for the Notes tab with a dedicated table-based component that matches the Broker tab's table pattern. The Notes section will display entries in a table with Date, Account, Name, and Reference columns, provide an "Add Notes" popup modal for creating entries, include a toolbar with File/Edit/View/Insert/Format menus, and add an Export to Excel function.
 
 ### Technical Changes
 
-**1. New helper: `src/lib/supabasePagination.ts`**
+**1. New Component: `src/components/deal/NotesTableView.tsx`**
 
-A reusable function `fetchAllRows()` that:
-- Accepts a Supabase query builder callback
-- Fetches in pages of 1,000 using `.range(0, 999)`, `.range(1000, 1999)`, etc.
-- Stops when a page returns fewer rows than the page size
-- Returns the concatenated array
+A table component following the `BrokersTableView` pattern:
+- Columns: Date, Account, Name, Reference (with column configuration via `ColumnConfigPopover`)
+- Each row represents a note entry
+- Clicking a row opens the note detail
+- Edit button per row
+- Pagination support
+- "Total Notes" footer
 
-**2. Update `src/lib/requiredFieldsResolver.ts`**
+**2. New Component: `src/components/deal/NotesModal.tsx`**
 
-- `resolveAllFields()` (line 68-72): Replace single `.limit(5000)` query with paginated fetch
-- `resolvePacketFields()` if it also queries `field_dictionary` with the same pattern
+A dialog/modal for adding and editing notes (following `BrokerModal` pattern):
+- "High Priority" checkbox at the top
+- Date field (prefilled with current date)
+- Account field (prefilled with deal number or user info)
+- Name field (prefilled with current user's name)
+- Reference field (text input, dropdown info to be provided later by user)
+- Notes textarea (large, rich text area for the note content)
+- Save / Cancel buttons
 
-**3. Update `src/hooks/useDealFields.ts`**
+**3. New Component: `src/components/deal/NotesSectionContent.tsx`**
 
-- TMO tab-sections fetch (line 256-262): Replace single query with paginated fetch
+The main section wrapper (following `BrokerSectionContent` pattern):
+- Manages notes state extracted from deal values using `notes_entry1`, `notes_entry2`, etc. prefixes
+- Handles add/edit/delete note operations
+- Renders the toolbar (File, Edit, View, Insert, Format menus using Menubar) plus an Export button
+- Renders `NotesTableView` as the main content
+- Renders `NotesModal` for add/edit
 
-**4. Update `src/lib/accessControl.ts`**
+**4. Update: `src/pages/csr/DealDataEntryPage.tsx`**
 
-- `fetchFieldVisibility()` (line 75-78): Replace single query with paginated fetch
+- Import `NotesSectionContent`
+- Add a conditional branch for `section === 'notes'` (before the generic `DealSectionTab` fallback) to render `NotesSectionContent`
 
-**5. Update `src/pages/admin/FieldDictionaryPage.tsx`**
+**5. Backend: Field Dictionary Entries (Database Migration)**
 
-- Admin field list fetch: Replace single query with paginated fetch
+Register the following keys in `field_dictionary` under section `notes` so the save logic can persist them:
+- `notes_entry.high_priority` (boolean)
+- `notes_entry.date` (date)
+- `notes_entry.account` (text)
+- `notes_entry.name` (text)
+- `notes_entry.reference` (text)
+- `notes_entry.content` (text)
 
-**6. Update `src/pages/admin/FieldMapEditorPage.tsx`**
+These will be stored using the existing indexed-key JSONB pattern (e.g., `notes_entry1.date`, `notes_entry2.date`) in `deal_section_values` under the `notes` section, exactly how brokers/lenders/properties are stored.
 
-- Field dictionary fetch in editor: Replace single query with paginated fetch
+### Toolbar Details
+
+The toolbar above the table will use the existing `Menubar` component (`@radix-ui/react-menubar`) with:
+- **File** menu: placeholder items
+- **Edit** menu: placeholder items
+- **View** menu: placeholder items
+- **Insert** menu: placeholder items
+- **Format** menu: placeholder items
+- **Export** button: Exports the notes table to an Excel/CSV file using client-side generation (no new dependencies -- will produce a `.csv` download)
+
+### Data Flow
+
+```text
+NotesSection extracts notes from deal values (notes_entry1.*, notes_entry2.*, ...)
+    |
+    v
+NotesTableView displays them in a table (Date, Account, Name, Reference)
+    |
+    v
+Add/Edit via NotesModal -> calls onValueChange for each field
+    |
+    v
+Existing saveDraft() persists via deal_section_values JSONB
+```
 
 ### What Will NOT Change
-- No UI layout or component changes
-- No database schema changes
-- No API contract changes
-- No changes to save/update logic
-- No changes to tab rendering, routing, or permissions logic
+- No changes to existing UI layout or components
+- No changes to existing save/update APIs
+- No changes to other sections (Borrower, Property, Loan, Broker, etc.)
+- No new database tables (uses existing `deal_section_values` JSONB storage)
+- No changes to document generation flow
 
-### Result
-All 1,330+ field dictionary entries will be fully loaded, restoring the Lender, Charges, Notes, and Broker tabs in the Enter File Data view.
