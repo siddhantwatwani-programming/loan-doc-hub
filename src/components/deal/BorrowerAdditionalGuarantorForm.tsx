@@ -2,8 +2,22 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
+
+const BORROWER_TYPE_OPTIONS = [
+  'Individual', 'Joint', 'Family Trust', 'LLC', 'C Corp / S Corp',
+  'IRA / ERISA', 'Investment Fund', '401K', 'Foreign Holder W-8', 'Non-profit',
+];
+
+const TAX_ID_TYPE_OPTIONS = ['0 – Unknown', '1 – EIN', '2 – SSN'];
 
 // Field key mapping for additional guarantor fields - uses same borrower keys per spec
 const FIELD_KEYS = {
@@ -107,7 +121,13 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
           <div className="border-b border-border pb-1 mb-2">
             <span className="font-semibold text-xs text-foreground">Name</span>
           </div>
-          {renderInlineField('borrowerType', 'Borrower Type')}
+          <div className="flex items-center gap-2">
+            <Label className="w-[120px] shrink-0 text-xs text-foreground">Borrower Type</Label>
+            <Select value={getValue('borrowerType')} onValueChange={(value) => handleChange('borrowerType', value)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>{BORROWER_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
+            </Select>
+          </div>
           {renderInlineField('borrowerId', 'Borrower ID')}
           {renderInlineField('fullName', 'Full Name')}
           {renderInlineField('firstName', 'First')}
@@ -116,7 +136,13 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
           {renderInlineField('capacity', 'Capacity')}
           {renderInlineField('email', 'Email')}
           {renderInlineField('creditScore', 'Credit Score')}
-          {renderInlineField('taxIdType', 'Tax ID Type')}
+          <div className="flex items-center gap-2">
+            <Label className="w-[120px] shrink-0 text-xs text-foreground">Tax ID Type</Label>
+            <Select value={getValue('taxIdType')} onValueChange={(value) => handleChange('taxIdType', value)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>{TAX_ID_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
+            </Select>
+          </div>
           {renderInlineField('taxId', 'TIN')}
         </div>
 
