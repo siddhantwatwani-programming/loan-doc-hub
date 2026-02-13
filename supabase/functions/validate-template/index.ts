@@ -67,15 +67,49 @@ function extractTextFromXml(xmlContent: string): string {
 function normalizeWordXml(xmlContent: string): string {
   let result = xmlContent;
   
+  // Strip Word spell-check markers (proofErr) that fragment merge tags
+  result = result.replace(/<w:proofErr[^/]*\/>/g, '');
+  
+  // Strip run property blocks (<w:rPr>...</w:rPr>) that contain formatting metadata
+  // but no text content. Removing them lets tag detection work for styled runs.
+  result = result.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g, '');
+  
   // Pattern to find « possibly followed by fragmented XML until »
   const fragmentedPattern = /«((?:<[^>]*>|\s)*?)([A-Za-z0-9_]+)((?:<[^>]*>|\s)*?)»/g;
   result = result.replace(fragmentedPattern, (match, pre, fieldName, post) => {
     return `«${fieldName}»`;
   });
   
+  // Handle XML-fragmented chevron patterns
+  const leftChevronFragmented = /«((?:<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)+)/g;
+  result = result.replace(leftChevronFragmented, () => "«");
+  
+  const rightChevronFragmented = /((?:<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)+)»/g;
+  result = result.replace(rightChevronFragmented, () => "»");
+  
   // Handle fragmented underscores
   const fragmentedUnderscore = /([A-Za-z0-9]+)(<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)_(<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)?([A-Za-z0-9]+)/g;
   result = result.replace(fragmentedUnderscore, "$1_$4");
+  
+  // Handle split opening braces: {</w:t></w:r><w:r><w:t>{ -> {{
+  const splitOpenBraces = /\{((?:<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>)+)\{/g;
+  result = result.replace(splitOpenBraces, () => '{{');
+  
+  // Handle split closing braces: }</w:t></w:r><w:r><w:t>} -> }}
+  const splitCloseBraces = /\}((?:<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>)+)\}/g;
+  result = result.replace(splitCloseBraces, () => '}}');
+
+  // Handle dots fragmented across runs: field</w:t></w:r><w:r><w:t>.name -> field.name
+  const fragmentedDot = /([A-Za-z0-9_]+)((?:<\/w:t><\/w:r><w:r[^>]*><w:t[^>]*>)+)\.([A-Za-z0-9_]+)/g;
+  result = result.replace(fragmentedDot, (match, before, xmlTags, after) => `${before}.${after}`);
+
+  // Handle fragmented curly brace patterns {{...}}
+  const curlyFragmentedPattern = /\{\{((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
+  result = result.replace(curlyFragmentedPattern, (match, pre, fieldName, post) => `{{${fieldName}}}`);
+
+  // Handle curly tags with inline transforms: {{field|transform}}
+  const curlyTransformFragmented = /\{\{((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\|((?:<[^>]*>|\s)*?)([A-Za-z0-9_]+)((?:<[^>]*>|\s)*?)\}\}/g;
+  result = result.replace(curlyTransformFragmented, (match, pre1, fieldName, mid1, mid2, transform, post) => `{{${fieldName}|${transform}}}`);
   
   return result;
 }
@@ -326,10 +360,21 @@ serve(async (req) => {
     
     console.log(`[validate-template] Loaded ${mergeTagMap.size / 2} legacy aliases (optional)`);
 
-    // 4. Fetch all field keys from dictionary for suggestions (and metadata if requested)
-    const { data: fieldDictionaryData } = await supabase
-      .from("field_dictionary")
-      .select("id, field_key, label, data_type, section, description");
+    // 4. Fetch all field keys from dictionary using pagination (table has 1700+ rows, default limit is 1000)
+    const PAGE_SIZE = 1000;
+    const fieldDictionaryData: any[] = [];
+    let fdFrom = 0;
+    while (true) {
+      const { data: page, error: fdError } = await supabase
+        .from("field_dictionary")
+        .select("id, field_key, label, data_type, section, description")
+        .range(fdFrom, fdFrom + PAGE_SIZE - 1);
+      if (fdError) { console.error("[validate-template] field_dictionary fetch error:", fdError.message); break; }
+      const rows = page || [];
+      fieldDictionaryData.push(...rows);
+      if (rows.length < PAGE_SIZE) break;
+      fdFrom += PAGE_SIZE;
+    }
     
     const allFieldKeys = (fieldDictionaryData || []).map(fd => fd.field_key);
     

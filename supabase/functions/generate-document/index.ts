@@ -161,12 +161,24 @@ async function generateSingleDocument(
     console.log(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);
 
     // Build set of ALL valid field keys from the complete field_dictionary (for direct tag matching)
-    const { data: completeFieldDictionary } = await supabase
-      .from("field_dictionary")
-      .select("field_key");
+    // Use pagination to fetch all rows (table has 1700+ entries, default limit is 1000)
+    const PAGE_SIZE = 1000;
+    const completeFieldDictionary: any[] = [];
+    let fdFrom = 0;
+    while (true) {
+      const { data: page, error: fdErr } = await supabase
+        .from("field_dictionary")
+        .select("field_key")
+        .range(fdFrom, fdFrom + PAGE_SIZE - 1);
+      if (fdErr) { console.error("[generate-document] field_dictionary fetch error:", fdErr.message); break; }
+      const rows = page || [];
+      completeFieldDictionary.push(...rows);
+      if (rows.length < PAGE_SIZE) break;
+      fdFrom += PAGE_SIZE;
+    }
     
     const validFieldKeys = new Set<string>();
-    (completeFieldDictionary || []).forEach((fd: any) => validFieldKeys.add(fd.field_key));
+    completeFieldDictionary.forEach((fd: any) => validFieldKeys.add(fd.field_key));
     console.log(`[generate-document] Built validFieldKeys set with ${validFieldKeys.size} entries`);
 
     // 4. Download template DOCX from storage
