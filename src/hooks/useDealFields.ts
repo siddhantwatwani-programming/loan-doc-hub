@@ -140,12 +140,13 @@ function getCanonicalKey(indexedKey: string): string {
     .replace(/^(charge)\d+\./, 'charge.')
     .replace(/^(lien)\d+\./, 'lien.')
     .replace(/^(insurance)\d+\./, 'insurance.')
-    .replace(/^(notes_entry)\d+\./, 'notes_entry.');
+    .replace(/^(notes_entry)\d+\./, 'notes_entry.')
+    .replace(/^(trust_ledger)\d+\./, 'trust_ledger.');
 }
 
 // Extract indexed prefix from field key (e.g., "borrower1.first_name" -> "borrower1", "charge1.date_of_charge" -> "charge1")
 function getIndexedPrefix(fieldKey: string): string | null {
-  const match = fieldKey.match(/^(borrower\d+|coborrower\d+|co_borrower\d+|lender\d+|property\d+|broker\d+|charge\d+|lien\d+|insurance\d+|notes_entry\d+)\./);
+  const match = fieldKey.match(/^(borrower\d+|coborrower\d+|co_borrower\d+|lender\d+|property\d+|broker\d+|charge\d+|lien\d+|insurance\d+|notes_entry\d+|trust_ledger\d+)\./);
   return match ? match[1] : null;
 }
 
