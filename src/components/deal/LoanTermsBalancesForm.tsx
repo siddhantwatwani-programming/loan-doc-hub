@@ -45,6 +45,7 @@ const FIELD_KEYS = {
   prepaidPaymentsEnabled: 'loan_terms.prepaid_payments_enabled',
   prepaidPaymentsMonths: 'loan_terms.prepaid_payments_months',
   impoundedPayments: 'loan_terms.impounded_payments',
+  impoundedPaymentsEnabled: 'loan_terms.impounded_payments_enabled',
   impoundedPaymentsMonths: 'loan_terms.impounded_payments_months',
   fundingHoldback: 'loan_terms.funding_holdback',
   fundingHoldbackEnabled: 'loan_terms.funding_holdback_enabled',
@@ -316,13 +317,22 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
             {/* Impounded Payments */}
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[130px] text-left shrink-0">Impounded Pmts</Label>
+              <div className="flex items-center gap-2 min-w-[130px] shrink-0">
+                <Checkbox
+                  id={`${FIELD_KEYS.impoundedPaymentsEnabled}-cb`}
+                  checked={isChecked(FIELD_KEYS.impoundedPaymentsEnabled)}
+                  onCheckedChange={() => toggleCheck(FIELD_KEYS.impoundedPaymentsEnabled)}
+                  disabled={disabled}
+                  className="h-3.5 w-3.5"
+                />
+                <Label htmlFor={`${FIELD_KEYS.impoundedPaymentsEnabled}-cb`} className="text-sm">Impounded Payments</Label>
+              </div>
               <div className="flex items-center gap-2 flex-1">
                 <Label className="text-xs text-muted-foreground shrink-0">Months</Label>
                 <Input
                   value={getValue(FIELD_KEYS.impoundedPaymentsMonths)}
                   onChange={(e) => setValue(FIELD_KEYS.impoundedPaymentsMonths, e.target.value)}
-                  disabled={disabled}
+                  disabled={disabled || !isChecked(FIELD_KEYS.impoundedPaymentsEnabled)}
                   className="h-7 text-sm flex-1"
                 />
               </div>

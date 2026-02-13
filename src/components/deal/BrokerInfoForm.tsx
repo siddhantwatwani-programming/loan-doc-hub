@@ -23,6 +23,10 @@ const FIELD_KEYS = {
   phoneWork: 'broker.phone.work',
   phoneCell: 'broker.phone.cell',
   phoneFax: 'broker.phone.fax',
+  preferredHome: 'broker.preferred.home',
+  preferredWork: 'broker.preferred.work',
+  preferredCell: 'broker.preferred.cell',
+  preferredFax: 'broker.preferred.fax',
   paymentNotification: 'broker.send_pref.payment_notification',
   lateNotice: 'broker.send_pref.late_notice',
   lenderStatement: 'broker.send_pref.lender_statement',
@@ -61,10 +65,16 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
     </div>
   );
 
-  const renderPhoneField = (key: keyof typeof FIELD_KEYS, label: string) => (
+  const renderPhoneField = (key: keyof typeof FIELD_KEYS, prefKey: keyof typeof FIELD_KEYS, label: string) => (
     <div className="flex items-center gap-2">
       <Label className="w-14 shrink-0 text-xs">{label}</Label>
       <Input type="tel" value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-xs flex-1" />
+      <Checkbox
+        checked={getBoolValue(prefKey)}
+        onCheckedChange={(checked) => handleChange(prefKey, !!checked)}
+        disabled={disabled}
+        className="h-3.5 w-3.5 shrink-0"
+      />
     </div>
   );
 
@@ -108,10 +118,10 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
         {/* Column 3 - Phone */}
         <div className="space-y-1.5">
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Phone</h3>
-          {renderPhoneField('phoneHome', 'Home')}
-          {renderPhoneField('phoneWork', 'Work')}
-          {renderPhoneField('phoneCell', 'Cell')}
-          {renderPhoneField('phoneFax', 'Fax')}
+          {renderPhoneField('phoneHome', 'preferredHome', 'Home')}
+          {renderPhoneField('phoneWork', 'preferredWork', 'Work')}
+          {renderPhoneField('phoneCell', 'preferredCell', 'Cell')}
+          {renderPhoneField('phoneFax', 'preferredFax', 'Fax')}
 
           <div className="space-y-1.5 pt-3">
             <Label className="text-xs font-medium">Send:</Label>
