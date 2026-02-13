@@ -150,20 +150,15 @@ export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="p-6 space-y-4">
       {/* Title */}
-      <h3 className="font-semibold text-lg text-primary">Trust Ledger</h3>
+      <h3 className="font-semibold text-lg text-foreground">Trust Ledger</h3>
 
       {/* Toolbar */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-1">
           <TooltipProvider>
-            {/* 1 - Edit */}
-            <Tooltip><TooltipTrigger asChild>
-              <Button variant="outline" size="icon" className="h-8 w-8" disabled={disabled}><Pencil className="h-4 w-4" /></Button>
-            </TooltipTrigger><TooltipContent>Edit</TooltipContent></Tooltip>
-
-            {/* 2 - Delete */}
+            {/* 1 - Delete */}
             <Tooltip><TooltipTrigger asChild>
               <Button variant="outline" size="icon" className="h-8 w-8" disabled={disabled}><Ban className="h-4 w-4" /></Button>
             </TooltipTrigger><TooltipContent>Void Transaction</TooltipContent></Tooltip>
