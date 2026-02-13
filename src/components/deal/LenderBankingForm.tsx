@@ -31,6 +31,7 @@ const FIELD_KEYS = {
   checkZip: 'lender.banking.zip_code',
   // ACH Notification
   achEmail: 'lender.banking.ach_email',
+  achEmail2: 'lender.banking.ach_email_2',
   // Credit Card
   ccName: 'lender.banking.cc_name',
   ccNumber: 'lender.banking.cc_number',
@@ -228,8 +229,6 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             </div>
           </div>
 
-          <h3 className="text-sm font-semibold text-foreground border-b pb-2 mt-6">ACH Notification</h3>
-          
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Add ACH Email</Label>
@@ -237,6 +236,16 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
                 type="email"
                 value={getValue('achEmail')}
                 onChange={(e) => handleChange('achEmail', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2 items-center">
+              <Label className="text-sm text-muted-foreground">Add ACH Email</Label>
+              <Input
+                type="email"
+                value={getValue('achEmail2')}
+                onChange={(e) => handleChange('achEmail2', e.target.value)}
                 disabled={disabled}
                 className="h-8"
               />
