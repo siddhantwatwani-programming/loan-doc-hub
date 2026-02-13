@@ -207,8 +207,11 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
 
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Full Name: If Entity, Use Entity</Label>
+            <div className="flex items-start gap-3">
+              <div className="min-w-[140px] shrink-0 pt-1">
+                <Label className="text-sm text-muted-foreground text-left">Full Name:</Label>
+                <p className="text-[10px] text-muted-foreground/70 leading-tight">If Entity, Use Entity</p>
+              </div>
               <Input
                 value={getValue('fullName')}
                 onChange={(e) => handleChange('fullName', e.target.value)}
@@ -217,8 +220,11 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>
             
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">First: If Entity, Use Signer</Label>
+            <div className="flex items-start gap-3">
+              <div className="min-w-[140px] shrink-0 pt-1">
+                <Label className="text-sm text-muted-foreground text-left">First:</Label>
+                <p className="text-[10px] text-muted-foreground/70 leading-tight">If Entity, Use Signer</p>
+              </div>
               <Input
                 value={getValue('firstName')}
                 onChange={(e) => handleChange('firstName', e.target.value)}
