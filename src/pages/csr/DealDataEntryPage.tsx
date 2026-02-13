@@ -1,34 +1,30 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useDealFields } from '@/hooks/useDealFields';
-import { useEntryOrchestration } from '@/hooks/useEntryOrchestration';
-import { useFieldPermissions } from '@/hooks/useFieldPermissions';
-import { useExternalModificationDetector } from '@/hooks/useExternalModificationDetector';
-import { useAuth } from '@/contexts/AuthContext';
-import { DealSectionTab } from '@/components/deal/DealSectionTab';
-import { BorrowerSectionContent } from '@/components/deal/BorrowerSectionContent';
-import { LenderSectionContent } from '@/components/deal/LenderSectionContent';
-import { PropertySectionContent } from '@/components/deal/PropertySectionContent';
-import { BrokerSectionContent } from '@/components/deal/BrokerSectionContent';
-import { LoanTermsSectionContent } from '@/components/deal/LoanTermsSectionContent';
-import { LoanTermsFundingForm } from '@/components/deal/LoanTermsFundingForm';
-import { ChargesSectionContent } from '@/components/deal/ChargesSectionContent';
-import { OriginationFeesSectionContent } from '@/components/deal/OriginationFeesSectionContent';
-import { NotesSectionContent } from '@/components/deal/NotesSectionContent';
-import { 
-  logDealUpdated, 
-  logDealMarkedReady, 
-  logDealRevertedToDraft 
-} from '@/hooks/useActivityLog';
-import { 
-  ArrowLeft, 
-  Loader2, 
+import React, { useState, useEffect, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useDealFields } from "@/hooks/useDealFields";
+import { useEntryOrchestration } from "@/hooks/useEntryOrchestration";
+import { useFieldPermissions } from "@/hooks/useFieldPermissions";
+import { useExternalModificationDetector } from "@/hooks/useExternalModificationDetector";
+import { useAuth } from "@/contexts/AuthContext";
+import { DealSectionTab } from "@/components/deal/DealSectionTab";
+import { BorrowerSectionContent } from "@/components/deal/BorrowerSectionContent";
+import { LenderSectionContent } from "@/components/deal/LenderSectionContent";
+import { PropertySectionContent } from "@/components/deal/PropertySectionContent";
+import { BrokerSectionContent } from "@/components/deal/BrokerSectionContent";
+import { LoanTermsSectionContent } from "@/components/deal/LoanTermsSectionContent";
+import { LoanTermsFundingForm } from "@/components/deal/LoanTermsFundingForm";
+import { ChargesSectionContent } from "@/components/deal/ChargesSectionContent";
+import { OriginationFeesSectionContent } from "@/components/deal/OriginationFeesSectionContent";
+import { NotesSectionContent } from "@/components/deal/NotesSectionContent";
+import { logDealUpdated, logDealMarkedReady, logDealRevertedToDraft } from "@/hooks/useActivityLog";
+import {
+  ArrowLeft,
+  Loader2,
   Save,
   CheckCircle2,
   AlertCircle,
@@ -37,58 +33,60 @@ import {
   Clock,
   Lock,
   User,
-  Eye
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { getRoleDisplayName } from '@/lib/accessControl';
-import type { Database } from '@/integrations/supabase/types';
+  Eye,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { getRoleDisplayName } from "@/lib/accessControl";
+import type { Database } from "@/integrations/supabase/types";
 
-type FieldSection = Database['public']['Enums']['field_section'];
+type FieldSection = Database["public"]["Enums"]["field_section"];
 
 interface Deal {
   id: string;
   deal_number: string;
   state: string;
   product_type: string;
-  mode: 'doc_prep' | 'servicing_only';
-  status: 'draft' | 'ready' | 'generated';
+  mode: "doc_prep" | "servicing_only";
+  status: "draft" | "ready" | "generated";
   packet_id: string | null;
 }
 
 // Section labels for display (partial - only includes displayable main sections)
-const SECTION_LABELS: Partial<Record<FieldSection | 'origination_fees' | 'funding' | 'conversation_log' | 'event_journal', string>> = {
-  borrower: 'Borrower',
-  property: 'Property',
-  loan_terms: 'Loan',
-  funding: 'Funding',
-  broker: 'Broker',
-  charges: 'Charges',
-  escrow: 'Escrow Impound',
-  conversation_log: 'Conversation Log',
-  notes: 'Notes',
-  event_journal: 'Events Journal',
-  lender: 'Lenders',
-  seller: 'Seller',
-  other: 'Other',
-  origination_fees: 'Other Originations',
-  system: 'System',
+const SECTION_LABELS: Partial<
+  Record<FieldSection | "origination_fees" | "funding" | "conversation_log" | "event_journal", string>
+> = {
+  borrower: "Borrower",
+  property: "Property",
+  loan_terms: "Loan",
+  funding: "Funding",
+  broker: "Broker",
+  charges: "Charges",
+  escrow: "Escrow Impound",
+  conversation_log: "Conversation Log",
+  notes: "Notes",
+  event_journal: "Events Journal",
+  lender: "Lenders",
+  seller: "Seller",
+  other: "Other",
+  origination_fees: "Other Origination",
+  system: "System",
 };
 
 // Custom ordering for top navbar tabs
 const SECTION_ORDER: string[] = [
-  'borrower',
-  'property',
-  'loan_terms',
-  'funding',
-  'broker',
-  'charges',
-  'escrow',
-  'conversation_log',
-  'notes',
-  'event_journal',
-  'lender',
-  'other',
-  'seller',
+  "borrower",
+  "property",
+  "loan_terms",
+  "funding",
+  "broker",
+  "charges",
+  "escrow",
+  "conversation_log",
+  "notes",
+  "event_journal",
+  "lender",
+  "other",
+  "seller",
 ];
 
 export const DealDataEntryPage: React.FC = () => {
@@ -96,10 +94,10 @@ export const DealDataEntryPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isExternalUser, isInternalUser } = useAuth();
-  
+
   const [deal, setDeal] = useState<Deal | null>(null);
   const [dealLoading, setDealLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>("");
   const [showValidation, setShowValidation] = useState(false);
   const [markingReady, setMarkingReady] = useState(false);
   const [completingSection, setCompletingSection] = useState(false);
@@ -114,19 +112,19 @@ export const DealDataEntryPage: React.FC = () => {
   const fetchDeal = async () => {
     try {
       const { data, error } = await supabase
-        .from('deals')
-        .select('id, deal_number, state, product_type, mode, status, packet_id')
-        .eq('id', id)
+        .from("deals")
+        .select("id, deal_number, state, product_type, mode, status, packet_id")
+        .eq("id", id)
         .single();
 
       if (error) throw error;
       setDeal(data);
     } catch (error) {
-      console.error('Error fetching deal:', error);
+      console.error("Error fetching deal:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to load file',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to load file",
+        variant: "destructive",
       });
     } finally {
       setDealLoading(false);
@@ -153,7 +151,7 @@ export const DealDataEntryPage: React.FC = () => {
     resetDirty,
     computeCalculatedFields,
     calculationResults,
-  } = useDealFields(id || '', deal?.packet_id || null);
+  } = useDealFields(id || "", deal?.packet_id || null);
 
   // Field permissions for filtering visible fields/sections
   const { checkCanView, loading: permissionsLoading } = useFieldPermissions();
@@ -168,7 +166,7 @@ export const DealDataEntryPage: React.FC = () => {
     hasCompleted,
     loading: orchestrationLoading,
     completeSection,
-  } = useEntryOrchestration(id || '');
+  } = useEntryOrchestration(id || "");
 
   // External modification detection for CSR warning banner
   const {
@@ -176,20 +174,20 @@ export const DealDataEntryPage: React.FC = () => {
     externalModifications,
     markAsReviewed,
     loading: modificationsLoading,
-  } = useExternalModificationDetector(id || '');
+  } = useExternalModificationDetector(id || "");
 
   // Calculate visible fields and sections for external users
-  const { 
-    visibleSections, 
-    visibleFieldsBySection, 
+  const {
+    visibleSections,
+    visibleFieldsBySection,
     visibleRequiredCount,
     visibleFilledRequiredCount,
-    externalMissingFields 
+    externalMissingFields,
   } = useMemo(() => {
     if (!isExternalUser) {
       // Internal users see everything
-      const totalRequired = fields.filter(f => f.is_required).length;
-      const filledRequired = fields.filter(f => f.is_required && values[f.field_key]?.trim()).length;
+      const totalRequired = fields.filter((f) => f.is_required).length;
+      const filledRequired = fields.filter((f) => f.is_required && values[f.field_key]?.trim()).length;
       return {
         visibleSections: sections,
         visibleFieldsBySection: fieldsBySection,
@@ -206,14 +204,14 @@ export const DealDataEntryPage: React.FC = () => {
     let filledRequired = 0;
     const missing: typeof fields = [];
 
-    sections.forEach(section => {
+    sections.forEach((section) => {
       const sectionFields = fieldsBySection[section] || [];
-      const visibleFields = sectionFields.filter(f => checkCanView(f.field_key));
+      const visibleFields = sectionFields.filter((f) => checkCanView(f.field_key));
       if (visibleFields.length > 0) {
         filteredBySection[section] = visibleFields;
         totalVisible += visibleFields.length;
-        
-        visibleFields.forEach(f => {
+
+        visibleFields.forEach((f) => {
           if (f.is_required) {
             requiredCount++;
             if (values[f.field_key]?.trim()) {
@@ -226,7 +224,7 @@ export const DealDataEntryPage: React.FC = () => {
       }
     });
 
-    const visibleSectionList = sections.filter(s => filteredBySection[s]?.length > 0);
+    const visibleSectionList = sections.filter((s) => filteredBySection[s]?.length > 0);
 
     return {
       visibleSections: visibleSectionList,
@@ -247,44 +245,41 @@ export const DealDataEntryPage: React.FC = () => {
 
   // Auto-revert to Draft if a required field is changed when status is Ready or Generated
   useEffect(() => {
-    if ((deal?.status === 'ready' || deal?.status === 'generated') && hasRequiredFieldChanged() && isDirty) {
+    if ((deal?.status === "ready" || deal?.status === "generated") && hasRequiredFieldChanged() && isDirty) {
       // Revert status to draft
       revertToDraft();
     }
   }, [values, deal?.status, hasRequiredFieldChanged, isDirty]);
 
   const revertToDraft = async () => {
-    const wasGenerated = deal?.status === 'generated';
-    
+    const wasGenerated = deal?.status === "generated";
+
     try {
-      const { error } = await supabase
-        .from('deals')
-        .update({ status: 'draft' })
-        .eq('id', id);
+      const { error } = await supabase.from("deals").update({ status: "draft" }).eq("id", id);
 
       if (error) throw error;
 
       // Log the revert
       if (id) {
         await logDealRevertedToDraft(id, {
-          reason: wasGenerated 
-            ? 'Required field modified after documents were generated'
-            : 'Required field modified after ready status',
+          reason: wasGenerated
+            ? "Required field modified after documents were generated"
+            : "Required field modified after ready status",
           previousStatus: deal?.status,
         });
       }
 
-      setDeal(prev => prev ? { ...prev, status: 'draft' } : null);
-      
+      setDeal((prev) => (prev ? { ...prev, status: "draft" } : null));
+
       toast({
-        title: 'Status changed to Draft',
+        title: "Status changed to Draft",
         description: wasGenerated
-           ? 'File status was reverted because a required field was modified. Documents should be regenerated.'
-           : 'File status was reverted because a required field was modified',
-        variant: wasGenerated ? 'destructive' : 'default',
+          ? "File status was reverted because a required field was modified. Documents should be regenerated."
+          : "File status was reverted because a required field was modified",
+        variant: wasGenerated ? "destructive" : "default",
       });
     } catch (error) {
-      console.error('Error reverting to draft:', error);
+      console.error("Error reverting to draft:", error);
     }
   };
 
@@ -296,22 +291,22 @@ export const DealDataEntryPage: React.FC = () => {
     if (success) {
       // Log the save activity
       if (id) {
-        const filledCount = Object.values(values).filter(v => v && v.trim() !== '').length;
+        const filledCount = Object.values(values).filter((v) => v && v.trim() !== "").length;
         await logDealUpdated(id, {
           fieldsUpdated: filledCount,
           fieldsTotal: visibleFieldKeys.length,
         });
       }
-      
+
       resetDirty();
       // Refresh deal to get updated timestamp
       fetchDeal();
       const missing = getMissingRequiredFields();
       if (missing.length > 0) {
         toast({
-          title: 'Saved with incomplete fields',
-          description: `${missing.length} required field${missing.length > 1 ? 's' : ''} still missing`,
-          variant: 'default',
+          title: "Saved with incomplete fields",
+          description: `${missing.length} required field${missing.length > 1 ? "s" : ""} still missing`,
+          variant: "default",
         });
       }
     }
@@ -320,9 +315,9 @@ export const DealDataEntryPage: React.FC = () => {
   const handleMarkReady = async () => {
     if (!isPacketComplete()) {
       toast({
-        title: 'Cannot mark ready',
-        description: 'Please complete all required fields first',
-        variant: 'destructive',
+        title: "Cannot mark ready",
+        description: "Please complete all required fields first",
+        variant: "destructive",
       });
       return;
     }
@@ -331,16 +326,13 @@ export const DealDataEntryPage: React.FC = () => {
     try {
       // Run calculations before saving
       computeCalculatedFields();
-      
+
       // Save first
       const saveSuccess = await saveDraft();
       if (!saveSuccess) return;
 
       // Update deal status to ready
-      const { error } = await supabase
-        .from('deals')
-        .update({ status: 'ready' })
-        .eq('id', id);
+      const { error } = await supabase.from("deals").update({ status: "ready" }).eq("id", id);
 
       if (error) throw error;
 
@@ -353,17 +345,17 @@ export const DealDataEntryPage: React.FC = () => {
 
       resetDirty();
       toast({
-        title: 'File marked as ready',
-        description: 'All required fields are complete',
+        title: "File marked as ready",
+        description: "All required fields are complete",
       });
 
       // Update local state
-      setDeal(prev => prev ? { ...prev, status: 'ready' } : null);
+      setDeal((prev) => (prev ? { ...prev, status: "ready" } : null));
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to mark file as ready',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to mark file as ready",
+        variant: "destructive",
       });
     } finally {
       setMarkingReady(false);
@@ -383,9 +375,9 @@ export const DealDataEntryPage: React.FC = () => {
     setTimeout(() => {
       const element = document.getElementById(`field-${firstMissing.field_key}`);
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
         // Focus the input
-        const input = element.querySelector('input, textarea');
+        const input = element.querySelector("input, textarea");
         if (input) {
           (input as HTMLElement).focus();
         }
@@ -400,9 +392,9 @@ export const DealDataEntryPage: React.FC = () => {
     if (missing.length > 0) {
       setShowValidation(true);
       toast({
-        title: 'Cannot complete section',
+        title: "Cannot complete section",
         description: `Please fill in all ${missing.length} required field(s) first`,
-        variant: 'destructive',
+        variant: "destructive",
       });
       return;
     }
@@ -413,26 +405,26 @@ export const DealDataEntryPage: React.FC = () => {
       computeCalculatedFields();
       const saveSuccess = await saveDraft();
       if (!saveSuccess) {
-        throw new Error('Failed to save changes');
+        throw new Error("Failed to save changes");
       }
 
       // Complete the section
       const success = await completeSection();
       if (!success) {
-        throw new Error('Failed to complete section');
+        throw new Error("Failed to complete section");
       }
 
       toast({
-        title: 'Section completed',
-        description: 'Thank you! Your section has been submitted successfully.',
+        title: "Section completed",
+        description: "Thank you! Your section has been submitted successfully.",
       });
 
       resetDirty();
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to complete section',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to complete section",
+        variant: "destructive",
       });
     } finally {
       setCompletingSection(false);
@@ -441,11 +433,10 @@ export const DealDataEntryPage: React.FC = () => {
 
   // Calculate missing/progress based on user type
   const totalMissing = isExternalUser ? externalMissingFields.length : getMissingRequiredFields().length;
-  const canMarkReady = isPacketComplete() && deal?.status === 'draft';
+  const canMarkReady = isPacketComplete() && deal?.status === "draft";
   const showCompleteSectionButton = isExternalUser && currentParticipant && !hasCompleted && orchestrationCanEdit;
-  const progressPercent = visibleRequiredCount > 0 
-    ? Math.round((visibleFilledRequiredCount / visibleRequiredCount) * 100) 
-    : 100;
+  const progressPercent =
+    visibleRequiredCount > 0 ? Math.round((visibleFilledRequiredCount / visibleRequiredCount) * 100) : 100;
 
   if (dealLoading) {
     return (
@@ -461,7 +452,7 @@ export const DealDataEntryPage: React.FC = () => {
         <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
         <h2 className="text-xl font-semibold text-foreground mb-2">File Not Found</h2>
         <p className="text-muted-foreground mb-4">The file you're looking for doesn't exist.</p>
-        <Button onClick={() => navigate('/deals')}>Back to Files</Button>
+        <Button onClick={() => navigate("/deals")}>Back to Files</Button>
       </div>
     );
   }
@@ -475,20 +466,20 @@ export const DealDataEntryPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="icon"
-                onClick={() => navigate(isExternalUser ? '/deals' : `/deals/${deal.id}`)} 
+                onClick={() => navigate(isExternalUser ? "/deals" : `/deals/${deal.id}`)}
                 className="h-8 w-8"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <h1 className="text-2xl font-bold text-foreground">
-                {isExternalUser ? 'Complete Your Information' : 'Enter File Data'}
+                {isExternalUser ? "Complete Your Information" : "Enter File Data"}
               </h1>
               {/* Show deal status for CSR only */}
-              {isInternalUser && deal.status !== 'draft' && (
-                <Badge variant={deal.status === 'ready' ? 'default' : 'secondary'} className="capitalize">
+              {isInternalUser && deal.status !== "draft" && (
+                <Badge variant={deal.status === "ready" ? "default" : "secondary"} className="capitalize">
                   {deal.status}
                 </Badge>
               )}
@@ -497,45 +488,33 @@ export const DealDataEntryPage: React.FC = () => {
               {deal.deal_number} • {deal.state} • {deal.product_type}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             {/* Save button - always visible unless completed */}
             {(!isExternalUser || !hasCompleted) && (
-              <Button 
-                onClick={handleSave} 
-                disabled={saving || (isExternalUser && !orchestrationCanEdit)} 
+              <Button
+                onClick={handleSave}
+                disabled={saving || (isExternalUser && !orchestrationCanEdit)}
                 variant="outline"
                 className="gap-2"
               >
-                {saving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Save Draft
               </Button>
             )}
-            
+
             {/* Mark Ready button - CSR only */}
             {isInternalUser && (
-              <Button 
-                onClick={handleMarkReady} 
-                disabled={!canMarkReady || markingReady || saving}
-                className="gap-2"
-              >
-                {markingReady ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="h-4 w-4" />
-                )}
+              <Button onClick={handleMarkReady} disabled={!canMarkReady || markingReady || saving} className="gap-2">
+                {markingReady ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                 Mark File Ready
               </Button>
             )}
 
             {/* Complete Section button - External users only */}
             {showCompleteSectionButton && (
-              <Button 
-                onClick={handleCompleteSection} 
+              <Button
+                onClick={handleCompleteSection}
                 disabled={completingSection || saving || totalMissing > 0}
                 className="gap-2"
               >
@@ -557,7 +536,12 @@ export const DealDataEntryPage: React.FC = () => {
           {/* Role and Status */}
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <User className="h-4 w-4" />
-            <span>Logged in as <span className="font-medium text-foreground">{getRoleDisplayName(currentParticipant?.role as any || 'borrower')}</span></span>
+            <span>
+              Logged in as{" "}
+              <span className="font-medium text-foreground">
+                {getRoleDisplayName((currentParticipant?.role as any) || "borrower")}
+              </span>
+            </span>
             {hasCompleted && (
               <Badge variant="secondary" className="bg-success/10 text-success border-success/20">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -565,7 +549,7 @@ export const DealDataEntryPage: React.FC = () => {
               </Badge>
             )}
           </div>
-          
+
           {/* Progress bar */}
           <div className="px-4 py-4 rounded-lg bg-muted/30 border border-border">
             <div className="flex items-center justify-between mb-2">
@@ -576,10 +560,9 @@ export const DealDataEntryPage: React.FC = () => {
             </div>
             <Progress value={progressPercent} className="h-2" />
             <p className="text-xs text-muted-foreground mt-2">
-              {progressPercent === 100 
-                ? 'All your required fields are complete! You can now submit your section.'
-                : `Complete the remaining ${totalMissing} required field${totalMissing > 1 ? 's' : ''} to submit.`
-              }
+              {progressPercent === 100
+                ? "All your required fields are complete! You can now submit your section."
+                : `Complete the remaining ${totalMissing} required field${totalMissing > 1 ? "s" : ""} to submit.`}
             </p>
           </div>
         </div>
@@ -592,25 +575,24 @@ export const DealDataEntryPage: React.FC = () => {
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium text-orange-800 dark:text-orange-200">
-                  External data was modified
-                </p>
+                <p className="font-medium text-orange-800 dark:text-orange-200">External data was modified</p>
                 <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
-                  {externalModifications.length} field{externalModifications.length > 1 ? 's were' : ' was'} updated by external participants. Review before generating documents.
+                  {externalModifications.length} field{externalModifications.length > 1 ? "s were" : " was"} updated by
+                  external participants. Review before generating documents.
                 </p>
                 <div className="flex flex-wrap gap-1.5 mt-2">
-                  {externalModifications.slice(0, 5).map(mod => (
-                    <Badge 
-                      key={mod.field_key} 
-                      variant="outline" 
+                  {externalModifications.slice(0, 5).map((mod) => (
+                    <Badge
+                      key={mod.field_key}
+                      variant="outline"
                       className="text-xs bg-orange-100 dark:bg-orange-900/50 border-orange-300 dark:border-orange-700 text-orange-800 dark:text-orange-200"
                     >
                       {mod.field_key}
                     </Badge>
                   ))}
                   {externalModifications.length > 5 && (
-                    <Badge 
-                      variant="outline" 
+                    <Badge
+                      variant="outline"
                       className="text-xs bg-orange-100 dark:bg-orange-900/50 border-orange-300 dark:border-orange-700 text-orange-800 dark:text-orange-200"
                     >
                       +{externalModifications.length - 5} more
@@ -626,8 +608,8 @@ export const DealDataEntryPage: React.FC = () => {
                 const success = await markAsReviewed();
                 if (success) {
                   toast({
-                    title: 'Marked as reviewed',
-                    description: 'External modifications have been acknowledged',
+                    title: "Marked as reviewed",
+                    description: "External modifications have been acknowledged",
                   });
                 }
               }}
@@ -640,7 +622,6 @@ export const DealDataEntryPage: React.FC = () => {
         </div>
       )}
 
-
       {/* Content */}
       {fieldsLoading || permissionsLoading ? (
         <div className="section-card flex items-center justify-center min-h-[300px]">
@@ -650,13 +631,12 @@ export const DealDataEntryPage: React.FC = () => {
         <div className="section-card text-center py-12">
           <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">
-            {isExternalUser ? 'No Fields Available' : 'No Fields Configured'}
+            {isExternalUser ? "No Fields Available" : "No Fields Configured"}
           </h3>
           <p className="text-muted-foreground">
-            {isExternalUser 
-              ? 'There are no fields assigned to your role for this deal.'
-              : 'No fields have been mapped to the templates in this packet.'
-            }
+            {isExternalUser
+              ? "There are no fields assigned to your role for this deal."
+              : "No fields have been mapped to the templates in this packet."}
           </p>
         </div>
       ) : (
@@ -665,233 +645,192 @@ export const DealDataEntryPage: React.FC = () => {
             <TabsList className="mb-6 flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
               {(() => {
                 // Get base sections, filter out 'dates' (merged into other) and apply custom order
-                const baseSections = (isExternalUser ? visibleSections : sections)
-                  .filter(s => SECTION_LABELS[s] && s !== 'dates');
-                
+                const baseSections = (isExternalUser ? visibleSections : sections).filter(
+                  (s) => SECTION_LABELS[s] && s !== "dates",
+                );
+
                 // Add virtual tabs for internal users
                 const allTabs = [...baseSections];
                 if (isInternalUser) {
-                  if (!allTabs.includes('funding' as any)) allTabs.push('funding' as any);
-                  if (!allTabs.includes('conversation_log' as any)) allTabs.push('conversation_log' as any);
-                  if (!allTabs.includes('event_journal' as any)) allTabs.push('event_journal' as any);
+                  if (!allTabs.includes("funding" as any)) allTabs.push("funding" as any);
+                  if (!allTabs.includes("conversation_log" as any)) allTabs.push("conversation_log" as any);
+                  if (!allTabs.includes("event_journal" as any)) allTabs.push("event_journal" as any);
                 }
-                
+
                 // Sort by SECTION_ORDER
                 allTabs.sort((a, b) => {
                   const idxA = SECTION_ORDER.indexOf(a);
                   const idxB = SECTION_ORDER.indexOf(b);
                   return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
                 });
-                
-                return allTabs.map(section => {
-                  const sectionFields = isExternalUser 
-                    ? (visibleFieldsBySection[section as FieldSection] || [])
-                    : (fieldsBySection[section as FieldSection] || []);
-                  
-                  const sectionMissing = sectionFields.filter(f => 
-                    f.is_required && !values[f.field_key]?.trim()
+
+                return allTabs.map((section) => {
+                  const sectionFields = isExternalUser
+                    ? visibleFieldsBySection[section as FieldSection] || []
+                    : fieldsBySection[section as FieldSection] || [];
+
+                  const sectionMissing = sectionFields.filter(
+                    (f) => f.is_required && !values[f.field_key]?.trim(),
                   ).length;
                   const isComplete = sectionMissing === 0;
-                  const hasRequiredFields = sectionFields.some(f => f.is_required);
-                  
+                  const hasRequiredFields = sectionFields.some((f) => f.is_required);
+
                   return (
                     <TabsTrigger
                       key={section}
                       value={section}
                       className={cn(
-                        'gap-2 data-[state=active]:bg-background relative',
-                        !isComplete && hasRequiredFields && showValidation && 'text-warning'
+                        "gap-2 data-[state=active]:bg-background relative",
+                        !isComplete && hasRequiredFields && showValidation && "text-warning",
                       )}
                     >
                       {SECTION_LABELS[section as keyof typeof SECTION_LABELS]}
-                      
+
                       {!isComplete && hasRequiredFields && (
-                        <Badge 
-                          variant="destructive" 
-                          className="h-5 min-w-[20px] px-1.5 text-xs font-medium"
-                        >
+                        <Badge variant="destructive" className="h-5 min-w-[20px] px-1.5 text-xs font-medium">
                           {sectionMissing}
                         </Badge>
                       )}
-                      
-                      {isComplete && hasRequiredFields && (
-                        <CheckCircle2 className="h-4 w-4 text-success" />
-                      )}
+
+                      {isComplete && hasRequiredFields && <CheckCircle2 className="h-4 w-4 text-success" />}
                     </TabsTrigger>
                   );
                 });
               })()}
-              
+
               {/* Origination Fees - Custom UI Tab (always visible for internal users) */}
               {isInternalUser && (
-                <TabsTrigger
-                  value="origination_fees"
-                  className="gap-2 data-[state=active]:bg-background relative"
-                >
-                  {SECTION_LABELS['origination_fees']}
+                <TabsTrigger value="origination_fees" className="gap-2 data-[state=active]:bg-background relative">
+                  {SECTION_LABELS["origination_fees"]}
                 </TabsTrigger>
               )}
             </TabsList>
 
-            {(isExternalUser ? visibleSections : sections).filter(s => SECTION_LABELS[s] && s !== 'dates').map(section => (
-              <TabsContent key={section} value={section} className="animate-fade-in">
-                {section === 'borrower' ? (
-                  <BorrowerSectionContent
-                    fields={isExternalUser 
-                      ? (visibleFieldsBySection[section] || [])
-                      : (fieldsBySection[section] || [])
-                    }
-                    values={values}
-                    onValueChange={updateValue}
-                    onRemoveValuesByPrefix={removeValuesByPrefix}
-                    showValidation={showValidation}
-                    disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
-                    calculationResults={calculationResults}
-                  />
-                ) : section === 'property' ? (
-                  <PropertySectionContent
-                    fields={isExternalUser 
-                      ? (visibleFieldsBySection[section] || [])
-                      : (fieldsBySection[section] || [])
-                    }
-                    values={values}
-                    onValueChange={updateValue}
-                    showValidation={showValidation}
-                    disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
-                    calculationResults={calculationResults}
-                  />
-                ) : section === 'loan_terms' ? (
-                  <LoanTermsSectionContent
-                    fields={isExternalUser 
-                      ? (visibleFieldsBySection[section] || [])
-                      : (fieldsBySection[section] || [])
-                    }
-                    values={values}
-                    onValueChange={updateValue}
-                    showValidation={showValidation}
-                    disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
-                    calculationResults={calculationResults}
-                    dealId={id || ''}
-                  />
-                ) : section === 'lender' ? (
-                  <LenderSectionContent
-                    fields={isExternalUser 
-                      ? (visibleFieldsBySection[section] || [])
-                      : (fieldsBySection[section] || [])
-                    }
-                    values={values}
-                    onValueChange={updateValue}
-                    showValidation={showValidation}
-                    disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
-                    calculationResults={calculationResults}
-                  />
-                ) : section === 'broker' ? (
-                  <BrokerSectionContent
-                    fields={isExternalUser 
-                      ? (visibleFieldsBySection[section] || [])
-                      : (fieldsBySection[section] || [])
-                    }
-                    values={values}
-                    onValueChange={updateValue}
-                    showValidation={showValidation}
-                    disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
-                    calculationResults={calculationResults}
-                  />
-                ) : section === 'charges' ? (
-                  <ChargesSectionContent
-                    fields={isExternalUser 
-                      ? (visibleFieldsBySection[section] || [])
-                      : (fieldsBySection[section] || [])
-                    }
-                    values={values}
-                    onValueChange={updateValue}
-                    showValidation={showValidation}
-                    disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
-                    calculationResults={calculationResults}
-                  />
-                ) : section === 'notes' ? (
-                  <NotesSectionContent
-                    fields={isExternalUser 
-                      ? (visibleFieldsBySection[section] || [])
-                      : (fieldsBySection[section] || [])
-                    }
-                    values={values}
-                    onValueChange={updateValue}
-                    showValidation={showValidation}
-                    disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
-                    calculationResults={calculationResults}
-                    dealNumber={deal.deal_number}
-                  />
-                ) : section === 'other' ? (
-                  <DealSectionTab
-                    fields={[
-                      ...(isExternalUser 
-                        ? (visibleFieldsBySection[section] || [])
-                        : (fieldsBySection[section] || [])
-                      ),
-                      ...(isExternalUser 
-                        ? (visibleFieldsBySection['dates' as FieldSection] || [])
-                        : (fieldsBySection['dates' as FieldSection] || [])
-                      ),
-                    ]}
-                    values={values}
-                    onValueChange={updateValue}
-                    missingRequiredFields={
-                      [
-                        ...(isExternalUser 
-                          ? (visibleFieldsBySection[section] || [])
-                          : (fieldsBySection[section] || [])
-                        ),
-                        ...(isExternalUser 
-                          ? (visibleFieldsBySection['dates' as FieldSection] || [])
-                          : (fieldsBySection['dates' as FieldSection] || [])
-                        ),
-                      ].filter(f => f.is_required && !values[f.field_key]?.trim())
-                    }
-                    showValidation={showValidation}
-                    calculationResults={calculationResults}
-                    orchestrationCanEdit={orchestrationCanEdit}
-                    isWaitingForPrevious={isWaiting}
-                    blockingRole={blockingParticipant?.role}
-                    hasCompleted={hasCompleted}
-                    hideValidationStatus={true}
-                  />
-                ) : (
-                  <DealSectionTab
-                    fields={isExternalUser 
-                      ? (visibleFieldsBySection[section] || [])
-                      : (fieldsBySection[section] || [])
-                    }
-                    values={values}
-                    onValueChange={updateValue}
-                    missingRequiredFields={
-                      (isExternalUser 
-                        ? (visibleFieldsBySection[section] || [])
-                        : (fieldsBySection[section] || [])
-                      ).filter(f => f.is_required && !values[f.field_key]?.trim())
-                    }
-                    showValidation={showValidation}
-                    calculationResults={calculationResults}
-                    orchestrationCanEdit={orchestrationCanEdit}
-                    isWaitingForPrevious={isWaiting}
-                    blockingRole={blockingParticipant?.role}
-                    hasCompleted={hasCompleted}
-                    hideValidationStatus={['charges', 'dates', 'escrow', 'notes', 'other'].includes(section)}
-                  />
-                )}
-              </TabsContent>
-            ))}
+            {(isExternalUser ? visibleSections : sections)
+              .filter((s) => SECTION_LABELS[s] && s !== "dates")
+              .map((section) => (
+                <TabsContent key={section} value={section} className="animate-fade-in">
+                  {section === "borrower" ? (
+                    <BorrowerSectionContent
+                      fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
+                      values={values}
+                      onValueChange={updateValue}
+                      onRemoveValuesByPrefix={removeValuesByPrefix}
+                      showValidation={showValidation}
+                      disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                      calculationResults={calculationResults}
+                    />
+                  ) : section === "property" ? (
+                    <PropertySectionContent
+                      fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
+                      values={values}
+                      onValueChange={updateValue}
+                      showValidation={showValidation}
+                      disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                      calculationResults={calculationResults}
+                    />
+                  ) : section === "loan_terms" ? (
+                    <LoanTermsSectionContent
+                      fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
+                      values={values}
+                      onValueChange={updateValue}
+                      showValidation={showValidation}
+                      disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                      calculationResults={calculationResults}
+                      dealId={id || ""}
+                    />
+                  ) : section === "lender" ? (
+                    <LenderSectionContent
+                      fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
+                      values={values}
+                      onValueChange={updateValue}
+                      showValidation={showValidation}
+                      disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                      calculationResults={calculationResults}
+                    />
+                  ) : section === "broker" ? (
+                    <BrokerSectionContent
+                      fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
+                      values={values}
+                      onValueChange={updateValue}
+                      showValidation={showValidation}
+                      disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                      calculationResults={calculationResults}
+                    />
+                  ) : section === "charges" ? (
+                    <ChargesSectionContent
+                      fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
+                      values={values}
+                      onValueChange={updateValue}
+                      showValidation={showValidation}
+                      disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                      calculationResults={calculationResults}
+                    />
+                  ) : section === "notes" ? (
+                    <NotesSectionContent
+                      fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
+                      values={values}
+                      onValueChange={updateValue}
+                      showValidation={showValidation}
+                      disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                      calculationResults={calculationResults}
+                      dealNumber={deal.deal_number}
+                    />
+                  ) : section === "other" ? (
+                    <DealSectionTab
+                      fields={[
+                        ...(isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []),
+                        ...(isExternalUser
+                          ? visibleFieldsBySection["dates" as FieldSection] || []
+                          : fieldsBySection["dates" as FieldSection] || []),
+                      ]}
+                      values={values}
+                      onValueChange={updateValue}
+                      missingRequiredFields={[
+                        ...(isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []),
+                        ...(isExternalUser
+                          ? visibleFieldsBySection["dates" as FieldSection] || []
+                          : fieldsBySection["dates" as FieldSection] || []),
+                      ].filter((f) => f.is_required && !values[f.field_key]?.trim())}
+                      showValidation={showValidation}
+                      calculationResults={calculationResults}
+                      orchestrationCanEdit={orchestrationCanEdit}
+                      isWaitingForPrevious={isWaiting}
+                      blockingRole={blockingParticipant?.role}
+                      hasCompleted={hasCompleted}
+                      hideValidationStatus={true}
+                    />
+                  ) : (
+                    <DealSectionTab
+                      fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
+                      values={values}
+                      onValueChange={updateValue}
+                      missingRequiredFields={(isExternalUser
+                        ? visibleFieldsBySection[section] || []
+                        : fieldsBySection[section] || []
+                      ).filter((f) => f.is_required && !values[f.field_key]?.trim())}
+                      showValidation={showValidation}
+                      calculationResults={calculationResults}
+                      orchestrationCanEdit={orchestrationCanEdit}
+                      isWaitingForPrevious={isWaiting}
+                      blockingRole={blockingParticipant?.role}
+                      hasCompleted={hasCompleted}
+                      hideValidationStatus={["charges", "dates", "escrow", "notes", "other"].includes(section)}
+                    />
+                  )}
+                </TabsContent>
+              ))}
 
             {/* Funding - standalone top-level tab */}
             <TabsContent value="funding" className="animate-fade-in">
               <LoanTermsFundingForm
-                fields={fieldsBySection['loan_terms' as FieldSection] || []}
+                fields={fieldsBySection["loan_terms" as FieldSection] || []}
                 values={values}
                 onValueChange={updateValue}
                 showValidation={showValidation}
                 disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
                 calculationResults={calculationResults}
-                dealId={id || ''}
+                dealId={id || ""}
               />
             </TabsContent>
 
@@ -916,7 +855,7 @@ export const DealDataEntryPage: React.FC = () => {
                 </div>
               </div>
             </TabsContent>
-            
+
             {/* Origination Fees - Custom UI Tab Content */}
             {isInternalUser && (
               <TabsContent value="origination_fees" className="animate-fade-in">
