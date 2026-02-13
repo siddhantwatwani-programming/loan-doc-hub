@@ -56,7 +56,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'occupancy', label: 'Occupancy', visible: true },
   { id: 'appraisedValue', label: 'Appraised Value', visible: true },
   { id: 'appraisedDate', label: 'Appraisal Date', visible: true },
-  { id: 'ltv', label: 'LTV', visible: true },
+  { id: 'ltv', label: 'Loan To Value', visible: true },
   { id: 'apn', label: 'APN', visible: true },
   { id: 'loanPriority', label: 'Loan Priority', visible: true },
 ];
