@@ -61,53 +61,53 @@ export const LenderTaxInfoForm: React.FC<LenderTaxInfoFormProps> = ({
         <span className="text-lg font-semibold text-primary underline">1099</span>
       </div>
 
-      <div className="max-w-[700px] space-y-4">
-        {/* SSN */}
-        <div>
-          <Label className="text-sm text-muted-foreground mb-1 block">TAX PAYER'S social security number</Label>
+      <div className="max-w-[700px] space-y-3">
+        {/* SSN - inline label */}
+        <div className="flex items-center gap-3">
+          <Label className="text-sm text-muted-foreground whitespace-nowrap min-w-[220px]">TAX PAYER'S social security number</Label>
           <Input
             value={getValue('ssn')}
             onChange={(e) => handleChange('ssn', e.target.value)}
             disabled={disabled}
-            className="h-8"
+            className="h-8 flex-1"
           />
         </div>
 
-        {/* Name */}
-        <div>
-          <Label className="text-sm text-muted-foreground mb-1 block">TAX PAYER'S name</Label>
+        {/* Name - inline label */}
+        <div className="flex items-start gap-3">
+          <Label className="text-sm text-muted-foreground whitespace-nowrap min-w-[220px] mt-2">TAX PAYER'S name</Label>
           <Textarea
             value={getValue('name')}
             onChange={(e) => handleChange('name', e.target.value)}
             disabled={disabled}
-            className="min-h-[60px] resize-none"
+            className="min-h-[60px] resize-none flex-1"
           />
         </div>
 
-        {/* Street Address */}
-        <div>
-          <Label className="text-sm text-muted-foreground mb-1 block">Street address (including apt no.)</Label>
+        {/* Street Address - inline label */}
+        <div className="flex items-center gap-3">
+          <Label className="text-sm text-muted-foreground whitespace-nowrap min-w-[220px]">Street address (including apt no.)</Label>
           <Input
             value={getValue('street_address')}
             onChange={(e) => handleChange('street_address', e.target.value)}
             disabled={disabled}
-            className="h-8"
+            className="h-8 flex-1"
           />
         </div>
 
-        {/* City / State / Zip */}
-        <div className="grid grid-cols-[1fr_160px_160px] gap-3">
-          <div>
-            <Label className="text-sm text-muted-foreground mb-1 block">City</Label>
+        {/* City / State / Zip - inline labels */}
+        <div className="grid grid-cols-[1fr_160px_160px] gap-3 pl-[232px]">
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground whitespace-nowrap">City</Label>
             <Input
               value={getValue('city')}
               onChange={(e) => handleChange('city', e.target.value)}
               disabled={disabled}
-              className="h-8"
+              className="h-8 flex-1"
             />
           </div>
-          <div>
-            <Label className="text-sm text-muted-foreground mb-1 block">State</Label>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground whitespace-nowrap">State</Label>
             <Select
               value={getValue('state')}
               onValueChange={(value) => handleChange('state', value)}
@@ -125,30 +125,30 @@ export const LenderTaxInfoForm: React.FC<LenderTaxInfoFormProps> = ({
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label className="text-sm text-muted-foreground mb-1 block">Zip Code</Label>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground whitespace-nowrap">Zip</Label>
             <Input
               value={getValue('zip_code')}
               onChange={(e) => handleChange('zip_code', e.target.value)}
               disabled={disabled}
-              className="h-8"
+              className="h-8 flex-1"
             />
           </div>
         </div>
 
-        {/* Account Number / Recipient Type */}
+        {/* Account Number / Recipient Type - inline labels */}
         <div className="grid grid-cols-[1fr_1fr] gap-3">
-          <div>
-            <Label className="text-sm text-muted-foreground mb-1 block">Account number (optional)</Label>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground whitespace-nowrap min-w-[220px]">Account number (optional)</Label>
             <Input
               value={getValue('account_number')}
               onChange={(e) => handleChange('account_number', e.target.value)}
               disabled={disabled}
-              className="h-8"
+              className="h-8 flex-1"
             />
           </div>
-          <div>
-            <Label className="text-sm text-muted-foreground mb-1 block">Recipient Type</Label>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground whitespace-nowrap">Recipient Type</Label>
             <Select
               value={getValue('recipient_type')}
               onValueChange={(value) => handleChange('recipient_type', value)}
@@ -179,6 +179,18 @@ export const LenderTaxInfoForm: React.FC<LenderTaxInfoFormProps> = ({
           <Label htmlFor="auto_synchronize" className="text-sm text-muted-foreground cursor-pointer">
             Auto-Synchronize
           </Label>
+        </div>
+
+        {/* Notes */}
+        <div className="pt-4">
+          <Label className="text-sm text-muted-foreground mb-1 block">Notes</Label>
+          <Textarea
+            value={getValue('notes')}
+            onChange={(e) => handleChange('notes', e.target.value)}
+            disabled={disabled}
+            className="min-h-[100px] resize-none"
+            placeholder="Enter notes..."
+          />
         </div>
       </div>
     </div>
