@@ -68,12 +68,21 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
     onValueChange(`coborrower.${key}`, value);
   };
 
+  const phoneRows = [
+    { key: 'phone.home', label: 'Home', prefKey: 'preferred.home', prefId: 'prefHome' },
+    { key: 'phone.home2', label: 'Home', prefKey: 'preferred.home2', prefId: 'prefHome2' },
+    { key: 'phone.work', label: 'Work', prefKey: 'preferred.work', prefId: 'prefWork' },
+    { key: 'phone.mobile', label: 'Cell', prefKey: 'preferred.cell', prefId: 'prefCell' },
+    { key: 'fax', label: 'Fax', prefKey: 'preferred.fax', prefId: 'prefFax' },
+  ];
+
   return (
     <div className="p-4 space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+      {/* Top section - 5 visual columns using custom grid */}
+      <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: '1.2fr 1.2fr 1fr 1fr auto' }}>
         {/* Column 1 - Name */}
-        <div className="space-y-3">
-          <h4 className="font-semibold text-sm text-foreground pb-2">Name</h4>
+        <div className="space-y-2">
+          <h4 className="font-semibold text-sm text-foreground pb-1">Name</h4>
 
           <InlineField label="Borrower ID">
             <Input value={getValue('borrower_id')} onChange={(e) => handleChange('borrower_id', e.target.value)} disabled={disabled} className="h-7 text-sm" />
@@ -87,19 +96,19 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           </InlineField>
 
           <InlineField label="Full Name: If Entity, Use Entity">
-            <Input value={getValue('full_name')} onChange={(e) => handleChange('full_name', e.target.value)} placeholder="Enter full name" disabled={disabled} className="h-7 text-sm" />
+            <Input value={getValue('full_name')} onChange={(e) => handleChange('full_name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
           <InlineField label="First: If Entity, Use Signer">
-            <Input value={getValue('first_name')} onChange={(e) => handleChange('first_name', e.target.value)} placeholder="Enter first name" disabled={disabled} className="h-7 text-sm" />
+            <Input value={getValue('first_name')} onChange={(e) => handleChange('first_name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
           <InlineField label="Middle">
-            <Input value={getValue('middle_name')} onChange={(e) => handleChange('middle_name', e.target.value)} placeholder="Enter middle name" disabled={disabled} className="h-7 text-sm" />
+            <Input value={getValue('middle_name')} onChange={(e) => handleChange('middle_name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
           <InlineField label="Last">
-            <Input value={getValue('last_name')} onChange={(e) => handleChange('last_name', e.target.value)} placeholder="Enter last name" disabled={disabled} className="h-7 text-sm" />
+            <Input value={getValue('last_name')} onChange={(e) => handleChange('last_name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
           <InlineField label="Capacity">
@@ -107,8 +116,10 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           </InlineField>
 
           <InlineField label="Email">
-            <Input type="email" value={getValue('email')} onChange={(e) => handleChange('email', e.target.value)} placeholder="Enter email" disabled={disabled} className="h-7 text-sm" />
+            <Input type="email" value={getValue('email')} onChange={(e) => handleChange('email', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
+
+          <div className="h-1" />
 
           <InlineField label="Credit Score">
             <Input value={getValue('credit_score')} onChange={(e) => handleChange('credit_score', e.target.value)} disabled={disabled} className="h-7 text-sm" />
@@ -116,29 +127,29 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
         </div>
 
         {/* Column 2 - Primary Address & Mailing Address */}
-        <div className="space-y-3">
-          <h4 className="font-semibold text-sm text-foreground pb-2">Primary Address</h4>
+        <div className="space-y-2">
+          <h4 className="font-semibold text-sm text-foreground pb-1">Primary Address</h4>
 
-          <InlineField label="Street">
+          <InlineField label="Street" labelWidth="min-w-[60px]">
             <Input value={getValue('primary_address.street')} onChange={(e) => handleChange('primary_address.street', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <InlineField label="City">
+          <InlineField label="City" labelWidth="min-w-[60px]">
             <Input value={getValue('primary_address.city')} onChange={(e) => handleChange('primary_address.city', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <InlineField label="State">
+          <InlineField label="State" labelWidth="min-w-[60px]">
             <Select value={getValue('primary_address.state')} onValueChange={(value) => handleChange('primary_address.state', value)} disabled={disabled}>
               <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>{STATE_OPTIONS.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}</SelectContent>
             </Select>
           </InlineField>
 
-          <InlineField label="ZIP">
+          <InlineField label="ZIP" labelWidth="min-w-[60px]">
             <Input value={getValue('primary_address.zip')} onChange={(e) => handleChange('primary_address.zip', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <h4 className="font-semibold text-sm text-foreground pb-2 pt-2 flex items-center gap-3">
+          <h4 className="font-semibold text-sm text-foreground pb-1 pt-2 flex items-center gap-3">
             Mailing Address
             <div className="flex items-center gap-1.5 ml-4">
               <Checkbox id="mailingSameAsPrimary" checked={getBoolValue('mailing_same_as_primary')} onCheckedChange={(checked) => handleChange('mailing_same_as_primary', String(!!checked))} disabled={disabled} />
@@ -146,63 +157,65 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             </div>
           </h4>
 
-          <InlineField label="Street">
+          <InlineField label="Street" labelWidth="min-w-[60px]">
             <Input value={getValue('mailing_address.street')} onChange={(e) => handleChange('mailing_address.street', e.target.value)} disabled={disabled || getBoolValue('mailing_same_as_primary')} className="h-7 text-sm" />
           </InlineField>
 
-          <InlineField label="City">
+          <InlineField label="City" labelWidth="min-w-[60px]">
             <Input value={getValue('mailing_address.city')} onChange={(e) => handleChange('mailing_address.city', e.target.value)} disabled={disabled || getBoolValue('mailing_same_as_primary')} className="h-7 text-sm" />
           </InlineField>
 
-          <InlineField label="State">
+          <InlineField label="State" labelWidth="min-w-[60px]">
             <Select value={getValue('mailing_address.state')} onValueChange={(value) => handleChange('mailing_address.state', value)} disabled={disabled || getBoolValue('mailing_same_as_primary')}>
               <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>{STATE_OPTIONS.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}</SelectContent>
             </Select>
           </InlineField>
 
-          <InlineField label="ZIP">
+          <InlineField label="ZIP" labelWidth="min-w-[60px]">
             <Input value={getValue('mailing_address.zip')} onChange={(e) => handleChange('mailing_address.zip', e.target.value)} disabled={disabled || getBoolValue('mailing_same_as_primary')} className="h-7 text-sm" />
           </InlineField>
         </div>
 
-        {/* Column 3 - Phone + Preferred */}
-        <div className="space-y-3">
-          <h4 className="font-semibold text-sm text-foreground pb-2">Phone</h4>
-
-          {[
-            { key: 'phone.home', label: 'Home', prefKey: 'preferred.home', prefId: 'prefHome' },
-            { key: 'phone.home2', label: 'Home', prefKey: 'preferred.home2', prefId: 'prefHome2' },
-            { key: 'phone.work', label: 'Work', prefKey: 'preferred.work', prefId: 'prefWork' },
-            { key: 'phone.mobile', label: 'Cell', prefKey: 'preferred.cell', prefId: 'prefCell' },
-            { key: 'fax', label: 'Fax', prefKey: 'preferred.fax', prefId: 'prefFax' },
-          ].map(({ key, label, prefKey, prefId }) => (
-            <div key={key} className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[50px] text-left shrink-0">{label}</Label>
+        {/* Column 3 - Phone */}
+        <div className="space-y-2">
+          <h4 className="font-semibold text-sm text-foreground pb-1">Phone</h4>
+          {phoneRows.map(({ key, label }) => (
+            <div key={key} className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground min-w-[40px] text-left shrink-0">{label}</Label>
               <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-              <Checkbox id={prefId} checked={getBoolValue(prefKey)} onCheckedChange={(checked) => handleChange(prefKey, String(!!checked))} disabled={disabled} className="shrink-0" />
             </div>
           ))}
         </div>
 
         {/* Column 4 - Vesting & FORD */}
-        <div className="space-y-3">
-          <h4 className="font-semibold text-sm text-foreground pb-2">Vesting</h4>
+        <div className="space-y-2">
+          <h4 className="font-semibold text-sm text-foreground pb-1">Vesting</h4>
           <Textarea value={getValue('vesting')} onChange={(e) => handleChange('vesting', e.target.value)} disabled={disabled} className="text-sm min-h-[80px] resize-none" />
 
-          <h4 className="font-semibold text-sm text-foreground pb-2 pt-2">FORD</h4>
-          <div className="grid grid-cols-2 gap-2">
+          <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">FORD</h4>
+          <div className="grid grid-cols-2 gap-1">
             {['ford1', 'ford2', 'ford3', 'ford4', 'ford5', 'ford6', 'ford7', 'ford8'].map((key) => (
               <Input key={key} value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm" />
             ))}
           </div>
         </div>
+
+        {/* Column 5 - Preferred (narrow) */}
+        <div className="space-y-2">
+          <h4 className="font-semibold text-sm text-foreground pb-1">Preferred</h4>
+          {phoneRows.map(({ prefKey, prefId }) => (
+            <div key={prefId} className="flex items-center justify-center h-7">
+              <Checkbox id={prefId} checked={getBoolValue(prefKey)} onCheckedChange={(checked) => handleChange(prefKey, String(!!checked))} disabled={disabled} />
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Bottom Section - Tax & Delivery spanning full width */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 pt-4">
+      {/* Bottom Section - Tax, Delivery, FORD continuation */}
+      <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: '1.2fr 1.2fr 1fr 1fr auto' }}>
         {/* Tax Info */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           <InlineField label="Tax ID Type">
             <Select value={getValue('tax_id_type')} onValueChange={(value) => handleChange('tax_id_type', value)} disabled={disabled}>
               <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
@@ -226,19 +239,24 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
         </div>
 
         {/* Delivery */}
-        <div className="space-y-3">
-          <h4 className="font-semibold text-sm text-foreground pb-2">Delivery</h4>
+        <div className="space-y-2">
+          <h4 className="font-semibold text-sm text-foreground pb-1">Delivery</h4>
 
           <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Online</Label>
             <Checkbox id="deliveryOnline" checked={getBoolValue('delivery_online')} onCheckedChange={(checked) => handleChange('delivery_online', String(!!checked))} disabled={disabled} />
-            <Label htmlFor="deliveryOnline" className="text-sm font-normal">Online</Label>
           </div>
 
           <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Mail</Label>
             <Checkbox id="deliveryMail" checked={getBoolValue('delivery_mail')} onCheckedChange={(checked) => handleChange('delivery_mail', String(!!checked))} disabled={disabled} />
-            <Label htmlFor="deliveryMail" className="text-sm font-normal">Mail</Label>
           </div>
         </div>
+
+        {/* Empty spacer columns */}
+        <div />
+        <div />
+        <div />
       </div>
     </div>
   );
