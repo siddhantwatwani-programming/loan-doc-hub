@@ -91,6 +91,16 @@ const FIELD_KEYS = {
   ford8: 'lender.ford.8',
   loanId: 'lender.loan_id',
   loanType: 'lender.loan_type',
+  // Delivery
+  deliveryOnline: 'lender.delivery.online',
+  deliveryMail: 'lender.delivery.mail',
+  // If Entity, sign line
+  entitySignBorrower: 'lender.entity_sign.borrower',
+  entitySignBy: 'lender.entity_sign.by',
+  entitySignIts: 'lender.entity_sign.its',
+  entitySignEntityName: 'lender.entity_sign.entity_name',
+  entitySignFirstLast: 'lender.entity_sign.first_last',
+  entitySignCapacity: 'lender.entity_sign.capacity',
 } as const;
 
 // Lender type options
@@ -243,17 +253,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             </div>
 
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Loan Type</Label>
-              <Input
-                value={getValue('loanType')}
-                onChange={(e) => handleChange('loanType', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Full Name</Label>
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Full Name: If Entity, Use Entity</Label>
               <Input
                 value={getValue('fullName')}
                 onChange={(e) => handleChange('fullName', e.target.value)}
@@ -263,7 +263,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             </div>
             
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">First</Label>
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">First: If Entity, Use Signer</Label>
               <Input
                 value={getValue('firstName')}
                 onChange={(e) => handleChange('firstName', e.target.value)}
@@ -613,6 +613,29 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               <Label className="text-sm text-muted-foreground">Maturity Notice</Label>
             </div>
           </div>
+
+          {/* Delivery Section */}
+          <h4 className="text-sm font-semibold text-foreground mt-6 border-b pb-1 text-destructive">Delivery</h4>
+          
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={getBoolValue('deliveryOnline')}
+                onCheckedChange={(checked) => handleChange('deliveryOnline', !!checked)}
+                disabled={disabled}
+              />
+              <Label className="text-sm text-muted-foreground">Online</Label>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={getBoolValue('deliveryMail')}
+                onCheckedChange={(checked) => handleChange('deliveryMail', !!checked)}
+                disabled={disabled}
+              />
+              <Label className="text-sm text-muted-foreground">Mail</Label>
+            </div>
+          </div>
         </div>
 
         {/* Vesting Section */}
@@ -640,6 +663,67 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               <Input value={getValue('ford7')} onChange={(e) => handleChange('ford7', e.target.value)} disabled={disabled} className="h-8" />
               <Input value={getValue('ford8')} onChange={(e) => handleChange('ford8', e.target.value)} disabled={disabled} className="h-8" />
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* If Entity, sign line should be: section */}
+      <div className="mt-6 border-t pt-4">
+        <h3 className="text-sm font-semibold text-destructive mb-3">If Entity, sig line should be:</h3>
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Borrower:</Label>
+            <Input
+              value={getValue('entitySignBorrower')}
+              onChange={(e) => handleChange('entitySignBorrower', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">By:</Label>
+            <Input
+              value={getValue('entitySignBy')}
+              onChange={(e) => handleChange('entitySignBy', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Its:</Label>
+            <Input
+              value={getValue('entitySignIts')}
+              onChange={(e) => handleChange('entitySignIts', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Entity Name</Label>
+            <Input
+              value={getValue('entitySignEntityName')}
+              onChange={(e) => handleChange('entitySignEntityName', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">First, Last</Label>
+            <Input
+              value={getValue('entitySignFirstLast')}
+              onChange={(e) => handleChange('entitySignFirstLast', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Capacity</Label>
+            <Input
+              value={getValue('entitySignCapacity')}
+              onChange={(e) => handleChange('entitySignCapacity', e.target.value)}
+              disabled={disabled}
+              className="h-8"
+            />
           </div>
         </div>
       </div>
