@@ -77,10 +77,9 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
   ];
 
   return (
-    <div className="p-4 space-y-0">
-      {/* Top section - 4 visual columns using custom grid */}
+    <div className="p-4">
       <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: '1.2fr 1.2fr 1.2fr auto' }}>
-        {/* Column 1 - Name */}
+        {/* Column 1 - Name + Tax Info */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Name</h4>
 
@@ -124,9 +123,30 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           <InlineField label="Credit Score">
             <Input value={getValue('credit_score')} onChange={(e) => handleChange('credit_score', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
+
+          <InlineField label="Tax ID Type">
+            <Select value={getValue('tax_id_type')} onValueChange={(value) => handleChange('tax_id_type', value)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>{TAX_ID_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
+            </Select>
+          </InlineField>
+
+          <InlineField label="TIN">
+            <Input value={getValue('tin')} onChange={(e) => handleChange('tin', e.target.value)} placeholder="SSN or Tax ID" disabled={disabled} className="h-7 text-sm" />
+          </InlineField>
+
+          <div className="flex items-center gap-2">
+            <Checkbox id="issue1098" checked={getBoolValue('issue_1098')} onCheckedChange={(checked) => handleChange('issue_1098', String(!!checked))} disabled={disabled} />
+            <Label htmlFor="issue1098" className="text-sm font-normal">Issue 1098</Label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox id="alternateReporting" checked={getBoolValue('alternate_reporting')} onCheckedChange={(checked) => handleChange('alternate_reporting', String(!!checked))} disabled={disabled} />
+            <Label htmlFor="alternateReporting" className="text-sm font-normal">Alternate Reporting</Label>
+          </div>
         </div>
 
-        {/* Column 2 - Primary Address & Mailing Address */}
+        {/* Column 2 - Primary Address & Mailing Address & Delivery */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Primary Address</h4>
 
@@ -175,6 +195,18 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           <InlineField label="ZIP" labelWidth="min-w-[60px]">
             <Input value={getValue('mailing_address.zip')} onChange={(e) => handleChange('mailing_address.zip', e.target.value)} disabled={disabled || getBoolValue('mailing_same_as_primary')} className="h-7 text-sm" />
           </InlineField>
+
+          <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">Delivery</h4>
+
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Online</Label>
+            <Checkbox id="deliveryOnline" checked={getBoolValue('delivery_online')} onCheckedChange={(checked) => handleChange('delivery_online', String(!!checked))} disabled={disabled} />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Mail</Label>
+            <Checkbox id="deliveryMail" checked={getBoolValue('delivery_mail')} onCheckedChange={(checked) => handleChange('delivery_mail', String(!!checked))} disabled={disabled} />
+          </div>
         </div>
 
         {/* Column 3 - Phone + Vesting + FORD */}
@@ -207,52 +239,6 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Bottom Section - Tax, Delivery, FORD continuation */}
-      <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: '1.2fr 1.2fr 1.2fr auto' }}>
-        {/* Tax Info */}
-        <div className="space-y-2">
-          <InlineField label="Tax ID Type">
-            <Select value={getValue('tax_id_type')} onValueChange={(value) => handleChange('tax_id_type', value)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>{TAX_ID_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
-            </Select>
-          </InlineField>
-
-          <InlineField label="TIN">
-            <Input value={getValue('tin')} onChange={(e) => handleChange('tin', e.target.value)} placeholder="SSN or Tax ID" disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
-
-          <div className="flex items-center gap-2">
-            <Checkbox id="issue1098" checked={getBoolValue('issue_1098')} onCheckedChange={(checked) => handleChange('issue_1098', String(!!checked))} disabled={disabled} />
-            <Label htmlFor="issue1098" className="text-sm font-normal">Issue 1098</Label>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Checkbox id="alternateReporting" checked={getBoolValue('alternate_reporting')} onCheckedChange={(checked) => handleChange('alternate_reporting', String(!!checked))} disabled={disabled} />
-            <Label htmlFor="alternateReporting" className="text-sm font-normal">Alternate Reporting</Label>
-          </div>
-        </div>
-
-        {/* Delivery */}
-        <div className="space-y-2">
-          <h4 className="font-semibold text-sm text-foreground pb-1">Delivery</h4>
-
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Online</Label>
-            <Checkbox id="deliveryOnline" checked={getBoolValue('delivery_online')} onCheckedChange={(checked) => handleChange('delivery_online', String(!!checked))} disabled={disabled} />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Mail</Label>
-            <Checkbox id="deliveryMail" checked={getBoolValue('delivery_mail')} onCheckedChange={(checked) => handleChange('delivery_mail', String(!!checked))} disabled={disabled} />
-          </div>
-        </div>
-
-        {/* Empty spacer columns */}
-        <div />
-        <div />
       </div>
     </div>
   );
