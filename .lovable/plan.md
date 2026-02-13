@@ -1,89 +1,40 @@
 
 
-## Update Notes Section with Table-Based UI
+## Fix: Template Field Key Matching Issues
 
-### Overview
+### Root Cause Analysis
 
-Replace the current generic `DealSectionTab` rendering for the Notes tab with a dedicated table-based component that matches the Broker tab's table pattern. The Notes section will display entries in a table with Date, Account, Name, and Reference columns, provide an "Add Notes" popup modal for creating entries, include a toolbar with File/Edit/View/Insert/Format menus, and add an Export to Excel function.
+Two issues prevent all 14 tags in the "Declaration of Oral Disclosure and Borrower Acknowledgement" template from resolving:
 
-### Technical Changes
+**Issue 1: Supabase 1,000-Row Query Limit (affects 5 tags)**
+The `field_dictionary` table has **1,739 entries**, but both `validate-template` and `generate-document` edge functions fetch without specifying a row limit. Supabase defaults to 1,000 rows, so ~739 field keys are silently dropped. Tags like `broker.phone.cell`, `other.date`, `terms.amortizationType`, `loan.Purpose`, and `property1.appraisal_occupancy` exist in the dictionary but fall outside the first 1,000 rows returned.
 
-**1. New Component: `src/components/deal/NotesTableView.tsx`**
+**Issue 2: XML Fragmentation in Validation (affects 9 tags)**
+The `validate-template` function uses its own simpler `normalizeWordXml` that does NOT strip `<w:rPr>` (formatting/font) blocks from the XML. The shared `tag-parser.ts` used by `generate-document` does strip these (line 26). As a result, tags like `{{loan_terms.impound}}`, `{{loan_terms.clause}}`, `{{broker.compensation}}`, `{{lender.fees}}`, `{{other.late_penalties}}`, `{{other.personal_guarantee}}`, `{{other.third_party_fees}}`, `{{other.cost_of_financing}}`, and `{{other.other_material_terms}}` remain fragmented across styled XML runs and fail to parse.
 
-A table component following the `BrokersTableView` pattern:
-- Columns: Date, Account, Name, Reference (with column configuration via `ColumnConfigPopover`)
-- Each row represents a note entry
-- Clicking a row opens the note detail
-- Edit button per row
-- Pagination support
-- "Total Notes" footer
+### Implementation Plan
 
-**2. New Component: `src/components/deal/NotesModal.tsx`**
+#### Step 1: Fix the 1,000-row limit in `validate-template`
+In `supabase/functions/validate-template/index.ts`, add pagination to the field_dictionary query to fetch all 1,739+ entries. This involves using a loop with `.range()` calls or a single query with a high explicit limit (e.g., 10000).
 
-A dialog/modal for adding and editing notes (following `BrokerModal` pattern):
-- "High Priority" checkbox at the top
-- Date field (prefilled with current date)
-- Account field (prefilled with deal number or user info)
-- Name field (prefilled with current user's name)
-- Reference field (text input, dropdown info to be provided later by user)
-- Notes textarea (large, rich text area for the note content)
-- Save / Cancel buttons
+#### Step 2: Fix the 1,000-row limit in `generate-document`
+Apply the same pagination fix to the `completeFieldDictionary` query in `supabase/functions/generate-document/index.ts` (around line 164-166).
 
-**3. New Component: `src/components/deal/NotesSectionContent.tsx`**
-
-The main section wrapper (following `BrokerSectionContent` pattern):
-- Manages notes state extracted from deal values using `notes_entry1`, `notes_entry2`, etc. prefixes
-- Handles add/edit/delete note operations
-- Renders the toolbar (File, Edit, View, Insert, Format menus using Menubar) plus an Export button
-- Renders `NotesTableView` as the main content
-- Renders `NotesModal` for add/edit
-
-**4. Update: `src/pages/csr/DealDataEntryPage.tsx`**
-
-- Import `NotesSectionContent`
-- Add a conditional branch for `section === 'notes'` (before the generic `DealSectionTab` fallback) to render `NotesSectionContent`
-
-**5. Backend: Field Dictionary Entries (Database Migration)**
-
-Register the following keys in `field_dictionary` under section `notes` so the save logic can persist them:
-- `notes_entry.high_priority` (boolean)
-- `notes_entry.date` (date)
-- `notes_entry.account` (text)
-- `notes_entry.name` (text)
-- `notes_entry.reference` (text)
-- `notes_entry.content` (text)
-
-These will be stored using the existing indexed-key JSONB pattern (e.g., `notes_entry1.date`, `notes_entry2.date`) in `deal_section_values` under the `notes` section, exactly how brokers/lenders/properties are stored.
-
-### Toolbar Details
-
-The toolbar above the table will use the existing `Menubar` component (`@radix-ui/react-menubar`) with:
-- **File** menu: placeholder items
-- **Edit** menu: placeholder items
-- **View** menu: placeholder items
-- **Insert** menu: placeholder items
-- **Format** menu: placeholder items
-- **Export** button: Exports the notes table to an Excel/CSV file using client-side generation (no new dependencies -- will produce a `.csv` download)
-
-### Data Flow
-
-```text
-NotesSection extracts notes from deal values (notes_entry1.*, notes_entry2.*, ...)
-    |
-    v
-NotesTableView displays them in a table (Date, Account, Name, Reference)
-    |
-    v
-Add/Edit via NotesModal -> calls onValueChange for each field
-    |
-    v
-Existing saveDraft() persists via deal_section_values JSONB
+#### Step 3: Improve XML normalization in `validate-template`
+Add the `<w:rPr>` stripping regex from the shared `tag-parser.ts` into the `normalizeWordXml` function inside `validate-template/index.ts`. Specifically, add this line before existing normalization:
 ```
+result = result.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g, '');
+```
+Also add the split-brace consolidation, fragmented-dot, and fragmented-curly-brace patterns that the shared tag-parser already handles.
 
-### What Will NOT Change
-- No changes to existing UI layout or components
-- No changes to existing save/update APIs
-- No changes to other sections (Borrower, Property, Loan, Broker, etc.)
-- No new database tables (uses existing `deal_section_values` JSONB storage)
-- No changes to document generation flow
+#### Step 4: Deploy and verify
+Deploy both updated edge functions, then re-validate the template to confirm all 14 previously unmapped tags now resolve correctly.
+
+### Technical Details
+
+**Files to modify:**
+- `supabase/functions/validate-template/index.ts` -- fix query limit + improve normalizeWordXml
+- `supabase/functions/generate-document/index.ts` -- fix query limit
+
+**No database changes required.** All field keys already exist in the `field_dictionary` table.
 
