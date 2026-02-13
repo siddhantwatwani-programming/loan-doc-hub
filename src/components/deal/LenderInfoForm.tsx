@@ -177,6 +177,17 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           <h3 className="text-sm font-semibold text-foreground border-b pb-2">Name</h3>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Lender ID</Label>
+              <Input
+                value={getValue('lenderId')}
+                onChange={(e) => handleChange('lenderId', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+                placeholder="Enter lender ID"
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Lender Type</Label>
               <Select
                 value={getValue('type')}
@@ -194,17 +205,6 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Lender ID</Label>
-              <Input
-                value={getValue('lenderId')}
-                onChange={(e) => handleChange('lenderId', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-                placeholder="Enter lender ID"
-              />
             </div>
 
             <div className="flex items-start gap-3">
