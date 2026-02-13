@@ -79,7 +79,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
   return (
     <div className="p-4 space-y-4">
       {/* Top section - 5 visual columns using custom grid */}
-      <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: '1.2fr 1.2fr 1fr 1fr auto' }}>
+      <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: '1.2fr 1.2fr 1.2fr auto' }}>
         {/* Column 1 - Name */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Name</h4>
@@ -177,7 +177,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           </InlineField>
         </div>
 
-        {/* Column 3 - Phone */}
+        {/* Column 3 - Phone + Vesting + FORD */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Phone</h4>
           {phoneRows.map(({ key, label }) => (
@@ -186,11 +186,8 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
               <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
             </div>
           ))}
-        </div>
 
-        {/* Column 4 - Vesting & FORD */}
-        <div className="space-y-2">
-          <h4 className="font-semibold text-sm text-foreground pb-1">Vesting</h4>
+          <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">Vesting</h4>
           <Textarea value={getValue('vesting')} onChange={(e) => handleChange('vesting', e.target.value)} disabled={disabled} className="text-sm min-h-[80px] resize-none" />
 
           <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">FORD</h4>
@@ -201,7 +198,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           </div>
         </div>
 
-        {/* Column 5 - Preferred (narrow) */}
+        {/* Column 4 - Preferred (narrow) */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Preferred</h4>
           {phoneRows.map(({ prefKey, prefId }) => (
@@ -213,7 +210,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
       </div>
 
       {/* Bottom Section - Tax, Delivery, FORD continuation */}
-      <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: '1.2fr 1.2fr 1fr 1fr auto' }}>
+      <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: '1.2fr 1.2fr 1.2fr auto' }}>
         {/* Tax Info */}
         <div className="space-y-2">
           <InlineField label="Tax ID Type">
@@ -254,7 +251,6 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
         </div>
 
         {/* Empty spacer columns */}
-        <div />
         <div />
         <div />
       </div>
