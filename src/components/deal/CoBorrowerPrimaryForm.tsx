@@ -77,8 +77,8 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
   ];
 
   return (
-    <div className="p-4 space-y-4">
-      {/* Top section - 5 visual columns using custom grid */}
+    <div className="p-4 space-y-2">
+      {/* Top section - 4 visual columns using custom grid */}
       <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: '1.2fr 1.2fr 1.2fr auto' }}>
         {/* Column 1 - Name */}
         <div className="space-y-2">
@@ -119,7 +119,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             <Input type="email" value={getValue('email')} onChange={(e) => handleChange('email', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <div className="h-1" />
+          <div className="h-0.5" />
 
           <InlineField label="Credit Score">
             <Input value={getValue('credit_score')} onChange={(e) => handleChange('credit_score', e.target.value)} disabled={disabled} className="h-7 text-sm" />
