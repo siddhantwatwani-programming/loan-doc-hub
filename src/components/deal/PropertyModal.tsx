@@ -148,7 +148,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                 {renderInlineSelect('propertyType', 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
                 {renderInlineSelect('occupancy', 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
                 <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">LTV</Label>
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Loan To Value</Label>
                   <div className="flex items-center gap-1 flex-1">
                     <Input value={formData.ltv} onChange={(e) => handlePercentageChange('ltv', e.target.value)} className="h-7 text-xs" inputMode="decimal" />
                     <span className="text-xs text-muted-foreground">%</span>

@@ -148,7 +148,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           {renderInlineSelect(FIELD_KEYS.performedBy, 'Performed By', PERFORMED_BY_OPTIONS, 'Select...')}
           {renderInlineSelect(FIELD_KEYS.propertyType, 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
           {renderInlineSelect(FIELD_KEYS.occupancy, 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
-          {renderPercentageField(FIELD_KEYS.ltv, 'LTV')}
+          {renderPercentageField(FIELD_KEYS.ltv, 'Loan To Value')}
           {renderInlineField(FIELD_KEYS.zoning, 'Zoning')}
           {renderCurrencyField(FIELD_KEYS.appraisedValue, 'Appraised Value')}
           {renderCurrencyField(FIELD_KEYS.pledgedEquity, 'Pledged Equity')}
