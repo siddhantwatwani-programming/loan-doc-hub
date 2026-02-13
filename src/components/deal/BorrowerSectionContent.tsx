@@ -141,17 +141,43 @@ const extractCoBorrowersFromValues = (values: Record<string, string>): CoBorrowe
       generation: values[`${prefix}.generation`] || '',
       email: values[`${prefix}.email`] || '',
       homePhone: values[`${prefix}.phone.home`] || '',
+      homePhone2: values[`${prefix}.phone.home2`] || '',
       workPhone: values[`${prefix}.phone.work`] || '',
       mobilePhone: values[`${prefix}.phone.mobile`] || '',
       fax: values[`${prefix}.fax`] || '',
+      preferredHome: values[`${prefix}.preferred.home`] === 'true',
+      preferredHome2: values[`${prefix}.preferred.home2`] === 'true',
+      preferredWork: values[`${prefix}.preferred.work`] === 'true',
+      preferredCell: values[`${prefix}.preferred.cell`] === 'true',
+      preferredFax: values[`${prefix}.preferred.fax`] === 'true',
       street: values[`${prefix}.address.street`] || '',
       city: values[`${prefix}.address.city`] || '',
       state: values[`${prefix}.state`] || '',
       zipCode: values[`${prefix}.address.zip`] || '',
+      primaryStreet: values[`${prefix}.primary_address.street`] || '',
+      primaryCity: values[`${prefix}.primary_address.city`] || '',
+      primaryState: values[`${prefix}.primary_address.state`] || '',
+      primaryZip: values[`${prefix}.primary_address.zip`] || '',
+      mailingStreet: values[`${prefix}.mailing_address.street`] || '',
+      mailingCity: values[`${prefix}.mailing_address.city`] || '',
+      mailingState: values[`${prefix}.mailing_address.state`] || '',
+      mailingZip: values[`${prefix}.mailing_address.zip`] || '',
+      mailingSameAsPrimary: values[`${prefix}.mailing_same_as_primary`] === 'true',
       loanNumber: values[`${prefix}.loan_number`] || '',
       tin: values[`${prefix}.tin`] || '',
       relation: values[`${prefix}.relation`] || 'None',
       type: values[`${prefix}.type`] || 'Co-Borrower',
+      borrowerId: values[`${prefix}.borrower_id`] || '',
+      borrowerType: values[`${prefix}.borrower_type`] || '',
+      capacity: values[`${prefix}.capacity`] || '',
+      creditScore: values[`${prefix}.credit_score`] || '',
+      vesting: values[`${prefix}.vesting`] || '',
+      ford: values[`${prefix}.ford`] || '',
+      taxIdType: values[`${prefix}.tax_id_type`] || '',
+      issue1098: values[`${prefix}.issue_1098`] === 'true',
+      alternateReporting: values[`${prefix}.alternate_reporting`] === 'true',
+      deliveryOnline: values[`${prefix}.delivery_online`] === 'true',
+      deliveryMail: values[`${prefix}.delivery_mail`] === 'true',
       dob: values[`${prefix}.dob`] || '',
       creditReporting: values[`${prefix}.credit_reporting`] === 'true',
       resCode: values[`${prefix}.res_code`] || '',
@@ -381,17 +407,43 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     onValueChange(`${prefix}.generation`, coBorrowerData.generation);
     onValueChange(`${prefix}.email`, coBorrowerData.email);
     onValueChange(`${prefix}.phone.home`, coBorrowerData.homePhone);
+    onValueChange(`${prefix}.phone.home2`, coBorrowerData.homePhone2);
     onValueChange(`${prefix}.phone.work`, coBorrowerData.workPhone);
     onValueChange(`${prefix}.phone.mobile`, coBorrowerData.mobilePhone);
     onValueChange(`${prefix}.fax`, coBorrowerData.fax);
+    onValueChange(`${prefix}.preferred.home`, String(coBorrowerData.preferredHome));
+    onValueChange(`${prefix}.preferred.home2`, String(coBorrowerData.preferredHome2));
+    onValueChange(`${prefix}.preferred.work`, String(coBorrowerData.preferredWork));
+    onValueChange(`${prefix}.preferred.cell`, String(coBorrowerData.preferredCell));
+    onValueChange(`${prefix}.preferred.fax`, String(coBorrowerData.preferredFax));
     onValueChange(`${prefix}.address.street`, coBorrowerData.street);
     onValueChange(`${prefix}.address.city`, coBorrowerData.city);
     onValueChange(`${prefix}.state`, coBorrowerData.state);
     onValueChange(`${prefix}.address.zip`, coBorrowerData.zipCode);
+    onValueChange(`${prefix}.primary_address.street`, coBorrowerData.primaryStreet);
+    onValueChange(`${prefix}.primary_address.city`, coBorrowerData.primaryCity);
+    onValueChange(`${prefix}.primary_address.state`, coBorrowerData.primaryState);
+    onValueChange(`${prefix}.primary_address.zip`, coBorrowerData.primaryZip);
+    onValueChange(`${prefix}.mailing_address.street`, coBorrowerData.mailingStreet);
+    onValueChange(`${prefix}.mailing_address.city`, coBorrowerData.mailingCity);
+    onValueChange(`${prefix}.mailing_address.state`, coBorrowerData.mailingState);
+    onValueChange(`${prefix}.mailing_address.zip`, coBorrowerData.mailingZip);
+    onValueChange(`${prefix}.mailing_same_as_primary`, String(coBorrowerData.mailingSameAsPrimary));
     onValueChange(`${prefix}.loan_number`, coBorrowerData.loanNumber);
     onValueChange(`${prefix}.tin`, coBorrowerData.tin);
     onValueChange(`${prefix}.relation`, coBorrowerData.relation);
     onValueChange(`${prefix}.type`, coBorrowerData.type);
+    onValueChange(`${prefix}.borrower_id`, coBorrowerData.borrowerId);
+    onValueChange(`${prefix}.borrower_type`, coBorrowerData.borrowerType);
+    onValueChange(`${prefix}.capacity`, coBorrowerData.capacity);
+    onValueChange(`${prefix}.credit_score`, coBorrowerData.creditScore);
+    onValueChange(`${prefix}.vesting`, coBorrowerData.vesting);
+    onValueChange(`${prefix}.ford`, coBorrowerData.ford);
+    onValueChange(`${prefix}.tax_id_type`, coBorrowerData.taxIdType);
+    onValueChange(`${prefix}.issue_1098`, String(coBorrowerData.issue1098));
+    onValueChange(`${prefix}.alternate_reporting`, String(coBorrowerData.alternateReporting));
+    onValueChange(`${prefix}.delivery_online`, String(coBorrowerData.deliveryOnline));
+    onValueChange(`${prefix}.delivery_mail`, String(coBorrowerData.deliveryMail));
     onValueChange(`${prefix}.dob`, coBorrowerData.dob);
     onValueChange(`${prefix}.credit_reporting`, String(coBorrowerData.creditReporting));
     onValueChange(`${prefix}.res_code`, coBorrowerData.resCode);
