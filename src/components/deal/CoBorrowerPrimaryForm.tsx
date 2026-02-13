@@ -1,6 +1,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
@@ -72,7 +73,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
         {/* Column 1 - Name */}
         <div className="space-y-3">
-          <h4 className="font-semibold text-sm text-foreground border-b border-border pb-2">Name</h4>
+          <h4 className="font-semibold text-sm text-foreground pb-2">Name</h4>
 
           <InlineField label="Borrower ID">
             <Input value={getValue('borrower_id')} onChange={(e) => handleChange('borrower_id', e.target.value)} disabled={disabled} className="h-7 text-sm" />
@@ -114,9 +115,9 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           </InlineField>
         </div>
 
-        {/* Column 2 - Primary Address & Mailing Address & Delivery */}
+        {/* Column 2 - Primary Address & Mailing Address */}
         <div className="space-y-3">
-          <h4 className="font-semibold text-sm text-foreground border-b border-border pb-2">Primary Address</h4>
+          <h4 className="font-semibold text-sm text-foreground pb-2">Primary Address</h4>
 
           <InlineField label="Street">
             <Input value={getValue('primary_address.street')} onChange={(e) => handleChange('primary_address.street', e.target.value)} disabled={disabled} className="h-7 text-sm" />
@@ -137,7 +138,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             <Input value={getValue('primary_address.zip')} onChange={(e) => handleChange('primary_address.zip', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <h4 className="font-semibold text-sm text-foreground border-b border-border pb-2 pt-2 flex items-center gap-3">
+          <h4 className="font-semibold text-sm text-foreground pb-2 pt-2 flex items-center gap-3">
             Mailing Address
             <div className="flex items-center gap-1.5 ml-4">
               <Checkbox id="mailingSameAsPrimary" checked={getBoolValue('mailing_same_as_primary')} onCheckedChange={(checked) => handleChange('mailing_same_as_primary', String(!!checked))} disabled={disabled} />
@@ -165,71 +166,41 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           </InlineField>
         </div>
 
-        {/* Column 3 - Phone & Vesting & FORD */}
+        {/* Column 3 - Phone + Preferred */}
         <div className="space-y-3">
-          <h4 className="font-semibold text-sm text-foreground border-b border-border pb-2">Phone</h4>
+          <h4 className="font-semibold text-sm text-foreground pb-2">Phone</h4>
 
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Home</Label>
-            <Input value={getValue('phone.home')} onChange={(e) => handleChange('phone.home', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Home</Label>
-            <Input value={getValue('phone.home2')} onChange={(e) => handleChange('phone.home2', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Work</Label>
-            <Input value={getValue('phone.work')} onChange={(e) => handleChange('phone.work', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Cell</Label>
-            <Input value={getValue('phone.mobile')} onChange={(e) => handleChange('phone.mobile', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Fax</Label>
-            <Input value={getValue('fax')} onChange={(e) => handleChange('fax', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-          </div>
-
-          <h4 className="font-semibold text-sm text-foreground border-b border-border pb-2 pt-2">Vesting</h4>
-          <Input value={getValue('vesting')} onChange={(e) => handleChange('vesting', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-
-          <h4 className="font-semibold text-sm text-foreground border-b border-border pb-2 pt-2">FORD</h4>
-          <Input value={getValue('ford')} onChange={(e) => handleChange('ford', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+          {[
+            { key: 'phone.home', label: 'Home', prefKey: 'preferred.home', prefId: 'prefHome' },
+            { key: 'phone.home2', label: 'Home', prefKey: 'preferred.home2', prefId: 'prefHome2' },
+            { key: 'phone.work', label: 'Work', prefKey: 'preferred.work', prefId: 'prefWork' },
+            { key: 'phone.mobile', label: 'Cell', prefKey: 'preferred.cell', prefId: 'prefCell' },
+            { key: 'fax', label: 'Fax', prefKey: 'preferred.fax', prefId: 'prefFax' },
+          ].map(({ key, label, prefKey, prefId }) => (
+            <div key={key} className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[50px] text-left shrink-0">{label}</Label>
+              <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              <Checkbox id={prefId} checked={getBoolValue(prefKey)} onCheckedChange={(checked) => handleChange(prefKey, String(!!checked))} disabled={disabled} className="shrink-0" />
+            </div>
+          ))}
         </div>
 
-        {/* Column 4 - Preferred & Tax & Delivery */}
+        {/* Column 4 - Vesting & FORD */}
         <div className="space-y-3">
-          <h4 className="font-semibold text-sm text-foreground border-b border-border pb-2">Preferred</h4>
+          <h4 className="font-semibold text-sm text-foreground pb-2">Vesting</h4>
+          <Textarea value={getValue('vesting')} onChange={(e) => handleChange('vesting', e.target.value)} disabled={disabled} className="text-sm min-h-[80px] resize-none" />
 
-          <div className="flex items-center gap-2 h-7">
-            <Checkbox id="prefHome" checked={getBoolValue('preferred.home')} onCheckedChange={(checked) => handleChange('preferred.home', String(!!checked))} disabled={disabled} />
-            <Label htmlFor="prefHome" className="text-xs font-normal">Home</Label>
-          </div>
-          <div className="flex items-center gap-2 h-7">
-            <Checkbox id="prefHome2" checked={getBoolValue('preferred.home2')} onCheckedChange={(checked) => handleChange('preferred.home2', String(!!checked))} disabled={disabled} />
-            <Label htmlFor="prefHome2" className="text-xs font-normal">Home 2</Label>
-          </div>
-          <div className="flex items-center gap-2 h-7">
-            <Checkbox id="prefWork" checked={getBoolValue('preferred.work')} onCheckedChange={(checked) => handleChange('preferred.work', String(!!checked))} disabled={disabled} />
-            <Label htmlFor="prefWork" className="text-xs font-normal">Work</Label>
-          </div>
-          <div className="flex items-center gap-2 h-7">
-            <Checkbox id="prefCell" checked={getBoolValue('preferred.cell')} onCheckedChange={(checked) => handleChange('preferred.cell', String(!!checked))} disabled={disabled} />
-            <Label htmlFor="prefCell" className="text-xs font-normal">Cell</Label>
-          </div>
-          <div className="flex items-center gap-2 h-7">
-            <Checkbox id="prefFax" checked={getBoolValue('preferred.fax')} onCheckedChange={(checked) => handleChange('preferred.fax', String(!!checked))} disabled={disabled} />
-            <Label htmlFor="prefFax" className="text-xs font-normal">Fax</Label>
+          <h4 className="font-semibold text-sm text-foreground pb-2 pt-2">FORD</h4>
+          <div className="grid grid-cols-2 gap-2">
+            {['ford1', 'ford2', 'ford3', 'ford4', 'ford5', 'ford6', 'ford7', 'ford8'].map((key) => (
+              <Input key={key} value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+            ))}
           </div>
         </div>
       </div>
 
       {/* Bottom Section - Tax & Delivery spanning full width */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 pt-4 border-t border-border">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 pt-4">
         {/* Tax Info */}
         <div className="space-y-3">
           <InlineField label="Tax ID Type">
@@ -256,7 +227,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
 
         {/* Delivery */}
         <div className="space-y-3">
-          <h4 className="font-semibold text-sm text-foreground border-b border-border pb-2">Delivery</h4>
+          <h4 className="font-semibold text-sm text-foreground pb-2">Delivery</h4>
 
           <div className="flex items-center gap-2">
             <Checkbox id="deliveryOnline" checked={getBoolValue('delivery_online')} onCheckedChange={(checked) => handleChange('delivery_online', String(!!checked))} disabled={disabled} />
