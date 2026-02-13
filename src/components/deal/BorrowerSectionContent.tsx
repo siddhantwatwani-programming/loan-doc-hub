@@ -173,6 +173,14 @@ const extractCoBorrowersFromValues = (values: Record<string, string>): CoBorrowe
       creditScore: values[`${prefix}.credit_score`] || '',
       vesting: values[`${prefix}.vesting`] || '',
       ford: values[`${prefix}.ford`] || '',
+      ford1: values[`${prefix}.ford1`] || '',
+      ford2: values[`${prefix}.ford2`] || '',
+      ford3: values[`${prefix}.ford3`] || '',
+      ford4: values[`${prefix}.ford4`] || '',
+      ford5: values[`${prefix}.ford5`] || '',
+      ford6: values[`${prefix}.ford6`] || '',
+      ford7: values[`${prefix}.ford7`] || '',
+      ford8: values[`${prefix}.ford8`] || '',
       taxIdType: values[`${prefix}.tax_id_type`] || '',
       issue1098: values[`${prefix}.issue_1098`] === 'true',
       alternateReporting: values[`${prefix}.alternate_reporting`] === 'true',
@@ -439,6 +447,14 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     onValueChange(`${prefix}.credit_score`, coBorrowerData.creditScore);
     onValueChange(`${prefix}.vesting`, coBorrowerData.vesting);
     onValueChange(`${prefix}.ford`, coBorrowerData.ford);
+    onValueChange(`${prefix}.ford1`, coBorrowerData.ford1);
+    onValueChange(`${prefix}.ford2`, coBorrowerData.ford2);
+    onValueChange(`${prefix}.ford3`, coBorrowerData.ford3);
+    onValueChange(`${prefix}.ford4`, coBorrowerData.ford4);
+    onValueChange(`${prefix}.ford5`, coBorrowerData.ford5);
+    onValueChange(`${prefix}.ford6`, coBorrowerData.ford6);
+    onValueChange(`${prefix}.ford7`, coBorrowerData.ford7);
+    onValueChange(`${prefix}.ford8`, coBorrowerData.ford8);
     onValueChange(`${prefix}.tax_id_type`, coBorrowerData.taxIdType);
     onValueChange(`${prefix}.issue_1098`, String(coBorrowerData.issue1098));
     onValueChange(`${prefix}.alternate_reporting`, String(coBorrowerData.alternateReporting));

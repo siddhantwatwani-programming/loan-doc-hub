@@ -61,6 +61,14 @@ export interface CoBorrowerData {
   creditScore: string;
   vesting: string;
   ford: string;
+  ford1: string;
+  ford2: string;
+  ford3: string;
+  ford4: string;
+  ford5: string;
+  ford6: string;
+  ford7: string;
+  ford8: string;
   taxIdType: string;
   issue1098: boolean;
   alternateReporting: boolean;
