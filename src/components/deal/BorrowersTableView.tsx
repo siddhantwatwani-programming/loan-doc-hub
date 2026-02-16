@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/pagination';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 
 export interface BorrowerData {
   id: string;
@@ -83,6 +84,7 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
   onPageChange,
 }) => {
   const [columns, setColumns] = useTableColumnConfig('borrowers', DEFAULT_COLUMNS);
+  const [deleteTarget, setDeleteTarget] = useState<BorrowerData | null>(null);
   
   const visibleColumns = columns.filter((col) => col.visible);
 
@@ -134,7 +136,7 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onDeleteBorrower(borrower)}
+                onClick={() => setDeleteTarget(borrower)}
                 disabled={disabled}
                 className="h-8 w-8 text-destructive hover:text-destructive"
               >
@@ -281,6 +283,20 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        onConfirm={() => {
+          if (deleteTarget && onDeleteBorrower) {
+            onDeleteBorrower(deleteTarget);
+          }
+          setDeleteTarget(null);
+        }}
+        title="Delete Borrower"
+        description="Are you sure you want to delete this borrower? This action cannot be undone."
+      />
     </div>
   );
 };

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, ArrowLeft, Trash2 } from 'lucide-react';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -48,6 +49,8 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
   onBack,
   disabled = false,
 }) => {
+  const [deleteTarget, setDeleteTarget] = useState<InsuranceData | null>(null);
+
   const formatCurrency = (value: string) => {
     if (!value) return '';
     const num = parseFloat(value.replace(/[^0-9.-]/g, ''));
@@ -137,7 +140,7 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
                             className="h-7 w-7 text-destructive hover:text-destructive"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onDeleteInsurance(insurance);
+                              setDeleteTarget(insurance);
                             }}
                             disabled={disabled}
                           >
@@ -168,6 +171,19 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
           </Table>
         </div>
       </div>
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        onConfirm={() => {
+          if (deleteTarget && onDeleteInsurance) {
+            onDeleteInsurance(deleteTarget);
+          }
+          setDeleteTarget(null);
+        }}
+        title="Delete Insurance"
+        description="Are you sure you want to delete this insurance record? This action cannot be undone."
+      />
     </div>
   );
 };

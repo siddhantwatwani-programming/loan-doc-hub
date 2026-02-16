@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 
 export interface ChargeData {
   id: string;
@@ -82,6 +83,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   onPageChange,
 }) => {
   const [columns, setColumns] = useTableColumnConfig('charges_v5', DEFAULT_COLUMNS);
+  const [deleteTarget, setDeleteTarget] = useState<ChargeData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const parseCurrency = (value: string): number => {
@@ -201,7 +203,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => onDeleteCharge(charge)}
+                          onClick={() => setDeleteTarget(charge)}
                           disabled={disabled}
                           className="h-8 w-8 text-destructive hover:text-destructive"
                         >
@@ -268,6 +270,19 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
           </div>
         </div>
       )}
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        onConfirm={() => {
+          if (deleteTarget && onDeleteCharge) {
+            onDeleteCharge(deleteTarget);
+          }
+          setDeleteTarget(null);
+        }}
+        title="Delete Charge"
+        description="Are you sure you want to delete this charge? This action cannot be undone."
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Pencil, Download, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,6 +7,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 
 export interface NoteData {
   id: string;
@@ -40,6 +41,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
   notes, onAddNote, onEditNote, onRowClick, onDeleteNote, onExport, disabled = false, isLoading = false,
 }) => {
   const [columns, setColumns] = useTableColumnConfig('notes', DEFAULT_COLUMNS);
+  const [deleteTarget, setDeleteTarget] = useState<NoteData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const renderCellValue = (note: NoteData, columnId: string) => {
@@ -108,7 +110,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
                         <Pencil className="h-4 w-4" />
                       </Button>
                       {onDeleteNote && (
-                        <Button variant="ghost" size="icon" onClick={() => onDeleteNote(note)} disabled={disabled} className="h-8 w-8 text-destructive hover:text-destructive">
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(note)} disabled={disabled} className="h-8 w-8 text-destructive hover:text-destructive">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
@@ -127,6 +129,19 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
           <div className="text-sm text-muted-foreground">Total Notes: {notes.length}</div>
         </div>
       )}
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        onConfirm={() => {
+          if (deleteTarget && onDeleteNote) {
+            onDeleteNote(deleteTarget);
+          }
+          setDeleteTarget(null);
+        }}
+        title="Delete Note"
+        description="Are you sure you want to delete this note? This action cannot be undone."
+      />
     </div>
   );
 };
