@@ -31,7 +31,7 @@ const PROPERTY_TYPE_OPTIONS = [
   'Restaurant/Bar'
 ];
 
-const OCCUPANCY_OPTIONS = ['Owner Occupied', 'Investment', 'Second Home', 'Vacant'];
+const OCCUPANCY_OPTIONS = ['Investor', 'Other', 'Owner', 'Primary Borrower', 'Secondary Borrower', 'Tenant', 'Unknown', 'Vacant', 'Non Owner Occupied'];
 const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
 const FLOOD_ZONE_OPTIONS = ['Zone A', 'Zone AE', 'Zone AO', 'Zone X', 'Zone V', 'Zone VE', 'Zone D', 'Unknown'];
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
@@ -125,9 +125,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
         {/* Left Column */}
         <div className="space-y-1.5">
           <div className="border-b border-border pb-1 mb-2">
-            <span className="font-semibold text-xs text-primary">Property Description & Address</span>
+            <span className="font-semibold text-xs text-primary">Property Address</span>
           </div>
-          {renderInlineField(FIELD_KEYS.description, 'Description')}
           {renderInlineField(FIELD_KEYS.street, 'Street')}
           {renderInlineField(FIELD_KEYS.city, 'City')}
           {renderInlineSelect(FIELD_KEYS.state, 'State', ['CA', 'TX', 'FL', 'NY', 'WA'], 'Select state')}
@@ -143,7 +142,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
         {/* Right Column */}
         <div className="space-y-1.5">
           <div className="border-b border-border pb-1 mb-2">
-            <span className="font-semibold text-xs text-primary">Appraisal / Broker Price Opinion</span>
+            <span className="font-semibold text-xs text-primary">Appraisal Information</span>
           </div>
           {renderInlineSelect(FIELD_KEYS.performedBy, 'Performed By', PERFORMED_BY_OPTIONS, 'Select...')}
           {renderInlineSelect(FIELD_KEYS.propertyType, 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
@@ -153,8 +152,6 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           {renderCurrencyField(FIELD_KEYS.appraisedValue, 'Appraised Value')}
           {renderCurrencyField(FIELD_KEYS.pledgedEquity, 'Pledged Equity')}
           {renderInlineField(FIELD_KEYS.appraisedDate, 'Appraisal Date', 'date')}
-          {renderInlineField(FIELD_KEYS.thomasMap, 'Thomas Map')}
-          {renderInlineField(FIELD_KEYS.apn, 'APN')}
           {renderInlineSelect(FIELD_KEYS.priority, 'Priority', PRIORITY_OPTIONS, 'Select')}
           {renderInlineSelect(FIELD_KEYS.floodZone, 'Flood Zone', FLOOD_ZONE_OPTIONS, 'Select')}
         </div>
