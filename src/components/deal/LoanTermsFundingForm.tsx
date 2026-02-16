@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { LoanFundingGrid } from './LoanFundingGrid';
+import { toast } from 'sonner';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import type { FundingFormData } from './AddFundingModal';
@@ -26,6 +27,7 @@ interface LoanTermsFundingFormProps {
   fields: FieldDefinition[];
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
+  saveDraft?: () => Promise<boolean>;
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
@@ -36,6 +38,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   fields,
   values,
   onValueChange,
+  saveDraft,
   showValidation = false,
   disabled = false,
   calculationResults = {},
@@ -127,9 +130,20 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     onValueChange(FIELD_KEYS.fundingRecords, JSON.stringify(updatedRecords));
   };
 
-  const handleDeleteRecord = (record: FundingRecord) => {
+  const handleDeleteRecord = async (record: FundingRecord) => {
     const updatedRecords = fundingRecords.filter((r) => r.id !== record.id);
     onValueChange(FIELD_KEYS.fundingRecords, JSON.stringify(updatedRecords));
+    if (saveDraft) {
+      // Small delay to let state update propagate before saving
+      setTimeout(async () => {
+        const success = await saveDraft();
+        if (success) {
+          toast.success('Funding record deleted successfully');
+        }
+      }, 100);
+    } else {
+      toast.success('Funding record deleted successfully');
+    }
   };
 
   const handlePageChange = (page: number) => {
