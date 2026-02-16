@@ -228,6 +228,7 @@ const extractCoBorrowersFromValues = (values: Record<string, string>): CoBorrowe
       deliveryPrint: values[`${prefix}.delivery_print`] !== 'false',
       deliveryEmail: values[`${prefix}.delivery_email`] === 'true',
       deliverySms: values[`${prefix}.delivery_sms`] === 'true',
+      parentBorrowerPrefix: values[`${prefix}.parent_borrower_prefix`] || '',
     };
     coBorrowers.push(coBorrower);
   });
@@ -309,12 +310,17 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     return allBorrowers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [allBorrowers, currentPage]);
   
-  // Paginated co-borrowers
-  const coBorrowerTotalPages = Math.max(1, Math.ceil(allCoBorrowers.length / ITEMS_PER_PAGE));
+  // Filter co-borrowers by the currently selected borrower
+  const filteredCoBorrowers = useMemo(() => {
+    return allCoBorrowers.filter(cb => cb.parentBorrowerPrefix === selectedBorrowerPrefix);
+  }, [allCoBorrowers, selectedBorrowerPrefix]);
+
+  // Paginated co-borrowers (filtered by selected borrower)
+  const coBorrowerTotalPages = Math.max(1, Math.ceil(filteredCoBorrowers.length / ITEMS_PER_PAGE));
   const paginatedCoBorrowers = useMemo(() => {
     const startIndex = (coBorrowerCurrentPage - 1) * ITEMS_PER_PAGE;
-    return allCoBorrowers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [allCoBorrowers, coBorrowerCurrentPage]);
+    return filteredCoBorrowers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredCoBorrowers, coBorrowerCurrentPage]);
 
   // Handle adding a new borrower
   const handleAddBorrower = useCallback(() => {
@@ -530,10 +536,12 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     onValueChange(`${prefix}.delivery_print`, String(coBorrowerData.deliveryPrint));
     onValueChange(`${prefix}.delivery_email`, String(coBorrowerData.deliveryEmail));
     onValueChange(`${prefix}.delivery_sms`, String(coBorrowerData.deliverySms));
+    // Save parent borrower association
+    onValueChange(`${prefix}.parent_borrower_prefix`, selectedBorrowerPrefix);
     
     setCoBorrowerModalOpen(false);
     setIsLoading(false);
-  }, [editingCoBorrower, values, onValueChange]);
+  }, [editingCoBorrower, values, onValueChange, selectedBorrowerPrefix]);
 
   // Handle deleting a co-borrower
   const handleDeleteCoBorrower = useCallback((coBorrower: CoBorrowerData) => {
