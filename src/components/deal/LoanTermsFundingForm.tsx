@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { LoanFundingGrid } from './LoanFundingGrid';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import type { FundingFormData } from './AddFundingModal';
@@ -133,16 +134,55 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   const handleDeleteRecord = async (record: FundingRecord) => {
     const updatedRecords = fundingRecords.filter((r) => r.id !== record.id);
     onValueChange(FIELD_KEYS.fundingRecords, JSON.stringify(updatedRecords));
-    if (saveDraft) {
-      // Small delay to let state update propagate before saving
-      setTimeout(async () => {
+
+    // Directly persist the updated records to the backend to avoid stale state issues
+    try {
+      const { data: sectionRows, error: fetchError } = await supabase
+        .from('deal_section_values')
+        .select('id, field_values, version')
+        .eq('deal_id', dealId)
+        .eq('section', 'loan_terms');
+
+      if (fetchError) throw fetchError;
+
+      for (const sv of (sectionRows || [])) {
+        const fieldValues = (sv.field_values as Record<string, any>) || {};
+        let modified = false;
+
+        // Find and update the funding_records entry in the JSONB
+        Object.keys(fieldValues).forEach(storageKey => {
+          const val = fieldValues[storageKey];
+          if (val?.indexed_key === FIELD_KEYS.fundingRecords || storageKey.includes('funding_records')) {
+            fieldValues[storageKey] = {
+              ...val,
+              value: JSON.stringify(updatedRecords),
+            };
+            modified = true;
+          }
+        });
+
+        if (modified) {
+          await supabase
+            .from('deal_section_values')
+            .update({
+              field_values: JSON.parse(JSON.stringify(fieldValues)),
+              updated_at: new Date().toISOString(),
+              version: (sv.version || 0) + 1,
+            })
+            .eq('id', sv.id);
+        }
+      }
+
+      toast.success('Funding record deleted successfully');
+    } catch (err) {
+      console.error('Error persisting funding deletion:', err);
+      // Fallback: try saveDraft
+      if (saveDraft) {
         const success = await saveDraft();
         if (success) {
           toast.success('Funding record deleted successfully');
         }
-      }, 100);
-    } else {
-      toast.success('Funding record deleted successfully');
+      }
     }
   };
 
