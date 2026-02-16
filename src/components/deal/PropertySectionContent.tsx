@@ -316,6 +316,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
               <LienSectionContent
                 values={values}
                 onValueChange={onValueChange}
+                onRemoveValuesByPrefix={onRemoveValuesByPrefix}
                 disabled={disabled}
                 propertyOptions={propertyOptions}
                 onBack={handleBackToTable}
@@ -345,6 +346,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
               <InsuranceSectionContent
                 values={values}
                 onValueChange={onValueChange}
+                onRemoveValuesByPrefix={onRemoveValuesByPrefix}
                 disabled={disabled}
                 propertyOptions={propertyOptions}
                 onBack={handleBackToTable}
