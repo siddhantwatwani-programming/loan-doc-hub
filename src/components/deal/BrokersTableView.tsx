@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -35,6 +35,7 @@ interface BrokersTableViewProps {
   onAddBroker: () => void;
   onEditBroker: (broker: BrokerData) => void;
   onRowClick: (broker: BrokerData) => void;
+  onDeleteBroker?: (broker: BrokerData) => void;
   disabled?: boolean;
   isLoading?: boolean;
   currentPage?: number;
@@ -58,6 +59,7 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
   onAddBroker,
   onEditBroker,
   onRowClick,
+  onDeleteBroker,
   disabled = false,
   isLoading = false,
   currentPage = 1,
@@ -168,15 +170,28 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
                     </TableCell>
                   ))}
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEditBroker(broker)}
-                      disabled={disabled}
-                      className="h-8 w-8"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEditBroker(broker)}
+                        disabled={disabled}
+                        className="h-8 w-8"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      {onDeleteBroker && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onDeleteBroker(broker)}
+                          disabled={disabled}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

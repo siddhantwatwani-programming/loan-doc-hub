@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Pencil, Download } from 'lucide-react';
+import { Plus, Pencil, Download, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -23,6 +23,7 @@ interface NotesTableViewProps {
   onAddNote: () => void;
   onEditNote: (note: NoteData) => void;
   onRowClick: (note: NoteData) => void;
+  onDeleteNote?: (note: NoteData) => void;
   onExport?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
@@ -36,7 +37,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
 ];
 
 export const NotesTableView: React.FC<NotesTableViewProps> = ({
-  notes, onAddNote, onEditNote, onRowClick, onExport, disabled = false, isLoading = false,
+  notes, onAddNote, onEditNote, onRowClick, onDeleteNote, onExport, disabled = false, isLoading = false,
 }) => {
   const [columns, setColumns] = useTableColumnConfig('notes', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
@@ -102,9 +103,16 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
                     <TableCell key={col.id}>{renderCellValue(note, col.id)}</TableCell>
                   ))}
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="icon" onClick={() => onEditNote(note)} disabled={disabled} className="h-8 w-8">
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => onEditNote(note)} disabled={disabled} className="h-8 w-8">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      {onDeleteNote && (
+                        <Button variant="ghost" size="icon" onClick={() => onDeleteNote(note)} disabled={disabled} className="h-8 w-8 text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

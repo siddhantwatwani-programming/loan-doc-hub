@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, ArrowLeft } from 'lucide-react';
+import { Plus, Edit, ArrowLeft, Trash2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -49,6 +49,7 @@ interface LiensTableViewProps {
   onAddLien: () => void;
   onEditLien: (lien: LienData) => void;
   onRowClick: (lien: LienData) => void;
+  onDeleteLien?: (lien: LienData) => void;
   onBack?: () => void;
   disabled?: boolean;
 }
@@ -58,6 +59,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
   onAddLien,
   onEditLien,
   onRowClick,
+  onDeleteLien,
   onBack,
   disabled = false,
 }) => {
@@ -153,18 +155,34 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                     <TableCell>{lien.recordingNumber || '-'}</TableCell>
                     <TableCell>{lien.lastVerified || '-'}</TableCell>
                     <TableCell className="w-10">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEditLien(lien);
-                        }}
-                        disabled={disabled}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditLien(lien);
+                          }}
+                          disabled={disabled}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        {onDeleteLien && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteLien(lien);
+                            }}
+                            disabled={disabled}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

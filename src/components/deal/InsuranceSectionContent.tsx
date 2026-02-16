@@ -9,6 +9,7 @@ import { InsuranceDetailForm } from './InsuranceDetailForm';
 interface InsuranceSectionContentProps {
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
+  onRemoveValuesByPrefix?: (prefix: string) => void;
   disabled?: boolean;
   propertyOptions?: { id: string; label: string }[];
   onBack?: () => void;
@@ -79,6 +80,7 @@ const getNextInsurancePrefix = (values: Record<string, string>): string => {
 export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = ({
   values,
   onValueChange,
+  onRemoveValuesByPrefix,
   disabled = false,
   propertyOptions = [],
   onBack,
@@ -172,6 +174,16 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
     setModalOpen(false);
   }, [editingInsurance, values, onValueChange]);
 
+  const handleDeleteInsurance = useCallback((insurance: InsuranceData) => {
+    if (onRemoveValuesByPrefix) {
+      onRemoveValuesByPrefix(insurance.id);
+    } else {
+      Object.keys(values).forEach(key => {
+        if (key.startsWith(`${insurance.id}.`)) onValueChange(key, '');
+      });
+    }
+  }, [values, onValueChange, onRemoveValuesByPrefix]);
+
   // Handle insurance field change in detail view
   const handleInsuranceFieldChange = useCallback((field: keyof InsuranceData, value: string | boolean) => {
     const fieldKeyMap: Record<keyof InsuranceData, string> = {
@@ -206,6 +218,7 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
             onAddInsurance={handleAddInsurance}
             onEditInsurance={handleEditInsurance}
             onRowClick={handleRowClick}
+            onDeleteInsurance={handleDeleteInsurance}
             onBack={onBack}
             disabled={disabled}
           />

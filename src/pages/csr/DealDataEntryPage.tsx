@@ -725,6 +725,7 @@ export const DealDataEntryPage: React.FC = () => {
                       fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
                       values={values}
                       onValueChange={updateValue}
+                      onRemoveValuesByPrefix={removeValuesByPrefix}
                       showValidation={showValidation}
                       disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
                       calculationResults={calculationResults}
@@ -744,6 +745,7 @@ export const DealDataEntryPage: React.FC = () => {
                       fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
                       values={values}
                       onValueChange={updateValue}
+                      onRemoveValuesByPrefix={removeValuesByPrefix}
                       showValidation={showValidation}
                       disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
                       calculationResults={calculationResults}
@@ -753,6 +755,7 @@ export const DealDataEntryPage: React.FC = () => {
                       fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
                       values={values}
                       onValueChange={updateValue}
+                      onRemoveValuesByPrefix={removeValuesByPrefix}
                       showValidation={showValidation}
                       disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
                       calculationResults={calculationResults}
@@ -762,6 +765,7 @@ export const DealDataEntryPage: React.FC = () => {
                       fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
                       values={values}
                       onValueChange={updateValue}
+                      onRemoveValuesByPrefix={removeValuesByPrefix}
                       showValidation={showValidation}
                       disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
                       calculationResults={calculationResults}
@@ -771,6 +775,7 @@ export const DealDataEntryPage: React.FC = () => {
                       fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
                       values={values}
                       onValueChange={updateValue}
+                      onRemoveValuesByPrefix={removeValuesByPrefix}
                       showValidation={showValidation}
                       disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
                       calculationResults={calculationResults}

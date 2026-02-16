@@ -16,6 +16,7 @@ interface PropertySectionContentProps {
   fields: FieldDefinition[];
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
+  onRemoveValuesByPrefix?: (prefix: string) => void;
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
@@ -91,6 +92,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   fields,
   values,
   onValueChange,
+  onRemoveValuesByPrefix,
   showValidation = false,
   disabled = false,
   calculationResults = {},
@@ -201,6 +203,19 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     setModalOpen(false);
   }, [editingProperty, values, onValueChange, properties]);
 
+  // Handle deleting a property
+  const handleDeleteProperty = useCallback((property: PropertyData) => {
+    if (onRemoveValuesByPrefix) {
+      onRemoveValuesByPrefix(property.id);
+    } else {
+      Object.keys(values).forEach(key => {
+        if (key.startsWith(`${property.id}.`)) {
+          onValueChange(key, '');
+        }
+      });
+    }
+  }, [values, onValueChange, onRemoveValuesByPrefix]);
+
   // Create property-specific values for the detail forms
   const getPropertySpecificValues = (): Record<string, string> => {
     const result: Record<string, string> = {};
@@ -235,6 +250,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             onEditProperty={handleEditProperty}
             onRowClick={handleRowClick}
             onPrimaryChange={handlePrimaryChange}
+            onDeleteProperty={handleDeleteProperty}
             disabled={disabled}
           />
         );

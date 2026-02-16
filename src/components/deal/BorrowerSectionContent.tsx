@@ -474,6 +474,32 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     setIsLoading(false);
   }, [editingCoBorrower, values, onValueChange]);
 
+  // Handle deleting a co-borrower
+  const handleDeleteCoBorrower = useCallback((coBorrower: CoBorrowerData) => {
+    if (onRemoveValuesByPrefix) {
+      onRemoveValuesByPrefix(coBorrower.id);
+    } else {
+      Object.keys(values).forEach(key => {
+        if (key.startsWith(`${coBorrower.id}.`)) {
+          onValueChange(key, '');
+        }
+      });
+    }
+  }, [values, onValueChange, onRemoveValuesByPrefix]);
+
+  // Handle deleting a trust ledger entry
+  const handleDeleteTrustLedgerEntry = useCallback((entry: TrustLedgerEntry) => {
+    if (onRemoveValuesByPrefix) {
+      onRemoveValuesByPrefix(entry.id);
+    } else {
+      Object.keys(values).forEach(key => {
+        if (key.startsWith(`${entry.id}.`)) {
+          onValueChange(key, '');
+        }
+      });
+    }
+  }, [values, onValueChange, onRemoveValuesByPrefix]);
+
   const handleCoBorrowerPageChange = useCallback((page: number) => {
     setCoBorrowerCurrentPage(page);
   }, []);
@@ -610,6 +636,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
         onAddEntry={() => { setEditingTrustLedgerEntry(null); setTrustLedgerModalOpen(true); }}
         onEditEntry={(entry) => { setEditingTrustLedgerEntry(entry); setTrustLedgerModalOpen(true); }}
         onRowClick={(entry) => { setEditingTrustLedgerEntry(entry); setTrustLedgerModalOpen(true); }}
+        onDeleteEntry={handleDeleteTrustLedgerEntry}
         disabled={disabled}
       />
       <TrustLedgerModal
@@ -632,7 +659,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
             onEditBorrower={handleEditBorrower}
             onRowClick={handleRowClick}
             onPrimaryChange={handlePrimaryChange}
-            
+            onDeleteBorrower={handleDeleteBorrower}
             disabled={disabled}
             isLoading={isLoading}
             currentPage={currentPage}
@@ -647,6 +674,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
             onAddCoBorrower={handleAddCoBorrower}
             onEditCoBorrower={handleEditCoBorrower}
             onRowClick={handleCoBorrowerRowClick}
+            onDeleteCoBorrower={handleDeleteCoBorrower}
             disabled={disabled}
             isLoading={isLoading}
             currentPage={coBorrowerCurrentPage}

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Pencil, Download, Search, DollarSign, FileText, ArrowRightLeft, Ban, CheckSquare, Building, RefreshCw, FileCheck } from 'lucide-react';
+import { Plus, Pencil, Download, Search, DollarSign, FileText, ArrowRightLeft, Ban, CheckSquare, Building, RefreshCw, FileCheck, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -37,6 +37,7 @@ interface TrustLedgerTableViewProps {
   onAddEntry: () => void;
   onEditEntry: (entry: TrustLedgerEntry) => void;
   onRowClick: (entry: TrustLedgerEntry) => void;
+  onDeleteEntry?: (entry: TrustLedgerEntry) => void;
   onExport?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
@@ -106,7 +107,7 @@ const filterByDate = (entries: TrustLedgerEntry[], filter: string): TrustLedgerE
 };
 
 export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
-  entries, onAddEntry, onEditEntry, onRowClick, onExport, disabled = false, isLoading = false,
+  entries, onAddEntry, onEditEntry, onRowClick, onDeleteEntry, onExport, disabled = false, isLoading = false,
 }) => {
   const [columns, setColumns] = useTableColumnConfig('trust_ledger', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
@@ -286,9 +287,16 @@ export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
                     <TableCell key={col.id} className="text-xs py-2">{renderCellValue(entry, col.id)}</TableCell>
                   ))}
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="icon" onClick={() => onEditEntry(entry)} disabled={disabled} className="h-7 w-7">
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => onEditEntry(entry)} disabled={disabled} className="h-7 w-7">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      {onDeleteEntry && (
+                        <Button variant="ghost" size="icon" onClick={() => onDeleteEntry(entry)} disabled={disabled} className="h-7 w-7 text-destructive hover:text-destructive">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

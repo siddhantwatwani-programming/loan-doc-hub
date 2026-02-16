@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,6 +34,7 @@ interface LendersTableViewProps {
   onEditLender: (lender: LenderData) => void;
   onRowClick: (lender: LenderData) => void;
   onPrimaryChange: (lenderId: string, isPrimary: boolean) => void;
+  onDeleteLender?: (lender: LenderData) => void;
   disabled?: boolean;
   isLoading?: boolean;
   currentPage?: number;
@@ -60,6 +61,7 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
   onEditLender,
   onRowClick,
   onPrimaryChange,
+  onDeleteLender,
   disabled = false,
   isLoading = false,
   currentPage = 1,
@@ -161,15 +163,28 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
                     </TableCell>
                   ))}
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEditLender(lender)}
-                      disabled={disabled}
-                      className="h-8 w-8"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEditLender(lender)}
+                        disabled={disabled}
+                        className="h-8 w-8"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      {onDeleteLender && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onDeleteLender(lender)}
+                          disabled={disabled}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
