@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/table';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 
 export interface LenderData {
   id: string;
@@ -69,6 +70,7 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
   onPageChange,
 }) => {
   const [columns, setColumns] = useTableColumnConfig('lenders', DEFAULT_COLUMNS);
+  const [deleteTarget, setDeleteTarget] = useState<LenderData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const renderCellValue = (lender: LenderData, columnId: string) => {
@@ -177,7 +179,7 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => onDeleteLender(lender)}
+                          onClick={() => setDeleteTarget(lender)}
                           disabled={disabled}
                           className="h-8 w-8 text-destructive hover:text-destructive"
                         >
@@ -226,6 +228,19 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
           </div>
         </div>
       )}
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        onConfirm={() => {
+          if (deleteTarget && onDeleteLender) {
+            onDeleteLender(deleteTarget);
+          }
+          setDeleteTarget(null);
+        }}
+        title="Delete Lender"
+        description="Are you sure you want to delete this lender? This action cannot be undone."
+      />
     </div>
   );
 };

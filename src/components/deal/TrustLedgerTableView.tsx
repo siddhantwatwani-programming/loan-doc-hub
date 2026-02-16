@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, Pencil, Download, Search, DollarSign, FileText, ArrowRightLeft, Ban, CheckSquare, Building, RefreshCw, FileCheck, Trash2 } from 'lucide-react';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -114,6 +115,7 @@ export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
   const [activeTab, setActiveTab] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [deleteTarget, setDeleteTarget] = useState<TrustLedgerEntry | null>(null);
 
   const filteredEntries = useMemo(() => {
     let result = entries;
@@ -292,7 +294,7 @@ export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                       {onDeleteEntry && (
-                        <Button variant="ghost" size="icon" onClick={() => onDeleteEntry(entry)} disabled={disabled} className="h-7 w-7 text-destructive hover:text-destructive">
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(entry)} disabled={disabled} className="h-7 w-7 text-destructive hover:text-destructive">
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       )}
@@ -311,6 +313,19 @@ export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
           <div className="text-sm text-muted-foreground">Total Entries: {filteredEntries.length}</div>
         </div>
       )}
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        onConfirm={() => {
+          if (deleteTarget && onDeleteEntry) {
+            onDeleteEntry(deleteTarget);
+          }
+          setDeleteTarget(null);
+        }}
+        title="Delete Entry"
+        description="Are you sure you want to delete this trust ledger entry? This action cannot be undone."
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 
 export interface BrokerData {
   id: string;
@@ -67,6 +68,7 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
   onPageChange,
 }) => {
   const [columns, setColumns] = useTableColumnConfig('brokers', DEFAULT_COLUMNS);
+  const [deleteTarget, setDeleteTarget] = useState<BrokerData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const getFullName = (broker: BrokerData): string => {
@@ -141,7 +143,6 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              // Loading skeleton
               Array.from({ length: 3 }).map((_, index) => (
                 <TableRow key={`skeleton-${index}`}>
                   {Array.from({ length: visibleColumns.length + 1 }).map((_, cellIndex) => (
@@ -184,7 +185,7 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => onDeleteBroker(broker)}
+                          onClick={() => setDeleteTarget(broker)}
                           disabled={disabled}
                           className="h-8 w-8 text-destructive hover:text-destructive"
                         >
@@ -235,6 +236,20 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        onConfirm={() => {
+          if (deleteTarget && onDeleteBroker) {
+            onDeleteBroker(deleteTarget);
+          }
+          setDeleteTarget(null);
+        }}
+        title="Delete Broker"
+        description="Are you sure you want to delete this broker? This action cannot be undone."
+      />
     </div>
   );
 };

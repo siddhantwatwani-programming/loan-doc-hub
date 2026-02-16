@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, ArrowLeft, Trash2 } from 'lucide-react';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import {
   Table,
   TableBody,
@@ -63,6 +64,8 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
   onBack,
   disabled = false,
 }) => {
+  const [deleteTarget, setDeleteTarget] = useState<LienData | null>(null);
+
   const formatCurrency = (value: string) => {
     if (!value) return '';
     const num = parseFloat(value.replace(/[^0-9.-]/g, ''));
@@ -175,7 +178,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                             className="h-7 w-7 text-destructive hover:text-destructive"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onDeleteLien(lien);
+                              setDeleteTarget(lien);
                             }}
                             disabled={disabled}
                           >
@@ -191,6 +194,19 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
           </Table>
         </div>
       </div>
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        onConfirm={() => {
+          if (deleteTarget && onDeleteLien) {
+            onDeleteLien(deleteTarget);
+          }
+          setDeleteTarget(null);
+        }}
+        title="Delete Lien"
+        description="Are you sure you want to delete this lien? This action cannot be undone."
+      />
     </div>
   );
 };

@@ -19,6 +19,7 @@ import {
 import { Plus, History, Loader2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal } from './AddFundingModal';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { FundingHistoryDialog } from './FundingHistoryDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
@@ -82,6 +83,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<FundingRecord | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<FundingRecord | null>(null);
   const [columns, setColumns] = useTableColumnConfig('funding', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
 
@@ -214,7 +216,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => onDeleteRecord(record)}
+                            onClick={() => setDeleteTarget(record)}
                             className="h-8 w-8 text-destructive hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -337,6 +339,20 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         onOpenChange={setIsHistoryOpen}
         dealId={dealId}
         historyRecords={historyRecords}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        onConfirm={() => {
+          if (deleteTarget && onDeleteRecord) {
+            onDeleteRecord(deleteTarget);
+          }
+          setDeleteTarget(null);
+        }}
+        title="Delete Funding Record"
+        description="Are you sure you want to delete this funding record? This action cannot be undone."
       />
     </div>
   );

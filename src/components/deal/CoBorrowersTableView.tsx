@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,6 +18,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 
 export interface CoBorrowerData {
   id: string;
@@ -110,6 +111,8 @@ export const CoBorrowersTableView: React.FC<CoBorrowersTableViewProps> = ({
   totalPages,
   onPageChange,
 }) => {
+  const [deleteTarget, setDeleteTarget] = useState<CoBorrowerData | null>(null);
+
   const renderLoader = () => (
     <TableRow>
       <TableCell colSpan={8} className="py-4">
@@ -204,7 +207,7 @@ export const CoBorrowersTableView: React.FC<CoBorrowersTableViewProps> = ({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => onDeleteCoBorrower(coBorrower)}
+                          onClick={() => setDeleteTarget(coBorrower)}
                           disabled={disabled}
                           className="h-8 w-8 text-destructive hover:text-destructive"
                         >
@@ -259,6 +262,20 @@ export const CoBorrowersTableView: React.FC<CoBorrowersTableViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        onConfirm={() => {
+          if (deleteTarget && onDeleteCoBorrower) {
+            onDeleteCoBorrower(deleteTarget);
+          }
+          setDeleteTarget(null);
+        }}
+        title="Delete Co-Borrower"
+        description="Are you sure you want to delete this co-borrower? This action cannot be undone."
+      />
     </div>
   );
 };

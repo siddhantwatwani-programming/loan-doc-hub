@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/table';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 
 export interface PropertyData {
   id: string;
@@ -72,6 +73,7 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   disabled = false,
 }) => {
   const [columns, setColumns] = useTableColumnConfig('properties', DEFAULT_COLUMNS);
+  const [deleteTarget, setDeleteTarget] = useState<PropertyData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const formatCurrency = (value: string) => {
@@ -185,7 +187,7 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => onDeleteProperty(property)}
+                          onClick={() => setDeleteTarget(property)}
                           disabled={disabled}
                           className="h-8 w-8 text-destructive hover:text-destructive"
                         >
@@ -212,6 +214,19 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
           </div>
         </div>
       )}
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        onConfirm={() => {
+          if (deleteTarget && onDeleteProperty) {
+            onDeleteProperty(deleteTarget);
+          }
+          setDeleteTarget(null);
+        }}
+        title="Delete Property"
+        description="Are you sure you want to delete this property? This action cannot be undone."
+      />
     </div>
   );
 };
