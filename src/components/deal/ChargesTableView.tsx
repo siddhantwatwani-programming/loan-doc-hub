@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -46,6 +46,7 @@ interface ChargesTableViewProps {
   onAddCharge: () => void;
   onEditCharge: (charge: ChargeData) => void;
   onRowClick: (charge: ChargeData) => void;
+  onDeleteCharge?: (charge: ChargeData) => void;
   disabled?: boolean;
   isLoading?: boolean;
   currentPage?: number;
@@ -73,6 +74,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   onAddCharge,
   onEditCharge,
   onRowClick,
+  onDeleteCharge,
   disabled = false,
   isLoading = false,
   currentPage = 1,
@@ -185,15 +187,28 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
                     </TableCell>
                   ))}
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEditCharge(charge)}
-                      disabled={disabled}
-                      className="h-8 w-8"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEditCharge(charge)}
+                        disabled={disabled}
+                        className="h-8 w-8"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      {onDeleteCharge && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onDeleteCharge(charge)}
+                          disabled={disabled}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

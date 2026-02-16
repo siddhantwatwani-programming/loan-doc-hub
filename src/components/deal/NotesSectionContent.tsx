@@ -8,6 +8,7 @@ interface NotesSectionContentProps {
   fields: FieldDefinition[];
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
+  onRemoveValuesByPrefix?: (prefix: string) => void;
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
@@ -57,7 +58,7 @@ const getNextNotePrefix = (values: Record<string, string>): string => {
 };
 
 export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
-  values, onValueChange, disabled = false, dealNumber = '', userName = '',
+  values, onValueChange, onRemoveValuesByPrefix, disabled = false, dealNumber = '', userName = '',
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<NoteData | null>(null);
@@ -67,6 +68,16 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
   const handleAddNote = useCallback(() => { setEditingNote(null); setModalOpen(true); }, []);
   const handleEditNote = useCallback((note: NoteData) => { setEditingNote(note); setModalOpen(true); }, []);
   const handleRowClick = useCallback((note: NoteData) => { setEditingNote(note); setModalOpen(true); }, []);
+
+  const handleDeleteNote = useCallback((note: NoteData) => {
+    if (onRemoveValuesByPrefix) {
+      onRemoveValuesByPrefix(note.id);
+    } else {
+      Object.keys(values).forEach(key => {
+        if (key.startsWith(`${note.id}.`)) onValueChange(key, '');
+      });
+    }
+  }, [values, onValueChange, onRemoveValuesByPrefix]);
 
   const handleSaveNote = useCallback((noteData: NoteData) => {
     const prefix = editingNote ? editingNote.id : getNextNotePrefix(values);
@@ -99,6 +110,7 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
         onAddNote={handleAddNote}
         onEditNote={handleEditNote}
         onRowClick={handleRowClick}
+        onDeleteNote={handleDeleteNote}
         onExport={handleExport}
         disabled={disabled}
       />

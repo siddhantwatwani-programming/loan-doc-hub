@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -90,6 +90,7 @@ interface CoBorrowersTableViewProps {
   onAddCoBorrower: () => void;
   onEditCoBorrower: (coBorrower: CoBorrowerData) => void;
   onRowClick: (coBorrower: CoBorrowerData) => void;
+  onDeleteCoBorrower?: (coBorrower: CoBorrowerData) => void;
   disabled?: boolean;
   isLoading?: boolean;
   currentPage: number;
@@ -102,6 +103,7 @@ export const CoBorrowersTableView: React.FC<CoBorrowersTableViewProps> = ({
   onAddCoBorrower,
   onEditCoBorrower,
   onRowClick,
+  onDeleteCoBorrower,
   disabled = false,
   isLoading = false,
   currentPage,
@@ -188,15 +190,28 @@ export const CoBorrowersTableView: React.FC<CoBorrowersTableViewProps> = ({
                   <TableCell>{coBorrower.city || '-'}</TableCell>
                   <TableCell>{coBorrower.state || '-'}</TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEditCoBorrower(coBorrower)}
-                      disabled={disabled}
-                      className="h-8 w-8"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEditCoBorrower(coBorrower)}
+                        disabled={disabled}
+                        className="h-8 w-8"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      {onDeleteCoBorrower && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onDeleteCoBorrower(coBorrower)}
+                          disabled={disabled}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

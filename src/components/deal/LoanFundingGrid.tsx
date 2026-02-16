@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, History, Loader2 } from 'lucide-react';
+import { Plus, History, Loader2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal } from './AddFundingModal';
 import { FundingHistoryDialog } from './FundingHistoryDialog';
@@ -53,6 +53,7 @@ interface LoanFundingGridProps {
   fundingRecords: FundingRecord[];
   historyRecords?: any[];
   onAddFunding: (data: any) => void;
+  onDeleteRecord?: (record: FundingRecord) => void;
   onUpdateRecord: (id: string, data: Partial<FundingRecord>) => void;
   isLoading?: boolean;
   currentPage: number;
@@ -69,6 +70,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   fundingRecords,
   historyRecords = [],
   onAddFunding,
+  onDeleteRecord,
   onUpdateRecord,
   isLoading = false,
   currentPage,
@@ -182,12 +184,13 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                     {col.label.toUpperCase()}
                   </TableHead>
                 ))}
+                {onDeleteRecord && <TableHead className="w-[80px]">ACTIONS</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {fundingRecords.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={visibleColumns.length} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={visibleColumns.length + (onDeleteRecord ? 1 : 0)} className="text-center text-muted-foreground py-8">
                     No funding records found. Click "Add Funding" to add a new funding record.
                   </TableCell>
                 </TableRow>
@@ -205,8 +208,20 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                       <TableCell key={col.id}>
                         {renderCellValue(record, col.id)}
                       </TableCell>
-                    ))}
-                  </TableRow>
+                      ))}
+                      {onDeleteRecord && (
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onDeleteRecord(record)}
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
                 ))
               )}
               {/* Totals Row */}

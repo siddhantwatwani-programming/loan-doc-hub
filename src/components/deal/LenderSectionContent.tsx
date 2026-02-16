@@ -16,6 +16,7 @@ interface LenderSectionContentProps {
   fields: FieldDefinition[];
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
+  onRemoveValuesByPrefix?: (prefix: string) => void;
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
@@ -83,6 +84,7 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
   fields,
   values,
   onValueChange,
+  onRemoveValuesByPrefix,
   showValidation = false,
   disabled = false,
   calculationResults = {},
@@ -172,6 +174,19 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
     setModalOpen(false);
   }, [editingLender, values, onValueChange, lenders]);
 
+  // Handle deleting a lender
+  const handleDeleteLender = useCallback((lender: LenderData) => {
+    if (onRemoveValuesByPrefix) {
+      onRemoveValuesByPrefix(lender.id);
+    } else {
+      Object.keys(values).forEach(key => {
+        if (key.startsWith(`${lender.id}.`)) {
+          onValueChange(key, '');
+        }
+      });
+    }
+  }, [values, onValueChange, onRemoveValuesByPrefix]);
+
   // Create lender-specific values for the detail forms
   const getLenderSpecificValues = (): Record<string, string> => {
     const result: Record<string, string> = {};
@@ -205,6 +220,7 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
             onEditLender={handleEditLender}
             onRowClick={handleRowClick}
             onPrimaryChange={handlePrimaryChange}
+            onDeleteLender={handleDeleteLender}
             disabled={disabled}
             isLoading={isLoading}
           />

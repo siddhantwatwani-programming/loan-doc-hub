@@ -9,6 +9,7 @@ import { LienDetailForm } from './LienDetailForm';
 interface LienSectionContentProps {
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
+  onRemoveValuesByPrefix?: (prefix: string) => void;
   disabled?: boolean;
   propertyOptions?: { id: string; label: string }[];
   onBack?: () => void;
@@ -129,6 +130,7 @@ const getNextLienPrefix = (values: Record<string, string>): string => {
 export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   values,
   onValueChange,
+  onRemoveValuesByPrefix,
   disabled = false,
   propertyOptions = [],
   onBack,
@@ -163,6 +165,16 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
     setModalOpen(false);
   }, [editingLien, values, onValueChange]);
 
+  const handleDeleteLien = useCallback((lien: LienData) => {
+    if (onRemoveValuesByPrefix) {
+      onRemoveValuesByPrefix(lien.id);
+    } else {
+      Object.keys(values).forEach(key => {
+        if (key.startsWith(`${lien.id}.`)) onValueChange(key, '');
+      });
+    }
+  }, [values, onValueChange, onRemoveValuesByPrefix]);
+
   const handleLienFieldChange = useCallback((field: keyof LienData, value: string) => {
     const dbField = LIEN_FIELD_MAP[field];
     if (dbField && field !== 'id') {
@@ -174,7 +186,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
     switch (activeSubSection) {
       case 'liens':
         return (
-          <LiensTableView liens={liens} onAddLien={handleAddLien} onEditLien={handleEditLien} onRowClick={handleRowClick} onBack={onBack} disabled={disabled} />
+          <LiensTableView liens={liens} onAddLien={handleAddLien} onEditLien={handleEditLien} onRowClick={handleRowClick} onDeleteLien={handleDeleteLien} onBack={onBack} disabled={disabled} />
         );
       case 'lien_details':
         return (

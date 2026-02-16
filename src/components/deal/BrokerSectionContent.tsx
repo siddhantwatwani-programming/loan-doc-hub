@@ -13,6 +13,7 @@ interface BrokerSectionContentProps {
   fields: FieldDefinition[];
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
+  onRemoveValuesByPrefix?: (prefix: string) => void;
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
@@ -83,6 +84,7 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
   fields,
   values,
   onValueChange,
+  onRemoveValuesByPrefix,
   showValidation = false,
   disabled = false,
   calculationResults = {},
@@ -154,6 +156,19 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
     setModalOpen(false);
   }, [editingBroker, values, onValueChange]);
 
+  // Handle deleting a broker
+  const handleDeleteBroker = useCallback((broker: BrokerData) => {
+    if (onRemoveValuesByPrefix) {
+      onRemoveValuesByPrefix(broker.id);
+    } else {
+      Object.keys(values).forEach(key => {
+        if (key.startsWith(`${broker.id}.`)) {
+          onValueChange(key, '');
+        }
+      });
+    }
+  }, [values, onValueChange, onRemoveValuesByPrefix]);
+
   // Create broker-specific values for the detail forms
   const getBrokerSpecificValues = (): Record<string, string> => {
     const result: Record<string, string> = {};
@@ -186,6 +201,7 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
             onAddBroker={handleAddBroker}
             onEditBroker={handleEditBroker}
             onRowClick={handleRowClick}
+            onDeleteBroker={handleDeleteBroker}
             disabled={disabled}
             isLoading={isLoading}
           />

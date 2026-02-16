@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, ArrowLeft } from 'lucide-react';
+import { Plus, Edit, ArrowLeft, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -34,6 +34,7 @@ interface InsuranceTableViewProps {
   onAddInsurance: () => void;
   onEditInsurance: (insurance: InsuranceData) => void;
   onRowClick: (insurance: InsuranceData) => void;
+  onDeleteInsurance?: (insurance: InsuranceData) => void;
   onBack?: () => void;
   disabled?: boolean;
 }
@@ -43,6 +44,7 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
   onAddInsurance,
   onEditInsurance,
   onRowClick,
+  onDeleteInsurance,
   onBack,
   disabled = false,
 }) => {
@@ -115,18 +117,34 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
                     onClick={() => onRowClick(insurance)}
                   >
                     <TableCell className="w-10">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEditInsurance(insurance);
-                        }}
-                        disabled={disabled}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditInsurance(insurance);
+                          }}
+                          disabled={disabled}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        {onDeleteInsurance && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteInsurance(insurance);
+                            }}
+                            disabled={disabled}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="font-medium">
                       {insurance.description || '-'}

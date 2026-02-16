@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -48,6 +48,7 @@ interface BorrowersTableViewProps {
   onEditBorrower: (borrower: BorrowerData) => void;
   onRowClick: (borrower: BorrowerData) => void;
   onPrimaryChange: (borrowerId: string, isPrimary: boolean) => void;
+  onDeleteBorrower?: (borrower: BorrowerData) => void;
   disabled?: boolean;
   isLoading?: boolean;
   currentPage: number;
@@ -74,6 +75,7 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
   onEditBorrower,
   onRowClick,
   onPrimaryChange,
+  onDeleteBorrower,
   disabled = false,
   isLoading = false,
   currentPage,
@@ -128,6 +130,17 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
             >
               <Pencil className="h-4 w-4" />
             </Button>
+            {onDeleteBorrower && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onDeleteBorrower(borrower)}
+                disabled={disabled}
+                className="h-8 w-8 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         );
       default:

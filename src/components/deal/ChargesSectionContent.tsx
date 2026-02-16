@@ -12,6 +12,7 @@ interface ChargesSectionContentProps {
   fields: FieldDefinition[];
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
+  onRemoveValuesByPrefix?: (prefix: string) => void;
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
@@ -90,6 +91,7 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
   fields,
   values,
   onValueChange,
+  onRemoveValuesByPrefix,
   showValidation = false,
   disabled = false,
   calculationResults = {},
@@ -160,6 +162,19 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
     setModalOpen(false);
   }, [editingCharge, values, onValueChange]);
 
+  // Handle deleting a charge
+  const handleDeleteCharge = useCallback((charge: ChargeData) => {
+    if (onRemoveValuesByPrefix) {
+      onRemoveValuesByPrefix(charge.id);
+    } else {
+      Object.keys(values).forEach(key => {
+        if (key.startsWith(`${charge.id}.`)) {
+          onValueChange(key, '');
+        }
+      });
+    }
+  }, [values, onValueChange, onRemoveValuesByPrefix]);
+
   const getChargeSpecificValues = (): Record<string, string> => {
     const result: Record<string, string> = {};
     Object.entries(values).forEach(([key, value]) => {
@@ -187,6 +202,7 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
             onAddCharge={handleAddCharge}
             onEditCharge={handleEditCharge}
             onRowClick={handleRowClick}
+            onDeleteCharge={handleDeleteCharge}
             disabled={disabled}
             isLoading={isLoading}
           />
