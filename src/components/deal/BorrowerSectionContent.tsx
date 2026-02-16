@@ -61,6 +61,7 @@ const extractBorrowersFromValues = (values: Record<string, string>): BorrowerDat
       id: prefix,
       isPrimary: values[`${prefix}.is_primary`] === 'true',
       borrowerType: values[`${prefix}.borrower_type`] || '',
+      borrowerId: values[`${prefix}.borrower_id`] || '',
       fullName: values[`${prefix}.full_name`] || '',
       firstName: values[`${prefix}.first_name`] || '',
       middleName: values[`${prefix}.middle_initial`] || '',
@@ -75,6 +76,38 @@ const extractBorrowersFromValues = (values: Record<string, string>): BorrowerDat
       taxId: values[`${prefix}.tax_id`] || '',
       creditScore: values[`${prefix}.credit_score`] || '',
       capacity: values[`${prefix}.capacity`] || '',
+      homePhone: values[`${prefix}.phone.home`] || '',
+      homePhone2: values[`${prefix}.phone.home2`] || '',
+      workPhone: values[`${prefix}.phone.work`] || '',
+      mobilePhone: values[`${prefix}.phone.mobile`] || '',
+      fax: values[`${prefix}.phone.fax`] || '',
+      preferredHome: values[`${prefix}.preferred.home`] === 'true',
+      preferredHome2: values[`${prefix}.preferred.home2`] === 'true',
+      preferredWork: values[`${prefix}.preferred.work`] === 'true',
+      preferredCell: values[`${prefix}.preferred.cell`] === 'true',
+      preferredFax: values[`${prefix}.preferred.fax`] === 'true',
+      primaryStreet: values[`${prefix}.address.street`] || '',
+      primaryCity: values[`${prefix}.address.city`] || '',
+      primaryState: values[`${prefix}.state`] || '',
+      primaryZip: values[`${prefix}.address.zip`] || '',
+      mailingStreet: values[`${prefix}.mailing.street`] || '',
+      mailingCity: values[`${prefix}.mailing.city`] || '',
+      mailingState: values[`${prefix}.mailing.state`] || '',
+      mailingZip: values[`${prefix}.mailing.zip`] || '',
+      mailingSameAsPrimary: values[`${prefix}.mailing_same_as_primary`] === 'true',
+      vesting: values[`${prefix}.vesting`] || '',
+      ford1: values[`${prefix}.ford.1`] || '',
+      ford2: values[`${prefix}.ford.2`] || '',
+      ford3: values[`${prefix}.ford.3`] || '',
+      ford4: values[`${prefix}.ford.4`] || '',
+      ford5: values[`${prefix}.ford.5`] || '',
+      ford6: values[`${prefix}.ford.6`] || '',
+      ford7: values[`${prefix}.ford.7`] || '',
+      ford8: values[`${prefix}.ford.8`] || '',
+      issue1098: values[`${prefix}.issue_1098`] === 'true',
+      alternateReporting: values[`${prefix}.alternate_reporting`] === 'true',
+      deliveryOnline: values[`${prefix}.delivery_online`] === 'true',
+      deliveryMail: values[`${prefix}.delivery_mail`] === 'true',
     };
     borrowers.push(borrower);
   });
@@ -337,20 +370,48 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     // Save all borrower fields
     onValueChange(`${prefix}.is_primary`, String(borrowerData.isPrimary));
     onValueChange(`${prefix}.borrower_type`, borrowerData.borrowerType);
+    onValueChange(`${prefix}.borrower_id`, borrowerData.borrowerId);
     onValueChange(`${prefix}.full_name`, borrowerData.fullName);
     onValueChange(`${prefix}.first_name`, borrowerData.firstName);
     onValueChange(`${prefix}.middle_initial`, borrowerData.middleName);
     onValueChange(`${prefix}.last_name`, borrowerData.lastName);
     onValueChange(`${prefix}.email`, borrowerData.email);
-    onValueChange(`${prefix}.phone.mobile`, borrowerData.phone);
-    onValueChange(`${prefix}.address.street`, borrowerData.street);
-    onValueChange(`${prefix}.address.city`, borrowerData.city);
-    onValueChange(`${prefix}.state`, borrowerData.state);
-    onValueChange(`${prefix}.address.zip`, borrowerData.zipCode);
+    onValueChange(`${prefix}.phone.mobile`, borrowerData.mobilePhone || borrowerData.phone);
+    onValueChange(`${prefix}.phone.home`, borrowerData.homePhone);
+    onValueChange(`${prefix}.phone.home2`, borrowerData.homePhone2);
+    onValueChange(`${prefix}.phone.work`, borrowerData.workPhone);
+    onValueChange(`${prefix}.phone.fax`, borrowerData.fax);
+    onValueChange(`${prefix}.preferred.home`, String(borrowerData.preferredHome));
+    onValueChange(`${prefix}.preferred.home2`, String(borrowerData.preferredHome2));
+    onValueChange(`${prefix}.preferred.work`, String(borrowerData.preferredWork));
+    onValueChange(`${prefix}.preferred.cell`, String(borrowerData.preferredCell));
+    onValueChange(`${prefix}.preferred.fax`, String(borrowerData.preferredFax));
+    onValueChange(`${prefix}.address.street`, borrowerData.primaryStreet || borrowerData.street);
+    onValueChange(`${prefix}.address.city`, borrowerData.primaryCity || borrowerData.city);
+    onValueChange(`${prefix}.state`, borrowerData.primaryState || borrowerData.state);
+    onValueChange(`${prefix}.address.zip`, borrowerData.primaryZip || borrowerData.zipCode);
+    onValueChange(`${prefix}.mailing.street`, borrowerData.mailingStreet);
+    onValueChange(`${prefix}.mailing.city`, borrowerData.mailingCity);
+    onValueChange(`${prefix}.mailing.state`, borrowerData.mailingState);
+    onValueChange(`${prefix}.mailing.zip`, borrowerData.mailingZip);
+    onValueChange(`${prefix}.mailing_same_as_primary`, String(borrowerData.mailingSameAsPrimary));
     onValueChange(`${prefix}.tax_id_type`, borrowerData.taxIdType);
     onValueChange(`${prefix}.tax_id`, borrowerData.taxId);
     onValueChange(`${prefix}.credit_score`, borrowerData.creditScore);
     onValueChange(`${prefix}.capacity`, borrowerData.capacity);
+    onValueChange(`${prefix}.vesting`, borrowerData.vesting);
+    onValueChange(`${prefix}.ford.1`, borrowerData.ford1);
+    onValueChange(`${prefix}.ford.2`, borrowerData.ford2);
+    onValueChange(`${prefix}.ford.3`, borrowerData.ford3);
+    onValueChange(`${prefix}.ford.4`, borrowerData.ford4);
+    onValueChange(`${prefix}.ford.5`, borrowerData.ford5);
+    onValueChange(`${prefix}.ford.6`, borrowerData.ford6);
+    onValueChange(`${prefix}.ford.7`, borrowerData.ford7);
+    onValueChange(`${prefix}.ford.8`, borrowerData.ford8);
+    onValueChange(`${prefix}.issue_1098`, String(borrowerData.issue1098));
+    onValueChange(`${prefix}.alternate_reporting`, String(borrowerData.alternateReporting));
+    onValueChange(`${prefix}.delivery_online`, String(borrowerData.deliveryOnline));
+    onValueChange(`${prefix}.delivery_mail`, String(borrowerData.deliveryMail));
     
     // If this is marked as primary, unset others
     if (borrowerData.isPrimary) {

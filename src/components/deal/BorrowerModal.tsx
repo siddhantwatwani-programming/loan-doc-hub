@@ -6,11 +6,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import type { BorrowerData } from './BorrowersTableView';
 
 interface BorrowerModalProps {
@@ -21,34 +22,17 @@ interface BorrowerModalProps {
   isEdit?: boolean;
 }
 
-const TAX_ID_TYPE_OPTIONS = ['SSN', 'EIN', 'ITIN', 'Other'];
+const BORROWER_TYPE_OPTIONS = [
+  'Individual', 'Joint', 'Family Trust', 'LLC', 'C Corp / S Corp',
+  'IRA / ERISA', 'Investment Fund', '401K', 'Foreign Holder W-8', 'Non-profit',
+];
 
-const US_STATES = [
-  { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' },
-  { value: 'AZ', label: 'Arizona' }, { value: 'AR', label: 'Arkansas' },
-  { value: 'CA', label: 'California' }, { value: 'CO', label: 'Colorado' },
-  { value: 'CT', label: 'Connecticut' }, { value: 'DE', label: 'Delaware' },
-  { value: 'FL', label: 'Florida' }, { value: 'GA', label: 'Georgia' },
-  { value: 'HI', label: 'Hawaii' }, { value: 'ID', label: 'Idaho' },
-  { value: 'IL', label: 'Illinois' }, { value: 'IN', label: 'Indiana' },
-  { value: 'IA', label: 'Iowa' }, { value: 'KS', label: 'Kansas' },
-  { value: 'KY', label: 'Kentucky' }, { value: 'LA', label: 'Louisiana' },
-  { value: 'ME', label: 'Maine' }, { value: 'MD', label: 'Maryland' },
-  { value: 'MA', label: 'Massachusetts' }, { value: 'MI', label: 'Michigan' },
-  { value: 'MN', label: 'Minnesota' }, { value: 'MS', label: 'Mississippi' },
-  { value: 'MO', label: 'Missouri' }, { value: 'MT', label: 'Montana' },
-  { value: 'NE', label: 'Nebraska' }, { value: 'NV', label: 'Nevada' },
-  { value: 'NH', label: 'New Hampshire' }, { value: 'NJ', label: 'New Jersey' },
-  { value: 'NM', label: 'New Mexico' }, { value: 'NY', label: 'New York' },
-  { value: 'NC', label: 'North Carolina' }, { value: 'ND', label: 'North Dakota' },
-  { value: 'OH', label: 'Ohio' }, { value: 'OK', label: 'Oklahoma' },
-  { value: 'OR', label: 'Oregon' }, { value: 'PA', label: 'Pennsylvania' },
-  { value: 'RI', label: 'Rhode Island' }, { value: 'SC', label: 'South Carolina' },
-  { value: 'SD', label: 'South Dakota' }, { value: 'TN', label: 'Tennessee' },
-  { value: 'TX', label: 'Texas' }, { value: 'UT', label: 'Utah' },
-  { value: 'VT', label: 'Vermont' }, { value: 'VA', label: 'Virginia' },
-  { value: 'WA', label: 'Washington' }, { value: 'WV', label: 'West Virginia' },
-  { value: 'WI', label: 'Wisconsin' }, { value: 'WY', label: 'Wyoming' },
+const TAX_ID_TYPE_OPTIONS = ['0 – Unknown', '1 – EIN', '2 – SSN'];
+
+const STATE_OPTIONS = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
+  'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
+  'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC',
 ];
 
 const generateBorrowerId = () => `borrower_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -58,23 +42,24 @@ const getEmptyBorrower = (): BorrowerData => ({
   firstName: '', middleName: '', lastName: '', email: '', phone: '',
   street: '', city: '', state: '', zipCode: '', taxIdType: '', taxId: '',
   creditScore: '', capacity: '',
+  homePhone: '', homePhone2: '', workPhone: '', mobilePhone: '', fax: '',
+  preferredHome: false, preferredHome2: false, preferredWork: false, preferredCell: false, preferredFax: false,
+  primaryStreet: '', primaryCity: '', primaryState: '', primaryZip: '',
+  mailingStreet: '', mailingCity: '', mailingState: '', mailingZip: '', mailingSameAsPrimary: false,
+  vesting: '', ford1: '', ford2: '', ford3: '', ford4: '', ford5: '', ford6: '', ford7: '', ford8: '',
+  issue1098: false, alternateReporting: false,
+  deliveryOnline: false, deliveryMail: false,
+  borrowerId: '',
 });
 
 export const BorrowerModal: React.FC<BorrowerModalProps> = ({
   open, onOpenChange, borrower, onSave, isEdit = false,
 }) => {
   const [formData, setFormData] = useState<BorrowerData>(getEmptyBorrower());
-  const [activeTab, setActiveTab] = useState('general');
-  const [phoneHome, setPhoneHome] = useState('');
-  const [phoneWork, setPhoneWork] = useState('');
-  const [phoneCell, setPhoneCell] = useState('');
-  const [phoneFax, setPhoneFax] = useState('');
 
   useEffect(() => {
     if (open) {
-      if (borrower) { setFormData(borrower); setPhoneHome(borrower.phone || ''); }
-      else { setFormData(getEmptyBorrower()); setPhoneHome(''); setPhoneWork(''); setPhoneCell(''); setPhoneFax(''); }
-      setActiveTab('general');
+      setFormData(borrower ? { ...getEmptyBorrower(), ...borrower } : getEmptyBorrower());
     }
   }, [open, borrower]);
 
@@ -83,21 +68,31 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
   };
 
   const handleSave = () => {
-    const primaryPhone = phoneCell || phoneHome || phoneWork || '';
+    const primaryPhone = formData.mobilePhone || formData.homePhone || formData.workPhone || formData.phone || '';
     onSave({ ...formData, phone: primaryPhone });
     onOpenChange(false);
   };
 
-  const renderInlineField = (field: keyof BorrowerData, label: string, type = 'text') => (
+  const renderInlineField = (field: keyof BorrowerData, label: string, props: Record<string, any> = {}) => (
     <div className="flex items-center gap-2">
-      <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
-      <Input value={String(formData[field] || '')} onChange={(e) => handleFieldChange(field, e.target.value)} className="h-7 text-xs flex-1" type={type} />
+      <Label className="w-[140px] shrink-0 text-xs">{label}</Label>
+      <Input value={String(formData[field] || '')} onChange={(e) => handleFieldChange(field, e.target.value)} className="h-7 text-xs flex-1" {...props} />
+    </div>
+  );
+
+  const renderInlineSelect = (field: keyof BorrowerData, label: string, options: string[], placeholder: string) => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[140px] shrink-0 text-xs">{label}</Label>
+      <Select value={String(formData[field] || '')} onValueChange={(value) => handleFieldChange(field, value)}>
+        <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder={placeholder} /></SelectTrigger>
+        <SelectContent>{options.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
+      </Select>
     </div>
   );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-sm">
             <User className="h-4 w-4 text-primary" />
@@ -105,90 +100,120 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-1">
-            <TabsTrigger value="general" className="text-xs">General</TabsTrigger>
-          </TabsList>
+        <ScrollArea className="max-h-[calc(90vh-120px)] pr-4">
+          {/* Top section - 4 column grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-0 py-2">
+            {/* Column 1 - Name */}
+            <div className="space-y-1">
+              <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Name</div>
+              {renderInlineField('borrowerId', 'Borrower ID')}
+              {renderInlineSelect('borrowerType', 'Borrower Type', BORROWER_TYPE_OPTIONS, 'Select')}
+              {renderInlineField('fullName', 'Full Name: If Entity, Use Entity')}
+              {renderInlineField('firstName', 'First: If Entity, Use Signer')}
+              {renderInlineField('middleName', 'Middle')}
+              {renderInlineField('lastName', 'Last')}
+              {renderInlineField('capacity', 'Capacity')}
+              {renderInlineField('email', 'Email', { type: 'email' })}
+              <div className="h-1" />
+              {renderInlineField('creditScore', 'Credit Score')}
+            </div>
 
-          <TabsContent value="general" className="mt-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
-              {/* Left Column */}
-              <div className="space-y-1.5">
-                <div className="border-b border-border pb-1 mb-2">
-                  <span className="font-semibold text-xs text-primary">Borrower Details</span>
+            {/* Column 2 - Primary & Mailing Address */}
+            <div className="space-y-1">
+              <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Primary Address</div>
+              {renderInlineField('primaryStreet', 'Street')}
+              {renderInlineField('primaryCity', 'City')}
+              {renderInlineSelect('primaryState', 'State', STATE_OPTIONS, 'State')}
+              {renderInlineField('primaryZip', 'ZIP')}
+
+              <div className="font-semibold text-xs text-foreground pb-1 mt-2 mb-1.5 flex items-center gap-2">
+                Mailing Address
+                <div className="flex items-center gap-1.5 ml-auto">
+                  <Checkbox id="modal-borrower-mailingSame" checked={formData.mailingSameAsPrimary} onCheckedChange={(checked) => handleFieldChange('mailingSameAsPrimary', !!checked)} className="h-3 w-3" />
+                  <Label htmlFor="modal-borrower-mailingSame" className="font-normal text-[10px]">Same as Primary</Label>
                 </div>
-                {renderInlineField('borrowerType', 'Borrower Type')}
-                {renderInlineField('fullName', 'Full Name')}
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Name</Label>
-                  <div className="flex-1 grid grid-cols-3 gap-1">
-                    <Input value={formData.firstName} onChange={(e) => handleFieldChange('firstName', e.target.value)} className="h-7 text-xs" placeholder="First" />
-                    <Input value={formData.middleName} onChange={(e) => handleFieldChange('middleName', e.target.value)} className="h-7 text-xs" placeholder="Middle" />
-                    <Input value={formData.lastName} onChange={(e) => handleFieldChange('lastName', e.target.value)} className="h-7 text-xs" placeholder="Last" />
+              </div>
+              {renderInlineField('mailingStreet', 'Street', { disabled: formData.mailingSameAsPrimary })}
+              {renderInlineField('mailingCity', 'City', { disabled: formData.mailingSameAsPrimary })}
+              {renderInlineSelect('mailingState', 'State', STATE_OPTIONS, 'State')}
+              {renderInlineField('mailingZip', 'ZIP', { disabled: formData.mailingSameAsPrimary })}
+            </div>
+
+            {/* Column 3 - Phone + Preferred */}
+            <div className="space-y-1">
+              <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Phone</div>
+              {(['homePhone', 'homePhone2', 'workPhone', 'mobilePhone', 'fax'] as const).map((phoneKey, idx) => {
+                const prefKey = (['preferredHome', 'preferredHome2', 'preferredWork', 'preferredCell', 'preferredFax'] as const)[idx];
+                const phoneLabel = ['Home', 'Home', 'Work', 'Cell', 'Fax'][idx];
+                return (
+                  <div key={phoneKey} className="flex items-center gap-2">
+                    <Label className="w-[50px] shrink-0 text-xs">{phoneLabel}</Label>
+                    <Input value={String(formData[phoneKey] || '')} onChange={(e) => handleFieldChange(phoneKey, e.target.value)} className="h-7 text-xs flex-1" />
+                    <Checkbox id={`modal-borrower-${prefKey}`} checked={!!formData[prefKey]} onCheckedChange={(checked) => handleFieldChange(prefKey, !!checked)} className="h-3 w-3 shrink-0" />
                   </div>
+                );
+              })}
+            </div>
+
+            {/* Column 4 - Vesting & FORD */}
+            <div className="space-y-1">
+              <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Vesting</div>
+              <Textarea value={String(formData.vesting || '')} onChange={(e) => handleFieldChange('vesting', e.target.value)} className="text-xs w-full min-h-[80px] resize-none" />
+
+              <div className="font-semibold text-xs text-foreground pb-1 mt-2 mb-1.5">FORD</div>
+              <div className="grid grid-cols-2 gap-1">
+                <Input value={String(formData.ford1 || '')} onChange={(e) => handleFieldChange('ford1', e.target.value)} className="h-7 text-xs" />
+                <Input value={String(formData.ford2 || '')} onChange={(e) => handleFieldChange('ford2', e.target.value)} className="h-7 text-xs" />
+                <Input value={String(formData.ford3 || '')} onChange={(e) => handleFieldChange('ford3', e.target.value)} className="h-7 text-xs" />
+                <Input value={String(formData.ford4 || '')} onChange={(e) => handleFieldChange('ford4', e.target.value)} className="h-7 text-xs" />
+                <Input value={String(formData.ford5 || '')} onChange={(e) => handleFieldChange('ford5', e.target.value)} className="h-7 text-xs" />
+                <Input value={String(formData.ford6 || '')} onChange={(e) => handleFieldChange('ford6', e.target.value)} className="h-7 text-xs" />
+                <Input value={String(formData.ford7 || '')} onChange={(e) => handleFieldChange('ford7', e.target.value)} className="h-7 text-xs" />
+                <Input value={String(formData.ford8 || '')} onChange={(e) => handleFieldChange('ford8', e.target.value)} className="h-7 text-xs" />
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom section - Tax, Delivery */}
+          <div className="mt-2 pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-0">
+              {/* Tax & Reporting */}
+              <div className="space-y-1">
+                {renderInlineSelect('taxIdType', 'Tax ID Type', TAX_ID_TYPE_OPTIONS, 'Select')}
+                {renderInlineField('taxId', 'TIN')}
+                <div className="flex items-center gap-2 h-7">
+                  <Checkbox id="modal-borrower-issue1098" checked={formData.issue1098} onCheckedChange={(checked) => handleFieldChange('issue1098', !!checked)} className="h-3 w-3" />
+                  <Label htmlFor="modal-borrower-issue1098" className="font-normal text-xs">Issue 1098</Label>
                 </div>
-                {renderInlineField('capacity', 'Capacity')}
-                {renderInlineField('email', 'Email')}
-                {renderInlineField('creditScore', 'Credit Score')}
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Tax ID Type</Label>
-                  <Select value={formData.taxIdType} onValueChange={(val) => handleFieldChange('taxIdType', val)}>
-                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50">
-                      {TAX_ID_TYPE_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {renderInlineField('taxId', 'Tax ID / TIN')}
-                <div className="flex items-center gap-2 pt-1">
-                  <Checkbox id="modal-primary-borrower" checked={formData.isPrimary} onCheckedChange={(checked) => handleFieldChange('isPrimary', !!checked)} className="h-3.5 w-3.5" />
-                  <Label htmlFor="modal-primary-borrower" className="text-xs text-foreground">Primary Borrower</Label>
+                <div className="flex items-center gap-2 h-7">
+                  <Checkbox id="modal-borrower-altReporting" checked={formData.alternateReporting} onCheckedChange={(checked) => handleFieldChange('alternateReporting', !!checked)} className="h-3 w-3" />
+                  <Label htmlFor="modal-borrower-altReporting" className="font-normal text-xs">Alternate Reporting</Label>
                 </div>
               </div>
 
-              {/* Right Column */}
-              <div className="space-y-1.5">
-                <div className="border-b border-border pb-1 mb-2">
-                  <span className="font-semibold text-xs text-primary">Primary Address</span>
+              {/* Delivery */}
+              <div className="space-y-1">
+                <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Delivery</div>
+                <div className="flex items-center gap-2 h-7">
+                  <Label className="w-[140px] shrink-0 text-xs">Online</Label>
+                  <Checkbox id="modal-borrower-deliveryOnline" checked={formData.deliveryOnline} onCheckedChange={(checked) => handleFieldChange('deliveryOnline', !!checked)} className="h-3 w-3" />
                 </div>
-                {renderInlineField('street', 'Street')}
-                {renderInlineField('city', 'City')}
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">State</Label>
-                  <Select value={formData.state} onValueChange={(val) => handleFieldChange('state', val)}>
-                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50 max-h-60">
-                      {US_STATES.map(s => (<SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
+                <div className="flex items-center gap-2 h-7">
+                  <Label className="w-[140px] shrink-0 text-xs">Mail</Label>
+                  <Checkbox id="modal-borrower-deliveryMail" checked={formData.deliveryMail} onCheckedChange={(checked) => handleFieldChange('deliveryMail', !!checked)} className="h-3 w-3" />
                 </div>
-                {renderInlineField('zipCode', 'Zip Code')}
+              </div>
 
-                <div className="border-b border-border pb-1 mt-3 mb-2">
-                  <span className="font-semibold text-xs text-primary">Phone Numbers</span>
-                </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <Label className="w-10 shrink-0 text-xs">Home</Label>
-                    <Input value={phoneHome} onChange={(e) => setPhoneHome(e.target.value)} className="h-7 text-xs flex-1" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="w-10 shrink-0 text-xs">Work</Label>
-                    <Input value={phoneWork} onChange={(e) => setPhoneWork(e.target.value)} className="h-7 text-xs flex-1" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="w-10 shrink-0 text-xs">Cell</Label>
-                    <Input value={phoneCell} onChange={(e) => setPhoneCell(e.target.value)} className="h-7 text-xs flex-1" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="w-10 shrink-0 text-xs">Fax</Label>
-                    <Input value={phoneFax} onChange={(e) => setPhoneFax(e.target.value)} className="h-7 text-xs flex-1" />
-                  </div>
+              {/* Primary checkbox */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 pt-4">
+                  <Checkbox id="modal-borrower-isPrimary" checked={formData.isPrimary} onCheckedChange={(checked) => handleFieldChange('isPrimary', !!checked)} className="h-3.5 w-3.5" />
+                  <Label htmlFor="modal-borrower-isPrimary" className="text-xs font-medium">Primary Borrower</Label>
                 </div>
               </div>
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </ScrollArea>
 
         <DialogFooter className="mt-4">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>

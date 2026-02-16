@@ -27,6 +27,7 @@ export interface BorrowerData {
   id: string;
   isPrimary: boolean;
   borrowerType: string;
+  borrowerId: string;
   fullName: string;
   firstName: string;
   middleName: string;
@@ -41,6 +42,38 @@ export interface BorrowerData {
   taxId: string;
   creditScore: string;
   capacity: string;
+  homePhone: string;
+  homePhone2: string;
+  workPhone: string;
+  mobilePhone: string;
+  fax: string;
+  preferredHome: boolean;
+  preferredHome2: boolean;
+  preferredWork: boolean;
+  preferredCell: boolean;
+  preferredFax: boolean;
+  primaryStreet: string;
+  primaryCity: string;
+  primaryState: string;
+  primaryZip: string;
+  mailingStreet: string;
+  mailingCity: string;
+  mailingState: string;
+  mailingZip: string;
+  mailingSameAsPrimary: boolean;
+  vesting: string;
+  ford1: string;
+  ford2: string;
+  ford3: string;
+  ford4: string;
+  ford5: string;
+  ford6: string;
+  ford7: string;
+  ford8: string;
+  issue1098: boolean;
+  alternateReporting: boolean;
+  deliveryOnline: boolean;
+  deliveryMail: boolean;
 }
 
 interface BorrowersTableViewProps {
