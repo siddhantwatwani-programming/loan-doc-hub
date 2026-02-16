@@ -29,7 +29,7 @@ const PROPERTY_TYPE_OPTIONS = [
   'Two Family Res', 'Two to Four Family Res', 'Unsecured', 'Vacant', 'Industrial Condo',
   'Restaurant/Bar'
 ];
-const OCCUPANCY_OPTIONS = ['Owner Occupied', 'Investment', 'Second Home', 'Vacant', 'Investor', 'Other', 'Primary Borrower', 'Secondary Borrower', 'Tenant', 'Unknown', 'Non Owner Occupied'];
+const OCCUPANCY_OPTIONS = ['Investor', 'Other', 'Owner', 'Primary Borrower', 'Secondary Borrower', 'Tenant', 'Unknown', 'Vacant', 'Non Owner Occupied'];
 const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
 const FLOOD_ZONE_OPTIONS = ['Zone A', 'Zone AE', 'Zone AO', 'Zone X', 'Zone V', 'Zone VE', 'Zone D', 'Unknown'];
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
@@ -128,7 +128,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
               {/* Left Column */}
               <div className="space-y-1.5">
-                <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Address</span></div>
+                <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Property Address</span></div>
                 {renderInlineField('street', 'Street')}
                 {renderInlineField('city', 'City')}
                 {renderInlineSelect('state', 'State', US_STATES, 'Select state')}
@@ -143,7 +143,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
 
               {/* Right Column */}
               <div className="space-y-1.5">
-                <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Appraisal / Broker Price Opinion</span></div>
+                <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Appraisal Information</span></div>
                 {renderInlineSelect('performedBy', 'Performed By', PERFORMED_BY_OPTIONS, 'Select')}
                 {renderInlineSelect('propertyType', 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
                 {renderInlineSelect('occupancy', 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
