@@ -137,6 +137,18 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
 
     // Directly persist the updated records to the backend to avoid stale state issues
     try {
+      // First, resolve the field_dictionary UUID for the funding_records field key
+      const { data: dictEntry, error: dictError } = await supabase
+        .from('field_dictionary')
+        .select('id')
+        .eq('field_key', FIELD_KEYS.fundingRecords)
+        .maybeSingle();
+
+      if (dictError) throw dictError;
+      if (!dictEntry) throw new Error('Field dictionary entry not found for funding_records');
+
+      const fieldDictId = dictEntry.id;
+
       const { data: sectionRows, error: fetchError } = await supabase
         .from('deal_section_values')
         .select('id, field_values, version')
@@ -147,21 +159,15 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
 
       for (const sv of (sectionRows || [])) {
         const fieldValues = (sv.field_values as Record<string, any>) || {};
-        let modified = false;
 
-        // Find and update the funding_records entry in the JSONB
-        Object.keys(fieldValues).forEach(storageKey => {
-          const val = fieldValues[storageKey];
-          if (val?.indexed_key === FIELD_KEYS.fundingRecords || storageKey.includes('funding_records')) {
-            fieldValues[storageKey] = {
-              ...val,
-              value: JSON.stringify(updatedRecords),
-            };
-            modified = true;
-          }
-        });
+        // The storage key is the field_dictionary UUID
+        if (fieldValues[fieldDictId]) {
+          fieldValues[fieldDictId] = {
+            ...fieldValues[fieldDictId],
+            value_text: JSON.stringify(updatedRecords),
+            updated_at: new Date().toISOString(),
+          };
 
-        if (modified) {
           await supabase
             .from('deal_section_values')
             .update({
@@ -170,10 +176,19 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
               version: (sv.version || 0) + 1,
             })
             .eq('id', sv.id);
+
+          toast.success('Funding record deleted successfully');
+          return;
         }
       }
 
-      toast.success('Funding record deleted successfully');
+      // If we didn't find the key in any row, fallback to saveDraft
+      if (saveDraft) {
+        const success = await saveDraft();
+        if (success) {
+          toast.success('Funding record deleted successfully');
+        }
+      }
     } catch (err) {
       console.error('Error persisting funding deletion:', err);
       // Fallback: try saveDraft
