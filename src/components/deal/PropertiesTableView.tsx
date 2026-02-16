@@ -48,7 +48,6 @@ interface PropertiesTableViewProps {
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'isPrimary', label: 'Primary', visible: true },
-  { id: 'description', label: 'Description', visible: true },
   { id: 'street', label: 'Street', visible: true },
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
@@ -59,8 +58,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'appraisedValue', label: 'Appraised Value', visible: true },
   { id: 'appraisedDate', label: 'Appraisal Date', visible: true },
   { id: 'ltv', label: 'Loan To Value', visible: true },
-  { id: 'apn', label: 'APN', visible: true },
-  { id: 'loanPriority', label: 'Loan Priority', visible: true },
+  { id: 'loanPriority', label: 'Priority', visible: true },
 ];
 
 export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
@@ -100,8 +98,6 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
             disabled={disabled}
           />
         );
-      case 'description':
-        return <span className="font-medium">{property.description || property.propertyType || '-'}</span>;
       case 'appraisedValue':
         return formatCurrency(property.appraisedValue);
       case 'ltv':
