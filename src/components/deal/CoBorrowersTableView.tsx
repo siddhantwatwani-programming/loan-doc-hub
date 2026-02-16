@@ -84,6 +84,7 @@ export interface CoBorrowerData {
   deliveryPrint: boolean;
   deliveryEmail: boolean;
   deliverySms: boolean;
+  parentBorrowerPrefix: string;
 }
 
 interface CoBorrowersTableViewProps {

@@ -49,6 +49,7 @@ const emptyCoBorrower: CoBorrowerData = {
   dob: '', creditReporting: false, resCode: '', addressIndicator: '',
   sendBorrowerNotifications: false, format: 'HTML',
   deliveryPrint: true, deliveryEmail: false, deliverySms: false,
+  parentBorrowerPrefix: '',
 };
 
 export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenChange, coBorrower, onSave, isEdit = false }) => {
