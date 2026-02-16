@@ -86,9 +86,9 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
             {renderInlineField('property', 'Related Property')}
-            {renderInlineField('lienPriorityNow', 'Priority Now')}
+            {renderInlineField('lienPriorityNow', 'Lien Priority Now')}
             {renderInlineField('holder', 'Lien Holder')}
-            {renderInlineField('lienPriorityAfter', 'Priority After')}
+            {renderInlineField('lienPriorityAfter', 'Lien Priority After')}
             {renderInlineField('account', 'Account Number')}
             {renderPercentageField('interestRate', 'Interest Rate')}
             {renderInlineField('phone', 'Phone')}
@@ -116,7 +116,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
               <Label htmlFor="modal-anticipated" className="text-xs text-foreground">Anticipated</Label>
             </div>
             <div className="flex items-center gap-2">
-              <Label className="w-[110px] shrink-0 text-xs text-foreground">Recording #</Label>
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Recording Number</Label>
               <div className="flex items-center gap-1 flex-1">
                 <Input value={formData.recordingNumber} onChange={(e) => handleChange('recordingNumber', e.target.value)} className="h-7 text-xs" />
                 <Checkbox id="modal-recFlag" checked={formData.recordingNumberFlag === 'true'} onCheckedChange={(c) => handleChange('recordingNumberFlag', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
