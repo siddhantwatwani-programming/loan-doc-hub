@@ -832,6 +832,7 @@ export const DealDataEntryPage: React.FC = () => {
                 fields={fieldsBySection["loan_terms" as FieldSection] || []}
                 values={values}
                 onValueChange={updateValue}
+                saveDraft={saveDraft}
                 showValidation={showValidation}
                 disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
                 calculationResults={calculationResults}
