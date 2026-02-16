@@ -47,7 +47,15 @@ const extractInsurancesFromValues = (values: Record<string, string>): InsuranceD
       email: values[`${prefix}.email`] || '',
       note: values[`${prefix}.note`] || '',
     };
-    insurances.push(insurance);
+    // Only add if the insurance has meaningful data (not an empty shell after deletion)
+    const hasData = Object.keys(insurance).some(key => {
+      if (key === 'id' || key === 'active') return false;
+      const val = (insurance as any)[key];
+      return val !== undefined && val !== '';
+    });
+    if (hasData) {
+      insurances.push(insurance);
+    }
   });
   
   // Sort to ensure insurance1 comes first

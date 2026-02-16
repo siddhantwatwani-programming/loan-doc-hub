@@ -127,6 +127,11 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     onValueChange(FIELD_KEYS.fundingRecords, JSON.stringify(updatedRecords));
   };
 
+  const handleDeleteRecord = (record: FundingRecord) => {
+    const updatedRecords = fundingRecords.filter((r) => r.id !== record.id);
+    onValueChange(FIELD_KEYS.fundingRecords, JSON.stringify(updatedRecords));
+  };
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
@@ -144,6 +149,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       fundingRecords={paginatedRecords}
       historyRecords={historyRecords}
       onAddFunding={handleAddFunding}
+      onDeleteRecord={handleDeleteRecord}
       onUpdateRecord={handleUpdateRecord}
       isLoading={isLoading}
       currentPage={currentPage}
