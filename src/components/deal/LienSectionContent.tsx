@@ -104,7 +104,15 @@ const extractLiensFromValues = (values: Record<string, string>): LienData[] => {
         (lien as any)[lienKey] = val;
       }
     });
-    liens.push(lien);
+    // Only add if the lien has meaningful data (not an empty shell after deletion)
+    const hasData = Object.entries(LIEN_FIELD_MAP).some(([lienKey, dbField]) => {
+      if (lienKey === 'id') return false;
+      const val = values[`${prefix}.${dbField}`];
+      return val !== undefined && val !== '';
+    });
+    if (hasData) {
+      liens.push(lien);
+    }
   });
 
   liens.sort((a, b) => {
