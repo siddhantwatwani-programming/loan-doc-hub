@@ -40,7 +40,8 @@ const FIELD_KEYS = {
   payeeAddress: 'property1.payee_address',
   ref: 'property1.payee_ref',
   memo: 'property1.payee_memo',
-  nextDueDateFrequency: 'property1.payee_next_due_datefrequency',
+  nextDueDate: 'property1.payee_next_due_date',
+  frequency: 'property1.payee_frequency',
   hold: 'property1.payee_hold',
   amount: 'property1.payee_amount',
   taxYear: 'property1.payee_tax_year',
@@ -77,7 +78,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Payee Name</Label>
+            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Payee</Label>
             <Input value={getFieldValue(FIELD_KEYS.payeeName)} onChange={(e) => onValueChange(FIELD_KEYS.payeeName, e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="SDTAXCOLL" />
           </div>
 
@@ -104,8 +105,20 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Due / Frequency</Label>
-            <Input value={getFieldValue(FIELD_KEYS.nextDueDateFrequency)} onChange={(e) => onValueChange(FIELD_KEYS.nextDueDateFrequency, e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="e.g., 2024-12-31 / Yearly" />
+            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Next Due Date</Label>
+            <Input value={getFieldValue(FIELD_KEYS.nextDueDate)} onChange={(e) => onValueChange(FIELD_KEYS.nextDueDate, e.target.value)} disabled={disabled} type="date" className="h-7 text-sm" />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Frequency</Label>
+            <Select value={getFieldValue(FIELD_KEYS.frequency)} onValueChange={(val) => onValueChange(FIELD_KEYS.frequency, val)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm flex-1">
+                <SelectValue placeholder="Select frequency" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border z-50">
+                {FREQUENCY_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex items-center gap-2">
