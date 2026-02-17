@@ -30,6 +30,7 @@ const FIELD_KEYS = {
   stopDate: 'ach.stop_date',
   debitAmount: 'ach.debit_amount',
   sendConfirm: 'ach.send_confirm',
+  disableOnlinePayment: 'ach.disable_online_payment',
 } as const;
 
 interface BorrowerBankingFormProps {
@@ -56,7 +57,7 @@ const DEBIT_FREQUENCY_OPTIONS = [
   'Semi-Yearly',
   'Yearly',
 ];
-const ACCOUNT_TYPE_OPTIONS = ['Checking', 'Savings'];
+const ACCOUNT_TYPE_OPTIONS = ['Personal Savings', 'Personal Checking', 'Business Savings', 'Business Checking'];
 
 export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
   fields,
@@ -366,7 +367,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
             </div>
           </div>
 
-          {/* Send Confirm */}
+          {/* Send Confirm + Disable Online Payment */}
           <div className="flex items-center gap-4">
             <Label className="w-32 text-sm text-foreground flex-shrink-0">Send Confirm</Label>
             <Checkbox
@@ -375,6 +376,15 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
               disabled={disabled}
               className="h-4 w-4"
             />
+            <div className="flex items-center gap-2 ml-8">
+              <Label className="text-sm font-semibold text-foreground whitespace-nowrap">Disable Online Payment</Label>
+              <Checkbox
+                checked={getBoolValue('disableOnlinePayment')}
+                onCheckedChange={(checked) => handleChange('disableOnlinePayment', !!checked)}
+                disabled={disabled}
+                className="h-4 w-4"
+              />
+            </div>
           </div>
         </div>
       </div>
