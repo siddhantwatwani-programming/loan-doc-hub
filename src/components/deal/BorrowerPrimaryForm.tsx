@@ -26,12 +26,6 @@ const BORROWER_TYPE_OPTIONS = [
   'Non-profit',
 ];
 
-const TAX_ID_TYPE_OPTIONS = [
-  '0 – Unknown',
-  '1 – EIN',
-  '2 – SSN',
-];
-
 const STATE_OPTIONS = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
   'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
@@ -52,8 +46,6 @@ const FIELD_KEYS = {
   capacity: 'borrower.capacity',
   email: 'borrower.email',
   creditScore: 'borrower.credit_score',
-  taxIdType: 'borrower.tax_id_type',
-  taxId: 'borrower.tax_id',
   issue1098: 'borrower.issue_1098',
   alternateReporting: 'borrower.alternate_reporting',
   // Primary Address
@@ -69,12 +61,10 @@ const FIELD_KEYS = {
   mailingZip: 'borrower.mailing.zip',
   // Phone
   phoneHome: 'borrower.phone.home',
-  phoneHome2: 'borrower.phone.home2',
   phoneWork: 'borrower.phone.work',
   phoneCell: 'borrower.phone.mobile',
   phoneFax: 'borrower.phone.fax',
   preferredHome: 'borrower.preferred.home',
-  preferredHome2: 'borrower.preferred.home2',
   preferredWork: 'borrower.preferred.work',
   preferredCell: 'borrower.preferred.cell',
   preferredFax: 'borrower.preferred.fax',
@@ -140,7 +130,6 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
 
   const phoneRows: { key: keyof typeof FIELD_KEYS; prefKey: keyof typeof FIELD_KEYS; label: string; prefId: string }[] = [
     { key: 'phoneHome', prefKey: 'preferredHome', label: 'Home', prefId: 'prefHome' },
-    { key: 'phoneHome2', prefKey: 'preferredHome2', label: 'Home', prefId: 'prefHome2' },
     { key: 'phoneWork', prefKey: 'preferredWork', label: 'Work', prefId: 'prefWork' },
     { key: 'phoneCell', prefKey: 'preferredCell', label: 'Cell', prefId: 'prefCell' },
     { key: 'phoneFax', prefKey: 'preferredFax', label: 'Fax', prefId: 'prefFax' },
@@ -192,17 +181,6 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
 
           <InlineField label="Credit Score">
             <Input value={getValue('creditScore')} onChange={(e) => handleChange('creditScore', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
-
-          <InlineField label="Tax ID Type">
-            <Select value={getValue('taxIdType')} onValueChange={(value) => handleChange('taxIdType', value)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>{TAX_ID_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
-            </Select>
-          </InlineField>
-
-          <InlineField label="TIN">
-            <Input value={getValue('taxId')} onChange={(e) => handleChange('taxId', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
           <div className="flex items-center gap-2">
