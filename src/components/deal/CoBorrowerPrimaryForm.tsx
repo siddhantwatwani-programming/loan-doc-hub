@@ -220,7 +220,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           ))}
 
           <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">Vesting</h4>
-          <Textarea value={getValue('vesting')} onChange={(e) => handleChange('vesting', e.target.value)} disabled={disabled} className="text-sm min-h-[80px] resize-none" />
+          <Textarea value={getValue('vesting')} onChange={(e) => handleChange('vesting', e.target.value)} disabled={true} className="text-sm min-h-[80px] resize-none bg-muted/50 cursor-not-allowed" />
 
           <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">FORD</h4>
           <div className="grid grid-cols-2 gap-1">
