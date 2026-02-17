@@ -1,7 +1,6 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
@@ -22,145 +21,131 @@ interface LenderTaxInfoFormProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
-const RECIPIENT_TYPE_OPTIONS = [
-  { value: '0', label: '0 - Unknown' },
-  { value: '1', label: '1 - EIN' },
-  { value: '2', label: '2 - SSN' },
+const DESIGNATED_RECIPIENT_OPTIONS = [
+  { value: 'lender', label: 'Lender' },
+  { value: 'servicer', label: 'Servicer' },
+  { value: 'broker', label: 'Broker' },
 ];
 
-const US_STATES = [
-  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC'
+const TIN_TYPE_OPTIONS = [
+  { value: '0', label: '0 – Unknown' },
+  { value: '1', label: '1 – EIN' },
+  { value: '2', label: '2 – SSN' },
 ];
+
+const FIELD_KEYS = {
+  designatedRecipient: 'lender.tax_payer.designated_recipient',
+  name: 'lender.tax_payer.name',
+  address: 'lender.tax_payer.street_address',
+  accountNumber: 'lender.tax_payer.account_number',
+  city: 'lender.tax_payer.city',
+  tinType: 'lender.tax_payer.recipient_type',
+  tin: 'lender.tax_payer.ssn',
+  state: 'lender.tax_payer.state',
+  zip: 'lender.tax_payer.zip_code',
+  send1099: 'lender.tax_payer.auto_synchronize',
+} as const;
 
 export const LenderTaxInfoForm: React.FC<LenderTaxInfoFormProps> = ({
   values,
   onValueChange,
   disabled = false,
 }) => {
-  const getValue = (key: string): string => {
-    return values[`lender.tax_payer.${key}`] || '';
+  const getValue = (key: keyof typeof FIELD_KEYS): string => {
+    return values[FIELD_KEYS[key]] || '';
   };
 
-  const handleChange = (key: string, value: string) => {
-    onValueChange(`lender.tax_payer.${key}`, value);
-  };
-
-  const handleCheckboxChange = (key: string, checked: boolean) => {
-    onValueChange(`lender.tax_payer.${key}`, checked ? 'true' : 'false');
+  const handleChange = (key: keyof typeof FIELD_KEYS, value: string) => {
+    onValueChange(FIELD_KEYS[key], value);
   };
 
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <h2 className="text-lg font-semibold text-foreground">Tax Payer</h2>
-        <span className="text-lg font-semibold text-primary underline">1099</span>
+      <div className="border-b border-border pb-2 mb-4">
+        <span className="font-semibold text-base text-foreground">1099</span>
       </div>
 
       <div className="max-w-[700px] space-y-3">
-        {/* SSN - inline label */}
+        {/* Designated Recipient */}
         <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground whitespace-nowrap min-w-[220px]">TAX PAYER'S social security number</Label>
-          <Input
-            value={getValue('ssn')}
-            onChange={(e) => handleChange('ssn', e.target.value)}
+          <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Designated Recipient</Label>
+          <Select
+            value={getValue('designatedRecipient')}
+            onValueChange={(value) => handleChange('designatedRecipient', value)}
             disabled={disabled}
-            className="h-8 flex-1"
-          />
+          >
+            <SelectTrigger className="h-7 text-sm flex-1 max-w-[200px] bg-background">
+              <SelectValue placeholder="Dropdown Populates" />
+            </SelectTrigger>
+            <SelectContent className="bg-background z-50">
+              {DESIGNATED_RECIPIENT_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Name - inline label */}
-        <div className="flex items-start gap-3">
-          <Label className="text-sm text-muted-foreground whitespace-nowrap min-w-[220px] mt-2">TAX PAYER'S name</Label>
-          <Textarea
+        {/* Name */}
+        <div className="flex items-center gap-3">
+          <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Name</Label>
+          <Input
             value={getValue('name')}
             onChange={(e) => handleChange('name', e.target.value)}
             disabled={disabled}
-            className="min-h-[60px] resize-none flex-1"
+            className="h-7 text-sm flex-1"
           />
         </div>
 
-        {/* Street Address - inline label */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground whitespace-nowrap min-w-[220px]">Street address (including apt no.)</Label>
-          <Input
-            value={getValue('street_address')}
-            onChange={(e) => handleChange('street_address', e.target.value)}
-            disabled={disabled}
-            className="h-8 flex-1"
-          />
+        {/* Address | Account Number */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Address</Label>
+            <Input
+              value={getValue('address')}
+              onChange={(e) => handleChange('address', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Account Number</Label>
+            <Input
+              value={getValue('accountNumber')}
+              onChange={(e) => handleChange('accountNumber', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
         </div>
 
-        {/* City / State / Zip - inline labels */}
-        <div className="grid grid-cols-[1fr_160px_160px] gap-3 pl-[232px]">
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground whitespace-nowrap">City</Label>
+        {/* City | TIN Type */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">City</Label>
             <Input
               value={getValue('city')}
               onChange={(e) => handleChange('city', e.target.value)}
               disabled={disabled}
-              className="h-8 flex-1"
+              className="h-7 text-sm flex-1"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground whitespace-nowrap">State</Label>
-            <Select
-              value={getValue('state')}
-              onValueChange={(value) => handleChange('state', value)}
-              disabled={disabled}
-            >
-              <SelectTrigger className="h-8">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                {US_STATES.map((state) => (
-                  <SelectItem key={state} value={state}>
-                    {state}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground whitespace-nowrap">Zip</Label>
-            <Input
-              value={getValue('zip_code')}
-              onChange={(e) => handleChange('zip_code', e.target.value)}
-              disabled={disabled}
-              className="h-8 flex-1"
-            />
-          </div>
-        </div>
-
-        {/* Account Number / Recipient Type - inline labels */}
-        <div className="grid grid-cols-[1fr_1fr] gap-3">
           <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground whitespace-nowrap min-w-[220px]">Account number (optional)</Label>
-            <Input
-              value={getValue('account_number')}
-              onChange={(e) => handleChange('account_number', e.target.value)}
-              disabled={disabled}
-              className="h-8 flex-1"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground whitespace-nowrap">Recipient Type</Label>
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN Type</Label>
             <Select
-              value={getValue('recipient_type')}
-              onValueChange={(value) => handleChange('recipient_type', value)}
+              value={getValue('tinType')}
+              onValueChange={(value) => handleChange('tinType', value)}
               disabled={disabled}
             >
-              <SelectTrigger className="h-8">
+              <SelectTrigger className="h-7 text-sm flex-1 bg-background">
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
-              <SelectContent>
-                {RECIPIENT_TYPE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+              <SelectContent className="bg-background z-50">
+                {TIN_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -168,29 +153,47 @@ export const LenderTaxInfoForm: React.FC<LenderTaxInfoFormProps> = ({
           </div>
         </div>
 
-        {/* Auto-Synchronize */}
-        <div className="flex items-center gap-2 pt-2">
-          <Checkbox
-            id="auto_synchronize"
-            checked={getValue('auto_synchronize') === 'true'}
-            onCheckedChange={(checked) => handleCheckboxChange('auto_synchronize', checked === true)}
-            disabled={disabled}
-          />
-          <Label htmlFor="auto_synchronize" className="text-sm text-muted-foreground cursor-pointer">
-            Auto-Synchronize
-          </Label>
+        {/* State | TIN */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">State</Label>
+            <Input
+              value={getValue('state')}
+              onChange={(e) => handleChange('state', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN</Label>
+            <Input
+              value={getValue('tin')}
+              onChange={(e) => handleChange('tin', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
         </div>
 
-        {/* Notes */}
-        <div className="pt-4">
-          <Label className="text-sm text-muted-foreground mb-1 block">Notes</Label>
-          <Textarea
-            value={getValue('notes')}
-            onChange={(e) => handleChange('notes', e.target.value)}
-            disabled={disabled}
-            className="min-h-[100px] resize-none"
-            placeholder="Enter notes..."
-          />
+        {/* ZIP | Send 1099 */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">ZIP</Label>
+            <Input
+              value={getValue('zip')}
+              onChange={(e) => handleChange('zip', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Send 1099</Label>
+            <Checkbox
+              checked={getValue('send1099') === 'true'}
+              onCheckedChange={(checked) => handleChange('send1099', checked === true ? 'true' : 'false')}
+              disabled={disabled}
+            />
+          </div>
         </div>
       </div>
     </div>
