@@ -3,8 +3,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
+
+const CAPACITY_OPTIONS = [
+  'Attorney',
+  'CFO / CPA',
+  'Broker',
+  'Family',
+  'Bankruptcy Trustee',
+  'Other',
+];
 
 const FIELD_KEYS = {
   // Name & Contact
@@ -29,8 +39,9 @@ const FIELD_KEYS = {
   sendBorrowerStatement: 'borrower.authorized_party.send_pref.borrower_statement',
   sendMaturityNotice: 'borrower.authorized_party.send_pref.maturity_notice',
   // Delivery
-  deliveryOnline: 'borrower.authorized_party.delivery.online',
+  deliveryEmail: 'borrower.authorized_party.delivery.email',
   deliveryMail: 'borrower.authorized_party.delivery.mail',
+  deliverySms: 'borrower.authorized_party.delivery.sms',
   // Details
   details: 'borrower.authorized_party.details',
 } as const;
@@ -87,7 +98,23 @@ export const BorrowerAuthorizedPartyForm: React.FC<BorrowerAuthorizedPartyFormPr
           {renderInlineField('firstName', 'First')}
           {renderInlineField('middleName', 'Middle')}
           {renderInlineField('lastName', 'Last')}
-          {renderInlineField('capacity', 'Capacity')}
+          <div className="flex items-center gap-2">
+            <Label className="w-[100px] shrink-0 text-xs text-muted-foreground">Capacity</Label>
+            <Select
+              value={getValue('capacity')}
+              onValueChange={(value) => handleChange('capacity', value)}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-7 text-xs flex-1">
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent>
+                {CAPACITY_OPTIONS.map(opt => (
+                  <SelectItem key={opt} value={opt} className="text-xs">{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           {renderInlineField('email', 'Email', 'email')}
         </div>
 
@@ -160,10 +187,10 @@ export const BorrowerAuthorizedPartyForm: React.FC<BorrowerAuthorizedPartyFormPr
           <h3 className="text-xs font-semibold text-foreground border-b border-border pb-1 mb-2">Delivery</h3>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
             <div className="flex items-center gap-2">
-              <Label className="text-xs text-muted-foreground flex-1">Online</Label>
+              <Label className="text-xs text-muted-foreground flex-1">Email</Label>
               <Checkbox
-                checked={getBoolValue('deliveryOnline')}
-                onCheckedChange={(checked) => handleChange('deliveryOnline', !!checked)}
+                checked={getBoolValue('deliveryEmail')}
+                onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)}
                 disabled={disabled}
                 className="h-3.5 w-3.5"
               />
@@ -173,6 +200,15 @@ export const BorrowerAuthorizedPartyForm: React.FC<BorrowerAuthorizedPartyFormPr
               <Checkbox
                 checked={getBoolValue('deliveryMail')}
                 onCheckedChange={(checked) => handleChange('deliveryMail', !!checked)}
+                disabled={disabled}
+                className="h-3.5 w-3.5"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-xs text-muted-foreground flex-1">SMS</Label>
+              <Checkbox
+                checked={getBoolValue('deliverySms')}
+                onCheckedChange={(checked) => handleChange('deliverySms', !!checked)}
                 disabled={disabled}
                 className="h-3.5 w-3.5"
               />
