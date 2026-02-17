@@ -54,7 +54,10 @@ const FIELD_KEYS = {
   sendLateNotice: 'lender.send_pref.late_notice',
   sendBorrowerStatement: 'lender.send_pref.borrower_statement',
   sendMaturityNotice: 'lender.send_pref.maturity_notice',
-  preferredPhone: 'lender.preferred.phone',
+  preferredHome: 'lender.preferred.home',
+  preferredWork: 'lender.preferred.work',
+  preferredCell: 'lender.preferred.cell',
+  preferredFax: 'lender.preferred.fax',
   isPrimary: 'lender.isPrimary',
   mailingStreet: 'lender.street',
   mailingCity: 'lender.city',
@@ -75,8 +78,9 @@ const FIELD_KEYS = {
   ford8: 'lender.ford.8',
   loanId: 'lender.loan_id',
   loanType: 'lender.loan_type',
-  deliveryOnline: 'lender.delivery.online',
-  deliveryMail: 'lender.delivery.mail',
+  deliveryPrint: 'lender.delivery.print',
+  deliveryEmail: 'lender.delivery.email',
+  deliverySms: 'lender.delivery.sms',
   entitySignBorrower: 'lender.entity_sign.borrower',
   entitySignBy: 'lender.entity_sign.by',
   entitySignIts: 'lender.entity_sign.its',
@@ -99,10 +103,10 @@ const LENDER_TYPE_OPTIONS = [
 ];
 
 const PHONE_FIELDS = [
-  { label: 'Home', fieldKey: 'phoneHome' as const },
-  { label: 'Work', fieldKey: 'phoneWork' as const },
-  { label: 'Cell', fieldKey: 'phoneCell' as const },
-  { label: 'Fax', fieldKey: 'phoneFax' as const },
+  { label: 'Home', fieldKey: 'phoneHome' as const, prefKey: 'preferredHome' as const },
+  { label: 'Work', fieldKey: 'phoneWork' as const, prefKey: 'preferredWork' as const },
+  { label: 'Cell', fieldKey: 'phoneCell' as const, prefKey: 'preferredCell' as const },
+  { label: 'Fax', fieldKey: 'phoneFax' as const, prefKey: 'preferredFax' as const },
 ];
 
 const TAX_ID_TYPE_OPTIONS = [
@@ -152,7 +156,6 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
 
   const lenderType = getValue('type');
   const taxedAs = getValue('taxedAs');
-  const preferredPhone = getValue('preferredPhone');
   
   const issue1099Mapping = LENDER_TYPE_ISSUE_1099_MAP[lenderType] || 'Yes';
   const isAlwaysNo1099 = ALWAYS_NO_1099_TYPES.includes(lenderType);
@@ -273,77 +276,6 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 className="h-8"
               />
             </div>
-            
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Tax ID Type</Label>
-              <Select
-                value={getValue('taxIdType')}
-                onValueChange={(value) => handleChange('taxIdType', value)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TAX_ID_TYPE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Tax ID</Label>
-              <Input
-                value={getValue('taxId')}
-                onChange={(e) => handleChange('taxId', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">LP/LLLP/LLC Taxed as Corp</Label>
-              <Checkbox
-                checked={getBoolValue('lpLllpLlcTaxedAsCorp')}
-                onCheckedChange={(checked) => handleChange('lpLllpLlcTaxedAsCorp', !!checked)}
-                disabled={disabled}
-              />
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Issue 1099</Label>
-              <Checkbox
-                checked={shouldForceNo1099 ? false : getBoolValue('issue1099')}
-                onCheckedChange={(checked) => handleChange('issue1099', !!checked)}
-                disabled={disabled || shouldForceNo1099}
-              />
-              {shouldForceNo1099 && (
-                <span className="text-xs text-muted-foreground">
-                  (Auto: No{isAlwaysNo1099 ? ` for ${lenderType}` : ' - Taxed as Corp'})
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">TIN Verified</Label>
-              <Checkbox
-                checked={getBoolValue('tinVerified')}
-                onCheckedChange={(checked) => handleChange('tinVerified', !!checked)}
-                disabled={disabled}
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Alternate Reporting</Label>
-              <Checkbox
-                checked={getBoolValue('alternateReporting')}
-                onCheckedChange={(checked) => handleChange('alternateReporting', !!checked)}
-                disabled={disabled}
-              />
-            </div>
           </div>
         </div>
 
@@ -370,9 +302,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           </div>
         </div>
 
-        {/* Column 3: Phone + Preferred + Send */}
+        {/* Column 3: Contact Preference */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Phone</h3>
+          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Contact Preference</h3>
           <div className="space-y-3">
             {PHONE_FIELDS.map((phone) => (
               <div key={phone.label} className="flex items-center gap-3">
@@ -384,65 +316,82 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   disabled={disabled}
                   className="h-8"
                 />
-              </div>
-            ))}
-          </div>
-
-          {/* Preferred section */}
-          <h4 className="text-sm font-semibold text-foreground mt-4 border-b pb-1">Preferred</h4>
-          <div className="space-y-2">
-            {PHONE_FIELDS.map((phone) => (
-              <div key={phone.label} className="flex items-center gap-2">
                 <Checkbox
-                  checked={preferredPhone === phone.label}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      handleChange('preferredPhone', phone.label);
-                    } else if (preferredPhone === phone.label) {
-                      handleChange('preferredPhone', '');
-                    }
-                  }}
+                  checked={getBoolValue(phone.prefKey)}
+                  onCheckedChange={(checked) => handleChange(phone.prefKey, !!checked)}
                   disabled={disabled}
                 />
-                <Label className="text-sm text-muted-foreground">{phone.label}</Label>
               </div>
             ))}
           </div>
 
-          {/* Send Options */}
-          <h4 className="text-sm font-semibold text-foreground mt-4 border-b pb-1">Send:</h4>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Payment Notification</Label>
-              <Checkbox
-                checked={getBoolValue('sendPaymentNotification')}
-                onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)}
-                disabled={disabled}
-              />
+          {/* Delivery Options + Send side by side */}
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div>
+              <h4 className="text-sm font-semibold text-foreground border-b pb-1 mb-2">Delivery Options</h4>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm text-muted-foreground">Print</Label>
+                  <Checkbox
+                    checked={getBoolValue('deliveryPrint')}
+                    onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)}
+                    disabled={disabled}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm text-muted-foreground">Email</Label>
+                  <Checkbox
+                    checked={getBoolValue('deliveryEmail')}
+                    onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)}
+                    disabled={disabled}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm text-muted-foreground">SMS</Label>
+                  <Checkbox
+                    checked={getBoolValue('deliverySms')}
+                    onCheckedChange={(checked) => handleChange('deliverySms', !!checked)}
+                    disabled={disabled}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Borrower Statement</Label>
-              <Checkbox
-                checked={getBoolValue('sendBorrowerStatement')}
-                onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)}
-                disabled={disabled}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Late Notice</Label>
-              <Checkbox
-                checked={getBoolValue('sendLateNotice')}
-                onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)}
-                disabled={disabled}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Maturity Notice</Label>
-              <Checkbox
-                checked={getBoolValue('sendMaturityNotice')}
-                onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)}
-                disabled={disabled}
-              />
+            <div>
+              <h4 className="text-sm font-semibold text-foreground border-b pb-1 mb-2">Send</h4>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={getBoolValue('sendPaymentNotification')}
+                    onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)}
+                    disabled={disabled}
+                  />
+                  <Label className="text-sm text-muted-foreground">Payment Notification</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={getBoolValue('sendLateNotice')}
+                    onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)}
+                    disabled={disabled}
+                  />
+                  <Label className="text-sm text-muted-foreground">Late Notice</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={getBoolValue('sendBorrowerStatement')}
+                    onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)}
+                    disabled={disabled}
+                  />
+                  <Label className="text-sm text-muted-foreground">Borrower Statement</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={getBoolValue('sendMaturityNotice')}
+                    onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)}
+                    disabled={disabled}
+                  />
+                  <Label className="text-sm text-muted-foreground">Maturity Notice</Label>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -498,29 +447,6 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             <Input value={getValue('ford6')} onChange={(e) => handleChange('ford6', e.target.value)} disabled={disabled} className="h-8" />
             <Input value={getValue('ford7')} onChange={(e) => handleChange('ford7', e.target.value)} disabled={disabled} className="h-8" />
             <Input value={getValue('ford8')} onChange={(e) => handleChange('ford8', e.target.value)} disabled={disabled} className="h-8" />
-          </div>
-        </div>
-      </div>
-
-      {/* Delivery Section */}
-      <div className="mt-6 border-t pt-4">
-        <h3 className="text-sm font-semibold text-destructive mb-3">Delivery</h3>
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground">Online</Label>
-            <Checkbox
-              checked={getBoolValue('deliveryOnline')}
-              onCheckedChange={(checked) => handleChange('deliveryOnline', !!checked)}
-              disabled={disabled}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground">Mail</Label>
-            <Checkbox
-              checked={getBoolValue('deliveryMail')}
-              onCheckedChange={(checked) => handleChange('deliveryMail', !!checked)}
-              disabled={disabled}
-            />
           </div>
         </div>
       </div>
