@@ -112,10 +112,16 @@ async function generateSingleDocument(
     });
 
     // 3. Fetch ALL deal field values from deal_section_values
-    const { data: sectionValues } = await supabase
+    const { data: sectionValues, error: svError } = await supabase
       .from("deal_section_values")
       .select("section, field_values")
       .eq("deal_id", dealId);
+
+    if (svError) {
+      console.error(`[generate-document] Failed to fetch deal_section_values:`, svError.message);
+      result.error = "Failed to fetch deal section values";
+      return result;
+    }
 
     // Get all field_dictionary_ids from JSONB keys
     // Handle composite keys like "borrower1::uuid" used by multi-entity sections
@@ -126,16 +132,30 @@ async function generateSingleDocument(
         if (fieldDictId && !allFieldDictIds.includes(fieldDictId)) allFieldDictIds.push(fieldDictId);
       });
     });
+
+    console.log(`[generate-document] Found ${allFieldDictIds.length} unique field_dictionary IDs from deal section values`);
     
-    // Fetch ALL field dictionary entries for deal values
-    const { data: allFieldDictEntries } = await supabase
-      .from("field_dictionary")
-      .select("id, field_key, data_type, label")
-      .in("id", allFieldDictIds);
+    // Fetch ALL field dictionary entries for deal values using batched queries
+    // to avoid URL length limits with large .in() arrays
+    const FD_BATCH_SIZE = 100;
+    const allFieldDictEntries: any[] = [];
+    for (let i = 0; i < allFieldDictIds.length; i += FD_BATCH_SIZE) {
+      const chunk = allFieldDictIds.slice(i, i + FD_BATCH_SIZE);
+      const { data: batchData, error: batchError } = await supabase
+        .from("field_dictionary")
+        .select("id, field_key, data_type, label")
+        .in("id", chunk);
+      if (batchError) {
+        console.error(`[generate-document] field_dictionary batch fetch error (offset ${i}):`, batchError.message);
+        continue;
+      }
+      allFieldDictEntries.push(...(batchData || []));
+    }
 
     // Create a complete lookup map for all field dictionary entries
     const allFieldDictMap = new Map<string, FieldDefinition>();
-    (allFieldDictEntries || []).forEach((fd: any) => allFieldDictMap.set(fd.id, fd));
+    allFieldDictEntries.forEach((fd: any) => allFieldDictMap.set(fd.id, fd));
+    console.log(`[generate-document] Built allFieldDictMap with ${allFieldDictMap.size} entries from ${allFieldDictIds.length} IDs`);
 
     const fieldValues = new Map<string, FieldValueData>();
     (sectionValues || []).forEach((sv: any) => {
