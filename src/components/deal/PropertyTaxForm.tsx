@@ -1,9 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
-import { Home } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -23,128 +21,180 @@ interface PropertyTaxFormProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
-const FREQUENCY_OPTIONS = [
-  'Once Only',
-  'Monthly',
-  'Quarterly',
-  'Bi-Monthly',
-  'Bi-Weekly',
-  'Weekly',
-  'Semi-Monthly',
-  'Semi-Yearly',
-  'Yearly'
-];
-
 const FIELD_KEYS = {
-  payeeName: 'property1.payee_name',
-  payeeAddress: 'property1.payee_address',
-  ref: 'property1.payee_ref',
-  memo: 'property1.payee_memo',
-  nextDueDate: 'property1.payee_next_due_date',
-  frequency: 'property1.payee_frequency',
-  hold: 'property1.payee_hold',
-  amount: 'property1.payee_amount',
-  taxYear: 'property1.payee_tax_year',
+  designatedRecipient: 'property1.1099.designated_recipient',
+  name: 'property1.1099.name',
+  address: 'property1.1099.address',
+  accountNumber: 'property1.1099.account_number',
+  city: 'property1.1099.city',
+  tinType: 'property1.1099.tin_type',
+  tin: 'property1.1099.tin',
+  state: 'property1.1099.state',
+  zip: 'property1.1099.zip',
+  send1099: 'property1.1099.send_1099',
 } as const;
 
+const DESIGNATED_RECIPIENT_OPTIONS = [
+  { value: 'lender', label: 'Lender' },
+  { value: 'servicer', label: 'Servicer' },
+  { value: 'broker', label: 'Broker' },
+];
+
+const TIN_TYPE_OPTIONS = [
+  { value: '0', label: '0 – Unknown' },
+  { value: '1', label: '1 – EIN' },
+  { value: '2', label: '2 – SSN' },
+];
+
 export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
-  fields,
   values,
   onValueChange,
-  showValidation = false,
   disabled = false,
 }) => {
-  const getFieldValue = (key: string) => values[key] || '';
-  const apnValue = values['property1.apn'] || '';
-  
-  useEffect(() => {
-    if (apnValue && !getFieldValue(FIELD_KEYS.ref)) {
-      onValueChange(FIELD_KEYS.ref, apnValue);
-    }
-  }, [apnValue]);
+  const getValue = (key: keyof typeof FIELD_KEYS): string => {
+    return values[FIELD_KEYS[key]] || '';
+  };
+
+  const handleChange = (key: keyof typeof FIELD_KEYS, value: string) => {
+    onValueChange(FIELD_KEYS[key], value);
+  };
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="flex items-center gap-2">
-        <Home className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-lg text-foreground">Property Tax</span>
+    <div className="p-6">
+      {/* Header */}
+      <div className="border-b border-border pb-2 mb-4">
+        <span className="font-semibold text-base text-foreground">1099</span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left Column - Payee Section */}
-        <div className="space-y-3">
-          <div className="border-b border-border pb-2">
-            <span className="font-semibold text-sm text-primary">Payee</span>
-          </div>
+      <div className="max-w-[700px] space-y-3">
+        {/* Designated Recipient + Dropdown Populates */}
+        <div className="flex items-center gap-3">
+          <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Designated Recipient</Label>
+          <Select
+            value={getValue('designatedRecipient')}
+            onValueChange={(value) => handleChange('designatedRecipient', value)}
+            disabled={disabled}
+          >
+            <SelectTrigger className="h-7 text-sm flex-1 max-w-[200px] bg-background">
+              <SelectValue placeholder="Dropdown Populates" />
+            </SelectTrigger>
+            <SelectContent className="bg-background z-50">
+              {DESIGNATED_RECIPIENT_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
+        {/* Name */}
+        <div className="flex items-center gap-3">
+          <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Name</Label>
+          <Input
+            value={getValue('name')}
+            onChange={(e) => handleChange('name', e.target.value)}
+            disabled={disabled}
+            className="h-7 text-sm flex-1"
+          />
+        </div>
+
+        {/* Address | Account Number */}
+        <div className="grid grid-cols-2 gap-4">
           <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Payee</Label>
-            <Input value={getFieldValue(FIELD_KEYS.payeeName)} onChange={(e) => onValueChange(FIELD_KEYS.payeeName, e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="SDTAXCOLL" />
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Address</Label>
+            <Input
+              value={getValue('address')}
+              onChange={(e) => handleChange('address', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
           </div>
-
-          <div className="flex items-start gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0 pt-2">Payee Address</Label>
-            <Textarea value={getFieldValue(FIELD_KEYS.payeeAddress)} onChange={(e) => onValueChange(FIELD_KEYS.payeeAddress, e.target.value)} disabled={disabled} className="min-h-[60px] text-sm" placeholder="Enter address" />
-          </div>
-
           <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Ref</Label>
-            <Input value={getFieldValue(FIELD_KEYS.ref) || apnValue} onChange={(e) => onValueChange(FIELD_KEYS.ref, e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="APN" />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Memo</Label>
-            <Input value={getFieldValue(FIELD_KEYS.memo)} onChange={(e) => onValueChange(FIELD_KEYS.memo, e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Enter memo" />
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Account Number</Label>
+            <Input
+              value={getValue('accountNumber')}
+              onChange={(e) => handleChange('accountNumber', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
           </div>
         </div>
 
-        {/* Right Column - Payment Details */}
-        <div className="space-y-3">
-          <div className="border-b border-border pb-2">
-            <span className="font-semibold text-sm text-primary">Payment Details</span>
-          </div>
-
+        {/* City | TIN Type */}
+        <div className="grid grid-cols-2 gap-4">
           <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Next Due Date</Label>
-            <Input value={getFieldValue(FIELD_KEYS.nextDueDate)} onChange={(e) => onValueChange(FIELD_KEYS.nextDueDate, e.target.value)} disabled={disabled} type="date" className="h-7 text-sm" />
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">City</Label>
+            <Input
+              value={getValue('city')}
+              onChange={(e) => handleChange('city', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
           </div>
-
           <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Frequency</Label>
-            <Select value={getFieldValue(FIELD_KEYS.frequency)} onValueChange={(val) => onValueChange(FIELD_KEYS.frequency, val)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm flex-1">
-                <SelectValue placeholder="Select frequency" />
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN Type</Label>
+            <Select
+              value={getValue('tinType')}
+              onValueChange={(value) => handleChange('tinType', value)}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-7 text-sm flex-1 bg-background">
+                <SelectValue placeholder="Select" />
               </SelectTrigger>
-              <SelectContent className="bg-background border border-border z-50">
-                {FREQUENCY_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+              <SelectContent className="bg-background z-50">
+                {TIN_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
+        </div>
 
-          <div className="flex items-center gap-2">
-            <Checkbox id="tax-hold" checked={getFieldValue(FIELD_KEYS.hold) === 'true'} onCheckedChange={(checked) => onValueChange(FIELD_KEYS.hold, checked ? 'true' : 'false')} disabled={disabled} className="h-4 w-4" />
-            <Label htmlFor="tax-hold" className="text-sm text-foreground">Hold</Label>
-          </div>
-
+        {/* State | TIN */}
+        <div className="grid grid-cols-2 gap-4">
           <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Amount</Label>
-            <div className="flex items-center gap-1 flex-1">
-              <span className="text-sm text-muted-foreground">$</span>
-              <Input value={getFieldValue(FIELD_KEYS.amount)} onChange={(e) => onValueChange(FIELD_KEYS.amount, e.target.value)} disabled={disabled} className="h-7 text-sm text-right" inputMode="decimal" placeholder="0.00" />
-            </div>
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">State</Label>
+            <Input
+              value={getValue('state')}
+              onChange={(e) => handleChange('state', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
           </div>
-
           <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Tax Year</Label>
-            <Input value={getFieldValue(FIELD_KEYS.taxYear)} onChange={(e) => onValueChange(FIELD_KEYS.taxYear, e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="2024" />
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN</Label>
+            <Input
+              value={getValue('tin')}
+              onChange={(e) => handleChange('tin', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
           </div>
         </div>
-      </div>
 
-      <div className="pt-4 border-t border-border">
-        <p className="text-sm text-muted-foreground">
-          Property tax information is used to track tax obligations and payment schedules for the property.
-        </p>
+        {/* ZIP | Send 1099 */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">ZIP</Label>
+            <Input
+              value={getValue('zip')}
+              onChange={(e) => handleChange('zip', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Send 1099</Label>
+            <Checkbox
+              checked={getValue('send1099') === 'true'}
+              onCheckedChange={(checked) => handleChange('send1099', checked === true ? 'true' : 'false')}
+              disabled={disabled}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
