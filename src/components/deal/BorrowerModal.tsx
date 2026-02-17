@@ -27,7 +27,7 @@ const BORROWER_TYPE_OPTIONS = [
   'IRA / ERISA', 'Investment Fund', '401K', 'Foreign Holder W-8', 'Non-profit',
 ];
 
-const TAX_ID_TYPE_OPTIONS = ['0 – Unknown', '1 – EIN', '2 – SSN'];
+
 
 const STATE_OPTIONS = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
@@ -40,10 +40,10 @@ const generateBorrowerId = () => `borrower_${Date.now()}_${Math.random().toStrin
 const getEmptyBorrower = (): BorrowerData => ({
   id: generateBorrowerId(), isPrimary: false, borrowerType: '', fullName: '',
   firstName: '', middleName: '', lastName: '', email: '', phone: '',
-  street: '', city: '', state: '', zipCode: '', taxIdType: '', taxId: '',
+  street: '', city: '', state: '', zipCode: '',
   creditScore: '', capacity: '',
-  homePhone: '', homePhone2: '', workPhone: '', mobilePhone: '', fax: '',
-  preferredHome: false, preferredHome2: false, preferredWork: false, preferredCell: false, preferredFax: false,
+  homePhone: '', workPhone: '', mobilePhone: '', fax: '',
+  preferredHome: false, preferredWork: false, preferredCell: false, preferredFax: false,
   primaryStreet: '', primaryCity: '', primaryState: '', primaryZip: '',
   mailingStreet: '', mailingCity: '', mailingState: '', mailingZip: '', mailingSameAsPrimary: false,
   vesting: '', ford1: '', ford2: '', ford3: '', ford4: '', ford5: '', ford6: '', ford7: '', ford8: '',
@@ -142,9 +142,9 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
             {/* Column 3 - Phone + Preferred */}
             <div className="space-y-1">
               <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Phone</div>
-              {(['homePhone', 'homePhone2', 'workPhone', 'mobilePhone', 'fax'] as const).map((phoneKey, idx) => {
-                const prefKey = (['preferredHome', 'preferredHome2', 'preferredWork', 'preferredCell', 'preferredFax'] as const)[idx];
-                const phoneLabel = ['Home', 'Home', 'Work', 'Cell', 'Fax'][idx];
+              {(['homePhone', 'workPhone', 'mobilePhone', 'fax'] as const).map((phoneKey, idx) => {
+                const prefKey = (['preferredHome', 'preferredWork', 'preferredCell', 'preferredFax'] as const)[idx];
+                const phoneLabel = ['Home', 'Work', 'Cell', 'Fax'][idx];
                 return (
                   <div key={phoneKey} className="flex items-center gap-2">
                     <Label className="w-[50px] shrink-0 text-xs">{phoneLabel}</Label>
@@ -177,10 +177,8 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
           {/* Bottom section - Tax, Delivery */}
           <div className="mt-2 pt-2">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-0">
-              {/* Tax & Reporting */}
+              {/* Reporting */}
               <div className="space-y-1">
-                {renderInlineSelect('taxIdType', 'Tax ID Type', TAX_ID_TYPE_OPTIONS, 'Select')}
-                {renderInlineField('taxId', 'TIN')}
                 <div className="flex items-center gap-2 h-7">
                   <Checkbox id="modal-borrower-issue1098" checked={formData.issue1098} onCheckedChange={(checked) => handleFieldChange('issue1098', !!checked)} className="h-3 w-3" />
                   <Label htmlFor="modal-borrower-issue1098" className="font-normal text-xs">Issue 1098</Label>
