@@ -161,6 +161,11 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Info text */}
+      <p className="mt-6 text-sm text-muted-foreground">
+        Property tax information is used to track tax obligations and payment schedules for the property.
+      </p>
     </div>
   );
 };
