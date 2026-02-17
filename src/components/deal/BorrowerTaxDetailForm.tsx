@@ -2,17 +2,40 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
-// Field key mapping for tax detail fields
 const FIELD_KEYS = {
-  taxIdType: 'borrower.tax_id_type',
-  taxId: 'borrower.tax_id',
-  filingStatus: 'borrower.tax_filing_status',
-  exemptions: 'borrower.tax_exemptions',
-  taxYear: 'borrower.tax_year',
+  designatedRecipient: 'borrower.1098.designated_recipient',
+  name: 'borrower.1098.name',
+  address: 'borrower.1098.address',
+  accountNumber: 'borrower.1098.account_number',
+  city: 'borrower.1098.city',
+  tinType: 'borrower.1098.tin_type',
+  tin: 'borrower.1098.tin',
+  state: 'borrower.1098.state',
+  zip: 'borrower.1098.zip',
+  send1098: 'borrower.1098.send_1098',
 } as const;
+
+const DESIGNATED_RECIPIENT_OPTIONS = [
+  { value: 'lender', label: 'Lender' },
+  { value: 'servicer', label: 'Servicer' },
+  { value: 'broker', label: 'Broker' },
+];
+
+const TIN_TYPE_OPTIONS = [
+  { value: '0', label: '0 – Unknown' },
+  { value: '1', label: '1 – EIN' },
+  { value: '2', label: '2 – SSN' },
+];
 
 interface BorrowerTaxDetailFormProps {
   fields: FieldDefinition[];
@@ -24,10 +47,8 @@ interface BorrowerTaxDetailFormProps {
 }
 
 export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
-  fields,
   values,
   onValueChange,
-  showValidation = false,
   disabled = false,
 }) => {
   const getValue = (key: keyof typeof FIELD_KEYS): string => {
@@ -38,45 +59,142 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
     onValueChange(FIELD_KEYS[key], value);
   };
 
-  const renderField = (key: keyof typeof FIELD_KEYS, label: string) => {
-    const value = getValue(key);
-    const fieldDef = fields.find(f => f.field_key === FIELD_KEYS[key]);
-    const isRequired = fieldDef?.is_required || false;
-    const showError = showValidation && isRequired && !value.trim();
-
-    return (
-      <div key={key} className="flex items-center gap-4">
-        <Label className="w-40 text-sm text-foreground flex-shrink-0">
-          {label}
-        </Label>
-        <Input
-          value={value}
-          onChange={(e) => handleChange(key, e.target.value)}
-          disabled={disabled}
-          className={`h-8 text-sm flex-1 max-w-md ${showError ? 'border-destructive' : ''}`}
-        />
-      </div>
-    );
-  };
-
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6">
+      {/* Header */}
       <div className="border-b border-border pb-2 mb-4">
         <span className="font-semibold text-base text-foreground">1098</span>
       </div>
 
-      <div className="space-y-3">
-        {renderField('taxIdType', 'Tax ID Type')}
-        {renderField('taxId', 'TIN / SSN')}
-        {renderField('filingStatus', 'Filing Status')}
-        {renderField('exemptions', 'Exemptions')}
-        {renderField('taxYear', 'Tax Year')}
-      </div>
+      <div className="max-w-[700px] space-y-3">
+        {/* Designated Recipient + Dropdown Populates */}
+        <div className="flex items-center gap-3">
+          <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Designated Recipient</Label>
+          <Select
+            value={getValue('designatedRecipient')}
+            onValueChange={(value) => handleChange('designatedRecipient', value)}
+            disabled={disabled}
+          >
+            <SelectTrigger className="h-7 text-sm flex-1 max-w-[200px] bg-background">
+              <SelectValue placeholder="Dropdown Populates" />
+            </SelectTrigger>
+            <SelectContent className="bg-background z-50">
+              {DESIGNATED_RECIPIENT_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      <div className="pt-6 border-t border-border">
-        <p className="text-sm text-muted-foreground">
-          Tax information is used for 1098 form generation and IRS reporting requirements.
-        </p>
+        {/* Name */}
+        <div className="flex items-center gap-3">
+          <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Name</Label>
+          <Input
+            value={getValue('name')}
+            onChange={(e) => handleChange('name', e.target.value)}
+            disabled={disabled}
+            className="h-7 text-sm flex-1"
+          />
+        </div>
+
+        {/* Address | Account Number */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Address</Label>
+            <Input
+              value={getValue('address')}
+              onChange={(e) => handleChange('address', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Account Number</Label>
+            <Input
+              value={getValue('accountNumber')}
+              onChange={(e) => handleChange('accountNumber', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </div>
+
+        {/* City | TIN Type */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">City</Label>
+            <Input
+              value={getValue('city')}
+              onChange={(e) => handleChange('city', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN Type</Label>
+            <Select
+              value={getValue('tinType')}
+              onValueChange={(value) => handleChange('tinType', value)}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-7 text-sm flex-1 bg-background">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent className="bg-background z-50">
+                {TIN_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* State | TIN */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">State</Label>
+            <Input
+              value={getValue('state')}
+              onChange={(e) => handleChange('state', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN</Label>
+            <Input
+              value={getValue('tin')}
+              onChange={(e) => handleChange('tin', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </div>
+
+        {/* ZIP | Send 1098 */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">ZIP</Label>
+            <Input
+              value={getValue('zip')}
+              onChange={(e) => handleChange('zip', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Send 1098</Label>
+            <Checkbox
+              checked={getValue('send1098') === 'true'}
+              onCheckedChange={(checked) => handleChange('send1098', checked === true ? 'true' : 'false')}
+              disabled={disabled}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
