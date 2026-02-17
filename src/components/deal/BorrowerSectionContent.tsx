@@ -417,6 +417,23 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     onValueChange(`${prefix}.credit_score`, borrowerData.creditScore);
     onValueChange(`${prefix}.capacity`, borrowerData.capacity);
     onValueChange(`${prefix}.vesting`, borrowerData.vesting);
+
+    // Vesting sync: propagate borrower vesting to co-borrowers and guarantor
+    // 1. Sync to all co-borrowers of this borrower (read-only sync)
+    const relatedCoBorrowers = allCoBorrowers.filter(
+      cb => cb.parentBorrowerPrefix === prefix
+    );
+    relatedCoBorrowers.forEach(cb => {
+      onValueChange(`${cb.id}.vesting`, borrowerData.vesting);
+    });
+
+    // 2. Sync to additional guarantor (only if not manually overridden)
+    const overriddenKey = `${prefix}.guarantor.vesting_overridden`;
+    const isOverridden = values[overriddenKey] === 'true';
+    if (!isOverridden) {
+      onValueChange(`${prefix}.guarantor.vesting`, borrowerData.vesting);
+    }
+
     onValueChange(`${prefix}.ford.1`, borrowerData.ford1);
     onValueChange(`${prefix}.ford.2`, borrowerData.ford2);
     onValueChange(`${prefix}.ford.3`, borrowerData.ford3);
@@ -441,7 +458,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     
     setModalOpen(false);
     setIsLoading(false);
-  }, [editingBorrower, values, onValueChange, allBorrowers]);
+  }, [editingBorrower, values, onValueChange, allBorrowers, allCoBorrowers]);
 
   // Handle deleting a borrower - remove all prefixed values from state and mark for backend cleanup
   // Auto-save is handled reactively inside useDealFields when deletedPrefixes changes
@@ -523,7 +540,9 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     onValueChange(`${prefix}.borrower_type`, coBorrowerData.borrowerType);
     onValueChange(`${prefix}.capacity`, coBorrowerData.capacity);
     onValueChange(`${prefix}.credit_score`, coBorrowerData.creditScore);
-    onValueChange(`${prefix}.vesting`, coBorrowerData.vesting);
+    // Always use parent borrower's vesting for co-borrower (read-only sync)
+    const parentVesting = values[`${selectedBorrowerPrefix}.vesting`] || '';
+    onValueChange(`${prefix}.vesting`, parentVesting);
     onValueChange(`${prefix}.ford`, coBorrowerData.ford);
     onValueChange(`${prefix}.ford1`, coBorrowerData.ford1);
     onValueChange(`${prefix}.ford2`, coBorrowerData.ford2);
@@ -963,6 +982,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
         coBorrower={editingCoBorrower}
         onSave={handleSaveCoBorrower}
         isEdit={!!editingCoBorrower}
+        parentBorrowerVesting={values[`${selectedBorrowerPrefix}.vesting`] || ''}
       />
     </>
   );

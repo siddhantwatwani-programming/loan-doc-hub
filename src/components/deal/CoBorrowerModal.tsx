@@ -19,6 +19,7 @@ interface CoBorrowerModalProps {
   coBorrower: CoBorrowerData | null;
   onSave: (coBorrower: CoBorrowerData) => void;
   isEdit?: boolean;
+  parentBorrowerVesting?: string;
 }
 
 const BORROWER_TYPE_OPTIONS = [
@@ -52,12 +53,16 @@ const emptyCoBorrower: CoBorrowerData = {
   parentBorrowerPrefix: '',
 };
 
-export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenChange, coBorrower, onSave, isEdit = false }) => {
+export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenChange, coBorrower, onSave, isEdit = false, parentBorrowerVesting = '' }) => {
   const [formData, setFormData] = useState<CoBorrowerData>(emptyCoBorrower);
 
   useEffect(() => {
-    setFormData(coBorrower ? coBorrower : emptyCoBorrower);
-  }, [coBorrower, open]);
+    if (coBorrower) {
+      setFormData({ ...coBorrower, vesting: parentBorrowerVesting || coBorrower.vesting });
+    } else {
+      setFormData({ ...emptyCoBorrower, vesting: parentBorrowerVesting });
+    }
+  }, [coBorrower, open, parentBorrowerVesting]);
 
   const handleInputChange = (field: keyof CoBorrowerData, value: string | boolean) => setFormData(prev => ({ ...prev, [field]: value }));
   const handleSave = () => onSave(formData);
@@ -144,7 +149,7 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
             {/* Column 4 - Vesting & FORD */}
             <div className="space-y-1">
               <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Vesting</div>
-              <Textarea value={String(formData.vesting || '')} onChange={(e) => handleInputChange('vesting', e.target.value)} className="text-xs w-full min-h-[80px] resize-none" />
+              <Textarea value={String(formData.vesting || '')} disabled={true} className="text-xs w-full min-h-[80px] resize-none bg-muted/50 cursor-not-allowed" />
 
               <div className="font-semibold text-xs text-foreground pb-1 mt-2 mb-1.5">FORD</div>
               <div className="grid grid-cols-2 gap-1">
