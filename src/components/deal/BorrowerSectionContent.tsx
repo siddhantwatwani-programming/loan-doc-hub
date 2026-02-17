@@ -75,17 +75,13 @@ const extractBorrowersFromValues = (values: Record<string, string>): BorrowerDat
       city: values[`${prefix}.address.city`] || '',
       state: values[`${prefix}.state`] || '',
       zipCode: values[`${prefix}.address.zip`] || '',
-      taxIdType: values[`${prefix}.tax_id_type`] || '',
-      taxId: values[`${prefix}.tax_id`] || '',
       creditScore: values[`${prefix}.credit_score`] || '',
       capacity: values[`${prefix}.capacity`] || '',
       homePhone: values[`${prefix}.phone.home`] || '',
-      homePhone2: values[`${prefix}.phone.home2`] || '',
       workPhone: values[`${prefix}.phone.work`] || '',
       mobilePhone: values[`${prefix}.phone.mobile`] || '',
       fax: values[`${prefix}.phone.fax`] || '',
       preferredHome: values[`${prefix}.preferred.home`] === 'true',
-      preferredHome2: values[`${prefix}.preferred.home2`] === 'true',
       preferredWork: values[`${prefix}.preferred.work`] === 'true',
       preferredCell: values[`${prefix}.preferred.cell`] === 'true',
       preferredFax: values[`${prefix}.preferred.fax`] === 'true',
@@ -186,12 +182,10 @@ const extractCoBorrowersFromValues = (values: Record<string, string>): CoBorrowe
       generation: values[`${prefix}.generation`] || '',
       email: values[`${prefix}.email`] || '',
       homePhone: values[`${prefix}.phone.home`] || '',
-      homePhone2: values[`${prefix}.phone.home2`] || '',
       workPhone: values[`${prefix}.phone.work`] || '',
       mobilePhone: values[`${prefix}.phone.mobile`] || '',
       fax: values[`${prefix}.fax`] || '',
       preferredHome: values[`${prefix}.preferred.home`] === 'true',
-      preferredHome2: values[`${prefix}.preferred.home2`] === 'true',
       preferredWork: values[`${prefix}.preferred.work`] === 'true',
       preferredCell: values[`${prefix}.preferred.cell`] === 'true',
       preferredFax: values[`${prefix}.preferred.fax`] === 'true',
@@ -226,7 +220,7 @@ const extractCoBorrowersFromValues = (values: Record<string, string>): CoBorrowe
       ford6: values[`${prefix}.ford6`] || '',
       ford7: values[`${prefix}.ford7`] || '',
       ford8: values[`${prefix}.ford8`] || '',
-      taxIdType: values[`${prefix}.tax_id_type`] || '',
+      
       issue1098: values[`${prefix}.issue_1098`] === 'true',
       alternateReporting: values[`${prefix}.alternate_reporting`] === 'true',
       deliveryOnline: values[`${prefix}.delivery_online`] === 'true',
@@ -403,11 +397,11 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     onValueChange(`${prefix}.email`, borrowerData.email);
     onValueChange(`${prefix}.phone.mobile`, borrowerData.mobilePhone || borrowerData.phone);
     onValueChange(`${prefix}.phone.home`, borrowerData.homePhone);
-    onValueChange(`${prefix}.phone.home2`, borrowerData.homePhone2);
+    
     onValueChange(`${prefix}.phone.work`, borrowerData.workPhone);
     onValueChange(`${prefix}.phone.fax`, borrowerData.fax);
     onValueChange(`${prefix}.preferred.home`, String(borrowerData.preferredHome));
-    onValueChange(`${prefix}.preferred.home2`, String(borrowerData.preferredHome2));
+    
     onValueChange(`${prefix}.preferred.work`, String(borrowerData.preferredWork));
     onValueChange(`${prefix}.preferred.cell`, String(borrowerData.preferredCell));
     onValueChange(`${prefix}.preferred.fax`, String(borrowerData.preferredFax));
@@ -420,8 +414,6 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     onValueChange(`${prefix}.mailing.state`, borrowerData.mailingState);
     onValueChange(`${prefix}.mailing.zip`, borrowerData.mailingZip);
     onValueChange(`${prefix}.mailing_same_as_primary`, String(borrowerData.mailingSameAsPrimary));
-    onValueChange(`${prefix}.tax_id_type`, borrowerData.taxIdType);
-    onValueChange(`${prefix}.tax_id`, borrowerData.taxId);
     onValueChange(`${prefix}.credit_score`, borrowerData.creditScore);
     onValueChange(`${prefix}.capacity`, borrowerData.capacity);
     onValueChange(`${prefix}.vesting`, borrowerData.vesting);
@@ -501,12 +493,12 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     onValueChange(`${prefix}.generation`, coBorrowerData.generation);
     onValueChange(`${prefix}.email`, coBorrowerData.email);
     onValueChange(`${prefix}.phone.home`, coBorrowerData.homePhone);
-    onValueChange(`${prefix}.phone.home2`, coBorrowerData.homePhone2);
+    
     onValueChange(`${prefix}.phone.work`, coBorrowerData.workPhone);
     onValueChange(`${prefix}.phone.mobile`, coBorrowerData.mobilePhone);
     onValueChange(`${prefix}.fax`, coBorrowerData.fax);
     onValueChange(`${prefix}.preferred.home`, String(coBorrowerData.preferredHome));
-    onValueChange(`${prefix}.preferred.home2`, String(coBorrowerData.preferredHome2));
+    
     onValueChange(`${prefix}.preferred.work`, String(coBorrowerData.preferredWork));
     onValueChange(`${prefix}.preferred.cell`, String(coBorrowerData.preferredCell));
     onValueChange(`${prefix}.preferred.fax`, String(coBorrowerData.preferredFax));
@@ -541,7 +533,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     onValueChange(`${prefix}.ford6`, coBorrowerData.ford6);
     onValueChange(`${prefix}.ford7`, coBorrowerData.ford7);
     onValueChange(`${prefix}.ford8`, coBorrowerData.ford8);
-    onValueChange(`${prefix}.tax_id_type`, coBorrowerData.taxIdType);
+    
     onValueChange(`${prefix}.issue_1098`, String(coBorrowerData.issue1098));
     onValueChange(`${prefix}.alternate_reporting`, String(coBorrowerData.alternateReporting));
     onValueChange(`${prefix}.delivery_online`, String(coBorrowerData.deliveryOnline));

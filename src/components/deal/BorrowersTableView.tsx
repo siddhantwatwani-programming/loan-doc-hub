@@ -38,17 +38,13 @@ export interface BorrowerData {
   city: string;
   state: string;
   zipCode: string;
-  taxIdType: string;
-  taxId: string;
   creditScore: string;
   capacity: string;
   homePhone: string;
-  homePhone2: string;
   workPhone: string;
   mobilePhone: string;
   fax: string;
   preferredHome: boolean;
-  preferredHome2: boolean;
   preferredWork: boolean;
   preferredCell: boolean;
   preferredFax: boolean;

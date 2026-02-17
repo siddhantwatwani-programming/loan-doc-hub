@@ -30,12 +30,10 @@ export interface CoBorrowerData {
   generation: string;
   email: string;
   homePhone: string;
-  homePhone2: string;
   workPhone: string;
   mobilePhone: string;
   fax: string;
   preferredHome: boolean;
-  preferredHome2: boolean;
   preferredWork: boolean;
   preferredCell: boolean;
   preferredFax: boolean;
@@ -70,7 +68,7 @@ export interface CoBorrowerData {
   ford6: string;
   ford7: string;
   ford8: string;
-  taxIdType: string;
+  
   issue1098: boolean;
   alternateReporting: boolean;
   deliveryOnline: boolean;
