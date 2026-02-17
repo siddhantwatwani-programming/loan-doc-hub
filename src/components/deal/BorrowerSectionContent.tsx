@@ -613,7 +613,25 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     // Replace 'borrower.' with the selected borrower prefix
     const actualKey = fieldKey.replace('borrower.', `${selectedBorrowerPrefix}.`);
     onValueChange(actualKey, value);
-  }, [selectedBorrowerPrefix, onValueChange]);
+
+    // Vesting sync: when borrower vesting changes, propagate to co-borrowers and additional guarantor
+    if (fieldKey === 'borrower.vesting') {
+      // 1. Sync to all co-borrowers of this borrower (read-only sync)
+      const relatedCoBorrowers = allCoBorrowers.filter(
+        cb => cb.parentBorrowerPrefix === selectedBorrowerPrefix
+      );
+      relatedCoBorrowers.forEach(cb => {
+        onValueChange(`${cb.id}.vesting`, value);
+      });
+
+      // 2. Sync to additional guarantor (only if not manually overridden)
+      const overriddenKey = `${selectedBorrowerPrefix}.guarantor.vesting_overridden`;
+      const isOverridden = values[overriddenKey] === 'true';
+      if (!isOverridden) {
+        onValueChange(`${selectedBorrowerPrefix}.guarantor.vesting`, value);
+      }
+    }
+  }, [selectedBorrowerPrefix, onValueChange, allCoBorrowers, values]);
 
   // Get selected borrower name for display
   const selectedBorrowerName = useMemo(() => {

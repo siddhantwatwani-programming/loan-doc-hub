@@ -48,6 +48,7 @@ const FIELD_KEYS = {
   mailingState: 'borrower.guarantor.mailing_state',
   mailingZip: 'borrower.guarantor.mailing_zip',
   vesting: 'borrower.guarantor.vesting',
+  vestingOverridden: 'borrower.guarantor.vesting_overridden',
   ford: 'borrower.guarantor.ford',
 } as const;
 
@@ -77,6 +78,10 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
 
   const handleChange = (key: keyof typeof FIELD_KEYS, value: string | boolean) => {
     onValueChange(FIELD_KEYS[key], String(value));
+    // Mark vesting as overridden when user manually edits it
+    if (key === 'vesting') {
+      onValueChange(FIELD_KEYS['vestingOverridden'], 'true');
+    }
   };
 
   const renderInlineField = (key: keyof typeof FIELD_KEYS, label: string) => (
