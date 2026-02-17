@@ -12,9 +12,8 @@ interface LenderSubNavigationProps {
 const LENDER_DETAIL_SECTIONS: { key: LenderSubSection; label: string }[] = [
   { key: 'lender', label: 'Lender Info' },
   { key: 'authorized_party', label: 'Authorized Party' },
-  { key: 'funding', label: 'Funding' },
   { key: 'banking', label: 'Banking' },
-  { key: 'tax_info', label: 'Tax Info' },
+  { key: 'tax_info', label: '1099' },
 ];
 
 export const LenderSubNavigation: React.FC<LenderSubNavigationProps> = ({
