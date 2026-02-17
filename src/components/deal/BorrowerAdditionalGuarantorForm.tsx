@@ -117,10 +117,6 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
 
   const handleChange = (key: keyof typeof FIELD_KEYS, value: string | boolean) => {
     onValueChange(FIELD_KEYS[key], String(value));
-    // Mark vesting as overridden when user manually edits it
-    if (key === 'vesting') {
-      onValueChange(FIELD_KEYS['vestingOverridden'], 'true');
-    }
   };
 
   const handleSameAsPrimaryChange = (checked: boolean) => {

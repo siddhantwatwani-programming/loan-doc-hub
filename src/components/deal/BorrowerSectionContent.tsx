@@ -427,12 +427,8 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
       onValueChange(`${cb.id}.vesting`, borrowerData.vesting);
     });
 
-    // 2. Sync to additional guarantor (only if not manually overridden)
-    const overriddenKey = `${prefix}.guarantor.vesting_overridden`;
-    const isOverridden = values[overriddenKey] === 'true';
-    if (!isOverridden) {
-      onValueChange(`${prefix}.guarantor.vesting`, borrowerData.vesting);
-    }
+    // 2. Always sync to additional guarantor (guarantor can still edit independently)
+    onValueChange(`${prefix}.guarantor.vesting`, borrowerData.vesting);
 
     onValueChange(`${prefix}.ford.1`, borrowerData.ford1);
     onValueChange(`${prefix}.ford.2`, borrowerData.ford2);
@@ -635,12 +631,8 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
         onValueChange(`${cb.id}.vesting`, value);
       });
 
-      // 2. Sync to additional guarantor (only if not manually overridden)
-      const overriddenKey = `${selectedBorrowerPrefix}.guarantor.vesting_overridden`;
-      const isOverridden = values[overriddenKey] === 'true';
-      if (!isOverridden) {
-        onValueChange(`${selectedBorrowerPrefix}.guarantor.vesting`, value);
-      }
+      // 2. Always sync to additional guarantor (guarantor can still edit independently)
+      onValueChange(`${selectedBorrowerPrefix}.guarantor.vesting`, value);
     }
   }, [selectedBorrowerPrefix, onValueChange, allCoBorrowers, values]);
 
