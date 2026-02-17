@@ -47,12 +47,15 @@ const extractBorrowersFromValues = (values: Record<string, string>): BorrowerDat
     }
   });
   
-  // Also check for base borrower prefix (borrower. without number)
-  const hasBorrowerBase = Object.keys(values).some(key => 
-    key.startsWith('borrower.') && !key.match(/^borrower\d+\./)
-  );
-  if (hasBorrowerBase) {
-    borrowerPrefixes.add('borrower');
+  // Only add base 'borrower' prefix if no numbered borrowers exist
+  // This prevents ghost rows from canonical field_dictionary keys or defaults
+  if (borrowerPrefixes.size === 0) {
+    const hasBorrowerBase = Object.keys(values).some(key => 
+      key.startsWith('borrower.') && !key.match(/^borrower\d+\./)
+    );
+    if (hasBorrowerBase) {
+      borrowerPrefixes.add('borrower');
+    }
   }
   
   // Build borrower objects from values
@@ -112,8 +115,15 @@ const extractBorrowersFromValues = (values: Record<string, string>): BorrowerDat
     borrowers.push(borrower);
   });
   
-  // Sort to ensure borrower (primary) comes first, then borrower1, borrower2, etc.
-  borrowers.sort((a, b) => {
+  // Filter out ghost rows where all meaningful fields are empty
+  const filteredBorrowers = borrowers.filter(b => {
+    const hasData = b.fullName || b.firstName || b.lastName || b.email || 
+      b.phone || b.street || b.city || b.state || b.borrowerType || b.borrowerId;
+    return !!hasData;
+  });
+  
+  // Sort to ensure borrower1, borrower2, etc. in order
+  filteredBorrowers.sort((a, b) => {
     if (a.id === 'borrower') return -1;
     if (b.id === 'borrower') return 1;
     const numA = parseInt(a.id.replace('borrower', '')) || 0;
@@ -121,7 +131,7 @@ const extractBorrowersFromValues = (values: Record<string, string>): BorrowerDat
     return numA - numB;
   });
   
-  return borrowers;
+  return filteredBorrowers;
 };
 
 // Get the next available borrower prefix
@@ -154,12 +164,14 @@ const extractCoBorrowersFromValues = (values: Record<string, string>): CoBorrowe
     }
   });
   
-  // Also check for base coborrower prefix (coborrower. without number)
-  const hasCoBorrowerBase = Object.keys(values).some(key => 
-    key.startsWith('coborrower.') && !key.match(/^coborrower\d+\./)
-  );
-  if (hasCoBorrowerBase) {
-    coBorrowerPrefixes.add('coborrower');
+  // Only add base 'coborrower' prefix if no numbered co-borrowers exist
+  if (coBorrowerPrefixes.size === 0) {
+    const hasCoBorrowerBase = Object.keys(values).some(key => 
+      key.startsWith('coborrower.') && !key.match(/^coborrower\d+\./)
+    );
+    if (hasCoBorrowerBase) {
+      coBorrowerPrefixes.add('coborrower');
+    }
   }
   
   // Build co-borrower objects from values
@@ -233,8 +245,15 @@ const extractCoBorrowersFromValues = (values: Record<string, string>): CoBorrowe
     coBorrowers.push(coBorrower);
   });
   
-  // Sort coborrower, coborrower1, coborrower2, etc.
-  coBorrowers.sort((a, b) => {
+  // Filter out ghost rows where all meaningful fields are empty
+  const filteredCoBorrowers = coBorrowers.filter(cb => {
+    const hasData = cb.fullName || cb.firstName || cb.lastName || cb.email || 
+      cb.mobilePhone || cb.city || cb.state;
+    return !!hasData;
+  });
+  
+  // Sort coborrower1, coborrower2, etc.
+  filteredCoBorrowers.sort((a, b) => {
     if (a.id === 'coborrower') return -1;
     if (b.id === 'coborrower') return 1;
     const numA = parseInt(a.id.replace('coborrower', '')) || 0;
@@ -242,7 +261,7 @@ const extractCoBorrowersFromValues = (values: Record<string, string>): CoBorrowe
     return numA - numB;
   });
   
-  return coBorrowers;
+  return filteredCoBorrowers;
 };
 
 // Get the next available co-borrower prefix
