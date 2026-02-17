@@ -180,6 +180,24 @@ async function generateSingleDocument(
 
     console.log(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);
 
+    // Auto-compute borrower.borrower_description if not already set
+    const existingDesc = fieldValues.get("borrower.borrower_description");
+    if (!existingDesc || !existingDesc.rawValue) {
+      const borrowerNames: { index: number; name: string }[] = [];
+      for (const [key, val] of fieldValues.entries()) {
+        const m = key.match(/^borrower(\d+)\.full_name$/);
+        if (m && val.rawValue) {
+          borrowerNames.push({ index: parseInt(m[1], 10), name: String(val.rawValue) });
+        }
+      }
+      if (borrowerNames.length > 0) {
+        borrowerNames.sort((a, b) => a.index - b.index);
+        const description = borrowerNames.map(b => b.name).join(" and ");
+        fieldValues.set("borrower.borrower_description", { rawValue: description, dataType: "text" });
+        console.log(`[generate-document] Auto-computed borrower.borrower_description = "${description}"`);
+      }
+    }
+
     // Build set of ALL valid field keys from the complete field_dictionary (for direct tag matching)
     // Use pagination to fetch all rows (table has 1700+ entries, default limit is 1000)
     const PAGE_SIZE = 1000;
