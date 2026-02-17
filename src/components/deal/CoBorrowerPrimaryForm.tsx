@@ -35,12 +35,6 @@ const BORROWER_TYPE_OPTIONS = [
   'Non-profit',
 ];
 
-const TAX_ID_TYPE_OPTIONS = [
-  '0 – Unknown',
-  '1 – EIN',
-  '2 – SSN',
-];
-
 const STATE_OPTIONS = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
   'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
@@ -70,7 +64,6 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
 
   const phoneRows = [
     { key: 'phone.home', label: 'Home', prefKey: 'preferred.home', prefId: 'prefHome' },
-    { key: 'phone.home2', label: 'Home', prefKey: 'preferred.home2', prefId: 'prefHome2' },
     { key: 'phone.work', label: 'Work', prefKey: 'preferred.work', prefId: 'prefWork' },
     { key: 'phone.mobile', label: 'Cell', prefKey: 'preferred.cell', prefId: 'prefCell' },
     { key: 'fax', label: 'Fax', prefKey: 'preferred.fax', prefId: 'prefFax' },
@@ -122,17 +115,6 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
 
           <InlineField label="Credit Score">
             <Input value={getValue('credit_score')} onChange={(e) => handleChange('credit_score', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
-
-          <InlineField label="Tax ID Type">
-            <Select value={getValue('tax_id_type')} onValueChange={(value) => handleChange('tax_id_type', value)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>{TAX_ID_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
-            </Select>
-          </InlineField>
-
-          <InlineField label="TIN">
-            <Input value={getValue('tin')} onChange={(e) => handleChange('tin', e.target.value)} placeholder="SSN or Tax ID" disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
           <div className="flex items-center gap-2">
