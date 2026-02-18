@@ -34,6 +34,7 @@ export interface PropertyData {
   pledgedEquity?: string;
   zoning?: string;
   performedBy?: string;
+  copyBorrowerAddress?: boolean;
 }
 
 interface PropertiesTableViewProps {

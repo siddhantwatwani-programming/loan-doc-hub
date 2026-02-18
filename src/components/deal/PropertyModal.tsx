@@ -67,7 +67,7 @@ const generatePropertyId = () => `property_${Date.now()}_${Math.random().toStrin
 const getEmptyProperty = (): PropertyData => ({
   id: generatePropertyId(), isPrimary: false, description: '', street: '', city: '', state: '', zipCode: '', county: '',
   propertyType: '', occupancy: '', appraisedValue: '', appraisedDate: '', ltv: '', apn: '',
-  loanPriority: '', floodZone: '', pledgedEquity: '', zoning: '', performedBy: '',
+  loanPriority: '', floodZone: '', pledgedEquity: '', zoning: '', performedBy: '', copyBorrowerAddress: false,
 });
 
 export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange, property, onSave, isEdit = false }) => {
@@ -134,7 +134,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                   <span className="text-xs font-medium text-primary">Address</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Checkbox id="modal-copy-borrower-address" checked={false} disabled className="h-3.5 w-3.5" />
+                  <Checkbox id="modal-copy-borrower-address" checked={!!formData.copyBorrowerAddress} onCheckedChange={(checked) => handleFieldChange('copyBorrowerAddress', !!checked)} className="h-3.5 w-3.5" />
                   <Label htmlFor="modal-copy-borrower-address" className="text-xs text-primary">Copy Borrower's Address</Label>
                 </div>
                 {renderInlineField('street', 'Street')}
