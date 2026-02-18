@@ -23,24 +23,15 @@ interface CoBorrowerPrimaryFormProps {
 }
 
 const BORROWER_TYPE_OPTIONS = [
-  'Individual',
-  'Joint',
-  'Family Trust',
-  'LLC',
-  'C Corp / S Corp',
-  'IRA / ERISA',
-  'Investment Fund',
-  '401K',
-  'Foreign Holder W-8',
-  'Non-profit',
+  'Individual', 'Joint', 'Family Trust', 'LLC', 'C Corp / S Corp',
+  'IRA / ERISA', 'Investment Fund', '401K', 'Foreign Holder W-8', 'Non-profit',
 ];
 
 const CAPACITY_OPTIONS = [
-  'Borrower',
-  'Co-Borrower',
-  'Additional Guarantor',
-  'Authorized Party',
+  'Borrower', 'Co-Borrower', 'Additional Guarantor', 'Authorized Party',
 ];
+
+const TAX_ID_TYPE_OPTIONS = ['0 – Unknown', '1 – EIN', '2 – SSN'];
 
 const STATE_OPTIONS = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -94,15 +85,6 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             </Select>
           </InlineField>
 
-          <InlineField label="Capacity">
-            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>
-                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-              </SelectContent>
-            </Select>
-          </InlineField>
-
           <InlineField label="Full Name: If Entity, Use Entity">
             <Input value={getValue('full_name')} onChange={(e) => handleChange('full_name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
@@ -119,6 +101,15 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             <Input value={getValue('last_name')} onChange={(e) => handleChange('last_name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
+          <InlineField label="Capacity">
+            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>
+                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </InlineField>
+
           <InlineField label="Email">
             <Input type="email" value={getValue('email')} onChange={(e) => handleChange('email', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
@@ -129,18 +120,25 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             <Input value={getValue('credit_score')} onChange={(e) => handleChange('credit_score', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <div className="flex items-center gap-2">
-            <Checkbox id="issue1098" checked={getBoolValue('issue_1098')} onCheckedChange={(checked) => handleChange('issue_1098', String(!!checked))} disabled={disabled} />
-            <Label htmlFor="issue1098" className="text-sm font-normal">Issue 1098</Label>
-          </div>
+          {/* Tax Identification */}
+          <InlineField label="Tax ID Type">
+            <Select value={getValue('tax_id_type')} onValueChange={(value) => handleChange('tax_id_type', value)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>{TAX_ID_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
+            </Select>
+          </InlineField>
+
+          <InlineField label="TIN">
+            <Input value={getValue('tin')} onChange={(e) => handleChange('tin', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+          </InlineField>
 
           <div className="flex items-center gap-2">
-            <Checkbox id="alternateReporting" checked={getBoolValue('alternate_reporting')} onCheckedChange={(checked) => handleChange('alternate_reporting', String(!!checked))} disabled={disabled} />
-            <Label htmlFor="alternateReporting" className="text-sm font-normal">Alternate Reporting</Label>
+            <Checkbox id="coborrower-tinVerified" checked={getBoolValue('tin_verified')} onCheckedChange={(checked) => handleChange('tin_verified', String(!!checked))} disabled={disabled} />
+            <Label htmlFor="coborrower-tinVerified" className="text-sm font-normal">TIN Verified</Label>
           </div>
         </div>
 
-        {/* Column 2 - Primary Address & Mailing Address & Delivery */}
+        {/* Column 2 - Primary Address & Mailing Address & Delivery Options & Send */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Primary Address</h4>
 
@@ -190,16 +188,42 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             <Input value={getValue('mailing_address.zip')} onChange={(e) => handleChange('mailing_address.zip', e.target.value)} disabled={disabled || getBoolValue('mailing_same_as_primary')} className="h-7 text-sm" />
           </InlineField>
 
-          <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">Delivery</h4>
-
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Online</Label>
-            <Checkbox id="deliveryOnline" checked={getBoolValue('delivery_online')} onCheckedChange={(checked) => handleChange('delivery_online', String(!!checked))} disabled={disabled} />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Mail</Label>
-            <Checkbox id="deliveryMail" checked={getBoolValue('delivery_mail')} onCheckedChange={(checked) => handleChange('delivery_mail', String(!!checked))} disabled={disabled} />
+          {/* Delivery Options & Send - side by side */}
+          <div className="pt-2 flex gap-6">
+            <div className="space-y-1.5">
+              <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options</h4>
+              <div className="flex items-center gap-2">
+                <Checkbox id="coborrower-deliveryPrint" checked={getBoolValue('delivery_print')} onCheckedChange={(checked) => handleChange('delivery_print', String(!!checked))} disabled={disabled} />
+                <Label htmlFor="coborrower-deliveryPrint" className="text-sm font-normal">Print</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="coborrower-deliveryEmail" checked={getBoolValue('delivery_email')} onCheckedChange={(checked) => handleChange('delivery_email', String(!!checked))} disabled={disabled} />
+                <Label htmlFor="coborrower-deliveryEmail" className="text-sm font-normal">Email</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="coborrower-deliverySms" checked={getBoolValue('delivery_sms')} onCheckedChange={(checked) => handleChange('delivery_sms', String(!!checked))} disabled={disabled} />
+                <Label htmlFor="coborrower-deliverySms" className="text-sm font-normal">SMS</Label>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <h4 className="font-semibold text-sm text-foreground pb-1">Send</h4>
+              <div className="flex items-center gap-2">
+                <Checkbox id="coborrower-sendPaymentNotification" checked={getBoolValue('send_payment_notification')} onCheckedChange={(checked) => handleChange('send_payment_notification', String(!!checked))} disabled={disabled} />
+                <Label htmlFor="coborrower-sendPaymentNotification" className="text-sm font-normal">Payment Notification</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="coborrower-sendLateNotice" checked={getBoolValue('send_late_notice')} onCheckedChange={(checked) => handleChange('send_late_notice', String(!!checked))} disabled={disabled} />
+                <Label htmlFor="coborrower-sendLateNotice" className="text-sm font-normal">Late Notice</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="coborrower-sendBorrowerStatement" checked={getBoolValue('send_borrower_statement')} onCheckedChange={(checked) => handleChange('send_borrower_statement', String(!!checked))} disabled={disabled} />
+                <Label htmlFor="coborrower-sendBorrowerStatement" className="text-sm font-normal">Borrower Statement</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="coborrower-sendMaturityNotice" checked={getBoolValue('send_maturity_notice')} onCheckedChange={(checked) => handleChange('send_maturity_notice', String(!!checked))} disabled={disabled} />
+                <Label htmlFor="coborrower-sendMaturityNotice" className="text-sm font-normal">Maturity Notice</Label>
+              </div>
+            </div>
           </div>
         </div>
 

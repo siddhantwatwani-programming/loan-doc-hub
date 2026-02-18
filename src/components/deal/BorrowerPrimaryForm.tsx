@@ -33,6 +33,12 @@ const CAPACITY_OPTIONS = [
   'Authorized Party',
 ];
 
+const TAX_ID_TYPE_OPTIONS = [
+  '0 – Unknown',
+  '1 – EIN',
+  '2 – SSN',
+];
+
 const STATE_OPTIONS = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
   'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
@@ -55,6 +61,10 @@ const FIELD_KEYS = {
   creditScore: 'borrower.credit_score',
   issue1098: 'borrower.issue_1098',
   alternateReporting: 'borrower.alternate_reporting',
+  // Tax Identification
+  taxIdType: 'borrower.tax_id_type',
+  tin: 'borrower.tin',
+  tinVerified: 'borrower.tin_verified',
   // Primary Address
   primaryStreet: 'borrower.address.street',
   primaryCity: 'borrower.address.city',
@@ -75,7 +85,16 @@ const FIELD_KEYS = {
   preferredWork: 'borrower.preferred.work',
   preferredCell: 'borrower.preferred.cell',
   preferredFax: 'borrower.preferred.fax',
-  // Delivery
+  // Delivery Options
+  deliveryPrint: 'borrower.delivery_print',
+  deliveryEmail: 'borrower.delivery_email',
+  deliverySms: 'borrower.delivery_sms',
+  // Send
+  sendPaymentNotification: 'borrower.send_payment_notification',
+  sendLateNotice: 'borrower.send_late_notice',
+  sendBorrowerStatement: 'borrower.send_borrower_statement',
+  sendMaturityNotice: 'borrower.send_maturity_notice',
+  // Delivery (legacy)
   deliveryOnline: 'borrower.delivery_online',
   deliveryMail: 'borrower.delivery_mail',
   // Vesting & FORD
@@ -160,15 +179,6 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
             </Select>
           </InlineField>
 
-          <InlineField label="Capacity">
-            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>
-                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-              </SelectContent>
-            </Select>
-          </InlineField>
-
           <InlineField label="Full Name: If Entity, Use Entity">
             <Input value={getValue('fullName')} onChange={(e) => handleChange('fullName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
@@ -185,6 +195,15 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
             <Input value={getValue('lastName')} onChange={(e) => handleChange('lastName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
+          <InlineField label="Capacity">
+            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>
+                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </InlineField>
+
           <InlineField label="Email">
             <Input type="email" value={getValue('email')} onChange={(e) => handleChange('email', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
@@ -195,18 +214,25 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
             <Input value={getValue('creditScore')} onChange={(e) => handleChange('creditScore', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <div className="flex items-center gap-2">
-            <Checkbox id="borrower-issue1098" checked={getBoolValue('issue1098')} onCheckedChange={(checked) => handleChange('issue1098', !!checked)} disabled={disabled} />
-            <Label htmlFor="borrower-issue1098" className="text-sm font-normal">Issue 1098</Label>
-          </div>
+          {/* Tax Identification */}
+          <InlineField label="Tax ID Type">
+            <Select value={getValue('taxIdType')} onValueChange={(value) => handleChange('taxIdType', value)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>{TAX_ID_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
+            </Select>
+          </InlineField>
+
+          <InlineField label="TIN">
+            <Input value={getValue('tin')} onChange={(e) => handleChange('tin', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+          </InlineField>
 
           <div className="flex items-center gap-2">
-            <Checkbox id="borrower-alternateReporting" checked={getBoolValue('alternateReporting')} onCheckedChange={(checked) => handleChange('alternateReporting', !!checked)} disabled={disabled} />
-            <Label htmlFor="borrower-alternateReporting" className="text-sm font-normal">Alternate Reporting</Label>
+            <Checkbox id="borrower-tinVerified" checked={getBoolValue('tinVerified')} onCheckedChange={(checked) => handleChange('tinVerified', !!checked)} disabled={disabled} />
+            <Label htmlFor="borrower-tinVerified" className="text-sm font-normal">TIN Verified</Label>
           </div>
         </div>
 
-        {/* Column 2 - Primary Address & Mailing Address & Delivery */}
+        {/* Column 2 - Primary Address & Mailing Address & Delivery Options & Send */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Primary Address</h4>
 
@@ -256,16 +282,42 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
             <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
           </InlineField>
 
-          <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">Delivery</h4>
-
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Online</Label>
-            <Checkbox id="borrower-deliveryOnline" checked={getBoolValue('deliveryOnline')} onCheckedChange={(checked) => handleChange('deliveryOnline', !!checked)} disabled={disabled} />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Mail</Label>
-            <Checkbox id="borrower-deliveryMail" checked={getBoolValue('deliveryMail')} onCheckedChange={(checked) => handleChange('deliveryMail', !!checked)} disabled={disabled} />
+          {/* Delivery Options & Send - side by side */}
+          <div className="pt-2 flex gap-6">
+            <div className="space-y-1.5">
+              <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options</h4>
+              <div className="flex items-center gap-2">
+                <Checkbox id="borrower-deliveryPrint" checked={getBoolValue('deliveryPrint')} onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)} disabled={disabled} />
+                <Label htmlFor="borrower-deliveryPrint" className="text-sm font-normal">Print</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="borrower-deliveryEmail" checked={getBoolValue('deliveryEmail')} onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)} disabled={disabled} />
+                <Label htmlFor="borrower-deliveryEmail" className="text-sm font-normal">Email</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="borrower-deliverySms" checked={getBoolValue('deliverySms')} onCheckedChange={(checked) => handleChange('deliverySms', !!checked)} disabled={disabled} />
+                <Label htmlFor="borrower-deliverySms" className="text-sm font-normal">SMS</Label>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <h4 className="font-semibold text-sm text-foreground pb-1">Send</h4>
+              <div className="flex items-center gap-2">
+                <Checkbox id="borrower-sendPaymentNotification" checked={getBoolValue('sendPaymentNotification')} onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)} disabled={disabled} />
+                <Label htmlFor="borrower-sendPaymentNotification" className="text-sm font-normal">Payment Notification</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="borrower-sendLateNotice" checked={getBoolValue('sendLateNotice')} onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)} disabled={disabled} />
+                <Label htmlFor="borrower-sendLateNotice" className="text-sm font-normal">Late Notice</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="borrower-sendBorrowerStatement" checked={getBoolValue('sendBorrowerStatement')} onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)} disabled={disabled} />
+                <Label htmlFor="borrower-sendBorrowerStatement" className="text-sm font-normal">Borrower Statement</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="borrower-sendMaturityNotice" checked={getBoolValue('sendMaturityNotice')} onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)} disabled={disabled} />
+                <Label htmlFor="borrower-sendMaturityNotice" className="text-sm font-normal">Maturity Notice</Label>
+              </div>
+            </div>
           </div>
         </div>
 

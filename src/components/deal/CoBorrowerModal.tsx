@@ -31,7 +31,7 @@ const CAPACITY_OPTIONS = [
   'Borrower', 'Co-Borrower', 'Additional Guarantor', 'Authorized Party',
 ];
 
-
+const TAX_ID_TYPE_OPTIONS = ['0 – Unknown', '1 – EIN', '2 – SSN'];
 
 const STATE_OPTIONS = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
@@ -55,6 +55,8 @@ const emptyCoBorrower: CoBorrowerData = {
   sendBorrowerNotifications: false, format: 'HTML',
   deliveryPrint: true, deliveryEmail: false, deliverySms: false,
   parentBorrowerPrefix: '',
+  taxIdType: '', tinVerified: false,
+  sendPaymentNotification: false, sendLateNotice: false, sendBorrowerStatement: false, sendMaturityNotice: false,
 };
 
 export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenChange, coBorrower, onSave, isEdit = false, parentBorrowerVesting = '' }) => {
@@ -62,7 +64,7 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
 
   useEffect(() => {
     if (coBorrower) {
-      setFormData({ ...coBorrower, vesting: parentBorrowerVesting || coBorrower.vesting });
+      setFormData({ ...emptyCoBorrower, ...coBorrower, vesting: parentBorrowerVesting || coBorrower.vesting });
     } else {
       setFormData({ ...emptyCoBorrower, vesting: parentBorrowerVesting });
     }
@@ -98,19 +100,25 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
         <ScrollArea className="max-h-[calc(90vh-140px)] pr-4">
           {/* Top section - 4 column grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-0 py-2">
-            {/* Column 1 - Name */}
+            {/* Column 1 - Name + Tax ID */}
             <div className="space-y-1">
               <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Name</div>
               {renderInlineField('borrowerId', 'Borrower ID')}
               {renderInlineSelect('borrowerType', 'Borrower Type', BORROWER_TYPE_OPTIONS, 'Select')}
-              {renderInlineSelect('capacity', 'Capacity', CAPACITY_OPTIONS, 'Select')}
               {renderInlineField('fullName', 'Full Name: If Entity, Use Entity')}
               {renderInlineField('firstName', 'First: If Entity, Use Signer')}
               {renderInlineField('middleName', 'Middle')}
               {renderInlineField('lastName', 'Last')}
+              {renderInlineSelect('capacity', 'Capacity', CAPACITY_OPTIONS, 'Select')}
               {renderInlineField('email', 'Email', { type: 'email' })}
               <div className="h-1" />
               {renderInlineField('creditScore', 'Credit Score')}
+              {renderInlineSelect('taxIdType', 'Tax ID Type', TAX_ID_TYPE_OPTIONS, 'Select')}
+              {renderInlineField('tin', 'TIN')}
+              <div className="flex items-center gap-2 h-7">
+                <Checkbox id="modal-coborrower-tinVerified" checked={!!formData.tinVerified} onCheckedChange={(checked) => handleInputChange('tinVerified', !!checked)} className="h-3 w-3" />
+                <Label htmlFor="modal-coborrower-tinVerified" className="font-normal text-xs">TIN Verified</Label>
+              </div>
             </div>
 
             {/* Column 2 - Primary & Mailing Address */}
@@ -132,6 +140,44 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
               {renderInlineField('mailingCity', 'City', { disabled: formData.mailingSameAsPrimary })}
               {renderInlineSelect('mailingState', 'State', STATE_OPTIONS, 'State')}
               {renderInlineField('mailingZip', 'ZIP', { disabled: formData.mailingSameAsPrimary })}
+
+              {/* Delivery Options & Send */}
+              <div className="pt-2 flex gap-4">
+                <div className="space-y-1">
+                  <div className="font-semibold text-xs text-foreground pb-1">Delivery Options</div>
+                  <div className="flex items-center gap-2 h-6">
+                    <Checkbox id="modal-coborrower-deliveryPrint" checked={!!formData.deliveryPrint} onCheckedChange={(checked) => handleInputChange('deliveryPrint', !!checked)} className="h-3 w-3" />
+                    <Label htmlFor="modal-coborrower-deliveryPrint" className="font-normal text-xs">Print</Label>
+                  </div>
+                  <div className="flex items-center gap-2 h-6">
+                    <Checkbox id="modal-coborrower-deliveryEmail" checked={!!formData.deliveryEmail} onCheckedChange={(checked) => handleInputChange('deliveryEmail', !!checked)} className="h-3 w-3" />
+                    <Label htmlFor="modal-coborrower-deliveryEmail" className="font-normal text-xs">Email</Label>
+                  </div>
+                  <div className="flex items-center gap-2 h-6">
+                    <Checkbox id="modal-coborrower-deliverySms" checked={!!formData.deliverySms} onCheckedChange={(checked) => handleInputChange('deliverySms', !!checked)} className="h-3 w-3" />
+                    <Label htmlFor="modal-coborrower-deliverySms" className="font-normal text-xs">SMS</Label>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-semibold text-xs text-foreground pb-1">Send</div>
+                  <div className="flex items-center gap-2 h-6">
+                    <Checkbox id="modal-coborrower-sendPayment" checked={!!formData.sendPaymentNotification} onCheckedChange={(checked) => handleInputChange('sendPaymentNotification', !!checked)} className="h-3 w-3" />
+                    <Label htmlFor="modal-coborrower-sendPayment" className="font-normal text-xs">Payment Notification</Label>
+                  </div>
+                  <div className="flex items-center gap-2 h-6">
+                    <Checkbox id="modal-coborrower-sendLate" checked={!!formData.sendLateNotice} onCheckedChange={(checked) => handleInputChange('sendLateNotice', !!checked)} className="h-3 w-3" />
+                    <Label htmlFor="modal-coborrower-sendLate" className="font-normal text-xs">Late Notice</Label>
+                  </div>
+                  <div className="flex items-center gap-2 h-6">
+                    <Checkbox id="modal-coborrower-sendStatement" checked={!!formData.sendBorrowerStatement} onCheckedChange={(checked) => handleInputChange('sendBorrowerStatement', !!checked)} className="h-3 w-3" />
+                    <Label htmlFor="modal-coborrower-sendStatement" className="font-normal text-xs">Borrower Statement</Label>
+                  </div>
+                  <div className="flex items-center gap-2 h-6">
+                    <Checkbox id="modal-coborrower-sendMaturity" checked={!!formData.sendMaturityNotice} onCheckedChange={(checked) => handleInputChange('sendMaturityNotice', !!checked)} className="h-3 w-3" />
+                    <Label htmlFor="modal-coborrower-sendMaturity" className="font-normal text-xs">Maturity Notice</Label>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Column 3 - Phone + Preferred */}
@@ -169,10 +215,9 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
             </div>
           </div>
 
-          {/* Bottom section - Tax, Delivery, extra fields */}
+          {/* Bottom section - Reporting */}
           <div className="mt-2 pt-2">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-0">
-              {/* Reporting */}
               <div className="space-y-1">
                 <div className="flex items-center gap-2 h-7">
                   <Checkbox id="modal-issue1098" checked={formData.issue1098} onCheckedChange={(checked) => handleInputChange('issue1098', !!checked)} className="h-3 w-3" />
@@ -184,20 +229,7 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
                 </div>
               </div>
 
-              {/* Delivery */}
-              <div className="space-y-1">
-                <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Delivery</div>
-                <div className="flex items-center gap-2 h-7">
-                  <Label className="w-[140px] shrink-0 text-xs">Online</Label>
-                  <Checkbox id="modal-deliveryOnline" checked={formData.deliveryOnline} onCheckedChange={(checked) => handleInputChange('deliveryOnline', !!checked)} className="h-3 w-3" />
-                </div>
-                <div className="flex items-center gap-2 h-7">
-                  <Label className="w-[140px] shrink-0 text-xs">Mail</Label>
-                  <Checkbox id="modal-deliveryMail" checked={formData.deliveryMail} onCheckedChange={(checked) => handleInputChange('deliveryMail', !!checked)} className="h-3 w-3" />
-                </div>
-              </div>
-
-              {/* Empty column for alignment */}
+              <div />
               <div />
             </div>
           </div>
