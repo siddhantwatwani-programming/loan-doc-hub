@@ -42,10 +42,20 @@ const extractInsurancesFromValues = (values: Record<string, string>): InsuranceD
       active: values[`${prefix}.active`] === 'true',
       agentName: values[`${prefix}.agent_name`] || '',
       businessAddress: values[`${prefix}.business_address`] || '',
+      businessAddressCity: values[`${prefix}.business_address_city`] || '',
+      businessAddressState: values[`${prefix}.business_address_state`] || '',
+      businessAddressZip: values[`${prefix}.business_address_zip`] || '',
       phoneNumber: values[`${prefix}.phone_number`] || '',
       faxNumber: values[`${prefix}.fax_number`] || '',
       email: values[`${prefix}.email`] || '',
       note: values[`${prefix}.note`] || '',
+      paymentMailingStreet: values[`${prefix}.payment_mailing_street`] || '',
+      paymentMailingCity: values[`${prefix}.payment_mailing_city`] || '',
+      paymentMailingState: values[`${prefix}.payment_mailing_state`] || '',
+      paymentMailingZip: values[`${prefix}.payment_mailing_zip`] || '',
+      insuranceTracking: values[`${prefix}.insurance_tracking`] === 'true',
+      lastVerified: values[`${prefix}.last_verified`] || '',
+      trackingStatus: values[`${prefix}.tracking_status`] || '',
     };
     // Only add if the insurance has meaningful data (not an empty shell after deletion)
     const hasData = Object.keys(insurance).some(key => {
@@ -118,10 +128,20 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
       active: true,
       agentName: '',
       businessAddress: '',
+      businessAddressCity: '',
+      businessAddressState: '',
+      businessAddressZip: '',
       phoneNumber: '',
       faxNumber: '',
       email: '',
       note: '',
+      paymentMailingStreet: '',
+      paymentMailingCity: '',
+      paymentMailingState: '',
+      paymentMailingZip: '',
+      insuranceTracking: false,
+      lastVerified: '',
+      trackingStatus: '',
     };
   }, [insurances, selectedInsurancePrefix]);
 
@@ -174,10 +194,20 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
     onValueChange(`${prefix}.active`, String(insuranceData.active));
     onValueChange(`${prefix}.agent_name`, insuranceData.agentName);
     onValueChange(`${prefix}.business_address`, insuranceData.businessAddress);
+    onValueChange(`${prefix}.business_address_city`, insuranceData.businessAddressCity);
+    onValueChange(`${prefix}.business_address_state`, insuranceData.businessAddressState);
+    onValueChange(`${prefix}.business_address_zip`, insuranceData.businessAddressZip);
     onValueChange(`${prefix}.phone_number`, insuranceData.phoneNumber);
     onValueChange(`${prefix}.fax_number`, insuranceData.faxNumber);
     onValueChange(`${prefix}.email`, insuranceData.email);
     onValueChange(`${prefix}.note`, insuranceData.note);
+    onValueChange(`${prefix}.payment_mailing_street`, insuranceData.paymentMailingStreet);
+    onValueChange(`${prefix}.payment_mailing_city`, insuranceData.paymentMailingCity);
+    onValueChange(`${prefix}.payment_mailing_state`, insuranceData.paymentMailingState);
+    onValueChange(`${prefix}.payment_mailing_zip`, insuranceData.paymentMailingZip);
+    onValueChange(`${prefix}.insurance_tracking`, String(insuranceData.insuranceTracking));
+    onValueChange(`${prefix}.last_verified`, insuranceData.lastVerified);
+    onValueChange(`${prefix}.tracking_status`, insuranceData.trackingStatus);
     
     setModalOpen(false);
   }, [editingInsurance, values, onValueChange]);
@@ -206,10 +236,20 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
       active: 'active',
       agentName: 'agent_name',
       businessAddress: 'business_address',
+      businessAddressCity: 'business_address_city',
+      businessAddressState: 'business_address_state',
+      businessAddressZip: 'business_address_zip',
       phoneNumber: 'phone_number',
       faxNumber: 'fax_number',
       email: 'email',
       note: 'note',
+      paymentMailingStreet: 'payment_mailing_street',
+      paymentMailingCity: 'payment_mailing_city',
+      paymentMailingState: 'payment_mailing_state',
+      paymentMailingZip: 'payment_mailing_zip',
+      insuranceTracking: 'insurance_tracking',
+      lastVerified: 'last_verified',
+      trackingStatus: 'tracking_status',
     };
     const dbField = fieldKeyMap[field];
     if (dbField && dbField !== 'id') {

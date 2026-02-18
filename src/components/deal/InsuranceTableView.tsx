@@ -24,10 +24,20 @@ export interface InsuranceData {
   active: boolean;
   agentName: string;
   businessAddress: string;
+  businessAddressCity: string;
+  businessAddressState: string;
+  businessAddressZip: string;
   phoneNumber: string;
   faxNumber: string;
   email: string;
   note: string;
+  paymentMailingStreet: string;
+  paymentMailingCity: string;
+  paymentMailingState: string;
+  paymentMailingZip: string;
+  insuranceTracking: boolean;
+  lastVerified: string;
+  trackingStatus: string;
 }
 
 interface InsuranceTableViewProps {

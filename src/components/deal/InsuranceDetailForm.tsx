@@ -30,6 +30,15 @@ const INSURANCE_DESCRIPTION_OPTIONS = [
   'Wind'
 ];
 
+const TRACKING_STATUS_OPTIONS = [
+  'Unable to Verify',
+  'Current - Active',
+  'Pending Cancellation',
+  'Cancelled - Payment',
+  'Cancelled - Other',
+  'Force Placed Coverage',
+];
+
 export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
   insurance,
   onChange,
@@ -79,7 +88,7 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
           </div>
 
           {renderField('insuredName', "Insured's Name")}
-          {renderField('companyName', 'Company Name')}
+          {renderField('companyName', 'Insurance Company')}
           {renderField('policyNumber', 'Policy Number')}
           {renderField('expiration', 'Expiration', { type: 'date' })}
 
@@ -91,7 +100,16 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Payment Mailing Address */}
+          <div className="border-b border-border pb-2 pt-2">
+            <span className="font-semibold text-sm text-primary">Payment Mailing Address</span>
+          </div>
+          {renderField('paymentMailingStreet', 'Street')}
+          {renderField('paymentMailingCity', 'City')}
+          {renderField('paymentMailingState', 'State')}
+          {renderField('paymentMailingZip', 'ZIP')}
+
+          <div className="flex items-center gap-2 pt-1">
             <Checkbox id="detail-insurance-active" checked={insurance.active} onCheckedChange={(checked) => onChange('active', !!checked)} disabled={disabled} className="h-4 w-4" />
             <Label htmlFor="detail-insurance-active" className="text-sm text-foreground">Active</Label>
           </div>
@@ -105,9 +123,37 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
 
           {renderField('agentName', "Agent's Name")}
           {renderField('businessAddress', 'Bus. Address')}
+          {renderField('businessAddressCity', 'City')}
+          {renderField('businessAddressState', 'State')}
+          {renderField('businessAddressZip', 'ZIP')}
           {renderField('phoneNumber', 'Phone Number')}
           {renderField('faxNumber', 'Fax Number')}
           {renderField('email', 'E-mail', { type: 'email' })}
+
+          {/* Insurance Tracking */}
+          <div className="border-b border-border pb-2 pt-2">
+            <span className="font-semibold text-sm text-primary">Insurance Tracking</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox id="detail-insurance-tracking" checked={insurance.insuranceTracking} onCheckedChange={(checked) => onChange('insuranceTracking', !!checked)} disabled={disabled} className="h-4 w-4" />
+            <Label htmlFor="detail-insurance-tracking" className="text-sm text-foreground">Insurance Tracking</Label>
+          </div>
+
+          {insurance.insuranceTracking && (
+            <>
+              {renderField('lastVerified', 'Last Verified', { type: 'date' })}
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Status</Label>
+                <Select value={insurance.trackingStatus} onValueChange={(val) => onChange('trackingStatus', val)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-50">
+                    {TRACKING_STATUS_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

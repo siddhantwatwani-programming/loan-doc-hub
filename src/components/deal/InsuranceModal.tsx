@@ -26,10 +26,18 @@ const INSURANCE_DESCRIPTION_OPTIONS = [
   'Force-Placed CPI', 'Hazard', 'Flood', 'Wind'
 ];
 
+const TRACKING_STATUS_OPTIONS = [
+  'Unable to Verify', 'Current - Active', 'Pending Cancellation',
+  'Cancelled - Payment', 'Cancelled - Other', 'Force Placed Coverage',
+];
+
 const getDefaultInsurance = (): InsuranceData => ({
   id: '', property: '', description: '', insuredName: '', companyName: '', policyNumber: '',
   expiration: '', coverage: '', active: true, agentName: '', businessAddress: '',
+  businessAddressCity: '', businessAddressState: '', businessAddressZip: '',
   phoneNumber: '', faxNumber: '', email: '', note: '',
+  paymentMailingStreet: '', paymentMailingCity: '', paymentMailingState: '', paymentMailingZip: '',
+  insuranceTracking: false, lastVerified: '', trackingStatus: '',
 });
 
 export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChange, insurance, onSave, isEdit, propertyOptions = [] }) => {
@@ -67,7 +75,7 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-sm">
             <Shield className="h-4 w-4 text-primary" />
@@ -75,7 +83,7 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
           </DialogTitle>
         </DialogHeader>
 
-        <div className="mt-3">
+        <div className="mt-3 overflow-y-auto flex-1">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
             {/* Left Column */}
             <div className="space-y-1.5">
@@ -85,7 +93,7 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
               {renderInlineSelect('property', 'Property', [{ id: 'unassigned', label: 'Unassigned' }, ...propertyOptions], 'Unassigned')}
               {renderInlineSelect('description', 'Description', INSURANCE_DESCRIPTION_OPTIONS, 'Select')}
               {renderInlineField('insuredName', "Insured's Name")}
-              {renderInlineField('companyName', 'Company Name')}
+              {renderInlineField('companyName', 'Ins. Company')}
               {renderInlineField('policyNumber', 'Policy Number')}
               {renderInlineField('expiration', 'Expiration', { type: 'date' })}
               <div className="flex items-center gap-2">
@@ -95,6 +103,16 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
                   <Input value={String(formData.coverage || '')} onChange={(e) => handleChange('coverage', e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
                 </div>
               </div>
+
+              {/* Payment Mailing Address */}
+              <div className="border-b border-border pb-1 mb-2 pt-2">
+                <span className="font-semibold text-xs text-primary">Payment Mailing Address</span>
+              </div>
+              {renderInlineField('paymentMailingStreet', 'Street')}
+              {renderInlineField('paymentMailingCity', 'City')}
+              {renderInlineField('paymentMailingState', 'State')}
+              {renderInlineField('paymentMailingZip', 'ZIP')}
+
               <div className="flex items-center gap-2 pt-1">
                 <Checkbox id="modal-insurance-active" checked={formData.active} onCheckedChange={(checked) => handleChange('active', !!checked)} className="h-3.5 w-3.5" />
                 <Label htmlFor="modal-insurance-active" className="text-xs text-foreground">Active</Label>
@@ -108,14 +126,32 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
               </div>
               {renderInlineField('agentName', "Agent's Name")}
               {renderInlineField('businessAddress', 'Bus. Address')}
+              {renderInlineField('businessAddressCity', 'City')}
+              {renderInlineField('businessAddressState', 'State')}
+              {renderInlineField('businessAddressZip', 'ZIP')}
               {renderInlineField('phoneNumber', 'Phone Number')}
               {renderInlineField('faxNumber', 'Fax Number')}
               {renderInlineField('email', 'E-mail', { type: 'email' })}
+
+              {/* Insurance Tracking */}
+              <div className="border-b border-border pb-1 mb-2 pt-2">
+                <span className="font-semibold text-xs text-primary">Insurance Tracking</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="modal-insurance-tracking" checked={formData.insuranceTracking} onCheckedChange={(checked) => handleChange('insuranceTracking', !!checked)} className="h-3.5 w-3.5" />
+                <Label htmlFor="modal-insurance-tracking" className="text-xs text-foreground">Insurance Tracking</Label>
+              </div>
+              {formData.insuranceTracking && (
+                <>
+                  {renderInlineField('lastVerified', 'Last Verified', { type: 'date' })}
+                  {renderInlineSelect('trackingStatus', 'Status', TRACKING_STATUS_OPTIONS, 'Select status')}
+                </>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+        <div className="flex justify-end gap-2 pt-3 border-t border-border shrink-0">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button size="sm" onClick={handleSave}>OK</Button>
         </div>
