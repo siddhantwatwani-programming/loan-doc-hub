@@ -122,24 +122,31 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   return (
     <div className="p-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-0">
-        {/* Left Column */}
+        {/* Left Column - Property Information */}
         <div className="space-y-1.5">
           <div className="border-b border-border pb-1 mb-2">
-            <span className="font-semibold text-xs text-primary">Property Address</span>
+            <span className="font-semibold text-xs text-primary">Property Information</span>
+          </div>
+          {renderInlineField(FIELD_KEYS.description, 'Description')}
+          <div className="pt-1">
+            <span className="text-xs font-medium text-primary">Address</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox id="copy-borrower-address" checked={getFieldValue(FIELD_KEYS.copyBorrowerAddress) === 'true'} onCheckedChange={(checked) => onValueChange(FIELD_KEYS.copyBorrowerAddress, String(!!checked))} disabled={disabled} className="h-3.5 w-3.5" />
+            <Label htmlFor="copy-borrower-address" className="text-xs text-primary">Copy Borrower's Address</Label>
           </div>
           {renderInlineField(FIELD_KEYS.street, 'Street')}
           {renderInlineField(FIELD_KEYS.city, 'City')}
           {renderInlineSelect(FIELD_KEYS.state, 'State', ['CA', 'TX', 'FL', 'NY', 'WA'], 'Select state')}
           {renderInlineField(FIELD_KEYS.zip, 'Zip Code')}
           {renderInlineField(FIELD_KEYS.county, 'County')}
-          <Button variant="link" className="text-primary p-0 h-auto text-xs" disabled={disabled}>Copy Borrower's Address</Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pt-1">
             <Checkbox id="primary-property" checked={getFieldValue(FIELD_KEYS.primaryProperty) === 'true'} onCheckedChange={(checked) => onValueChange(FIELD_KEYS.primaryProperty, String(!!checked))} disabled={disabled} className="h-3.5 w-3.5" />
             <Label htmlFor="primary-property" className="text-xs text-foreground">Primary Property</Label>
           </div>
         </div>
 
-        {/* Right Column */}
+        {/* Right Column - Appraisal Information */}
         <div className="space-y-1.5">
           <div className="border-b border-border pb-1 mb-2">
             <span className="font-semibold text-xs text-primary">Appraisal Information</span>
