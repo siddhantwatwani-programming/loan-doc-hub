@@ -141,15 +141,17 @@ export const NotesModal: React.FC<NotesModalProps> = ({
           {renderInlineField('name', 'Name')}
           {renderInlineField('reference', 'Reference')}
 
-          {/* Notes content - Rich Text Editor */}
+          {/* Notes content - Rich Text Editor with its own scroll */}
           <div className="space-y-1">
             <Label className="text-xs text-foreground">Notes</Label>
-            <RichTextEditor
-              value={formData.content}
-              onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
-              placeholder="Enter note content..."
-              minHeight="200px"
-            />
+            <div className="max-h-[300px] overflow-y-auto border border-border rounded-md">
+              <RichTextEditor
+                value={formData.content}
+                onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
+                placeholder="Enter note content..."
+                minHeight="200px"
+              />
+            </div>
           </div>
 
           {/* Attachments */}
