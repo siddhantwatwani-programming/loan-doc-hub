@@ -478,10 +478,6 @@ export const PacketManagementPage: React.FC = () => {
                         <label
                           key={state}
                           className="flex items-center gap-2 py-1 px-1 rounded hover:bg-muted/50 cursor-pointer select-none"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            toggleStateSelection(state);
-                          }}
                         >
                           <Checkbox
                             checked={formData.states.includes(state)}
