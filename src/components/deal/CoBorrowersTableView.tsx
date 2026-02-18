@@ -120,7 +120,7 @@ export const CoBorrowersTableView: React.FC<CoBorrowersTableViewProps> = ({
 
   const renderLoader = () => (
     <TableRow>
-      <TableCell colSpan={8} className="py-4">
+      <TableCell colSpan={10} className="py-4">
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex items-center gap-4">
@@ -164,13 +164,15 @@ export const CoBorrowersTableView: React.FC<CoBorrowersTableViewProps> = ({
         <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <TableHead>PRIMARY CONTACT</TableHead>
               <TableHead>TYPE</TableHead>
               <TableHead>FULL NAME</TableHead>
-              <TableHead>RELATION</TableHead>
               <TableHead>EMAIL</TableHead>
-              <TableHead>MOBILE PHONE</TableHead>
+              <TableHead>PHONE</TableHead>
+              <TableHead>STREET</TableHead>
               <TableHead>CITY</TableHead>
               <TableHead>STATE</TableHead>
+              <TableHead>ZIP</TableHead>
               <TableHead className="w-[80px]">ACTIONS</TableHead>
             </TableRow>
           </TableHeader>
@@ -179,7 +181,7 @@ export const CoBorrowersTableView: React.FC<CoBorrowersTableViewProps> = ({
               renderLoader()
             ) : coBorrowers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                   No co-borrowers added. Click "Add Co-Borrower" to add one.
                 </TableCell>
               </TableRow>
@@ -190,13 +192,15 @@ export const CoBorrowersTableView: React.FC<CoBorrowersTableViewProps> = ({
                   className="cursor-pointer hover:bg-muted/30"
                   onClick={() => onRowClick(coBorrower)}
                 >
+                  <TableCell>{coBorrower.preferredCell ? '✓' : '-'}</TableCell>
                   <TableCell>{coBorrower.type || '-'}</TableCell>
                   <TableCell className="font-medium">{coBorrower.fullName || `${coBorrower.firstName} ${coBorrower.lastName}`.trim() || '-'}</TableCell>
-                  <TableCell>{coBorrower.relation || '-'}</TableCell>
                   <TableCell>{coBorrower.email || '-'}</TableCell>
                   <TableCell>{coBorrower.mobilePhone || '-'}</TableCell>
-                  <TableCell>{coBorrower.city || '-'}</TableCell>
-                  <TableCell>{coBorrower.state || '-'}</TableCell>
+                  <TableCell>{coBorrower.primaryStreet || coBorrower.street || '-'}</TableCell>
+                  <TableCell>{coBorrower.primaryCity || coBorrower.city || '-'}</TableCell>
+                  <TableCell>{coBorrower.primaryState || coBorrower.state || '-'}</TableCell>
+                  <TableCell>{coBorrower.zipCode || coBorrower.primaryZip || '-'}</TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-1">
                       <Button
