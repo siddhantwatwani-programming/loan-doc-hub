@@ -34,6 +34,8 @@ const extractNotesFromValues = (values: Record<string, string>): NoteData[] => {
       name: values[`${prefix}.name`] || '',
       reference: values[`${prefix}.reference`] || '',
       content: values[`${prefix}.content`] || '',
+      type: values[`${prefix}.type`] || '',
+      attachments: values[`${prefix}.attachments`] ? JSON.parse(values[`${prefix}.attachments`]) : [],
     });
   });
 
@@ -87,6 +89,8 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
     onValueChange(`${prefix}.name`, noteData.name);
     onValueChange(`${prefix}.reference`, noteData.reference);
     onValueChange(`${prefix}.content`, noteData.content);
+    onValueChange(`${prefix}.type`, noteData.type);
+    onValueChange(`${prefix}.attachments`, JSON.stringify(noteData.attachments || []));
     setModalOpen(false);
   }, [editingNote, values, onValueChange]);
 
