@@ -105,20 +105,21 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="w-10"></TableHead>
                 <TableHead className="min-w-[120px]">Description</TableHead>
+                <TableHead className="min-w-[150px]">Company</TableHead>
                 <TableHead className="min-w-[150px]">Company</TableHead>
                 <TableHead className="min-w-[120px]">Policy #</TableHead>
                 <TableHead className="min-w-[100px]">Expiration</TableHead>
                 <TableHead className="min-w-[120px] text-right">Coverage</TableHead>
                 <TableHead className="min-w-[80px]">Status</TableHead>
                 <TableHead className="min-w-[150px]">Agent</TableHead>
+                <TableHead className="min-w-[80px] text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {insurances.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No insurance records added. Click "Add Insurance" to create one.
                   </TableCell>
                 </TableRow>
@@ -129,8 +130,23 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() => onRowClick(insurance)}
                   >
-                    <TableCell className="w-10">
-                      <div className="flex items-center gap-1">
+                    <TableCell className="font-medium">
+                      {insurance.description || '-'}
+                    </TableCell>
+                    <TableCell>{insurance.companyName || '-'}</TableCell>
+                    <TableCell>{insurance.policyNumber || '-'}</TableCell>
+                    <TableCell>{insurance.expiration || '-'}</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(insurance.coverage) || '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={insurance.active ? 'default' : 'secondary'}>
+                        {insurance.active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{insurance.agentName || '-'}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -159,21 +175,6 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {insurance.description || '-'}
-                    </TableCell>
-                    <TableCell>{insurance.companyName || '-'}</TableCell>
-                    <TableCell>{insurance.policyNumber || '-'}</TableCell>
-                    <TableCell>{insurance.expiration || '-'}</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(insurance.coverage) || '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={insurance.active ? 'default' : 'secondary'}>
-                        {insurance.active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{insurance.agentName || '-'}</TableCell>
                   </TableRow>
                 ))
               )}
