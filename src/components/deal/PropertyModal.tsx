@@ -126,24 +126,38 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
 
           <TabsContent value="general" className="mt-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
-              {/* Left Column */}
+              {/* Left Column - Property Information */}
               <div className="space-y-1.5">
-                <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Property Address</span></div>
+                <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Property Information</span></div>
+                {renderInlineField('description', 'Description')}
+                <div className="pt-1">
+                  <span className="text-xs font-medium text-primary">Address</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="modal-copy-borrower-address" checked={false} disabled className="h-3.5 w-3.5" />
+                  <Label htmlFor="modal-copy-borrower-address" className="text-xs text-primary">Copy Borrower's Address</Label>
+                </div>
                 {renderInlineField('street', 'Street')}
                 {renderInlineField('city', 'City')}
                 {renderInlineSelect('state', 'State', US_STATES, 'Select state')}
                 {renderInlineField('zipCode', 'Zip Code')}
                 {renderInlineField('county', 'County')}
-                <Button variant="link" className="text-primary p-0 h-auto text-xs" type="button">Copy Borrower's Address</Button>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 pt-1">
                   <Checkbox id="modal-primary-property" checked={formData.isPrimary} onCheckedChange={(checked) => handleFieldChange('isPrimary', !!checked)} className="h-3.5 w-3.5" />
                   <Label htmlFor="modal-primary-property" className="text-xs text-foreground">Primary Property</Label>
                 </div>
               </div>
 
-              {/* Right Column */}
+              {/* Right Column - Appraisal Information */}
               <div className="space-y-1.5">
                 <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Appraisal Information</span></div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Appraised Value</Label>
+                  <div className="flex items-center gap-1 flex-1">
+                    <span className="text-xs text-muted-foreground">$</span>
+                    <Input value={formData.appraisedValue} onChange={(e) => handleCurrencyChange('appraisedValue', e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
+                  </div>
+                </div>
                 {renderInlineSelect('performedBy', 'Performed By', PERFORMED_BY_OPTIONS, 'Select')}
                 {renderInlineSelect('propertyType', 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
                 {renderInlineSelect('occupancy', 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
@@ -155,13 +169,6 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                   </div>
                 </div>
                 {renderInlineField('zoning', 'Zoning')}
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Appraised Value</Label>
-                  <div className="flex items-center gap-1 flex-1">
-                    <span className="text-xs text-muted-foreground">$</span>
-                    <Input value={formData.appraisedValue} onChange={(e) => handleCurrencyChange('appraisedValue', e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
-                  </div>
-                </div>
                 <div className="flex items-center gap-2">
                   <Label className="w-[100px] shrink-0 text-xs text-foreground">Pledged Equity</Label>
                   <div className="flex items-center gap-1 flex-1">
