@@ -242,10 +242,6 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
         </div>
       </div>
 
-      {/* Info text */}
-      <p className="mt-6 text-sm text-muted-foreground">
-        Note: Tax Tracking is populated if Checked in Servicing.
-      </p>
     </div>
   );
 };

@@ -179,11 +179,6 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
         </div>
       </div>
 
-      <div className="pt-4 border-t border-border">
-        <p className="text-sm text-muted-foreground">
-          Property liens are used to track existing encumbrances on the property.
-        </p>
-      </div>
     </div>
   );
 };

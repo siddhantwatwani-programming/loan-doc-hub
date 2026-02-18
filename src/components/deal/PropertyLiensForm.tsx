@@ -193,11 +193,6 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
         </div>
       </div>
 
-      <div className="pt-6 border-t border-border">
-        <p className="text-sm text-muted-foreground">
-          Property liens are used to track existing encumbrances on the property.
-        </p>
-      </div>
     </div>
   );
 };
