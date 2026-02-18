@@ -57,6 +57,7 @@ const extractPropertiesFromValues = (values: Record<string, string>): PropertyDa
       pledgedEquity: values[`${prefix}.pledged_equity`] || '',
       zoning: values[`${prefix}.zoning`] || '',
       performedBy: values[`${prefix}.appraisal_performed_by`] || '',
+      copyBorrowerAddress: values[`${prefix}.copy_borrower_address`] === 'true',
     };
     properties.push(property);
   });
@@ -190,6 +191,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     onValueChange(`${prefix}.pledged_equity`, propertyData.pledgedEquity || '');
     onValueChange(`${prefix}.zoning`, propertyData.zoning || '');
     onValueChange(`${prefix}.appraisal_performed_by`, propertyData.performedBy || '');
+    onValueChange(`${prefix}.copy_borrower_address`, String(!!propertyData.copyBorrowerAddress));
     
     // If this is marked as primary, unset others
     if (propertyData.isPrimary) {
