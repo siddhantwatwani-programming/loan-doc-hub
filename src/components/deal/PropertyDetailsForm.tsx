@@ -151,12 +151,12 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           <div className="border-b border-border pb-1 mb-2">
             <span className="font-semibold text-xs text-primary">Appraisal Information</span>
           </div>
+          {renderCurrencyField(FIELD_KEYS.appraisedValue, 'Appraised Value')}
           {renderInlineSelect(FIELD_KEYS.performedBy, 'Performed By', PERFORMED_BY_OPTIONS, 'Select...')}
           {renderInlineSelect(FIELD_KEYS.propertyType, 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
           {renderInlineSelect(FIELD_KEYS.occupancy, 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
           {renderPercentageField(FIELD_KEYS.ltv, 'Loan To Value')}
           {renderInlineField(FIELD_KEYS.zoning, 'Zoning')}
-          {renderCurrencyField(FIELD_KEYS.appraisedValue, 'Appraised Value')}
           {renderCurrencyField(FIELD_KEYS.pledgedEquity, 'Pledged Equity')}
           {renderInlineField(FIELD_KEYS.appraisedDate, 'Appraisal Date', 'date')}
           {renderInlineSelect(FIELD_KEYS.priority, 'Priority', PRIORITY_OPTIONS, 'Select')}
