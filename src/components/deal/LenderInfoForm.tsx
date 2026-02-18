@@ -278,7 +278,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             </div>
 
             {/* Tax ID Section */}
-            <div className="border border-border rounded p-3 space-y-3 mt-2">
+            <div className="space-y-3 mt-2">
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">Tax ID Type</Label>
                 <Select
