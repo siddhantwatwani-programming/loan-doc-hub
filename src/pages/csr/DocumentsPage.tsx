@@ -36,6 +36,10 @@ interface GeneratedDocument {
   id: string;
   deal_id: string;
   template_id: string;
+  template_name: string | null;
+  packet_id: string | null;
+  packet_name: string | null;
+  generation_batch_id: string | null;
   output_docx_path: string;
   output_pdf_path: string | null;
   version_number: number;
@@ -63,6 +67,7 @@ export const DocumentsPage: React.FC = () => {
   const [deals, setDeals] = useState<DealWithDocuments[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [templateLookup, setTemplateLookup] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     fetchDealsWithDocuments();
@@ -96,6 +101,19 @@ export const DocumentsPage: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (docsError) throw docsError;
+
+      // Build template lookup for docs without denormalized names
+      const templateIds = [...new Set((docsData || []).filter(d => !d.template_name).map(d => d.template_id))];
+      if (templateIds.length > 0) {
+        const { data: templatesData } = await supabase
+          .from('templates')
+          .select('id, name')
+          .in('id', templateIds);
+        if (templatesData) {
+          const lookup = new Map(templatesData.map(t => [t.id, t.name]));
+          setTemplateLookup(lookup);
+        }
+      }
 
       // Map documents to deals
       const dealsWithDocs: DealWithDocuments[] = dealsData.map(deal => {
@@ -173,12 +191,17 @@ export const DocumentsPage: React.FC = () => {
     (deal.borrower_name?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
 
+  const getDocName = (doc: GeneratedDocument): string => {
+    if (doc.template_name) return doc.template_name;
+    return templateLookup.get(doc.template_id) || 'Unknown Template';
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'generated':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Generated</Badge>;
+        return <Badge className="bg-success/10 text-success hover:bg-success/10">Generated</Badge>;
       case 'ready':
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Ready</Badge>;
+        return <Badge className="bg-primary/10 text-primary hover:bg-primary/10">Ready</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -274,18 +297,25 @@ export const DocumentsPage: React.FC = () => {
                               <ChevronDown className="h-3 w-3" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-56">
-                            {deal.documents.map((doc, idx) => (
+                          <DropdownMenuContent align="end" className="w-72">
+                            {deal.documents.map((doc) => (
                               <React.Fragment key={doc.id}>
                                 <DropdownMenuItem
                                   onClick={() => handleDownload(doc, 'docx')}
                                   disabled={downloadingId === doc.id}
                                   className="gap-2"
                                 >
-                                  <FileType className="h-4 w-4 text-blue-600" />
-                                  <span className="flex-1 truncate">
-                                    Document v{doc.version_number} (DOCX)
-                                  </span>
+                                  <FileType className="h-4 w-4 text-primary" />
+                                  <div className="flex-1 min-w-0">
+                                    <span className="block truncate text-sm font-medium">
+                                      {getDocName(doc)} v{doc.version_number} (DOCX)
+                                    </span>
+                                    {doc.packet_name && (
+                                      <span className="block text-xs text-muted-foreground truncate">
+                                        via Packet: {doc.packet_name}
+                                      </span>
+                                    )}
+                                  </div>
                                 </DropdownMenuItem>
                                 {doc.output_pdf_path && (
                                   <DropdownMenuItem
@@ -293,10 +323,12 @@ export const DocumentsPage: React.FC = () => {
                                     disabled={downloadingId === doc.id}
                                     className="gap-2"
                                   >
-                                    <File className="h-4 w-4 text-red-600" />
-                                    <span className="flex-1 truncate">
-                                      Document v{doc.version_number} (PDF)
-                                    </span>
+                                    <File className="h-4 w-4 text-destructive" />
+                                    <div className="flex-1 min-w-0">
+                                      <span className="block truncate text-sm font-medium">
+                                        {getDocName(doc)} v{doc.version_number} (PDF)
+                                      </span>
+                                    </div>
                                   </DropdownMenuItem>
                                 )}
                               </React.Fragment>
