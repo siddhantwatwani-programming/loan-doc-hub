@@ -46,8 +46,10 @@ const extractLendersFromValues = (values: Record<string, string>): LenderData[] 
       lastName: values[`${prefix}.last_name`] || '',
       email: values[`${prefix}.email`] || '',
       phone: values[`${prefix}.phone.cell`] || values[`${prefix}.phone.work`] || '',
+      street: values[`${prefix}.primary_address.street`] || values[`${prefix}.street`] || '',
       city: values[`${prefix}.primary_address.city`] || values[`${prefix}.city`] || '',
       state: values[`${prefix}.primary_address.state`] || values[`${prefix}.state`] || '',
+      zip: values[`${prefix}.primary_address.zip`] || values[`${prefix}.zip`] || '',
       taxId: values[`${prefix}.tax_id`] || '',
     };
     lenders.push(lender);
