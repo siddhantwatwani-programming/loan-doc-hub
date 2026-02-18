@@ -17,6 +17,8 @@ export interface NoteData {
   name: string;
   reference: string;
   content: string;
+  type: string;
+  attachments: string[];
 }
 
 interface NotesTableViewProps {
@@ -31,7 +33,9 @@ interface NotesTableViewProps {
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { id: 'date', label: 'Date', visible: true },
+  { id: 'date', label: 'Date - Time', visible: true },
+  { id: 'highPriority', label: 'High Priority', visible: true },
+  { id: 'type', label: 'Type', visible: true },
   { id: 'account', label: 'Account', visible: true },
   { id: 'name', label: 'Name', visible: true },
   { id: 'reference', label: 'Reference', visible: true },
@@ -40,13 +44,30 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
 export const NotesTableView: React.FC<NotesTableViewProps> = ({
   notes, onAddNote, onEditNote, onRowClick, onDeleteNote, onExport, disabled = false, isLoading = false,
 }) => {
-  const [columns, setColumns] = useTableColumnConfig('notes', DEFAULT_COLUMNS);
+  const [columns, setColumns] = useTableColumnConfig('notes_v2', DEFAULT_COLUMNS);
   const [deleteTarget, setDeleteTarget] = useState<NoteData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
 
+  const formatDateTime = (dateStr: string) => {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      const ss = String(d.getSeconds()).padStart(2, '0');
+      return `${mm}/${dd}/${yyyy} ${hh}:${min}:${ss}`;
+    } catch { return dateStr; }
+  };
+
   const renderCellValue = (note: NoteData, columnId: string) => {
     switch (columnId) {
-      case 'date': return note.date || '-';
+      case 'date': return formatDateTime(note.date);
+      case 'highPriority': return note.highPriority ? 'Yes' : 'No';
+      case 'type': return note.type || '-';
       case 'account': return note.account || '-';
       case 'name': return note.name || '-';
       case 'reference': return note.reference || '-';
