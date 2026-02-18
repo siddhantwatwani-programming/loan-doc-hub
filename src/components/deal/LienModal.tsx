@@ -22,6 +22,7 @@ interface LienModalProps {
 }
 
 const LOAN_TYPE_OPTIONS = ['Conventional', 'Private Lender', 'Judgement', 'Other'];
+const STATUS_OPTIONS = ['Current', 'Unable to Verify', '30-90', '90+', 'Foreclosure', 'Modification', 'Paid'];
 
 const getDefaultLien = (): LienData => ({
   id: '', property: '', priority: '1st', holder: '', account: '', contact: '', phone: '', fax: '', email: '',
@@ -29,7 +30,7 @@ const getDefaultLien = (): LienData => ({
   existingPaydownAmount: '', existingPayoffAmount: '', lienPriorityNow: '', lienPriorityAfter: '', interestRate: '',
   maturityDate: '', originalBalance: '', balanceAfter: '', currentBalance: '', regularPayment: '',
   recordingNumber: '', recordingNumberFlag: 'false', recordingDate: '', seniorLienTracking: 'false',
-  lastVerified: '', lastChecked: '', note: '',
+  lastVerified: '', lastChecked: '', note: '', thisLoan: 'false', estimate: 'false', status: '',
 });
 
 export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, onSave, isEdit, propertyOptions = [] }) => {
@@ -42,28 +43,30 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
   const handleChange = (field: keyof LienData, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
   const handleSave = () => { onSave(formData); onOpenChange(false); };
 
-  const renderInlineField = (field: keyof LienData, label: string, type = 'text') => (
+  const isThisLoan = formData.thisLoan === 'true';
+
+  const renderInlineField = (field: keyof LienData, label: string, type = 'text', forceDisabled = false) => (
     <div className="flex items-center gap-2">
       <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
-      <Input value={formData[field]} onChange={(e) => handleChange(field, e.target.value)} className="h-7 text-xs flex-1" type={type} />
+      <Input value={formData[field]} onChange={(e) => handleChange(field, e.target.value)} className={`h-7 text-xs flex-1 ${forceDisabled ? 'opacity-50 bg-muted' : ''}`} type={type} disabled={forceDisabled} />
     </div>
   );
 
-  const renderCurrencyField = (field: keyof LienData, label: string) => (
+  const renderCurrencyField = (field: keyof LienData, label: string, forceDisabled = false) => (
     <div className="flex items-center gap-2">
       <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
       <div className="flex items-center gap-1 flex-1">
         <span className="text-xs text-muted-foreground">$</span>
-        <Input value={formData[field]} onChange={(e) => handleChange(field, e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
+        <Input value={formData[field]} onChange={(e) => handleChange(field, e.target.value)} className={`h-7 text-xs text-right ${forceDisabled ? 'opacity-50 bg-muted' : ''}`} inputMode="decimal" placeholder="0.00" disabled={forceDisabled} />
       </div>
     </div>
   );
 
-  const renderPercentageField = (field: keyof LienData, label: string) => (
+  const renderPercentageField = (field: keyof LienData, label: string, forceDisabled = false) => (
     <div className="flex items-center gap-2">
       <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
       <div className="flex items-center gap-1 flex-1">
-        <Input value={formData[field]} onChange={(e) => handleChange(field, e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.000" />
+        <Input value={formData[field]} onChange={(e) => handleChange(field, e.target.value)} className={`h-7 text-xs text-right ${forceDisabled ? 'opacity-50 bg-muted' : ''}`} inputMode="decimal" placeholder="0.000" disabled={forceDisabled} />
         <span className="text-xs text-muted-foreground">%</span>
       </div>
     </div>
@@ -71,7 +74,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-sm">
             <Home className="h-4 w-4 text-primary" />
@@ -79,7 +82,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 mt-3">
+        <div className="space-y-3 mt-3 overflow-y-auto flex-1">
           <div className="border-b border-border pb-1">
             <span className="font-semibold text-xs text-primary">Property Lien Information</span>
           </div>
@@ -87,26 +90,33 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
           <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
             {renderInlineField('property', 'Related Property')}
             {renderInlineField('lienPriorityNow', 'Lien Priority Now')}
-            {renderInlineField('holder', 'Lien Holder')}
+
+            <div className="flex items-center gap-2">
+              <Checkbox id="modal-thisLoan" checked={isThisLoan} onCheckedChange={(c) => handleChange('thisLoan', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+              <Label htmlFor="modal-thisLoan" className="text-xs text-foreground">This Loan</Label>
+            </div>
             {renderInlineField('lienPriorityAfter', 'Lien Priority After')}
-            {renderInlineField('account', 'Account Number')}
-            {renderPercentageField('interestRate', 'Interest Rate')}
-            {renderInlineField('phone', 'Phone')}
-            {renderInlineField('maturityDate', 'Maturity Date', 'date')}
-            {renderInlineField('fax', 'Fax')}
-            {renderCurrencyField('originalBalance', 'Original Balance')}
-            {renderInlineField('email', 'Email')}
-            {renderCurrencyField('balanceAfter', 'Balance After')}
+
+            {renderInlineField('holder', 'Lien Holder', 'text', isThisLoan)}
+            {renderPercentageField('interestRate', 'Interest Rate', isThisLoan)}
+            {renderInlineField('account', 'Account Number', 'text', isThisLoan)}
+            {renderInlineField('maturityDate', 'Maturity Date', 'date', isThisLoan)}
+            {renderInlineField('phone', 'Phone', 'text', isThisLoan)}
+            {renderCurrencyField('originalBalance', 'Original Balance', isThisLoan)}
+            {renderInlineField('fax', 'Fax', 'text', isThisLoan)}
+            {renderCurrencyField('balanceAfter', 'Balance After', isThisLoan)}
+            {renderInlineField('email', 'Email', 'text', isThisLoan)}
+            {renderCurrencyField('regularPayment', 'Regular Payment', isThisLoan)}
             <div className="flex items-center gap-2">
               <Label className="w-[110px] shrink-0 text-xs text-foreground">Loan Type</Label>
-              <Select value={formData.loanType} onValueChange={(val) => handleChange('loanType', val)}>
-                <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+              <Select value={formData.loanType} onValueChange={(val) => handleChange('loanType', val)} disabled={isThisLoan}>
+                <SelectTrigger className={`h-7 text-xs flex-1 ${isThisLoan ? 'opacity-50 bg-muted' : ''}`}><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent className="bg-background border border-border z-50">
                   {LOAN_TYPE_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
-            {renderCurrencyField('regularPayment', 'Regular Payment')}
+            <div /> {/* spacer */}
           </div>
 
           {/* Checkboxes + remaining */}
@@ -133,10 +143,12 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
               <div className="flex items-center gap-2">
                 <Checkbox id="modal-existingPaydown" checked={formData.existingPaydown === 'true'} onCheckedChange={(c) => handleChange('existingPaydown', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
                 <Label htmlFor="modal-existingPaydown" className="text-xs text-foreground">Existing - Paydown</Label>
-              </div>
-              <div className="flex items-center gap-1 mt-1 pl-6">
-                <span className="text-xs text-muted-foreground">$</span>
-                <Input value={formData.existingPaydownAmount} onChange={(e) => handleChange('existingPaydownAmount', e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
+                {formData.existingPaydown === 'true' && (
+                  <div className="flex items-center gap-1 ml-2">
+                    <span className="text-xs text-muted-foreground">$</span>
+                    <Input value={formData.existingPaydownAmount} onChange={(e) => handleChange('existingPaydownAmount', e.target.value)} className="h-7 text-xs text-right w-28" inputMode="decimal" placeholder="0.00" />
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -148,17 +160,40 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
               <div className="flex items-center gap-2">
                 <Checkbox id="modal-existingPayoff" checked={formData.existingPayoff === 'true'} onCheckedChange={(c) => handleChange('existingPayoff', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
                 <Label htmlFor="modal-existingPayoff" className="text-xs text-foreground">Existing - Payoff</Label>
-              </div>
-              <div className="flex items-center gap-1 mt-1 pl-6">
-                <span className="text-xs text-muted-foreground">$</span>
-                <Input value={formData.existingPayoffAmount} onChange={(e) => handleChange('existingPayoffAmount', e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
+                {formData.existingPayoff === 'true' && (
+                  <div className="flex items-center gap-1 ml-2">
+                    <span className="text-xs text-muted-foreground">$</span>
+                    <Input value={formData.existingPayoffAmount} onChange={(e) => handleChange('existingPayoffAmount', e.target.value)} className="h-7 text-xs text-right w-28" inputMode="decimal" placeholder="0.00" />
+                  </div>
+                )}
+                {formData.existingPayoff === 'true' && (
+                  <div className="flex items-center gap-2 ml-2">
+                    <Checkbox id="modal-estimate" checked={formData.estimate === 'true'} onCheckedChange={(c) => handleChange('estimate', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                    <Label htmlFor="modal-estimate" className="text-xs text-foreground">Estimate</Label>
+                  </div>
+                )}
               </div>
             </div>
-            {renderInlineField('lastVerified', 'Last Verified', 'date')}
+            {formData.seniorLienTracking === 'true' ? (
+              <div className="space-y-1.5">
+                {renderInlineField('lastVerified', 'Last Verified', 'date')}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[110px] shrink-0 text-xs text-foreground">Status</Label>
+                  <Select value={formData.status} onValueChange={(val) => handleChange('status', val)}>
+                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select status" /></SelectTrigger>
+                    <SelectContent className="bg-background border border-border z-50">
+                      {STATUS_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ) : (
+              <div>{renderInlineField('lastVerified', 'Last Verified', 'date')}</div>
+            )}
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+        <div className="flex justify-end gap-2 pt-3 border-t border-border shrink-0">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button size="sm" onClick={handleSave}>OK</Button>
         </div>
