@@ -38,8 +38,10 @@ async function generateSingleDocument(
   dealId: string,
   templateId: string,
   packetId: string | null,
+  packetName: string | null,
   outputType: OutputType,
-  userId: string
+  userId: string,
+  generationBatchId: string | null
 ): Promise<GenerationResult> {
   const result: GenerationResult = {
     templateId,
@@ -310,6 +312,9 @@ async function generateSingleDocument(
         deal_id: dealId,
         template_id: templateId,
         packet_id: packetId,
+        template_name: result.templateName,
+        packet_name: packetName,
+        generation_batch_id: generationBatchId,
         output_docx_path: outputFileName,
         output_pdf_path: pdfPath,
         output_type: outputType,
@@ -602,8 +607,10 @@ serve(async (req) => {
           dealId,
           templateId,
           deal.packet_id,
+          null,
           outputType,
-          userId
+          userId,
+          null
         );
         jobResult.results.push(result);
         
@@ -616,6 +623,17 @@ serve(async (req) => {
         // Packet generation - iterate all templates in order
         const effectivePacketId = packetId || deal.packet_id;
         
+        // Fetch packet name for denormalization
+        const { data: packetRecord } = await supabase
+          .from("packets")
+          .select("name")
+          .eq("id", effectivePacketId)
+          .single();
+        const effectivePacketName = packetRecord?.name || null;
+
+        // Generate a unique batch ID for this packet generation run
+        const batchId = crypto.randomUUID();
+
         const { data: packetTemplates, error: ptError } = await supabase
           .from("packet_templates")
           .select("template_id, templates(id, name, file_path)")
@@ -626,7 +644,7 @@ serve(async (req) => {
           throw new Error("Failed to fetch packet templates");
         }
 
-        console.log(`[generate-document] Processing ${packetTemplates?.length || 0} templates in packet`);
+        console.log(`[generate-document] Processing ${packetTemplates?.length || 0} templates in packet (batch: ${batchId})`);
 
         for (const pt of (packetTemplates || [])) {
           const template = (pt as any).templates as Template;
@@ -647,8 +665,10 @@ serve(async (req) => {
             dealId,
             pt.template_id,
             effectivePacketId,
+            effectivePacketName,
             outputType,
-            userId
+            userId,
+            batchId
           );
           
           jobResult.results.push(result);

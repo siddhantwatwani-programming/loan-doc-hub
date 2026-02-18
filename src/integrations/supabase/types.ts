@@ -410,13 +410,16 @@ export type Database = {
           created_by: string
           deal_id: string
           error_message: string | null
+          generation_batch_id: string | null
           generation_status: Database["public"]["Enums"]["generation_status"]
           id: string
           output_docx_path: string
           output_pdf_path: string | null
           output_type: Database["public"]["Enums"]["output_type"]
           packet_id: string | null
+          packet_name: string | null
           template_id: string
+          template_name: string | null
           version_number: number
         }
         Insert: {
@@ -424,13 +427,16 @@ export type Database = {
           created_by: string
           deal_id: string
           error_message?: string | null
+          generation_batch_id?: string | null
           generation_status?: Database["public"]["Enums"]["generation_status"]
           id?: string
           output_docx_path: string
           output_pdf_path?: string | null
           output_type?: Database["public"]["Enums"]["output_type"]
           packet_id?: string | null
+          packet_name?: string | null
           template_id: string
+          template_name?: string | null
           version_number?: number
         }
         Update: {
@@ -438,13 +444,16 @@ export type Database = {
           created_by?: string
           deal_id?: string
           error_message?: string | null
+          generation_batch_id?: string | null
           generation_status?: Database["public"]["Enums"]["generation_status"]
           id?: string
           output_docx_path?: string
           output_pdf_path?: string | null
           output_type?: Database["public"]["Enums"]["output_type"]
           packet_id?: string | null
+          packet_name?: string | null
           template_id?: string
+          template_name?: string | null
           version_number?: number
         }
         Relationships: [

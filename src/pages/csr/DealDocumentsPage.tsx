@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -29,6 +30,20 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,7 +67,11 @@ import {
   History,
   User,
   Eye,
-  Upload
+  Upload,
+  ArrowUpDown,
+  Filter,
+  Search,
+  Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -97,6 +116,10 @@ interface Profile {
 interface GeneratedDocument {
   id: string;
   template_id: string;
+  template_name: string | null;
+  packet_id: string | null;
+  packet_name: string | null;
+  generation_batch_id: string | null;
   output_docx_path: string;
   output_pdf_path: string | null;
   output_type: 'docx_only' | 'docx_and_pdf';
@@ -150,6 +173,11 @@ export const DealDocumentsPage: React.FC = () => {
   const [generationMode, setGenerationMode] = useState<'single' | 'packet'>('packet');
   const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'generate' | 'history'>('generate');
+  // History filters & sorting
+  const [historySortField, setHistorySortField] = useState<'date' | 'template' | 'packet' | 'user'>('date');
+  const [historySortDir, setHistorySortDir] = useState<'asc' | 'desc'>('desc');
+  const [historyFilterSearch, setHistoryFilterSearch] = useState('');
+  const [historyFilterType, setHistoryFilterType] = useState<'all' | 'template' | 'packet'>('all');
 
   const isCsr = role === 'csr' || role === 'admin';
   const isAdminViewOnly = role === 'admin';
@@ -403,6 +431,65 @@ export const DealDocumentsPage: React.FC = () => {
     const profile = profiles.get(userId);
     return profile?.full_name || profile?.email || 'Unknown';
   };
+
+  const getDocTemplateName = (doc: GeneratedDocument): string => {
+    // Prefer denormalized snapshot name, fallback to live lookup
+    if (doc.template_name) return doc.template_name;
+    const fromPacket = packetTemplates.find(pt => pt.template_id === doc.template_id);
+    if (fromPacket?.templates?.name) return fromPacket.templates.name;
+    const fromAll = allTemplates.find(t => t.id === doc.template_id);
+    if (fromAll?.name) return fromAll.name;
+    return 'Unknown Template';
+  };
+
+  const getGeneratedVia = (doc: GeneratedDocument): 'Packet' | 'Template' => {
+    return doc.packet_id ? 'Packet' : 'Template';
+  };
+
+  // Sorted & filtered history documents
+  const filteredHistoryDocs = useMemo(() => {
+    let docs = [...generatedDocuments];
+
+    // Filter by type
+    if (historyFilterType === 'packet') {
+      docs = docs.filter(d => d.packet_id);
+    } else if (historyFilterType === 'template') {
+      docs = docs.filter(d => !d.packet_id);
+    }
+
+    // Search filter
+    if (historyFilterSearch) {
+      const q = historyFilterSearch.toLowerCase();
+      docs = docs.filter(d => {
+        const tName = getDocTemplateName(d).toLowerCase();
+        const pName = (d.packet_name || '').toLowerCase();
+        const creator = getCreatorName(d.created_by).toLowerCase();
+        return tName.includes(q) || pName.includes(q) || creator.includes(q);
+      });
+    }
+
+    // Sort
+    docs.sort((a, b) => {
+      let cmp = 0;
+      switch (historySortField) {
+        case 'date':
+          cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          break;
+        case 'template':
+          cmp = getDocTemplateName(a).localeCompare(getDocTemplateName(b));
+          break;
+        case 'packet':
+          cmp = (a.packet_name || '').localeCompare(b.packet_name || '');
+          break;
+        case 'user':
+          cmp = getCreatorName(a.created_by).localeCompare(getCreatorName(b.created_by));
+          break;
+      }
+      return historySortDir === 'desc' ? -cmp : cmp;
+    });
+
+    return docs;
+  }, [generatedDocuments, historyFilterType, historyFilterSearch, historySortField, historySortDir]);
 
   const toggleTemplateExpanded = (templateId: string) => {
     setExpandedTemplates(prev => {
@@ -1033,6 +1120,7 @@ export const DealDocumentsPage: React.FC = () => {
 
       {/* Document History Tab Content */}
       {activeTab === 'history' && (
+        <TooltipProvider>
         <div className="space-y-6">
           {/* Failed Generations Alert */}
           {getFailedDocuments().length > 0 && (
@@ -1044,45 +1132,72 @@ export const DealDocumentsPage: React.FC = () => {
                 </h3>
               </div>
               <div className="space-y-3">
-                {getFailedDocuments().map((doc) => {
-                  const template = packetTemplates.find(pt => pt.template_id === doc.template_id)?.templates;
-                  return (
-                    <div key={doc.id} className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-foreground">
-                              {template?.name || 'Unknown Template'}
-                            </span>
-                            <Badge variant="destructive" className="text-xs">Failed</Badge>
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(doc.created_at), 'MMM d, yyyy h:mm a')} • by {getCreatorName(doc.created_by)}
-                          </div>
-                          {doc.error_message && (
-                            <p className="text-sm text-destructive mt-2 p-2 bg-background rounded">
-                              {doc.error_message}
-                            </p>
+                {getFailedDocuments().map((doc) => (
+                  <div key={doc.id} className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">
+                            {getDocTemplateName(doc)}
+                          </span>
+                          <Badge variant="destructive" className="text-xs">Failed</Badge>
+                          {doc.packet_name && (
+                            <Badge variant="outline" className="text-xs gap-1">
+                              <Package className="h-3 w-3" />
+                              {doc.packet_name}
+                            </Badge>
                           )}
                         </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {format(new Date(doc.created_at), 'MM/dd/yyyy – hh:mm a')} • by {getCreatorName(doc.created_by)}
+                        </div>
+                        {doc.error_message && (
+                          <p className="text-sm text-destructive mt-2 p-2 bg-background rounded">
+                            {doc.error_message}
+                          </p>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Documents Grouped by Template */}
+          {/* Document History Table */}
           <div className="section-card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                 <History className="h-5 w-5 text-primary" />
-                Generated Documents
+                Document History
               </h3>
               <span className="text-sm text-muted-foreground">
                 {generatedDocuments.filter(d => d.generation_status === 'success').length} versions total
               </span>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by template, packet, or user..."
+                  value={historyFilterSearch}
+                  onChange={(e) => setHistoryFilterSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={historyFilterType} onValueChange={(v) => setHistoryFilterType(v as any)}>
+                <SelectTrigger className="w-40">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="template">Template Only</SelectItem>
+                  <SelectItem value="packet">Packet Only</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {generatedDocuments.length === 0 ? (
@@ -1097,139 +1212,164 @@ export const DealDocumentsPage: React.FC = () => {
                   Go to Generate
                 </Button>
               </div>
+            ) : filteredHistoryDocs.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No documents match your filters</p>
+              </div>
             ) : (
-              <div className="space-y-4">
-                {Array.from(getDocumentsGroupedByTemplate().entries()).map(([templateId, { template, documents }]) => {
-                  if (documents.length === 0) return null;
-                  
-                  const isExpanded = expandedTemplates.has(templateId);
-                  const successDocs = documents.filter(d => d.generation_status === 'success');
-                  const failedDocs = documents.filter(d => d.generation_status === 'failed');
-                  
-                  return (
-                    <Collapsible 
-                      key={templateId} 
-                      open={isExpanded}
-                      onOpenChange={() => toggleTemplateExpanded(templateId)}
-                    >
-                      <div className="rounded-lg border border-border overflow-hidden">
-                        <CollapsibleTrigger asChild>
-                          <button className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors text-left">
-                            <div className="flex items-center gap-3">
-                              <FileText className="h-5 w-5 text-primary" />
-                              <div>
-                                <span className="font-medium text-foreground">
-                                  {template?.name || 'Unknown Template'}
-                                </span>
-                                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                                  <span>{successDocs.length} version{successDocs.length !== 1 ? 's' : ''}</span>
-                                  {failedDocs.length > 0 && (
-                                    <span className="text-destructive">{failedDocs.length} failed</span>
-                                  )}
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>
+                        <button
+                          className="flex items-center gap-1 hover:text-foreground transition-colors"
+                          onClick={() => {
+                            if (historySortField === 'template') setHistorySortDir(d => d === 'asc' ? 'desc' : 'asc');
+                            else { setHistorySortField('template'); setHistorySortDir('asc'); }
+                          }}
+                        >
+                          Document Name
+                          <ArrowUpDown className="h-3 w-3" />
+                        </button>
+                      </TableHead>
+                      <TableHead>Generated Via</TableHead>
+                      <TableHead>
+                        <button
+                          className="flex items-center gap-1 hover:text-foreground transition-colors"
+                          onClick={() => {
+                            if (historySortField === 'packet') setHistorySortDir(d => d === 'asc' ? 'desc' : 'asc');
+                            else { setHistorySortField('packet'); setHistorySortDir('asc'); }
+                          }}
+                        >
+                          Packet Name
+                          <ArrowUpDown className="h-3 w-3" />
+                        </button>
+                      </TableHead>
+                      <TableHead>Version</TableHead>
+                      <TableHead>
+                        <button
+                          className="flex items-center gap-1 hover:text-foreground transition-colors"
+                          onClick={() => {
+                            if (historySortField === 'user') setHistorySortDir(d => d === 'asc' ? 'desc' : 'asc');
+                            else { setHistorySortField('user'); setHistorySortDir('asc'); }
+                          }}
+                        >
+                          Generated By
+                          <ArrowUpDown className="h-3 w-3" />
+                        </button>
+                      </TableHead>
+                      <TableHead>
+                        <button
+                          className="flex items-center gap-1 hover:text-foreground transition-colors"
+                          onClick={() => {
+                            if (historySortField === 'date') setHistorySortDir(d => d === 'asc' ? 'desc' : 'asc');
+                            else { setHistorySortField('date'); setHistorySortDir('desc'); }
+                          }}
+                        >
+                          Generated On
+                          <ArrowUpDown className="h-3 w-3" />
+                        </button>
+                      </TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredHistoryDocs.map((doc) => {
+                      const templateName = getDocTemplateName(doc);
+                      const via = getGeneratedVia(doc);
+                      return (
+                        <TableRow key={doc.id} className={cn(doc.generation_status === 'failed' && 'bg-destructive/5')}>
+                          <TableCell>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4 text-primary shrink-0" />
+                                  <span className="font-medium text-foreground">{templateName}</span>
                                 </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {successDocs.length > 0 && (
-                                <Badge className="bg-success/10 text-success text-xs">
-                                  Latest: v{successDocs[0].version_number}
-                                </Badge>
-                              )}
-                              {isExpanded ? (
-                                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                              )}
-                            </div>
-                          </button>
-                        </CollapsibleTrigger>
-                        
-                        <CollapsibleContent>
-                          <div className="border-t border-border">
-                            <div className="divide-y divide-border">
-                              {documents.map((doc) => (
-                                <div 
-                                  key={doc.id} 
-                                  className={cn(
-                                    "p-4 flex items-center justify-between gap-4",
-                                    doc.generation_status === 'failed' && "bg-destructive/5"
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="max-w-xs">
+                                <div className="space-y-1 text-xs">
+                                  <p><strong>Template:</strong> {templateName}</p>
+                                  {doc.packet_name && <p><strong>Packet:</strong> {doc.packet_name}</p>}
+                                  <p><strong>Generated by:</strong> {getCreatorName(doc.created_by)}</p>
+                                  <p><strong>Timestamp:</strong> {format(new Date(doc.created_at), 'MM/dd/yyyy – hh:mm:ss a')}</p>
+                                  {doc.generation_batch_id && <p><strong>Batch:</strong> {doc.generation_batch_id.slice(0, 8)}…</p>}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs gap-1">
+                              {via === 'Packet' ? <Package className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
+                              {via}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {doc.packet_name || '—'}
+                          </TableCell>
+                          <TableCell className="text-sm">v{doc.version_number}</TableCell>
+                          <TableCell>
+                            <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <User className="h-3 w-3" />
+                              {getCreatorName(doc.created_by)}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                            {format(new Date(doc.created_at), 'MM/dd/yyyy – hh:mm a')}
+                          </TableCell>
+                          <TableCell>
+                            {doc.generation_status === 'success' ? (
+                              <Badge className="bg-success/10 text-success text-xs">Success</Badge>
+                            ) : doc.generation_status === 'failed' ? (
+                              <Badge variant="destructive" className="text-xs">Failed</Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-xs">{doc.generation_status}</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {doc.generation_status === 'success' && (
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 h-7 text-xs"
+                                  onClick={() => handleDownload(
+                                    doc.output_docx_path,
+                                    `${templateName}_v${doc.version_number}.docx`
                                   )}
                                 >
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium text-foreground">
-                                        Version {doc.version_number}
-                                      </span>
-                                      {doc.generation_status === 'success' ? (
-                                        <Badge className="bg-success/10 text-success text-xs">Success</Badge>
-                                      ) : doc.generation_status === 'failed' ? (
-                                        <Badge variant="destructive" className="text-xs">Failed</Badge>
-                                      ) : (
-                                        <Badge variant="secondary" className="text-xs">
-                                          {doc.generation_status}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                                      <span className="flex items-center gap-1">
-                                        <Clock className="h-3 w-3" />
-                                        {format(new Date(doc.created_at), 'MMM d, yyyy h:mm a')}
-                                      </span>
-                                      <span className="flex items-center gap-1">
-                                        <User className="h-3 w-3" />
-                                        {getCreatorName(doc.created_by)}
-                                      </span>
-                                    </div>
-                                    {doc.error_message && (
-                                      <p className="text-sm text-destructive mt-2">
-                                        {doc.error_message}
-                                      </p>
+                                  <Download className="h-3 w-3" />
+                                  DOCX
+                                </Button>
+                                {doc.output_pdf_path && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-1 h-7 text-xs"
+                                    onClick={() => handleDownload(
+                                      doc.output_pdf_path!,
+                                      `${templateName}_v${doc.version_number}.pdf`
                                     )}
-                                  </div>
-                                  
-                                  {doc.generation_status === 'success' && (
-                                    <div className="flex items-center gap-2">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="gap-1"
-                                        onClick={() => handleDownload(
-                                          doc.output_docx_path,
-                                          `${template?.name || 'document'}_v${doc.version_number}.docx`
-                                        )}
-                                      >
-                                        <Download className="h-3.5 w-3.5" />
-                                        DOCX
-                                      </Button>
-                                      {doc.output_pdf_path && (
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="gap-1"
-                                          onClick={() => handleDownload(
-                                            doc.output_pdf_path!,
-                                            `${template?.name || 'document'}_v${doc.version_number}.pdf`
-                                          )}
-                                        >
-                                          <Download className="h-3.5 w-3.5" />
-                                          PDF
-                                        </Button>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </CollapsibleContent>
-                      </div>
-                    </Collapsible>
-                  );
-                })}
+                                  >
+                                    <Download className="h-3 w-3" />
+                                    PDF
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </div>
             )}
           </div>
         </div>
+        </TooltipProvider>
       )}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent>
