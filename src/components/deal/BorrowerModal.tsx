@@ -27,6 +27,10 @@ const BORROWER_TYPE_OPTIONS = [
   'IRA / ERISA', 'Investment Fund', '401K', 'Foreign Holder W-8', 'Non-profit',
 ];
 
+const CAPACITY_OPTIONS = [
+  'Borrower', 'Co-Borrower', 'Additional Guarantor', 'Authorized Party',
+];
+
 
 
 const STATE_OPTIONS = [
@@ -108,11 +112,11 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
               <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Name</div>
               {renderInlineField('borrowerId', 'Borrower ID')}
               {renderInlineSelect('borrowerType', 'Borrower Type', BORROWER_TYPE_OPTIONS, 'Select')}
+              {renderInlineSelect('capacity', 'Capacity', CAPACITY_OPTIONS, 'Select')}
               {renderInlineField('fullName', 'Full Name: If Entity, Use Entity')}
               {renderInlineField('firstName', 'First: If Entity, Use Signer')}
               {renderInlineField('middleName', 'Middle')}
               {renderInlineField('lastName', 'Last')}
-              {renderInlineField('capacity', 'Capacity')}
               {renderInlineField('email', 'Email', { type: 'email' })}
               <div className="h-1" />
               {renderInlineField('creditScore', 'Credit Score')}
