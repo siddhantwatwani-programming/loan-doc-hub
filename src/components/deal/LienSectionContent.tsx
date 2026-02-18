@@ -47,6 +47,9 @@ const DEFAULT_LIEN: LienData = {
   lastVerified: '',
   lastChecked: '',
   note: '',
+  thisLoan: 'false',
+  estimate: 'false',
+  status: '',
 };
 
 const LIEN_FIELD_MAP: Record<string, string> = {
@@ -80,6 +83,9 @@ const LIEN_FIELD_MAP: Record<string, string> = {
   lastVerified: 'last_verified',
   lastChecked: 'last_checked',
   note: 'note',
+  thisLoan: 'this_loan',
+  estimate: 'estimate',
+  status: 'status',
 };
 
 // Reverse map: db field -> LienData key

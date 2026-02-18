@@ -43,6 +43,9 @@ export interface LienData {
   lastVerified: string;
   lastChecked: string;
   note: string;
+  thisLoan: string;
+  estimate: string;
+  status: string;
 }
 
 interface LiensTableViewProps {
