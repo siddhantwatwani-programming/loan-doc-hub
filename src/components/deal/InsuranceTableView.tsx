@@ -107,7 +107,6 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
               <TableRow className="bg-muted/50">
                 <TableHead className="min-w-[120px]">Description</TableHead>
                 <TableHead className="min-w-[150px]">Company</TableHead>
-                <TableHead className="min-w-[150px]">Company</TableHead>
                 <TableHead className="min-w-[120px]">Policy #</TableHead>
                 <TableHead className="min-w-[100px]">Expiration</TableHead>
                 <TableHead className="min-w-[120px] text-right">Coverage</TableHead>
