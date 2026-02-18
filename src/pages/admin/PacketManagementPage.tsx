@@ -394,14 +394,14 @@ export const PacketManagementPage: React.FC = () => {
               New Packet
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
+          <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+            <DialogHeader className="shrink-0">
               <DialogTitle>{editingPacket ? 'Edit Packet' : 'Create Packet'}</DialogTitle>
               <DialogDescription>
                 {editingPacket ? 'Update packet details' : 'Add a new document packet'}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4 overflow-y-auto min-h-0 flex-1 pr-1">
               <div className="space-y-2">
                 <Label htmlFor="name">Packet Name *</Label>
                 <Input
@@ -475,17 +475,20 @@ export const PacketManagementPage: React.FC = () => {
                   <ScrollArea className="h-36 rounded-md border border-border p-2">
                     <div className="space-y-1">
                       {filteredStates.map((state) => (
-                        <div
+                        <label
                           key={state}
-                          className="flex items-center gap-2 py-1 px-1 rounded hover:bg-muted/50 cursor-pointer"
-                          onClick={() => toggleStateSelection(state)}
+                          className="flex items-center gap-2 py-1 px-1 rounded hover:bg-muted/50 cursor-pointer select-none"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            toggleStateSelection(state);
+                          }}
                         >
                           <Checkbox
                             checked={formData.states.includes(state)}
                             onCheckedChange={() => toggleStateSelection(state)}
                           />
                           <span className="text-sm">{state}</span>
-                        </div>
+                        </label>
                       ))}
                     </div>
                   </ScrollArea>
@@ -509,7 +512,7 @@ export const PacketManagementPage: React.FC = () => {
                 <Label>Active</Label>
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="shrink-0">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
               <Button onClick={handleSubmit} disabled={saving}>
                 {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</> : (editingPacket ? 'Update' : 'Create')}
@@ -521,12 +524,12 @@ export const PacketManagementPage: React.FC = () => {
 
       {/* Template Assignment Dialog */}
       <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+           <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle>Manage Templates - {selectedPacket?.name}</DialogTitle>
             <DialogDescription>Add and order templates in this packet</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-y-auto min-h-0 flex-1 pr-1">
             <div className="space-y-2">
               <Label>Add Template</Label>
               <Select onValueChange={handleAddTemplate}>
@@ -556,8 +559,8 @@ export const PacketManagementPage: React.FC = () => {
                       <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
                       <span className="text-sm font-medium text-muted-foreground w-6">{idx + 1}</span>
                       <FileText className="h-4 w-4 text-primary" />
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">{pt.template?.name}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground truncate">{pt.template?.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {pt.template?.state} - {pt.template?.product_type} v{pt.template?.version}
                         </p>
@@ -566,7 +569,7 @@ export const PacketManagementPage: React.FC = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleRemoveTemplate(pt.id)}
-                        className="text-destructive hover:text-destructive"
+                        className="text-destructive hover:text-destructive shrink-0"
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -576,7 +579,7 @@ export const PacketManagementPage: React.FC = () => {
               )}
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0">
             <Button onClick={() => setIsTemplateDialogOpen(false)}>Done</Button>
           </DialogFooter>
         </DialogContent>
