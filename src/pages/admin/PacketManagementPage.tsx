@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -40,6 +41,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Packet {
   id: string;
@@ -49,6 +52,8 @@ interface Packet {
   description: string | null;
   is_active: boolean;
   created_at: string;
+  all_states: boolean;
+  states: string[];
 }
 
 interface Template {
@@ -98,7 +103,11 @@ export const PacketManagementPage: React.FC = () => {
     product_type: '',
     description: '',
     is_active: true,
+    all_states: false,
+    states: [] as string[],
   });
+
+  const [stateSearchQuery, setStateSearchQuery] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -114,7 +123,14 @@ export const PacketManagementPage: React.FC = () => {
       if (packetsRes.error) throw packetsRes.error;
       if (templatesRes.error) throw templatesRes.error;
 
-      setPackets(packetsRes.data || []);
+      // Map packets with new fields, falling back to old state field
+      const mappedPackets = (packetsRes.data || []).map((p: any) => ({
+        ...p,
+        all_states: p.all_states || false,
+        states: p.states && p.states.length > 0 ? p.states : (p.state && p.state !== 'TBD' ? [p.state] : []),
+      }));
+
+      setPackets(mappedPackets);
       setTemplates(templatesRes.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -153,7 +169,7 @@ export const PacketManagementPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.state || !formData.product_type) {
+    if (!formData.name || !formData.product_type) {
       toast({
         title: 'Validation error',
         description: 'Please fill in all required fields',
@@ -162,17 +178,31 @@ export const PacketManagementPage: React.FC = () => {
       return;
     }
 
+    if (!formData.all_states && formData.states.length === 0) {
+      toast({
+        title: 'Validation error',
+        description: 'Please select at least one state or check "All States"',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSaving(true);
     try {
+      // Use first selected state as the legacy `state` field for backward compat
+      const legacyState = formData.all_states ? 'ALL' : (formData.states[0] || 'TBD');
+
       if (editingPacket) {
         const { error } = await supabase
           .from('packets')
           .update({
             name: formData.name,
-            state: formData.state,
+            state: legacyState,
             product_type: formData.product_type,
             description: formData.description || null,
             is_active: formData.is_active,
+            all_states: formData.all_states,
+            states: formData.all_states ? [] : formData.states,
           })
           .eq('id', editingPacket.id);
 
@@ -181,10 +211,12 @@ export const PacketManagementPage: React.FC = () => {
       } else {
         const { error } = await supabase.from('packets').insert({
           name: formData.name,
-          state: formData.state,
+          state: legacyState,
           product_type: formData.product_type,
           description: formData.description || null,
           is_active: formData.is_active,
+          all_states: formData.all_states,
+          states: formData.all_states ? [] : formData.states,
         });
 
         if (error) throw error;
@@ -213,6 +245,8 @@ export const PacketManagementPage: React.FC = () => {
       product_type: packet.product_type,
       description: packet.description || '',
       is_active: packet.is_active,
+      all_states: packet.all_states,
+      states: packet.states || [],
     });
     setIsDialogOpen(true);
   };
@@ -296,19 +330,44 @@ export const PacketManagementPage: React.FC = () => {
       product_type: '',
       description: '',
       is_active: true,
+      all_states: false,
+      states: [],
     });
+    setStateSearchQuery('');
+  };
+
+  const toggleStateSelection = (state: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      states: prev.states.includes(state)
+        ? prev.states.filter((s) => s !== state)
+        : [...prev.states, state],
+    }));
   };
 
   const filteredPackets = packets.filter(
     (p) =>
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.all_states ? 'all states' : (p.states || []).join(', ')).toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.product_type.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredStates = US_STATES.filter((s) =>
+    s.toLowerCase().includes(stateSearchQuery.toLowerCase())
   );
 
   const availableTemplates = templates.filter(
     (t) => !packetTemplates.some((pt) => pt.template_id === t.id)
   );
+
+  const getStatesDisplay = (packet: Packet) => {
+    if (packet.all_states) return 'All States';
+    if (packet.states && packet.states.length > 0) {
+      if (packet.states.length <= 3) return packet.states.join(', ');
+      return `${packet.states.slice(0, 3).join(', ')} +${packet.states.length - 3}`;
+    }
+    return packet.state || 'TBD';
+  };
 
   if (loading) {
     return (
@@ -335,7 +394,7 @@ export const PacketManagementPage: React.FC = () => {
               New Packet
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>{editingPacket ? 'Edit Packet' : 'Create Packet'}</DialogTitle>
               <DialogDescription>
@@ -352,40 +411,87 @@ export const PacketManagementPage: React.FC = () => {
                   placeholder="e.g., CA Conventional Package"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>State *</Label>
-                  <Select
-                    value={formData.state}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, state: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select state" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {US_STATES.map((state) => (
-                        <SelectItem key={state} value={state}>{state}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Product Type *</Label>
-                  <Select
-                    value={formData.product_type}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, product_type: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PRODUCT_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label>Product Type *</Label>
+                <Select
+                  value={formData.product_type}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, product_type: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRODUCT_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
+              {/* All States Checkbox */}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="all-states"
+                  checked={formData.all_states}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      all_states: !!checked,
+                      states: checked ? [] : prev.states,
+                    }))
+                  }
+                />
+                <Label htmlFor="all-states" className="cursor-pointer">All States</Label>
+              </div>
+
+              {/* Multi-select States */}
+              {!formData.all_states && (
+                <div className="space-y-2">
+                  <Label>States *</Label>
+                  {formData.states.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {formData.states.map((s) => (
+                        <Badge key={s} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleStateSelection(s)}>
+                          {s}
+                          <X className="h-3 w-3" />
+                        </Badge>
+                      ))}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs text-muted-foreground"
+                        onClick={() => setFormData((prev) => ({ ...prev, states: [] }))}
+                      >
+                        Clear all
+                      </Button>
+                    </div>
+                  )}
+                  <Input
+                    placeholder="Search states..."
+                    value={stateSearchQuery}
+                    onChange={(e) => setStateSearchQuery(e.target.value)}
+                    className="mb-1"
+                  />
+                  <ScrollArea className="h-36 rounded-md border border-border p-2">
+                    <div className="space-y-1">
+                      {filteredStates.map((state) => (
+                        <div
+                          key={state}
+                          className="flex items-center gap-2 py-1 px-1 rounded hover:bg-muted/50 cursor-pointer"
+                          onClick={() => toggleStateSelection(state)}
+                        >
+                          <Checkbox
+                            checked={formData.states.includes(state)}
+                            onCheckedChange={() => toggleStateSelection(state)}
+                          />
+                          <span className="text-sm">{state}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Input
@@ -506,7 +612,7 @@ export const PacketManagementPage: React.FC = () => {
                   <div>
                     <h3 className="font-semibold text-foreground">{packet.name}</h3>
                     <p className="text-xs text-muted-foreground">
-                      {packet.state} • {packet.product_type}
+                      {getStatesDisplay(packet)} • {packet.product_type}
                     </p>
                   </div>
                 </div>

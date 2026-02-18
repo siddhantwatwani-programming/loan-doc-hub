@@ -70,6 +70,8 @@ interface Packet {
   id: string;
   name: string;
   description: string | null;
+  all_states?: boolean;
+  states?: string[];
 }
 
 interface Template {
@@ -132,7 +134,9 @@ export const DealDocumentsPage: React.FC = () => {
   const [deal, setDeal] = useState<Deal | null>(null);
   const [packet, setPacket] = useState<Packet | null>(null);
   const [packetTemplates, setPacketTemplates] = useState<PacketTemplate[]>([]);
-  const [allTemplates, setAllTemplates] = useState<Template[]>([]); // All active templates for no-packet mode
+  const [allTemplates, setAllTemplates] = useState<Template[]>([]);
+  const [availablePackets, setAvailablePackets] = useState<Packet[]>([]);
+  const [selectedPacketId, setSelectedPacketId] = useState<string | null>(null);
   const [generatedDocuments, setGeneratedDocuments] = useState<GeneratedDocument[]>([]);
   const [recentJobs, setRecentJobs] = useState<GenerationJob[]>([]);
   const [profiles, setProfiles] = useState<Map<string, Profile>>(new Map());
@@ -234,14 +238,28 @@ export const DealDocumentsPage: React.FC = () => {
       
       setPacketTemplates((ptData || []) as any);
     } else {
-      // No packet - fetch all active templates for single-template generation
-      const { data: templatesData } = await supabase
-        .from('templates')
-        .select('id, name, file_path, version')
-        .eq('is_active', true)
-        .order('name');
+      // No packet - fetch all active templates and available packets for selection
+      const [templatesRes, packetsRes] = await Promise.all([
+        supabase
+          .from('templates')
+          .select('id, name, file_path, version')
+          .eq('is_active', true)
+          .order('name'),
+        supabase
+          .from('packets')
+          .select('*')
+          .eq('is_active', true)
+          .order('name'),
+      ]);
       
-      setAllTemplates((templatesData || []) as Template[]);
+      setAllTemplates((templatesRes.data || []) as Template[]);
+
+      // Filter packets by deal state: all_states=true OR deal's state is in packet's states array
+      const dealState = dealData.state;
+      const filtered = (packetsRes.data || []).filter((p: any) => 
+        p.all_states || (p.states && p.states.includes(dealState))
+      );
+      setAvailablePackets(filtered);
     }
   };
 
@@ -299,7 +317,10 @@ export const DealDocumentsPage: React.FC = () => {
       if (generationMode === 'single' && selectedTemplateId) {
         body.templateId = selectedTemplateId;
       } else {
-        body.packetId = packet!.id;
+        // Use deal's assigned packet or the user-selected packet
+        const packetIdToUse = packet?.id || selectedPacketId;
+        if (!packetIdToUse) throw new Error('No packet selected');
+        body.packetId = packetIdToUse;
       }
 
       const { data, error } = await supabase.functions.invoke('generate-document', {
@@ -623,73 +644,168 @@ export const DealDocumentsPage: React.FC = () => {
               </div>
             )}
 
-            {/* No Packet - Template Selector Mode */}
+            {/* No Packet - Packet Selector + Template Selector Mode */}
             {!packet && (
-              <div className="section-card">
-                <div className="flex items-center gap-3 mb-4">
-                  <FileText className="h-5 w-5 text-primary" />
+              <div className="section-card space-y-6">
+                {/* Packet Selector */}
+                {availablePackets.length > 0 && (
                   <div>
-                    <h2 className="text-lg font-semibold text-foreground">Single Template Generation</h2>
-                    <p className="text-sm text-muted-foreground">
-                      No packet assigned. Select a template to generate a single document.
-                    </p>
-                  </div>
-                </div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <Package className="h-5 w-5 text-primary" />
+                      <div>
+                        <h2 className="text-lg font-semibold text-foreground">Generate from Packet</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Select a packet to generate all its templates at once.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                        <span className="text-sm font-medium text-foreground">Packet:</span>
+                        <Select
+                          value={selectedPacketId || ''}
+                          onValueChange={async (v) => {
+                            setSelectedPacketId(v);
+                            // Fetch templates for this packet
+                            const { data: ptData } = await supabase
+                              .from('packet_templates')
+                              .select('template_id, display_order, is_required, templates(id, name, file_path, version)')
+                              .eq('packet_id', v)
+                              .order('display_order');
+                            setPacketTemplates((ptData || []) as any);
+                          }}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Select a packet..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availablePackets.map(p => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.name} {p.all_states ? '(All States)' : `(${(p.states || []).join(', ')})`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                {/* Template Selector */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
-                    <span className="text-sm font-medium text-foreground">Template:</span>
-                    <Select 
-                      value={selectedTemplateId || ''} 
-                      onValueChange={(v) => setSelectedTemplateId(v)}
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Select a template..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {allTemplates.map(template => (
-                          <SelectItem key={template.id} value={template.id}>
-                            {template.name} (v{template.version})
-                            {!template.file_path && ' - No file'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      {/* Show selected packet templates preview */}
+                      {selectedPacketId && packetTemplates.length > 0 && (
+                        <div className="p-3 bg-muted/30 rounded-lg space-y-2">
+                          <p className="text-sm font-medium text-foreground">Templates in Packet ({packetTemplates.length}):</p>
+                          {packetTemplates.map((pt, idx) => (
+                            <div key={pt.template_id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <span className="font-medium w-5">{idx + 1}.</span>
+                              <FileText className="h-3.5 w-3.5" />
+                              <span>{pt.templates?.name || 'Unknown'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                        <span className="text-sm font-medium text-foreground">Output Format:</span>
+                        <Select value={outputType} onValueChange={(v) => setOutputType(v as OutputType)}>
+                          <SelectTrigger className="w-48">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="docx_only">DOCX Only</SelectItem>
+                            <SelectItem value="docx_and_pdf">DOCX + PDF</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <Button 
+                        onClick={() => handleGenerateClick('packet')}
+                        disabled={!canGenerate || generating || !selectedPacketId}
+                        className="w-full gap-2"
+                        size="lg"
+                      >
+                        {generating ? (
+                          <>
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-5 w-5" />
+                            Generate Full Packet ({packetTemplates.length} templates)
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    <div className="my-4 border-t border-border" />
+                  </div>
+                )}
+
+                {/* Single Template Selector */}
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <div>
+                      <h2 className="text-lg font-semibold text-foreground">Single Template Generation</h2>
+                      <p className="text-sm text-muted-foreground">
+                        Select a template to generate a single document.
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
-                    <span className="text-sm font-medium text-foreground">Output Format:</span>
-                    <Select value={outputType} onValueChange={(v) => setOutputType(v as OutputType)}>
-                      <SelectTrigger className="w-48">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="docx_only">DOCX Only</SelectItem>
-                        <SelectItem value="docx_and_pdf">DOCX + PDF</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm font-medium text-foreground">Template:</span>
+                      <Select 
+                        value={selectedTemplateId || ''} 
+                        onValueChange={(v) => setSelectedTemplateId(v)}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Select a template..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {allTemplates.map(template => (
+                            <SelectItem key={template.id} value={template.id}>
+                              {template.name} (v{template.version})
+                              {!template.file_path && ' - No file'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  {/* Generate Single Document Button */}
-                  <Button 
-                    onClick={() => handleGenerateClick('single', selectedTemplateId || undefined)}
-                    disabled={!canGenerate || generating || !selectedTemplateId}
-                    className="w-full gap-2"
-                    size="lg"
-                  >
-                    {generating ? (
-                      <>
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Play className="h-5 w-5" />
-                        Generate Document
-                      </>
+                    {!availablePackets.length && (
+                      <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                        <span className="text-sm font-medium text-foreground">Output Format:</span>
+                        <Select value={outputType} onValueChange={(v) => setOutputType(v as OutputType)}>
+                          <SelectTrigger className="w-48">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="docx_only">DOCX Only</SelectItem>
+                            <SelectItem value="docx_and_pdf">DOCX + PDF</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     )}
-                  </Button>
+
+                    <Button 
+                      onClick={() => handleGenerateClick('single', selectedTemplateId || undefined)}
+                      disabled={!canGenerate || generating || !selectedTemplateId}
+                      className="w-full gap-2"
+                      size="lg"
+                    >
+                      {generating ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-5 w-5" />
+                          Generate Document
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}

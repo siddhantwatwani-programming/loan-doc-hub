@@ -662,6 +662,7 @@ export type Database = {
       }
       packets: {
         Row: {
+          all_states: boolean
           created_at: string
           created_by: string | null
           description: string | null
@@ -670,9 +671,11 @@ export type Database = {
           name: string
           product_type: string
           state: string
+          states: string[] | null
           updated_at: string
         }
         Insert: {
+          all_states?: boolean
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -681,9 +684,11 @@ export type Database = {
           name: string
           product_type: string
           state: string
+          states?: string[] | null
           updated_at?: string
         }
         Update: {
+          all_states?: boolean
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -692,6 +697,7 @@ export type Database = {
           name?: string
           product_type?: string
           state?: string
+          states?: string[] | null
           updated_at?: string
         }
         Relationships: []

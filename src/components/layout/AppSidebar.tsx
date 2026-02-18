@@ -82,6 +82,7 @@ const externalItems: NavItem[] = [
 
 // Top-level admin items
 const adminItems: NavItem[] = [
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['admin'] },
   { label: 'User Management', icon: Users, path: '/admin/users', roles: ['admin'] },
   { label: 'Templates', icon: FileText, path: '/admin/templates', roles: ['admin'] },
   { label: 'Field Dictionary', icon: Key, path: '/admin/fields', roles: ['admin'] },
@@ -305,13 +306,13 @@ export const AppSidebar: React.FC = () => {
             )
           )}
 
-          {/* Broker Services Section */}
-          {!isCollapsed && (
+          {/* CSR-specific sections - hidden from admin */}
+          {!isCollapsed && role === 'csr' && (
             <BrokerServicesNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'broker'} onOpenChange={handleSectionToggle('broker')} />
           )}
 
-          {/* Loan Servicing (promoted from Broker Services) */}
-          {!isCollapsed && (
+          {/* Loan Servicing (promoted from Broker Services) - CSR only */}
+          {!isCollapsed && role === 'csr' && (
             <PromotedNavSection
               label="Loan Servicing"
               icon={Landmark}
@@ -330,8 +331,8 @@ export const AppSidebar: React.FC = () => {
             />
           )}
 
-          {/* Default Services (promoted from Broker Services) */}
-          {!isCollapsed && (
+          {/* Default Services (promoted from Broker Services) - CSR only */}
+          {!isCollapsed && role === 'csr' && (
             <PromotedNavSection
               label="Default Services"
               icon={AlertTriangle}
@@ -351,8 +352,8 @@ export const AppSidebar: React.FC = () => {
             />
           )}
 
-          {/* Operations (promoted from Broker Services) */}
-          {!isCollapsed && (
+          {/* Operations (promoted from Broker Services) - CSR only */}
+          {!isCollapsed && role === 'csr' && (
             <PromotedNavSection
               label="Operations"
               icon={Workflow}
@@ -374,13 +375,13 @@ export const AppSidebar: React.FC = () => {
             />
           )}
 
-          {/* Accounting Section */}
-          {!isCollapsed && (
+          {/* Accounting Section - CSR only */}
+          {!isCollapsed && role === 'csr' && (
             <AccountingNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'accounting'} onOpenChange={handleSectionToggle('accounting')} />
           )}
 
-          {/* Knowledge Center (promoted from Accounting) */}
-          {!isCollapsed && (
+          {/* Knowledge Center (promoted from Accounting) - CSR only */}
+          {!isCollapsed && role === 'csr' && (
             <PromotedNavSection
               label="Knowledge Center"
               icon={BookOpen}
@@ -397,8 +398,8 @@ export const AppSidebar: React.FC = () => {
             />
           )}
 
-          {/* Legal (promoted from Accounting) */}
-          {!isCollapsed && (
+          {/* Legal (promoted from Accounting) - CSR only */}
+          {!isCollapsed && role === 'csr' && (
             <PromotedNavSection
               label="Legal"
               icon={Scale}
@@ -417,8 +418,8 @@ export const AppSidebar: React.FC = () => {
             />
           )}
 
-          {/* Documents Vault (promoted from Accounting - direct link) */}
-          {!isCollapsed && (
+          {/* Documents Vault - CSR only */}
+          {!isCollapsed && role === 'csr' && (
             <PromotedNavSection
               label="Documents Vault"
               icon={FolderLock}
@@ -429,8 +430,8 @@ export const AppSidebar: React.FC = () => {
             />
           )}
 
-          {/* Contacts (promoted from Accounting - direct link) */}
-          {!isCollapsed && (
+          {/* Contacts - CSR only */}
+          {!isCollapsed && role === 'csr' && (
             <PromotedNavSection
               label="Contacts"
               icon={Users}
@@ -440,8 +441,8 @@ export const AppSidebar: React.FC = () => {
             />
           )}
 
-          {/* Statements & Reports (promoted from Accounting - direct link) */}
-          {!isCollapsed && (
+          {/* Statements & Reports - CSR only */}
+          {!isCollapsed && role === 'csr' && (
             <PromotedNavSection
               label="Statements & Reports"
               icon={BarChart3}
@@ -451,13 +452,13 @@ export const AppSidebar: React.FC = () => {
             />
           )}
 
-          {/* System Administration Section */}
-          {!isCollapsed && (
+          {/* System Administration Section - CSR only */}
+          {!isCollapsed && role === 'csr' && (
             <SystemAdminNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'sysadmin'} onOpenChange={handleSectionToggle('sysadmin')} />
           )}
 
-          {/* C Level Module Section */}
-          {!isCollapsed && (
+          {/* C Level Module Section - CSR only */}
+          {!isCollapsed && role === 'csr' && (
             <CLevelModuleNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'clevel'} onOpenChange={handleSectionToggle('clevel')} />
           )}
 
