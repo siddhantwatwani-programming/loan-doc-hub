@@ -155,6 +155,15 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             </Select>
           </InlineField>
 
+          <InlineField label="Capacity">
+            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>
+                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </InlineField>
+
           <InlineField label="Full Name: If Entity, Use Entity">
             <Input value={getValue('fullName')} onChange={(e) => handleChange('fullName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
@@ -169,15 +178,6 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
 
           <InlineField label="Last">
             <Input value={getValue('lastName')} onChange={(e) => handleChange('lastName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
-
-          <InlineField label="Capacity">
-            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>
-                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-              </SelectContent>
-            </Select>
           </InlineField>
 
           <InlineField label="Email">
