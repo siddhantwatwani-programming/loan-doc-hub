@@ -97,15 +97,15 @@ interface BorrowersTableViewProps {
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { id: 'primary', label: 'Primary', visible: true },
+  { id: 'primaryContact', label: 'Primary Contact', visible: true },
   { id: 'type', label: 'Type', visible: true },
   { id: 'fullName', label: 'Full Name', visible: true },
   { id: 'email', label: 'Email', visible: true },
   { id: 'phone', label: 'Phone', visible: true },
+  { id: 'street', label: 'Street', visible: true },
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
-  { id: 'creditScore', label: 'Credit Score', visible: true },
-  { id: 'capacity', label: 'Authorized Party', visible: true },
+  { id: 'zip', label: 'ZIP', visible: true },
   { id: 'actions', label: 'Actions', visible: true },
 ];
 
@@ -129,7 +129,7 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
 
   const renderCellContent = (borrower: BorrowerData, columnId: string) => {
     switch (columnId) {
-      case 'primary':
+      case 'primaryContact':
         return (
           <div onClick={(e) => e.stopPropagation()}>
             <Checkbox
@@ -150,15 +150,15 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
       case 'email':
         return borrower.email || '-';
       case 'phone':
-        return borrower.phone || '-';
+        return borrower.mobilePhone || borrower.phone || '-';
+      case 'street':
+        return borrower.primaryStreet || borrower.street || '-';
       case 'city':
-        return borrower.city || '-';
+        return borrower.primaryCity || borrower.city || '-';
       case 'state':
-        return borrower.state || '-';
-      case 'creditScore':
-        return borrower.creditScore || '-';
-      case 'capacity':
-        return borrower.capacity || '-';
+        return borrower.primaryState || borrower.state || '-';
+      case 'zip':
+        return borrower.primaryZip || borrower.zipCode || '-';
       case 'actions':
         return (
           <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
@@ -242,7 +242,7 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
                 <TableHead
                   key={column.id}
                   className={
-                    column.id === 'primary' || column.id === 'actions'
+                    column.id === 'primaryContact' || column.id === 'actions'
                       ? 'w-[80px]'
                       : undefined
                   }
