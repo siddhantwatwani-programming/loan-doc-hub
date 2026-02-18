@@ -128,6 +128,11 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
               {renderInlineField('state', 'State')}
             </div>
 
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+              {renderInlineField('street', 'Street')}
+              {renderInlineField('zip', 'Zip')}
+            </div>
+
             {/* Tax ID Type dropdown */}
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs">Tax ID</Label>

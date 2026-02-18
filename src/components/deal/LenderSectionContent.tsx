@@ -161,8 +161,10 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
     onValueChange(`${prefix}.last_name`, lenderData.lastName);
     onValueChange(`${prefix}.email`, lenderData.email);
     onValueChange(`${prefix}.phone.cell`, lenderData.phone);
+    onValueChange(`${prefix}.primary_address.street`, lenderData.street);
     onValueChange(`${prefix}.primary_address.city`, lenderData.city);
     onValueChange(`${prefix}.primary_address.state`, lenderData.state);
+    onValueChange(`${prefix}.primary_address.zip`, lenderData.zip);
     onValueChange(`${prefix}.tax_id`, lenderData.taxId);
     onValueChange(`${prefix}.tax_id_type`, lenderData.taxIdType);
     
