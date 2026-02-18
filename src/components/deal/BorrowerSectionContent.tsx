@@ -107,6 +107,16 @@ const extractBorrowersFromValues = (values: Record<string, string>): BorrowerDat
       alternateReporting: values[`${prefix}.alternate_reporting`] === 'true',
       deliveryOnline: values[`${prefix}.delivery_online`] === 'true',
       deliveryMail: values[`${prefix}.delivery_mail`] === 'true',
+      taxIdType: values[`${prefix}.tax_id_type`] || '',
+      tin: values[`${prefix}.tin`] || '',
+      tinVerified: values[`${prefix}.tin_verified`] === 'true',
+      deliveryPrint: values[`${prefix}.delivery_print`] === 'true',
+      deliveryEmail: values[`${prefix}.delivery_email`] === 'true',
+      deliverySms: values[`${prefix}.delivery_sms`] === 'true',
+      sendPaymentNotification: values[`${prefix}.send_payment_notification`] === 'true',
+      sendLateNotice: values[`${prefix}.send_late_notice`] === 'true',
+      sendBorrowerStatement: values[`${prefix}.send_borrower_statement`] === 'true',
+      sendMaturityNotice: values[`${prefix}.send_maturity_notice`] === 'true',
     };
     borrowers.push(borrower);
   });
@@ -235,6 +245,12 @@ const extractCoBorrowersFromValues = (values: Record<string, string>): CoBorrowe
       deliveryEmail: values[`${prefix}.delivery_email`] === 'true',
       deliverySms: values[`${prefix}.delivery_sms`] === 'true',
       parentBorrowerPrefix: values[`${prefix}.parent_borrower_prefix`] || '',
+      taxIdType: values[`${prefix}.tax_id_type`] || '',
+      tinVerified: values[`${prefix}.tin_verified`] === 'true',
+      sendPaymentNotification: values[`${prefix}.send_payment_notification`] === 'true',
+      sendLateNotice: values[`${prefix}.send_late_notice`] === 'true',
+      sendBorrowerStatement: values[`${prefix}.send_borrower_statement`] === 'true',
+      sendMaturityNotice: values[`${prefix}.send_maturity_notice`] === 'true',
     };
     coBorrowers.push(coBorrower);
   });
@@ -427,9 +443,6 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
       onValueChange(`${cb.id}.vesting`, borrowerData.vesting);
     });
 
-    // 2. Always sync to additional guarantor (guarantor can still edit independently)
-    onValueChange(`${prefix}.guarantor.vesting`, borrowerData.vesting);
-
     onValueChange(`${prefix}.ford.1`, borrowerData.ford1);
     onValueChange(`${prefix}.ford.2`, borrowerData.ford2);
     onValueChange(`${prefix}.ford.3`, borrowerData.ford3);
@@ -442,6 +455,16 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     onValueChange(`${prefix}.alternate_reporting`, String(borrowerData.alternateReporting));
     onValueChange(`${prefix}.delivery_online`, String(borrowerData.deliveryOnline));
     onValueChange(`${prefix}.delivery_mail`, String(borrowerData.deliveryMail));
+    onValueChange(`${prefix}.tax_id_type`, borrowerData.taxIdType || '');
+    onValueChange(`${prefix}.tin`, borrowerData.tin || '');
+    onValueChange(`${prefix}.tin_verified`, String(!!borrowerData.tinVerified));
+    onValueChange(`${prefix}.delivery_print`, String(!!borrowerData.deliveryPrint));
+    onValueChange(`${prefix}.delivery_email`, String(!!borrowerData.deliveryEmail));
+    onValueChange(`${prefix}.delivery_sms`, String(!!borrowerData.deliverySms));
+    onValueChange(`${prefix}.send_payment_notification`, String(!!borrowerData.sendPaymentNotification));
+    onValueChange(`${prefix}.send_late_notice`, String(!!borrowerData.sendLateNotice));
+    onValueChange(`${prefix}.send_borrower_statement`, String(!!borrowerData.sendBorrowerStatement));
+    onValueChange(`${prefix}.send_maturity_notice`, String(!!borrowerData.sendMaturityNotice));
     
     // If this is marked as primary, unset others
     if (borrowerData.isPrimary) {
@@ -562,6 +585,12 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     onValueChange(`${prefix}.delivery_print`, String(coBorrowerData.deliveryPrint));
     onValueChange(`${prefix}.delivery_email`, String(coBorrowerData.deliveryEmail));
     onValueChange(`${prefix}.delivery_sms`, String(coBorrowerData.deliverySms));
+    onValueChange(`${prefix}.tax_id_type`, coBorrowerData.taxIdType || '');
+    onValueChange(`${prefix}.tin_verified`, String(!!coBorrowerData.tinVerified));
+    onValueChange(`${prefix}.send_payment_notification`, String(!!coBorrowerData.sendPaymentNotification));
+    onValueChange(`${prefix}.send_late_notice`, String(!!coBorrowerData.sendLateNotice));
+    onValueChange(`${prefix}.send_borrower_statement`, String(!!coBorrowerData.sendBorrowerStatement));
+    onValueChange(`${prefix}.send_maturity_notice`, String(!!coBorrowerData.sendMaturityNotice));
     // Save parent borrower association
     onValueChange(`${prefix}.parent_borrower_prefix`, selectedBorrowerPrefix);
     

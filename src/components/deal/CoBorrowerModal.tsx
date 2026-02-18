@@ -105,11 +105,11 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
               <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Name</div>
               {renderInlineField('borrowerId', 'Borrower ID')}
               {renderInlineSelect('borrowerType', 'Borrower Type', BORROWER_TYPE_OPTIONS, 'Select')}
+              {renderInlineSelect('capacity', 'Capacity', CAPACITY_OPTIONS, 'Select')}
               {renderInlineField('fullName', 'Full Name: If Entity, Use Entity')}
               {renderInlineField('firstName', 'First: If Entity, Use Signer')}
               {renderInlineField('middleName', 'Middle')}
               {renderInlineField('lastName', 'Last')}
-              {renderInlineSelect('capacity', 'Capacity', CAPACITY_OPTIONS, 'Select')}
               {renderInlineField('email', 'Email', { type: 'email' })}
               <div className="h-1" />
               {renderInlineField('creditScore', 'Credit Score')}
