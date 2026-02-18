@@ -373,9 +373,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
-            <span className="text-sm font-medium text-foreground">
-              {selectedPropertyName}
-            </span>
           </div>
         )}
 
