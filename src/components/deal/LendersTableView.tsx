@@ -29,6 +29,7 @@ export interface LenderData {
   state: string;
   zip: string;
   taxId: string;
+  taxIdType: string;
 }
 
 interface LendersTableViewProps {

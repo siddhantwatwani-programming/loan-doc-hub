@@ -51,6 +51,7 @@ const extractLendersFromValues = (values: Record<string, string>): LenderData[] 
       state: values[`${prefix}.primary_address.state`] || values[`${prefix}.state`] || '',
       zip: values[`${prefix}.primary_address.zip`] || values[`${prefix}.zip`] || '',
       taxId: values[`${prefix}.tax_id`] || '',
+      taxIdType: values[`${prefix}.tax_id_type`] || '',
     };
     lenders.push(lender);
   });
@@ -163,6 +164,7 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
     onValueChange(`${prefix}.primary_address.city`, lenderData.city);
     onValueChange(`${prefix}.primary_address.state`, lenderData.state);
     onValueChange(`${prefix}.tax_id`, lenderData.taxId);
+    onValueChange(`${prefix}.tax_id_type`, lenderData.taxIdType);
     
     // If this is marked as primary, unset others
     if (lenderData.isPrimary) {

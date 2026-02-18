@@ -7,7 +7,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { LenderData } from './LendersTableView';
+
+const LENDER_TYPE_OPTIONS = [
+  { value: 'Individual', label: 'Individual' },
+  { value: 'Joint', label: 'Joint' },
+  { value: 'Family Trust', label: 'Family Trust' },
+  { value: 'LLC', label: 'LLC' },
+  { value: 'C Corp / S Corp', label: 'C Corp / S Corp' },
+  { value: 'IRA / ERISA', label: 'IRA / ERISA' },
+  { value: 'Investment Fund', label: 'Investment Fund' },
+  { value: '401k', label: '401k' },
+  { value: 'Foreign Holder W-8', label: 'Foreign Holder W-8' },
+  { value: 'Non-profit', label: 'Non-profit' },
+];
+
+const TAX_ID_TYPE_OPTIONS = [
+  { value: '0', label: '0 - Unknown' },
+  { value: '1', label: '1 - EIN' },
+  { value: '2', label: '2 - SSN' },
+];
 
 interface LenderModalProps {
   open: boolean;
@@ -19,7 +39,7 @@ interface LenderModalProps {
 
 const getDefaultLenderData = (): LenderData => ({
   id: '', isPrimary: false, type: '', fullName: '', firstName: '', lastName: '',
-  email: '', phone: '', street: '', city: '', state: '', zip: '', taxId: '',
+  email: '', phone: '', street: '', city: '', state: '', zip: '', taxId: '', taxIdType: '',
 });
 
 export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, lender, onSave, isEdit = false }) => {
@@ -28,7 +48,7 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
 
   useEffect(() => {
     if (open) {
-      setFormData(lender ? lender : getDefaultLenderData());
+      setFormData(lender ? { ...getDefaultLenderData(), ...lender } : getDefaultLenderData());
       setErrors({});
     }
   }, [open, lender]);
@@ -68,7 +88,25 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
               <Label htmlFor="isPrimary" className="text-xs font-medium">Primary Lender</Label>
             </div>
 
-            {renderInlineField('type', 'Lender Type', { placeholder: 'e.g., Individual' })}
+            {/* Lender Type dropdown */}
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">Lender Type</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(value) => handleChange('type', value)}
+              >
+                <SelectTrigger className="h-7 text-xs flex-1">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LENDER_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
               <div>
@@ -90,7 +128,25 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
               {renderInlineField('state', 'State')}
             </div>
 
-            {renderInlineField('taxId', 'Tax ID')}
+            {/* Tax ID Type dropdown */}
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">Tax ID</Label>
+              <Select
+                value={formData.taxIdType}
+                onValueChange={(value) => handleChange('taxIdType', value)}
+              >
+                <SelectTrigger className="h-7 text-xs flex-1">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TAX_ID_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </ScrollArea>
 
