@@ -40,7 +40,7 @@ const STATE_OPTIONS = [
 ];
 
 const emptyCoBorrower: CoBorrowerData = {
-  id: '', fullName: '', firstName: '', middleName: '', lastName: '', salutation: '', generation: '',
+  id: '', isPrimary: false, fullName: '', firstName: '', middleName: '', lastName: '', salutation: '', generation: '',
   email: '', homePhone: '', workPhone: '', mobilePhone: '', fax: '',
   preferredHome: false, preferredWork: false, preferredCell: false, preferredFax: false,
   street: '', city: '', state: '', zipCode: '',

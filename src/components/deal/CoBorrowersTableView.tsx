@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -22,6 +23,7 @@ import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 
 export interface CoBorrowerData {
   id: string;
+  isPrimary: boolean;
   fullName: string;
   firstName: string;
   middleName: string;
@@ -96,6 +98,7 @@ interface CoBorrowersTableViewProps {
   onAddCoBorrower: () => void;
   onEditCoBorrower: (coBorrower: CoBorrowerData) => void;
   onRowClick: (coBorrower: CoBorrowerData) => void;
+  onPrimaryChange: (coBorrowerId: string, isPrimary: boolean) => void;
   onDeleteCoBorrower?: (coBorrower: CoBorrowerData) => void;
   disabled?: boolean;
   isLoading?: boolean;
@@ -109,6 +112,7 @@ export const CoBorrowersTableView: React.FC<CoBorrowersTableViewProps> = ({
   onAddCoBorrower,
   onEditCoBorrower,
   onRowClick,
+  onPrimaryChange,
   onDeleteCoBorrower,
   disabled = false,
   isLoading = false,
@@ -192,7 +196,13 @@ export const CoBorrowersTableView: React.FC<CoBorrowersTableViewProps> = ({
                   className="cursor-pointer hover:bg-muted/30"
                   onClick={() => onRowClick(coBorrower)}
                 >
-                  <TableCell>{coBorrower.preferredCell ? '✓' : '-'}</TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={coBorrower.isPrimary}
+                      onCheckedChange={(checked) => onPrimaryChange(coBorrower.id, !!checked)}
+                      disabled={disabled}
+                    />
+                  </TableCell>
                   <TableCell>{coBorrower.type || '-'}</TableCell>
                   <TableCell className="font-medium">{coBorrower.fullName || `${coBorrower.firstName} ${coBorrower.lastName}`.trim() || '-'}</TableCell>
                   <TableCell>{coBorrower.email || '-'}</TableCell>
