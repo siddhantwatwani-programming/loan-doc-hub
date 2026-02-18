@@ -26,6 +26,13 @@ const BORROWER_TYPE_OPTIONS = [
   'Non-profit',
 ];
 
+const CAPACITY_OPTIONS = [
+  'Borrower',
+  'Co-Borrower',
+  'Additional Guarantor',
+  'Authorized Party',
+];
+
 const STATE_OPTIONS = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
   'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
@@ -154,6 +161,15 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             </Select>
           </InlineField>
 
+          <InlineField label="Capacity">
+            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>
+                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </InlineField>
+
           <InlineField label="Full Name: If Entity, Use Entity">
             <Input value={getValue('fullName')} onChange={(e) => handleChange('fullName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
@@ -168,10 +184,6 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
 
           <InlineField label="Last">
             <Input value={getValue('lastName')} onChange={(e) => handleChange('lastName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
-
-          <InlineField label="Capacity">
-            <Input value={getValue('capacity')} onChange={(e) => handleChange('capacity', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
           <InlineField label="Email">
