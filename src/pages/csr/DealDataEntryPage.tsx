@@ -75,8 +75,8 @@ const SECTION_LABELS: Partial<
 // Custom ordering for top navbar tabs
 const SECTION_ORDER: string[] = [
   "borrower",
-  "property",
   "loan_terms",
+  "property",
   "funding",
   "broker",
   "charges",
@@ -86,6 +86,7 @@ const SECTION_ORDER: string[] = [
   "event_journal",
   "lender",
   "other",
+  "origination_fees",
   "seller",
 ];
 

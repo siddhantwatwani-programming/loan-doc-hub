@@ -184,6 +184,7 @@ const extractCoBorrowersFromValues = (values: Record<string, string>): CoBorrowe
   coBorrowerPrefixes.forEach(prefix => {
     const coBorrower: CoBorrowerData = {
       id: prefix,
+      isPrimary: values[`${prefix}.is_primary`] === 'true',
       fullName: values[`${prefix}.full_name`] || '',
       firstName: values[`${prefix}.first_name`] || '',
       middleName: values[`${prefix}.middle_name`] || '',
@@ -396,6 +397,19 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     onValueChange(`${borrowerId}.is_primary`, String(isPrimary));
   }, [allBorrowers, onValueChange]);
 
+  // Handle co-borrower primary contact change - only one can be primary
+  const handleCoBorrowerPrimaryChange = useCallback((coBorrowerId: string, isPrimary: boolean) => {
+    if (isPrimary) {
+      // Unset all other co-borrowers (of same parent) as non-primary
+      filteredCoBorrowers.forEach(cb => {
+        if (cb.id !== coBorrowerId) {
+          onValueChange(`${cb.id}.is_primary`, 'false');
+        }
+      });
+    }
+    onValueChange(`${coBorrowerId}.is_primary`, String(isPrimary));
+  }, [filteredCoBorrowers, onValueChange]);
+
   // Handle saving borrower from modal
   const handleSaveBorrower = useCallback((borrowerData: BorrowerData) => {
     setIsLoading(true);
@@ -521,6 +535,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     const prefix = editingCoBorrower ? editingCoBorrower.id : getNextCoBorrowerPrefix(values);
     
     // Save all co-borrower fields
+    onValueChange(`${prefix}.is_primary`, String(!!coBorrowerData.isPrimary));
     onValueChange(`${prefix}.full_name`, coBorrowerData.fullName);
     onValueChange(`${prefix}.first_name`, coBorrowerData.firstName);
     onValueChange(`${prefix}.middle_name`, coBorrowerData.middleName);
@@ -812,6 +827,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
             onAddCoBorrower={handleAddCoBorrower}
             onEditCoBorrower={handleEditCoBorrower}
             onRowClick={handleCoBorrowerRowClick}
+            onPrimaryChange={handleCoBorrowerPrimaryChange}
             onDeleteCoBorrower={handleDeleteCoBorrower}
             disabled={disabled}
             isLoading={isLoading}
