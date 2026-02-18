@@ -109,6 +109,8 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'actions', label: 'Actions', visible: true },
 ];
 
+const BORROWERS_TABLE_ID = 'borrowers_v2';
+
 export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
   borrowers,
   onAddBorrower,
@@ -122,7 +124,7 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
   totalPages,
   onPageChange,
 }) => {
-  const [columns, setColumns] = useTableColumnConfig('borrowers', DEFAULT_COLUMNS);
+  const [columns, setColumns] = useTableColumnConfig(BORROWERS_TABLE_ID, DEFAULT_COLUMNS);
   const [deleteTarget, setDeleteTarget] = useState<BorrowerData | null>(null);
   
   const visibleColumns = columns.filter((col) => col.visible);
