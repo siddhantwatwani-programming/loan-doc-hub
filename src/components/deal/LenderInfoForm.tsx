@@ -210,6 +210,16 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               </Select>
             </div>
 
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Capacity</Label>
+              <Input
+                value={getValue('capacity')}
+                onChange={(e) => handleChange('capacity', e.target.value)}
+                disabled={disabled}
+                className="h-8"
+              />
+            </div>
+
             <div className="flex items-start gap-3">
               <div className="min-w-[140px] shrink-0 pt-1">
                 <Label className="text-sm text-muted-foreground text-left">Full Name:</Label>
@@ -257,16 +267,6 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             </div>
             
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Capacity</Label>
-              <Input
-                value={getValue('capacity')}
-                onChange={(e) => handleChange('capacity', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            
-            <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Email</Label>
               <Input
                 type="email"
@@ -275,6 +275,46 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
+            </div>
+
+            {/* Tax ID Section */}
+            <div className="border border-border rounded p-3 space-y-3 mt-2">
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">Tax ID Type</Label>
+                <Select
+                  value={getValue('taxIdType')}
+                  onValueChange={(value) => handleChange('taxIdType', value)}
+                  disabled={disabled}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TAX_ID_TYPE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">TIN</Label>
+                <Input
+                  value={getValue('taxId')}
+                  onChange={(e) => handleChange('taxId', e.target.value)}
+                  disabled={disabled}
+                  className="h-8"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={getBoolValue('tinVerified')}
+                  onCheckedChange={(checked) => handleChange('tinVerified', !!checked)}
+                  disabled={disabled}
+                />
+                <Label className="text-sm text-muted-foreground font-semibold">TIN Verified</Label>
+              </div>
             </div>
           </div>
         </div>
@@ -302,9 +342,12 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           </div>
         </div>
 
-        {/* Column 3: Contact Preference */}
+        {/* Column 3: Phone + Preferred */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Contact Preference</h3>
+          <div className="flex items-center justify-between border-b pb-2">
+            <h3 className="text-sm font-semibold text-foreground">Phone</h3>
+            <span className="text-sm font-semibold text-foreground">Preferred</span>
+          </div>
           <div className="space-y-3">
             {PHONE_FIELDS.map((phone) => (
               <div key={phone.label} className="flex items-center gap-3">
@@ -396,38 +439,10 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           </div>
         </div>
 
-        {/* Column 4: Mailing Address + Vesting + FORD */}
+        {/* Column 4: Vesting + FORD */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 border-b pb-2">
-            <h3 className="text-sm font-semibold text-foreground">Mailing Address</h3>
-            <Checkbox
-              checked={getBoolValue('isPrimary')}
-              onCheckedChange={handleSameAsPrimaryChange}
-              disabled={disabled}
-            />
-            <Label className="text-xs text-muted-foreground">(Same as Primary)</Label>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Street</Label>
-              <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || getBoolValue('isPrimary')} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">City</Label>
-              <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || getBoolValue('isPrimary')} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">State</Label>
-              <Input value={getValue('mailingState')} onChange={(e) => handleChange('mailingState', e.target.value)} disabled={disabled || getBoolValue('isPrimary')} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">ZIP</Label>
-              <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('isPrimary')} className="h-8" />
-            </div>
-          </div>
-
           {/* Vesting */}
-          <h4 className="text-sm font-semibold text-foreground border-b pb-2 mt-6">Vesting</h4>
+          <h4 className="text-sm font-semibold text-foreground border-b pb-2">Vesting</h4>
           <Textarea
             value={getValue('vesting')}
             onChange={(e) => handleChange('vesting', e.target.value)}

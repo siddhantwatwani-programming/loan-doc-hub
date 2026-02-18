@@ -19,7 +19,7 @@ interface LenderModalProps {
 
 const getDefaultLenderData = (): LenderData => ({
   id: '', isPrimary: false, type: '', fullName: '', firstName: '', lastName: '',
-  email: '', phone: '', city: '', state: '', taxId: '',
+  email: '', phone: '', street: '', city: '', state: '', zip: '', taxId: '',
 });
 
 export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, lender, onSave, isEdit = false }) => {

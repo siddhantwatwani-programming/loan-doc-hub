@@ -24,8 +24,10 @@ export interface LenderData {
   lastName: string;
   email: string;
   phone: string;
+  street: string;
   city: string;
   state: string;
+  zip: string;
   taxId: string;
 }
 
@@ -44,16 +46,15 @@ interface LendersTableViewProps {
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { id: 'isPrimary', label: 'Primary', visible: true },
+  { id: 'isPrimary', label: 'Primary Contact', visible: true },
   { id: 'type', label: 'Type', visible: true },
   { id: 'fullName', label: 'Full Name', visible: true },
-  { id: 'firstName', label: 'First Name', visible: true },
-  { id: 'lastName', label: 'Last Name', visible: true },
   { id: 'email', label: 'Email', visible: true },
   { id: 'phone', label: 'Phone', visible: true },
+  { id: 'street', label: 'Street', visible: true },
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
-  { id: 'taxId', label: 'Tax ID', visible: true },
+  { id: 'zip', label: 'ZIP', visible: true },
 ];
 
 export const LendersTableView: React.FC<LendersTableViewProps> = ({
@@ -69,7 +70,7 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
   totalPages = 1,
   onPageChange,
 }) => {
-  const [columns, setColumns] = useTableColumnConfig('lenders', DEFAULT_COLUMNS);
+  const [columns, setColumns] = useTableColumnConfig('lenders_v2', DEFAULT_COLUMNS);
   const [deleteTarget, setDeleteTarget] = useState<LenderData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
 
