@@ -151,13 +151,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
               {/* Right Column - Appraisal Information */}
               <div className="space-y-1.5">
                 <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Appraisal Information</span></div>
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Appraised Value</Label>
-                  <div className="flex items-center gap-1 flex-1">
-                    <span className="text-xs text-muted-foreground">$</span>
-                    <Input value={formData.appraisedValue} onChange={(e) => handleCurrencyChange('appraisedValue', e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
-                  </div>
-                </div>
+                {renderInlineField('appraisedDate', 'Appraisal Date', 'date')}
                 {renderInlineSelect('performedBy', 'Performed By', PERFORMED_BY_OPTIONS, 'Select')}
                 {renderInlineSelect('propertyType', 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
                 {renderInlineSelect('occupancy', 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
@@ -170,13 +164,19 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                 </div>
                 {renderInlineField('zoning', 'Zoning')}
                 <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Appraised Value</Label>
+                  <div className="flex items-center gap-1 flex-1">
+                    <span className="text-xs text-muted-foreground">$</span>
+                    <Input value={formData.appraisedValue} onChange={(e) => handleCurrencyChange('appraisedValue', e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
                   <Label className="w-[100px] shrink-0 text-xs text-foreground">Pledged Equity</Label>
                   <div className="flex items-center gap-1 flex-1">
                     <span className="text-xs text-muted-foreground">$</span>
                     <Input value={formData.pledgedEquity || ''} onChange={(e) => handleCurrencyChange('pledgedEquity', e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
                   </div>
                 </div>
-                {renderInlineField('appraisedDate', 'Appraisal Date', 'date')}
                 {renderInlineSelect('loanPriority', 'Priority', PRIORITY_OPTIONS, 'Select')}
                 {renderInlineSelect('floodZone', 'Flood Zone', FLOOD_ZONE_OPTIONS, 'Select')}
               </div>
