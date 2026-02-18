@@ -251,11 +251,6 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
         </div>
       </div>
 
-      <div className="pt-6 border-t border-border">
-        <p className="text-sm text-muted-foreground">
-          Insurance information is used to track property coverage requirements and agent contacts.
-        </p>
-      </div>
     </div>
   );
 };
