@@ -70,6 +70,16 @@ export interface BorrowerData {
   alternateReporting: boolean;
   deliveryOnline: boolean;
   deliveryMail: boolean;
+  taxIdType?: string;
+  tin?: string;
+  tinVerified?: boolean;
+  deliveryPrint?: boolean;
+  deliveryEmail?: boolean;
+  deliverySms?: boolean;
+  sendPaymentNotification?: boolean;
+  sendLateNotice?: boolean;
+  sendBorrowerStatement?: boolean;
+  sendMaturityNotice?: boolean;
 }
 
 interface BorrowersTableViewProps {

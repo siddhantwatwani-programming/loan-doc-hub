@@ -14,24 +14,15 @@ import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 const BORROWER_TYPE_OPTIONS = [
-  'Individual',
-  'Joint',
-  'Family Trust',
-  'LLC',
-  'C Corp / S Corp',
-  'IRA / ERISA',
-  'Investment Fund',
-  '401K',
-  'Foreign Holder W-8',
-  'Non-profit',
+  'Individual', 'Joint', 'Family Trust', 'LLC', 'C Corp / S Corp',
+  'IRA / ERISA', 'Investment Fund', '401K', 'Foreign Holder W-8', 'Non-profit',
 ];
 
 const CAPACITY_OPTIONS = [
-  'Borrower',
-  'Co-Borrower',
-  'Additional Guarantor',
-  'Authorized Party',
+  'Borrower', 'Co-Borrower', 'Additional Guarantor', 'Authorized Party',
 ];
+
+const TAX_ID_TYPE_OPTIONS = ['0 – Unknown', '1 – EIN', '2 – SSN'];
 
 const STATE_OPTIONS = [
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -41,9 +32,7 @@ const STATE_OPTIONS = [
   'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC',
 ];
 
-// Field key mapping for additional guarantor fields
 const FIELD_KEYS = {
-  // Guarantor Details
   borrowerType: 'borrower.guarantor.borrower_type',
   borrowerId: 'borrower.guarantor.borrower_id',
   fullName: 'borrower.guarantor.full_name',
@@ -55,18 +44,18 @@ const FIELD_KEYS = {
   creditScore: 'borrower.guarantor.credit_score',
   issue1098: 'borrower.guarantor.issue_1098',
   alternateReporting: 'borrower.guarantor.alternate_reporting',
-  // Primary Address
+  taxIdType: 'borrower.guarantor.tax_id_type',
+  tin: 'borrower.guarantor.tin',
+  tinVerified: 'borrower.guarantor.tin_verified',
   primaryStreet: 'borrower.guarantor.address.street',
   primaryCity: 'borrower.guarantor.address.city',
   primaryState: 'borrower.guarantor.state',
   primaryZip: 'borrower.guarantor.address.zip',
-  // Mailing Address
   mailingSameAsPrimary: 'borrower.guarantor.mailing_same_as_primary',
   mailingStreet: 'borrower.guarantor.mailing.street',
   mailingCity: 'borrower.guarantor.mailing.city',
   mailingState: 'borrower.guarantor.mailing.state',
   mailingZip: 'borrower.guarantor.mailing.zip',
-  // Phone
   phoneHome: 'borrower.guarantor.phone.home',
   phoneWork: 'borrower.guarantor.phone.work',
   phoneCell: 'borrower.guarantor.phone.mobile',
@@ -75,10 +64,15 @@ const FIELD_KEYS = {
   preferredWork: 'borrower.guarantor.preferred.work',
   preferredCell: 'borrower.guarantor.preferred.cell',
   preferredFax: 'borrower.guarantor.preferred.fax',
-  // Delivery
+  deliveryPrint: 'borrower.guarantor.delivery_print',
+  deliveryEmail: 'borrower.guarantor.delivery_email',
+  deliverySms: 'borrower.guarantor.delivery_sms',
+  sendPaymentNotification: 'borrower.guarantor.send_payment_notification',
+  sendLateNotice: 'borrower.guarantor.send_late_notice',
+  sendBorrowerStatement: 'borrower.guarantor.send_borrower_statement',
+  sendMaturityNotice: 'borrower.guarantor.send_maturity_notice',
   deliveryOnline: 'borrower.guarantor.delivery_online',
   deliveryMail: 'borrower.guarantor.delivery_mail',
-  // Vesting & FORD
   vesting: 'borrower.guarantor.vesting',
   vestingOverridden: 'borrower.guarantor.vesting_overridden',
   ford1: 'borrower.guarantor.ford.1',
@@ -146,7 +140,7 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
   return (
     <div className="p-4">
       <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: '1.2fr 1.2fr 1.2fr auto' }}>
-        {/* Column 1 - Name */}
+        {/* Column 1 - Name + Tax Info */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Name</h4>
 
@@ -158,15 +152,6 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             <Select value={getValue('borrowerType')} onValueChange={(value) => handleChange('borrowerType', value)} disabled={disabled}>
               <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>{BORROWER_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
-            </Select>
-          </InlineField>
-
-          <InlineField label="Capacity">
-            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>
-                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-              </SelectContent>
             </Select>
           </InlineField>
 
@@ -186,6 +171,15 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             <Input value={getValue('lastName')} onChange={(e) => handleChange('lastName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
+          <InlineField label="Capacity">
+            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>
+                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </InlineField>
+
           <InlineField label="Email">
             <Input type="email" value={getValue('email')} onChange={(e) => handleChange('email', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
@@ -196,18 +190,25 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             <Input value={getValue('creditScore')} onChange={(e) => handleChange('creditScore', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <div className="flex items-center gap-2">
-            <Checkbox id="guarantor-issue1098" checked={getBoolValue('issue1098')} onCheckedChange={(checked) => handleChange('issue1098', !!checked)} disabled={disabled} />
-            <Label htmlFor="guarantor-issue1098" className="text-sm font-normal">Issue 1098</Label>
-          </div>
+          {/* Tax Identification */}
+          <InlineField label="Tax ID Type">
+            <Select value={getValue('taxIdType')} onValueChange={(value) => handleChange('taxIdType', value)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>{TAX_ID_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
+            </Select>
+          </InlineField>
+
+          <InlineField label="TIN">
+            <Input value={getValue('tin')} onChange={(e) => handleChange('tin', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+          </InlineField>
 
           <div className="flex items-center gap-2">
-            <Checkbox id="guarantor-alternateReporting" checked={getBoolValue('alternateReporting')} onCheckedChange={(checked) => handleChange('alternateReporting', !!checked)} disabled={disabled} />
-            <Label htmlFor="guarantor-alternateReporting" className="text-sm font-normal">Alternate Reporting</Label>
+            <Checkbox id="guarantor-tinVerified" checked={getBoolValue('tinVerified')} onCheckedChange={(checked) => handleChange('tinVerified', !!checked)} disabled={disabled} />
+            <Label htmlFor="guarantor-tinVerified" className="text-sm font-normal">TIN Verified</Label>
           </div>
         </div>
 
-        {/* Column 2 - Primary Address & Mailing Address & Delivery */}
+        {/* Column 2 - Primary Address & Mailing Address & Delivery Options & Send */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Primary Address</h4>
 
@@ -257,16 +258,42 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
           </InlineField>
 
-          <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">Delivery</h4>
-
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Online</Label>
-            <Checkbox id="guarantor-deliveryOnline" checked={getBoolValue('deliveryOnline')} onCheckedChange={(checked) => handleChange('deliveryOnline', !!checked)} disabled={disabled} />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Mail</Label>
-            <Checkbox id="guarantor-deliveryMail" checked={getBoolValue('deliveryMail')} onCheckedChange={(checked) => handleChange('deliveryMail', !!checked)} disabled={disabled} />
+          {/* Delivery Options & Send - side by side */}
+          <div className="pt-2 flex gap-6">
+            <div className="space-y-1.5">
+              <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options</h4>
+              <div className="flex items-center gap-2">
+                <Checkbox id="guarantor-deliveryPrint" checked={getBoolValue('deliveryPrint')} onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)} disabled={disabled} />
+                <Label htmlFor="guarantor-deliveryPrint" className="text-sm font-normal">Print</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="guarantor-deliveryEmail" checked={getBoolValue('deliveryEmail')} onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)} disabled={disabled} />
+                <Label htmlFor="guarantor-deliveryEmail" className="text-sm font-normal">Email</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="guarantor-deliverySms" checked={getBoolValue('deliverySms')} onCheckedChange={(checked) => handleChange('deliverySms', !!checked)} disabled={disabled} />
+                <Label htmlFor="guarantor-deliverySms" className="text-sm font-normal">SMS</Label>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <h4 className="font-semibold text-sm text-foreground pb-1">Send</h4>
+              <div className="flex items-center gap-2">
+                <Checkbox id="guarantor-sendPaymentNotification" checked={getBoolValue('sendPaymentNotification')} onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)} disabled={disabled} />
+                <Label htmlFor="guarantor-sendPaymentNotification" className="text-sm font-normal">Payment Notification</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="guarantor-sendLateNotice" checked={getBoolValue('sendLateNotice')} onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)} disabled={disabled} />
+                <Label htmlFor="guarantor-sendLateNotice" className="text-sm font-normal">Late Notice</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="guarantor-sendBorrowerStatement" checked={getBoolValue('sendBorrowerStatement')} onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)} disabled={disabled} />
+                <Label htmlFor="guarantor-sendBorrowerStatement" className="text-sm font-normal">Borrower Statement</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="guarantor-sendMaturityNotice" checked={getBoolValue('sendMaturityNotice')} onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)} disabled={disabled} />
+                <Label htmlFor="guarantor-sendMaturityNotice" className="text-sm font-normal">Maturity Notice</Label>
+              </div>
+            </div>
           </div>
         </div>
 

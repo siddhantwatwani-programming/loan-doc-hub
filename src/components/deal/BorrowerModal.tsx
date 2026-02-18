@@ -31,7 +31,7 @@ const CAPACITY_OPTIONS = [
   'Borrower', 'Co-Borrower', 'Additional Guarantor', 'Authorized Party',
 ];
 
-
+const TAX_ID_TYPE_OPTIONS = ['0 – Unknown', '1 – EIN', '2 – SSN'];
 
 const STATE_OPTIONS = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
@@ -54,6 +54,9 @@ const getEmptyBorrower = (): BorrowerData => ({
   issue1098: false, alternateReporting: false,
   deliveryOnline: false, deliveryMail: false,
   borrowerId: '',
+  taxIdType: '', tin: '', tinVerified: false,
+  deliveryPrint: false, deliveryEmail: false, deliverySms: false,
+  sendPaymentNotification: false, sendLateNotice: false, sendBorrowerStatement: false, sendMaturityNotice: false,
 });
 
 export const BorrowerModal: React.FC<BorrowerModalProps> = ({
@@ -107,19 +110,25 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
         <ScrollArea className="max-h-[calc(90vh-140px)] pr-4">
           {/* Top section - 4 column grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-0 py-2">
-            {/* Column 1 - Name */}
+            {/* Column 1 - Name + Tax ID */}
             <div className="space-y-1">
               <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Name</div>
               {renderInlineField('borrowerId', 'Borrower ID')}
               {renderInlineSelect('borrowerType', 'Borrower Type', BORROWER_TYPE_OPTIONS, 'Select')}
-              {renderInlineSelect('capacity', 'Capacity', CAPACITY_OPTIONS, 'Select')}
               {renderInlineField('fullName', 'Full Name: If Entity, Use Entity')}
               {renderInlineField('firstName', 'First: If Entity, Use Signer')}
               {renderInlineField('middleName', 'Middle')}
               {renderInlineField('lastName', 'Last')}
+              {renderInlineSelect('capacity', 'Capacity', CAPACITY_OPTIONS, 'Select')}
               {renderInlineField('email', 'Email', { type: 'email' })}
               <div className="h-1" />
               {renderInlineField('creditScore', 'Credit Score')}
+              {renderInlineSelect('taxIdType', 'Tax ID Type', TAX_ID_TYPE_OPTIONS, 'Select')}
+              {renderInlineField('tin', 'TIN')}
+              <div className="flex items-center gap-2 h-7">
+                <Checkbox id="modal-borrower-tinVerified" checked={!!formData.tinVerified} onCheckedChange={(checked) => handleFieldChange('tinVerified', !!checked)} className="h-3 w-3" />
+                <Label htmlFor="modal-borrower-tinVerified" className="font-normal text-xs">TIN Verified</Label>
+              </div>
             </div>
 
             {/* Column 2 - Primary & Mailing Address */}
@@ -141,6 +150,44 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
               {renderInlineField('mailingCity', 'City', { disabled: formData.mailingSameAsPrimary })}
               {renderInlineSelect('mailingState', 'State', STATE_OPTIONS, 'State')}
               {renderInlineField('mailingZip', 'ZIP', { disabled: formData.mailingSameAsPrimary })}
+
+              {/* Delivery Options & Send */}
+              <div className="pt-2 flex gap-4">
+                <div className="space-y-1">
+                  <div className="font-semibold text-xs text-foreground pb-1">Delivery Options</div>
+                  <div className="flex items-center gap-2 h-6">
+                    <Checkbox id="modal-borrower-deliveryPrint" checked={!!formData.deliveryPrint} onCheckedChange={(checked) => handleFieldChange('deliveryPrint', !!checked)} className="h-3 w-3" />
+                    <Label htmlFor="modal-borrower-deliveryPrint" className="font-normal text-xs">Print</Label>
+                  </div>
+                  <div className="flex items-center gap-2 h-6">
+                    <Checkbox id="modal-borrower-deliveryEmail" checked={!!formData.deliveryEmail} onCheckedChange={(checked) => handleFieldChange('deliveryEmail', !!checked)} className="h-3 w-3" />
+                    <Label htmlFor="modal-borrower-deliveryEmail" className="font-normal text-xs">Email</Label>
+                  </div>
+                  <div className="flex items-center gap-2 h-6">
+                    <Checkbox id="modal-borrower-deliverySms" checked={!!formData.deliverySms} onCheckedChange={(checked) => handleFieldChange('deliverySms', !!checked)} className="h-3 w-3" />
+                    <Label htmlFor="modal-borrower-deliverySms" className="font-normal text-xs">SMS</Label>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-semibold text-xs text-foreground pb-1">Send</div>
+                  <div className="flex items-center gap-2 h-6">
+                    <Checkbox id="modal-borrower-sendPayment" checked={!!formData.sendPaymentNotification} onCheckedChange={(checked) => handleFieldChange('sendPaymentNotification', !!checked)} className="h-3 w-3" />
+                    <Label htmlFor="modal-borrower-sendPayment" className="font-normal text-xs">Payment Notification</Label>
+                  </div>
+                  <div className="flex items-center gap-2 h-6">
+                    <Checkbox id="modal-borrower-sendLate" checked={!!formData.sendLateNotice} onCheckedChange={(checked) => handleFieldChange('sendLateNotice', !!checked)} className="h-3 w-3" />
+                    <Label htmlFor="modal-borrower-sendLate" className="font-normal text-xs">Late Notice</Label>
+                  </div>
+                  <div className="flex items-center gap-2 h-6">
+                    <Checkbox id="modal-borrower-sendStatement" checked={!!formData.sendBorrowerStatement} onCheckedChange={(checked) => handleFieldChange('sendBorrowerStatement', !!checked)} className="h-3 w-3" />
+                    <Label htmlFor="modal-borrower-sendStatement" className="font-normal text-xs">Borrower Statement</Label>
+                  </div>
+                  <div className="flex items-center gap-2 h-6">
+                    <Checkbox id="modal-borrower-sendMaturity" checked={!!formData.sendMaturityNotice} onCheckedChange={(checked) => handleFieldChange('sendMaturityNotice', !!checked)} className="h-3 w-3" />
+                    <Label htmlFor="modal-borrower-sendMaturity" className="font-normal text-xs">Maturity Notice</Label>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Column 3 - Phone + Preferred */}
@@ -178,10 +225,9 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
             </div>
           </div>
 
-          {/* Bottom section - Tax, Delivery */}
+          {/* Bottom section - Reporting + Primary */}
           <div className="mt-2 pt-2">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-0">
-              {/* Reporting */}
               <div className="space-y-1">
                 <div className="flex items-center gap-2 h-7">
                   <Checkbox id="modal-borrower-issue1098" checked={formData.issue1098} onCheckedChange={(checked) => handleFieldChange('issue1098', !!checked)} className="h-3 w-3" />
@@ -193,20 +239,8 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
                 </div>
               </div>
 
-              {/* Delivery */}
-              <div className="space-y-1">
-                <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Delivery</div>
-                <div className="flex items-center gap-2 h-7">
-                  <Label className="w-[140px] shrink-0 text-xs">Online</Label>
-                  <Checkbox id="modal-borrower-deliveryOnline" checked={formData.deliveryOnline} onCheckedChange={(checked) => handleFieldChange('deliveryOnline', !!checked)} className="h-3 w-3" />
-                </div>
-                <div className="flex items-center gap-2 h-7">
-                  <Label className="w-[140px] shrink-0 text-xs">Mail</Label>
-                  <Checkbox id="modal-borrower-deliveryMail" checked={formData.deliveryMail} onCheckedChange={(checked) => handleFieldChange('deliveryMail', !!checked)} className="h-3 w-3" />
-                </div>
-              </div>
+              <div />
 
-              {/* Primary checkbox */}
               <div className="space-y-1">
                 <div className="flex items-center gap-2 pt-4">
                   <Checkbox id="modal-borrower-isPrimary" checked={formData.isPrimary} onCheckedChange={(checked) => handleFieldChange('isPrimary', !!checked)} className="h-3.5 w-3.5" />

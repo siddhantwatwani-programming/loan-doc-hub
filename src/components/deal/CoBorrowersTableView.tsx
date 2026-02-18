@@ -83,6 +83,12 @@ export interface CoBorrowerData {
   deliveryEmail: boolean;
   deliverySms: boolean;
   parentBorrowerPrefix: string;
+  taxIdType?: string;
+  tinVerified?: boolean;
+  sendPaymentNotification?: boolean;
+  sendLateNotice?: boolean;
+  sendBorrowerStatement?: boolean;
+  sendMaturityNotice?: boolean;
 }
 
 interface CoBorrowersTableViewProps {
