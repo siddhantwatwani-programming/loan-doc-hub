@@ -48,10 +48,15 @@ const FIELD_KEYS = {
 
   // Document Request
   doc_balance_sheet: 'origination_app.doc.balance_sheet_received',
+  doc_balance_sheet_2: 'origination_app.doc.balance_sheet_reviewed',
   doc_income_statement: 'origination_app.doc.income_statement_received',
+  doc_income_statement_2: 'origination_app.doc.income_statement_reviewed',
   doc_audited_financials: 'origination_app.doc.audited_financials',
+  doc_audited_financials_2: 'origination_app.doc.audited_financials_reviewed',
   doc_periods_reviewed: 'origination_app.doc.periods_reviewed',
+  doc_periods_reviewed_2: 'origination_app.doc.periods_reviewed_checked',
   doc_additional_info: 'origination_app.doc.additional_info_attached',
+  doc_additional_info_2: 'origination_app.doc.additional_info_reviewed',
 };
 
 export const OriginationApplicationForm: React.FC<OriginationApplicationFormProps> = ({
@@ -137,6 +142,22 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
     </div>
   );
 
+  const renderDualCheckboxField = (label: string, key1: string, key2: string) => (
+    <div className="flex items-center gap-2">
+      <Label className="text-sm shrink-0 flex-1">{label}</Label>
+      <Checkbox
+        checked={getBoolValue(key1)}
+        onCheckedChange={(checked) => setBoolValue(key1, !!checked)}
+        disabled={disabled}
+      />
+      <Checkbox
+        checked={getBoolValue(key2)}
+        onCheckedChange={(checked) => setBoolValue(key2, !!checked)}
+        disabled={disabled}
+      />
+    </div>
+  );
+
   return (
     <div className="p-4 space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-6">
@@ -181,11 +202,11 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
         {/* Column 3: Document Request */}
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Document Request</h3>
-          {renderCheckboxField('Balance Sheet Received', FIELD_KEYS.doc_balance_sheet)}
-          {renderCheckboxField('Income Statement Received', FIELD_KEYS.doc_income_statement)}
-          {renderCheckboxField('Audited Financials', FIELD_KEYS.doc_audited_financials)}
-          {renderCheckboxField('Periods Reviewed', FIELD_KEYS.doc_periods_reviewed)}
-          {renderCheckboxField('Additional Information Attached', FIELD_KEYS.doc_additional_info)}
+          {renderDualCheckboxField('Balance Sheet Received', FIELD_KEYS.doc_balance_sheet, FIELD_KEYS.doc_balance_sheet_2)}
+          {renderDualCheckboxField('Income Statement Received', FIELD_KEYS.doc_income_statement, FIELD_KEYS.doc_income_statement_2)}
+          {renderDualCheckboxField('Audited Financials', FIELD_KEYS.doc_audited_financials, FIELD_KEYS.doc_audited_financials_2)}
+          {renderDualCheckboxField('Periods Reviewed', FIELD_KEYS.doc_periods_reviewed, FIELD_KEYS.doc_periods_reviewed_2)}
+          {renderDualCheckboxField('Additional Information Attached', FIELD_KEYS.doc_additional_info, FIELD_KEYS.doc_additional_info_2)}
         </div>
       </div>
     </div>
