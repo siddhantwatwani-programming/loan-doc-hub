@@ -306,6 +306,83 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 </Select>
               </div>
             </div>
+
+            {/* Override, Accept Short, Post-maturity, Auto-post - part of Interest Split section */}
+            <div className="space-y-2 pt-1">
+              {/* Override Funds Held */}
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id={`${FIELD_KEYS.overrideFundsHeld}-cb`}
+                  checked={isChecked(FIELD_KEYS.overrideFundsHeld)}
+                  onCheckedChange={() => toggleCheck(FIELD_KEYS.overrideFundsHeld)}
+                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                  className="h-3.5 w-3.5"
+                />
+                <Label htmlFor={`${FIELD_KEYS.overrideFundsHeld}-cb`} className="text-sm min-w-[140px] shrink-0">Override Funds Held</Label>
+                <Label className="text-sm text-muted-foreground shrink-0">Hold Days</Label>
+                <Input
+                  value={getValue(FIELD_KEYS.holdDays)}
+                  onChange={(e) => setValue(FIELD_KEYS.holdDays, e.target.value)}
+                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.overrideFundsHeld)}
+                  className="h-7 text-sm w-20"
+                />
+              </div>
+
+              {/* Accept Short Payments */}
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`}
+                  checked={isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
+                  onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptShortPaymentsEnabled)}
+                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                  className="h-3.5 w-3.5"
+                />
+                <Label htmlFor={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`} className="text-sm min-w-[140px] shrink-0">Accept Short Payments</Label>
+                <div className="relative w-24">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                  <Input
+                    value={getValue(FIELD_KEYS.acceptShortPaymentsAmount)}
+                    onChange={(e) => setValue(FIELD_KEYS.acceptShortPaymentsAmount, e.target.value)}
+                    disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
+                    className="h-7 text-sm pl-7"
+                    placeholder="-"
+                  />
+                </div>
+                <span className="text-sm text-muted-foreground">Or</span>
+                <Checkbox
+                  id={`${FIELD_KEYS.acceptShortPaymentsOrPercent}-cb`}
+                  checked={isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)}
+                  onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptShortPaymentsOrPercent)}
+                  disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
+                  className="h-3.5 w-3.5"
+                />
+                <Label className="text-sm">Percent</Label>
+              </div>
+
+              {/* Accept Post-maturity */}
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id={`${FIELD_KEYS.acceptPostMaturity}-cb`}
+                  checked={isChecked(FIELD_KEYS.acceptPostMaturity)}
+                  onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptPostMaturity)}
+                  disabled={disabled}
+                  className="h-3.5 w-3.5"
+                />
+                <Label htmlFor={`${FIELD_KEYS.acceptPostMaturity}-cb`} className="text-sm min-w-[140px] shrink-0">Accept Post-maturity</Label>
+              </div>
+
+              {/* Auto-post Enabled */}
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id={`${FIELD_KEYS.autoPostEnabled}-cb`}
+                  checked={isChecked(FIELD_KEYS.autoPostEnabled)}
+                  onCheckedChange={() => toggleCheck(FIELD_KEYS.autoPostEnabled)}
+                  disabled={disabled}
+                  className="h-3.5 w-3.5"
+                />
+                <Label htmlFor={`${FIELD_KEYS.autoPostEnabled}-cb`} className="text-sm min-w-[140px] shrink-0">Auto-post Enabled</Label>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -442,83 +519,6 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Section 7: Override, Accept Short, Post-maturity, Auto-post */}
-      <div className="space-y-2 pt-2">
-        {/* Override Funds Held */}
-        <div className="flex items-center gap-3">
-          <Checkbox
-            id={`${FIELD_KEYS.overrideFundsHeld}-cb`}
-            checked={isChecked(FIELD_KEYS.overrideFundsHeld)}
-            onCheckedChange={() => toggleCheck(FIELD_KEYS.overrideFundsHeld)}
-            disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
-            className="h-3.5 w-3.5"
-          />
-          <Label htmlFor={`${FIELD_KEYS.overrideFundsHeld}-cb`} className="text-sm min-w-[140px] shrink-0">Override Funds Held</Label>
-          <Label className="text-sm text-muted-foreground shrink-0">Hold Days</Label>
-          <Input
-            value={getValue(FIELD_KEYS.holdDays)}
-            onChange={(e) => setValue(FIELD_KEYS.holdDays, e.target.value)}
-            disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.overrideFundsHeld)}
-            className="h-7 text-sm w-20"
-          />
-        </div>
-
-        {/* Accept Short Payments */}
-        <div className="flex items-center gap-3">
-          <Checkbox
-            id={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`}
-            checked={isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
-            onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptShortPaymentsEnabled)}
-            disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
-            className="h-3.5 w-3.5"
-          />
-          <Label htmlFor={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`} className="text-sm min-w-[140px] shrink-0">Accept Short Payments</Label>
-          <div className="relative w-24">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-            <Input
-              value={getValue(FIELD_KEYS.acceptShortPaymentsAmount)}
-              onChange={(e) => setValue(FIELD_KEYS.acceptShortPaymentsAmount, e.target.value)}
-              disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
-              className="h-7 text-sm pl-7"
-              placeholder="-"
-            />
-          </div>
-          <span className="text-sm text-muted-foreground">Or</span>
-          <Checkbox
-            id={`${FIELD_KEYS.acceptShortPaymentsOrPercent}-cb`}
-            checked={isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)}
-            onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptShortPaymentsOrPercent)}
-            disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
-            className="h-3.5 w-3.5"
-          />
-          <Label className="text-sm">Percent</Label>
-        </div>
-
-        {/* Accept Post-maturity */}
-        <div className="flex items-center gap-3">
-          <Checkbox
-            id={`${FIELD_KEYS.acceptPostMaturity}-cb`}
-            checked={isChecked(FIELD_KEYS.acceptPostMaturity)}
-            onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptPostMaturity)}
-            disabled={disabled}
-            className="h-3.5 w-3.5"
-          />
-          <Label htmlFor={`${FIELD_KEYS.acceptPostMaturity}-cb`} className="text-sm min-w-[140px] shrink-0">Accept Post-maturity</Label>
-        </div>
-
-        {/* Auto-post Enabled */}
-        <div className="flex items-center gap-3">
-          <Checkbox
-            id={`${FIELD_KEYS.autoPostEnabled}-cb`}
-            checked={isChecked(FIELD_KEYS.autoPostEnabled)}
-            onCheckedChange={() => toggleCheck(FIELD_KEYS.autoPostEnabled)}
-            disabled={disabled}
-            className="h-3.5 w-3.5"
-          />
-          <Label htmlFor={`${FIELD_KEYS.autoPostEnabled}-cb`} className="text-sm min-w-[140px] shrink-0">Auto-post Enabled</Label>
         </div>
       </div>
     </div>
