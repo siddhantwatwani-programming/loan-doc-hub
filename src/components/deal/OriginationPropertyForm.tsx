@@ -61,18 +61,16 @@ export const OriginationPropertyForm: React.FC<OriginationPropertyFormProps> = (
     try { return parse(val, 'yyyy-MM-dd', new Date()); } catch { return undefined; }
   };
 
-  const paidByLoan = bv(FK.paid_by_loan);
-
-  const renderTextField = (label: string, key: string, extraDisabled = false) => (
+  const renderTextField = (label: string, key: string) => (
     <div className="flex items-center gap-2">
-      <Label className="w-[140px] text-sm shrink-0">{label}</Label>
-      <Input value={v(key)} onChange={(e) => sv(key, e.target.value)} disabled={disabled || extraDisabled} className="h-7 text-sm" />
+      <Label className="w-[180px] text-sm shrink-0">{label}</Label>
+      <Input value={v(key)} onChange={(e) => sv(key, e.target.value)} disabled={disabled} className="h-7 text-sm" />
     </div>
   );
 
   const renderCurrencyField = (label: string, key: string) => (
     <div className="flex items-center gap-2">
-      <Label className="w-[140px] text-sm shrink-0">{label}</Label>
+      <Label className="w-[180px] text-sm shrink-0">{label}</Label>
       <div className="relative flex-1">
         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
         <Input type="text" inputMode="decimal" value={v(key)} onChange={(e) => sv(key, e.target.value)}
@@ -83,120 +81,84 @@ export const OriginationPropertyForm: React.FC<OriginationPropertyFormProps> = (
 
   const renderCheckboxField = (label: string, key: string) => (
     <div className="flex items-center gap-2">
+      <Label className="w-[180px] text-sm shrink-0">{label}</Label>
       <Checkbox checked={bv(key)} onCheckedChange={(c) => sbv(key, !!c)} disabled={disabled} />
-      <Label className="text-sm cursor-pointer">{label}</Label>
     </div>
   );
 
   return (
-    <div className="p-4 space-y-6">
-      {/* Financial Details */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Financial Details</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-2 max-w-2xl">
-          {renderCurrencyField('Purchase Price', FK.purchase_price)}
-          {renderCurrencyField('Down Payment', FK.down_payment)}
-          {renderCurrencyField('Delinquent Taxes', FK.delinquent_taxes)}
-        </div>
+    <div className="p-4 space-y-2 max-w-xl">
+      {renderCurrencyField('Purchase Price', FK.purchase_price)}
+      {renderCurrencyField('Down Payment', FK.down_payment)}
+      {renderCurrencyField('Delinquent Taxes', FK.delinquent_taxes)}
+
+      <p className="text-sm italic text-foreground pt-3 pb-1">Appraiser Contact</p>
+      {renderTextField('Street', FK.appraiser_street)}
+      {renderTextField('City', FK.appraiser_city)}
+      {renderTextField('State', FK.appraiser_state)}
+      {renderTextField('ZIP', FK.appraiser_zip)}
+      {renderTextField('Phone', FK.appraiser_phone)}
+      {renderTextField('Email', FK.appraiser_email)}
+
+      <div className="pt-4" />
+
+      <div className="flex items-center gap-2">
+        <Label className="w-[180px] text-sm shrink-0">Year Built</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-sm', !v(FK.year_built) && 'text-muted-foreground')} disabled={disabled}>
+              <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+              {v(FK.year_built) ? format(parseDate(v(FK.year_built))!, 'MM/dd/yyyy') : 'Date'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar mode="single" selected={parseDate(v(FK.year_built))}
+              onSelect={(date) => date && sv(FK.year_built, format(date, 'yyyy-MM-dd'))}
+              initialFocus className="p-3 pointer-events-auto" />
+          </PopoverContent>
+        </Popover>
       </div>
 
-      {/* Appraiser Contact */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Appraiser Contact</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-2 max-w-2xl">
-          {renderTextField('Street', FK.appraiser_street)}
-          {renderTextField('City', FK.appraiser_city)}
-          {renderTextField('State', FK.appraiser_state)}
-          {renderTextField('ZIP', FK.appraiser_zip)}
-          {renderTextField('Phone', FK.appraiser_phone)}
-          {renderTextField('Email', FK.appraiser_email)}
-        </div>
+      {renderTextField('Square Feet', FK.square_feet)}
+
+      <div className="flex items-center gap-2">
+        <Label className="w-[180px] text-sm shrink-0">Type of Construction</Label>
+        <Select value={v(FK.construction_type)} onValueChange={(val) => sv(FK.construction_type, val)} disabled={disabled}>
+          <SelectTrigger className="h-7 text-sm">
+            <SelectValue placeholder="Select..." />
+          </SelectTrigger>
+          <SelectContent className="bg-popover z-50">
+            {CONSTRUCTION_TYPES.map((opt) => (
+              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Property Details */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Property Details</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-2 max-w-2xl">
-          <div className="flex items-center gap-2">
-            <Label className="w-[140px] text-sm shrink-0">Year Built</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-sm', !v(FK.year_built) && 'text-muted-foreground')} disabled={disabled}>
-                  <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                  {v(FK.year_built) ? format(parseDate(v(FK.year_built))!, 'MM/dd/yyyy') : 'Date'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={parseDate(v(FK.year_built))}
-                  onSelect={(date) => date && sv(FK.year_built, format(date, 'yyyy-MM-dd'))}
-                  initialFocus className="p-3 pointer-events-auto" />
-              </PopoverContent>
-            </Popover>
-          </div>
-          {renderTextField('Square Feet', FK.square_feet)}
-          <div className="flex items-center gap-2">
-            <Label className="w-[140px] text-sm shrink-0">Type of Construction</Label>
-            <Select value={v(FK.construction_type)} onValueChange={(val) => sv(FK.construction_type, val)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm">
-                <SelectValue placeholder="Select..." />
-              </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
-                {CONSTRUCTION_TYPES.map((opt) => (
-                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+      {renderCurrencyField('Generates Monthly Income', FK.monthly_income)}
+      {renderCurrencyField('Lien (Protective Equity)', FK.lien_protective_equity)}
+
+      <div className="flex items-center gap-2">
+        <Label className="w-[180px] text-sm shrink-0">Source of Lien Information</Label>
+        <Select value={v(FK.source_lien_info)} onValueChange={(val) => sv(FK.source_lien_info, val)} disabled={disabled}>
+          <SelectTrigger className="h-7 text-sm">
+            <SelectValue placeholder="Select..." />
+          </SelectTrigger>
+          <SelectContent className="bg-popover z-50">
+            {LIEN_SOURCES.map((opt) => (
+              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Income / Lien Information */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Income / Lien Information</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-2 max-w-2xl">
-          {renderCurrencyField('Generates Monthly Income', FK.monthly_income)}
-          {renderCurrencyField('Lien (Protective Equity)', FK.lien_protective_equity)}
-          <div className="flex items-center gap-2">
-            <Label className="w-[140px] text-sm shrink-0">Source of Lien Info</Label>
-            <Select value={v(FK.source_lien_info)} onValueChange={(val) => sv(FK.source_lien_info, val)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm">
-                <SelectValue placeholder="Select..." />
-              </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
-                {LIEN_SOURCES.map((opt) => (
-                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-
-      {/* Delinquency Information */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Delinquency Information</h3>
-        <div className="space-y-3 max-w-2xl">
-          <p className="text-xs text-muted-foreground font-medium">During Previous 12 Months</p>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-2">
-            {renderCheckboxField('60-day + Delinquencies', FK.delinquencies_60day)}
-            {renderTextField('How Many', FK.delinquencies_how_many)}
-          </div>
-          <p className="text-xs text-muted-foreground font-medium pt-2">Status</p>
-          <div className="space-y-2">
-            {renderCheckboxField('Currently Delinquent', FK.currently_delinquent)}
-            {renderCheckboxField('Will be Paid by this Loan', FK.paid_by_loan)}
-            {!paidByLoan && renderTextField('If No, List Source of Payment', FK.source_of_payment)}
-          </div>
-        </div>
-      </div>
-
-      {/* Recording Information */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Recording Information</h3>
-        <div className="max-w-md">
-          {renderTextField('Recording Number', FK.recording_number)}
-        </div>
-      </div>
+      <p className="text-sm text-foreground font-medium pt-3 pb-1">During Previous 12 Months</p>
+      {renderCheckboxField('60-day + Delinquencies', FK.delinquencies_60day)}
+      {renderTextField('How Many', FK.delinquencies_how_many)}
+      {renderCheckboxField('Currently Delinquent', FK.currently_delinquent)}
+      {renderCheckboxField('Will be Paid by this Loan', FK.paid_by_loan)}
+      {renderTextField('If No, List Source of Payment', FK.source_of_payment)}
+      {renderTextField('Recording number', FK.recording_number)}
     </div>
   );
 };
