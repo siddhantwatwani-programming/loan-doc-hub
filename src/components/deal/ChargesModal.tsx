@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -110,8 +110,11 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
               </div>
             </div>
             <div className="flex items-center gap-2 px-1 pt-1.5">
-              <Checkbox id="deferred" checked={formData.deferred === 'true'} onCheckedChange={(checked) => handleFieldChange('deferred', checked ? 'true' : 'false')} className="h-3.5 w-3.5" />
-              <Label htmlFor="deferred" className="text-xs font-semibold text-foreground cursor-pointer">Deferred</Label>
+              <Label className="w-[110px] shrink-0 text-xs font-semibold text-foreground">Deferred</Label>
+              <RadioGroup value={formData.deferred === 'true' ? 'true' : 'false'} onValueChange={(val) => handleFieldChange('deferred', val)} className="flex items-center gap-4">
+                <div className="flex items-center gap-1"><RadioGroupItem value="true" id="modal-deferred-yes" /><Label htmlFor="modal-deferred-yes" className="text-xs cursor-pointer">Yes</Label></div>
+                <div className="flex items-center gap-1"><RadioGroupItem value="false" id="modal-deferred-no" /><Label htmlFor="modal-deferred-no" className="text-xs cursor-pointer">No</Label></div>
+              </RadioGroup>
             </div>
           </div>
 
@@ -141,8 +144,11 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
               </div>
               <div className="grid grid-cols-[120px_1fr_1fr_1fr] items-center">
                 <div className="px-2 py-1 flex items-center gap-1">
-                  <Checkbox id="distributeAll" checked={formData.distributeBetweenAllLenders === 'true'} onCheckedChange={(checked) => handleFieldChange('distributeBetweenAllLenders', checked ? 'true' : 'false')} className="h-3 w-3" />
-                  <Label htmlFor="distributeAll" className="text-[10px] font-medium text-foreground cursor-pointer whitespace-nowrap">Distribute Between All Lenders</Label>
+                  <Label className="text-[10px] font-medium text-foreground whitespace-nowrap mr-1">Distribute Between All Lenders</Label>
+                  <RadioGroup value={formData.distributeBetweenAllLenders === 'true' ? 'true' : 'false'} onValueChange={(val) => handleFieldChange('distributeBetweenAllLenders', val)} className="flex items-center gap-2">
+                    <div className="flex items-center gap-0.5"><RadioGroupItem value="true" id="modal-dist-yes" className="h-3 w-3" /><Label htmlFor="modal-dist-yes" className="text-[10px] cursor-pointer">Yes</Label></div>
+                    <div className="flex items-center gap-0.5"><RadioGroupItem value="false" id="modal-dist-no" className="h-3 w-3" /><Label htmlFor="modal-dist-no" className="text-[10px] cursor-pointer">No</Label></div>
+                  </RadioGroup>
                 </div>
                 <div className="px-2 py-1 text-xs font-medium text-foreground col-span-2 text-right pr-3">Amount Advanced:</div>
                 <div className="px-1.5 py-1"><div className="relative"><span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span><Input type="number" step="0.01" value={formData.amountOwedByBorrower} onChange={(e) => handleFieldChange('amountOwedByBorrower', e.target.value)} className="h-6 text-xs pl-4" placeholder="0.00" /></div></div>
