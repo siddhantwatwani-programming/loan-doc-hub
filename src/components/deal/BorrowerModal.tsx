@@ -33,6 +33,27 @@ const CAPACITY_OPTIONS = [
 
 const TAX_ID_TYPE_OPTIONS = ['0 – Unknown', '1 – EIN', '2 – SSN'];
 
+const FORD_DROPDOWN_OPTIONS = [
+  { value: 'Spouse, Kids, Grandkids', label: 'Spouse, Kids, Grandkids' },
+  { value: 'Big Dream', label: 'Big Dream' },
+  { value: 'Sports Teams', label: 'Sports Teams' },
+  { value: 'Hobbies / Collections', label: 'Hobbies / Collections' },
+  { value: 'Goals / Achievements', label: 'Goals / Achievements' },
+  { value: 'Favorite Restaurant, Food, Drinks', label: 'Favorite Restaurant, Food, Drinks' },
+  { value: 'Pet(s)', label: 'Pet(s)' },
+  { value: 'Vacation Spot', label: 'Vacation Spot' },
+  { value: 'Job / Occupation', label: 'Job / Occupation' },
+  { value: 'Music / Bands', label: 'Music / Bands' },
+  { value: 'College', label: 'College' },
+  { value: 'Hometown / Childhood', label: 'Hometown / Childhood' },
+  { value: 'TV / Movies / Books', label: 'TV / Movies / Books' },
+  { value: 'Anniversary', label: 'Anniversary' },
+  { value: 'Challenges / Frustrations', label: 'Challenges / Frustrations' },
+  { value: 'Charity / Personal Causes', label: 'Charity / Personal Causes' },
+  { value: 'Upcoming Event - What / When', label: 'Upcoming Event - What / When' },
+  { value: 'Celebration - What / When', label: 'Celebration - What / When' },
+];
+
 const STATE_OPTIONS = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
   'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
@@ -212,15 +233,16 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
               <Textarea value={String(formData.vesting || '')} onChange={(e) => handleFieldChange('vesting', e.target.value)} className="text-xs w-full min-h-[80px] resize-none" />
 
               <div className="font-semibold text-xs text-foreground pb-1 mt-2 mb-1.5">FORD</div>
-              <div className="grid grid-cols-2 gap-1">
-                <Input value={String(formData.ford1 || '')} onChange={(e) => handleFieldChange('ford1', e.target.value)} className="h-7 text-xs" />
-                <Input value={String(formData.ford2 || '')} onChange={(e) => handleFieldChange('ford2', e.target.value)} className="h-7 text-xs" />
-                <Input value={String(formData.ford3 || '')} onChange={(e) => handleFieldChange('ford3', e.target.value)} className="h-7 text-xs" />
-                <Input value={String(formData.ford4 || '')} onChange={(e) => handleFieldChange('ford4', e.target.value)} className="h-7 text-xs" />
-                <Input value={String(formData.ford5 || '')} onChange={(e) => handleFieldChange('ford5', e.target.value)} className="h-7 text-xs" />
-                <Input value={String(formData.ford6 || '')} onChange={(e) => handleFieldChange('ford6', e.target.value)} className="h-7 text-xs" />
-                <Input value={String(formData.ford7 || '')} onChange={(e) => handleFieldChange('ford7', e.target.value)} className="h-7 text-xs" />
-                <Input value={String(formData.ford8 || '')} onChange={(e) => handleFieldChange('ford8', e.target.value)} className="h-7 text-xs" />
+              <div className="space-y-1">
+                {([['ford1', 'ford2'], ['ford3', 'ford4'], ['ford5', 'ford6'], ['ford7', 'ford8']] as const).map(([dropdownKey, inputKey], idx) => (
+                  <div key={idx} className="grid grid-cols-2 gap-1">
+                    <Select value={String(formData[dropdownKey] || '')} onValueChange={(v) => handleFieldChange(dropdownKey, v)}>
+                      <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <Input value={String(formData[inputKey] || '')} onChange={(e) => handleFieldChange(inputKey, e.target.value)} className="h-7 text-xs" />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
