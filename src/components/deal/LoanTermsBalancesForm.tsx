@@ -307,27 +307,8 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
             </div>
 
-            {/* Override, Accept Short, Post-maturity, Auto-post - part of Interest Split section */}
+            {/* Accept Short, Post-maturity, Auto-post, Override - part of Interest Split section */}
             <div className="space-y-2 pt-1">
-              {/* Override Funds Held */}
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  id={`${FIELD_KEYS.overrideFundsHeld}-cb`}
-                  checked={isChecked(FIELD_KEYS.overrideFundsHeld)}
-                  onCheckedChange={() => toggleCheck(FIELD_KEYS.overrideFundsHeld)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
-                  className="h-3.5 w-3.5"
-                />
-                <Label htmlFor={`${FIELD_KEYS.overrideFundsHeld}-cb`} className="text-sm min-w-[140px] shrink-0">Override Funds Held</Label>
-                <Label className="text-sm text-muted-foreground shrink-0">Hold Days</Label>
-                <Input
-                  value={getValue(FIELD_KEYS.holdDays)}
-                  onChange={(e) => setValue(FIELD_KEYS.holdDays, e.target.value)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.overrideFundsHeld)}
-                  className="h-7 text-sm w-20"
-                />
-              </div>
-
               {/* Accept Short Payments */}
               <div className="flex items-center gap-3">
                 <Checkbox
@@ -365,7 +346,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   id={`${FIELD_KEYS.acceptPostMaturity}-cb`}
                   checked={isChecked(FIELD_KEYS.acceptPostMaturity)}
                   onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptPostMaturity)}
-                  disabled={disabled}
+                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
                   className="h-3.5 w-3.5"
                 />
                 <Label htmlFor={`${FIELD_KEYS.acceptPostMaturity}-cb`} className="text-sm min-w-[140px] shrink-0">Accept Post-maturity</Label>
@@ -377,10 +358,29 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   id={`${FIELD_KEYS.autoPostEnabled}-cb`}
                   checked={isChecked(FIELD_KEYS.autoPostEnabled)}
                   onCheckedChange={() => toggleCheck(FIELD_KEYS.autoPostEnabled)}
-                  disabled={disabled}
+                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
                   className="h-3.5 w-3.5"
                 />
                 <Label htmlFor={`${FIELD_KEYS.autoPostEnabled}-cb`} className="text-sm min-w-[140px] shrink-0">Auto-post Enabled</Label>
+              </div>
+
+              {/* Override Funds Held - last in section */}
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id={`${FIELD_KEYS.overrideFundsHeld}-cb`}
+                  checked={isChecked(FIELD_KEYS.overrideFundsHeld)}
+                  onCheckedChange={() => toggleCheck(FIELD_KEYS.overrideFundsHeld)}
+                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                  className="h-3.5 w-3.5"
+                />
+                <Label htmlFor={`${FIELD_KEYS.overrideFundsHeld}-cb`} className="text-sm min-w-[140px] shrink-0">Override Funds Held</Label>
+                <Label className="text-sm text-muted-foreground shrink-0">Hold Days</Label>
+                <Input
+                  value={getValue(FIELD_KEYS.holdDays)}
+                  onChange={(e) => setValue(FIELD_KEYS.holdDays, e.target.value)}
+                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.overrideFundsHeld)}
+                  className="h-7 text-sm w-20"
+                />
               </div>
             </div>
           </div>
