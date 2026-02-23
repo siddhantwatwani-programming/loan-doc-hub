@@ -120,7 +120,17 @@ const LENDER_TYPE_OPTIONS = [
 
 const LENDER_CAPACITY_OPTIONS = [
   { value: 'Broker', label: 'Broker' },
+  { value: 'Primary Lender', label: 'Primary Lender' },
   { value: 'Authorized Party', label: 'Authorized Party' },
+];
+
+const FORD_DROPDOWN_OPTIONS = [
+  { value: 'Company', label: 'Company' },
+  { value: 'Broker', label: 'Broker' },
+  { value: 'Primary Lender', label: 'Primary Lender' },
+  { value: 'Authorized Party', label: 'Authorized Party' },
+  { value: '3rd Party Servicer', label: '3rd Party Servicer' },
+  { value: 'Other', label: 'Other' },
 ];
 
 const PHONE_FIELDS = [
@@ -595,10 +605,22 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           {/* FORD */}
           <h4 className="text-sm font-semibold text-foreground mt-4 mb-2">FORD</h4>
           <div className="grid grid-cols-2 gap-2">
-            <Input value={getValue('ford1')} onChange={(e) => handleChange('ford1', e.target.value)} disabled={disabled} className="h-8" />
-            <Input value={getValue('ford2')} onChange={(e) => handleChange('ford2', e.target.value)} disabled={disabled} className="h-8" />
-            <Input value={getValue('ford3')} onChange={(e) => handleChange('ford3', e.target.value)} disabled={disabled} className="h-8" />
-            <Input value={getValue('ford4')} onChange={(e) => handleChange('ford4', e.target.value)} disabled={disabled} className="h-8" />
+            <Select value={getValue('ford1')} onValueChange={(v) => handleChange('ford1', v)} disabled={disabled}>
+              <SelectTrigger className="h-8"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+            </Select>
+            <Select value={getValue('ford2')} onValueChange={(v) => handleChange('ford2', v)} disabled={disabled}>
+              <SelectTrigger className="h-8"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+            </Select>
+            <Select value={getValue('ford3')} onValueChange={(v) => handleChange('ford3', v)} disabled={disabled}>
+              <SelectTrigger className="h-8"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+            </Select>
+            <Select value={getValue('ford4')} onValueChange={(v) => handleChange('ford4', v)} disabled={disabled}>
+              <SelectTrigger className="h-8"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+            </Select>
             <Input value={getValue('ford5')} onChange={(e) => handleChange('ford5', e.target.value)} disabled={disabled} className="h-8" />
             <Input value={getValue('ford6')} onChange={(e) => handleChange('ford6', e.target.value)} disabled={disabled} className="h-8" />
             <Input value={getValue('ford7')} onChange={(e) => handleChange('ford7', e.target.value)} disabled={disabled} className="h-8" />
