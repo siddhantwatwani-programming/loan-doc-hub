@@ -378,7 +378,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           </div>
         </div>
 
-        {/* Column 2: Primary Address */}
+        {/* Column 2: Primary Address + Mailing Address + Extra fields */}
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-foreground border-b pb-2">Primary Address</h3>
           <div className="space-y-3">
@@ -397,6 +397,88 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">ZIP</Label>
               <Input value={getValue('primaryZip')} onChange={(e) => handleChange('primaryZip', e.target.value)} disabled={disabled} className="h-8" />
+            </div>
+          </div>
+
+          {/* Mailing Address */}
+          <h3 className="text-sm font-semibold text-foreground border-b pb-2 mt-4">Mailing Address</h3>
+          <div className="flex items-center gap-2 mb-2">
+            <Checkbox
+              checked={getBoolValue('mailingSameAsPrimary')}
+              onCheckedChange={(checked) => {
+                handleChange('mailingSameAsPrimary', !!checked);
+                if (checked) {
+                  handleChange('mailingStreet', getValue('primaryStreet'));
+                  handleChange('mailingCity', getValue('primaryCity'));
+                  handleChange('mailingState', getValue('primaryState'));
+                  handleChange('mailingZip', getValue('primaryZip'));
+                }
+              }}
+              disabled={disabled}
+            />
+            <Label className="text-xs text-muted-foreground">Same as Primary Address</Label>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Street</Label>
+              <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">City</Label>
+              <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">State</Label>
+              <Input value={getValue('mailingState')} onChange={(e) => handleChange('mailingState', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">ZIP</Label>
+              <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
+            </div>
+          </div>
+
+          {/* Extra fields */}
+          <div className="space-y-3 mt-4 border-t pt-3">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={getBoolValue('servicingAgreementOnFile')}
+                onCheckedChange={(checked) => handleChange('servicingAgreementOnFile', !!checked)}
+                disabled={disabled}
+              />
+              <Label className="text-sm text-muted-foreground">Servicing Agreement on File</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={getBoolValue('freezeOutgoingDisbursements')}
+                onCheckedChange={(checked) => handleChange('freezeOutgoingDisbursements', !!checked)}
+                disabled={disabled}
+              />
+              <Label className="text-sm text-muted-foreground">Freeze Outgoing Disbursements</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={getBoolValue('investorQuestionnaireDue')}
+                onCheckedChange={(checked) => handleChange('investorQuestionnaireDue', !!checked)}
+                disabled={disabled}
+              />
+              <Label className="text-sm text-muted-foreground mr-2">Investor Questionaire Due</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("h-7 text-xs", !getValue('investorQuestionnaireDueDate') && "text-muted-foreground")} disabled={disabled}>
+                    <CalendarIcon className="mr-1 h-3 w-3" />
+                    {getValue('investorQuestionnaireDueDate') ? format(parse(getValue('investorQuestionnaireDueDate'), 'yyyy-MM-dd', new Date()), 'MM/dd/yyyy') : 'Date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={getValue('investorQuestionnaireDueDate') ? parse(getValue('investorQuestionnaireDueDate'), 'yyyy-MM-dd', new Date()) : undefined}
+                    onSelect={(date) => handleChange('investorQuestionnaireDueDate', date ? format(date, 'yyyy-MM-dd') : '')}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </div>
@@ -498,92 +580,10 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           </div>
         </div>
 
-        {/* Column 4: Mailing Address + Vesting + FORD */}
+        {/* Column 4: Vesting + FORD */}
         <div className="space-y-4">
-          {/* Mailing Address */}
-          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Mailing Address</h3>
-          <div className="flex items-center gap-2 mb-2">
-            <Checkbox
-              checked={getBoolValue('mailingSameAsPrimary')}
-              onCheckedChange={(checked) => {
-                handleChange('mailingSameAsPrimary', !!checked);
-                if (checked) {
-                  handleChange('mailingStreet', getValue('primaryStreet'));
-                  handleChange('mailingCity', getValue('primaryCity'));
-                  handleChange('mailingState', getValue('primaryState'));
-                  handleChange('mailingZip', getValue('primaryZip'));
-                }
-              }}
-              disabled={disabled}
-            />
-            <Label className="text-xs text-muted-foreground">Same as Primary Address</Label>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Street</Label>
-              <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">City</Label>
-              <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">State</Label>
-              <Input value={getValue('mailingState')} onChange={(e) => handleChange('mailingState', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">ZIP</Label>
-              <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
-          </div>
-
-          {/* Screenshot fields */}
-          <div className="space-y-3 mt-4 border-t pt-3">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={getBoolValue('servicingAgreementOnFile')}
-                onCheckedChange={(checked) => handleChange('servicingAgreementOnFile', !!checked)}
-                disabled={disabled}
-              />
-              <Label className="text-sm text-muted-foreground">Servicing Agreement on File</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={getBoolValue('freezeOutgoingDisbursements')}
-                onCheckedChange={(checked) => handleChange('freezeOutgoingDisbursements', !!checked)}
-                disabled={disabled}
-              />
-              <Label className="text-sm text-muted-foreground">Freeze Outgoing Disbursements</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={getBoolValue('investorQuestionnaireDue')}
-                onCheckedChange={(checked) => handleChange('investorQuestionnaireDue', !!checked)}
-                disabled={disabled}
-              />
-              <Label className="text-sm text-muted-foreground mr-2">Investor Questionaire Due</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("h-7 text-xs", !getValue('investorQuestionnaireDueDate') && "text-muted-foreground")} disabled={disabled}>
-                    <CalendarIcon className="mr-1 h-3 w-3" />
-                    {getValue('investorQuestionnaireDueDate') ? format(parse(getValue('investorQuestionnaireDueDate'), 'yyyy-MM-dd', new Date()), 'MM/dd/yyyy') : 'Date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={getValue('investorQuestionnaireDueDate') ? parse(getValue('investorQuestionnaireDueDate'), 'yyyy-MM-dd', new Date()) : undefined}
-                    onSelect={(date) => handleChange('investorQuestionnaireDueDate', date ? format(date, 'yyyy-MM-dd') : '')}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
           {/* Vesting */}
-          <h4 className="text-sm font-semibold text-foreground border-b pb-2 mt-4">Vesting</h4>
+          <h4 className="text-sm font-semibold text-foreground border-b pb-2">Vesting</h4>
           <Textarea
             value={getValue('vesting')}
             onChange={(e) => handleChange('vesting', e.target.value)}
