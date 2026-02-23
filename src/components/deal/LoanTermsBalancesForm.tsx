@@ -21,24 +21,8 @@ const FIELD_KEYS = {
   noteRate: 'loan_terms.note_rate',
   soldRate: 'loan_terms.sold_rate',
   soldRateEnabled: 'loan_terms.sold_rate_enabled',
-  originatingVendor: 'loan_terms.originating_vendor',
-  originatingVendorEnabled: 'loan_terms.originating_vendor_enabled',
-  company: 'loan_terms.company',
-  companyEnabled: 'loan_terms.company_enabled',
-  otherClient1: 'loan_terms.other_client_1',
-  otherClient1Enabled: 'loan_terms.other_client_1_enabled',
-  otherClient1Pct: 'loan_terms.other_client_1_pct',
-  otherClient1Amt: 'loan_terms.other_client_1_amt',
-  otherClient2: 'loan_terms.other_client_2',
-  otherClient2Enabled: 'loan_terms.other_client_2_enabled',
-  otherClient2Pct: 'loan_terms.other_client_2_pct',
-  otherClient2Amt: 'loan_terms.other_client_2_amt',
   interestSplit: 'loan_terms.interest_split',
   interestSplitEnabled: 'loan_terms.interest_split_enabled',
-  originatingVendorPct: 'loan_terms.originating_vendor_pct',
-  originatingVendorAmt: 'loan_terms.originating_vendor_amt',
-  companyPct: 'loan_terms.company_pct',
-  companyAmt: 'loan_terms.company_amt',
   unearnedDiscountBalance: 'loan_terms.unearned_discount_balance',
   accrualMethod: 'loan_terms.accrual_method',
   prepaidPayments: 'loan_terms.prepaid_payments',
@@ -50,6 +34,7 @@ const FIELD_KEYS = {
   fundingHoldback: 'loan_terms.funding_holdback',
   fundingHoldbackEnabled: 'loan_terms.funding_holdback_enabled',
   fundingHoldbackHeldBy: 'loan_terms.funding_holdback_held_by',
+  numberOfPayments: 'loan_terms.number_of_payments',
   paymentFrequency: 'loan_terms.payment_frequency',
   dayDue: 'loan_terms.day_due',
   firstPayment: 'loan_terms.first_payment',
@@ -58,6 +43,8 @@ const FIELD_KEYS = {
   nextPayment: 'loan_terms.next_payment',
   regularPayment: 'loan_terms.regular_payment',
   additionalPrincipal: 'loan_terms.additional_principal',
+  servicingFees: 'loan_terms.servicing_fees',
+  salesTaxEnabled: 'loan_terms.sales_tax_enabled',
   otherScheduledPayments: 'loan_terms.other_scheduled_payments',
   toEscrowImpounds: 'loan_terms.to_escrow_impounds',
   defaultInterest: 'loan_terms.default_interest',
@@ -75,6 +62,16 @@ const FIELD_KEYS = {
   amountToReinstate: 'loan_terms.amount_to_reinstate',
   reserveBalance: 'loan_terms.reserve_balance',
   escrowBalance: 'loan_terms.escrow_balance',
+  totalBalanceDue: 'loan_terms.total_balance_due',
+  estimatedBalloonPayment: 'loan_terms.estimated_balloon_payment',
+  acceptShortPaymentsEnabled: 'loan_terms.accept_short_payments_enabled',
+  acceptShortPaymentsAmount: 'loan_terms.accept_short_payments_amount',
+  acceptShortPaymentsOrPercent: 'loan_terms.accept_short_payments_or_percent',
+  acceptShortPaymentsPercent: 'loan_terms.accept_short_payments_percent',
+  acceptPostMaturity: 'loan_terms.accept_post_maturity',
+  autoPostEnabled: 'loan_terms.auto_post_enabled',
+  overrideFundsHeld: 'loan_terms.override_funds_held',
+  holdDays: 'loan_terms.hold_days',
 };
 
 const PAYMENT_FREQUENCY_OPTIONS = [
@@ -154,48 +151,6 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
     </div>
   );
 
-  const renderCheckboxPercentAmount = (
-    enabledKey: string,
-    label: string,
-    pctKey: string,
-    amtKey: string,
-  ) => (
-    <div className="space-y-1">
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id={`${enabledKey}-cb`}
-          checked={isChecked(enabledKey)}
-          onCheckedChange={() => toggleCheck(enabledKey)}
-          disabled={disabled}
-          className="h-3.5 w-3.5"
-        />
-        <Label htmlFor={`${enabledKey}-cb`} className="text-sm">{label}</Label>
-      </div>
-      <div className="flex items-center gap-2 pl-5">
-        <div className="relative flex-1">
-          <Input
-            value={getValue(pctKey)}
-            onChange={(e) => setValue(pctKey, e.target.value)}
-            disabled={disabled || !isChecked(enabledKey)}
-            className="h-7 text-sm text-center pr-6"
-            placeholder=""
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
-        </div>
-        <div className="relative flex-1">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-          <Input
-            value={getValue(amtKey)}
-            onChange={(e) => setValue(amtKey, e.target.value)}
-            disabled={disabled || !isChecked(enabledKey)}
-            className="h-7 text-sm pl-7"
-            placeholder="0.00"
-          />
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="p-4 space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -233,23 +188,6 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
             </div>
 
-            {renderCheckboxPercentAmount(
-              FIELD_KEYS.originatingVendorEnabled, 'Originating Vendor',
-              FIELD_KEYS.originatingVendorPct, FIELD_KEYS.originatingVendorAmt,
-            )}
-            {renderCheckboxPercentAmount(
-              FIELD_KEYS.companyEnabled, 'Company',
-              FIELD_KEYS.companyPct, FIELD_KEYS.companyAmt,
-            )}
-            {renderCheckboxPercentAmount(
-              FIELD_KEYS.otherClient1Enabled, 'Other - Client List',
-              'loan_terms.other_1_pct', 'loan_terms.other_1_amt',
-            )}
-            {renderCheckboxPercentAmount(
-              FIELD_KEYS.otherClient2Enabled, 'Other - Client List',
-              'loan_terms.other_2_pct', 'loan_terms.other_2_amt',
-            )}
-
             {/* Interest Split */}
             <div className="flex items-center gap-2 py-1">
               <Checkbox
@@ -273,13 +211,13 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               />
             </div>
 
-            {/* Accrual Method */}
+            {/* Accrual Method - enabled only when Interest Split is checked */}
             <div className="flex items-center gap-3">
               <Label className={LABEL_CLASS}>Accrual Method</Label>
               <Select
                 value={getValue(FIELD_KEYS.accrualMethod)}
                 onValueChange={(value) => setValue(FIELD_KEYS.accrualMethod, value)}
-                disabled={disabled}
+                disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
               >
                 <SelectTrigger className="h-7 text-sm flex-1">
                   <SelectValue placeholder="Select method" />
@@ -375,6 +313,29 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
         <div className="space-y-3">
           <h3 className="font-semibold text-sm text-foreground border-b border-border pb-2">Payments</h3>
           <div className="space-y-2">
+            {/* Number of Payments */}
+            <div className="flex items-center gap-3">
+              <Label className={LABEL_CLASS}>Number of Payments</Label>
+              <Input
+                value={getValue(FIELD_KEYS.numberOfPayments)}
+                onChange={(e) => setValue(FIELD_KEYS.numberOfPayments, e.target.value)}
+                disabled={disabled}
+                className="h-7 text-sm flex-1"
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Label className={LABEL_CLASS}>Day Due</Label>
+              <Input
+                value={getValue(FIELD_KEYS.dayDue)}
+                onChange={(e) => setValue(FIELD_KEYS.dayDue, e.target.value)}
+                disabled={disabled}
+                className="h-7 text-sm flex-1"
+              />
+            </div>
+
+            {renderDateField(FIELD_KEYS.firstPayment, 'First Payment')}
+
             <div className="flex items-center gap-3">
               <Label className={LABEL_CLASS}>Payment Frequency</Label>
               <Select
@@ -409,6 +370,35 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {renderDateField(FIELD_KEYS.nextPayment, 'Next Payment')}
             {renderCurrencyField(FIELD_KEYS.regularPayment, 'Regular Payment')}
             {renderCurrencyField(FIELD_KEYS.additionalPrincipal, 'Additional Principal')}
+
+            {/* Servicing Fees */}
+            <div className="flex items-center gap-3">
+              <Label className="text-sm font-semibold text-foreground min-w-[130px] text-left shrink-0">Servicing Fees</Label>
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                <Input
+                  value={getValue(FIELD_KEYS.servicingFees)}
+                  onChange={(e) => setValue(FIELD_KEYS.servicingFees, e.target.value)}
+                  disabled={disabled}
+                  className="h-7 text-sm pl-7"
+                  placeholder="-"
+                />
+              </div>
+            </div>
+
+            {/* Sales Tax checkbox */}
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground min-w-[130px] text-left shrink-0">Sales Tax</Label>
+              <Checkbox
+                id={`${FIELD_KEYS.salesTaxEnabled}-cb`}
+                checked={isChecked(FIELD_KEYS.salesTaxEnabled)}
+                onCheckedChange={() => toggleCheck(FIELD_KEYS.salesTaxEnabled)}
+                disabled={disabled}
+                className="h-3.5 w-3.5"
+              />
+              <Label htmlFor={`${FIELD_KEYS.salesTaxEnabled}-cb`} className="text-sm text-muted-foreground">Percent of Servicing Fees</Label>
+            </div>
+
             {renderCurrencyField(FIELD_KEYS.otherScheduledPayments, 'Other Sched. Pmts',
               "text-sm text-primary font-medium min-w-[130px] text-left shrink-0")}
             {renderCurrencyField(FIELD_KEYS.toEscrowImpounds, 'To Escrow Impounds',
@@ -438,7 +428,116 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               "text-sm text-primary font-medium min-w-[130px] text-left shrink-0")}
             {renderCurrencyField(FIELD_KEYS.escrowBalance, 'Escrow Balance',
               "text-sm text-primary font-medium min-w-[130px] text-left shrink-0")}
+
+            {/* Section 6: Total Balance Due & Estimated Balloon Payment */}
+            <div className="pt-2 space-y-2">
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-primary font-medium min-w-[130px] text-left shrink-0">Total Balance Due</Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                  <Input
+                    value={getValue(FIELD_KEYS.totalBalanceDue)}
+                    onChange={(e) => setValue(FIELD_KEYS.totalBalanceDue, e.target.value)}
+                    disabled={disabled}
+                    className="h-7 text-sm pl-7"
+                    placeholder="-"
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">* Does not include Close-out Fees</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-primary font-medium min-w-[130px] text-left shrink-0">Estimated Balloon Payment</Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                  <Input
+                    value={getValue(FIELD_KEYS.estimatedBalloonPayment)}
+                    onChange={(e) => setValue(FIELD_KEYS.estimatedBalloonPayment, e.target.value)}
+                    disabled={disabled}
+                    className="h-7 text-sm pl-7"
+                    placeholder="-"
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">* Does not include Close-out Fees</span>
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* Section 7: Accept Short Payments, Post-maturity, Auto-post, Override Funds Held */}
+      <div className="space-y-2 pt-2">
+        {/* Accept Short Payments */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <Checkbox
+            id={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`}
+            checked={isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
+            onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptShortPaymentsEnabled)}
+            disabled={disabled}
+            className="h-3.5 w-3.5"
+          />
+          <Label htmlFor={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`} className="text-sm">Accept Short Payments</Label>
+          <div className="relative w-24">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+            <Input
+              value={getValue(FIELD_KEYS.acceptShortPaymentsAmount)}
+              onChange={(e) => setValue(FIELD_KEYS.acceptShortPaymentsAmount, e.target.value)}
+              disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
+              className="h-7 text-sm pl-7"
+              placeholder="-"
+            />
+          </div>
+          <span className="text-sm text-muted-foreground">Or</span>
+          <Checkbox
+            id={`${FIELD_KEYS.acceptShortPaymentsOrPercent}-cb`}
+            checked={isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)}
+            onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptShortPaymentsOrPercent)}
+            disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
+            className="h-3.5 w-3.5"
+          />
+          <Label className="text-sm">Percent</Label>
+        </div>
+
+        {/* Accept Post-maturity */}
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id={`${FIELD_KEYS.acceptPostMaturity}-cb`}
+            checked={isChecked(FIELD_KEYS.acceptPostMaturity)}
+            onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptPostMaturity)}
+            disabled={disabled}
+            className="h-3.5 w-3.5"
+          />
+          <Label htmlFor={`${FIELD_KEYS.acceptPostMaturity}-cb`} className="text-sm">Accept Post-maturity</Label>
+        </div>
+
+        {/* Auto-post Enabled */}
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id={`${FIELD_KEYS.autoPostEnabled}-cb`}
+            checked={isChecked(FIELD_KEYS.autoPostEnabled)}
+            onCheckedChange={() => toggleCheck(FIELD_KEYS.autoPostEnabled)}
+            disabled={disabled}
+            className="h-3.5 w-3.5"
+          />
+          <Label htmlFor={`${FIELD_KEYS.autoPostEnabled}-cb`} className="text-sm">Auto-post Enabled</Label>
+        </div>
+
+        {/* Override Funds Held */}
+        <div className="flex items-center gap-3">
+          <Checkbox
+            id={`${FIELD_KEYS.overrideFundsHeld}-cb`}
+            checked={isChecked(FIELD_KEYS.overrideFundsHeld)}
+            onCheckedChange={() => toggleCheck(FIELD_KEYS.overrideFundsHeld)}
+            disabled={disabled}
+            className="h-3.5 w-3.5"
+          />
+          <Label htmlFor={`${FIELD_KEYS.overrideFundsHeld}-cb`} className="text-sm">Override Funds Held</Label>
+          <Label className="text-sm text-muted-foreground">Hold Days</Label>
+          <Input
+            value={getValue(FIELD_KEYS.holdDays)}
+            onChange={(e) => setValue(FIELD_KEYS.holdDays, e.target.value)}
+            disabled={disabled || !isChecked(FIELD_KEYS.overrideFundsHeld)}
+            className="h-7 text-sm w-20"
+          />
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface ChargesDetailFormProps {
   values: Record<string, string>;
@@ -98,10 +98,14 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
           </div>
         </div>
         <div className="flex items-center gap-2 px-1 pt-2">
-          <button type="button" disabled={disabled} onClick={() => onValueChange(FIELD_KEYS.deferred, values[FIELD_KEYS.deferred] === 'true' ? 'false' : 'true')} className="aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center">
-            {values[FIELD_KEYS.deferred] === 'true' && <span className="h-2.5 w-2.5 rounded-full bg-current block" />}
-          </button>
-          <Label className="text-sm text-foreground cursor-pointer" onClick={() => !disabled && onValueChange(FIELD_KEYS.deferred, values[FIELD_KEYS.deferred] === 'true' ? 'false' : 'true')}>Deferred</Label>
+          <Checkbox
+            id="deferred-cb"
+            checked={values[FIELD_KEYS.deferred] === 'true'}
+            onCheckedChange={(checked) => onValueChange(FIELD_KEYS.deferred, checked ? 'true' : 'false')}
+            disabled={disabled}
+            className="h-3.5 w-3.5"
+          />
+          <Label htmlFor="deferred-cb" className="text-sm text-foreground cursor-pointer">Deferred</Label>
         </div>
       </div>
 
