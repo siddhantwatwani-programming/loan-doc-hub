@@ -1,9 +1,15 @@
 import React, { useEffect } from 'react';
+import { format, parse } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -59,10 +65,10 @@ const FIELD_KEYS = {
   preferredCell: 'lender.preferred.cell',
   preferredFax: 'lender.preferred.fax',
   isPrimary: 'lender.isPrimary',
-  mailingStreet: 'lender.street',
-  mailingCity: 'lender.city',
-  mailingState: 'lender.state',
-  mailingZip: 'lender.zip',
+  oldMailingStreet: 'lender.street',
+  oldMailingCity: 'lender.city',
+  oldMailingState: 'lender.state',
+  oldMailingZip: 'lender.zip',
   careOfStreet: 'lender.care_of.street',
   careOfCity: 'lender.care_of.city',
   careOfState: 'lender.care_of.state',
@@ -87,6 +93,16 @@ const FIELD_KEYS = {
   entitySignEntityName: 'lender.entity_sign.entity_name',
   entitySignFirstLast: 'lender.entity_sign.first_last',
   entitySignCapacity: 'lender.entity_sign.capacity',
+  dob: 'lender.dob',
+  mailingStreet: 'lender.mailing.street',
+  mailingCity: 'lender.mailing.city',
+  mailingState: 'lender.mailing.state',
+  mailingZip: 'lender.mailing.zip',
+  mailingSameAsPrimary: 'lender.mailing_same_as_primary',
+  servicingAgreementOnFile: 'lender.servicing_agreement_on_file',
+  freezeOutgoingDisbursements: 'lender.freeze_outgoing_disbursements',
+  investorQuestionnaireDue: 'lender.investor_questionnaire_due',
+  investorQuestionnaireDueDate: 'lender.investor_questionnaire_due_date',
 } as const;
 
 const LENDER_TYPE_OPTIONS = [
@@ -100,6 +116,11 @@ const LENDER_TYPE_OPTIONS = [
   { value: '401k', label: '401k' },
   { value: 'Foreign Holder W-8', label: 'Foreign Holder W-8' },
   { value: 'Non-profit', label: 'Non-profit' },
+];
+
+const LENDER_CAPACITY_OPTIONS = [
+  { value: 'Broker', label: 'Broker' },
+  { value: 'Authorized Party', label: 'Authorized Party' },
 ];
 
 const PHONE_FIELDS = [
@@ -186,7 +207,6 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 onChange={(e) => handleChange('lenderId', e.target.value)}
                 disabled={disabled}
                 className="h-8"
-                placeholder="Enter lender ID"
               />
             </div>
 
@@ -212,12 +232,22 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
 
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Capacity</Label>
-              <Input
+              <Select
                 value={getValue('capacity')}
-                onChange={(e) => handleChange('capacity', e.target.value)}
+                onValueChange={(value) => handleChange('capacity', value)}
                 disabled={disabled}
-                className="h-8"
-              />
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LENDER_CAPACITY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex items-start gap-3">
@@ -275,6 +305,35 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
+            </div>
+
+            {/* DOB */}
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">DOB</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-8 w-full justify-start text-left font-normal",
+                      !getValue('dob') && "text-muted-foreground"
+                    )}
+                    disabled={disabled}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {getValue('dob') ? format(parse(getValue('dob'), 'yyyy-MM-dd', new Date()), 'PPP') : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={getValue('dob') ? parse(getValue('dob'), 'yyyy-MM-dd', new Date()) : undefined}
+                    onSelect={(date) => handleChange('dob', date ? format(date, 'yyyy-MM-dd') : '')}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Tax ID Section */}
@@ -439,10 +498,92 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           </div>
         </div>
 
-        {/* Column 4: Vesting + FORD */}
+        {/* Column 4: Mailing Address + Vesting + FORD */}
         <div className="space-y-4">
+          {/* Mailing Address */}
+          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Mailing Address</h3>
+          <div className="flex items-center gap-2 mb-2">
+            <Checkbox
+              checked={getBoolValue('mailingSameAsPrimary')}
+              onCheckedChange={(checked) => {
+                handleChange('mailingSameAsPrimary', !!checked);
+                if (checked) {
+                  handleChange('mailingStreet', getValue('primaryStreet'));
+                  handleChange('mailingCity', getValue('primaryCity'));
+                  handleChange('mailingState', getValue('primaryState'));
+                  handleChange('mailingZip', getValue('primaryZip'));
+                }
+              }}
+              disabled={disabled}
+            />
+            <Label className="text-xs text-muted-foreground">Same as Primary Address</Label>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Street</Label>
+              <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">City</Label>
+              <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">State</Label>
+              <Input value={getValue('mailingState')} onChange={(e) => handleChange('mailingState', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">ZIP</Label>
+              <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
+            </div>
+          </div>
+
+          {/* Screenshot fields */}
+          <div className="space-y-3 mt-4 border-t pt-3">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={getBoolValue('servicingAgreementOnFile')}
+                onCheckedChange={(checked) => handleChange('servicingAgreementOnFile', !!checked)}
+                disabled={disabled}
+              />
+              <Label className="text-sm text-muted-foreground">Servicing Agreement on File</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={getBoolValue('freezeOutgoingDisbursements')}
+                onCheckedChange={(checked) => handleChange('freezeOutgoingDisbursements', !!checked)}
+                disabled={disabled}
+              />
+              <Label className="text-sm text-muted-foreground">Freeze Outgoing Disbursements</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={getBoolValue('investorQuestionnaireDue')}
+                onCheckedChange={(checked) => handleChange('investorQuestionnaireDue', !!checked)}
+                disabled={disabled}
+              />
+              <Label className="text-sm text-muted-foreground mr-2">Investor Questionaire Due</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("h-7 text-xs", !getValue('investorQuestionnaireDueDate') && "text-muted-foreground")} disabled={disabled}>
+                    <CalendarIcon className="mr-1 h-3 w-3" />
+                    {getValue('investorQuestionnaireDueDate') ? format(parse(getValue('investorQuestionnaireDueDate'), 'yyyy-MM-dd', new Date()), 'MM/dd/yyyy') : 'Date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={getValue('investorQuestionnaireDueDate') ? parse(getValue('investorQuestionnaireDueDate'), 'yyyy-MM-dd', new Date()) : undefined}
+                    onSelect={(date) => handleChange('investorQuestionnaireDueDate', date ? format(date, 'yyyy-MM-dd') : '')}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
           {/* Vesting */}
-          <h4 className="text-sm font-semibold text-foreground border-b pb-2">Vesting</h4>
+          <h4 className="text-sm font-semibold text-foreground border-b pb-2 mt-4">Vesting</h4>
           <Textarea
             value={getValue('vesting')}
             onChange={(e) => handleChange('vesting', e.target.value)}

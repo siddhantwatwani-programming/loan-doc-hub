@@ -19,7 +19,7 @@ const BORROWER_TYPE_OPTIONS = [
 ];
 
 const CAPACITY_OPTIONS = [
-  'Borrower', 'Co-Borrower', 'Additional Guarantor', 'Authorized Party',
+  'Borrower', 'Co-Borrower', 'Additional Guarantor', 'Authorized Party', 'Broker',
 ];
 
 const TAX_ID_TYPE_OPTIONS = ['0 – Unknown', '1 – EIN', '2 – SSN'];
