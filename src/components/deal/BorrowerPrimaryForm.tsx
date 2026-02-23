@@ -31,6 +31,7 @@ const CAPACITY_OPTIONS = [
   'Co-Borrower',
   'Additional Guarantor',
   'Authorized Party',
+  'Broker',
 ];
 
 const TAX_ID_TYPE_OPTIONS = [
