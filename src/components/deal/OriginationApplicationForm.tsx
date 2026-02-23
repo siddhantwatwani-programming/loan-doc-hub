@@ -30,6 +30,10 @@ const FIELD_KEYS = {
   filed_bankruptcy: 'origination_app.borrower.filed_bankruptcy',
   discharged: 'origination_app.borrower.discharged',
   credit_score: 'origination_app.borrower.credit_score',
+  extra_label_1: 'origination_app.borrower.extra_label_1',
+  extra_value_1: 'origination_app.borrower.extra_value_1',
+  extra_label_2: 'origination_app.borrower.extra_label_2',
+  extra_value_2: 'origination_app.borrower.extra_value_2',
 
   // Gross Monthly Income
   income_salary: 'origination_app.income.salary',
@@ -54,10 +58,15 @@ const FIELD_KEYS = {
   doc_audited_financials: 'origination_app.doc.audited_financials',
   doc_audited_financials_2: 'origination_app.doc.audited_financials_reviewed',
   doc_periods_reviewed: 'origination_app.doc.periods_reviewed',
-  doc_periods_reviewed_2: 'origination_app.doc.periods_reviewed_checked',
   doc_additional_info: 'origination_app.doc.additional_info_attached',
-  doc_additional_info_2: 'origination_app.doc.additional_info_reviewed',
 };
+
+// Additional rows: 8 rows with text + 2 checkboxes each
+const ADDITIONAL_ROWS = Array.from({ length: 8 }, (_, i) => ({
+  text: `origination_app.doc.additional_row_${i + 1}_text`,
+  check1: `origination_app.doc.additional_row_${i + 1}_check1`,
+  check2: `origination_app.doc.additional_row_${i + 1}_check2`,
+}));
 
 export const OriginationApplicationForm: React.FC<OriginationApplicationFormProps> = ({
   values,
@@ -158,6 +167,44 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
     </div>
   );
 
+  const renderLabelInputPair = (labelKey: string, valueKey: string) => (
+    <div className="flex items-center gap-2">
+      <Input
+        value={getValue(labelKey)}
+        onChange={(e) => setValue(labelKey, e.target.value)}
+        disabled={disabled}
+        className="h-7 text-sm w-[140px] shrink-0"
+      />
+      <Input
+        value={getValue(valueKey)}
+        onChange={(e) => setValue(valueKey, e.target.value)}
+        disabled={disabled}
+        className="h-7 text-sm"
+      />
+    </div>
+  );
+
+  const renderAdditionalDocRow = (row: typeof ADDITIONAL_ROWS[0]) => (
+    <div className="flex items-center gap-2" key={row.text}>
+      <Input
+        value={getValue(row.text)}
+        onChange={(e) => setValue(row.text, e.target.value)}
+        disabled={disabled}
+        className="h-7 text-sm flex-1"
+      />
+      <Checkbox
+        checked={getBoolValue(row.check1)}
+        onCheckedChange={(checked) => setBoolValue(row.check1, !!checked)}
+        disabled={disabled}
+      />
+      <Checkbox
+        checked={getBoolValue(row.check2)}
+        onCheckedChange={(checked) => setBoolValue(row.check2, !!checked)}
+        disabled={disabled}
+      />
+    </div>
+  );
+
   return (
     <div className="p-4 space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-6">
@@ -176,6 +223,8 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
             {renderCheckboxField('Discharged?', FIELD_KEYS.discharged)}
           </div>
           {renderTextField('Credit Score', FIELD_KEYS.credit_score)}
+          {renderLabelInputPair(FIELD_KEYS.extra_label_1, FIELD_KEYS.extra_value_1)}
+          {renderLabelInputPair(FIELD_KEYS.extra_label_2, FIELD_KEYS.extra_value_2)}
         </div>
 
         {/* Column 2: Income & Expenses */}
@@ -205,8 +254,11 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
           {renderDualCheckboxField('Balance Sheet Received', FIELD_KEYS.doc_balance_sheet, FIELD_KEYS.doc_balance_sheet_2)}
           {renderDualCheckboxField('Income Statement Received', FIELD_KEYS.doc_income_statement, FIELD_KEYS.doc_income_statement_2)}
           {renderDualCheckboxField('Audited Financials', FIELD_KEYS.doc_audited_financials, FIELD_KEYS.doc_audited_financials_2)}
-          {renderDualCheckboxField('Periods Reviewed', FIELD_KEYS.doc_periods_reviewed, FIELD_KEYS.doc_periods_reviewed_2)}
-          {renderDualCheckboxField('Additional Information Attached', FIELD_KEYS.doc_additional_info, FIELD_KEYS.doc_additional_info_2)}
+          {renderTextField('Periods Reviewed', FIELD_KEYS.doc_periods_reviewed)}
+          <div className="flex items-center gap-2">
+            <Label className="text-sm shrink-0 flex-1">Additional Information Attached</Label>
+          </div>
+          {ADDITIONAL_ROWS.map(renderAdditionalDocRow)}
         </div>
       </div>
     </div>
