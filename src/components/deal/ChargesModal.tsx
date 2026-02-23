@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { cn } from '@/lib/utils';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -110,11 +110,10 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
               </div>
             </div>
             <div className="flex items-center gap-2 px-1 pt-1.5">
-              <Label className="w-[110px] shrink-0 text-xs font-semibold text-foreground">Deferred</Label>
-              <RadioGroup value={formData.deferred === 'true' ? 'true' : 'false'} onValueChange={(val) => handleFieldChange('deferred', val)} className="flex items-center gap-4">
-                <div className="flex items-center gap-1"><RadioGroupItem value="true" id="modal-deferred-yes" /><Label htmlFor="modal-deferred-yes" className="text-xs cursor-pointer">Yes</Label></div>
-                <div className="flex items-center gap-1"><RadioGroupItem value="false" id="modal-deferred-no" /><Label htmlFor="modal-deferred-no" className="text-xs cursor-pointer">No</Label></div>
-              </RadioGroup>
+              <button type="button" onClick={() => handleFieldChange('deferred', formData.deferred === 'true' ? 'false' : 'true')} className="aspect-square h-3.5 w-3.5 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 flex items-center justify-center">
+                {formData.deferred === 'true' && <span className="h-2 w-2 rounded-full bg-current block" />}
+              </button>
+              <Label className="text-xs font-semibold text-foreground cursor-pointer" onClick={() => handleFieldChange('deferred', formData.deferred === 'true' ? 'false' : 'true')}>Deferred</Label>
             </div>
           </div>
 
@@ -144,11 +143,10 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
               </div>
               <div className="grid grid-cols-[120px_1fr_1fr_1fr] items-center">
                 <div className="px-2 py-1 flex items-center gap-1">
-                  <Label className="text-[10px] font-medium text-foreground whitespace-nowrap mr-1">Distribute Between All Lenders</Label>
-                  <RadioGroup value={formData.distributeBetweenAllLenders === 'true' ? 'true' : 'false'} onValueChange={(val) => handleFieldChange('distributeBetweenAllLenders', val)} className="flex items-center gap-2">
-                    <div className="flex items-center gap-0.5"><RadioGroupItem value="true" id="modal-dist-yes" className="h-3 w-3" /><Label htmlFor="modal-dist-yes" className="text-[10px] cursor-pointer">Yes</Label></div>
-                    <div className="flex items-center gap-0.5"><RadioGroupItem value="false" id="modal-dist-no" className="h-3 w-3" /><Label htmlFor="modal-dist-no" className="text-[10px] cursor-pointer">No</Label></div>
-                  </RadioGroup>
+                  <button type="button" onClick={() => handleFieldChange('distributeBetweenAllLenders', formData.distributeBetweenAllLenders === 'true' ? 'false' : 'true')} className="aspect-square h-3 w-3 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 flex items-center justify-center">
+                    {formData.distributeBetweenAllLenders === 'true' && <span className="h-1.5 w-1.5 rounded-full bg-current block" />}
+                  </button>
+                  <Label className="text-[10px] font-medium text-foreground cursor-pointer whitespace-nowrap" onClick={() => handleFieldChange('distributeBetweenAllLenders', formData.distributeBetweenAllLenders === 'true' ? 'false' : 'true')}>Distribute Between All Lenders</Label>
                 </div>
                 <div className="px-2 py-1 text-xs font-medium text-foreground col-span-2 text-right pr-3">Amount Advanced:</div>
                 <div className="px-1.5 py-1"><div className="relative"><span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span><Input type="number" step="0.01" value={formData.amountOwedByBorrower} onChange={(e) => handleFieldChange('amountOwedByBorrower', e.target.value)} className="h-6 text-xs pl-4" placeholder="0.00" /></div></div>
