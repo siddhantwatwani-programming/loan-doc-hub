@@ -187,11 +187,36 @@ export function formatBoolean(value: string | number | null): string {
 }
 
 // ============================================
+// Checkbox Formatters
+// ============================================
+
+function isTruthy(value: string | number | null): boolean {
+  if (value === null || value === undefined) return false;
+  const s = String(value).toLowerCase().trim();
+  return s === "true" || s === "1" || s === "yes";
+}
+
+/** ☑ / ☐ */
+export function formatCheckbox(value: string | number | null): string {
+  return isTruthy(value) ? "☑" : "☐";
+}
+
+/** Yes / No */
+export function formatCheckboxYesNo(value: string | number | null): string {
+  return isTruthy(value) ? "Yes" : "No";
+}
+
+/** [X] / [ ] */
+export function formatCheckboxX(value: string | number | null): string {
+  return isTruthy(value) ? "[X]" : "[ ]";
+}
+
+// ============================================
 // Transform Dispatcher
 // ============================================
 
 export function applyTransform(value: string | number | null, transform: string): string {
-  if (value === null || value === undefined) return "";
+  if (value === null || value === undefined) value = "";
   const valueStr = String(value);
   const t = transform.toLowerCase().trim();
 
@@ -204,10 +229,12 @@ export function applyTransform(value: string | number | null, transform: string)
     case "date_mmddyyyy":
       return formatDateMMDDYYYY(valueStr);
     case "date_long":
+    case "long":
       return formatDateLong(valueStr);
     case "date_short":
       return formatDateShort(valueStr);
     case "uppercase":
+    case "upper":
       return formatUppercase(valueStr);
     case "titlecase":
       return formatTitlecase(valueStr);
@@ -219,6 +246,14 @@ export function applyTransform(value: string | number | null, transform: string)
       return formatPhone(valueStr);
     case "ssn_masked":
       return formatSSNMasked(valueStr);
+    case "words":
+      return formatCurrencyInWords(value);
+    case "checkbox":
+      return formatCheckbox(value);
+    case "checkbox_yes_no":
+      return formatCheckboxYesNo(value);
+    case "checkbox_x":
+      return formatCheckboxX(value);
     default:
       return valueStr;
   }
