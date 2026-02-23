@@ -616,27 +616,16 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
 
           {/* FORD */}
           <h4 className="text-sm font-semibold text-foreground mt-4 mb-2">FORD</h4>
-          <div className="grid grid-cols-2 gap-2">
-            <Select value={getValue('ford1')} onValueChange={(v) => handleChange('ford1', v)} disabled={disabled}>
-              <SelectTrigger className="h-8"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-            </Select>
-            <Select value={getValue('ford2')} onValueChange={(v) => handleChange('ford2', v)} disabled={disabled}>
-              <SelectTrigger className="h-8"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-            </Select>
-            <Select value={getValue('ford3')} onValueChange={(v) => handleChange('ford3', v)} disabled={disabled}>
-              <SelectTrigger className="h-8"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-            </Select>
-            <Select value={getValue('ford4')} onValueChange={(v) => handleChange('ford4', v)} disabled={disabled}>
-              <SelectTrigger className="h-8"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-            </Select>
-            <Input value={getValue('ford5')} onChange={(e) => handleChange('ford5', e.target.value)} disabled={disabled} className="h-8" />
-            <Input value={getValue('ford6')} onChange={(e) => handleChange('ford6', e.target.value)} disabled={disabled} className="h-8" />
-            <Input value={getValue('ford7')} onChange={(e) => handleChange('ford7', e.target.value)} disabled={disabled} className="h-8" />
-            <Input value={getValue('ford8')} onChange={(e) => handleChange('ford8', e.target.value)} disabled={disabled} className="h-8" />
+          <div className="space-y-2">
+            {([['ford1', 'ford2'], ['ford3', 'ford4'], ['ford5', 'ford6'], ['ford7', 'ford8']] as const).map(([dropdownKey, inputKey], idx) => (
+              <div key={idx} className="grid grid-cols-2 gap-2">
+                <Select value={getValue(dropdownKey)} onValueChange={(v) => handleChange(dropdownKey, v)} disabled={disabled}>
+                  <SelectTrigger className="h-8"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                </Select>
+                <Input value={getValue(inputKey)} onChange={(e) => handleChange(inputKey, e.target.value)} disabled={disabled} className="h-8" />
+              </div>
+            ))}
           </div>
         </div>
       </div>
