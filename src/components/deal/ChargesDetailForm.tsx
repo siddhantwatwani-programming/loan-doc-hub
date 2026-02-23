@@ -2,7 +2,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface ChargesDetailFormProps {
   values: Record<string, string>;
@@ -97,9 +97,12 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
             <Textarea value={values[FIELD_KEYS.notes] || ''} onChange={(e) => onValueChange(FIELD_KEYS.notes, e.target.value)} disabled={disabled} className="text-sm min-h-[50px] flex-1" placeholder="Enter notes" />
           </div>
         </div>
-        <div className="flex items-center gap-2 px-1 pt-2">
-          <Checkbox id="detail-deferred" checked={values[FIELD_KEYS.deferred] === 'true'} onCheckedChange={(checked) => onValueChange(FIELD_KEYS.deferred, checked ? 'true' : 'false')} disabled={disabled} />
-          <Label htmlFor="detail-deferred" className="text-sm text-foreground cursor-pointer">Deferred</Label>
+        <div className="flex items-center gap-3 px-1 pt-2">
+          <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Deferred</Label>
+          <RadioGroup value={values[FIELD_KEYS.deferred] === 'true' ? 'true' : 'false'} onValueChange={(val) => onValueChange(FIELD_KEYS.deferred, val)} disabled={disabled} className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5"><RadioGroupItem value="true" id="detail-deferred-yes" /><Label htmlFor="detail-deferred-yes" className="text-sm cursor-pointer">Yes</Label></div>
+            <div className="flex items-center gap-1.5"><RadioGroupItem value="false" id="detail-deferred-no" /><Label htmlFor="detail-deferred-no" className="text-sm cursor-pointer">No</Label></div>
+          </RadioGroup>
         </div>
       </div>
 
@@ -130,8 +133,11 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
             </div>
             <div className="grid grid-cols-[140px_1fr_1fr_1fr] items-center">
               <div className="px-3 py-2 flex items-center gap-2">
-                <Checkbox id="distributeBetweenAllLendersDetail" checked={values[FIELD_KEYS.distributeBetweenAllLenders] === 'true'} onCheckedChange={(checked) => onValueChange(FIELD_KEYS.distributeBetweenAllLenders, checked ? 'true' : 'false')} disabled={disabled} />
-               <Label htmlFor="distributeBetweenAllLendersDetail" className="text-sm font-medium text-foreground cursor-pointer whitespace-nowrap">Distribute Between All Lenders</Label>
+                <Label className="text-sm font-medium text-foreground whitespace-nowrap mr-2">Distribute Between All Lenders</Label>
+                <RadioGroup value={values[FIELD_KEYS.distributeBetweenAllLenders] === 'true' ? 'true' : 'false'} onValueChange={(val) => onValueChange(FIELD_KEYS.distributeBetweenAllLenders, val)} disabled={disabled} className="flex items-center gap-3">
+                  <div className="flex items-center gap-1"><RadioGroupItem value="true" id="dist-all-detail-yes" /><Label htmlFor="dist-all-detail-yes" className="text-xs cursor-pointer">Yes</Label></div>
+                  <div className="flex items-center gap-1"><RadioGroupItem value="false" id="dist-all-detail-no" /><Label htmlFor="dist-all-detail-no" className="text-xs cursor-pointer">No</Label></div>
+                </RadioGroup>
               </div>
               <div className="px-3 py-2 text-sm font-medium text-foreground col-span-2 text-right pr-4">Amount Advanced:</div>
               <div className="px-2 py-1.5"><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span><Input type="number" step="0.01" value={values[FIELD_KEYS.amountOwedByBorrower] || ''} onChange={(e) => onValueChange(FIELD_KEYS.amountOwedByBorrower, e.target.value)} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" /></div></div>
