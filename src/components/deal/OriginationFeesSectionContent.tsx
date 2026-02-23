@@ -3,6 +3,8 @@ import { OriginationFeesForm } from './OriginationFeesForm';
 import { OriginationApplicationForm } from './OriginationApplicationForm';
 import { OriginationInsuranceConditionsForm } from './OriginationInsuranceConditionsForm';
 import { OriginationServicingForm } from './OriginationServicingForm';
+import { OriginationPropertyForm } from './OriginationPropertyForm';
+import { OriginationEscrowTitleForm } from './OriginationEscrowTitleForm';
 import { OriginationFeesSubNavigation, type OriginationFeesSubSection } from './OriginationFeesSubNavigation';
 import { Clock } from 'lucide-react';
 import type { FieldDefinition } from '@/hooks/useDealFields';
@@ -79,11 +81,27 @@ export const OriginationFeesSectionContent: React.FC<OriginationFeesSectionConte
           />
         );
       case 'escrow_title':
-        return <ComingSoonPlaceholder title="Escrow & Title" />;
+        return (
+          <OriginationEscrowTitleForm
+            values={values}
+            onValueChange={onValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+          />
+        );
       case 'document_provisions':
         return <ComingSoonPlaceholder title="Document Provisions" />;
       case 'property':
-        return <ComingSoonPlaceholder title="Property" />;
+        return (
+          <OriginationPropertyForm
+            values={values}
+            onValueChange={onValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+          />
+        );
       case 'rules':
         return <ComingSoonPlaceholder title="Rules" />;
       default:
