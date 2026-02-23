@@ -257,6 +257,16 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
           {renderTextField('Periods Reviewed', FIELD_KEYS.doc_periods_reviewed)}
           <div className="flex items-center gap-2">
             <Label className="text-sm shrink-0 flex-1">Additional Information Attached</Label>
+            <Checkbox
+              checked={getBoolValue('origination_app.doc.additional_info_check1')}
+              onCheckedChange={(checked) => setBoolValue('origination_app.doc.additional_info_check1', !!checked)}
+              disabled={disabled}
+            />
+            <Checkbox
+              checked={getBoolValue('origination_app.doc.additional_info_check2')}
+              onCheckedChange={(checked) => setBoolValue('origination_app.doc.additional_info_check2', !!checked)}
+              disabled={disabled}
+            />
           </div>
           {ADDITIONAL_ROWS.map(renderAdditionalDocRow)}
         </div>

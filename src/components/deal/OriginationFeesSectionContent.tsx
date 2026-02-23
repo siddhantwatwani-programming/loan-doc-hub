@@ -102,8 +102,6 @@ export const OriginationFeesSectionContent: React.FC<OriginationFeesSectionConte
             calculationResults={calculationResults}
           />
         );
-      case 'rules':
-        return <ComingSoonPlaceholder title="Rules" />;
       default:
         return null;
     }
