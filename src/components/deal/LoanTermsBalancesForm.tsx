@@ -420,7 +420,6 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     placeholder="0.00"
                   />
                 </div>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">* Does not include Close-out Fees</span>
               </div>
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-primary font-medium min-w-[130px] text-left shrink-0">Estimated Balloon Payment</Label>
@@ -434,15 +433,15 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     placeholder="0.00"
                   />
                 </div>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">* Does not include Close-out Fees</span>
               </div>
+              <p className="text-xs text-muted-foreground pl-[142px]">* Does not include Close-out Fees</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Section 7: Accept Short Payments, Post-maturity, Auto-post, Override Funds Held */}
-      <div className="space-y-2 pt-2 pl-0">
+      {/* Section 7: Override, Accept Short, Post-maturity, Auto-post */}
+      <div className="space-y-2 pt-2">
         {/* Override Funds Held */}
         <div className="flex items-center gap-3">
           <Checkbox
@@ -452,8 +451,8 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
             className="h-3.5 w-3.5"
           />
-          <Label htmlFor={`${FIELD_KEYS.overrideFundsHeld}-cb`} className="text-sm">Override Funds Held</Label>
-          <Label className="text-sm text-muted-foreground">Hold Days</Label>
+          <Label htmlFor={`${FIELD_KEYS.overrideFundsHeld}-cb`} className="text-sm min-w-[140px] shrink-0">Override Funds Held</Label>
+          <Label className="text-sm text-muted-foreground shrink-0">Hold Days</Label>
           <Input
             value={getValue(FIELD_KEYS.holdDays)}
             onChange={(e) => setValue(FIELD_KEYS.holdDays, e.target.value)}
@@ -463,7 +462,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
         </div>
 
         {/* Accept Short Payments */}
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
           <Checkbox
             id={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`}
             checked={isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
@@ -471,7 +470,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
             className="h-3.5 w-3.5"
           />
-          <Label htmlFor={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`} className="text-sm">Accept Short Payments</Label>
+          <Label htmlFor={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`} className="text-sm min-w-[140px] shrink-0">Accept Short Payments</Label>
           <div className="relative w-24">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
             <Input
@@ -494,7 +493,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
         </div>
 
         {/* Accept Post-maturity */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Checkbox
             id={`${FIELD_KEYS.acceptPostMaturity}-cb`}
             checked={isChecked(FIELD_KEYS.acceptPostMaturity)}
@@ -502,11 +501,11 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             disabled={disabled}
             className="h-3.5 w-3.5"
           />
-          <Label htmlFor={`${FIELD_KEYS.acceptPostMaturity}-cb`} className="text-sm">Accept Post-maturity</Label>
+          <Label htmlFor={`${FIELD_KEYS.acceptPostMaturity}-cb`} className="text-sm min-w-[140px] shrink-0">Accept Post-maturity</Label>
         </div>
 
         {/* Auto-post Enabled */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Checkbox
             id={`${FIELD_KEYS.autoPostEnabled}-cb`}
             checked={isChecked(FIELD_KEYS.autoPostEnabled)}
@@ -514,10 +513,8 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             disabled={disabled}
             className="h-3.5 w-3.5"
           />
-          <Label htmlFor={`${FIELD_KEYS.autoPostEnabled}-cb`} className="text-sm">Auto-post Enabled</Label>
+          <Label htmlFor={`${FIELD_KEYS.autoPostEnabled}-cb`} className="text-sm min-w-[140px] shrink-0">Auto-post Enabled</Label>
         </div>
-
-        
       </div>
     </div>
   );
