@@ -125,12 +125,24 @@ const LENDER_CAPACITY_OPTIONS = [
 ];
 
 const FORD_DROPDOWN_OPTIONS = [
-  { value: 'Company', label: 'Company' },
-  { value: 'Broker', label: 'Broker' },
-  { value: 'Primary Lender', label: 'Primary Lender' },
-  { value: 'Authorized Party', label: 'Authorized Party' },
-  { value: '3rd Party Servicer', label: '3rd Party Servicer' },
-  { value: 'Other', label: 'Other' },
+  { value: 'Spouse, Kids, Grandkids', label: 'Spouse, Kids, Grandkids' },
+  { value: 'Big Dream', label: 'Big Dream' },
+  { value: 'Sports Teams', label: 'Sports Teams' },
+  { value: 'Hobbies / Collections', label: 'Hobbies / Collections' },
+  { value: 'Goals / Achievements', label: 'Goals / Achievements' },
+  { value: 'Favorite Restaurant, Food, Drinks', label: 'Favorite Restaurant, Food, Drinks' },
+  { value: 'Pet(s)', label: 'Pet(s)' },
+  { value: 'Vacation Spot', label: 'Vacation Spot' },
+  { value: 'Job / Occupation', label: 'Job / Occupation' },
+  { value: 'Music / Bands', label: 'Music / Bands' },
+  { value: 'College', label: 'College' },
+  { value: 'Hometown / Childhood', label: 'Hometown / Childhood' },
+  { value: 'TV / Movies / Books', label: 'TV / Movies / Books' },
+  { value: 'Anniversary', label: 'Anniversary' },
+  { value: 'Challenges / Frustrations', label: 'Challenges / Frustrations' },
+  { value: 'Charity / Personal Causes', label: 'Charity / Personal Causes' },
+  { value: 'Upcoming Event - What / When', label: 'Upcoming Event - What / When' },
+  { value: 'Celebration - What / When', label: 'Celebration - What / When' },
 ];
 
 const PHONE_FIELDS = [
