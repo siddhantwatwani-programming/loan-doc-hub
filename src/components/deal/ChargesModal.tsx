@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -110,10 +111,13 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
               </div>
             </div>
             <div className="flex items-center gap-2 px-1 pt-1.5">
-              <button type="button" onClick={() => handleFieldChange('deferred', formData.deferred === 'true' ? 'false' : 'true')} className="aspect-square h-3.5 w-3.5 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 flex items-center justify-center">
-                {formData.deferred === 'true' && <span className="h-2 w-2 rounded-full bg-current block" />}
-              </button>
-              <Label className="text-xs font-semibold text-foreground cursor-pointer" onClick={() => handleFieldChange('deferred', formData.deferred === 'true' ? 'false' : 'true')}>Deferred</Label>
+              <Checkbox
+                id="modal-deferred-cb"
+                checked={formData.deferred === 'true'}
+                onCheckedChange={(checked) => handleFieldChange('deferred', checked ? 'true' : 'false')}
+                className="h-3.5 w-3.5"
+              />
+              <Label htmlFor="modal-deferred-cb" className="text-xs font-semibold text-foreground cursor-pointer">Deferred</Label>
             </div>
           </div>
 
