@@ -40,6 +40,11 @@ const FIELD_KEYS = {
   unsecured: 'loan_terms.unsecured',
   crossCollateral: 'loan_terms.cross_collateral',
   limitedNoDoc: 'loan_terms.limited_no_doc',
+  balloonPayment: 'loan_terms.balloon_payment',
+  parentAccount: 'loan_terms.parent_account',
+  parentAccountValue: 'loan_terms.parent_account_value',
+  childAccount: 'loan_terms.child_account',
+  childAccountValue: 'loan_terms.child_account_value',
 };
 
 const LIEN_POSITION_OPTIONS = [
@@ -138,7 +143,7 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
           {renderInlineSelect(FIELD_KEYS.rateStructure, 'Rate Structure', RATE_STRUCTURE_OPTIONS, 'Select')}
           {renderInlineSelect(FIELD_KEYS.amortization, 'Amortization', AMORTIZATION_OPTIONS, 'Select')}
           {renderInlineSelect(FIELD_KEYS.interestCalculation, 'Interest Calc', INTEREST_CALCULATION_OPTIONS, 'Select')}
-          {renderInlineSelect(FIELD_KEYS.shortPaymentsAppliedTo, 'Short Payments', SHORT_PAYMENTS_OPTIONS, 'Select')}
+          {renderInlineSelect(FIELD_KEYS.shortPaymentsAppliedTo, 'Apply Short Payments', SHORT_PAYMENTS_OPTIONS, 'Select')}
           {renderInlineSelect(FIELD_KEYS.processingUnpaidInterest, 'Unpaid Interest', PROCESSING_UNPAID_INTEREST_OPTIONS, 'Select')}
           {renderInlineSelect(FIELD_KEYS.calculationPeriod, 'Calc Period', CALCULATION_PERIOD_OPTIONS, 'Select')}
         </div>
@@ -161,6 +166,20 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
               <Label htmlFor={key} className="font-normal cursor-pointer text-xs">{label}</Label>
             </div>
           ))}
+          <div className="flex items-center space-x-2">
+            <Checkbox id={FIELD_KEYS.balloonPayment} checked={getBoolValue(FIELD_KEYS.balloonPayment)} onCheckedChange={(checked) => setBoolValue(FIELD_KEYS.balloonPayment, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+            <Label htmlFor={FIELD_KEYS.balloonPayment} className="font-normal cursor-pointer text-xs">Balloon Payment</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id={FIELD_KEYS.parentAccount} checked={getBoolValue(FIELD_KEYS.parentAccount)} onCheckedChange={(checked) => setBoolValue(FIELD_KEYS.parentAccount, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+            <Label htmlFor={FIELD_KEYS.parentAccount} className="font-normal cursor-pointer text-xs">Parent Account</Label>
+            <Input value={getValue(FIELD_KEYS.parentAccountValue)} onChange={(e) => setValue(FIELD_KEYS.parentAccountValue, e.target.value)} disabled={disabled} className="h-7 text-xs w-24" />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id={FIELD_KEYS.childAccount} checked={getBoolValue(FIELD_KEYS.childAccount)} onCheckedChange={(checked) => setBoolValue(FIELD_KEYS.childAccount, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+            <Label htmlFor={FIELD_KEYS.childAccount} className="font-normal cursor-pointer text-xs">Child Account</Label>
+            <Input value={getValue(FIELD_KEYS.childAccountValue)} onChange={(e) => setValue(FIELD_KEYS.childAccountValue, e.target.value)} disabled={disabled} className="h-7 text-xs w-24" />
+          </div>
         </div>
       </div>
     </div>
