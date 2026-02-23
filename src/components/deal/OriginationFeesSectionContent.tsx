@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { OriginationFeesForm } from './OriginationFeesForm';
+import { OriginationApplicationForm } from './OriginationApplicationForm';
+import { OriginationInsuranceConditionsForm } from './OriginationInsuranceConditionsForm';
+import { OriginationServicingForm } from './OriginationServicingForm';
 import { OriginationFeesSubNavigation, type OriginationFeesSubSection } from './OriginationFeesSubNavigation';
+import { Clock } from 'lucide-react';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -13,6 +17,16 @@ interface OriginationFeesSectionContentProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
+const ComingSoonPlaceholder: React.FC<{ title: string }> = ({ title }) => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="text-center">
+      <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+      <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
+      <p className="text-muted-foreground">Coming Soon</p>
+    </div>
+  </div>
+);
+
 export const OriginationFeesSectionContent: React.FC<OriginationFeesSectionContentProps> = ({
   values,
   onValueChange,
@@ -20,7 +34,62 @@ export const OriginationFeesSectionContent: React.FC<OriginationFeesSectionConte
   disabled = false,
   calculationResults = {},
 }) => {
-  const [activeSubSection, setActiveSubSection] = useState<OriginationFeesSubSection>('origination_fees');
+  const [activeSubSection, setActiveSubSection] = useState<OriginationFeesSubSection>('application');
+
+  const renderContent = () => {
+    switch (activeSubSection) {
+      case 'application':
+        return (
+          <OriginationApplicationForm
+            values={values}
+            onValueChange={onValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+          />
+        );
+      case 'insurance_conditions':
+        return (
+          <OriginationInsuranceConditionsForm
+            values={values}
+            onValueChange={onValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+          />
+        );
+      case 'servicing':
+        return (
+          <OriginationServicingForm
+            values={values}
+            onValueChange={onValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+          />
+        );
+      case 'origination_fees':
+        return (
+          <OriginationFeesForm
+            values={values}
+            onValueChange={onValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+          />
+        );
+      case 'escrow_title':
+        return <ComingSoonPlaceholder title="Escrow & Title" />;
+      case 'document_provisions':
+        return <ComingSoonPlaceholder title="Document Provisions" />;
+      case 'property':
+        return <ComingSoonPlaceholder title="Property" />;
+      case 'rules':
+        return <ComingSoonPlaceholder title="Rules" />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
@@ -30,13 +99,7 @@ export const OriginationFeesSectionContent: React.FC<OriginationFeesSectionConte
           onSubSectionChange={setActiveSubSection}
         />
         <div className="flex-1 min-w-0 overflow-auto min-h-[500px]">
-          <OriginationFeesForm
-            values={values}
-            onValueChange={onValueChange}
-            showValidation={showValidation}
-            disabled={disabled}
-            calculationResults={calculationResults}
-          />
+          {renderContent()}
         </div>
       </div>
     </div>
