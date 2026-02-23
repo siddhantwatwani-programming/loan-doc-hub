@@ -313,29 +313,6 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
         <div className="space-y-3">
           <h3 className="font-semibold text-sm text-foreground border-b border-border pb-2">Payments</h3>
           <div className="space-y-2">
-            {/* Number of Payments */}
-            <div className="flex items-center gap-3">
-              <Label className={LABEL_CLASS}>Number of Payments</Label>
-              <Input
-                value={getValue(FIELD_KEYS.numberOfPayments)}
-                onChange={(e) => setValue(FIELD_KEYS.numberOfPayments, e.target.value)}
-                disabled={disabled}
-                className="h-7 text-sm flex-1"
-              />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Label className={LABEL_CLASS}>Day Due</Label>
-              <Input
-                value={getValue(FIELD_KEYS.dayDue)}
-                onChange={(e) => setValue(FIELD_KEYS.dayDue, e.target.value)}
-                disabled={disabled}
-                className="h-7 text-sm flex-1"
-              />
-            </div>
-
-            {renderDateField(FIELD_KEYS.firstPayment, 'First Payment')}
-
             <div className="flex items-center gap-3">
               <Label className={LABEL_CLASS}>Payment Frequency</Label>
               <Select
