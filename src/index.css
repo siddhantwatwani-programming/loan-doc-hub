@@ -140,6 +140,14 @@
     @apply border-border;
   }
 
+  :root {
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
   html {
     font-size: 16px;
   }

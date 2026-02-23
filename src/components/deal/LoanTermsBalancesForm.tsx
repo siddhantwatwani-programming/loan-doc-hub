@@ -206,7 +206,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               <Input
                 value={getValue(FIELD_KEYS.unearnedDiscountBalance)}
                 onChange={(e) => setValue(FIELD_KEYS.unearnedDiscountBalance, e.target.value)}
-                disabled={disabled}
+                disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
                 className="h-7 text-sm flex-1"
               />
             </div>
@@ -237,7 +237,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   id={`${FIELD_KEYS.prepaidPaymentsEnabled}-cb`}
                   checked={isChecked(FIELD_KEYS.prepaidPaymentsEnabled)}
                   onCheckedChange={() => toggleCheck(FIELD_KEYS.prepaidPaymentsEnabled)}
-                  disabled={disabled}
+                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
                   className="h-3.5 w-3.5"
                 />
                 <Label htmlFor={`${FIELD_KEYS.prepaidPaymentsEnabled}-cb`} className="text-sm">Prepaid Payments</Label>
@@ -247,7 +247,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 <Input
                   value={getValue(FIELD_KEYS.prepaidPaymentsMonths)}
                   onChange={(e) => setValue(FIELD_KEYS.prepaidPaymentsMonths, e.target.value)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.prepaidPaymentsEnabled)}
+                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.prepaidPaymentsEnabled)}
                   className="h-7 text-sm flex-1"
                 />
               </div>
@@ -260,7 +260,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   id={`${FIELD_KEYS.impoundedPaymentsEnabled}-cb`}
                   checked={isChecked(FIELD_KEYS.impoundedPaymentsEnabled)}
                   onCheckedChange={() => toggleCheck(FIELD_KEYS.impoundedPaymentsEnabled)}
-                  disabled={disabled}
+                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
                   className="h-3.5 w-3.5"
                 />
                 <Label htmlFor={`${FIELD_KEYS.impoundedPaymentsEnabled}-cb`} className="text-sm">Impounded Payments</Label>
@@ -270,7 +270,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 <Input
                   value={getValue(FIELD_KEYS.impoundedPaymentsMonths)}
                   onChange={(e) => setValue(FIELD_KEYS.impoundedPaymentsMonths, e.target.value)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.impoundedPaymentsEnabled)}
+                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.impoundedPaymentsEnabled)}
                   className="h-7 text-sm flex-1"
                 />
               </div>
@@ -283,7 +283,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   id={`${FIELD_KEYS.fundingHoldbackEnabled}-cb`}
                   checked={isChecked(FIELD_KEYS.fundingHoldbackEnabled)}
                   onCheckedChange={() => toggleCheck(FIELD_KEYS.fundingHoldbackEnabled)}
-                  disabled={disabled}
+                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
                   className="h-3.5 w-3.5"
                 />
                 <Label htmlFor={`${FIELD_KEYS.fundingHoldbackEnabled}-cb`} className="text-sm">Funding Holdback</Label>
@@ -293,7 +293,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 <Select
                   value={getValue(FIELD_KEYS.fundingHoldbackHeldBy)}
                   onValueChange={(value) => setValue(FIELD_KEYS.fundingHoldbackHeldBy, value)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.fundingHoldbackEnabled)}
+                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.fundingHoldbackEnabled)}
                 >
                   <SelectTrigger className="h-7 text-sm flex-1">
                     <SelectValue placeholder="Select" />
@@ -442,14 +442,33 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
       </div>
 
       {/* Section 7: Accept Short Payments, Post-maturity, Auto-post, Override Funds Held */}
-      <div className="space-y-2 pt-2">
+      <div className="space-y-2 pt-2 pl-0">
+        {/* Override Funds Held */}
+        <div className="flex items-center gap-3">
+          <Checkbox
+            id={`${FIELD_KEYS.overrideFundsHeld}-cb`}
+            checked={isChecked(FIELD_KEYS.overrideFundsHeld)}
+            onCheckedChange={() => toggleCheck(FIELD_KEYS.overrideFundsHeld)}
+            disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+            className="h-3.5 w-3.5"
+          />
+          <Label htmlFor={`${FIELD_KEYS.overrideFundsHeld}-cb`} className="text-sm">Override Funds Held</Label>
+          <Label className="text-sm text-muted-foreground">Hold Days</Label>
+          <Input
+            value={getValue(FIELD_KEYS.holdDays)}
+            onChange={(e) => setValue(FIELD_KEYS.holdDays, e.target.value)}
+            disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.overrideFundsHeld)}
+            className="h-7 text-sm w-20"
+          />
+        </div>
+
         {/* Accept Short Payments */}
         <div className="flex items-center gap-3 flex-wrap">
           <Checkbox
             id={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`}
             checked={isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
             onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptShortPaymentsEnabled)}
-            disabled={disabled}
+            disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
             className="h-3.5 w-3.5"
           />
           <Label htmlFor={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`} className="text-sm">Accept Short Payments</Label>
@@ -498,24 +517,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
           <Label htmlFor={`${FIELD_KEYS.autoPostEnabled}-cb`} className="text-sm">Auto-post Enabled</Label>
         </div>
 
-        {/* Override Funds Held */}
-        <div className="flex items-center gap-3">
-          <Checkbox
-            id={`${FIELD_KEYS.overrideFundsHeld}-cb`}
-            checked={isChecked(FIELD_KEYS.overrideFundsHeld)}
-            onCheckedChange={() => toggleCheck(FIELD_KEYS.overrideFundsHeld)}
-            disabled={disabled}
-            className="h-3.5 w-3.5"
-          />
-          <Label htmlFor={`${FIELD_KEYS.overrideFundsHeld}-cb`} className="text-sm">Override Funds Held</Label>
-          <Label className="text-sm text-muted-foreground">Hold Days</Label>
-          <Input
-            value={getValue(FIELD_KEYS.holdDays)}
-            onChange={(e) => setValue(FIELD_KEYS.holdDays, e.target.value)}
-            disabled={disabled || !isChecked(FIELD_KEYS.overrideFundsHeld)}
-            className="h-7 text-sm w-20"
-          />
-        </div>
+        
       </div>
     </div>
   );
