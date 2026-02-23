@@ -133,6 +133,7 @@ export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceCo
             {renderCheckbox('Loss of Rents / Business Income', FK.policy_loss_of_rents)}
             {renderCheckbox('Vacancy Endorsement', FK.policy_vacancy)}
             <div className="flex items-center gap-2 pt-1">
+              <Checkbox checked={bv('origination_ins.coverage_construction_checkbox')} onCheckedChange={(c) => sbv('origination_ins.coverage_construction_checkbox', !!c)} disabled={disabled} />
               <Label className="text-sm shrink-0">Course-of-Construction Coverage Amount:</Label>
               {renderCurrencyInline(FK.policy_construction_amount)}
             </div>
@@ -150,12 +151,14 @@ export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceCo
               {renderCurrencyInline(FK.coverage_specific_dollar_amount)}
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              <Checkbox checked={bv('origination_ins.coverage_flood_checkbox')} onCheckedChange={(c) => sbv('origination_ins.coverage_flood_checkbox', !!c)} disabled={disabled} />
               <Label className="text-sm shrink-0">Flood: Building</Label>
               {renderCurrencyInline(FK.coverage_flood_building)}
               <Label className="text-sm shrink-0">/ Contents</Label>
               {renderCurrencyInline(FK.coverage_flood_contents)}
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              <Checkbox checked={bv('origination_ins.coverage_earthquake_checkbox')} onCheckedChange={(c) => sbv('origination_ins.coverage_earthquake_checkbox', !!c)} disabled={disabled} />
               <Label className="text-sm shrink-0">Earthquake:</Label>
               {renderCurrencyInline(FK.coverage_earthquake_amount)}
               <Label className="text-sm shrink-0">or</Label>
@@ -164,6 +167,7 @@ export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceCo
               <Label className="text-sm shrink-0">% of value</Label>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              <Checkbox checked={bv('origination_ins.coverage_loss_rents_checkbox')} onCheckedChange={(c) => sbv('origination_ins.coverage_loss_rents_checkbox', !!c)} disabled={disabled} />
               <Label className="text-sm shrink-0">Loss of Rents:</Label>
               {renderCurrencyInline(FK.coverage_loss_rents_per_month)}
               <Label className="text-sm shrink-0">per month for</Label>
