@@ -91,10 +91,7 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
             </div>
           </div>
-          {renderInlineField(FIELD_KEYS.owedTo, 'Owed To', values, onValueChange, disabled, { placeholder: 'Enter owed to' })}
-          {renderInlineField(FIELD_KEYS.owedFrom, 'Owed From', values, onValueChange, disabled, { placeholder: 'Enter owed from' })}
           {renderCurrencyField(FIELD_KEYS.unpaidBalance, 'Unpaid Balance', values, onValueChange, disabled)}
-          {renderCurrencyField(FIELD_KEYS.totalDue, 'Total Due', values, onValueChange, disabled)}
           <div className="flex items-start gap-3">
             <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0 pt-2">Notes</Label>
             <Textarea value={values[FIELD_KEYS.notes] || ''} onChange={(e) => onValueChange(FIELD_KEYS.notes, e.target.value)} disabled={disabled} className="text-sm min-h-[50px] flex-1" placeholder="Enter notes" />
@@ -115,8 +112,8 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
           <div className="border border-border rounded-lg overflow-hidden">
             <div className="grid grid-cols-[140px_1fr_1fr_1fr] bg-muted/50 border-b border-border">
               <div className="px-3 py-2 text-xs font-semibold text-muted-foreground"></div>
-              <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">ACCOUNT</div>
-              <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">LENDER NAME</div>
+              <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">ACCOUNT ID</div>
+              <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">NAME</div>
               <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">AMOUNT</div>
             </div>
             <div className="grid grid-cols-[140px_1fr_1fr_1fr] border-b border-border items-center">
@@ -134,9 +131,9 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
             <div className="grid grid-cols-[140px_1fr_1fr_1fr] items-center">
               <div className="px-3 py-2 flex items-center gap-2">
                 <Checkbox id="distributeBetweenAllLendersDetail" checked={values[FIELD_KEYS.distributeBetweenAllLenders] === 'true'} onCheckedChange={(checked) => onValueChange(FIELD_KEYS.distributeBetweenAllLenders, checked ? 'true' : 'false')} disabled={disabled} />
-                <Label htmlFor="distributeBetweenAllLendersDetail" className="text-sm font-medium text-foreground cursor-pointer whitespace-nowrap">Distribute All</Label>
+               <Label htmlFor="distributeBetweenAllLendersDetail" className="text-sm font-medium text-foreground cursor-pointer whitespace-nowrap">Distribute Between All Lenders</Label>
               </div>
-              <div className="px-3 py-2 text-sm font-medium text-foreground col-span-2 text-right pr-4">Amount Owed by Borrower:</div>
+              <div className="px-3 py-2 text-sm font-medium text-foreground col-span-2 text-right pr-4">Amount Advanced:</div>
               <div className="px-2 py-1.5"><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span><Input type="number" step="0.01" value={values[FIELD_KEYS.amountOwedByBorrower] || ''} onChange={(e) => onValueChange(FIELD_KEYS.amountOwedByBorrower, e.target.value)} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" /></div></div>
             </div>
           </div>
