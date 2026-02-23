@@ -192,10 +192,10 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             {renderTextField('City', FK.escrow_city)}
             {renderTextField('State', FK.escrow_state)}
             {renderTextField('ZIP', FK.escrow_zip)}
-            {renderTextField('Officer Name', FK.escrow_officer)}
-            {renderTextField('Contact', FK.escrow_contact)}
-            {renderTextField('Telephone', FK.escrow_telephone)}
-            {renderTextField('Email', FK.escrow_email)}
+            {renderTextField('Escrow Officer Name', FK.escrow_officer)}
+            {renderTextField('Escrow Contact', FK.escrow_contact)}
+            {renderTextField('Escrow Telephone', FK.escrow_telephone)}
+            {renderTextField('Escrow Email', FK.escrow_email)}
           </div>
         </div>
 
@@ -209,10 +209,10 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             {renderTextField('City', FK.title_city)}
             {renderTextField('State', FK.title_state)}
             {renderTextField('ZIP', FK.title_zip)}
-            {renderTextField('Officer Name', FK.title_officer)}
-            {renderTextField('Contact', FK.title_contact)}
-            {renderTextField('Telephone', FK.title_telephone)}
-            {renderTextField('Email', FK.title_email)}
+            {renderTextField('Title Officer Name', FK.title_officer)}
+            {renderTextField('Title Contact', FK.title_contact)}
+            {renderTextField('Title Telephone', FK.title_telephone)}
+            {renderTextField('Title Email', FK.title_email)}
           </div>
         </div>
 
@@ -272,7 +272,7 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
         {/* Rehab */}
         <div className="pt-2 space-y-2">
           <p className="text-xs font-semibold text-muted-foreground">Rehab</p>
-          <div className="flex gap-6">
+          <div className="space-y-2">
             {renderCheckboxField('Baseline Pack', FK.e_rehab_baseline)}
             {renderCheckboxField('ALTA 32.06 / CLTA 137.06', FK.e_rehab_alta32)}
           </div>
