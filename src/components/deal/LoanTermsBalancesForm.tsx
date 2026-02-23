@@ -410,28 +410,28 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             <div className="pt-2 space-y-2">
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-primary font-medium min-w-[130px] text-left shrink-0">Total Balance Due</Label>
-                <div className="relative flex-1">
+                <div className="relative flex-1 min-w-[120px]">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                   <Input
                     value={getValue(FIELD_KEYS.totalBalanceDue)}
                     onChange={(e) => setValue(FIELD_KEYS.totalBalanceDue, e.target.value)}
                     disabled={disabled}
                     className="h-7 text-sm pl-7"
-                    placeholder="-"
+                    placeholder="0.00"
                   />
                 </div>
                 <span className="text-xs text-muted-foreground whitespace-nowrap">* Does not include Close-out Fees</span>
               </div>
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-primary font-medium min-w-[130px] text-left shrink-0">Estimated Balloon Payment</Label>
-                <div className="relative flex-1">
+                <div className="relative flex-1 min-w-[120px]">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                   <Input
                     value={getValue(FIELD_KEYS.estimatedBalloonPayment)}
                     onChange={(e) => setValue(FIELD_KEYS.estimatedBalloonPayment, e.target.value)}
                     disabled={disabled}
                     className="h-7 text-sm pl-7"
-                    placeholder="-"
+                    placeholder="0.00"
                   />
                 </div>
                 <span className="text-xs text-muted-foreground whitespace-nowrap">* Does not include Close-out Fees</span>
