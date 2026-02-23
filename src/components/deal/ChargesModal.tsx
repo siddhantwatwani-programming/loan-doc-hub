@@ -103,10 +103,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
               {renderCurrencyField('originalAmount', 'Original Amount')}
               {renderInlineField('description', 'Description')}
               {renderPercentageField('interestRate', 'Interest Rate')}
-              {renderInlineField('owedTo', 'Owed To')}
-              {renderInlineField('owedFrom', 'Owed From')}
               {renderCurrencyField('unpaidBalance', 'Unpaid Balance')}
-              {renderCurrencyField('totalDue', 'Total Due')}
               <div className="flex items-center gap-2">
                 <Label className="w-[110px] shrink-0 text-xs font-semibold text-foreground">Notes</Label>
                 <Textarea value={formData.notes} onChange={(e) => handleFieldChange('notes', e.target.value)} className="text-xs min-h-[40px] flex-1" />
@@ -126,8 +123,8 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
             <div className="border border-border rounded-lg overflow-hidden">
               <div className="grid grid-cols-[120px_1fr_1fr_1fr] bg-muted/50 border-b border-border">
                 <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground"></div>
-                <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground">ACCOUNT</div>
-                <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground">LENDER NAME</div>
+                <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground">ACCOUNT ID</div>
+                <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground">NAME</div>
                 <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground">AMOUNT</div>
               </div>
               <div className="grid grid-cols-[120px_1fr_1fr_1fr] border-b border-border items-center">
@@ -145,9 +142,9 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
               <div className="grid grid-cols-[120px_1fr_1fr_1fr] items-center">
                 <div className="px-2 py-1 flex items-center gap-1">
                   <Checkbox id="distributeAll" checked={formData.distributeBetweenAllLenders === 'true'} onCheckedChange={(checked) => handleFieldChange('distributeBetweenAllLenders', checked ? 'true' : 'false')} className="h-3 w-3" />
-                  <Label htmlFor="distributeAll" className="text-[10px] font-medium text-foreground cursor-pointer whitespace-nowrap">Distribute All</Label>
+                  <Label htmlFor="distributeAll" className="text-[10px] font-medium text-foreground cursor-pointer whitespace-nowrap">Distribute Between All Lenders</Label>
                 </div>
-                <div className="px-2 py-1 text-xs font-medium text-foreground col-span-2 text-right pr-3">Amt Owed by Borrower:</div>
+                <div className="px-2 py-1 text-xs font-medium text-foreground col-span-2 text-right pr-3">Amount Advanced:</div>
                 <div className="px-1.5 py-1"><div className="relative"><span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span><Input type="number" step="0.01" value={formData.amountOwedByBorrower} onChange={(e) => handleFieldChange('amountOwedByBorrower', e.target.value)} className="h-6 text-xs pl-4" placeholder="0.00" /></div></div>
               </div>
             </div>

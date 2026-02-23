@@ -63,10 +63,9 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'interestRate', label: 'Interest Rate', visible: true },
   { id: 'interestFrom', label: 'Interest From', visible: true },
   { id: 'deferred', label: 'Deferred', visible: true },
-  { id: 'owedTo', label: 'Owed To Account', visible: true },
   { id: 'originalAmount', label: 'Original Balance', visible: true },
   { id: 'unpaidBalance', label: 'Unpaid Balance', visible: true },
-  { id: 'totalDue', label: 'Total Due', visible: true },
+  { id: 'accruedInterest', label: 'Accrued Interest', visible: true },
   { id: 'accruedInterest', label: 'Accrued Interest', visible: true },
 ];
 
@@ -82,7 +81,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   totalPages = 1,
   onPageChange,
 }) => {
-  const [columns, setColumns] = useTableColumnConfig('charges_v5', DEFAULT_COLUMNS);
+  const [columns, setColumns] = useTableColumnConfig('charges_v6', DEFAULT_COLUMNS);
   const [deleteTarget, setDeleteTarget] = useState<ChargeData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
 
@@ -101,7 +100,6 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   const totals = {
     originalAmount: charges.reduce((sum, c) => sum + parseCurrency(c.originalAmount), 0),
     unpaidBalance: charges.reduce((sum, c) => sum + parseCurrency(c.unpaidBalance), 0),
-    totalDue: charges.reduce((sum, c) => sum + parseCurrency(c.totalDue), 0),
     accruedInterest: charges.reduce((sum, c) => sum + parseCurrency(c.accruedInterest), 0),
   };
 
