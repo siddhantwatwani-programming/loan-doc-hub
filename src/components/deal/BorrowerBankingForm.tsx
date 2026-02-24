@@ -351,8 +351,8 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           {/* Debit Amount */}
           <div className="flex items-center gap-4">
             <Label className="w-32 text-sm text-foreground flex-shrink-0">Debit Amount</Label>
-            <div className="flex items-center flex-1">
-              <span className="text-sm text-muted-foreground mr-2">$</span>
+            <div className="relative flex-1">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
               <Input
                 value={getValue('debitAmount')}
                 onChange={(e) => {
@@ -360,7 +360,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                   handleChange('debitAmount', val);
                 }}
                 disabled={disabled}
-                className="h-8 text-sm flex-1"
+                className="h-8 text-sm pl-6"
                 placeholder="0.00"
                 inputMode="decimal"
               />

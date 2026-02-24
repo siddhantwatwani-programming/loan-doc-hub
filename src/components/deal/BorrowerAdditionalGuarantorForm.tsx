@@ -164,13 +164,21 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             </Select>
           </InlineField>
 
-          <InlineField label="Full Name: If Entity, Use Entity">
+          <div className="flex items-start gap-3">
+            <div className="min-w-[140px] text-left shrink-0">
+              <Label className="text-sm text-muted-foreground">Full Name</Label>
+              <p className="text-xs text-muted-foreground">If Entity, Use Entity</p>
+            </div>
             <Input value={getValue('fullName')} onChange={(e) => handleChange('fullName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
+          </div>
 
-          <InlineField label="First: If Entity, Use Signer">
+          <div className="flex items-start gap-3">
+            <div className="min-w-[140px] text-left shrink-0">
+              <Label className="text-sm text-muted-foreground">First</Label>
+              <p className="text-xs text-muted-foreground">If Entity, Use Signer</p>
+            </div>
             <Input value={getValue('firstName')} onChange={(e) => handleChange('firstName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
+          </div>
 
           <InlineField label="Middle">
             <Input value={getValue('middleName')} onChange={(e) => handleChange('middleName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
