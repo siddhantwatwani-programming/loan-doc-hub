@@ -163,8 +163,8 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {renderPercentField(FIELD_KEYS.noteRate, 'Note Rate')}
 
             {/* Sold Rate with checkbox */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 min-w-[130px] shrink-0">
                 <Checkbox
                   id={`${FIELD_KEYS.soldRateEnabled}-cb`}
                   checked={isChecked(FIELD_KEYS.soldRateEnabled)}
@@ -174,17 +174,15 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 />
                 <Label htmlFor={`${FIELD_KEYS.soldRateEnabled}-cb`} className="text-sm text-primary font-medium">Sold Rate</Label>
               </div>
-              <div className="flex items-center gap-3 pl-5">
-                <div className="relative flex-1">
-                  <Input
-                    value={getValue(FIELD_KEYS.soldRate)}
-                    onChange={(e) => setValue(FIELD_KEYS.soldRate, e.target.value)}
-                    disabled={disabled || !isChecked(FIELD_KEYS.soldRateEnabled)}
-                    className="h-7 text-sm pr-7"
-                    placeholder="0.000"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
-                </div>
+              <div className="relative flex-1">
+                <Input
+                  value={getValue(FIELD_KEYS.soldRate)}
+                  onChange={(e) => setValue(FIELD_KEYS.soldRate, e.target.value)}
+                  disabled={disabled || !isChecked(FIELD_KEYS.soldRateEnabled)}
+                  className="h-7 text-sm pr-7"
+                  placeholder="0.000"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
               </div>
             </div>
 
@@ -232,79 +230,79 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
             {/* Prepaid Payments */}
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 min-w-[130px] shrink-0">
-                <Checkbox
-                  id={`${FIELD_KEYS.prepaidPaymentsEnabled}-cb`}
-                  checked={isChecked(FIELD_KEYS.prepaidPaymentsEnabled)}
-                  onCheckedChange={() => toggleCheck(FIELD_KEYS.prepaidPaymentsEnabled)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
-                  className="h-3.5 w-3.5"
-                />
-                <Label htmlFor={`${FIELD_KEYS.prepaidPaymentsEnabled}-cb`} className="text-sm">Prepaid Payments</Label>
+              <div className="min-w-[130px] shrink-0">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id={`${FIELD_KEYS.prepaidPaymentsEnabled}-cb`}
+                    checked={isChecked(FIELD_KEYS.prepaidPaymentsEnabled)}
+                    onCheckedChange={() => toggleCheck(FIELD_KEYS.prepaidPaymentsEnabled)}
+                    disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                    className="h-3.5 w-3.5"
+                  />
+                  <Label htmlFor={`${FIELD_KEYS.prepaidPaymentsEnabled}-cb`} className="text-sm">Prepaid Payments</Label>
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">Months</p>
               </div>
-              <div className="flex items-center gap-2 flex-1">
-                <Label className="text-xs text-muted-foreground shrink-0">Months</Label>
-                <Input
-                  value={getValue(FIELD_KEYS.prepaidPaymentsMonths)}
-                  onChange={(e) => setValue(FIELD_KEYS.prepaidPaymentsMonths, e.target.value)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.prepaidPaymentsEnabled)}
-                  className="h-7 text-sm flex-1"
-                />
-              </div>
+              <Input
+                value={getValue(FIELD_KEYS.prepaidPaymentsMonths)}
+                onChange={(e) => setValue(FIELD_KEYS.prepaidPaymentsMonths, e.target.value)}
+                disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.prepaidPaymentsEnabled)}
+                className="h-7 text-sm flex-1"
+              />
             </div>
 
             {/* Impounded Payments */}
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 min-w-[130px] shrink-0">
-                <Checkbox
-                  id={`${FIELD_KEYS.impoundedPaymentsEnabled}-cb`}
-                  checked={isChecked(FIELD_KEYS.impoundedPaymentsEnabled)}
-                  onCheckedChange={() => toggleCheck(FIELD_KEYS.impoundedPaymentsEnabled)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
-                  className="h-3.5 w-3.5"
-                />
-                <Label htmlFor={`${FIELD_KEYS.impoundedPaymentsEnabled}-cb`} className="text-sm">Impounded Payments</Label>
+              <div className="min-w-[130px] shrink-0">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id={`${FIELD_KEYS.impoundedPaymentsEnabled}-cb`}
+                    checked={isChecked(FIELD_KEYS.impoundedPaymentsEnabled)}
+                    onCheckedChange={() => toggleCheck(FIELD_KEYS.impoundedPaymentsEnabled)}
+                    disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                    className="h-3.5 w-3.5"
+                  />
+                  <Label htmlFor={`${FIELD_KEYS.impoundedPaymentsEnabled}-cb`} className="text-sm">Impounded Payments</Label>
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">Months</p>
               </div>
-              <div className="flex items-center gap-2 flex-1">
-                <Label className="text-xs text-muted-foreground shrink-0">Months</Label>
-                <Input
-                  value={getValue(FIELD_KEYS.impoundedPaymentsMonths)}
-                  onChange={(e) => setValue(FIELD_KEYS.impoundedPaymentsMonths, e.target.value)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.impoundedPaymentsEnabled)}
-                  className="h-7 text-sm flex-1"
-                />
-              </div>
+              <Input
+                value={getValue(FIELD_KEYS.impoundedPaymentsMonths)}
+                onChange={(e) => setValue(FIELD_KEYS.impoundedPaymentsMonths, e.target.value)}
+                disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.impoundedPaymentsEnabled)}
+                className="h-7 text-sm flex-1"
+              />
             </div>
 
             {/* Funding Holdback */}
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 min-w-[130px] shrink-0">
-                <Checkbox
-                  id={`${FIELD_KEYS.fundingHoldbackEnabled}-cb`}
-                  checked={isChecked(FIELD_KEYS.fundingHoldbackEnabled)}
-                  onCheckedChange={() => toggleCheck(FIELD_KEYS.fundingHoldbackEnabled)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
-                  className="h-3.5 w-3.5"
-                />
-                <Label htmlFor={`${FIELD_KEYS.fundingHoldbackEnabled}-cb`} className="text-sm">Funding Holdback</Label>
+              <div className="min-w-[130px] shrink-0">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id={`${FIELD_KEYS.fundingHoldbackEnabled}-cb`}
+                    checked={isChecked(FIELD_KEYS.fundingHoldbackEnabled)}
+                    onCheckedChange={() => toggleCheck(FIELD_KEYS.fundingHoldbackEnabled)}
+                    disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                    className="h-3.5 w-3.5"
+                  />
+                  <Label htmlFor={`${FIELD_KEYS.fundingHoldbackEnabled}-cb`} className="text-sm">Funding Holdback</Label>
+                </div>
+                <p className="text-xs text-muted-foreground pl-5">Held By</p>
               </div>
-              <div className="flex items-center gap-2 flex-1">
-                <Label className="text-xs text-muted-foreground shrink-0">Held By</Label>
-                <Select
-                  value={getValue(FIELD_KEYS.fundingHoldbackHeldBy)}
-                  onValueChange={(value) => setValue(FIELD_KEYS.fundingHoldbackHeldBy, value)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.fundingHoldbackEnabled)}
-                >
-                  <SelectTrigger className="h-7 text-sm flex-1">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="lender">Lender</SelectItem>
-                    <SelectItem value="company">Company</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select
+                value={getValue(FIELD_KEYS.fundingHoldbackHeldBy)}
+                onValueChange={(value) => setValue(FIELD_KEYS.fundingHoldbackHeldBy, value)}
+                disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.fundingHoldbackEnabled)}
+              >
+                <SelectTrigger className="h-7 text-sm flex-1">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lender">Lender</SelectItem>
+                  <SelectItem value="company">Company</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Accept Short, Post-maturity, Auto-post, Override - part of Interest Split section */}
@@ -366,15 +364,19 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
               {/* Override Funds Held - last in section */}
               <div className="flex items-center gap-3">
-                <Checkbox
-                  id={`${FIELD_KEYS.overrideFundsHeld}-cb`}
-                  checked={isChecked(FIELD_KEYS.overrideFundsHeld)}
-                  onCheckedChange={() => toggleCheck(FIELD_KEYS.overrideFundsHeld)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
-                  className="h-3.5 w-3.5"
-                />
-                <Label htmlFor={`${FIELD_KEYS.overrideFundsHeld}-cb`} className="text-sm min-w-[140px] shrink-0">Override Funds Held</Label>
-                <Label className="text-sm text-muted-foreground shrink-0">Hold Days</Label>
+                <div className="min-w-[140px] shrink-0">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={`${FIELD_KEYS.overrideFundsHeld}-cb`}
+                      checked={isChecked(FIELD_KEYS.overrideFundsHeld)}
+                      onCheckedChange={() => toggleCheck(FIELD_KEYS.overrideFundsHeld)}
+                      disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                      className="h-3.5 w-3.5"
+                    />
+                    <Label htmlFor={`${FIELD_KEYS.overrideFundsHeld}-cb`} className="text-sm">Override Funds Held</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-5">Hold Days</p>
+                </div>
                 <Input
                   value={getValue(FIELD_KEYS.holdDays)}
                   onChange={(e) => setValue(FIELD_KEYS.holdDays, e.target.value)}
@@ -503,7 +505,10 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-3">
-                  <Label className="text-sm text-primary font-medium min-w-[130px] text-left shrink-0">Estimated Balloon Payment</Label>
+                  <div className="min-w-[130px] text-left shrink-0">
+                    <Label className="text-sm text-primary font-medium">Estimated Balloon</Label>
+                    <p className="text-xs text-primary font-medium">Payment</p>
+                  </div>
                   <div className="relative flex-1 min-w-[120px]">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                     <Input
