@@ -88,7 +88,7 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
               <Label htmlFor="isPrimary" className="text-xs font-medium">Primary Lender</Label>
             </div>
 
-            {/* Lender Type dropdown */}
+            {/* Lender Type dropdown - full width */}
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs">Lender Type</Label>
               <Select
@@ -108,11 +108,12 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
               </Select>
             </div>
 
+            <div>
+              {renderInlineField('fullName', 'Full Name *')}
+              {errors.fullName && <p className="text-[10px] text-destructive pl-[108px]">{errors.fullName}</p>}
+            </div>
+
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-              <div>
-                {renderInlineField('fullName', 'Full Name *')}
-                {errors.fullName && <p className="text-[10px] text-destructive pl-[108px]">{errors.fullName}</p>}
-              </div>
               {renderInlineField('firstName', 'First Name')}
             </div>
 
@@ -133,7 +134,7 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
               {renderInlineField('zip', 'Zip')}
             </div>
 
-            {/* Tax ID Type dropdown */}
+            {/* Tax ID Type dropdown - full width */}
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs">Tax ID</Label>
               <Select
