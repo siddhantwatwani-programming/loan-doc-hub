@@ -1,20 +1,14 @@
 import React from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
-import { useAuth, AppRole } from '@/contexts/AuthContext';
-import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSidebar } from '@/contexts/SidebarContext';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
 import { Loader2 } from 'lucide-react';
-import { isExternalRole } from '@/lib/accessControl';
 import { cn } from '@/lib/utils';
 
-interface AppLayoutProps {
-  requiredRoles?: AppRole[];
-  blockExternalUsers?: boolean;
-}
-
-const LayoutContent: React.FC<AppLayoutProps> = ({ requiredRoles, blockExternalUsers = false }) => {
-  const { user, role, loading, isExternalUser } = useAuth();
+export const AppLayout: React.FC = () => {
+  const { user, role, loading } = useAuth();
   const { isCollapsed } = useSidebar();
 
   if (loading) {
@@ -46,19 +40,6 @@ const LayoutContent: React.FC<AppLayoutProps> = ({ requiredRoles, blockExternalU
     );
   }
 
-  // Block external users from admin routes
-  if (blockExternalUsers && isExternalUser) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  // Check if user has required role
-  if (requiredRoles && requiredRoles.length > 0) {
-    const hasRequiredRole = requiredRoles.includes(role);
-    if (!hasRequiredRole) {
-      return <Navigate to="/dashboard" replace />;
-    }
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <AppSidebar />
@@ -72,13 +53,5 @@ const LayoutContent: React.FC<AppLayoutProps> = ({ requiredRoles, blockExternalU
         </div>
       </main>
     </div>
-  );
-};
-
-export const AppLayout: React.FC<AppLayoutProps> = (props) => {
-  return (
-    <SidebarProvider>
-      <LayoutContent {...props} />
-    </SidebarProvider>
   );
 };
