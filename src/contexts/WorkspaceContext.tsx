@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 
 export interface OpenFile {
   id: string;
@@ -20,13 +20,41 @@ interface WorkspaceState {
 }
 
 const MAX_FILES = 10;
+const STORAGE_KEY_FILES = 'workspace_openFiles';
+const STORAGE_KEY_ACTIVE = 'workspace_activeFileId';
+
+function loadPersistedFiles(): OpenFile[] {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY_FILES);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function loadPersistedActive(): string | null {
+  try {
+    return sessionStorage.getItem(STORAGE_KEY_ACTIVE) || null;
+  } catch { return null; }
+}
 
 const WorkspaceContext = createContext<WorkspaceState | null>(null);
 
 export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [openFiles, setOpenFiles] = useState<OpenFile[]>([]);
-  const [activeFileId, setActiveFileId] = useState<string | null>(null);
+  const [openFiles, setOpenFiles] = useState<OpenFile[]>(loadPersistedFiles);
+  const [activeFileId, setActiveFileId] = useState<string | null>(loadPersistedActive);
   const [dirtyFiles, setDirtyFiles] = useState<Set<string>>(new Set());
+
+  // Persist to sessionStorage on change
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEY_FILES, JSON.stringify(openFiles));
+  }, [openFiles]);
+
+  useEffect(() => {
+    if (activeFileId) {
+      sessionStorage.setItem(STORAGE_KEY_ACTIVE, activeFileId);
+    } else {
+      sessionStorage.removeItem(STORAGE_KEY_ACTIVE);
+    }
+  }, [activeFileId]);
 
   const openFile = useCallback((file: OpenFile): boolean => {
     let opened = false;

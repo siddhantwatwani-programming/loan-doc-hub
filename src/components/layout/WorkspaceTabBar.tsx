@@ -32,11 +32,11 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
   return (
     <div
       className={cn(
-        'fixed top-12 right-0 z-30 h-10 border-b border-border bg-muted/30 flex items-stretch transition-all duration-300',
+        'fixed top-12 right-0 z-30 h-10 border-b border-border bg-muted/30 overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent transition-all duration-300',
         isCollapsed ? 'left-16' : 'left-64'
       )}
     >
-      <div className="flex items-stretch h-10 min-w-max overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+      <div className="flex items-stretch h-10 w-max min-w-full">
           {/* Dashboard tab */}
           <button
             onClick={handleDashboardClick}
