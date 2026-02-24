@@ -102,9 +102,9 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   const renderCurrencyField = (fieldKey: string, label: string) => (
     <div className="flex items-center gap-2">
       <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
-      <div className="flex items-center gap-1 flex-1">
-        <span className="text-xs text-muted-foreground">$</span>
-        <Input value={getFieldValue(fieldKey)} onChange={(e) => handleCurrencyChange(fieldKey, e.target.value)} disabled={disabled} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
+      <div className="relative flex-1">
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+        <Input value={getFieldValue(fieldKey)} onChange={(e) => handleCurrencyChange(fieldKey, e.target.value)} disabled={disabled} className="h-7 text-xs text-right pl-6" inputMode="decimal" placeholder="0.00" />
       </div>
     </div>
   );
@@ -112,9 +112,9 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   const renderPercentageField = (fieldKey: string, label: string) => (
     <div className="flex items-center gap-2">
       <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
-      <div className="flex items-center gap-1 flex-1">
-        <Input value={getFieldValue(fieldKey)} onChange={(e) => handlePercentageChange(fieldKey, e.target.value)} disabled={disabled} className="h-7 text-xs" inputMode="decimal" />
-        <span className="text-xs text-muted-foreground">%</span>
+      <div className="relative flex-1">
+        <Input value={getFieldValue(fieldKey)} onChange={(e) => handlePercentageChange(fieldKey, e.target.value)} disabled={disabled} className="h-7 text-xs pr-6" inputMode="decimal" />
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
       </div>
     </div>
   );
