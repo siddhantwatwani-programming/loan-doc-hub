@@ -65,13 +65,15 @@ export type CustomUISection = typeof CUSTOM_UI_SECTIONS[number];
  * Loads ALL fields from field_dictionary grouped by section.
  * No fields are marked as required since there's no template mapping.
  */
-export async function resolveAllFields(): Promise<ResolvedFieldSet> {
-  const fieldDictEntries = await fetchAllRows((client) =>
-    client
-      .from('field_dictionary')
-      .select('*')
-      .in('section', SECTION_ORDER as any)
-  );
+export async function resolveAllFields(cachedEntries?: any[]): Promise<ResolvedFieldSet> {
+  const fieldDictEntries = cachedEntries
+    ? cachedEntries.filter((e: any) => SECTION_ORDER.includes(e.section))
+    : await fetchAllRows((client) =>
+        client
+          .from('field_dictionary')
+          .select('*')
+          .in('section', SECTION_ORDER as any)
+      );
 
   const fields: ResolvedField[] = (fieldDictEntries || []).map(fd => ({
     field_dictionary_id: fd.id,
@@ -140,7 +142,7 @@ export async function resolveAllFields(): Promise<ResolvedFieldSet> {
  * @param packetId - The packet ID to resolve fields for
  * @returns ResolvedFieldSet with visible and required field keys
  */
-export async function resolvePacketFields(packetId: string): Promise<ResolvedFieldSet> {
+export async function resolvePacketFields(packetId: string, cachedEntries?: any[]): Promise<ResolvedFieldSet> {
   // 1. Load all templates in the packet
   const { data: packetTemplates, error: ptError } = await supabase
     .from('packet_templates')
@@ -198,13 +200,15 @@ export async function resolvePacketFields(packetId: string): Promise<ResolvedFie
     };
   }
 
-  // 3. Load field dictionary entries for those IDs (paginated for safety)
-  const fieldDictEntries = await fetchAllRows((client) =>
-    client
-      .from('field_dictionary')
-      .select('*')
-      .in('id', fieldDictIds)
-  );
+  // 3. Load field dictionary entries for those IDs (use cache if available)
+  const fieldDictEntries = cachedEntries
+    ? cachedEntries.filter((e: any) => fieldDictIds.includes(e.id))
+    : await fetchAllRows((client) =>
+        client
+          .from('field_dictionary')
+          .select('*')
+          .in('id', fieldDictIds)
+      );
 
   // Create lookup map for field dictionary by ID
   const fieldDictMap = new Map<string, any>();

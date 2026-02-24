@@ -138,8 +138,8 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
       if (error) throw error;
       setDeal(data);
 
-      // Register with workspace if available
-      if (workspace && data) {
+      // Register with workspace if available (only if not already open)
+      if (workspace && data && !workspace.openFiles.find(f => f.id === data.id)) {
         workspace.openFile({
           id: data.id,
           dealNumber: data.deal_number,

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useFieldDictionaryCacheOptional } from '@/hooks/useFieldDictionaryCache';
@@ -212,6 +212,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
   const [isDirty, setIsDirty] = useState(false);
   const [requiredFieldChanged, setRequiredFieldChanged] = useState(false);
   const [deletedPrefixes, setDeletedPrefixes] = useState<string[]>([]);
+  const isFetchingRef = useRef(false);
 
   // Fetch resolved fields and values
   useEffect(() => {
@@ -224,14 +225,22 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
   }, [dealId, packetId]);
 
   const fetchData = async () => {
+    // Guard against concurrent fetches
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       setLoading(true);
       setError(null);
 
+      // Use cached field dictionary entries if available
+      const cachedEntries = (cache && !cache.loading && cache.allEntries.length > 0)
+        ? cache.allEntries
+        : undefined;
+
       // 1. Resolve fields - use packet fields if packet exists, otherwise all fields
       const resolved = packetId 
-        ? await resolvePacketFields(packetId)
-        : await resolveAllFields();
+        ? await resolvePacketFields(packetId, cachedEntries)
+        : await resolveAllFields(cachedEntries);
 
       // UI: Ensure all standard sections render as tabs when they exist in field_dictionary,
       // even if they are not mapped in TemplateFieldMap for the active packet.
@@ -434,6 +443,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
       });
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   };
 
