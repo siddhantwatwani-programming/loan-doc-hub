@@ -10,6 +10,8 @@ import { ActivityLogViewer } from '@/components/deal/ActivityLogViewer';
 import { InviteParticipantsPanel } from '@/components/deal/InviteParticipantsPanel';
 import { useAuth } from '@/contexts/AuthContext';
 import { logDealMarkedReady } from '@/hooks/useActivityLog';
+import { useWorkspaceOptional } from '@/contexts/WorkspaceContext';
+import { MaxFilesDialog } from '@/components/workspace/MaxFilesDialog';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -78,6 +80,8 @@ export const DealOverviewPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { role } = useAuth();
+  const workspace = useWorkspaceOptional();
+  const [showMaxFilesDialog, setShowMaxFilesDialog] = useState(false);
   
   const [deal, setDeal] = useState<Deal | null>(null);
   const [packet, setPacket] = useState<Packet | null>(null);
@@ -357,11 +361,31 @@ export const DealOverviewPage: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={() => navigate(`/deals/${deal.id}/edit`)} className="gap-2">
+            <Button variant="outline" onClick={() => {
+              if (workspace && deal) {
+                const alreadyOpen = workspace.openFiles.find(f => f.id === deal.id);
+                if (alreadyOpen) {
+                  workspace.switchToFile(deal.id);
+                  navigate(`/deals/${deal.id}/edit`);
+                  return;
+                }
+                if (workspace.isAtLimit()) {
+                  setShowMaxFilesDialog(true);
+                  return;
+                }
+                workspace.openFile({
+                  id: deal.id,
+                  dealNumber: deal.deal_number,
+                  state: deal.state || '',
+                  productType: deal.product_type || '',
+                  openedAt: Date.now(),
+                });
+              }
+              navigate(`/deals/${deal.id}/edit`);
+            }} className="gap-2">
               <Edit className="h-4 w-4" />
               Enter Data
             </Button>
-            {/* Documents Page Button - now works with or without packet */}
             {isCsr && (
               <Button 
                 onClick={() => navigate(`/deals/${deal.id}/documents`)}
@@ -629,6 +653,10 @@ export const DealOverviewPage: React.FC = () => {
           )}
         </div>
       </div>
+      <MaxFilesDialog
+        open={showMaxFilesDialog}
+        onClose={() => setShowMaxFilesDialog(false)}
+      />
     </div>
   );
 };

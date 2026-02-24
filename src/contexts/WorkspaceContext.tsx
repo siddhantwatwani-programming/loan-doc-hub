@@ -1,0 +1,109 @@
+import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+
+export interface OpenFile {
+  id: string;
+  dealNumber: string;
+  state: string;
+  productType: string;
+  openedAt: number;
+}
+
+interface WorkspaceState {
+  openFiles: OpenFile[];
+  activeFileId: string | null;
+  openFile: (file: OpenFile) => boolean;
+  closeFile: (id: string) => void;
+  switchToFile: (id: string) => void;
+  setFileDirty: (id: string, dirty: boolean) => void;
+  isFileDirty: (id: string) => boolean;
+  isAtLimit: () => boolean;
+}
+
+const MAX_FILES = 10;
+
+const WorkspaceContext = createContext<WorkspaceState | null>(null);
+
+export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [openFiles, setOpenFiles] = useState<OpenFile[]>([]);
+  const [activeFileId, setActiveFileId] = useState<string | null>(null);
+  const [dirtyFiles, setDirtyFiles] = useState<Set<string>>(new Set());
+
+  const openFile = useCallback((file: OpenFile): boolean => {
+    let opened = false;
+    setOpenFiles(prev => {
+      // Already open? Just switch to it
+      if (prev.find(f => f.id === file.id)) {
+        opened = true;
+        return prev;
+      }
+      if (prev.length >= MAX_FILES) {
+        opened = false;
+        return prev;
+      }
+      opened = true;
+      return [...prev, file];
+    });
+    // We need to handle the return synchronously but setState is async
+    // Use a ref-like pattern: check current state
+    setActiveFileId(file.id);
+    return opened;
+  }, []);
+
+  const closeFile = useCallback((id: string) => {
+    setOpenFiles(prev => prev.filter(f => f.id !== id));
+    setDirtyFiles(prev => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    setActiveFileId(prev => prev === id ? null : prev);
+  }, []);
+
+  const switchToFile = useCallback((id: string) => {
+    setActiveFileId(id);
+  }, []);
+
+  const setFileDirty = useCallback((id: string, dirty: boolean) => {
+    setDirtyFiles(prev => {
+      const next = new Set(prev);
+      if (dirty) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const isFileDirty = useCallback((id: string): boolean => {
+    return dirtyFiles.has(id);
+  }, [dirtyFiles]);
+
+  const isAtLimit = useCallback((): boolean => {
+    return openFiles.length >= MAX_FILES;
+  }, [openFiles]);
+
+  return (
+    <WorkspaceContext.Provider value={{
+      openFiles,
+      activeFileId,
+      openFile,
+      closeFile,
+      switchToFile,
+      setFileDirty,
+      isFileDirty,
+      isAtLimit,
+    }}>
+      {children}
+    </WorkspaceContext.Provider>
+  );
+};
+
+export const useWorkspace = (): WorkspaceState => {
+  const context = useContext(WorkspaceContext);
+  if (!context) {
+    throw new Error('useWorkspace must be used within a WorkspaceProvider');
+  }
+  return context;
+};
+
+export const useWorkspaceOptional = (): WorkspaceState | null => {
+  return useContext(WorkspaceContext);
+};

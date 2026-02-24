@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useWorkspaceOptional } from '@/contexts/WorkspaceContext';
+import { MaxFilesDialog } from '@/components/workspace/MaxFilesDialog';
 import { 
   Plus, 
   Search, 
@@ -80,6 +82,7 @@ const PAGE_SIZE = 10;
 export const DealsPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const workspace = useWorkspaceOptional();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,6 +90,7 @@ export const DealsPage: React.FC = () => {
   const [filterState, setFilterState] = useState<string>('');
   const [filterProduct, setFilterProduct] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showMaxFilesDialog, setShowMaxFilesDialog] = useState(false);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -150,6 +154,35 @@ export const DealsPage: React.FC = () => {
     if (page >= 1 && page <= totalPages) {
       fetchDeals(page);
     }
+  };
+
+  const handleEnterData = (deal: Deal, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    
+    if (workspace) {
+      // Check if already open
+      const alreadyOpen = workspace.openFiles.find(f => f.id === deal.id);
+      if (alreadyOpen) {
+        workspace.switchToFile(deal.id);
+        navigate(`/deals/${deal.id}/edit`);
+        return;
+      }
+      
+      if (workspace.isAtLimit()) {
+        setShowMaxFilesDialog(true);
+        return;
+      }
+      
+      workspace.openFile({
+        id: deal.id,
+        dealNumber: deal.deal_number,
+        state: deal.state,
+        productType: deal.product_type,
+        openedAt: Date.now(),
+      });
+    }
+    
+    navigate(`/deals/${deal.id}/edit`);
   };
 
   const handleDelete = async (deal: Deal) => {
@@ -376,8 +409,7 @@ export const DealsPage: React.FC = () => {
                             View
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/deals/${deal.id}/edit`);
+                            handleEnterData(deal, e as any);
                           }}>
                             <Edit className="h-4 w-4 mr-2" />
                             Enter Data
@@ -458,6 +490,11 @@ export const DealsPage: React.FC = () => {
           )}
         </div>
       )}
+
+      <MaxFilesDialog
+        open={showMaxFilesDialog}
+        onClose={() => setShowMaxFilesDialog(false)}
+      />
     </div>
   );
 };
