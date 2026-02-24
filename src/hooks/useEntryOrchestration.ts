@@ -4,6 +4,8 @@
  * Manages parallel/sequential entry modes for deal participants.
  * - Parallel: All participants can edit their allowed fields anytime
  * - Sequential: Only participant with lowest incomplete sequence can edit
+ * 
+ * Optimized: Internal users (CSR/admin) skip all DB queries and realtime subscriptions.
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -27,42 +29,25 @@ export interface DealParticipant {
 }
 
 export interface OrchestrationState {
-  /** The deal's entry mode */
   mode: 'parallel' | 'sequential';
-  /** Whether the current user can edit fields */
   canEdit: boolean;
-  /** Whether the current user is waiting for previous participants */
   isWaiting: boolean;
-  /** Current participant's info (null if not a participant) */
   currentParticipant: DealParticipant | null;
-  /** All participants for this deal */
   allParticipants: DealParticipant[];
-  /** The participant who must complete before current user (if sequential) */
   blockingParticipant: DealParticipant | null;
-  /** Whether current participant has completed */
   hasCompleted: boolean;
-  /** Loading state */
   loading: boolean;
 }
 
 export interface UseEntryOrchestrationResult extends OrchestrationState {
-  /** Complete the current participant's section */
   completeSection: () => Promise<boolean>;
-  /** Refresh orchestration state */
   refresh: () => Promise<void>;
 }
 
-/**
- * Determines the entry mode for a deal based on participant sequence orders
- * If any participant has a non-null sequence_order, it's sequential mode
- */
 function determineMode(participants: DealParticipant[]): 'parallel' | 'sequential' {
   return participants.some(p => p.sequence_order !== null) ? 'sequential' : 'parallel';
 }
 
-/**
- * Find the participant with lowest incomplete sequence order
- */
 function findActiveParticipant(participants: DealParticipant[]): DealParticipant | null {
   const incompleteSequential = participants
     .filter(p => p.sequence_order !== null && p.status !== 'completed')
@@ -71,9 +56,6 @@ function findActiveParticipant(participants: DealParticipant[]): DealParticipant
   return incompleteSequential[0] || null;
 }
 
-/**
- * Find who is blocking the current participant
- */
 function findBlockingParticipant(
   currentParticipant: DealParticipant,
   participants: DealParticipant[]
@@ -91,21 +73,39 @@ function findBlockingParticipant(
   return blocking[0] || null;
 }
 
+// Default state for internal users - skip all DB work
+const INTERNAL_USER_DEFAULT: OrchestrationState = {
+  mode: 'parallel',
+  canEdit: true,
+  isWaiting: false,
+  currentParticipant: null,
+  allParticipants: [],
+  blockingParticipant: null,
+  hasCompleted: false,
+  loading: false,
+};
+
 export function useEntryOrchestration(dealId: string): UseEntryOrchestrationResult {
-  const { user, role, isExternalUser } = useAuth();
-  const [state, setState] = useState<OrchestrationState>({
-    mode: 'parallel',
-    canEdit: true,
-    isWaiting: false,
-    currentParticipant: null,
-    allParticipants: [],
-    blockingParticipant: null,
-    hasCompleted: false,
-    loading: true,
-  });
+  const { user, role, isExternalUser, isInternalUser } = useAuth();
+  const [state, setState] = useState<OrchestrationState>(
+    isInternalUser ? INTERNAL_USER_DEFAULT : {
+      mode: 'parallel',
+      canEdit: true,
+      isWaiting: false,
+      currentParticipant: null,
+      allParticipants: [],
+      blockingParticipant: null,
+      hasCompleted: false,
+      loading: true,
+    }
+  );
+
+  // Early return for internal users - no DB queries, no realtime
+  const noopRefresh = useCallback(async () => {}, []);
+  const noopComplete = useCallback(async () => false, []);
 
   const fetchParticipants = useCallback(async () => {
-    if (!dealId) {
+    if (!dealId || isInternalUser) {
       setState(prev => ({ ...prev, loading: false }));
       return;
     }
@@ -122,15 +122,12 @@ export function useEntryOrchestration(dealId: string): UseEntryOrchestrationResu
       const allParticipants = (participants || []) as DealParticipant[];
       const mode = determineMode(allParticipants);
 
-      // Determine current user's participant record
       let currentParticipant: DealParticipant | null = null;
       
-      // Check if user is logged in
       if (user) {
         currentParticipant = allParticipants.find(p => p.user_id === user.id) || null;
       }
       
-      // Check magic link session for external users
       if (!currentParticipant && isExternalUser) {
         const session = getMagicLinkSession();
         if (session?.participantId) {
@@ -138,17 +135,14 @@ export function useEntryOrchestration(dealId: string): UseEntryOrchestrationResu
         }
       }
 
-      // Determine edit permissions
       let canEdit = true;
       let isWaiting = false;
       let blockingParticipant: DealParticipant | null = null;
 
       if (isExternalUser && currentParticipant) {
         if (currentParticipant.status === 'completed') {
-          // Already completed - read only
           canEdit = false;
         } else if (mode === 'sequential') {
-          // Sequential mode - check if it's this participant's turn
           const activeParticipant = findActiveParticipant(allParticipants);
           
           if (activeParticipant && activeParticipant.id !== currentParticipant.id) {
@@ -157,9 +151,7 @@ export function useEntryOrchestration(dealId: string): UseEntryOrchestrationResu
             blockingParticipant = findBlockingParticipant(currentParticipant, allParticipants);
           }
         }
-        // Parallel mode - can always edit if not completed
       } else if (!isExternalUser) {
-        // Internal users (CSR) can always edit
         canEdit = true;
       }
 
@@ -177,15 +169,16 @@ export function useEntryOrchestration(dealId: string): UseEntryOrchestrationResu
       console.error('Error fetching participants:', err);
       setState(prev => ({ ...prev, loading: false }));
     }
-  }, [dealId, user, isExternalUser]);
+  }, [dealId, user, isExternalUser, isInternalUser]);
 
   useEffect(() => {
+    if (isInternalUser) return; // Skip for internal users
     fetchParticipants();
-  }, [fetchParticipants]);
+  }, [fetchParticipants, isInternalUser]);
 
-  // Subscribe to realtime updates for participants
+  // Subscribe to realtime updates - only for external users
   useEffect(() => {
-    if (!dealId) return;
+    if (!dealId || isInternalUser) return;
 
     const channel = supabase
       .channel(`deal-participants-${dealId}`)
@@ -206,7 +199,7 @@ export function useEntryOrchestration(dealId: string): UseEntryOrchestrationResu
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [dealId, fetchParticipants]);
+  }, [dealId, fetchParticipants, isInternalUser]);
 
   const completeSection = useCallback(async (): Promise<boolean> => {
     if (!state.currentParticipant) {
@@ -215,7 +208,6 @@ export function useEntryOrchestration(dealId: string): UseEntryOrchestrationResu
     }
 
     try {
-      // Call the edge function to handle completion
       const { data, error } = await supabase.functions.invoke('complete-participant-section', {
         body: {
           participantId: state.currentParticipant.id,
@@ -229,7 +221,6 @@ export function useEntryOrchestration(dealId: string): UseEntryOrchestrationResu
         throw new Error(data?.error || 'Failed to complete section');
       }
 
-      // Refresh state
       await fetchParticipants();
       return true;
     } catch (err) {
@@ -237,6 +228,15 @@ export function useEntryOrchestration(dealId: string): UseEntryOrchestrationResu
       return false;
     }
   }, [state.currentParticipant, dealId, fetchParticipants]);
+
+  // For internal users, return static state with no-op functions
+  if (isInternalUser) {
+    return {
+      ...INTERNAL_USER_DEFAULT,
+      completeSection: noopComplete,
+      refresh: noopRefresh,
+    };
+  }
 
   return {
     ...state,

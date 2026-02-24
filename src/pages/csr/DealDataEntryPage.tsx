@@ -198,12 +198,14 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
   } = useEntryOrchestration(id || "");
 
   // External modification detection for CSR warning banner
+  // Only fetch for the active workspace tab to reduce API calls
+  const isActiveTab = !workspace || workspace.activeFileId === id;
   const {
     hasExternalModifications,
     externalModifications,
     markAsReviewed,
     loading: modificationsLoading,
-  } = useExternalModificationDetector(id || "");
+  } = useExternalModificationDetector(id || "", isActiveTab);
 
   // Track dirty state in workspace
   useEffect(() => {

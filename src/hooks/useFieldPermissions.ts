@@ -7,20 +7,30 @@ import {
   canEditFieldWithVisibility,
   isInternalRole 
 } from '@/lib/accessControl';
+import { useFieldDictionaryCacheOptional } from '@/hooks/useFieldDictionaryCache';
 
 export const useFieldPermissions = () => {
   const { role, user } = useAuth();
+  const cache = useFieldDictionaryCacheOptional();
   const [visibility, setVisibility] = useState<Map<string, FieldVisibility>>(new Map());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadVisibility = async () => {
-      if (!user || !role) {
-        setVisibility(new Map());
-        setLoading(false);
-        return;
-      }
+    if (!user || !role) {
+      setVisibility(new Map());
+      setLoading(false);
+      return;
+    }
 
+    // Use cache if available
+    if (cache && !cache.loading) {
+      setVisibility(cache.visibilityMap);
+      setLoading(false);
+      return;
+    }
+
+    // Fallback: fetch independently (e.g. outside provider)
+    const loadVisibility = async () => {
       setLoading(true);
       const vis = await fetchFieldVisibility();
       setVisibility(vis);
@@ -28,7 +38,7 @@ export const useFieldPermissions = () => {
     };
 
     loadVisibility();
-  }, [user, role]);
+  }, [user, role, cache]);
 
   const checkCanView = useCallback((fieldKey: string): boolean => {
     return canViewFieldWithVisibility(role, fieldKey, visibility);
