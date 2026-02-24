@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 
 export interface OpenFile {
   id: string;
@@ -100,9 +100,13 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     });
   }, []);
 
+  // Use a ref to always have the latest dirtyFiles available without stale closures
+  const dirtyFilesRef = useRef(dirtyFiles);
+  dirtyFilesRef.current = dirtyFiles;
+
   const isFileDirty = useCallback((id: string): boolean => {
-    return dirtyFiles.has(id);
-  }, [dirtyFiles]);
+    return dirtyFilesRef.current.has(id);
+  }, []);
 
   const isAtLimit = useCallback((): boolean => {
     return openFiles.length >= MAX_FILES;
