@@ -351,7 +351,7 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
           </div>
         </div>
 
-        {/* Column 3 - Phone + Vesting + FORD */}
+        {/* Column 3 - Phone only */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Phone</h4>
           {phoneRows.map(({ key, label }) => (
@@ -360,9 +360,22 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
               <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
             </div>
           ))}
+        </div>
 
-          <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">Vesting</h4>
-          <Textarea value={getValue('vesting')} onChange={(e) => handleChange('vesting', e.target.value)} disabled={disabled} className="text-sm min-h-[80px] resize-none" />
+        {/* Column 4 - Preferred (narrow) */}
+        <div className="space-y-2">
+          <h4 className="font-semibold text-sm text-foreground pb-1">Preferred</h4>
+          {phoneRows.map(({ prefKey, prefId }) => (
+            <div key={prefId} className="flex items-center justify-center h-7">
+              <Checkbox id={`borrower-${prefId}`} checked={getBoolValue(prefKey)} onCheckedChange={(checked) => handleChange(prefKey, !!checked)} disabled={disabled} />
+            </div>
+          ))}
+        </div>
+
+        {/* Vesting + FORD - full width spanning columns 3-4 area */}
+        <div className="col-start-3 col-span-2 space-y-2 pt-2">
+          <h4 className="font-semibold text-sm text-foreground pb-1">Vesting</h4>
+          <Textarea value={getValue('vesting')} onChange={(e) => handleChange('vesting', e.target.value)} disabled={disabled} className="text-sm min-h-[80px] resize-none w-full" />
 
           <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">FORD</h4>
           <div className="space-y-1">
@@ -376,16 +389,6 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Column 4 - Preferred (narrow) */}
-        <div className="space-y-2">
-          <h4 className="font-semibold text-sm text-foreground pb-1">Preferred</h4>
-          {phoneRows.map(({ prefKey, prefId }) => (
-            <div key={prefId} className="flex items-center justify-center h-7">
-              <Checkbox id={`borrower-${prefId}`} checked={getBoolValue(prefKey)} onCheckedChange={(checked) => handleChange(prefKey, !!checked)} disabled={disabled} />
-            </div>
-          ))}
         </div>
       </div>
     </div>
