@@ -37,7 +37,9 @@ const AppLayoutInner: React.FC = () => {
   }, []);
 
   const handleRequestClose = useCallback((fileId: string) => {
-    if (isFileDirty(fileId)) {
+    const dirty = isFileDirty(fileId);
+    console.log('[WorkspaceClose] handleRequestClose called', { fileId, dirty });
+    if (dirty) {
       setClosingFileId(fileId);
     } else {
       closeFile(fileId);
