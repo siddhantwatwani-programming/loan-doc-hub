@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BorrowerSubNavigation, type BorrowerSubSection } from './BorrowerSubNavigation';
@@ -301,8 +302,11 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   disabled = false,
   calculationResults = {},
 }) => {
-  const [activeSubSection, setActiveSubSection] = useState<BorrowerSubSection>('borrowers');
-  const [selectedBorrowerPrefix, setSelectedBorrowerPrefix] = useState<string>('borrower');
+  const nav = useDealNavigationOptional();
+  const activeSubSection = (nav?.getSubSection('borrower') ?? 'borrowers') as BorrowerSubSection;
+  const setActiveSubSection = (sub: BorrowerSubSection) => nav?.setSubSection('borrower', sub);
+  const selectedBorrowerPrefix = nav?.getSelectedPrefix('borrower') ?? 'borrower';
+  const setSelectedBorrowerPrefix = (prefix: string) => nav?.setSelectedPrefix('borrower', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBorrower, setEditingBorrower] = useState<BorrowerData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -312,7 +316,8 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   const [coBorrowerModalOpen, setCoBorrowerModalOpen] = useState(false);
   const [editingCoBorrower, setEditingCoBorrower] = useState<CoBorrowerData | null>(null);
   const [coBorrowerCurrentPage, setCoBorrowerCurrentPage] = useState(1);
-  const [selectedCoBorrowerPrefix, setSelectedCoBorrowerPrefix] = useState<string>('coborrower');
+  const selectedCoBorrowerPrefix = nav?.getSelectedPrefix('coborrower') ?? 'coborrower';
+  const setSelectedCoBorrowerPrefix = (prefix: string) => nav?.setSelectedPrefix('coborrower', prefix);
 
   // Trust Ledger state
   const [trustLedgerModalOpen, setTrustLedgerModalOpen] = useState(false);

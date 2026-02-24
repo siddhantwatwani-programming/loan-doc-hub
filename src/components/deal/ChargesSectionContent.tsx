@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChargesSubNavigation, ChargesSubSection } from './ChargesSubNavigation';
@@ -96,8 +97,11 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
   disabled = false,
   calculationResults = {},
 }) => {
-  const [activeSubSection, setActiveSubSection] = useState<ChargesSubSection>('charges');
-  const [selectedChargePrefix, setSelectedChargePrefix] = useState<string>('charge1');
+  const nav = useDealNavigationOptional();
+  const activeSubSection = (nav?.getSubSection('charges') ?? 'charges') as ChargesSubSection;
+  const setActiveSubSection = (sub: ChargesSubSection) => nav?.setSubSection('charges', sub);
+  const selectedChargePrefix = nav?.getSelectedPrefix('charges') ?? 'charge1';
+  const setSelectedChargePrefix = (prefix: string) => nav?.setSelectedPrefix('charges', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCharge, setEditingCharge] = useState<ChargeData | null>(null);
   const [isLoading, setIsLoading] = useState(false);

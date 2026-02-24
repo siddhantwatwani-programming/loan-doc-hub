@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PropertySubNavigation, type PropertySubSection } from './PropertySubNavigation';
@@ -98,8 +99,11 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   disabled = false,
   calculationResults = {},
 }) => {
-  const [activeSubSection, setActiveSubSection] = useState<PropertySubSection>('properties');
-  const [selectedPropertyPrefix, setSelectedPropertyPrefix] = useState<string>('property1');
+  const nav = useDealNavigationOptional();
+  const activeSubSection = (nav?.getSubSection('property') ?? 'properties') as PropertySubSection;
+  const setActiveSubSection = (sub: PropertySubSection) => nav?.setSubSection('property', sub);
+  const selectedPropertyPrefix = nav?.getSelectedPrefix('property') ?? 'property1';
+  const setSelectedPropertyPrefix = (prefix: string) => nav?.setSelectedPrefix('property', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<PropertyData | null>(null);
   
