@@ -12,6 +12,8 @@ import { useFieldPermissions } from "@/hooks/useFieldPermissions";
 import { useExternalModificationDetector } from "@/hooks/useExternalModificationDetector";
 import { useAuth } from "@/contexts/AuthContext";
 import { DealNavigationProvider, useDealNavigation } from "@/contexts/DealNavigationContext";
+import { useWorkspaceOptional } from "@/contexts/WorkspaceContext";
+import { SaveConfirmationDialog } from "@/components/workspace/SaveConfirmationDialog";
 import { DealSectionTab } from "@/components/deal/DealSectionTab";
 import { BorrowerSectionContent } from "@/components/deal/BorrowerSectionContent";
 import { LenderSectionContent } from "@/components/deal/LenderSectionContent";
@@ -91,19 +93,32 @@ const SECTION_ORDER: string[] = [
   "seller",
 ];
 
+interface DealDataEntryInnerProps {
+  dealIdProp?: string;
+  registerSaveFn?: (dealId: string, fn: () => Promise<boolean>) => void;
+  unregisterSaveFn?: (dealId: string) => void;
+}
+
 // Inner component that uses the navigation context
-const DealDataEntryInner: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
+  dealIdProp,
+  registerSaveFn,
+  unregisterSaveFn,
+}) => {
+  const params = useParams<{ id: string }>();
+  const id = dealIdProp || params.id;
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isExternalUser, isInternalUser } = useAuth();
   const { activeTab, setActiveTab } = useDealNavigation();
+  const workspace = useWorkspaceOptional();
 
   const [deal, setDeal] = useState<Deal | null>(null);
   const [dealLoading, setDealLoading] = useState(true);
   const [showValidation, setShowValidation] = useState(false);
   const [markingReady, setMarkingReady] = useState(false);
   const [completingSection, setCompletingSection] = useState(false);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
   // Fetch deal info
   useEffect(() => {
@@ -122,6 +137,17 @@ const DealDataEntryInner: React.FC = () => {
 
       if (error) throw error;
       setDeal(data);
+
+      // Register with workspace if available
+      if (workspace && data) {
+        workspace.openFile({
+          id: data.id,
+          dealNumber: data.deal_number,
+          state: data.state || '',
+          productType: data.product_type || '',
+          openedAt: Date.now(),
+        });
+      }
     } catch (error) {
       console.error("Error fetching deal:", error);
       toast({
@@ -178,6 +204,30 @@ const DealDataEntryInner: React.FC = () => {
     markAsReviewed,
     loading: modificationsLoading,
   } = useExternalModificationDetector(id || "");
+
+  // Track dirty state in workspace
+  useEffect(() => {
+    if (workspace && id) {
+      workspace.setFileDirty(id, isDirty);
+    }
+  }, [isDirty, id, workspace]);
+
+  // Register save function with workspace
+  useEffect(() => {
+    if (registerSaveFn && id) {
+      registerSaveFn(id, async () => {
+        computeCalculatedFields();
+        const success = await saveDraft();
+        if (success) resetDirty();
+        return success;
+      });
+    }
+    return () => {
+      if (unregisterSaveFn && id) {
+        unregisterSaveFn(id);
+      }
+    };
+  }, [id, registerSaveFn, unregisterSaveFn, saveDraft, resetDirty, computeCalculatedFields]);
 
   // Calculate visible fields and sections for external users
   const {
@@ -286,7 +336,7 @@ const DealDataEntryInner: React.FC = () => {
     }
   };
 
-  const handleSave = async () => {
+  const performSave = async () => {
     setShowValidation(true);
     // Run calculations before saving
     computeCalculatedFields();
@@ -302,6 +352,9 @@ const DealDataEntryInner: React.FC = () => {
       }
 
       resetDirty();
+      if (workspace && id) {
+        workspace.setFileDirty(id, false);
+      }
       // Refresh deal to get updated timestamp
       fetchDeal();
       const missing = getMissingRequiredFields();
@@ -313,6 +366,23 @@ const DealDataEntryInner: React.FC = () => {
         });
       }
     }
+  };
+
+  const handleSave = async () => {
+    if (isDirty) {
+      setShowSaveConfirm(true);
+    } else {
+      // Nothing to save
+      toast({
+        title: "No changes",
+        description: "There are no unsaved changes to save.",
+      });
+    }
+  };
+
+  const handleSaveConfirmed = async () => {
+    setShowSaveConfirm(false);
+    await performSave();
   };
 
   const handleMarkReady = async () => {
@@ -347,6 +417,9 @@ const DealDataEntryInner: React.FC = () => {
       }
 
       resetDirty();
+      if (workspace && id) {
+        workspace.setFileDirty(id, false);
+      }
       toast({
         title: "File marked as ready",
         description: "All required fields are complete",
@@ -881,11 +954,18 @@ const DealDataEntryInner: React.FC = () => {
           </Tabs>
         </div>
       )}
+
+      {/* Save Confirmation Dialog */}
+      <SaveConfirmationDialog
+        open={showSaveConfirm}
+        onConfirm={handleSaveConfirmed}
+        onCancel={() => setShowSaveConfirm(false)}
+      />
     </div>
   );
 };
 
-// Wrapper component that provides the navigation context
+// Wrapper component that provides the navigation context (used for direct route access)
 export const DealDataEntryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   return (
