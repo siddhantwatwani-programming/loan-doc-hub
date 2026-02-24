@@ -531,72 +531,72 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             ))}
           </div>
 
-          {/* Delivery Options + Send side by side */}
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div>
-              <h4 className="text-sm font-semibold text-foreground border-b pb-1 mb-2">Delivery Options</h4>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm text-muted-foreground">Print</Label>
+          {/* Delivery Options - inline */}
+          <div className="mt-4">
+            <div className="flex items-center gap-4 border-b pb-1 mb-2">
+              <h4 className="text-sm font-semibold text-foreground">Delivery Options</h4>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
                   <Checkbox
                     checked={getBoolValue('deliveryPrint')}
                     onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)}
                     disabled={disabled}
                   />
+                  <Label className="text-sm text-muted-foreground">Print</Label>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm text-muted-foreground">Email</Label>
+                <div className="flex items-center gap-1">
                   <Checkbox
                     checked={getBoolValue('deliveryEmail')}
                     onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)}
                     disabled={disabled}
                   />
+                  <Label className="text-sm text-muted-foreground">Email</Label>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm text-muted-foreground">SMS</Label>
+                <div className="flex items-center gap-1">
                   <Checkbox
                     checked={getBoolValue('deliverySms')}
                     onCheckedChange={(checked) => handleChange('deliverySms', !!checked)}
                     disabled={disabled}
                   />
+                  <Label className="text-sm text-muted-foreground">SMS</Label>
                 </div>
               </div>
             </div>
-            <div>
-              <h4 className="text-sm font-semibold text-foreground border-b pb-1 mb-2">Send</h4>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={getBoolValue('sendPaymentNotification')}
-                    onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)}
-                    disabled={disabled}
-                  />
-                  <Label className="text-sm text-muted-foreground">Payment Notification</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={getBoolValue('sendLateNotice')}
-                    onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)}
-                    disabled={disabled}
-                  />
-                  <Label className="text-sm text-muted-foreground">Late Notice</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={getBoolValue('sendBorrowerStatement')}
-                    onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)}
-                    disabled={disabled}
-                  />
-                  <Label className="text-sm text-muted-foreground">Borrower Statement</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={getBoolValue('sendMaturityNotice')}
-                    onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)}
-                    disabled={disabled}
-                  />
-                  <Label className="text-sm text-muted-foreground">Maturity Notice</Label>
-                </div>
+
+            {/* Send section below */}
+            <h4 className="text-sm font-semibold text-foreground border-b pb-1 mb-2">Send</h4>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={getBoolValue('sendPaymentNotification')}
+                  onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)}
+                  disabled={disabled}
+                />
+                <Label className="text-sm text-muted-foreground">Payment Notification</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={getBoolValue('sendLateNotice')}
+                  onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)}
+                  disabled={disabled}
+                />
+                <Label className="text-sm text-muted-foreground">Late Notice</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={getBoolValue('sendBorrowerStatement')}
+                  onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)}
+                  disabled={disabled}
+                />
+                <Label className="text-sm text-muted-foreground">Borrower Statement</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={getBoolValue('sendMaturityNotice')}
+                  onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)}
+                  disabled={disabled}
+                />
+                <Label className="text-sm text-muted-foreground">Maturity Notice</Label>
               </div>
             </div>
           </div>
