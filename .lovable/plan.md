@@ -1,48 +1,116 @@
 
 
-## Fix: Empty Row in Borrowers Table During Document Generation
+# Prevent Auto-Refresh / State Reset on Navigation
 
-### Problem
-When generating the "ASSIGNMENT OF RENTS RIDER TO DEED OF TRUST" document, an extra empty row appears in the Borrowers table section.
+## Problem Analysis
 
-### Root Cause
-The DOCX template contains a merge tag `{{borrower.borrower_description}}` which is designed to hold a textual description of all borrowers (e.g., "Adwait and Abhijit"). However, this field is never auto-computed during document generation. Since the user does not manually enter a value for `borrower.borrower_description`, the tag resolves to an empty string, leaving a visible blank row in the generated document.
+The application has **5 separate `<AppLayout>` route groups** in `App.tsx`. Each group creates its own `AppLayout` component instance, which in turn creates its own `SidebarProvider`. When navigating between routes in different groups (e.g., from `/dashboard` to `/deals`), React unmounts and remounts the entire layout, causing:
 
-The underlying data confirms:
-- Deal DL-2026-0115 has two borrowers: borrower1 ("Adwait") and borrower2 ("Abhijit")
-- Both have `full_name` values stored with indexed keys `borrower1.full_name` and `borrower2.full_name`
-- `borrower.borrower_description` has no stored value in `deal_section_values`
-- The template tag `{{borrower.borrower_description}}` resolves to empty, producing the blank row
+- Sidebar collapse state to reset
+- Page-level component state to be lost
+- Data re-fetching on every navigation between route groups
 
-### Fix (Single File Change)
-
-**File**: `supabase/functions/generate-document/index.ts`
-
-After the `fieldValues` map is built (after line 179), add logic to auto-compute `borrower.borrower_description` if it is not already set:
-
-1. Collect all `borrowerN.full_name` values from `fieldValues` by scanning for keys matching the pattern `borrower{N}.full_name`
-2. Sort them by index number (borrower1, borrower2, etc.)
-3. Join them with " and " to produce a description string (e.g., "Adwait and Abhijit")
-4. Set `fieldValues["borrower.borrower_description"]` to this computed value
-5. Only compute if the field is not already explicitly set by the user
-
-### Technical Detail
+## Root Cause
 
 ```text
-Location: supabase/functions/generate-document/index.ts, after line 179
+Current Route Structure (simplified):
 
-Logic:
-  - Check if fieldValues.has("borrower.borrower_description") is falsy or empty
-  - Scan fieldValues for keys matching /^borrower(\d+)\.full_name$/
-  - Collect names in index order
-  - Join with " and "
-  - Set into fieldValues as { rawValue: joinedString, dataType: "text" }
+Route group 1: <AppLayout>                --> /dashboard, /my-work/*, /broker-services/*
+Route group 2: <AppLayout requiredRoles>  --> /deals, /deals/:id
+Route group 3: <AppLayout requiredRoles>  --> /deals/:id/data
+Route group 4: <AppLayout requiredRoles blockExternalUsers> --> /deals/new, /users, /documents
+Route group 5: <AppLayout requiredRoles>  --> /deals/:id/documents
+Route group 6: <AppLayout requiredRoles blockExternalUsers> --> /admin/*
 ```
 
-### What Will NOT Change
-- No UI changes
-- No database schema changes
-- No changes to tag-parser, field-resolver, or docx-processor
-- No changes to template_field_maps or merge_tag_aliases
-- No changes to any other edge function
-- No changes to how other merge tags are resolved
+Each group is a separate React element, so switching between them causes a full remount.
+
+## Solution
+
+### Step 1: Lift `SidebarProvider` to App Level
+
+Move `SidebarProvider` out of `AppLayout` and into `App.tsx`, wrapping `BrowserRouter`. This ensures sidebar state (collapsed/expanded) persists across all navigations.
+
+**File: `src/App.tsx`**
+- Import `SidebarProvider` from `@/contexts/SidebarContext`
+- Wrap `BrowserRouter` content with `SidebarProvider`
+
+### Step 2: Create a Lightweight `RoleGuard` Component
+
+Instead of using separate `AppLayout` wrappers for role-based access, create a small `RoleGuard` wrapper component that only handles authorization checks without remounting the layout.
+
+**New file: `src/components/layout/RoleGuard.tsx`**
+- Accepts `requiredRoles` and `blockExternalUsers` props
+- Uses `useAuth()` to check permissions
+- Renders `<Outlet />` if authorized, otherwise `<Navigate>` to redirect
+- Does NOT wrap children in layout/sidebar - purely an auth gate
+
+### Step 3: Consolidate to a Single `AppLayout` Route Group
+
+Restructure `App.tsx` to use a **single** `<AppLayout>` wrapper for all protected routes, with `RoleGuard` nested inside for role-specific restrictions.
+
+```text
+New Route Structure:
+
+<AppLayout>  (single instance - never remounts)
+  /dashboard
+  /my-work/*
+  /broker-services/*
+  /accounting/*
+  /system-admin/*
+  /c-level/*
+
+  <RoleGuard requiredRoles={['csr','admin','borrower','broker','lender']}>
+    /deals
+    /deals/:id
+    /deals/:id/data
+  </RoleGuard>
+
+  <RoleGuard requiredRoles={['csr','admin']} blockExternalUsers>
+    /deals/new
+    /deals/:id/edit
+    /users
+    /documents
+  </RoleGuard>
+
+  <RoleGuard requiredRoles={['csr','admin']}>
+    /deals/:id/documents
+  </RoleGuard>
+
+  <RoleGuard requiredRoles={['admin']} blockExternalUsers>
+    /admin/*
+  </RoleGuard>
+</AppLayout>
+```
+
+### Step 4: Update `AppLayout` to Remove `SidebarProvider` Wrapper
+
+Since `SidebarProvider` is now at the App level, remove it from `AppLayout` so `LayoutContent` renders directly.
+
+**File: `src/components/layout/AppLayout.tsx`**
+- Remove the outer `SidebarProvider` wrapper from the `AppLayout` component
+- Keep `LayoutContent` logic (auth check, loading state, no-role state) intact
+- Remove `requiredRoles` and `blockExternalUsers` props (handled by `RoleGuard`)
+
+## Technical Details
+
+### Files Modified
+1. **`src/App.tsx`** - Add `SidebarProvider` wrapper, consolidate to single `AppLayout`, nest `RoleGuard` for protected routes
+2. **`src/components/layout/AppLayout.tsx`** - Remove `SidebarProvider` wrapper and role-checking props
+
+### File Created
+1. **`src/components/layout/RoleGuard.tsx`** - Lightweight authorization component
+
+### What This Preserves
+- All existing route paths and their accessibility rules
+- All existing UI layout, sidebar, header components
+- All existing authentication flow and role checks
+- All existing data-fetching hooks and form state within pages
+- No database or API changes
+
+### What This Fixes
+- Sidebar state (collapsed/expanded) persists across all navigation
+- Navigating between `/dashboard` and `/deals` no longer remounts the layout
+- Switching between deal tabs no longer causes parent component re-initialization
+- State resets only on manual browser refresh or logout
+
