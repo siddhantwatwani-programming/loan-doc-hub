@@ -447,6 +447,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
   };
 
   const updateValue = useCallback((fieldKey: string, value: string, isRequiredField?: boolean) => {
+    console.log('[DirtyTrack] updateValue called', { fieldKey, value: value?.substring(0, 20) });
     setValues(prev => ({
       ...prev,
       [fieldKey]: value
