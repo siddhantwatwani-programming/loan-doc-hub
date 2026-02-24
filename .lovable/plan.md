@@ -1,95 +1,63 @@
 
 
-# Performance Optimization & File Handling Fix
+# UI Alignment & Layout Fixes
 
-## Root Cause Analysis
+## Overview
+Three sets of changes across Loan Terms & Balances form, Add Funding modal, and currency field styling for Lien forms/modals.
 
-### Issue 1: "File Not Found" Error
-When opening more than 2 files, the `DealDataEntryInner` component calls `workspace.openFile()` inside `fetchDeal()` (line 142-150 of DealDataEntryPage.tsx). This is called on every mount, including when the workspace already has the file open. The real "File Not Found" message comes from `DealOverviewPage` (line 276) when the deal query returns null -- but the actual problem is that `resolveAllFields()` and `resolvePacketFields()` make heavy DB calls that can fail under concurrent load from multiple open tabs, causing cascading errors.
+## Changes
 
-### Issue 2: Slow Table/Section Loading
-The `resolveAllFields()` and `resolvePacketFields()` functions in `requiredFieldsResolver.ts` fetch `field_dictionary` from the database **every time** they are called, completely bypassing the `FieldDictionaryCacheProvider`. With 3+ open files, this means 3+ redundant full-table fetches of `field_dictionary` on every load. This is the primary bottleneck.
+### 1. Loan Terms & Balances - Sold Rate Alignment (LoanTermsBalancesForm.tsx)
 
-### Issue 3: Tab Limit
-The 10-tab limit is already implemented in `WorkspaceContext` and `DealsPage`. No changes needed.
+**Current:** The Sold Rate input has a checkbox + label taking `min-w-[130px]` but the input is inside a different structure than Note Rate's `renderPercentField`.
 
-## Implementation Plan
+**Fix:** Restructure the Sold Rate row so the input field uses `flex-1` with `pr-7` (matching Note Rate's percent field pattern), ensuring consistent width and alignment.
 
-### Fix 1: Cache-Aware Field Resolution
-**File:** `src/lib/requiredFieldsResolver.ts`
+### 2. Loan Terms & Balances - Accept Short Payments Alignment (LoanTermsBalancesForm.tsx)
 
-Add optional cache parameter to both `resolveAllFields()` and `resolvePacketFields()` so they can use the pre-fetched field dictionary data instead of querying the database.
+**Current:** Accept Short Payments has a `$` input with fixed `w-24`, then "Or" text and Percent checkbox inline.
 
-- `resolveAllFields(cachedEntries?)` -- if cache is provided, use it instead of fetching `field_dictionary`
-- `resolvePacketFields(packetId, cachedEntries?)` -- after fetching `template_field_maps` (deal-specific), use cache for `field_dictionary` lookups instead of a separate DB query
+**Fix:** 
+- Change the `$` input from `w-24` to `flex-1` to match the width of other fields
+- Move "Or" checkbox + "Percent" label below the input as a sub-label line (matching the sub-label pattern used for "Months", "Held By", "Hold Days")
 
-This eliminates the largest redundant query per open file.
+### 3. Add Funding Modal - Layout Restructure (AddFundingModal.tsx)
 
-### Fix 2: Pass Cache into useDealFields
-**File:** `src/hooks/useDealFields.ts`
+**Current:** The right column has "Broker or family..." in a bordered box and "NOTE:" in a separate bordered box.
 
-Update `fetchData()` to pass the cached field dictionary entries into `resolveAllFields()` and `resolvePacketFields()`, so those functions skip their own `field_dictionary` fetch when cache is available.
+**Fix:**
+- Remove the 3-column grid layout - make it a single 2-column form
+- Move the "NOTE:" section below the Notes textarea, remove its border
+- Move the "Broker or family will participate in funding" checkbox below the NOTE section as a single line, remove its border
 
-### Fix 3: Prevent Duplicate openFile Calls
-**File:** `src/pages/csr/DealDataEntryPage.tsx`
+### 4. Currency Fields - $ Inside Input (LienDetailForm.tsx, LienModal.tsx, PropertyLiensForm.tsx)
 
-In `fetchDeal()`, the `workspace.openFile()` call at line 142-150 re-registers the file on every fetch (including re-fetches after save). Add a guard to only call `openFile()` if the file is not already in the workspace's `openFiles` array.
+**Current:** The `$` symbol is rendered as a separate `<span>` outside/beside the `<Input>`.
 
-### Fix 4: Debounce fetchData in useDealFields
-**File:** `src/hooks/useDealFields.ts`
-
-Add a guard to prevent `fetchData()` from running while a previous fetch is still in progress (use a ref-based `isFetching` flag). This prevents duplicate concurrent fetches when the component re-renders rapidly.
-
-## Technical Details
-
-### resolveAllFields with Cache
-
-```text
-Before: resolveAllFields() -> fetches ALL field_dictionary rows from DB
-After:  resolveAllFields(cachedEntries?) -> uses cachedEntries if provided, skips DB fetch
-```
-
-### resolvePacketFields with Cache
-
-```text
-Before: 
-  1. Fetch packet_templates (deal-specific, needed)
-  2. Fetch template_field_maps (deal-specific, needed)  
-  3. Fetch field_dictionary by IDs (REDUNDANT with cache)
-
-After:
-  1. Fetch packet_templates (deal-specific, needed)
-  2. Fetch template_field_maps (deal-specific, needed)
-  3. Lookup field_dictionary entries from cache map (zero DB calls)
-```
-
-### Performance Impact
-
-```text
-Before (3 open files, no packet):
-  resolveAllFields: 3 full field_dictionary fetches
-  TMO tab sections: 3 more fetches (or cache hit)
-  Total field_dictionary queries: 3-6
-
-After (3 open files, no packet):
-  resolveAllFields: 0 fetches (all from cache)
-  TMO tab sections: 0 fetches (from cache)
-  Total field_dictionary queries: 0
-```
+**Fix:** For Original Balance, Balance After, and Regular Payment fields in all three files, move the `$` symbol inside the input using absolute positioning (`absolute left-3`) and add `pl-7` padding to the input. This matches the pattern already used in `LoanTermsBalancesForm.tsx`'s `renderCurrencyField`.
 
 ## Files Modified
 
-1. `src/lib/requiredFieldsResolver.ts` -- Add optional cache parameter to resolveAllFields and resolvePacketFields
-2. `src/hooks/useDealFields.ts` -- Pass cache into resolver functions, add fetch guard
-3. `src/pages/csr/DealDataEntryPage.tsx` -- Guard duplicate workspace.openFile() calls
+1. **`src/components/deal/LoanTermsBalancesForm.tsx`**
+   - Lines 166-187: Restructure Sold Rate row for proper alignment
+   - Lines 311-339: Restructure Accept Short Payments - make input full-width, move "Or Percent" below
+
+2. **`src/components/deal/AddFundingModal.tsx`**
+   - Lines 83-161: Remove 3-column grid, move NOTE and broker checkbox below Notes textarea, remove borders
+
+3. **`src/components/deal/LienDetailForm.tsx`**
+   - Lines 40-48: Update `renderCurrency` helper to use absolute-positioned `$` inside input with `pl-7`
+
+4. **`src/components/deal/LienModal.tsx`**
+   - Lines 55-63: Update `renderCurrencyField` helper to use absolute-positioned `$` inside input with `pl-7`
+
+5. **`src/components/deal/PropertyLiensForm.tsx`**
+   - Lines 139-152, 169-180: Update Original Balance, Regular Payment fields to use `$` inside input
 
 ## No Changes To
-
 - Database schema or tables
-- RLS policies
-- Edge functions
-- UI layout or component structure
-- WorkspaceContext, WorkspaceTabBar, or confirmation dialogs
-- Existing save/update APIs
-- Existing form components
+- APIs or edge functions
+- Save/update logic
+- Any other components or pages
+- Data handling or state management
 
