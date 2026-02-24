@@ -73,9 +73,9 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           {renderField('holder', 'Lien Holder', {}, isThisLoan)}
           <div className="flex items-center gap-3">
             <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Interest Rate</Label>
-            <div className="flex items-center gap-1 flex-1">
-              <Input value={lien.interestRate} onChange={(e) => onChange('interestRate', e.target.value)} disabled={disabled || isThisLoan} className={`h-7 text-sm text-right ${isThisLoan ? 'opacity-50 bg-muted' : ''}`} inputMode="decimal" placeholder="0.000" />
-              <span className="text-sm text-muted-foreground">%</span>
+            <div className="relative flex-1">
+              <Input value={lien.interestRate} onChange={(e) => onChange('interestRate', e.target.value)} disabled={disabled || isThisLoan} className={`h-7 text-sm text-right pr-6 ${isThisLoan ? 'opacity-50 bg-muted' : ''}`} inputMode="decimal" placeholder="0.000" />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
             </div>
           </div>
 
