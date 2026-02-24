@@ -199,7 +199,7 @@ function extractTypedValueFromJsonb(fieldData: JsonbFieldValue, dataType: FieldD
   }
 }
 
-export function useDealFields(dealId: string, packetId: string | null): UseDealFieldsReturn {
+export function useDealFields(dealId: string, packetId: string | null, active: boolean = true): UseDealFieldsReturn {
   const { toast } = useToast();
   const cache = useFieldDictionaryCacheOptional();
   const [resolvedFields, setResolvedFields] = useState<ResolvedFieldSet | null>(null);
@@ -213,16 +213,15 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
   const [requiredFieldChanged, setRequiredFieldChanged] = useState(false);
   const [deletedPrefixes, setDeletedPrefixes] = useState<string[]>([]);
   const isFetchingRef = useRef(false);
+  const hasLoadedRef = useRef(false);
 
-  // Fetch resolved fields and values
+  // Fetch resolved fields and values - deferred until active
   useEffect(() => {
-    if (!dealId) {
-      setLoading(false);
-      return;
-    }
-    
+    if (!dealId || !active) return;
+    if (hasLoadedRef.current) return; // Already loaded
+    hasLoadedRef.current = true;
     fetchData();
-  }, [dealId, packetId]);
+  }, [dealId, packetId, active]);
 
   const fetchData = async () => {
     // Guard against concurrent fetches
@@ -736,32 +735,43 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
           }
         }
 
-        // Persist each section: insert if missing, otherwise update
+        // Batch: fetch ALL existing sections for this deal in one query
+        const { data: allExistingSections, error: batchFetchError } = await supabase
+          .from('deal_section_values')
+          .select('id, section, field_values, version')
+          .eq('deal_id', dealId);
+
+        if (batchFetchError) throw batchFetchError;
+
+        // Build a lookup map: section -> existing row
+        const existingSectionMap = new Map<string, { id: string; field_values: Record<string, JsonbFieldValue>; version: number }>();
+        (allExistingSections || []).forEach((sv: any) => {
+          existingSectionMap.set(sv.section, {
+            id: sv.id,
+            field_values: (sv.field_values as unknown as Record<string, JsonbFieldValue>) || {},
+            version: sv.version || 0,
+          });
+        });
+
+        // Build all payloads
+        const updates: { id: string; payload: any }[] = [];
+        const inserts: any[] = [];
+
         for (const [section, newFieldValues] of sectionsToPersist) {
-          const { data: existingSection, error: existingError } = await supabase
-            .from('deal_section_values')
-            .select('id, field_values, version')
-            .eq('deal_id', dealId)
-            .eq('section', section as FieldSection)
-            .maybeSingle();
-
-          if (existingError) throw existingError;
-
-          // Merge new values with existing - cast through unknown for JSONB compatibility
-          const existingFieldValues = (existingSection?.field_values as unknown as Record<string, JsonbFieldValue>) || {};
+          const existing = existingSectionMap.get(section);
+          const existingFieldValues = existing?.field_values || {};
           const mergedFieldValues: Record<string, JsonbFieldValue> = {
             ...existingFieldValues,
             ...newFieldValues,
           };
 
-          // Remove composite keys belonging to deleted prefixes (e.g., "borrower2::uuid")
+          // Remove composite keys belonging to deleted prefixes
           if (deletedPrefixes.length > 0) {
             Object.keys(mergedFieldValues).forEach(storageKey => {
               const { prefix } = parseStorageKey(storageKey);
               if (prefix && deletedPrefixes.includes(prefix)) {
                 delete mergedFieldValues[storageKey];
               }
-              // Also check indexed_key inside the value
               const val = mergedFieldValues[storageKey];
               if (val?.indexed_key) {
                 for (const dp of deletedPrefixes) {
@@ -774,8 +784,7 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
             });
           }
 
-          const newVersion = (existingSection?.version || 0) + 1;
-
+          const newVersion = (existing?.version || 0) + 1;
           const payload = {
             deal_id: dealId,
             section: section as FieldSection,
@@ -784,20 +793,28 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
             version: newVersion,
           };
 
-          if (existingSection?.id) {
-            const { error: updateError } = await supabase
-              .from('deal_section_values')
-              .update(payload)
-              .eq('id', existingSection.id);
-
-            if (updateError) throw updateError;
+          if (existing?.id) {
+            updates.push({ id: existing.id, payload });
           } else {
-            const { error: insertError } = await supabase
-              .from('deal_section_values')
-              .insert(payload);
-
-            if (insertError) throw insertError;
+            inserts.push(payload);
           }
+        }
+
+        // Execute inserts in a single batch
+        if (inserts.length > 0) {
+          const { error: insertError } = await supabase
+            .from('deal_section_values')
+            .insert(inserts);
+          if (insertError) throw insertError;
+        }
+
+        // Execute updates (must be per-row due to different payloads per id)
+        for (const { id: rowId, payload } of updates) {
+          const { error: updateError } = await supabase
+            .from('deal_section_values')
+            .update(payload)
+            .eq('id', rowId);
+          if (updateError) throw updateError;
         }
       }
 

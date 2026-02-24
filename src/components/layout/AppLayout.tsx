@@ -98,10 +98,11 @@ const AppLayoutInner: React.FC = () => {
           {/* Always render workspace files (hidden when not active) */}
           {showWorkspaceRenderer && (
             <div className={cn(!isWorkspaceRoute && 'hidden')}>
-              <WorkspaceFileRenderer
-                renderFile={(dealId) => (
+            <WorkspaceFileRenderer
+                renderFile={(dealId, isActive) => (
                   <DealDataEntryInner
                     dealIdProp={dealId}
+                    isActiveTab={isActive}
                     registerSaveFn={registerSaveFn}
                     unregisterSaveFn={unregisterSaveFn}
                   />
