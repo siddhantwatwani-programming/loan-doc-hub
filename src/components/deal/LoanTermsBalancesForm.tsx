@@ -308,34 +308,42 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {/* Accept Short, Post-maturity, Auto-post, Override - part of Interest Split section */}
             <div className="space-y-2 pt-1">
               {/* Accept Short Payments */}
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  id={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`}
-                  checked={isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
-                  onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptShortPaymentsEnabled)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
-                  className="h-3.5 w-3.5"
-                />
-                <Label htmlFor={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`} className="text-sm min-w-[140px] shrink-0">Accept Short Payments</Label>
-                <div className="relative w-24">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-                  <Input
-                    value={getValue(FIELD_KEYS.acceptShortPaymentsAmount)}
-                    onChange={(e) => setValue(FIELD_KEYS.acceptShortPaymentsAmount, e.target.value)}
-                    disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
-                    className="h-7 text-sm pl-7"
-                    placeholder="-"
-                  />
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="min-w-[140px] shrink-0">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`}
+                        checked={isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
+                        onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptShortPaymentsEnabled)}
+                        disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                        className="h-3.5 w-3.5"
+                      />
+                      <Label htmlFor={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`} className="text-sm">Accept Short Payments</Label>
+                    </div>
+                  </div>
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                    <Input
+                      value={getValue(FIELD_KEYS.acceptShortPaymentsAmount)}
+                      onChange={(e) => setValue(FIELD_KEYS.acceptShortPaymentsAmount, e.target.value)}
+                      disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
+                      className="h-7 text-sm pl-7"
+                      placeholder="-"
+                    />
+                  </div>
                 </div>
-                <span className="text-sm text-muted-foreground">Or</span>
-                <Checkbox
-                  id={`${FIELD_KEYS.acceptShortPaymentsOrPercent}-cb`}
-                  checked={isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)}
-                  onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptShortPaymentsOrPercent)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
-                  className="h-3.5 w-3.5"
-                />
-                <Label className="text-sm">Percent</Label>
+                <div className="flex items-center gap-2 pl-5 mt-0.5">
+                  <span className="text-xs text-muted-foreground">Or</span>
+                  <Checkbox
+                    id={`${FIELD_KEYS.acceptShortPaymentsOrPercent}-cb`}
+                    checked={isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)}
+                    onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptShortPaymentsOrPercent)}
+                    disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
+                    className="h-3.5 w-3.5"
+                  />
+                  <Label className="text-xs text-muted-foreground">Percent</Label>
+                </div>
               </div>
 
               {/* Accept Post-maturity */}
