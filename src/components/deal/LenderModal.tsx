@@ -115,9 +115,8 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
               {renderInlineField('firstName', 'First Name')}
+              {renderInlineField('lastName', 'Last Name')}
             </div>
-
-            {renderInlineField('lastName', 'Last Name')}
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
               {renderInlineField('email', 'Email', { type: 'email' })}
@@ -134,24 +133,26 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
               {renderInlineField('zip', 'Zip')}
             </div>
 
-            {/* Tax ID Type dropdown - full width */}
-            <div className="flex items-center gap-2">
-              <Label className="w-[100px] shrink-0 text-xs">Tax ID</Label>
-              <Select
-                value={formData.taxIdType}
-                onValueChange={(value) => handleChange('taxIdType', value)}
-              >
-                <SelectTrigger className="h-7 text-xs flex-1">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TAX_ID_TYPE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Tax ID Type dropdown - same width as Street (half row) */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Tax ID</Label>
+                <Select
+                  value={formData.taxIdType}
+                  onValueChange={(value) => handleChange('taxIdType', value)}
+                >
+                  <SelectTrigger className="h-7 text-xs flex-1">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TAX_ID_TYPE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </ScrollArea>

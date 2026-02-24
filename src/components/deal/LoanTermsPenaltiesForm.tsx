@@ -34,7 +34,7 @@ const DistributionFields: React.FC<{
       <h4 className="font-semibold text-sm text-foreground border-b border-border pb-1">Distribution</h4>
       <div className="space-y-2">
         <div className="flex items-center gap-3">
-          <Label className="text-sm min-w-[120px]">Lenders</Label>
+          <Label className="text-sm min-w-[160px] max-w-[160px]">Lenders</Label>
           <Input
             value={values[`${prefix}.distribution.lenders`] || ''}
             onChange={(e) => onValueChange(`${prefix}.distribution.lenders`, e.target.value)}
@@ -43,7 +43,7 @@ const DistributionFields: React.FC<{
           />
         </div>
         <div className="flex items-center gap-3">
-          <Label className="text-sm min-w-[120px]">Origination Vendors</Label>
+          <Label className="text-sm min-w-[160px] max-w-[160px]">Origination Vendors</Label>
           <Input
             value={values[`${prefix}.distribution.origination_vendors`] || ''}
             onChange={(e) => onValueChange(`${prefix}.distribution.origination_vendors`, e.target.value)}
@@ -52,7 +52,7 @@ const DistributionFields: React.FC<{
           />
         </div>
         <div className="flex items-center gap-3">
-          <Label className="text-sm min-w-[120px]">Company</Label>
+          <Label className="text-sm min-w-[160px] max-w-[160px]">Company</Label>
           <Input
             value={values[`${prefix}.distribution.company`] || ''}
             onChange={(e) => onValueChange(`${prefix}.distribution.company`, e.target.value)}
@@ -61,7 +61,7 @@ const DistributionFields: React.FC<{
           />
         </div>
         <div className="flex items-center gap-3">
-          <Label className="text-sm min-w-[120px]">Other</Label>
+          <Label className="text-sm min-w-[160px] max-w-[160px]">Other</Label>
           <Input
             value={values[`${prefix}.distribution.other`] || ''}
             onChange={(e) => onValueChange(`${prefix}.distribution.other`, e.target.value)}
@@ -83,7 +83,7 @@ const FieldRow: React.FC<{
   disabled?: boolean;
 }> = ({ label, children, checkboxValue, onCheckboxChange, disabled }) => (
   <div className="flex items-center gap-3">
-    <Label className="text-sm min-w-[140px]">{label}</Label>
+    <Label className="text-sm min-w-[160px] max-w-[160px]">{label}</Label>
     {onCheckboxChange !== undefined && (
       <Checkbox
         checked={checkboxValue}
@@ -92,7 +92,7 @@ const FieldRow: React.FC<{
         className="h-4 w-4"
       />
     )}
-    <div className="flex-1">{children}</div>
+    <div className="flex-1 min-w-0">{children}</div>
   </div>
 );
 
