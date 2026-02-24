@@ -92,8 +92,10 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, []);
 
   const setFileDirty = useCallback((id: string, dirty: boolean) => {
-    console.log('[WorkspaceDirty] setFileDirty', { id, dirty });
     setDirtyFiles(prev => {
+      const hasDirty = prev.has(id);
+      if (dirty && hasDirty) return prev;   // already dirty – no change
+      if (!dirty && !hasDirty) return prev;  // already clean – no change
       const next = new Set(prev);
       if (dirty) next.add(id);
       else next.delete(id);

@@ -447,7 +447,6 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
   };
 
   const updateValue = useCallback((fieldKey: string, value: string, isRequiredField?: boolean) => {
-    console.log('[DirtyTrack] updateValue called', { fieldKey, value: value?.substring(0, 20) });
     setValues(prev => ({
       ...prev,
       [fieldKey]: value
@@ -683,60 +682,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
 
         const sectionsToPersist = Object.entries(sectionUpdates).filter(([, v]) => Object.keys(v).length > 0);
         
-        // If we have deleted prefixes but no sections to persist, we still need to clean up existing JSONB
-        if (sectionsToPersist.length === 0 && deletedPrefixes.length === 0) {
-          throw new Error('Nothing to save (no matching field definitions found)');
-        }
-
-        // Also clean deleted prefixes from sections not in sectionsToPersist
-        if (deletedPrefixes.length > 0) {
-          const { data: allSections, error: allSectionsError } = await supabase
-            .from('deal_section_values')
-            .select('id, section, field_values, version')
-            .eq('deal_id', dealId);
-
-          if (!allSectionsError && allSections) {
-            for (const sv of allSections) {
-              const sectionKey = sv.section;
-              // Skip sections already in sectionsToPersist (handled below)
-              if (sectionUpdates[sectionKey] && Object.keys(sectionUpdates[sectionKey]).length > 0) continue;
-
-              const existingFieldValues = (sv.field_values as unknown as Record<string, JsonbFieldValue>) || {};
-              let modified = false;
-
-              Object.keys(existingFieldValues).forEach(storageKey => {
-                const { prefix } = parseStorageKey(storageKey);
-                if (prefix && deletedPrefixes.includes(prefix)) {
-                  delete existingFieldValues[storageKey];
-                  modified = true;
-                }
-                const val = existingFieldValues[storageKey];
-                if (val?.indexed_key) {
-                  for (const dp of deletedPrefixes) {
-                    if (val.indexed_key.startsWith(`${dp}.`)) {
-                      delete existingFieldValues[storageKey];
-                      modified = true;
-                      break;
-                    }
-                  }
-                }
-              });
-
-              if (modified) {
-                await supabase
-                  .from('deal_section_values')
-                  .update({
-                    field_values: JSON.parse(JSON.stringify(existingFieldValues)),
-                    updated_at: new Date().toISOString(),
-                    version: (sv.version || 0) + 1,
-                  })
-                  .eq('id', sv.id);
-              }
-            }
-          }
-        }
-
-        // Batch: fetch ALL existing sections for this deal in one query
+        // Batch: fetch ALL existing sections for this deal in one query (used for both deleted-prefix cleanup AND upsert)
         const { data: allExistingSections, error: batchFetchError } = await supabase
           .from('deal_section_values')
           .select('id, section, field_values, version')
@@ -753,6 +699,46 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
             version: sv.version || 0,
           });
         });
+
+        // Clean deleted prefixes from sections NOT in sectionsToPersist (those are handled during merge below)
+        if (deletedPrefixes.length > 0) {
+          for (const [sectionKey, existing] of existingSectionMap.entries()) {
+            // Skip sections already in sectionsToPersist (handled below)
+            if (sectionUpdates[sectionKey] && Object.keys(sectionUpdates[sectionKey]).length > 0) continue;
+
+            const existingFieldValues = { ...existing.field_values };
+            let modified = false;
+
+            Object.keys(existingFieldValues).forEach(storageKey => {
+              const { prefix } = parseStorageKey(storageKey);
+              if (prefix && deletedPrefixes.includes(prefix)) {
+                delete existingFieldValues[storageKey];
+                modified = true;
+              }
+              const val = existingFieldValues[storageKey];
+              if (val?.indexed_key) {
+                for (const dp of deletedPrefixes) {
+                  if (val.indexed_key.startsWith(`${dp}.`)) {
+                    delete existingFieldValues[storageKey];
+                    modified = true;
+                    break;
+                  }
+                }
+              }
+            });
+
+            if (modified) {
+              await supabase
+                .from('deal_section_values')
+                .update({
+                  field_values: JSON.parse(JSON.stringify(existingFieldValues)),
+                  updated_at: new Date().toISOString(),
+                  version: (existing.version || 0) + 1,
+                })
+                .eq('id', existing.id);
+            }
+          }
+        }
 
         // Build all payloads
         const updates: { id: string; payload: any }[] = [];
