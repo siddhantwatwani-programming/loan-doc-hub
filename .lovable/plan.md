@@ -1,116 +1,116 @@
 
 
-# Prevent Auto-Refresh / State Reset on Navigation
+# Fix Auto-Refresh / State Reset on Navigation
 
 ## Problem Analysis
 
-The application has **5 separate `<AppLayout>` route groups** in `App.tsx`. Each group creates its own `AppLayout` component instance, which in turn creates its own `SidebarProvider`. When navigating between routes in different groups (e.g., from `/dashboard` to `/deals`), React unmounts and remounts the entire layout, causing:
+After the previous fix (consolidating to a single `AppLayout`), the layout no longer remounts between route groups. However, **state still resets** due to two remaining issues:
 
-- Sidebar collapse state to reset
-- Page-level component state to be lost
-- Data re-fetching on every navigation between route groups
+### Issue 1: Tab Content Unmounting (Radix TabsContent)
+In `DealDataEntryPage.tsx`, the top-level tabs (Borrower, Loan, Property, etc.) use Radix UI's `<TabsContent>`, which **unmounts inactive tab content by default**. When switching from "Property" to "Loan" and back, the entire `PropertySectionContent` component is destroyed and recreated, losing:
+- Active sub-section (e.g., "Legal Description" resets to "Properties")
+- Selected item (e.g., which property was being viewed)
+- Table pagination, scroll position
+- Modal state
 
-## Root Cause
+### Issue 2: Local State in Section Components
+Every section component stores its navigation state in local `useState`:
+- `BorrowerSectionContent` -- `useState<BorrowerSubSection>('borrowers')`
+- `PropertySectionContent` -- `useState<PropertySubSection>('properties')`
+- `LoanTermsSectionContent` -- `useState<LoanTermsSubSection>('balances_loan_details')`
+- `LenderSectionContent` -- `useState<LenderSubSection>('lenders')`
+- `BrokerSectionContent` -- `useState<BrokerSubSection>('brokers')`
+- `ChargesSectionContent` -- `useState<ChargesSubSection>('charges')`
+- `InsuranceSectionContent` -- `useState<InsuranceSubSection>('insurances')`
+- `LienSectionContent` -- `useState<LienSubSection>('liens')`
+- `OriginationFeesSectionContent` -- `useState<OriginationFeesSubSection>('application')`
 
-```text
-Current Route Structure (simplified):
-
-Route group 1: <AppLayout>                --> /dashboard, /my-work/*, /broker-services/*
-Route group 2: <AppLayout requiredRoles>  --> /deals, /deals/:id
-Route group 3: <AppLayout requiredRoles>  --> /deals/:id/data
-Route group 4: <AppLayout requiredRoles blockExternalUsers> --> /deals/new, /users, /documents
-Route group 5: <AppLayout requiredRoles>  --> /deals/:id/documents
-Route group 6: <AppLayout requiredRoles blockExternalUsers> --> /admin/*
-```
-
-Each group is a separate React element, so switching between them causes a full remount.
+When the parent `TabsContent` unmounts/remounts these components, all sub-navigation resets to defaults.
 
 ## Solution
 
-### Step 1: Lift `SidebarProvider` to App Level
+### Step 1: Create a Navigation State Context
 
-Move `SidebarProvider` out of `AppLayout` and into `App.tsx`, wrapping `BrowserRouter`. This ensures sidebar state (collapsed/expanded) persists across all navigations.
+Create a new context (`DealNavigationContext`) that stores all tab and sub-navigation state for the deal data entry page. This context will be placed inside `DealDataEntryPage` so it lives as long as the page is mounted.
 
-**File: `src/App.tsx`**
-- Import `SidebarProvider` from `@/contexts/SidebarContext`
-- Wrap `BrowserRouter` content with `SidebarProvider`
+**New file: `src/contexts/DealNavigationContext.tsx`**
 
-### Step 2: Create a Lightweight `RoleGuard` Component
+Stores:
+- `activeTab` (top-level tab: borrower, loan_terms, property, etc.)
+- `subSections` map: a record mapping each section key to its active sub-section
+- `selectedPrefixes` map: a record mapping each section to its selected item prefix (e.g., `property1`, `borrower2`)
 
-Instead of using separate `AppLayout` wrappers for role-based access, create a small `RoleGuard` wrapper component that only handles authorization checks without remounting the layout.
+This means when a user navigates Property > Legal Description > switches to Loan tab > comes back to Property, it will restore "Legal Description" as the active sub-section.
 
-**New file: `src/components/layout/RoleGuard.tsx`**
-- Accepts `requiredRoles` and `blockExternalUsers` props
-- Uses `useAuth()` to check permissions
-- Renders `<Outlet />` if authorized, otherwise `<Navigate>` to redirect
-- Does NOT wrap children in layout/sidebar - purely an auth gate
+### Step 2: Use `forceMount` on TabsContent + CSS Visibility
 
-### Step 3: Consolidate to a Single `AppLayout` Route Group
-
-Restructure `App.tsx` to use a **single** `<AppLayout>` wrapper for all protected routes, with `RoleGuard` nested inside for role-specific restrictions.
+Modify `DealDataEntryPage.tsx` to add `forceMount` to each `<TabsContent>` and use CSS to hide inactive tabs instead of unmounting them. This keeps all section components mounted in the DOM, preserving their internal state.
 
 ```text
-New Route Structure:
-
-<AppLayout>  (single instance - never remounts)
-  /dashboard
-  /my-work/*
-  /broker-services/*
-  /accounting/*
-  /system-admin/*
-  /c-level/*
-
-  <RoleGuard requiredRoles={['csr','admin','borrower','broker','lender']}>
-    /deals
-    /deals/:id
-    /deals/:id/data
-  </RoleGuard>
-
-  <RoleGuard requiredRoles={['csr','admin']} blockExternalUsers>
-    /deals/new
-    /deals/:id/edit
-    /users
-    /documents
-  </RoleGuard>
-
-  <RoleGuard requiredRoles={['csr','admin']}>
-    /deals/:id/documents
-  </RoleGuard>
-
-  <RoleGuard requiredRoles={['admin']} blockExternalUsers>
-    /admin/*
-  </RoleGuard>
-</AppLayout>
+Before: <TabsContent value={section}>  -- unmounts when inactive
+After:  <TabsContent value={section} forceMount className={activeTab !== section ? 'hidden' : ''}>
 ```
 
-### Step 4: Update `AppLayout` to Remove `SidebarProvider` Wrapper
+This single change prevents all child component state from being destroyed.
 
-Since `SidebarProvider` is now at the App level, remove it from `AppLayout` so `LayoutContent` renders directly.
+### Step 3: Wire Section Components to the Navigation Context
 
-**File: `src/components/layout/AppLayout.tsx`**
-- Remove the outer `SidebarProvider` wrapper from the `AppLayout` component
-- Keep `LayoutContent` logic (auth check, loading state, no-role state) intact
-- Remove `requiredRoles` and `blockExternalUsers` props (handled by `RoleGuard`)
+Update each section content component to read/write its sub-section state from the context instead of local `useState`:
+
+- `BorrowerSectionContent` -- read `subSections.borrower`, write via context setter
+- `PropertySectionContent` -- read `subSections.property`, write via context setter
+- `LoanTermsSectionContent` -- read `subSections.loan_terms`, write via context setter
+- `LenderSectionContent` -- read `subSections.lender`, write via context setter
+- `BrokerSectionContent` -- read `subSections.broker`, write via context setter
+- `ChargesSectionContent` -- read `subSections.charges`, write via context setter
+- `InsuranceSectionContent` -- read from parent context
+- `LienSectionContent` -- read from parent context
+- `OriginationFeesSectionContent` -- read `subSections.origination_fees`, write via context setter
+
+Each component's `useState` for sub-section/selected-prefix will be replaced with context getters/setters, keeping the same API shape.
+
+### Step 4: Persist activeTab in DealDataEntryPage via Context
+
+Move the `activeTab` state from `DealDataEntryPage`'s local `useState` into the `DealNavigationContext`. The initial tab is still set from the first loaded section, but subsequent tab switches are stored in context and persist as long as the page component is mounted.
 
 ## Technical Details
 
-### Files Modified
-1. **`src/App.tsx`** - Add `SidebarProvider` wrapper, consolidate to single `AppLayout`, nest `RoleGuard` for protected routes
-2. **`src/components/layout/AppLayout.tsx`** - Remove `SidebarProvider` wrapper and role-checking props
+### Files Created
+1. **`src/contexts/DealNavigationContext.tsx`** -- Context provider for deal navigation state (active tab, sub-sections, selected prefixes)
 
-### File Created
-1. **`src/components/layout/RoleGuard.tsx`** - Lightweight authorization component
+### Files Modified
+1. **`src/pages/csr/DealDataEntryPage.tsx`**
+   - Wrap content with `DealNavigationProvider`
+   - Replace local `activeTab` state with context
+   - Add `forceMount` + conditional `hidden` class to all `TabsContent` elements
+
+2. **`src/components/deal/BorrowerSectionContent.tsx`** -- Replace local `activeSubSection` and `selectedBorrowerPrefix` with context
+3. **`src/components/deal/PropertySectionContent.tsx`** -- Replace local `activeSubSection` and `selectedPropertyPrefix` with context
+4. **`src/components/deal/LoanTermsSectionContent.tsx`** -- Replace local `activeSubSection` with context
+5. **`src/components/deal/LenderSectionContent.tsx`** -- Replace local `activeSubSection` and `selectedLenderPrefix` with context
+6. **`src/components/deal/BrokerSectionContent.tsx`** -- Replace local `activeSubSection` and `selectedBrokerPrefix` with context
+7. **`src/components/deal/ChargesSectionContent.tsx`** -- Replace local `activeSubSection` and `selectedChargePrefix` with context
+8. **`src/components/deal/InsuranceSectionContent.tsx`** -- Replace local `activeSubSection` with context
+9. **`src/components/deal/LienSectionContent.tsx`** -- Replace local `activeSubSection` with context
+10. **`src/components/deal/OriginationFeesSectionContent.tsx`** -- Replace local `activeSubSection` with context
 
 ### What This Preserves
-- All existing route paths and their accessibility rules
-- All existing UI layout, sidebar, header components
-- All existing authentication flow and role checks
-- All existing data-fetching hooks and form state within pages
-- No database or API changes
+- All existing UI layout, forms, and components
+- All save/update APIs and data handling
+- All role-based access control
+- All existing route structure
+- No database or schema changes
 
 ### What This Fixes
-- Sidebar state (collapsed/expanded) persists across all navigation
-- Navigating between `/dashboard` and `/deals` no longer remounts the layout
-- Switching between deal tabs no longer causes parent component re-initialization
-- State resets only on manual browser refresh or logout
+- Switching top-level tabs (Borrower/Loan/Property/etc.) no longer destroys sub-component state
+- Sub-navigation position is remembered when returning to a tab
+- Selected items (which borrower, which property) are preserved across tab switches
+- Table pagination, scroll position, and modal state survive tab changes
+- State resets only on page unmount (navigating away from deal), manual refresh, or logout
+
+### Example Flow After Fix
+1. User opens Deals > Enter Deal Data > Property > selects Property 2 > Legal Description
+2. User switches to Loan tab
+3. User returns to Property tab
+4. Property tab shows Property 2 > Legal Description (exactly where they left off)
 
