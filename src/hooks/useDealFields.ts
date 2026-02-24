@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useFieldDictionaryCacheOptional } from '@/hooks/useFieldDictionaryCache';
 import { 
   resolvePacketFields,
   resolveAllFields,
@@ -200,6 +201,7 @@ function extractTypedValueFromJsonb(fieldData: JsonbFieldValue, dataType: FieldD
 
 export function useDealFields(dealId: string, packetId: string | null): UseDealFieldsReturn {
   const { toast } = useToast();
+  const cache = useFieldDictionaryCacheOptional();
   const [resolvedFields, setResolvedFields] = useState<ResolvedFieldSet | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [fieldDataTypes, setFieldDataTypes] = useState<Record<string, FieldDataType>>({});
@@ -256,14 +258,20 @@ export function useDealFields(dealId: string, packetId: string | null): UseDealF
 
       let mergedResolved = resolved;
       try {
-        const tmoFields = await fetchAllRows((client) =>
-          client
-            .from('field_dictionary')
-            .select(
-              'id, field_key, label, section, data_type, description, default_value, is_calculated, is_repeatable, validation_rule, calculation_formula, calculation_dependencies'
-            )
-            .in('section', TMO_TAB_SECTIONS as any)
-        );
+        // Use cache if available, otherwise fetch
+        let tmoFields: any[];
+        if (cache && !cache.loading && cache.allEntries.length > 0) {
+          tmoFields = cache.allEntries.filter((e: any) => TMO_TAB_SECTIONS.includes(e.section));
+        } else {
+          tmoFields = await fetchAllRows((client) =>
+            client
+              .from('field_dictionary')
+              .select(
+                'id, field_key, label, section, data_type, description, default_value, is_calculated, is_repeatable, validation_rule, calculation_formula, calculation_dependencies'
+              )
+              .in('section', TMO_TAB_SECTIONS as any)
+          );
+        }
 
         const existingIds = new Set(resolved.fields.map(f => f.field_dictionary_id));
         const existingKeys = new Set(resolved.fields.map(f => f.field_key));

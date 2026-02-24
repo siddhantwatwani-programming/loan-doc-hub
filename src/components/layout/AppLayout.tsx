@@ -3,6 +3,7 @@ import { Outlet, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { WorkspaceProvider, useWorkspace } from '@/contexts/WorkspaceContext';
+import { FieldDictionaryCacheProvider } from '@/hooks/useFieldDictionaryCache';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
 import { WorkspaceTabBar } from './WorkspaceTabBar';
@@ -158,8 +159,10 @@ export const AppLayout: React.FC = () => {
   }
 
   return (
-    <WorkspaceProvider>
-      <AppLayoutInner />
-    </WorkspaceProvider>
+    <FieldDictionaryCacheProvider>
+      <WorkspaceProvider>
+        <AppLayoutInner />
+      </WorkspaceProvider>
+    </FieldDictionaryCacheProvider>
   );
 };
