@@ -94,13 +94,25 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             </Select>
           </InlineField>
 
-          <InlineField label="Full Name: If Entity, Use Entity">
-            <Input value={getValue('full_name')} onChange={(e) => handleChange('full_name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
+          <div className="flex items-center gap-3">
+            <div className="min-w-[140px] text-left shrink-0">
+              <Label className="text-sm text-muted-foreground">Full Name</Label>
+              <p className="text-xs text-muted-foreground">If Entity, Use Entity</p>
+            </div>
+            <div className="flex-1">
+              <Input value={getValue('full_name')} onChange={(e) => handleChange('full_name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+            </div>
+          </div>
 
-          <InlineField label="First: If Entity, Use Signer">
-            <Input value={getValue('first_name')} onChange={(e) => handleChange('first_name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
+          <div className="flex items-center gap-3">
+            <div className="min-w-[140px] text-left shrink-0">
+              <Label className="text-sm text-muted-foreground">First</Label>
+              <p className="text-xs text-muted-foreground">If Entity, Use Signer</p>
+            </div>
+            <div className="flex-1">
+              <Input value={getValue('first_name')} onChange={(e) => handleChange('first_name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+            </div>
+          </div>
 
           <InlineField label="Middle">
             <Input value={getValue('middle_name')} onChange={(e) => handleChange('middle_name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
@@ -188,40 +200,44 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             <Input value={getValue('mailing_address.zip')} onChange={(e) => handleChange('mailing_address.zip', e.target.value)} disabled={disabled || getBoolValue('mailing_same_as_primary')} className="h-7 text-sm" />
           </InlineField>
 
-          {/* Delivery Options & Send - side by side */}
-          <div className="pt-2 flex gap-6">
-            <div className="space-y-1.5">
+          {/* Delivery Options & Send - stacked, inline checkboxes */}
+          <div className="pt-2 space-y-2">
+            <div>
               <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options</h4>
-              <div className="flex items-center gap-2">
-                <Checkbox id="coborrower-deliveryPrint" checked={getBoolValue('delivery_print')} onCheckedChange={(checked) => handleChange('delivery_print', String(!!checked))} disabled={disabled} />
-                <Label htmlFor="coborrower-deliveryPrint" className="text-sm font-normal">Print</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="coborrower-deliveryEmail" checked={getBoolValue('delivery_email')} onCheckedChange={(checked) => handleChange('delivery_email', String(!!checked))} disabled={disabled} />
-                <Label htmlFor="coborrower-deliveryEmail" className="text-sm font-normal">Email</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="coborrower-deliverySms" checked={getBoolValue('delivery_sms')} onCheckedChange={(checked) => handleChange('delivery_sms', String(!!checked))} disabled={disabled} />
-                <Label htmlFor="coborrower-deliverySms" className="text-sm font-normal">SMS</Label>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="coborrower-deliveryPrint" checked={getBoolValue('delivery_print')} onCheckedChange={(checked) => handleChange('delivery_print', String(!!checked))} disabled={disabled} />
+                  <Label htmlFor="coborrower-deliveryPrint" className="text-sm font-normal">Print</Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="coborrower-deliveryEmail" checked={getBoolValue('delivery_email')} onCheckedChange={(checked) => handleChange('delivery_email', String(!!checked))} disabled={disabled} />
+                  <Label htmlFor="coborrower-deliveryEmail" className="text-sm font-normal">Email</Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="coborrower-deliverySms" checked={getBoolValue('delivery_sms')} onCheckedChange={(checked) => handleChange('delivery_sms', String(!!checked))} disabled={disabled} />
+                  <Label htmlFor="coborrower-deliverySms" className="text-sm font-normal">SMS</Label>
+                </div>
               </div>
             </div>
-            <div className="space-y-1.5">
+            <div>
               <h4 className="font-semibold text-sm text-foreground pb-1">Send</h4>
-              <div className="flex items-center gap-2">
-                <Checkbox id="coborrower-sendPaymentNotification" checked={getBoolValue('send_payment_notification')} onCheckedChange={(checked) => handleChange('send_payment_notification', String(!!checked))} disabled={disabled} />
-                <Label htmlFor="coborrower-sendPaymentNotification" className="text-sm font-normal">Payment Notification</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="coborrower-sendLateNotice" checked={getBoolValue('send_late_notice')} onCheckedChange={(checked) => handleChange('send_late_notice', String(!!checked))} disabled={disabled} />
-                <Label htmlFor="coborrower-sendLateNotice" className="text-sm font-normal">Late Notice</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="coborrower-sendBorrowerStatement" checked={getBoolValue('send_borrower_statement')} onCheckedChange={(checked) => handleChange('send_borrower_statement', String(!!checked))} disabled={disabled} />
-                <Label htmlFor="coborrower-sendBorrowerStatement" className="text-sm font-normal">Borrower Statement</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="coborrower-sendMaturityNotice" checked={getBoolValue('send_maturity_notice')} onCheckedChange={(checked) => handleChange('send_maturity_notice', String(!!checked))} disabled={disabled} />
-                <Label htmlFor="coborrower-sendMaturityNotice" className="text-sm font-normal">Maturity Notice</Label>
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="coborrower-sendPaymentNotification" checked={getBoolValue('send_payment_notification')} onCheckedChange={(checked) => handleChange('send_payment_notification', String(!!checked))} disabled={disabled} />
+                  <Label htmlFor="coborrower-sendPaymentNotification" className="text-sm font-normal">Payment Notification</Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="coborrower-sendLateNotice" checked={getBoolValue('send_late_notice')} onCheckedChange={(checked) => handleChange('send_late_notice', String(!!checked))} disabled={disabled} />
+                  <Label htmlFor="coborrower-sendLateNotice" className="text-sm font-normal">Late Notice</Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="coborrower-sendBorrowerStatement" checked={getBoolValue('send_borrower_statement')} onCheckedChange={(checked) => handleChange('send_borrower_statement', String(!!checked))} disabled={disabled} />
+                  <Label htmlFor="coborrower-sendBorrowerStatement" className="text-sm font-normal">Borrower Statement</Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="coborrower-sendMaturityNotice" checked={getBoolValue('send_maturity_notice')} onCheckedChange={(checked) => handleChange('send_maturity_notice', String(!!checked))} disabled={disabled} />
+                  <Label htmlFor="coborrower-sendMaturityNotice" className="text-sm font-normal">Maturity Notice</Label>
+                </div>
               </div>
             </div>
           </div>
