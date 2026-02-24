@@ -1,81 +1,49 @@
 
 
-# Fix Global Sub-Navigation State Persistence
+# Label Layout Changes and Currency Input Fix
 
-## Root Cause
+## Changes Required
 
-The `DealNavigationContext` is created inside `DealDataEntryPage`, which means it only lives as long as that page is mounted. When the user navigates away (e.g., to Dashboard, or to the Deal Overview page) and returns, the entire page component unmounts and remounts, resetting all navigation state to defaults.
+### 1. Borrower Primary Form (`src/components/deal/BorrowerPrimaryForm.tsx`)
 
-**Flow that fails:**
-1. User is on `/deals/:id/edit` -- Borrower > Authorized Party
-2. User clicks sidebar to go to Dashboard (`/dashboard`)
-3. `DealDataEntryPage` unmounts, `DealNavigationProvider` is destroyed
-4. User navigates back to `/deals/:id/edit`
-5. New `DealNavigationProvider` is created with empty state
-6. activeTab defaults to first section, sub-section defaults to "borrowers"
-7. User loses their position (Authorized Party is gone)
+**Current**: The labels "Full Name: If Entity, Use Entity" and "First: If Entity, Use Signer" are displayed as single long inline labels next to inputs.
 
-## Solution: Persist Navigation State to SessionStorage
+**Change**: Split each into two lines:
+- Main label: "Full Name" / "First"
+- Subtitle below: "If Entity, Use Entity" / "If Entity, Use Signer" in smaller, muted text
 
-Update the `DealNavigationContext` to automatically persist its state (activeTab, subSections map, selectedPrefixes map) to `sessionStorage`, keyed by the deal ID. On mount, it reads from sessionStorage to restore the previous position. On unmount or logout, state is naturally cleared (sessionStorage clears on tab close; explicit clear on logout).
+Update the `InlineField` usage at lines 213-218 to use a stacked label layout where the hint text appears below the field label.
 
-This approach:
-- Preserves state when navigating away and returning to the same deal
-- Clears automatically on browser tab close or manual refresh
-- Requires no new database tables or API calls
-- Changes only ONE file
+### 2. Additional Guarantor Form (`src/components/deal/BorrowerAdditionalGuarantorForm.tsx`)
+
+**Same change** as above at lines 167-172:
+- "Full Name: If Entity, Use Entity" becomes "Full Name" with subtitle
+- "First: If Entity, Use Signer" becomes "First" with subtitle
+
+### 3. Banking Form - Debit Amount (`src/components/deal/BorrowerBankingForm.tsx`)
+
+**Current** (line 352-368): The `$` sign is rendered as a separate `<span>` outside the input, with `mr-2` spacing.
+
+**Change**: Move the `$` inside the input field using a wrapper `div` with `relative` positioning and a `pl-6` padding on the input to make room for the dollar sign. This places the `$` visually inside the input border.
 
 ## Technical Details
 
-### File Modified
+### Files Modified
 
-**`src/contexts/DealNavigationContext.tsx`**
+1. **`src/components/deal/BorrowerPrimaryForm.tsx`** (lines 213-218)
+   - Replace `InlineField label="Full Name: If Entity, Use Entity"` with a custom layout: label "Full Name" on the left, hint "If Entity, Use Entity" below it in `text-xs text-muted-foreground`
+   - Replace `InlineField label="First: If Entity, Use Signer"` with a custom layout: label "First" on the left, hint "If Entity, Use Signer" below it
 
-Changes:
-1. Add a `dealId` prop to `DealNavigationProvider` -- used as the sessionStorage key
-2. On mount: read `activeTab`, `subSections`, and `selectedPrefixes` from `sessionStorage` using key `deal-nav-{dealId}`
-3. On state change: write updated state to sessionStorage (debounced via a single `useEffect`)
-4. The `initialTab` prop is only used if no sessionStorage entry exists
+2. **`src/components/deal/BorrowerAdditionalGuarantorForm.tsx`** (lines 167-172)
+   - Same two label changes as above
 
-Implementation sketch:
-```text
-const STORAGE_KEY = `deal-nav-${dealId}`;
-
-// On mount: restore from sessionStorage
-useState(() => {
-  const stored = sessionStorage.getItem(STORAGE_KEY);
-  return stored ? JSON.parse(stored) : { activeTab: initialTab, subSections: {}, selectedPrefixes: {} };
-});
-
-// On state change: persist to sessionStorage
-useEffect(() => {
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ activeTab, subSections, selectedPrefixes }));
-}, [activeTab, subSections, selectedPrefixes]);
-```
-
-**`src/pages/csr/DealDataEntryPage.tsx`**
-
-Changes:
-1. Pass the deal `id` to `DealNavigationProvider` as `dealId` prop
-2. The wrapper at the bottom becomes: `<DealNavigationProvider dealId={id}>`
-3. Since the id comes from `useParams`, extract it in the wrapper component
+3. **`src/components/deal/BorrowerBankingForm.tsx`** (lines 352-368)
+   - Remove the outer `<div className="flex items-center flex-1">` wrapper with the separate `<span>$</span>`
+   - Replace with a `relative` container and position the `$` as an absolute element inside the input using `absolute left-2 top-1/2 -translate-y-1/2`
+   - Add `pl-6` to the input so text does not overlap the `$` sign
 
 ### What This Preserves
-- All existing UI layout, forms, and components -- zero visual changes
-- All save/update APIs and data handling
-- All role-based access control
-- All existing route structure
-- No database or schema changes
-- The forceMount + hidden class approach for within-page tab switching remains intact
-
-### What This Fixes
-- Navigating away from the deal page and returning restores the exact tab and sub-section
-- Example: Borrower > Authorized Party is preserved even after visiting Dashboard and returning
-- State clears on browser tab close, manual page refresh, or logout (sessionStorage behavior)
-- Works for all sections: Borrower, Property (including Liens/Insurance sub-views), Loan, Lender, Broker, Charges, Origination Fees
-
-### Example Flow After Fix
-1. User opens Deals > Enter Deal Data > Borrower > Authorized Party
-2. User clicks Dashboard in sidebar
-3. User clicks back to the same deal's Enter Deal Data
-4. Application restores: Borrower tab active, Authorized Party sub-section selected
+- All existing field keys, data binding, and save/update behavior
+- All other fields and layout in each form
+- No database or API changes
+- No changes to any other components
