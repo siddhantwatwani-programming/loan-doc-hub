@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 
 interface DealNavigationState {
   activeTab: string;
@@ -34,15 +34,57 @@ const DEFAULT_PREFIXES: Record<string, string> = {
   coborrower: 'coborrower',
 };
 
+interface StoredState {
+  activeTab: string;
+  subSections: Record<string, string>;
+  selectedPrefixes: Record<string, string>;
+}
+
+const getStorageKey = (dealId?: string) => dealId ? `deal-nav-${dealId}` : null;
+
+const loadState = (dealId?: string, initialTab = ''): StoredState => {
+  const key = getStorageKey(dealId);
+  if (key) {
+    try {
+      const stored = sessionStorage.getItem(key);
+      if (stored) {
+        const parsed = JSON.parse(stored) as StoredState;
+        return {
+          activeTab: parsed.activeTab || initialTab,
+          subSections: parsed.subSections || {},
+          selectedPrefixes: parsed.selectedPrefixes || {},
+        };
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }
+  return { activeTab: initialTab, subSections: {}, selectedPrefixes: {} };
+};
+
 interface DealNavigationProviderProps {
   children: ReactNode;
   initialTab?: string;
+  dealId?: string;
 }
 
-export const DealNavigationProvider: React.FC<DealNavigationProviderProps> = ({ children, initialTab = '' }) => {
-  const [activeTab, setActiveTab] = useState<string>(initialTab);
-  const [subSections, setSubSections] = useState<Record<string, string>>({});
-  const [selectedPrefixes, setSelectedPrefixes] = useState<Record<string, string>>({});
+export const DealNavigationProvider: React.FC<DealNavigationProviderProps> = ({ children, initialTab = '', dealId }) => {
+  const [state] = useState(() => loadState(dealId, initialTab));
+  const [activeTab, setActiveTabState] = useState<string>(state.activeTab);
+  const [subSections, setSubSections] = useState<Record<string, string>>(state.subSections);
+  const [selectedPrefixes, setSelectedPrefixes] = useState<Record<string, string>>(state.selectedPrefixes);
+
+  // Persist to sessionStorage on changes
+  useEffect(() => {
+    const key = getStorageKey(dealId);
+    if (key) {
+      sessionStorage.setItem(key, JSON.stringify({ activeTab, subSections, selectedPrefixes }));
+    }
+  }, [dealId, activeTab, subSections, selectedPrefixes]);
+
+  const setActiveTab = useCallback((tab: string) => {
+    setActiveTabState(tab);
+  }, []);
 
   const getSubSection = useCallback((sectionKey: string) => {
     return subSections[sectionKey] ?? DEFAULT_SUB_SECTIONS[sectionKey] ?? '';

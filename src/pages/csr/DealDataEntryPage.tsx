@@ -886,10 +886,13 @@ const DealDataEntryInner: React.FC = () => {
 };
 
 // Wrapper component that provides the navigation context
-export const DealDataEntryPage: React.FC = () => (
-  <DealNavigationProvider>
-    <DealDataEntryInner />
-  </DealNavigationProvider>
-);
+export const DealDataEntryPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  return (
+    <DealNavigationProvider dealId={id}>
+      <DealDataEntryInner />
+    </DealNavigationProvider>
+  );
+};
 
 export default DealDataEntryPage;
