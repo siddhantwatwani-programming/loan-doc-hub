@@ -1,63 +1,70 @@
 
 
-# UI Alignment & Layout Fixes
+# Fix: File Tab Scrolling, File Loading Errors & Performance Optimization
 
 ## Overview
-Three sets of changes across Loan Terms & Balances form, Add Funding modal, and currency field styling for Lien forms/modals.
+Three interconnected issues are identified in the workspace system: horizontal tab scrolling not working properly, "Unable to load file" errors when opening multiple files, and degraded performance with multiple open files. Root causes traced to Radix ScrollArea limitations, concurrent API overload, and lack of deferred loading for inactive workspace files.
 
-## Changes
+## Problem Analysis
 
-### 1. Loan Terms & Balances - Sold Rate Alignment (LoanTermsBalancesForm.tsx)
+### 1. Tab Bar Horizontal Scrolling
+**Root Cause:** Radix UI's `ScrollArea` component applies `overflow: hidden` on its viewport and relies on its own virtual scrollbar rendering. This can fail silently with horizontally-expanding `min-w-max` content, making tabs beyond the visible area unreachable.
 
-**Current:** The Sold Rate input has a checkbox + label taking `min-w-[130px]` but the input is inside a different structure than Note Rate's `renderPercentField`.
+### 2. "Unable to load file" Errors
+**Root Cause:** When multiple deal files are opened, ALL `DealDataEntryInner` instances mount simultaneously (keep-alive architecture). Each triggers `fetchDeal()` + `useDealFields.fetchData()` + `useExternalModificationDetector` concurrently. With 5-10 files, this creates 15-30+ simultaneous API calls, overwhelming the browser's connection pool and triggering `Failed to fetch` / timeout errors.
 
-**Fix:** Restructure the Sold Rate row so the input field uses `flex-1` with `pr-7` (matching Note Rate's percent field pattern), ensuring consistent width and alignment.
+### 3. Performance Degradation
+**Root Cause:** Every mounted (but hidden) file runs its full data-fetching lifecycle on mount. The `useDealFields` hook fetches field_dictionary (mitigated by cache), deal_section_values, and builds complex value maps for every open file simultaneously. The `saveDraft` function performs sequential per-section upserts which compounds when multiple files have unsaved changes.
 
-### 2. Loan Terms & Balances - Accept Short Payments Alignment (LoanTermsBalancesForm.tsx)
+## Implementation Plan
 
-**Current:** Accept Short Payments has a `$` input with fixed `w-24`, then "Or" text and Percent checkbox inline.
+### Change 1: Replace Radix ScrollArea with Native Scrolling (WorkspaceTabBar.tsx)
+Replace the `ScrollArea`/`ScrollBar` wrapper in the tab bar with a native `div` using `overflow-x-auto overflow-y-hidden` and custom scrollbar styling. Native browser horizontal scrolling is more reliable for this use case.
 
-**Fix:** 
-- Change the `$` input from `w-24` to `flex-1` to match the width of other fields
-- Move "Or" checkbox + "Percent" label below the input as a sub-label line (matching the sub-label pattern used for "Months", "Held By", "Hold Days")
+- Remove `ScrollArea` and `ScrollBar` imports
+- Replace with a `div` that has `overflow-x-auto overflow-y-hidden` classes
+- Add thin scrollbar styling via Tailwind utility classes
 
-### 3. Add Funding Modal - Layout Restructure (AddFundingModal.tsx)
+### Change 2: Deferred Loading for Inactive Workspace Files (useDealFields.ts)
+Add an `active` parameter to `useDealFields` so that hidden (inactive) workspace files skip their initial data fetch until the user switches to them.
 
-**Current:** The right column has "Broker or family..." in a bordered box and "NOTE:" in a separate bordered box.
+- Add `active: boolean` parameter (default `true`) to `useDealFields`
+- Guard `fetchData` to only run when `active` is true
+- When `active` transitions from false to true, trigger fetch if data hasn't loaded yet
+- Pass `isActiveTab` from `DealDataEntryInner` to `useDealFields`
 
-**Fix:**
-- Remove the 3-column grid layout - make it a single 2-column form
-- Move the "NOTE:" section below the Notes textarea, remove its border
-- Move the "Broker or family will participate in funding" checkbox below the NOTE section as a single line, remove its border
+### Change 3: Deferred Deal Fetch for Inactive Files (DealDataEntryPage.tsx)
+Similarly defer the `fetchDeal()` call in `DealDataEntryInner` until the file becomes the active workspace tab.
 
-### 4. Currency Fields - $ Inside Input (LienDetailForm.tsx, LienModal.tsx, PropertyLiensForm.tsx)
+- Use the workspace context to determine if this file is the active tab
+- Only call `fetchDeal()` when active or when first becoming active
+- Show a lightweight skeleton/spinner for inactive-but-not-yet-loaded files
 
-**Current:** The `$` symbol is rendered as a separate `<span>` outside/beside the `<Input>`.
+### Change 4: Batch Section Saves (useDealFields.ts)
+The current `saveDraft` does sequential `maybeSingle()` + `update/insert` per section. Consolidate to reduce round-trips.
 
-**Fix:** For Original Balance, Balance After, and Regular Payment fields in all three files, move the `$` symbol inside the input using absolute positioning (`absolute left-3`) and add `pl-7` padding to the input. This matches the pattern already used in `LoanTermsBalancesForm.tsx`'s `renderCurrencyField`.
+- Fetch all existing `deal_section_values` for the deal in a single query at the start of save
+- Build all section payloads in memory
+- Perform upserts using fewer sequential calls (group inserts together, group updates together)
+
+### Change 5: Memoize Heavy Computations (DealDataEntryPage.tsx)
+Wrap expensive computed values that recalculate on every render.
+
+- Memoize the section tab rendering logic
+- Ensure `computeCalculatedFields` doesn't re-trigger unnecessarily during save
 
 ## Files Modified
 
-1. **`src/components/deal/LoanTermsBalancesForm.tsx`**
-   - Lines 166-187: Restructure Sold Rate row for proper alignment
-   - Lines 311-339: Restructure Accept Short Payments - make input full-width, move "Or Percent" below
-
-2. **`src/components/deal/AddFundingModal.tsx`**
-   - Lines 83-161: Remove 3-column grid, move NOTE and broker checkbox below Notes textarea, remove borders
-
-3. **`src/components/deal/LienDetailForm.tsx`**
-   - Lines 40-48: Update `renderCurrency` helper to use absolute-positioned `$` inside input with `pl-7`
-
-4. **`src/components/deal/LienModal.tsx`**
-   - Lines 55-63: Update `renderCurrencyField` helper to use absolute-positioned `$` inside input with `pl-7`
-
-5. **`src/components/deal/PropertyLiensForm.tsx`**
-   - Lines 139-152, 169-180: Update Original Balance, Regular Payment fields to use `$` inside input
+1. **`src/components/layout/WorkspaceTabBar.tsx`** - Replace ScrollArea with native overflow scrolling
+2. **`src/hooks/useDealFields.ts`** - Add `active` parameter for deferred loading; batch save optimization
+3. **`src/pages/csr/DealDataEntryPage.tsx`** - Pass `isActiveTab` to hooks; defer `fetchDeal`; memoize tab rendering
+4. **`src/components/workspace/WorkspaceFileRenderer.tsx`** - Pass active state to children
 
 ## No Changes To
-- Database schema or tables
-- APIs or edge functions
-- Save/update logic
-- Any other components or pages
-- Data handling or state management
+- Database schema, tables, or RLS policies
+- Edge functions
+- Existing save/update API patterns
+- UI layout of forms, modals, or sections
+- Document generation flow
+- Any other components not listed above
 
