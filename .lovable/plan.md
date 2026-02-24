@@ -1,116 +1,81 @@
 
 
-# Fix Auto-Refresh / State Reset on Navigation
+# Fix Global Sub-Navigation State Persistence
 
-## Problem Analysis
+## Root Cause
 
-After the previous fix (consolidating to a single `AppLayout`), the layout no longer remounts between route groups. However, **state still resets** due to two remaining issues:
+The `DealNavigationContext` is created inside `DealDataEntryPage`, which means it only lives as long as that page is mounted. When the user navigates away (e.g., to Dashboard, or to the Deal Overview page) and returns, the entire page component unmounts and remounts, resetting all navigation state to defaults.
 
-### Issue 1: Tab Content Unmounting (Radix TabsContent)
-In `DealDataEntryPage.tsx`, the top-level tabs (Borrower, Loan, Property, etc.) use Radix UI's `<TabsContent>`, which **unmounts inactive tab content by default**. When switching from "Property" to "Loan" and back, the entire `PropertySectionContent` component is destroyed and recreated, losing:
-- Active sub-section (e.g., "Legal Description" resets to "Properties")
-- Selected item (e.g., which property was being viewed)
-- Table pagination, scroll position
-- Modal state
+**Flow that fails:**
+1. User is on `/deals/:id/edit` -- Borrower > Authorized Party
+2. User clicks sidebar to go to Dashboard (`/dashboard`)
+3. `DealDataEntryPage` unmounts, `DealNavigationProvider` is destroyed
+4. User navigates back to `/deals/:id/edit`
+5. New `DealNavigationProvider` is created with empty state
+6. activeTab defaults to first section, sub-section defaults to "borrowers"
+7. User loses their position (Authorized Party is gone)
 
-### Issue 2: Local State in Section Components
-Every section component stores its navigation state in local `useState`:
-- `BorrowerSectionContent` -- `useState<BorrowerSubSection>('borrowers')`
-- `PropertySectionContent` -- `useState<PropertySubSection>('properties')`
-- `LoanTermsSectionContent` -- `useState<LoanTermsSubSection>('balances_loan_details')`
-- `LenderSectionContent` -- `useState<LenderSubSection>('lenders')`
-- `BrokerSectionContent` -- `useState<BrokerSubSection>('brokers')`
-- `ChargesSectionContent` -- `useState<ChargesSubSection>('charges')`
-- `InsuranceSectionContent` -- `useState<InsuranceSubSection>('insurances')`
-- `LienSectionContent` -- `useState<LienSubSection>('liens')`
-- `OriginationFeesSectionContent` -- `useState<OriginationFeesSubSection>('application')`
+## Solution: Persist Navigation State to SessionStorage
 
-When the parent `TabsContent` unmounts/remounts these components, all sub-navigation resets to defaults.
+Update the `DealNavigationContext` to automatically persist its state (activeTab, subSections map, selectedPrefixes map) to `sessionStorage`, keyed by the deal ID. On mount, it reads from sessionStorage to restore the previous position. On unmount or logout, state is naturally cleared (sessionStorage clears on tab close; explicit clear on logout).
 
-## Solution
-
-### Step 1: Create a Navigation State Context
-
-Create a new context (`DealNavigationContext`) that stores all tab and sub-navigation state for the deal data entry page. This context will be placed inside `DealDataEntryPage` so it lives as long as the page is mounted.
-
-**New file: `src/contexts/DealNavigationContext.tsx`**
-
-Stores:
-- `activeTab` (top-level tab: borrower, loan_terms, property, etc.)
-- `subSections` map: a record mapping each section key to its active sub-section
-- `selectedPrefixes` map: a record mapping each section to its selected item prefix (e.g., `property1`, `borrower2`)
-
-This means when a user navigates Property > Legal Description > switches to Loan tab > comes back to Property, it will restore "Legal Description" as the active sub-section.
-
-### Step 2: Use `forceMount` on TabsContent + CSS Visibility
-
-Modify `DealDataEntryPage.tsx` to add `forceMount` to each `<TabsContent>` and use CSS to hide inactive tabs instead of unmounting them. This keeps all section components mounted in the DOM, preserving their internal state.
-
-```text
-Before: <TabsContent value={section}>  -- unmounts when inactive
-After:  <TabsContent value={section} forceMount className={activeTab !== section ? 'hidden' : ''}>
-```
-
-This single change prevents all child component state from being destroyed.
-
-### Step 3: Wire Section Components to the Navigation Context
-
-Update each section content component to read/write its sub-section state from the context instead of local `useState`:
-
-- `BorrowerSectionContent` -- read `subSections.borrower`, write via context setter
-- `PropertySectionContent` -- read `subSections.property`, write via context setter
-- `LoanTermsSectionContent` -- read `subSections.loan_terms`, write via context setter
-- `LenderSectionContent` -- read `subSections.lender`, write via context setter
-- `BrokerSectionContent` -- read `subSections.broker`, write via context setter
-- `ChargesSectionContent` -- read `subSections.charges`, write via context setter
-- `InsuranceSectionContent` -- read from parent context
-- `LienSectionContent` -- read from parent context
-- `OriginationFeesSectionContent` -- read `subSections.origination_fees`, write via context setter
-
-Each component's `useState` for sub-section/selected-prefix will be replaced with context getters/setters, keeping the same API shape.
-
-### Step 4: Persist activeTab in DealDataEntryPage via Context
-
-Move the `activeTab` state from `DealDataEntryPage`'s local `useState` into the `DealNavigationContext`. The initial tab is still set from the first loaded section, but subsequent tab switches are stored in context and persist as long as the page component is mounted.
+This approach:
+- Preserves state when navigating away and returning to the same deal
+- Clears automatically on browser tab close or manual refresh
+- Requires no new database tables or API calls
+- Changes only ONE file
 
 ## Technical Details
 
-### Files Created
-1. **`src/contexts/DealNavigationContext.tsx`** -- Context provider for deal navigation state (active tab, sub-sections, selected prefixes)
+### File Modified
 
-### Files Modified
-1. **`src/pages/csr/DealDataEntryPage.tsx`**
-   - Wrap content with `DealNavigationProvider`
-   - Replace local `activeTab` state with context
-   - Add `forceMount` + conditional `hidden` class to all `TabsContent` elements
+**`src/contexts/DealNavigationContext.tsx`**
 
-2. **`src/components/deal/BorrowerSectionContent.tsx`** -- Replace local `activeSubSection` and `selectedBorrowerPrefix` with context
-3. **`src/components/deal/PropertySectionContent.tsx`** -- Replace local `activeSubSection` and `selectedPropertyPrefix` with context
-4. **`src/components/deal/LoanTermsSectionContent.tsx`** -- Replace local `activeSubSection` with context
-5. **`src/components/deal/LenderSectionContent.tsx`** -- Replace local `activeSubSection` and `selectedLenderPrefix` with context
-6. **`src/components/deal/BrokerSectionContent.tsx`** -- Replace local `activeSubSection` and `selectedBrokerPrefix` with context
-7. **`src/components/deal/ChargesSectionContent.tsx`** -- Replace local `activeSubSection` and `selectedChargePrefix` with context
-8. **`src/components/deal/InsuranceSectionContent.tsx`** -- Replace local `activeSubSection` with context
-9. **`src/components/deal/LienSectionContent.tsx`** -- Replace local `activeSubSection` with context
-10. **`src/components/deal/OriginationFeesSectionContent.tsx`** -- Replace local `activeSubSection` with context
+Changes:
+1. Add a `dealId` prop to `DealNavigationProvider` -- used as the sessionStorage key
+2. On mount: read `activeTab`, `subSections`, and `selectedPrefixes` from `sessionStorage` using key `deal-nav-{dealId}`
+3. On state change: write updated state to sessionStorage (debounced via a single `useEffect`)
+4. The `initialTab` prop is only used if no sessionStorage entry exists
+
+Implementation sketch:
+```text
+const STORAGE_KEY = `deal-nav-${dealId}`;
+
+// On mount: restore from sessionStorage
+useState(() => {
+  const stored = sessionStorage.getItem(STORAGE_KEY);
+  return stored ? JSON.parse(stored) : { activeTab: initialTab, subSections: {}, selectedPrefixes: {} };
+});
+
+// On state change: persist to sessionStorage
+useEffect(() => {
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ activeTab, subSections, selectedPrefixes }));
+}, [activeTab, subSections, selectedPrefixes]);
+```
+
+**`src/pages/csr/DealDataEntryPage.tsx`**
+
+Changes:
+1. Pass the deal `id` to `DealNavigationProvider` as `dealId` prop
+2. The wrapper at the bottom becomes: `<DealNavigationProvider dealId={id}>`
+3. Since the id comes from `useParams`, extract it in the wrapper component
 
 ### What This Preserves
-- All existing UI layout, forms, and components
+- All existing UI layout, forms, and components -- zero visual changes
 - All save/update APIs and data handling
 - All role-based access control
 - All existing route structure
 - No database or schema changes
+- The forceMount + hidden class approach for within-page tab switching remains intact
 
 ### What This Fixes
-- Switching top-level tabs (Borrower/Loan/Property/etc.) no longer destroys sub-component state
-- Sub-navigation position is remembered when returning to a tab
-- Selected items (which borrower, which property) are preserved across tab switches
-- Table pagination, scroll position, and modal state survive tab changes
-- State resets only on page unmount (navigating away from deal), manual refresh, or logout
+- Navigating away from the deal page and returning restores the exact tab and sub-section
+- Example: Borrower > Authorized Party is preserved even after visiting Dashboard and returning
+- State clears on browser tab close, manual page refresh, or logout (sessionStorage behavior)
+- Works for all sections: Borrower, Property (including Liens/Insurance sub-views), Loan, Lender, Broker, Charges, Origination Fees
 
 ### Example Flow After Fix
-1. User opens Deals > Enter Deal Data > Property > selects Property 2 > Legal Description
-2. User switches to Loan tab
-3. User returns to Property tab
-4. Property tab shows Property 2 > Legal Description (exactly where they left off)
-
+1. User opens Deals > Enter Deal Data > Borrower > Authorized Party
+2. User clicks Dashboard in sidebar
+3. User clicks back to the same deal's Enter Deal Data
+4. Application restores: Borrower tab active, Authorized Party sub-section selected
