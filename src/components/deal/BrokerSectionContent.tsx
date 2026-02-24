@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BrokerSubNavigation, BrokerSubSection } from './BrokerSubNavigation';
@@ -89,8 +90,11 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
   disabled = false,
   calculationResults = {},
 }) => {
-  const [activeSubSection, setActiveSubSection] = useState<BrokerSubSection>('brokers');
-  const [selectedBrokerPrefix, setSelectedBrokerPrefix] = useState<string>('broker1');
+  const nav = useDealNavigationOptional();
+  const activeSubSection = (nav?.getSubSection('broker') ?? 'brokers') as BrokerSubSection;
+  const setActiveSubSection = (sub: BrokerSubSection) => nav?.setSubSection('broker', sub);
+  const selectedBrokerPrefix = nav?.getSelectedPrefix('broker') ?? 'broker1';
+  const setSelectedBrokerPrefix = (prefix: string) => nav?.setSelectedPrefix('broker', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBroker, setEditingBroker] = useState<BrokerData | null>(null);
   const [isLoading, setIsLoading] = useState(false);

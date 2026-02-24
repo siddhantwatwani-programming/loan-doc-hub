@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InsuranceSubNavigation, type InsuranceSubSection } from './InsuranceSubNavigation';
@@ -103,8 +104,11 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
   propertyOptions = [],
   onBack,
 }) => {
-  const [activeSubSection, setActiveSubSection] = useState<InsuranceSubSection>('insurances');
-  const [selectedInsurancePrefix, setSelectedInsurancePrefix] = useState<string>('insurance1');
+  const nav = useDealNavigationOptional();
+  const activeSubSection = (nav?.getSubSection('insurance') ?? 'insurances') as InsuranceSubSection;
+  const setActiveSubSection = (sub: InsuranceSubSection) => nav?.setSubSection('insurance', sub);
+  const selectedInsurancePrefix = nav?.getSelectedPrefix('insurance') ?? 'insurance1';
+  const setSelectedInsurancePrefix = (prefix: string) => nav?.setSelectedPrefix('insurance', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingInsurance, setEditingInsurance] = useState<InsuranceData | null>(null);
   

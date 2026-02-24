@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { useEntryOrchestration } from "@/hooks/useEntryOrchestration";
 import { useFieldPermissions } from "@/hooks/useFieldPermissions";
 import { useExternalModificationDetector } from "@/hooks/useExternalModificationDetector";
 import { useAuth } from "@/contexts/AuthContext";
+import { DealNavigationProvider, useDealNavigation } from "@/contexts/DealNavigationContext";
 import { DealSectionTab } from "@/components/deal/DealSectionTab";
 import { BorrowerSectionContent } from "@/components/deal/BorrowerSectionContent";
 import { LenderSectionContent } from "@/components/deal/LenderSectionContent";
@@ -90,15 +91,16 @@ const SECTION_ORDER: string[] = [
   "seller",
 ];
 
-export const DealDataEntryPage: React.FC = () => {
+// Inner component that uses the navigation context
+const DealDataEntryInner: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isExternalUser, isInternalUser } = useAuth();
+  const { activeTab, setActiveTab } = useDealNavigation();
 
   const [deal, setDeal] = useState<Deal | null>(null);
   const [dealLoading, setDealLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>("");
   const [showValidation, setShowValidation] = useState(false);
   const [markingReady, setMarkingReady] = useState(false);
   const [completingSection, setCompletingSection] = useState(false);
@@ -710,7 +712,7 @@ export const DealDataEntryPage: React.FC = () => {
             {(isExternalUser ? visibleSections : sections)
               .filter((s) => SECTION_LABELS[s] && s !== "dates")
               .map((section) => (
-                <TabsContent key={section} value={section} className="animate-fade-in">
+                <TabsContent key={section} value={section} forceMount className={cn("animate-fade-in", activeTab !== section && "hidden")}>
                   {section === "borrower" ? (
                     <BorrowerSectionContent
                       fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
@@ -828,7 +830,7 @@ export const DealDataEntryPage: React.FC = () => {
               ))}
 
             {/* Funding - standalone top-level tab */}
-            <TabsContent value="funding" className="animate-fade-in">
+            <TabsContent value="funding" forceMount className={cn("animate-fade-in", activeTab !== "funding" && "hidden")}>
               <LoanTermsFundingForm
                 fields={fieldsBySection["loan_terms" as FieldSection] || []}
                 values={values}
@@ -842,7 +844,7 @@ export const DealDataEntryPage: React.FC = () => {
             </TabsContent>
 
             {/* Conversation Log - Coming Soon */}
-            <TabsContent value="conversation_log" className="animate-fade-in">
+            <TabsContent value="conversation_log" forceMount className={cn("animate-fade-in", activeTab !== "conversation_log" && "hidden")}>
               <div className="flex items-center justify-center min-h-[300px]">
                 <div className="text-center">
                   <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -853,7 +855,7 @@ export const DealDataEntryPage: React.FC = () => {
             </TabsContent>
 
             {/* Event Journal - Coming Soon */}
-            <TabsContent value="event_journal" className="animate-fade-in">
+            <TabsContent value="event_journal" forceMount className={cn("animate-fade-in", activeTab !== "event_journal" && "hidden")}>
               <div className="flex items-center justify-center min-h-[300px]">
                 <div className="text-center">
                   <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -865,7 +867,7 @@ export const DealDataEntryPage: React.FC = () => {
 
             {/* Origination Fees - Custom UI Tab Content */}
             {isInternalUser && (
-              <TabsContent value="origination_fees" className="animate-fade-in">
+              <TabsContent value="origination_fees" forceMount className={cn("animate-fade-in", activeTab !== "origination_fees" && "hidden")}>
                 <OriginationFeesSectionContent
                   fields={[]}
                   values={values}
@@ -882,5 +884,12 @@ export const DealDataEntryPage: React.FC = () => {
     </div>
   );
 };
+
+// Wrapper component that provides the navigation context
+export const DealDataEntryPage: React.FC = () => (
+  <DealNavigationProvider>
+    <DealDataEntryInner />
+  </DealNavigationProvider>
+);
 
 export default DealDataEntryPage;

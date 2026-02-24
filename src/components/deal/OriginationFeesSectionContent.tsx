@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { OriginationFeesForm } from './OriginationFeesForm';
 import { OriginationApplicationForm } from './OriginationApplicationForm';
 import { OriginationInsuranceConditionsForm } from './OriginationInsuranceConditionsForm';
@@ -36,7 +37,9 @@ export const OriginationFeesSectionContent: React.FC<OriginationFeesSectionConte
   disabled = false,
   calculationResults = {},
 }) => {
-  const [activeSubSection, setActiveSubSection] = useState<OriginationFeesSubSection>('application');
+  const nav = useDealNavigationOptional();
+  const activeSubSection = (nav?.getSubSection('origination_fees') ?? 'application') as OriginationFeesSubSection;
+  const setActiveSubSection = (sub: OriginationFeesSubSection) => nav?.setSubSection('origination_fees', sub);
 
   const renderContent = () => {
     switch (activeSubSection) {

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { LoanTermsSubNavigation, type LoanTermsSubSection } from './LoanTermsSubNavigation';
+import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { LoanTermsBalancesForm } from './LoanTermsBalancesForm';
 import { LoanTermsDetailsForm } from './LoanTermsDetailsForm';
 import { LoanTermsPenaltiesForm } from './LoanTermsPenaltiesForm';
@@ -26,7 +27,9 @@ export const LoanTermsSectionContent: React.FC<LoanTermsSectionContentProps> = (
   calculationResults = {},
   dealId = '',
 }) => {
-  const [activeSubSection, setActiveSubSection] = useState<LoanTermsSubSection>('balances_loan_details');
+  const nav = useDealNavigationOptional();
+  const activeSubSection = (nav?.getSubSection('loan_terms') ?? 'balances_loan_details') as LoanTermsSubSection;
+  const setActiveSubSection = (sub: LoanTermsSubSection) => nav?.setSubSection('loan_terms', sub);
 
   const renderSubSectionContent = () => {
     switch (activeSubSection) {

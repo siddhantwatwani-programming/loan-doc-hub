@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LenderSubNavigation, type LenderSubSection } from './LenderSubNavigation';
@@ -92,8 +93,11 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
   disabled = false,
   calculationResults = {},
 }) => {
-  const [activeSubSection, setActiveSubSection] = useState<LenderSubSection>('lenders');
-  const [selectedLenderPrefix, setSelectedLenderPrefix] = useState<string>('lender1');
+  const nav = useDealNavigationOptional();
+  const activeSubSection = (nav?.getSubSection('lender') ?? 'lenders') as LenderSubSection;
+  const setActiveSubSection = (sub: LenderSubSection) => nav?.setSubSection('lender', sub);
+  const selectedLenderPrefix = nav?.getSelectedPrefix('lender') ?? 'lender1';
+  const setSelectedLenderPrefix = (prefix: string) => nav?.setSelectedPrefix('lender', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLender, setEditingLender] = useState<LenderData | null>(null);
   const [isLoading, setIsLoading] = useState(false);

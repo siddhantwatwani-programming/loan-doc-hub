@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LienSubNavigation, type LienSubSection } from './LienSubNavigation';
@@ -149,8 +150,11 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   propertyOptions = [],
   onBack,
 }) => {
-  const [activeSubSection, setActiveSubSection] = useState<LienSubSection>('liens');
-  const [selectedLienPrefix, setSelectedLienPrefix] = useState<string>('lien1');
+  const nav = useDealNavigationOptional();
+  const activeSubSection = (nav?.getSubSection('lien') ?? 'liens') as LienSubSection;
+  const setActiveSubSection = (sub: LienSubSection) => nav?.setSubSection('lien', sub);
+  const selectedLienPrefix = nav?.getSelectedPrefix('lien') ?? 'lien1';
+  const setSelectedLienPrefix = (prefix: string) => nav?.setSelectedPrefix('lien', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLien, setEditingLien] = useState<LienData | null>(null);
 
