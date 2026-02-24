@@ -48,8 +48,8 @@
     --warning-foreground: 0 0% 100%;
 
     /* Borders & inputs */
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
+    --border: 214 25% 78%;
+    --input: 214 25% 78%;
     --ring: 224 76% 48%;
 
     --radius: 0.5rem;
@@ -113,8 +113,8 @@
     --warning-foreground: 0 0% 100%;
 
     /* Borders & inputs */
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
+    --border: 217 25% 30%;
+    --input: 217 25% 30%;
     --ring: 224 76% 58%;
 
     /* Sidebar */
