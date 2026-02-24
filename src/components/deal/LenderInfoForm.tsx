@@ -343,7 +343,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                     disabled={disabled}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {getValue('dob') ? format(parse(getValue('dob'), 'yyyy-MM-dd', new Date()), 'PPP') : <span>Pick a date</span>}
+                    {getValue('dob') ? format(parse(getValue('dob'), 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy') : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -361,7 +361,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             {/* Tax ID Section */}
             <div className="space-y-3 mt-2">
               <div className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">Tax ID Type</Label>
+                <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Tax ID Type</Label>
                 <Select
                   value={getValue('taxIdType')}
                   onValueChange={(value) => handleChange('taxIdType', value)}
@@ -380,7 +380,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 </Select>
               </div>
               <div className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground min-w-[100px] text-left shrink-0">TIN</Label>
+                <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">TIN</Label>
                 <Input
                   value={getValue('taxId')}
                   onChange={(e) => handleChange('taxId', e.target.value)}
