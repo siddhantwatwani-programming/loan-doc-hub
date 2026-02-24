@@ -1,183 +1,146 @@
 
+# Application Performance Optimization
 
-# Multi-File Workspace Tabs for CSR Portal
+## Root Cause Analysis
 
-## Overview
-Implement a persistent, browser-tab-like workspace system that allows CSRs to open up to 10 deal files simultaneously, switch between them instantly without data loss, and manage unsaved changes with proper confirmation dialogs.
+After thorough code analysis, the following performance bottlenecks have been identified:
 
-## Architecture
+### Critical Issues
 
-```text
-+---------------------------------------------+
-|  AppHeader (user info, theme, logout)        |
-+---------------------------------------------+
-|  WorkspaceTabBar (file tabs with close btns) |
-|  [Dashboard] [DL-2026-0120 x] [DL-2026-0121 x] |
-+---------------------------------------------+
-|  AppSidebar  |  Active File Content          |
-|              |  (all open files rendered,    |
-|              |   inactive ones hidden)       |
-+---------------------------------------------+
-```
+1. **N+1 Query Problem in External Modification Detector** (`useExternalModificationDetector.ts`)
+   - Lines 112-139: For every field value in `deal_section_values`, the hook makes **individual** database queries for `user_roles` and `profiles` tables inside a loop
+   - A deal with 100 field values triggers 200+ sequential database calls on mount
+   - This runs for **every open workspace file** simultaneously
 
-## Implementation Steps
+2. **Duplicate Field Dictionary Fetches** (`useDealFields.ts`)
+   - The hook calls `resolveAllFields()` or `resolvePacketFields()` which fetches the entire `field_dictionary` table
+   - Then immediately fetches `field_dictionary` **again** (lines 259-266) for TMO tab sections
+   - Each open workspace file duplicates these calls
 
-### Step 1: Create WorkspaceContext
-**New file:** `src/contexts/WorkspaceContext.tsx`
+3. **No Caching of Shared Data**
+   - `fetchFieldVisibility()` in `useFieldPermissions` fetches the entire `field_dictionary` on every mount
+   - Field dictionary data is identical across all open deals but fetched independently per file
+   - With 3 open files, field_dictionary is fetched 6-9 times on load
 
-Global state store managing:
-- `openFiles[]` - array of `{ id, dealNumber, dealState, productType, openedAt }`
-- `activeFileId` - currently active file ID
-- `fileStates{}` - per-file cached state (isDirty flag tracked via useDealFields)
-- Functions: `openFile()`, `closeFile()`, `switchToFile()`, `setFileDirty()`, `getFileDirty()`
-- Max 10 file limit enforcement
-- State resets on logout only (no sessionStorage persistence -- resets on browser refresh per spec)
+4. **Keep-Alive Multiplied API Calls**
+   - The workspace Keep-Alive architecture mounts ALL open deal components simultaneously
+   - Each mounted `DealDataEntryInner` independently runs: `useDealFields`, `useEntryOrchestration`, `useExternalModificationDetector`, `useFieldPermissions`
+   - With 5 open files, this means 20+ parallel hook instances making 50+ API calls on load
 
-### Step 2: Create WorkspaceTabBar Component
-**New file:** `src/components/layout/WorkspaceTabBar.tsx`
+5. **Duplicate React Key in ChargesTableView** (`ChargesTableView.tsx` lines 68-69)
+   - `accruedInterest` column is defined twice in `DEFAULT_COLUMNS`, causing the React key warning visible in console logs
+   - Causes React reconciliation issues
 
-- Rendered inside AppLayout, between AppHeader and main content
-- Shows a "Dashboard" tab (always present, not closeable)
-- Shows one tab per open file displaying deal_number
-- Each file tab has a close (X) button
-- Active tab: blue background, bold text
-- Inactive tab: light grey background
-- Dirty indicator: bullet (bullet) on tabs with unsaved changes
-- Clicking a tab calls `switchToFile()` and navigates to `/deals/:id/edit`
-- Clicking Dashboard navigates to `/dashboard`
+### Secondary Issues
 
-### Step 3: Create Close Confirmation Dialog
-**New file:** `src/components/workspace/CloseConfirmationDialog.tsx`
+6. **Unnecessary Realtime Subscriptions** - `useEntryOrchestration` creates a realtime channel per open deal file, even for internal CSR users who don't need participant orchestration
 
-Modal shown when closing a tab with unsaved changes:
-- Title: "Do you want to save changes before leaving?"
-- Buttons: "Save & Close", "Discard", "Stay"
-- "Save & Close" triggers saveDraft, then closes
-- "Discard" closes without saving
-- "Stay" cancels the close action
+7. **AbortError from concurrent Supabase calls** - The "signal is aborted without reason" error in console is caused by too many simultaneous Supabase requests being created and canceled
 
-### Step 4: Create Save Confirmation Dialog
-**New file:** `src/components/workspace/SaveConfirmationDialog.tsx`
+## Optimization Plan
 
-Modal shown when clicking "Save Draft" (only if unsaved changes exist):
-- Title: "Do you want to save changes?"
-- Buttons: "Yes", "No"
-- "Yes" proceeds with save
-- "No" cancels
+### Fix 1: Batch Queries in External Modification Detector
+**File:** `src/hooks/useExternalModificationDetector.ts`
 
-### Step 5: Create Max Files Warning Dialog
-**New file:** `src/components/workspace/MaxFilesDialog.tsx`
+Replace the N+1 loop (individual queries per field) with batch queries:
+- Collect all unique `updated_by` user IDs from field values
+- Make ONE query to `user_roles` for all user IDs
+- Make ONE query to `profiles` for external user IDs only
+- Process results in memory
 
-Modal shown when trying to open an 11th file:
-- Message: "You can open up to 10 files. Please close one before opening another."
-- Buttons: "Close a file", "Cancel"
+This reduces 200+ queries to 3 queries per deal.
 
-### Step 6: Create WorkspaceFileRenderer Component
-**New file:** `src/components/workspace/WorkspaceFileRenderer.tsx`
+### Fix 2: App-Level Field Dictionary Cache
+**New file:** `src/hooks/useFieldDictionaryCache.ts`
 
-Uses the Keep-Alive pattern:
-- Renders ALL open file DealDataEntryPage components simultaneously
-- Each wrapped in its own DealNavigationProvider
-- Inactive files are hidden via CSS (`display: none` / `hidden` class)
-- Active file is visible
-- Components stay mounted, preserving all state (form data, scroll, sub-tabs, filters)
+Create a shared cache using React Context that:
+- Fetches field_dictionary ONCE at app level
+- Provides cached data to all `useDealFields`, `useFieldPermissions`, and `useExternalModificationDetector` instances
+- Uses a simple "fetch once, share everywhere" pattern with `useRef` to prevent duplicate fetches
+- Exposes `fieldDictionary`, `fieldVisibility`, and loading state
 
-### Step 7: Modify AppLayout
 **File:** `src/components/layout/AppLayout.tsx`
+- Wrap content with `FieldDictionaryCacheProvider`
 
-- Wrap children with `WorkspaceProvider`
-- Add `WorkspaceTabBar` below AppHeader
-- Adjust main content `pt` to account for tab bar height (~40px more)
-- When workspace has open files and active file, render `WorkspaceFileRenderer` instead of `<Outlet />` for deal edit routes
-- `<Outlet />` still used for non-deal routes (Dashboard, admin pages, etc.)
+### Fix 3: Use Cache in useDealFields
+**File:** `src/hooks/useDealFields.ts`
 
-### Step 8: Modify DealDataEntryPage Save Flow
+- Accept cached field dictionary data as parameter or from context
+- Remove the duplicate TMO tab sections fetch (lines 259-266) by using cached data
+- Only fetch deal-specific data (`deal_section_values`, `packet_templates`, `template_field_maps`)
+
+### Fix 4: Use Cache in useFieldPermissions
+**File:** `src/hooks/useFieldPermissions.ts`
+
+- Use the shared field dictionary cache instead of calling `fetchFieldVisibility()` independently
+- Eliminates redundant `field_dictionary` fetch per component mount
+
+### Fix 5: Fix Duplicate Key in ChargesTableView
+**File:** `src/components/deal/ChargesTableView.tsx`
+
+- Remove the duplicate `accruedInterest` entry from `DEFAULT_COLUMNS` (line 69)
+- This fixes the React key warning in console
+
+### Fix 6: Skip Unnecessary Hooks for Internal Users
+**File:** `src/hooks/useEntryOrchestration.ts`
+
+- Early-return with default state for internal (CSR/admin) users
+- Skip the realtime subscription for internal users since they don't need participant orchestration
+- This eliminates unnecessary database queries and realtime channels
+
+### Fix 7: Lazy-Initialize External Modification Detector
+**File:** `src/hooks/useExternalModificationDetector.ts`
+
+- Skip fetching for non-active workspace files (pass an `enabled` flag)
+- Only fetch when the file tab becomes active
+
 **File:** `src/pages/csr/DealDataEntryPage.tsx`
-
-- Import and use `useWorkspace()` context
-- When opening a deal (on mount), call `openFile()` to register in workspace
-- Track dirty state: call `setFileDirty(id, isDirty)` whenever `isDirty` changes
-- Wrap "Save Draft" button click with save confirmation dialog (show only if `isDirty`)
-- After successful save, call `setFileDirty(id, false)`
-
-### Step 9: Modify DealsPage Navigation
-**File:** `src/pages/csr/DealsPage.tsx`
-
-- When CSR clicks "Enter Data" on a deal, call `openFile()` from workspace context
-- If 10 files already open, show MaxFilesDialog instead of navigating
-- On successful open, navigate to `/deals/:id/edit`
-
-### Step 10: Modify DealOverviewPage Navigation
-**File:** `src/pages/csr/DealOverviewPage.tsx`
-
-- Same workspace integration for "Enter Data" button
-- Check file limit before opening
-
-### Step 11: URL Sync
-- Active file route stays as `/deals/:id/edit`
-- Switching tabs updates the URL via `navigate()`
-- Dashboard tab navigates to `/dashboard`
-- Sub-tab state preserved via existing DealNavigationContext (sessionStorage)
+- Pass `enabled` flag based on whether the file is the active workspace file
 
 ## Technical Details
 
-### WorkspaceContext Interface
+### Field Dictionary Cache Structure
 ```text
-interface OpenFile {
-  id: string;
-  dealNumber: string;
-  state: string;
-  productType: string;
-  openedAt: number;
-}
-
-interface WorkspaceState {
-  openFiles: OpenFile[];
-  activeFileId: string | null;
-  dirtyFiles: Set<string>;
-  openFile(file: OpenFile): boolean;  // returns false if at limit
-  closeFile(id: string): void;
-  switchToFile(id: string): void;
-  setFileDirty(id: string, dirty: boolean): void;
-  isFileDirty(id: string): boolean;
-  isAtLimit(): boolean;
-}
+FieldDictionaryCacheProvider
+  |-- Fetches field_dictionary ONCE
+  |-- Stores: Map<id, FieldDictEntry>, Map<field_key, FieldVisibility>
+  |-- Consumers:
+       |-- useDealFields (skip redundant fetch)
+       |-- useFieldPermissions (skip redundant fetch)
+       |-- useExternalModificationDetector (field_key lookup)
 ```
 
-### Keep-Alive Rendering Strategy
-All open DealDataEntryPage instances remain mounted. Only CSS visibility toggles. This means:
-- No refetching data on tab switch
-- No form state loss
-- No scroll position reset
-- Instant switching
-- Sub-tab state preserved (DealNavigationContext per deal)
+### Performance Impact Estimate
+```text
+Before (3 open files):
+  field_dictionary fetches: ~9 calls
+  External mod detector: ~600 calls (200 per file)
+  Realtime channels: 3
+  Total API calls on load: ~620+
 
-### Layout Height Adjustment
-- AppHeader: 48px (h-12)
-- WorkspaceTabBar: ~40px (h-10)
-- Main content padding-top increases from `pt-12` to `pt-[88px]` (or similar)
-- WorkspaceTabBar positioned fixed below header with matching left offset for sidebar
+After (3 open files):
+  field_dictionary fetches: 1 call (cached)
+  External mod detector: ~9 calls (3 batched per file)
+  Realtime channels: 0 (CSR users)
+  Total API calls on load: ~15
+```
 
 ### Files Created
-1. `src/contexts/WorkspaceContext.tsx`
-2. `src/components/layout/WorkspaceTabBar.tsx`
-3. `src/components/workspace/CloseConfirmationDialog.tsx`
-4. `src/components/workspace/SaveConfirmationDialog.tsx`
-5. `src/components/workspace/MaxFilesDialog.tsx`
-6. `src/components/workspace/WorkspaceFileRenderer.tsx`
+1. `src/hooks/useFieldDictionaryCache.ts` - Shared cache provider and hook
 
 ### Files Modified
-1. `src/components/layout/AppLayout.tsx` - Add WorkspaceProvider, TabBar, and FileRenderer
-2. `src/components/layout/AppHeader.tsx` - Adjust z-index if needed
-3. `src/pages/csr/DealDataEntryPage.tsx` - Register with workspace, dirty tracking, save confirmation
-4. `src/pages/csr/DealsPage.tsx` - Workspace-aware file opening
-5. `src/pages/csr/DealOverviewPage.tsx` - Workspace-aware file opening
+1. `src/hooks/useExternalModificationDetector.ts` - Batch queries, add enabled flag
+2. `src/hooks/useDealFields.ts` - Use cached field dictionary, remove duplicate fetch
+3. `src/hooks/useFieldPermissions.ts` - Use cached field dictionary
+4. `src/hooks/useEntryOrchestration.ts` - Early-return for internal users
+5. `src/components/deal/ChargesTableView.tsx` - Remove duplicate column key
+6. `src/components/layout/AppLayout.tsx` - Add cache provider
+7. `src/pages/csr/DealDataEntryPage.tsx` - Pass enabled flag to external mod detector
 
 ### No Changes To
-- Database schema
-- APIs or edge functions
-- Existing UI components (forms, sub-navigation, field inputs)
-- DealNavigationContext (continues to handle sub-tab persistence)
-- useDealFields hook (unchanged)
-- Sidebar, theme, auth contexts
-
+- Database schema or tables
+- RLS policies
+- Edge functions
+- UI layout or component structure
+- Save/update APIs
+- Existing form components or field rendering
