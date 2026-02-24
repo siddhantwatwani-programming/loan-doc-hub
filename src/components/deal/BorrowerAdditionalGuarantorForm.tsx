@@ -266,40 +266,44 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
           </InlineField>
 
-          {/* Delivery Options & Send - side by side */}
-          <div className="pt-2 flex gap-6">
-            <div className="space-y-1.5">
+          {/* Delivery Options & Send - stacked, inline checkboxes */}
+          <div className="pt-2 space-y-2">
+            <div>
               <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options</h4>
-              <div className="flex items-center gap-2">
-                <Checkbox id="guarantor-deliveryPrint" checked={getBoolValue('deliveryPrint')} onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)} disabled={disabled} />
-                <Label htmlFor="guarantor-deliveryPrint" className="text-sm font-normal">Print</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="guarantor-deliveryEmail" checked={getBoolValue('deliveryEmail')} onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)} disabled={disabled} />
-                <Label htmlFor="guarantor-deliveryEmail" className="text-sm font-normal">Email</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="guarantor-deliverySms" checked={getBoolValue('deliverySms')} onCheckedChange={(checked) => handleChange('deliverySms', !!checked)} disabled={disabled} />
-                <Label htmlFor="guarantor-deliverySms" className="text-sm font-normal">SMS</Label>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="guarantor-deliveryPrint" checked={getBoolValue('deliveryPrint')} onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)} disabled={disabled} />
+                  <Label htmlFor="guarantor-deliveryPrint" className="text-sm font-normal">Print</Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="guarantor-deliveryEmail" checked={getBoolValue('deliveryEmail')} onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)} disabled={disabled} />
+                  <Label htmlFor="guarantor-deliveryEmail" className="text-sm font-normal">Email</Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="guarantor-deliverySms" checked={getBoolValue('deliverySms')} onCheckedChange={(checked) => handleChange('deliverySms', !!checked)} disabled={disabled} />
+                  <Label htmlFor="guarantor-deliverySms" className="text-sm font-normal">SMS</Label>
+                </div>
               </div>
             </div>
-            <div className="space-y-1.5">
+            <div>
               <h4 className="font-semibold text-sm text-foreground pb-1">Send</h4>
-              <div className="flex items-center gap-2">
-                <Checkbox id="guarantor-sendPaymentNotification" checked={getBoolValue('sendPaymentNotification')} onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)} disabled={disabled} />
-                <Label htmlFor="guarantor-sendPaymentNotification" className="text-sm font-normal">Payment Notification</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="guarantor-sendLateNotice" checked={getBoolValue('sendLateNotice')} onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)} disabled={disabled} />
-                <Label htmlFor="guarantor-sendLateNotice" className="text-sm font-normal">Late Notice</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="guarantor-sendBorrowerStatement" checked={getBoolValue('sendBorrowerStatement')} onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)} disabled={disabled} />
-                <Label htmlFor="guarantor-sendBorrowerStatement" className="text-sm font-normal">Borrower Statement</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="guarantor-sendMaturityNotice" checked={getBoolValue('sendMaturityNotice')} onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)} disabled={disabled} />
-                <Label htmlFor="guarantor-sendMaturityNotice" className="text-sm font-normal">Maturity Notice</Label>
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="guarantor-sendPaymentNotification" checked={getBoolValue('sendPaymentNotification')} onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)} disabled={disabled} />
+                  <Label htmlFor="guarantor-sendPaymentNotification" className="text-sm font-normal">Payment Notification</Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="guarantor-sendLateNotice" checked={getBoolValue('sendLateNotice')} onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)} disabled={disabled} />
+                  <Label htmlFor="guarantor-sendLateNotice" className="text-sm font-normal">Late Notice</Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="guarantor-sendBorrowerStatement" checked={getBoolValue('sendBorrowerStatement')} onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)} disabled={disabled} />
+                  <Label htmlFor="guarantor-sendBorrowerStatement" className="text-sm font-normal">Borrower Statement</Label>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="guarantor-sendMaturityNotice" checked={getBoolValue('sendMaturityNotice')} onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)} disabled={disabled} />
+                  <Label htmlFor="guarantor-sendMaturityNotice" className="text-sm font-normal">Maturity Notice</Label>
+                </div>
               </div>
             </div>
           </div>
