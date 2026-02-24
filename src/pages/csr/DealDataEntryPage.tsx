@@ -164,11 +164,16 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
       }
     } catch (error) {
       console.error("Error fetching deal:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load file",
-        variant: "destructive",
-      });
+      // If this is a persisted workspace file that can't be loaded, silently remove it
+      if (workspace && workspace.openFiles.find(f => f.id === id)) {
+        workspace.closeFile(id);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to load file",
+          variant: "destructive",
+        });
+      }
     } finally {
       setDealLoading(false);
     }
