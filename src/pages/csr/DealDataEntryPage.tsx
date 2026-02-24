@@ -225,12 +225,21 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
     loading: modificationsLoading,
   } = useExternalModificationDetector(id || "", isActive);
 
-  // Track dirty state in workspace
+  // Track dirty state in workspace - sync immediately whenever isDirty changes
   useEffect(() => {
     if (workspace && id) {
       workspace.setFileDirty(id, isDirty);
     }
   }, [isDirty, id, workspace]);
+
+  // Also propagate dirty state on every value change to ensure workspace always has latest state
+  const prevValuesRef = React.useRef(values);
+  useEffect(() => {
+    if (workspace && id && prevValuesRef.current !== values && isDirty) {
+      workspace.setFileDirty(id, true);
+    }
+    prevValuesRef.current = values;
+  }, [values, workspace, id, isDirty]);
 
   // Register save function with workspace
   useEffect(() => {
