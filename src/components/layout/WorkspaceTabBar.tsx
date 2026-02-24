@@ -4,7 +4,6 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 interface WorkspaceTabBarProps {
   onRequestClose: (fileId: string) => void;
@@ -37,8 +36,7 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
         isCollapsed ? 'left-16' : 'left-64'
       )}
     >
-      <ScrollArea className="w-full">
-        <div className="flex items-stretch h-10 min-w-max">
+      <div className="flex items-stretch h-10 min-w-max overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
           {/* Dashboard tab */}
           <button
             onClick={handleDashboardClick}
@@ -95,9 +93,7 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
               </div>
             );
           })}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+      </div>
     </div>
   );
 };

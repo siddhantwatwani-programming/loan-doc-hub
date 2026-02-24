@@ -95,6 +95,7 @@ const SECTION_ORDER: string[] = [
 
 interface DealDataEntryInnerProps {
   dealIdProp?: string;
+  isActiveTab?: boolean;
   registerSaveFn?: (dealId: string, fn: () => Promise<boolean>) => void;
   unregisterSaveFn?: (dealId: string) => void;
 }
@@ -102,6 +103,7 @@ interface DealDataEntryInnerProps {
 // Inner component that uses the navigation context
 export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
   dealIdProp,
+  isActiveTab: isActiveTabProp,
   registerSaveFn,
   unregisterSaveFn,
 }) => {
@@ -113,6 +115,9 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
   const { activeTab, setActiveTab } = useDealNavigation();
   const workspace = useWorkspaceOptional();
 
+  // Determine if this tab is active (for deferred loading)
+  const isActive = isActiveTabProp !== undefined ? isActiveTabProp : (!workspace || workspace.activeFileId === id);
+
   const [deal, setDeal] = useState<Deal | null>(null);
   const [dealLoading, setDealLoading] = useState(true);
   const [showValidation, setShowValidation] = useState(false);
@@ -120,12 +125,21 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
   const [completingSection, setCompletingSection] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
-  // Fetch deal info
+  const [hasEverBeenActive, setHasEverBeenActive] = useState(isActive);
+
+  // Track when this tab first becomes active
   useEffect(() => {
-    if (id) {
+    if (isActive && !hasEverBeenActive) {
+      setHasEverBeenActive(true);
+    }
+  }, [isActive, hasEverBeenActive]);
+
+  // Fetch deal info - deferred until tab is active
+  useEffect(() => {
+    if (id && (isActive || hasEverBeenActive)) {
       fetchDeal();
     }
-  }, [id]);
+  }, [id, isActive, hasEverBeenActive]);
 
   const fetchDeal = async () => {
     try {
@@ -180,7 +194,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
     resetDirty,
     computeCalculatedFields,
     calculationResults,
-  } = useDealFields(id || "", deal?.packet_id || null);
+  } = useDealFields(id || "", deal?.packet_id || null, isActive || hasEverBeenActive);
 
   // Field permissions for filtering visible fields/sections
   const { checkCanView, loading: permissionsLoading } = useFieldPermissions();
@@ -199,13 +213,12 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
 
   // External modification detection for CSR warning banner
   // Only fetch for the active workspace tab to reduce API calls
-  const isActiveTab = !workspace || workspace.activeFileId === id;
   const {
     hasExternalModifications,
     externalModifications,
     markAsReviewed,
     loading: modificationsLoading,
-  } = useExternalModificationDetector(id || "", isActiveTab);
+  } = useExternalModificationDetector(id || "", isActive);
 
   // Track dirty state in workspace
   useEffect(() => {
@@ -515,6 +528,18 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
   const showCompleteSectionButton = isExternalUser && currentParticipant && !hasCompleted && orchestrationCanEdit;
   const progressPercent =
     visibleRequiredCount > 0 ? Math.round((visibleFilledRequiredCount / visibleRequiredCount) * 100) : 100;
+
+  // Show lightweight skeleton for inactive tabs that haven't loaded yet
+  if (!hasEverBeenActive && !isActive) {
+    return (
+      <div className="page-container flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Waiting to load...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (dealLoading) {
     return (

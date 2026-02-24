@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 // Instead, we create a lightweight wrapper that renders DealDataEntryPage content per file
 
 interface WorkspaceFileRendererProps {
-  renderFile: (dealId: string) => React.ReactNode;
+  renderFile: (dealId: string, isActive: boolean) => React.ReactNode;
 }
 
 export const WorkspaceFileRenderer: React.FC<WorkspaceFileRendererProps> = ({ renderFile }) => {
@@ -16,18 +16,21 @@ export const WorkspaceFileRenderer: React.FC<WorkspaceFileRendererProps> = ({ re
 
   return (
     <>
-      {openFiles.map(file => (
-        <div
-          key={file.id}
-          className={cn(
-            activeFileId === file.id ? 'block' : 'hidden'
-          )}
-        >
-          <DealNavigationProvider dealId={file.id}>
-            {renderFile(file.id)}
-          </DealNavigationProvider>
-        </div>
-      ))}
+      {openFiles.map(file => {
+        const isActive = activeFileId === file.id;
+        return (
+          <div
+            key={file.id}
+            className={cn(
+              isActive ? 'block' : 'hidden'
+            )}
+          >
+            <DealNavigationProvider dealId={file.id}>
+              {renderFile(file.id, isActive)}
+            </DealNavigationProvider>
+          </div>
+        );
+      })}
     </>
   );
 };
