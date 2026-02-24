@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -228,12 +228,15 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
   // Track dirty state in workspace - only sync from the workspace-managed instance
   // (the one with dealIdProp). The Outlet-rendered instance must NOT sync to avoid
   // two instances racing and resetting each other's dirty state.
+  // Use a ref for workspace to avoid re-triggering on context object changes.
   const isWorkspaceInstance = !!dealIdProp;
+  const workspaceRef = useRef(workspace);
+  workspaceRef.current = workspace;
   useEffect(() => {
-    if (isWorkspaceInstance && workspace && id) {
-      workspace.setFileDirty(id, isDirty);
+    if (isWorkspaceInstance && workspaceRef.current && id) {
+      workspaceRef.current.setFileDirty(id, isDirty);
     }
-  }, [isDirty, id, workspace, isWorkspaceInstance]);
+  }, [isDirty, id, isWorkspaceInstance]);
 
   // Register save function with workspace
   useEffect(() => {
