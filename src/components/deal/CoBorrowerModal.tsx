@@ -106,8 +106,20 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
               {renderInlineField('borrowerId', 'Borrower ID')}
               {renderInlineSelect('borrowerType', 'Borrower Type', BORROWER_TYPE_OPTIONS, 'Select')}
               {renderInlineSelect('capacity', 'Capacity', CAPACITY_OPTIONS, 'Select')}
-              {renderInlineField('fullName', 'Full Name: If Entity, Use Entity')}
-              {renderInlineField('firstName', 'First: If Entity, Use Signer')}
+              <div className="flex items-center gap-2">
+                <div className="w-[140px] shrink-0">
+                  <Label className="text-xs">Full Name</Label>
+                  <div className="text-[10px] text-muted-foreground leading-tight">If Entity, Use Entity</div>
+                </div>
+                <Input value={String(formData.fullName || '')} onChange={(e) => handleInputChange('fullName', e.target.value)} className="h-7 text-xs flex-1" />
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-[140px] shrink-0">
+                  <Label className="text-xs">First</Label>
+                  <div className="text-[10px] text-muted-foreground leading-tight">If Entity, Use Signer</div>
+                </div>
+                <Input value={String(formData.firstName || '')} onChange={(e) => handleInputChange('firstName', e.target.value)} className="h-7 text-xs flex-1" />
+              </div>
               {renderInlineField('middleName', 'Middle')}
               {renderInlineField('lastName', 'Last')}
               {renderInlineField('email', 'Email', { type: 'email' })}
@@ -142,39 +154,43 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
               {renderInlineField('mailingZip', 'ZIP', { disabled: formData.mailingSameAsPrimary })}
 
               {/* Delivery Options & Send */}
-              <div className="pt-2 flex gap-4">
-                <div className="space-y-1">
+              <div className="pt-2 space-y-2">
+                <div>
                   <div className="font-semibold text-xs text-foreground pb-1">Delivery Options</div>
-                  <div className="flex items-center gap-2 h-6">
-                    <Checkbox id="modal-coborrower-deliveryPrint" checked={!!formData.deliveryPrint} onCheckedChange={(checked) => handleInputChange('deliveryPrint', !!checked)} className="h-3 w-3" />
-                    <Label htmlFor="modal-coborrower-deliveryPrint" className="font-normal text-xs">Print</Label>
-                  </div>
-                  <div className="flex items-center gap-2 h-6">
-                    <Checkbox id="modal-coborrower-deliveryEmail" checked={!!formData.deliveryEmail} onCheckedChange={(checked) => handleInputChange('deliveryEmail', !!checked)} className="h-3 w-3" />
-                    <Label htmlFor="modal-coborrower-deliveryEmail" className="font-normal text-xs">Email</Label>
-                  </div>
-                  <div className="flex items-center gap-2 h-6">
-                    <Checkbox id="modal-coborrower-deliverySms" checked={!!formData.deliverySms} onCheckedChange={(checked) => handleInputChange('deliverySms', !!checked)} className="h-3 w-3" />
-                    <Label htmlFor="modal-coborrower-deliverySms" className="font-normal text-xs">SMS</Label>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1">
+                      <Checkbox id="modal-coborrower-deliveryPrint" checked={!!formData.deliveryPrint} onCheckedChange={(checked) => handleInputChange('deliveryPrint', !!checked)} className="h-3 w-3" />
+                      <Label htmlFor="modal-coborrower-deliveryPrint" className="font-normal text-xs">Print</Label>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Checkbox id="modal-coborrower-deliveryEmail" checked={!!formData.deliveryEmail} onCheckedChange={(checked) => handleInputChange('deliveryEmail', !!checked)} className="h-3 w-3" />
+                      <Label htmlFor="modal-coborrower-deliveryEmail" className="font-normal text-xs">Email</Label>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Checkbox id="modal-coborrower-deliverySms" checked={!!formData.deliverySms} onCheckedChange={(checked) => handleInputChange('deliverySms', !!checked)} className="h-3 w-3" />
+                      <Label htmlFor="modal-coborrower-deliverySms" className="font-normal text-xs">SMS</Label>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-1">
+                <div>
                   <div className="font-semibold text-xs text-foreground pb-1">Send</div>
-                  <div className="flex items-center gap-2 h-6">
-                    <Checkbox id="modal-coborrower-sendPayment" checked={!!formData.sendPaymentNotification} onCheckedChange={(checked) => handleInputChange('sendPaymentNotification', !!checked)} className="h-3 w-3" />
-                    <Label htmlFor="modal-coborrower-sendPayment" className="font-normal text-xs">Payment Notification</Label>
-                  </div>
-                  <div className="flex items-center gap-2 h-6">
-                    <Checkbox id="modal-coborrower-sendLate" checked={!!formData.sendLateNotice} onCheckedChange={(checked) => handleInputChange('sendLateNotice', !!checked)} className="h-3 w-3" />
-                    <Label htmlFor="modal-coborrower-sendLate" className="font-normal text-xs">Late Notice</Label>
-                  </div>
-                  <div className="flex items-center gap-2 h-6">
-                    <Checkbox id="modal-coborrower-sendStatement" checked={!!formData.sendBorrowerStatement} onCheckedChange={(checked) => handleInputChange('sendBorrowerStatement', !!checked)} className="h-3 w-3" />
-                    <Label htmlFor="modal-coborrower-sendStatement" className="font-normal text-xs">Borrower Statement</Label>
-                  </div>
-                  <div className="flex items-center gap-2 h-6">
-                    <Checkbox id="modal-coborrower-sendMaturity" checked={!!formData.sendMaturityNotice} onCheckedChange={(checked) => handleInputChange('sendMaturityNotice', !!checked)} className="h-3 w-3" />
-                    <Label htmlFor="modal-coborrower-sendMaturity" className="font-normal text-xs">Maturity Notice</Label>
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-1">
+                      <Checkbox id="modal-coborrower-sendPayment" checked={!!formData.sendPaymentNotification} onCheckedChange={(checked) => handleInputChange('sendPaymentNotification', !!checked)} className="h-3 w-3" />
+                      <Label htmlFor="modal-coborrower-sendPayment" className="font-normal text-xs">Payment Notification</Label>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Checkbox id="modal-coborrower-sendLate" checked={!!formData.sendLateNotice} onCheckedChange={(checked) => handleInputChange('sendLateNotice', !!checked)} className="h-3 w-3" />
+                      <Label htmlFor="modal-coborrower-sendLate" className="font-normal text-xs">Late Notice</Label>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Checkbox id="modal-coborrower-sendStatement" checked={!!formData.sendBorrowerStatement} onCheckedChange={(checked) => handleInputChange('sendBorrowerStatement', !!checked)} className="h-3 w-3" />
+                      <Label htmlFor="modal-coborrower-sendStatement" className="font-normal text-xs">Borrower Statement</Label>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Checkbox id="modal-coborrower-sendMaturity" checked={!!formData.sendMaturityNotice} onCheckedChange={(checked) => handleInputChange('sendMaturityNotice', !!checked)} className="h-3 w-3" />
+                      <Label htmlFor="modal-coborrower-sendMaturity" className="font-normal text-xs">Maturity Notice</Label>
+                    </div>
                   </div>
                 </div>
               </div>
