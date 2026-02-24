@@ -80,9 +80,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
           <DialogTitle>Add Funding</DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-3">
-          <div className="lg:col-span-2 space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+        <div className="space-y-3 py-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Loan</Label>
                 <Input value={loanNumber || formData.loan} disabled className="h-7 text-sm bg-muted/50" />
@@ -147,18 +146,16 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0 pt-2">Notes</Label>
               <Textarea value={formData.notes} onChange={(e) => handleChange('notes', e.target.value)} rows={2} className="resize-none text-sm" />
             </div>
-          </div>
 
-          <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3 border rounded-lg bg-muted/20">
-              <Checkbox id="brokerParticipates" checked={formData.brokerParticipates} onCheckedChange={(checked) => handleChange('brokerParticipates', !!checked)} />
-              <Label htmlFor="brokerParticipates" className="text-sm font-medium leading-tight cursor-pointer">Broker or family will participate in funding</Label>
-            </div>
-            <div className="space-y-2 p-3 border rounded-lg bg-muted/10">
+            <div className="space-y-1">
               <p className="text-sm font-semibold text-primary">NOTE:</p>
               <p className="text-xs text-muted-foreground">If Multi-lender loan, docs should reflect "See Attached Lender Schedule"</p>
             </div>
-          </div>
+
+            <div className="flex items-center gap-2">
+              <Checkbox id="brokerParticipates" checked={formData.brokerParticipates} onCheckedChange={(checked) => handleChange('brokerParticipates', !!checked)} />
+              <Label htmlFor="brokerParticipates" className="text-sm font-medium leading-tight cursor-pointer">Broker or family will participate in funding</Label>
+            </div>
         </div>
 
         <DialogFooter>

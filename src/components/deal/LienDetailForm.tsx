@@ -40,9 +40,9 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
   const renderCurrency = (field: keyof LienData, label: string, forceDisabled = false) => (
     <div className="flex items-center gap-3">
       <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
-      <div className="flex items-center gap-1 flex-1">
-        <span className="text-sm text-muted-foreground">$</span>
-        <Input value={lien[field]} onChange={(e) => onChange(field, e.target.value)} disabled={disabled || forceDisabled} className={`h-7 text-sm text-right ${forceDisabled ? 'opacity-50 bg-muted' : ''}`} inputMode="decimal" placeholder="0.00" />
+      <div className="relative flex-1">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+        <Input value={lien[field]} onChange={(e) => onChange(field, e.target.value)} disabled={disabled || forceDisabled} className={`h-7 text-sm pl-7 ${forceDisabled ? 'opacity-50 bg-muted' : ''}`} inputMode="decimal" placeholder="0.00" />
       </div>
     </div>
   );

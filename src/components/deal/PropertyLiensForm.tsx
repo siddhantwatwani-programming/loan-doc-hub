@@ -138,13 +138,13 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
 
         <div>
           <Label className="text-sm text-foreground">Original Balance</Label>
-          <div className="flex items-center gap-1 mt-1">
-            <span className="text-sm text-muted-foreground">$</span>
+          <div className="relative mt-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
             <Input
               value={getFieldValue(FIELD_KEYS.originalBalance)}
               onChange={(e) => onValueChange(FIELD_KEYS.originalBalance, e.target.value)}
               disabled={disabled}
-              className="h-8 text-sm text-right"
+              className="h-8 text-sm pl-7"
               inputMode="decimal"
               placeholder="0.00"
             />
@@ -153,13 +153,13 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
 
         <div>
           <Label className="text-sm text-foreground">Current Balance</Label>
-          <div className="flex items-center gap-1 mt-1">
-            <span className="text-sm text-muted-foreground">$</span>
+          <div className="relative mt-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
             <Input
               value={getFieldValue(FIELD_KEYS.currentBalance)}
               onChange={(e) => onValueChange(FIELD_KEYS.currentBalance, e.target.value)}
               disabled={disabled}
-              className="h-8 text-sm text-right"
+              className="h-8 text-sm pl-7"
               inputMode="decimal"
               placeholder="0.00"
             />
@@ -168,13 +168,13 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
 
         <div>
           <Label className="text-sm text-foreground">Regular Payment</Label>
-          <div className="flex items-center gap-1 mt-1">
-            <span className="text-sm text-muted-foreground">$</span>
+          <div className="relative mt-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
             <Input
               value={getFieldValue(FIELD_KEYS.regularPayment)}
               onChange={(e) => onValueChange(FIELD_KEYS.regularPayment, e.target.value)}
               disabled={disabled}
-              className="h-8 text-sm text-right"
+              className="h-8 text-sm pl-7"
               inputMode="decimal"
               placeholder="0.00"
             />
