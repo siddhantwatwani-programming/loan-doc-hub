@@ -134,7 +134,7 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
           onChange={(e) => setValue(key, e.target.value)}
           disabled={disabled}
           placeholder="0.00"
-          className="h-7 text-sm pl-6 text-right"
+          className="h-7 text-sm pl-6 text-left"
         />
       </div>
     </div>
