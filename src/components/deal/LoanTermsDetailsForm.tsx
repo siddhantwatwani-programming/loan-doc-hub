@@ -101,7 +101,7 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
   const renderInlineField = (fieldKey: string, label: string, type: 'text' | 'date' = 'text') => (
     <div className="flex items-center gap-2">
       <Label className="w-[130px] shrink-0 text-xs">{label}</Label>
-      <Input id={fieldKey} value={getValue(fieldKey)} onChange={(e) => setValue(fieldKey, e.target.value)} disabled={disabled} type={type} className="h-7 text-xs flex-1" />
+      <Input id={fieldKey} value={getValue(fieldKey)} onChange={(e) => setValue(fieldKey, e.target.value)} disabled={disabled} type={type} className="h-8 text-xs flex-1" />
     </div>
   );
 
@@ -109,7 +109,7 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
     <div className="flex items-center gap-2">
       <Label className="w-[130px] shrink-0 text-xs">{label}</Label>
       <Select value={getValue(fieldKey)} onValueChange={(value) => setValue(fieldKey, value)} disabled={disabled}>
-        <SelectTrigger id={fieldKey} className="h-7 text-xs flex-1">
+        <SelectTrigger id={fieldKey} className="h-8 text-xs flex-1">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
@@ -173,12 +173,12 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
           <div className="flex items-center space-x-2">
             <Checkbox id={FIELD_KEYS.parentAccount} checked={getBoolValue(FIELD_KEYS.parentAccount)} onCheckedChange={(checked) => setBoolValue(FIELD_KEYS.parentAccount, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
             <Label htmlFor={FIELD_KEYS.parentAccount} className="font-normal cursor-pointer text-xs">Parent Account</Label>
-            <Input value={getValue(FIELD_KEYS.parentAccountValue)} onChange={(e) => setValue(FIELD_KEYS.parentAccountValue, e.target.value)} disabled={disabled} className="h-7 text-xs w-24" />
+            <Input value={getValue(FIELD_KEYS.parentAccountValue)} onChange={(e) => setValue(FIELD_KEYS.parentAccountValue, e.target.value)} disabled={disabled} className="h-8 text-xs w-28" />
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox id={FIELD_KEYS.childAccount} checked={getBoolValue(FIELD_KEYS.childAccount)} onCheckedChange={(checked) => setBoolValue(FIELD_KEYS.childAccount, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
             <Label htmlFor={FIELD_KEYS.childAccount} className="font-normal cursor-pointer text-xs">Child Account</Label>
-            <Input value={getValue(FIELD_KEYS.childAccountValue)} onChange={(e) => setValue(FIELD_KEYS.childAccountValue, e.target.value)} disabled={disabled} className="h-7 text-xs w-24" />
+            <Input value={getValue(FIELD_KEYS.childAccountValue)} onChange={(e) => setValue(FIELD_KEYS.childAccountValue, e.target.value)} disabled={disabled} className="h-8 text-xs w-28" />
           </div>
         </div>
       </div>
