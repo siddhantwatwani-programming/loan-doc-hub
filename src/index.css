@@ -54,14 +54,14 @@
 
     --radius: 0.5rem;
 
-    /* Sidebar - Clean slate */
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
+    /* Sidebar - matches main screen */
+    --sidebar-background: 210 20% 98%;
+    --sidebar-foreground: 222 47% 11%;
     --sidebar-primary: 224 76% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
+    --sidebar-accent: 214 32% 91%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 25% 78%;
     --sidebar-ring: 224 76% 48%;
 
     /* Custom shadows */
@@ -117,14 +117,14 @@
     --input: 217 25% 30%;
     --ring: 224 76% 58%;
 
-    /* Sidebar */
-    --sidebar-background: 222 47% 8%;
+    /* Sidebar - matches main screen */
+    --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 224 76% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 15%;
+    --sidebar-accent: 217 33% 17%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 15%;
+    --sidebar-border: 217 25% 30%;
     --sidebar-ring: 224 76% 58%;
 
     /* Custom shadows for dark mode */
