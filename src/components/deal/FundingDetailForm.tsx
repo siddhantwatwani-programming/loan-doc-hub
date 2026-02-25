@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Button } from '@/components/ui/button';
 import { CalendarIcon, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -13,16 +13,13 @@ import type { FundingFormData } from './AddFundingModal';
 
 interface FundingDetailFormProps {
   data: FundingFormData;
-  onSave: (data: FundingFormData) => void;
-  onCancel: () => void;
+  onChange: (data: FundingFormData) => void;
 }
 
 export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
   data,
-  onSave,
-  onCancel,
+  onChange,
 }) => {
-  const [formData, setFormData] = useState<FundingFormData>({ ...data });
   const [fundingDate, setFundingDate] = useState<Date | undefined>(
     data.fundingDate ? new Date(data.fundingDate) : undefined
   );
@@ -30,33 +27,35 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
     data.interestFrom ? new Date(data.interestFrom) : undefined
   );
 
-  const handleChange = (field: keyof FundingFormData, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  const handleChange = useCallback((field: keyof FundingFormData, value: string | boolean) => {
+    onChange({ ...data, [field]: value });
+  }, [data, onChange]);
 
-  const handleSubmit = () => {
-    onSave({
-      ...formData,
-      fundingDate: fundingDate ? format(fundingDate, 'yyyy-MM-dd') : '',
-      interestFrom: interestFromDate ? format(interestFromDate, 'yyyy-MM-dd') : '',
-    });
-  };
+  const handleFundingDateChange = useCallback((date: Date | undefined) => {
+    setFundingDate(date);
+    onChange({ ...data, fundingDate: date ? format(date, 'yyyy-MM-dd') : '' });
+  }, [data, onChange]);
+
+  const handleInterestFromDateChange = useCallback((date: Date | undefined) => {
+    setInterestFromDate(date);
+    onChange({ ...data, interestFrom: date ? format(date, 'yyyy-MM-dd') : '' });
+  }, [data, onChange]);
 
   return (
-    <div className="space-y-3">
+    <div className="p-4 space-y-3">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Loan</Label>
-          <Input value={formData.loan} onChange={(e) => handleChange('loan', e.target.value)} className="h-7 text-sm" />
+          <Input value={data.loan} onChange={(e) => handleChange('loan', e.target.value)} className="h-7 text-sm" />
         </div>
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Borrower</Label>
-          <Input value={formData.borrower} onChange={(e) => handleChange('borrower', e.target.value)} className="h-7 text-sm" />
+          <Input value={data.borrower} onChange={(e) => handleChange('borrower', e.target.value)} className="h-7 text-sm" />
         </div>
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender ID</Label>
           <div className="relative flex-1">
-            <Input value={formData.lenderId} onChange={(e) => handleChange('lenderId', e.target.value)} placeholder="Search" className="h-7 text-sm" />
+            <Input value={data.lenderId} onChange={(e) => handleChange('lenderId', e.target.value)} placeholder="Search" className="h-7 text-sm" />
             <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           </div>
         </div>
@@ -67,7 +66,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
             <Input
               type="text"
               inputMode="decimal"
-              value={formData.fundingAmount}
+              value={data.fundingAmount}
               onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('fundingAmount', v); }}
               placeholder="0.00"
               className="h-7 text-sm pl-6"
@@ -76,7 +75,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
         </div>
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender Name</Label>
-          <Input value={formData.lenderFullName} onChange={(e) => handleChange('lenderFullName', e.target.value)} className="h-7 text-sm" />
+          <Input value={data.lenderFullName} onChange={(e) => handleChange('lenderFullName', e.target.value)} className="h-7 text-sm" />
         </div>
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Funding Date</Label>
@@ -88,7 +87,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={fundingDate} onSelect={setFundingDate} initialFocus />
+              <Calendar mode="single" selected={fundingDate} onSelect={handleFundingDateChange} initialFocus />
             </PopoverContent>
           </Popover>
         </div>
@@ -98,7 +97,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
             <Input
               type="text"
               inputMode="decimal"
-              value={formData.lenderRate}
+              value={data.lenderRate}
               onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('lenderRate', v); }}
               placeholder="0.000"
               className="h-7 text-sm pr-6"
@@ -116,7 +115,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={interestFromDate} onSelect={setInterestFromDate} initialFocus />
+              <Calendar mode="single" selected={interestFromDate} onSelect={handleInterestFromDateChange} initialFocus />
             </PopoverContent>
           </Popover>
         </div>
@@ -125,7 +124,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
 
       <div className="flex items-start gap-3">
         <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0 pt-2">Notes</Label>
-        <Textarea value={formData.notes} onChange={(e) => handleChange('notes', e.target.value)} rows={2} className="resize-none text-sm" />
+        <Textarea value={data.notes} onChange={(e) => handleChange('notes', e.target.value)} rows={2} className="resize-none text-sm" />
       </div>
 
       <div className="space-y-1">
@@ -134,13 +133,8 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
       </div>
 
       <div className="flex items-center gap-2">
-        <Checkbox id="detail-brokerParticipates" checked={formData.brokerParticipates} onCheckedChange={(checked) => handleChange('brokerParticipates', !!checked)} />
+        <Checkbox id="detail-brokerParticipates" checked={data.brokerParticipates} onCheckedChange={(checked) => handleChange('brokerParticipates', !!checked)} />
         <Label htmlFor="detail-brokerParticipates" className="text-sm font-medium leading-tight cursor-pointer">Broker or family will participate in funding</Label>
-      </div>
-
-      <div className="flex justify-end gap-2 pt-2">
-        <Button variant="outline" size="sm" onClick={onCancel}>Cancel</Button>
-        <Button size="sm" onClick={handleSubmit}>Save</Button>
       </div>
     </div>
   );

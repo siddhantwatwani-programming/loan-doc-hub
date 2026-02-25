@@ -143,28 +143,50 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
     }
   };
 
-  // If a record is selected for detail view, show the detail form
-  if (detailRecord) {
-    const detailFormData: FundingFormData = {
-      loan: loanNumber || '',
-      borrower: borrowerName || '',
-      lenderId: detailRecord.lenderAccount,
-      lenderFullName: detailRecord.lenderName,
-      lenderRate: String(detailRecord.lenderRate),
-      fundingAmount: String(detailRecord.originalAmount),
-      fundingDate: '',
-      interestFrom: '',
-      notes: '',
-      brokerParticipates: false,
-    };
+  // Track detail form data separately so changes persist while viewing
+  const [detailFormData, setDetailFormData] = useState<FundingFormData | null>(null);
 
+  // Initialize detail form data when a record is selected
+  React.useEffect(() => {
+    if (detailRecord) {
+      setDetailFormData({
+        loan: loanNumber || '',
+        borrower: borrowerName || '',
+        lenderId: detailRecord.lenderAccount,
+        lenderFullName: detailRecord.lenderName,
+        lenderRate: String(detailRecord.lenderRate),
+        fundingAmount: String(detailRecord.originalAmount),
+        fundingDate: '',
+        interestFrom: '',
+        notes: '',
+        brokerParticipates: false,
+      });
+    }
+  }, [detailRecord]);
+
+  const handleDetailChange = (updatedData: FundingFormData) => {
+    setDetailFormData(updatedData);
+    if (detailRecord) {
+      onUpdateRecord(detailRecord.id, {
+        lenderAccount: updatedData.lenderId,
+        lenderName: updatedData.lenderFullName,
+        lenderRate: parseFloat(updatedData.lenderRate) || 0,
+        originalAmount: parseFloat(updatedData.fundingAmount) || 0,
+        principalBalance: parseFloat(updatedData.fundingAmount) || 0,
+      });
+    }
+  };
+
+  // If a record is selected for detail view, show Borrower-style layout
+  if (detailRecord && detailFormData) {
     return (
-      <div className="p-6 space-y-4">
-        <div className="flex items-center gap-3">
+      <div>
+        {/* Back header */}
+        <div className="flex items-center gap-3 p-4 border-b border-border">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setDetailRecord(null)}
+            onClick={() => { setDetailRecord(null); setDetailFormData(null); }}
             className="gap-1"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -174,20 +196,26 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
             {detailRecord.lenderName || 'Funding Detail'}
           </h3>
         </div>
-        <FundingDetailForm
-          data={detailFormData}
-          onSave={(data) => {
-            onUpdateRecord(detailRecord.id, {
-              lenderAccount: data.lenderId,
-              lenderName: data.lenderFullName,
-              lenderRate: parseFloat(data.lenderRate) || 0,
-              originalAmount: parseFloat(data.fundingAmount) || 0,
-              principalBalance: parseFloat(data.fundingAmount) || 0,
-            });
-            setDetailRecord(null);
-          }}
-          onCancel={() => setDetailRecord(null)}
-        />
+
+        {/* Borrower-style layout: sidebar + content */}
+        <div className="flex">
+          {/* Left sidebar nav */}
+          <div className="flex flex-col border-r border-border bg-background min-w-[180px]">
+            <button
+              className="px-4 py-3 text-sm font-medium transition-colors text-left border-l-2 border-primary text-foreground bg-muted/30"
+            >
+              General
+            </button>
+          </div>
+
+          {/* Right content area */}
+          <div className="flex-1 min-w-0 overflow-auto">
+            <FundingDetailForm
+              data={detailFormData}
+              onChange={handleDetailChange}
+            />
+          </div>
+        </div>
       </div>
     );
   }
