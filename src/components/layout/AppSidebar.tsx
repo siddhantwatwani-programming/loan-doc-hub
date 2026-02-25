@@ -180,11 +180,11 @@ export const AppSidebar: React.FC = () => {
       isCollapsed ? "w-16" : "w-64"
     )}>
       {/* Logo Section with Hamburger */}
-      <div className="px-3 py-3 border-b border-sidebar-border">
-        <div className="flex items-center justify-between">
+      <div className="h-12 px-3 border-b border-sidebar-border flex items-center">
+        <div className="flex items-center justify-between w-full">
           <div className={cn("flex items-center", isCollapsed && "justify-center w-full")}>
             {!isCollapsed && (
-              <img src={logoNew} alt="Private Lending 360" className="h-14 w-auto max-w-[210px] object-contain drop-shadow-md dark:drop-shadow-[0_2px_4px_rgba(255,255,255,0.15)] dark:brightness-125 dark:contrast-110" style={{ imageRendering: '-webkit-optimize-contrast' }} />
+              <img src={logoNew} alt="Private Lending 360" className="h-9 w-auto max-w-[180px] object-contain drop-shadow-md dark:drop-shadow-[0_2px_4px_rgba(255,255,255,0.2)] dark:brightness-150 dark:contrast-125 dark:saturate-[1.1]" style={{ imageRendering: '-webkit-optimize-contrast' }} />
             )}
           </div>
           <button
@@ -209,8 +209,8 @@ export const AppSidebar: React.FC = () => {
 
       {/* Search Bar */}
       {!isCollapsed ? (
-        <div className="px-3 py-2 border-b border-sidebar-border">
-          <div className="relative">
+        <div className="h-10 px-3 border-b border-sidebar-border flex items-center">
+          <div className="relative w-full">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-sidebar-foreground/50" />
             <input
               type="text"
@@ -222,7 +222,7 @@ export const AppSidebar: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="px-2 py-2 border-b border-sidebar-border">
+        <div className="h-10 px-2 border-b border-sidebar-border flex items-center">
           <TooltipProvider delayDuration={0}>
             <Tooltip>
               <TooltipTrigger asChild>
