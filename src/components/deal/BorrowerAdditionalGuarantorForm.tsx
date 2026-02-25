@@ -13,6 +13,27 @@ import {
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
+const FORD_DROPDOWN_OPTIONS = [
+  { value: 'Spouse, Kids, Grandkids', label: 'Spouse, Kids, Grandkids' },
+  { value: 'Big Dream', label: 'Big Dream' },
+  { value: 'Sports Teams', label: 'Sports Teams' },
+  { value: 'Hobbies / Collections', label: 'Hobbies / Collections' },
+  { value: 'Goals / Achievements', label: 'Goals / Achievements' },
+  { value: 'Favorite Restaurant, Food, Drinks', label: 'Favorite Restaurant, Food, Drinks' },
+  { value: 'Pet(s)', label: 'Pet(s)' },
+  { value: 'Vacation Spot', label: 'Vacation Spot' },
+  { value: 'Job / Occupation', label: 'Job / Occupation' },
+  { value: 'Music / Bands', label: 'Music / Bands' },
+  { value: 'College', label: 'College' },
+  { value: 'Hometown / Childhood', label: 'Hometown / Childhood' },
+  { value: 'TV / Movies / Books', label: 'TV / Movies / Books' },
+  { value: 'Anniversary', label: 'Anniversary' },
+  { value: 'Challenges / Frustrations', label: 'Challenges / Frustrations' },
+  { value: 'Charity / Personal Causes', label: 'Charity / Personal Causes' },
+  { value: 'Upcoming Event - What / When', label: 'Upcoming Event - What / When' },
+  { value: 'Celebration - What / When', label: 'Celebration - What / When' },
+];
+
 const BORROWER_TYPE_OPTIONS = [
   'Individual', 'Joint', 'Family Trust', 'LLC', 'C Corp / S Corp',
   'IRA / ERISA', 'Investment Fund', '401K', 'Foreign Holder W-8', 'Non-profit',
@@ -323,9 +344,15 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
           <Textarea value={getValue('vesting')} onChange={(e) => handleChange('vesting', e.target.value)} disabled={disabled} className="text-sm min-h-[80px] resize-none" />
 
           <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">FORD</h4>
-          <div className="grid grid-cols-2 gap-1">
-            {(['ford1', 'ford2', 'ford3', 'ford4', 'ford5', 'ford6', 'ford7', 'ford8'] as (keyof typeof FIELD_KEYS)[]).map((key) => (
-              <Input key={key} value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+          <div className="space-y-1">
+            {([['ford1', 'ford2'], ['ford3', 'ford4'], ['ford5', 'ford6'], ['ford7', 'ford8']] as [keyof typeof FIELD_KEYS, keyof typeof FIELD_KEYS][]).map(([dropdownKey, inputKey], idx) => (
+              <div key={idx} className="grid grid-cols-2 gap-1">
+                <Select value={getValue(dropdownKey)} onValueChange={(v) => handleChange(dropdownKey, v)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                </Select>
+                <Input value={getValue(inputKey)} onChange={(e) => handleChange(inputKey, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+              </div>
             ))}
           </div>
         </div>
