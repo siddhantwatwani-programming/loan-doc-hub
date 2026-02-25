@@ -38,7 +38,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import logoNew from '@/assets/logo-new.png';
+import logoNew from '@/assets/Private-Lending-360-Logo.png';
 import {
   Collapsible,
   CollapsibleContent,
