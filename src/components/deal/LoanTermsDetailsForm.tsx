@@ -101,7 +101,7 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
   const renderInlineField = (fieldKey: string, label: string, type: 'text' | 'date' = 'text') => (
     <div className="flex items-center gap-2">
       <Label className="w-[130px] shrink-0 text-xs">{label}</Label>
-      <Input id={fieldKey} value={getValue(fieldKey)} onChange={(e) => setValue(fieldKey, e.target.value)} disabled={disabled} type={type} className="h-8 text-xs flex-1" />
+      <Input id={fieldKey} value={getValue(fieldKey)} onChange={(e) => setValue(fieldKey, e.target.value)} disabled={disabled} type={type} className={`h-8 text-xs ${type === 'date' ? 'w-[220px] 3xl:w-[280px]' : 'flex-1'}`} />
     </div>
   );
 
