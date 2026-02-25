@@ -85,7 +85,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
             <div className="bg-primary/10 border border-primary/20 rounded px-2 py-1 mb-2">
               <span className="font-semibold text-xs text-primary">Loan Information</span>
             </div>
-            <div className="space-y-1.5 px-1">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 px-1">
               {renderInlineField('account', 'Account')}
               {renderInlineField('borrowerFullName', 'Borrower Name')}
             </div>
