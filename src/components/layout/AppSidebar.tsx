@@ -185,15 +185,16 @@ export const AppSidebar: React.FC = () => {
           <div className={cn("flex items-center", isCollapsed ? "justify-center w-full" : "justify-center flex-1")}>
             <img 
               src={logoNew} 
-              alt="Private Lending 360" 
+              alt="Private Lending 360"
+              title="Private Lending 360"
               className={cn(
-                "object-contain drop-shadow-sm dark:drop-shadow-[0_1px_4px_rgba(255,255,255,0.2)] dark:brightness-[1.6] dark:contrast-110 transition-transform duration-200",
+                "object-contain drop-shadow-sm dark:drop-shadow-[0_1px_4px_rgba(255,255,255,0.2)] dark:brightness-[1.6] dark:contrast-110 transition-transform duration-200 cursor-pointer",
                 isCollapsed 
-                  ? "h-7 w-7 rounded object-cover hover:scale-105 cursor-pointer" 
+                  ? "h-7 w-7 rounded object-cover hover:scale-105" 
                   : "h-11 w-auto max-w-[200px] hover:scale-[1.02]"
               )}
               style={{ imageRendering: '-webkit-optimize-contrast' }}
-              onClick={isCollapsed ? toggleSidebar : undefined}
+              onClick={() => navigate('/dashboard')}
             />
           </div>
           {!isCollapsed && (
