@@ -66,7 +66,7 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
         <div className="bg-primary/10 border border-primary/20 rounded px-3 py-1.5 mb-3">
           <span className="font-semibold text-sm text-primary">Loan Information</span>
         </div>
-        <div className="space-y-2 px-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 px-1">
           {renderInlineField(FIELD_KEYS.account, 'Account', values, onValueChange, disabled, { placeholder: 'Enter account' })}
           {renderInlineField(FIELD_KEYS.borrowerFullName, 'Borrower Name', values, onValueChange, disabled, { placeholder: 'Enter name' })}
         </div>
