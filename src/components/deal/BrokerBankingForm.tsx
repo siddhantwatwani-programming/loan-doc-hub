@@ -51,15 +51,15 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({
   };
 
   const renderField = (key: keyof typeof FIELD_KEYS, label: string, props: Record<string, any> = {}) => (
-    <div className="flex items-center gap-3">
-      <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0">{label}</Label>
-      <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-8 text-sm w-[220px] 3xl:w-[280px]" {...props} />
+    <div className="flex items-center gap-2">
+      <Label className="text-sm text-muted-foreground min-w-[120px] max-w-[120px] text-left shrink-0">{label}</Label>
+      <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-8 text-sm w-[160px] 3xl:w-[200px]" {...props} />
     </div>
   );
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="space-y-4 overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Column 1 - ACH Section */}
         <div className="space-y-3">
           <h3 className="font-semibold text-sm text-foreground border-b border-border pb-2">Bank / ACH</h3>
@@ -78,12 +78,12 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({
           <h3 className="font-semibold text-sm text-foreground border-b border-border pb-2">Check / Mailing</h3>
           
           <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0">By Check</Label>
+            <Label className="text-sm text-muted-foreground min-w-[120px] max-w-[120px] text-left shrink-0">By Check</Label>
             <Checkbox id="byCheck" checked={getBoolValue('byCheck')} onCheckedChange={(checked) => handleChange('byCheck', !!checked)} disabled={disabled} />
           </div>
 
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0">Same as Mailing</Label>
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-muted-foreground min-w-[120px] max-w-[120px] text-left shrink-0">Same as Mailing</Label>
             <Checkbox id="checkSameAsMailing" checked={getBoolValue('checkSameAsMailing')} onCheckedChange={(checked) => handleChange('checkSameAsMailing', !!checked)} disabled={disabled} />
           </div>
 
