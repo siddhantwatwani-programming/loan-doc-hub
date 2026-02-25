@@ -104,7 +104,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
       <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
       <div className="relative flex-1">
         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-        <Input value={getFieldValue(fieldKey)} onChange={(e) => handleCurrencyChange(fieldKey, e.target.value)} disabled={disabled} className="h-7 text-xs text-right pl-6" inputMode="decimal" placeholder="0.00" />
+        <Input value={getFieldValue(fieldKey)} onChange={(e) => handleCurrencyChange(fieldKey, e.target.value)} disabled={disabled} className="h-7 text-xs pl-6" inputMode="decimal" placeholder="0.00" />
       </div>
     </div>
   );

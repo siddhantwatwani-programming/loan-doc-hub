@@ -167,14 +167,14 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                   <Label className="w-[100px] shrink-0 text-xs text-foreground">Appraised Value</Label>
                   <div className="relative flex-1">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-                    <Input value={formData.appraisedValue} onChange={(e) => handleCurrencyChange('appraisedValue', e.target.value)} className="h-7 text-xs text-right pl-6" inputMode="decimal" placeholder="0.00" />
+                    <Input value={formData.appraisedValue} onChange={(e) => handleCurrencyChange('appraisedValue', e.target.value)} className="h-7 text-xs pl-6" inputMode="decimal" placeholder="0.00" />
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Label className="w-[100px] shrink-0 text-xs text-foreground">Pledged Equity</Label>
                   <div className="relative flex-1">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-                    <Input value={formData.pledgedEquity || ''} onChange={(e) => handleCurrencyChange('pledgedEquity', e.target.value)} className="h-7 text-xs text-right pl-6" inputMode="decimal" placeholder="0.00" />
+                    <Input value={formData.pledgedEquity || ''} onChange={(e) => handleCurrencyChange('pledgedEquity', e.target.value)} className="h-7 text-xs pl-6" inputMode="decimal" placeholder="0.00" />
                   </div>
                 </div>
                 {renderInlineSelect('loanPriority', 'Priority', PRIORITY_OPTIONS, 'Select')}
