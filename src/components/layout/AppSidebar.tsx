@@ -180,16 +180,16 @@ export const AppSidebar: React.FC = () => {
       isCollapsed ? "w-16" : "w-64"
     )}>
       {/* Logo Section with Hamburger */}
-      <div className="p-4 border-b border-sidebar-border">
+      <div className="px-3 py-3 border-b border-sidebar-border">
         <div className="flex items-center justify-between">
-          <div className={cn("flex items-center gap-3", isCollapsed && "justify-center w-full")}>
+          <div className={cn("flex items-center", isCollapsed && "justify-center w-full")}>
             {!isCollapsed && (
-              <img src={logoNew} alt="Logo" className="h-10 w-auto" />
+              <img src={logoNew} alt="Private Lending 360" className="h-8 w-auto max-w-[180px] object-contain" />
             )}
           </div>
           <button
             onClick={toggleSidebar}
-            className="p-2 rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors"
+            className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors flex-shrink-0"
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isCollapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
