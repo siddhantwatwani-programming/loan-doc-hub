@@ -131,8 +131,8 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
               isDisabled && 'bg-muted cursor-not-allowed'
             )}
           >
-            <CalendarIcon className="mr-1.5 h-3 w-3" />
             {isValidDate ? format(selectedDate, 'MM/dd/yyyy') : <span>Pick a date</span>}
+            <CalendarIcon className="ml-auto h-3 w-3" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">

@@ -299,10 +299,10 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                     !getValue('nextDebitDate') && "text-muted-foreground"
                   )}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
                   {getValue('nextDebitDate')
                     ? format(parseDate(getValue('nextDebitDate'))!, 'MM/dd/yyyy')
                     : 'mm/dd/yyyy'}
+                  <CalendarIcon className="ml-auto h-4 w-4" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
@@ -330,10 +330,10 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                     !getValue('stopDate') && "text-muted-foreground"
                   )}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
                   {getValue('stopDate')
                     ? format(parseDate(getValue('stopDate'))!, 'MM/dd/yyyy')
                     : 'mm/dd/yyyy'}
+                  <CalendarIcon className="ml-auto h-4 w-4" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 bg-background z-50" align="start">

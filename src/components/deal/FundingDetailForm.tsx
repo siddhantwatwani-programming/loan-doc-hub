@@ -82,8 +82,8 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn('h-7 text-sm w-full justify-start text-left font-normal flex-1', !fundingDate && 'text-muted-foreground')}>
-                <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                 {fundingDate ? format(fundingDate, 'MM/dd/yyyy') : 'Select date'}
+                <CalendarIcon className="ml-auto h-3.5 w-3.5" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -110,8 +110,8 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn('h-7 text-sm w-full justify-start text-left font-normal flex-1', !interestFromDate && 'text-muted-foreground')}>
-                <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                 {interestFromDate ? format(interestFromDate, 'MM/dd/yyyy') : 'Select date'}
+                <CalendarIcon className="ml-auto h-3.5 w-3.5" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
