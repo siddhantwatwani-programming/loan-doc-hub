@@ -370,49 +370,53 @@ const PrepaymentPenaltySection: React.FC<{
         />
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-center gap-1 flex-wrap text-sm text-foreground">
-          <span>A Principal paydown in the first</span>
-          <Input
-            value={values[`${prefix}.first_years`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.first_years`, e.target.value)}
-            disabled={disabled || !isEnabled}
-            className="h-7 text-sm w-14 inline-block"
-          />
-          <span>years, greater than</span>
-          <Input
-            value={values[`${prefix}.greater_than`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.greater_than`, e.target.value)}
-            disabled={disabled || !isEnabled}
-            className="h-7 text-sm w-14 inline-block"
-          />
-          <span>of the</span>
-          <Select
-            value={values[`${prefix}.of_the`] || ''}
-            onValueChange={(val) => onValueChange(`${prefix}.of_the`, val)}
-            disabled={disabled || !isEnabled}
-          >
-            <SelectTrigger className="h-7 text-sm w-28 inline-flex">
-              <SelectValue placeholder="Select..." />
-            </SelectTrigger>
-            <SelectContent className="bg-background border border-border z-50">
-              <SelectItem value="original">Original</SelectItem>
-              <SelectItem value="unpaid">Unpaid</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm text-foreground">
+            <span className="whitespace-nowrap">A Principal paydown in the first</span>
+            <Input
+              value={values[`${prefix}.first_years`] || ''}
+              onChange={(e) => onValueChange(`${prefix}.first_years`, e.target.value)}
+              disabled={disabled || !isEnabled}
+              className="h-7 text-sm w-16"
+            />
+            <span className="whitespace-nowrap">years, greater than</span>
+          </div>
 
-        <div className="flex items-center gap-1 flex-wrap text-sm text-foreground">
-          <span>will result in a penalty of</span>
-          <Input
-            value={values[`${prefix}.penalty_months`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.penalty_months`, e.target.value)}
-            disabled={disabled || !isEnabled}
-            className="h-7 text-sm w-14 inline-block"
-          />
-          <span>months of interest at note rate.</span>
+          <div className="flex items-center gap-2 text-sm text-foreground">
+            <Input
+              value={values[`${prefix}.greater_than`] || ''}
+              onChange={(e) => onValueChange(`${prefix}.greater_than`, e.target.value)}
+              disabled={disabled || !isEnabled}
+              className="h-7 text-sm w-16"
+            />
+            <span className="whitespace-nowrap">of the</span>
+            <Select
+              value={values[`${prefix}.of_the`] || ''}
+              onValueChange={(val) => onValueChange(`${prefix}.of_the`, val)}
+              disabled={disabled || !isEnabled}
+            >
+              <SelectTrigger className="h-7 text-sm w-28">
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border z-50">
+                <SelectItem value="original">Original</SelectItem>
+                <SelectItem value="unpaid">Unpaid</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2 text-sm text-foreground">
+            <span className="whitespace-nowrap">will result in a penalty of</span>
+            <Input
+              value={values[`${prefix}.penalty_months`] || ''}
+              onChange={(e) => onValueChange(`${prefix}.penalty_months`, e.target.value)}
+              disabled={disabled || !isEnabled}
+              className="h-7 text-sm w-16"
+            />
+          </div>
+
+          <p className="text-sm text-foreground">months of interest at note rate.</p>
         </div>
-      </div>
 
       <DistributionFields
         prefix={prefix}
