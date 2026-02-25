@@ -370,24 +370,24 @@ const PrepaymentPenaltySection: React.FC<{
         />
       </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-foreground">
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
             <span className="whitespace-nowrap">A Principal paydown in the first</span>
             <Input
               value={values[`${prefix}.first_years`] || ''}
               onChange={(e) => onValueChange(`${prefix}.first_years`, e.target.value)}
               disabled={disabled || !isEnabled}
-              className="h-7 text-sm w-16"
+              className="h-7 text-sm w-16 shrink-0"
             />
             <span className="whitespace-nowrap">years, greater than</span>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-foreground">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
             <Input
               value={values[`${prefix}.greater_than`] || ''}
               onChange={(e) => onValueChange(`${prefix}.greater_than`, e.target.value)}
               disabled={disabled || !isEnabled}
-              className="h-7 text-sm w-16"
+              className="h-7 text-sm w-16 shrink-0"
             />
             <span className="whitespace-nowrap">of the</span>
             <Select
@@ -395,7 +395,7 @@ const PrepaymentPenaltySection: React.FC<{
               onValueChange={(val) => onValueChange(`${prefix}.of_the`, val)}
               disabled={disabled || !isEnabled}
             >
-              <SelectTrigger className="h-7 text-sm w-28">
+              <SelectTrigger className="h-7 text-sm w-28 shrink-0">
                 <SelectValue placeholder="Select..." />
               </SelectTrigger>
               <SelectContent className="bg-background border border-border z-50">
@@ -405,13 +405,13 @@ const PrepaymentPenaltySection: React.FC<{
             </Select>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-foreground">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
             <span className="whitespace-nowrap">will result in a penalty of</span>
             <Input
               value={values[`${prefix}.penalty_months`] || ''}
               onChange={(e) => onValueChange(`${prefix}.penalty_months`, e.target.value)}
               disabled={disabled || !isEnabled}
-              className="h-7 text-sm w-16"
+              className="h-7 text-sm w-16 shrink-0"
             />
           </div>
 
