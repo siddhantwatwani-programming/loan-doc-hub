@@ -43,7 +43,7 @@ const AppLayoutInner: React.FC = () => {
     } else {
       closeFile(fileId);
       if (activeFileId === fileId) {
-        navigate('/dashboard');
+        navigate('/deals');
       }
     }
   }, [isFileDirty, closeFile, activeFileId, navigate]);
@@ -60,7 +60,7 @@ const AppLayoutInner: React.FC = () => {
     const wasActive = activeFileId === closingFileId;
     closeFile(closingFileId);
     setClosingFileId(null);
-    if (wasActive) navigate('/dashboard');
+    if (wasActive) navigate('/deals');
   }, [closingFileId, saveFns, closeFile, activeFileId, navigate, setFileDirty]);
 
   const handleDiscard = useCallback(() => {
@@ -68,7 +68,7 @@ const AppLayoutInner: React.FC = () => {
     const wasActive = activeFileId === closingFileId;
     closeFile(closingFileId);
     setClosingFileId(null);
-    if (wasActive) navigate('/dashboard');
+    if (wasActive) navigate('/deals');
   }, [closingFileId, closeFile, activeFileId, navigate]);
 
   const handleStay = useCallback(() => {
@@ -76,7 +76,7 @@ const AppLayoutInner: React.FC = () => {
   }, []);
 
   const hasOpenFiles = openFiles.length > 0;
-  const hasTabBar = hasOpenFiles;
+  const hasTabBar = true; // Always show tab bar
 
   // Check if the current route is a deal edit route and if the deal is open in workspace
   const dealEditMatch = location.pathname.match(/^\/deals\/([^/]+)\/edit$/);
