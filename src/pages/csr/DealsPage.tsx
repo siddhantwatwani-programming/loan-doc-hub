@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -81,6 +81,8 @@ const PAGE_SIZE = 10;
 
 export const DealsPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const refreshKey = searchParams.get('_r');
   const { toast } = useToast();
   const workspace = useWorkspaceOptional();
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -147,6 +149,13 @@ export const DealsPage: React.FC = () => {
       supabase.removeChannel(channel);
     };
   }, [fetchDeals]);
+
+  // Refresh deals when "All Loan Documents" tab is clicked (refreshKey changes)
+  useEffect(() => {
+    if (refreshKey) {
+      fetchDeals(1);
+    }
+  }, [refreshKey, fetchDeals]);
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
