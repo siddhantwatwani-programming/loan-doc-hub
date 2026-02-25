@@ -38,7 +38,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import logoNew from '@/assets/logo-new.png';
+import BrandLogo from '@/components/layout/BrandLogo';
 import {
   Collapsible,
   CollapsibleContent,
@@ -183,8 +183,10 @@ export const AppSidebar: React.FC = () => {
       <div className="h-12 px-3 border-b border-sidebar-border flex items-center">
         <div className="flex items-center justify-between w-full">
           <div className={cn("flex items-center gap-2", isCollapsed && "justify-center w-full")}>
-            {!isCollapsed && (
-              <img src={logoNew} alt="Private Lending 360" className="h-11 w-auto max-w-[200px] object-contain drop-shadow-sm dark:drop-shadow-[0_1px_3px_rgba(255,255,255,0.25)] dark:brightness-[1.8] dark:contrast-110" style={{ imageRendering: '-webkit-optimize-contrast' }} />
+            {!isCollapsed ? (
+              <BrandLogo variant="full" />
+            ) : (
+              <BrandLogo variant="icon" />
             )}
           </div>
           <button
