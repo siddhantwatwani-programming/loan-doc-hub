@@ -113,7 +113,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
           value={getValue(key)}
           onChange={(e) => setValue(key, e.target.value)}
           disabled={disabled}
-          className="h-7 text-sm pl-7"
+          className="h-8 text-sm pl-7"
           placeholder="0.00"
         />
       </div>
@@ -129,7 +129,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
           value={getValue(key)}
           onChange={(e) => setValue(key, e.target.value)}
           disabled={disabled}
-          className="h-7 text-sm pr-7"
+          className="h-8 text-sm pr-7"
           placeholder="0.000"
         />
         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
@@ -146,7 +146,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
         value={getValue(key)}
         onChange={(e) => setValue(key, e.target.value)}
         disabled={disabled}
-        className="h-7 text-sm flex-1"
+        className="h-8 text-sm flex-1"
       />
     </div>
   );
@@ -179,7 +179,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   value={getValue(FIELD_KEYS.soldRate)}
                   onChange={(e) => setValue(FIELD_KEYS.soldRate, e.target.value)}
                   disabled={disabled || !isChecked(FIELD_KEYS.soldRateEnabled)}
-                  className="h-7 text-sm pr-7"
+                  className="h-8 text-sm pr-7"
                   placeholder="0.000"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
@@ -205,7 +205,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 value={getValue(FIELD_KEYS.unearnedDiscountBalance)}
                 onChange={(e) => setValue(FIELD_KEYS.unearnedDiscountBalance, e.target.value)}
                 disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
-                className="h-7 text-sm flex-1"
+                className="h-8 text-sm flex-1"
               />
             </div>
 
@@ -217,7 +217,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 onValueChange={(value) => setValue(FIELD_KEYS.accrualMethod, value)}
                 disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
               >
-                <SelectTrigger className="h-7 text-sm flex-1">
+                <SelectTrigger className="h-8 text-sm flex-1">
                   <SelectValue placeholder="Select method" />
                 </SelectTrigger>
                 <SelectContent>
@@ -247,7 +247,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 value={getValue(FIELD_KEYS.prepaidPaymentsMonths)}
                 onChange={(e) => setValue(FIELD_KEYS.prepaidPaymentsMonths, e.target.value)}
                 disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.prepaidPaymentsEnabled)}
-                className="h-7 text-sm flex-1"
+                className="h-8 text-sm flex-1"
               />
             </div>
 
@@ -270,7 +270,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 value={getValue(FIELD_KEYS.impoundedPaymentsMonths)}
                 onChange={(e) => setValue(FIELD_KEYS.impoundedPaymentsMonths, e.target.value)}
                 disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.impoundedPaymentsEnabled)}
-                className="h-7 text-sm flex-1"
+                className="h-8 text-sm flex-1"
               />
             </div>
 
@@ -294,7 +294,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 onValueChange={(value) => setValue(FIELD_KEYS.fundingHoldbackHeldBy, value)}
                 disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.fundingHoldbackEnabled)}
               >
-                <SelectTrigger className="h-7 text-sm flex-1">
+                <SelectTrigger className="h-8 text-sm flex-1">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
@@ -328,7 +328,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                       value={getValue(FIELD_KEYS.acceptShortPaymentsAmount)}
                       onChange={(e) => setValue(FIELD_KEYS.acceptShortPaymentsAmount, e.target.value)}
                       disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
-                      className="h-7 text-sm pl-7"
+                      className="h-8 text-sm pl-7"
                       placeholder="-"
                     />
                   </div>
@@ -389,7 +389,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   value={getValue(FIELD_KEYS.holdDays)}
                   onChange={(e) => setValue(FIELD_KEYS.holdDays, e.target.value)}
                   disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.overrideFundsHeld)}
-                  className="h-7 text-sm flex-1"
+                  className="h-8 text-sm flex-1"
                 />
               </div>
             </div>
@@ -407,7 +407,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 onValueChange={(value) => setValue(FIELD_KEYS.paymentFrequency, value)}
                 disabled={disabled}
               >
-                <SelectTrigger className="h-7 text-sm flex-1">
+                <SelectTrigger className="h-8 text-sm flex-1">
                   <SelectValue placeholder="Select frequency" />
                 </SelectTrigger>
                 <SelectContent>
@@ -424,7 +424,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 value={getValue(FIELD_KEYS.dayDue)}
                 onChange={(e) => setValue(FIELD_KEYS.dayDue, e.target.value)}
                 disabled={disabled}
-                className="h-7 text-sm flex-1"
+                className="h-8 text-sm flex-1"
               />
             </div>
 
@@ -444,7 +444,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   value={getValue(FIELD_KEYS.servicingFees)}
                   onChange={(e) => setValue(FIELD_KEYS.servicingFees, e.target.value)}
                   disabled={disabled}
-                  className="h-7 text-sm pl-7"
+                  className="h-8 text-sm pl-7"
                   placeholder="-"
                 />
               </div>
@@ -504,7 +504,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                       value={getValue(FIELD_KEYS.totalBalanceDue)}
                       onChange={(e) => setValue(FIELD_KEYS.totalBalanceDue, e.target.value)}
                       disabled={disabled}
-                      className="h-7 text-sm pl-7"
+                      className="h-8 text-sm pl-7"
                       placeholder="0.00"
                     />
                   </div>
@@ -523,7 +523,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                       value={getValue(FIELD_KEYS.estimatedBalloonPayment)}
                       onChange={(e) => setValue(FIELD_KEYS.estimatedBalloonPayment, e.target.value)}
                       disabled={disabled}
-                      className="h-7 text-sm pl-7"
+                      className="h-8 text-sm pl-7"
                       placeholder="0.00"
                     />
                   </div>
