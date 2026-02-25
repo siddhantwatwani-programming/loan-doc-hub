@@ -52,8 +52,8 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({
 
   const renderField = (key: keyof typeof FIELD_KEYS, label: string, props: Record<string, any> = {}) => (
     <div className="flex items-center gap-3">
-      <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">{label}</Label>
-      <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-8 text-sm flex-1" {...props} />
+      <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0">{label}</Label>
+      <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-8 text-sm w-[220px] 3xl:w-[280px]" {...props} />
     </div>
   );
 
