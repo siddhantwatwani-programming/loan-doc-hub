@@ -52,8 +52,8 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({
 
   const renderField = (key: keyof typeof FIELD_KEYS, label: string, props: Record<string, any> = {}) => (
     <div className="flex items-center gap-3">
-      <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
-      <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" {...props} />
+      <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">{label}</Label>
+      <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-8 text-sm flex-1" {...props} />
     </div>
   );
 
@@ -78,12 +78,12 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({
           <h3 className="font-semibold text-sm text-foreground border-b border-border pb-2">Check / Mailing</h3>
           
           <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">By Check</Label>
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">By Check</Label>
             <Checkbox id="byCheck" checked={getBoolValue('byCheck')} onCheckedChange={(checked) => handleChange('byCheck', !!checked)} disabled={disabled} />
           </div>
 
           <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Same as Mailing</Label>
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Same as Mailing</Label>
             <Checkbox id="checkSameAsMailing" checked={getBoolValue('checkSameAsMailing')} onCheckedChange={(checked) => handleChange('checkSameAsMailing', !!checked)} disabled={disabled} />
           </div>
 
