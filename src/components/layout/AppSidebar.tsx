@@ -184,7 +184,7 @@ export const AppSidebar: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className={cn("flex items-center", isCollapsed && "justify-center w-full")}>
             {!isCollapsed && (
-              <img src={logoNew} alt="Private Lending 360" className="h-12 w-auto max-w-[200px] object-contain drop-shadow-sm dark:brightness-110 dark:contrast-110" style={{ imageRendering: 'auto' }} />
+              <img src={logoNew} alt="Private Lending 360" className="h-14 w-auto max-w-[210px] object-contain drop-shadow-md dark:drop-shadow-[0_2px_4px_rgba(255,255,255,0.15)] dark:brightness-125 dark:contrast-110" style={{ imageRendering: '-webkit-optimize-contrast' }} />
             )}
           </div>
           <button
