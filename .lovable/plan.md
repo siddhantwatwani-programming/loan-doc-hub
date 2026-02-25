@@ -1,27 +1,31 @@
 
 
-## Analysis
+## Improve Left Panel Logo Appearance
 
-Looking at the screenshot and code, I can identify two issues:
+### Current State
+The logo (`logo-new.png`) is displayed as a plain image at `h-11` height inside a cramped `h-12` header row. It has basic dark mode filters but no visual polish — no padding, no background treatment, and it sits flush against the hamburger button.
 
-1. **Tab bar alignment**: The `WorkspaceTabBar` starts at `left-16` (collapsed) or `left-64` (expanded), which aligns with the main content area. But looking at the screenshot, the tab bar content appears to overlap with scrolling page content because `bg-muted/30` is semi-transparent — scrolled content shows through. Need to use a fully opaque background.
+### Proposed Changes
 
-2. **Logo quality**: The logo has `drop-shadow-sm` and basic styling. For better appearance in both themes, I'll add a dark-mode invert filter or improve contrast, and increase the rendered size slightly for clarity.
-
-## Plan
-
-### 1. Fix WorkspaceTabBar background opacity and alignment
-**File: `src/components/layout/WorkspaceTabBar.tsx`**
-- Change `bg-muted/30` to `bg-background` so the tab bar has a fully opaque background that matches the app theme, preventing scrolled content from bleeding through.
-- The `left-16`/`left-64` positioning already aligns with the sidebar edge (where search bar starts), so horizontal alignment is correct.
-
-### 2. Improve logo appearance for both themes
 **File: `src/components/layout/AppSidebar.tsx`**
-- Increase logo height from `h-10` to `h-12` for better visibility.
-- Add `dark:brightness-110 dark:contrast-110` classes to improve logo legibility in dark mode.
-- Keep `drop-shadow-sm` and `object-contain` for clean rendering.
 
-### Files to modify
-- `src/components/layout/WorkspaceTabBar.tsx` (line 33: change `bg-muted/30` → `bg-background`)
-- `src/components/layout/AppSidebar.tsx` (line 187: update logo classes)
+1. **Add vertical breathing room** — Increase the logo section height from `h-12` to `h-14` and add slight vertical padding so the logo isn't squeezed against borders.
+
+2. **Center the logo better** — Add `justify-center` to the logo container when expanded, giving it a more intentional, branded feel rather than left-aligned flush.
+
+3. **Add subtle background accent** — Give the logo section a very subtle gradient or slightly different background tone (`bg-sidebar/80`) to visually separate it as a branded header area.
+
+4. **Refine dark mode treatment** — Improve the dark mode filters: soften the brightness boost from `1.8` to `1.6`, and add a subtle glow effect using a refined drop-shadow for better legibility without harshness.
+
+5. **Add smooth hover interaction** — Add a subtle scale transition on hover (`hover:scale-[1.02] transition-transform`) to make the logo feel polished and interactive.
+
+6. **Improve collapsed state** — When collapsed, show a small version of the logo (or a compact icon placeholder) instead of showing nothing, so the brand presence is maintained.
+
+### Technical Details
+
+Changes limited to the logo section (lines 182-198) of `AppSidebar.tsx`:
+- Logo container: `h-14 px-4` with a bottom border and optional subtle gradient
+- Image element: refined className with hover transition, adjusted dark mode filters
+- Collapsed state: show logo at `h-6 w-6 rounded` as a compact brand mark
+- No changes to any other sidebar functionality, layout, or navigation
 
