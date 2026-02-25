@@ -90,7 +90,7 @@ const ACCRUAL_METHOD_OPTIONS = [
   { value: 'actual_actual', label: 'Actual/Actual' },
 ];
 
-const LABEL_CLASS = "text-sm text-muted-foreground min-w-[130px] text-left shrink-0";
+const LABEL_CLASS = "text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0";
 
 export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
   values,
@@ -164,7 +164,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
             {/* Sold Rate with checkbox */}
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 min-w-[130px] shrink-0">
+              <div className="flex items-center gap-2 min-w-[140px] max-w-[140px] shrink-0">
                 <Checkbox
                   id={`${FIELD_KEYS.soldRateEnabled}-cb`}
                   checked={isChecked(FIELD_KEYS.soldRateEnabled)}
@@ -230,7 +230,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
             {/* Prepaid Payments */}
             <div className="flex items-center gap-3">
-              <div className="min-w-[130px] shrink-0">
+              <div className="min-w-[140px] max-w-[140px] shrink-0">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id={`${FIELD_KEYS.prepaidPaymentsEnabled}-cb`}
@@ -253,7 +253,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
             {/* Impounded Payments */}
             <div className="flex items-center gap-3">
-              <div className="min-w-[130px] shrink-0">
+              <div className="min-w-[140px] max-w-[140px] shrink-0">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id={`${FIELD_KEYS.impoundedPaymentsEnabled}-cb`}
@@ -276,7 +276,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
             {/* Funding Holdback */}
             <div className="flex items-center gap-3">
-              <div className="min-w-[130px] shrink-0">
+              <div className="min-w-[140px] max-w-[140px] shrink-0">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id={`${FIELD_KEYS.fundingHoldbackEnabled}-cb`}
@@ -310,7 +310,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               {/* Accept Short Payments */}
               <div>
                 <div className="flex items-center gap-3">
-                  <div className="min-w-[130px] shrink-0">
+                  <div className="min-w-[140px] max-w-[140px] shrink-0">
                     <div className="flex items-center gap-2">
                       <Checkbox
                         id={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`}
@@ -355,7 +355,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
                   className="h-3.5 w-3.5"
                 />
-                <Label htmlFor={`${FIELD_KEYS.acceptPostMaturity}-cb`} className="text-sm min-w-[130px] shrink-0">Accept Post-maturity</Label>
+                <Label htmlFor={`${FIELD_KEYS.acceptPostMaturity}-cb`} className="text-sm min-w-[140px] max-w-[140px] shrink-0">Accept Post-maturity</Label>
               </div>
 
               {/* Auto-post Enabled */}
@@ -367,12 +367,12 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
                   className="h-3.5 w-3.5"
                 />
-                <Label htmlFor={`${FIELD_KEYS.autoPostEnabled}-cb`} className="text-sm min-w-[130px] shrink-0">Auto-post Enabled</Label>
+                <Label htmlFor={`${FIELD_KEYS.autoPostEnabled}-cb`} className="text-sm min-w-[140px] max-w-[140px] shrink-0">Auto-post Enabled</Label>
               </div>
 
               {/* Override Funds Held - last in section */}
               <div className="flex items-center gap-3">
-                <div className="min-w-[130px] shrink-0">
+                <div className="min-w-[140px] max-w-[140px] shrink-0">
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id={`${FIELD_KEYS.overrideFundsHeld}-cb`}
@@ -437,7 +437,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
             {/* Servicing Fees */}
             <div className="flex items-center gap-3">
-              <Label className="text-sm font-semibold text-foreground min-w-[130px] text-left shrink-0">Servicing Fees</Label>
+              <Label className="text-sm font-semibold text-foreground min-w-[140px] max-w-[140px] text-left shrink-0">Servicing Fees</Label>
               <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                 <Input
@@ -452,7 +452,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
             {/* Sales Tax checkbox */}
             <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[130px] text-left shrink-0">Sales Tax</Label>
+              <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0">Sales Tax</Label>
               <Checkbox
                 id={`${FIELD_KEYS.salesTaxEnabled}-cb`}
                 checked={isChecked(FIELD_KEYS.salesTaxEnabled)}
@@ -464,9 +464,9 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             </div>
 
             {renderCurrencyField(FIELD_KEYS.otherScheduledPayments, 'Other Sched. Pmts',
-              "text-sm text-primary font-medium min-w-[130px] text-left shrink-0")}
+              "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0")}
             {renderCurrencyField(FIELD_KEYS.toEscrowImpounds, 'To Escrow Impounds',
-              "text-sm text-primary font-medium min-w-[130px] text-left shrink-0")}
+              "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0")}
             {renderCurrencyField(FIELD_KEYS.defaultInterest, 'Default Interest')}
             {renderCurrencyField(FIELD_KEYS.totalPayment, 'Total Payment')}
           </div>
@@ -487,18 +487,18 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {renderCurrencyField(FIELD_KEYS.chargesOwed, 'Charges Owed')}
             {renderCurrencyField(FIELD_KEYS.chargesInterest, 'Charges Interest')}
             {renderCurrencyField(FIELD_KEYS.amountToReinstate, 'Amount to Reinstate',
-              "text-sm text-primary font-medium min-w-[130px] text-left shrink-0")}
+              "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0")}
             {renderCurrencyField(FIELD_KEYS.reserveBalance, 'Reserve Balance',
-              "text-sm text-primary font-medium min-w-[130px] text-left shrink-0")}
+              "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0")}
             {renderCurrencyField(FIELD_KEYS.escrowBalance, 'Escrow Balance',
-              "text-sm text-primary font-medium min-w-[130px] text-left shrink-0")}
+              "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0")}
 
             {/* Section 6: Total Balance Due & Estimated Balloon Payment */}
             <div className="pt-2 space-y-2">
               <div>
                 <div className="flex items-center gap-3">
-                  <Label className="text-sm text-primary font-medium min-w-[130px] text-left shrink-0">Total Balance Due</Label>
-                  <div className="relative flex-1 min-w-[120px]">
+                  <Label className="text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0">Total Balance Due</Label>
+                  <div className="relative flex-1">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                     <Input
                       value={getValue(FIELD_KEYS.totalBalanceDue)}
@@ -513,11 +513,11 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
               <div>
                 <div className="flex items-center gap-3">
-                  <div className="min-w-[130px] text-left shrink-0">
+                  <div className="min-w-[140px] max-w-[140px] text-left shrink-0">
                     <Label className="text-sm text-primary font-medium">Estimated Balloon</Label>
                     <p className="text-xs text-primary font-medium">Payment</p>
                   </div>
-                  <div className="relative flex-1 min-w-[120px]">
+                  <div className="relative flex-1">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                     <Input
                       value={getValue(FIELD_KEYS.estimatedBalloonPayment)}
