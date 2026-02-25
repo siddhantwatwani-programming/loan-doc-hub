@@ -22,6 +22,27 @@ interface CoBorrowerModalProps {
   parentBorrowerVesting?: string;
 }
 
+const FORD_DROPDOWN_OPTIONS = [
+  { value: 'Spouse, Kids, Grandkids', label: 'Spouse, Kids, Grandkids' },
+  { value: 'Big Dream', label: 'Big Dream' },
+  { value: 'Sports Teams', label: 'Sports Teams' },
+  { value: 'Hobbies / Collections', label: 'Hobbies / Collections' },
+  { value: 'Goals / Achievements', label: 'Goals / Achievements' },
+  { value: 'Favorite Restaurant, Food, Drinks', label: 'Favorite Restaurant, Food, Drinks' },
+  { value: 'Pet(s)', label: 'Pet(s)' },
+  { value: 'Vacation Spot', label: 'Vacation Spot' },
+  { value: 'Job / Occupation', label: 'Job / Occupation' },
+  { value: 'Music / Bands', label: 'Music / Bands' },
+  { value: 'College', label: 'College' },
+  { value: 'Hometown / Childhood', label: 'Hometown / Childhood' },
+  { value: 'TV / Movies / Books', label: 'TV / Movies / Books' },
+  { value: 'Anniversary', label: 'Anniversary' },
+  { value: 'Challenges / Frustrations', label: 'Challenges / Frustrations' },
+  { value: 'Charity / Personal Causes', label: 'Charity / Personal Causes' },
+  { value: 'Upcoming Event - What / When', label: 'Upcoming Event - What / When' },
+  { value: 'Celebration - What / When', label: 'Celebration - What / When' },
+];
+
 const BORROWER_TYPE_OPTIONS = [
   'Individual', 'Joint', 'Family Trust', 'LLC', 'C Corp / S Corp',
   'IRA / ERISA', 'Investment Fund', '401K', 'Foreign Holder W-8', 'Non-profit',
@@ -218,15 +239,16 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
               <Textarea value={String(formData.vesting || '')} disabled={true} className="text-xs w-full min-h-[80px] resize-none bg-muted/50 cursor-not-allowed" />
 
               <div className="font-semibold text-xs text-foreground pb-1 mt-2 mb-1.5">FORD</div>
-              <div className="grid grid-cols-2 gap-1">
-                <Input value={String(formData.ford1 || '')} onChange={(e) => handleInputChange('ford1', e.target.value)} className="h-7 text-xs" />
-                <Input value={String(formData.ford2 || '')} onChange={(e) => handleInputChange('ford2', e.target.value)} className="h-7 text-xs" />
-                <Input value={String(formData.ford3 || '')} onChange={(e) => handleInputChange('ford3', e.target.value)} className="h-7 text-xs" />
-                <Input value={String(formData.ford4 || '')} onChange={(e) => handleInputChange('ford4', e.target.value)} className="h-7 text-xs" />
-                <Input value={String(formData.ford5 || '')} onChange={(e) => handleInputChange('ford5', e.target.value)} className="h-7 text-xs" />
-                <Input value={String(formData.ford6 || '')} onChange={(e) => handleInputChange('ford6', e.target.value)} className="h-7 text-xs" />
-                <Input value={String(formData.ford7 || '')} onChange={(e) => handleInputChange('ford7', e.target.value)} className="h-7 text-xs" />
-                <Input value={String(formData.ford8 || '')} onChange={(e) => handleInputChange('ford8', e.target.value)} className="h-7 text-xs" />
+              <div className="space-y-1">
+                {([['ford1', 'ford2'], ['ford3', 'ford4'], ['ford5', 'ford6'], ['ford7', 'ford8']] as [string, string][]).map(([dropdownKey, inputKey], idx) => (
+                  <div key={idx} className="grid grid-cols-2 gap-1">
+                    <Select value={String(formData[dropdownKey as keyof CoBorrowerData] || '')} onValueChange={(v) => handleInputChange(dropdownKey as keyof CoBorrowerData, v)}>
+                      <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                    </Select>
+                    <Input value={String(formData[inputKey as keyof CoBorrowerData] || '')} onChange={(e) => handleInputChange(inputKey as keyof CoBorrowerData, e.target.value)} className="h-7 text-xs" />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
