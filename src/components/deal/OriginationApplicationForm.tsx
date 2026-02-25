@@ -93,8 +93,8 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
             className={cn('h-7 w-full justify-start text-left font-normal text-sm', !getValue(key) && 'text-muted-foreground')}
             disabled={disabled}
           >
-            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
             {getValue(key) ? format(parseDate(getValue(key))!, 'MM/dd/yyyy') : 'Date'}
+            <CalendarIcon className="ml-auto h-3.5 w-3.5" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">

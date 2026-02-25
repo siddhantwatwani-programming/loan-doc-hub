@@ -342,8 +342,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                     )}
                     disabled={disabled}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
                     {getValue('dob') ? format(parse(getValue('dob'), 'yyyy-MM-dd', new Date()), 'dd/MM/yyyy') : <span>Pick a date</span>}
+                    <CalendarIcon className="ml-auto h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -487,8 +487,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("h-7 text-xs", !getValue('investorQuestionnaireDueDate') && "text-muted-foreground")} disabled={disabled}>
-                    <CalendarIcon className="mr-1 h-3 w-3" />
                     {getValue('investorQuestionnaireDueDate') ? format(parse(getValue('investorQuestionnaireDueDate'), 'yyyy-MM-dd', new Date()), 'MM/dd/yyyy') : 'Date'}
+                    <CalendarIcon className="ml-auto h-3 w-3" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
