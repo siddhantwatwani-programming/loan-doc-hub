@@ -287,16 +287,23 @@
     @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background;
   }
 
-  /* Ensure native date input calendar icon is right-aligned */
+  /* Ensure native date input calendar icon is right-aligned on all screen sizes */
   input[type="date"]::-webkit-calendar-picker-indicator {
-    margin-left: auto;
+    margin-left: auto !important;
     cursor: pointer;
     order: 1;
+    flex-shrink: 0;
   }
 
   input[type="date"] {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    text-align: left;
+  }
+
+  /* Firefox date input right-alignment */
+  input[type="date"]::-moz-calendar-picker-indicator {
+    margin-left: auto !important;
   }
 }
