@@ -291,5 +291,12 @@
   input[type="date"]::-webkit-calendar-picker-indicator {
     margin-left: auto;
     cursor: pointer;
+    order: 1;
+  }
+
+  input[type="date"] {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 }
