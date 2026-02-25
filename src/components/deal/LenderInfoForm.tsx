@@ -631,29 +631,29 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
       {/* If Entity, sig line should be: */}
       <div className="mt-6 border-t pt-4">
         <h3 className="text-sm font-semibold text-destructive mb-3">If Entity, sig line should be:</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-6 gap-y-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-2">
           <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground min-w-[80px] shrink-0">Borrower:</Label>
+            <Label className="text-xs text-muted-foreground min-w-[80px] max-w-[80px] shrink-0">Borrower:</Label>
             <Input value={getValue('entitySignBorrower')} onChange={(e) => handleChange('entitySignBorrower', e.target.value)} disabled={disabled} className="h-8" />
           </div>
           <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground min-w-[80px] shrink-0">Entity Name</Label>
+            <Label className="text-xs text-muted-foreground min-w-[100px] max-w-[100px] shrink-0">Entity Name</Label>
             <Input value={getValue('entitySignEntityName')} onChange={(e) => handleChange('entitySignEntityName', e.target.value)} disabled={disabled} className="h-8" />
           </div>
-          <div className="lg:col-start-1 flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground min-w-[80px] shrink-0">By:</Label>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground min-w-[80px] max-w-[80px] shrink-0">By:</Label>
             <Input value={getValue('entitySignBy')} onChange={(e) => handleChange('entitySignBy', e.target.value)} disabled={disabled} className="h-8" />
           </div>
           <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground min-w-[80px] shrink-0">First, Last</Label>
+            <Label className="text-xs text-muted-foreground min-w-[100px] max-w-[100px] shrink-0">First, Last</Label>
             <Input value={getValue('entitySignFirstLast')} onChange={(e) => handleChange('entitySignFirstLast', e.target.value)} disabled={disabled} className="h-8" />
           </div>
-          <div className="lg:col-start-1 flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground min-w-[80px] shrink-0">Its:</Label>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground min-w-[80px] max-w-[80px] shrink-0">Its:</Label>
             <Input value={getValue('entitySignIts')} onChange={(e) => handleChange('entitySignIts', e.target.value)} disabled={disabled} className="h-8" />
           </div>
           <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground min-w-[80px] shrink-0">Capacity</Label>
+            <Label className="text-xs text-muted-foreground min-w-[100px] max-w-[100px] shrink-0">Capacity</Label>
             <Input value={getValue('entitySignCapacity')} onChange={(e) => handleChange('entitySignCapacity', e.target.value)} disabled={disabled} className="h-8" />
           </div>
         </div>
