@@ -76,11 +76,13 @@ const AppLayoutInner: React.FC = () => {
   }, []);
 
   const hasOpenFiles = openFiles.length > 0;
-  const hasTabBar = true; // Always show tab bar
 
   // Check if the current route is a deal edit route and if the deal is open in workspace
   const dealEditMatch = location.pathname.match(/^\/deals\/([^/]+)\/edit$/);
+  const isOnDealsPage = location.pathname === '/deals';
   const isWorkspaceRoute = dealEditMatch && openFiles.find(f => f.id === dealEditMatch[1]);
+  const hasTabBar = isOnDealsPage || isWorkspaceRoute || hasOpenFiles;
+
   const showWorkspaceRenderer = hasOpenFiles;
 
   return (
