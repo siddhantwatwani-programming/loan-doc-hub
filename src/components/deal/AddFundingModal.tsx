@@ -23,6 +23,7 @@ interface AddFundingModalProps {
   loanNumber?: string;
   borrowerName?: string;
   onSubmit: (data: FundingFormData) => void;
+  editData?: FundingFormData | null;
 }
 
 export interface FundingFormData {
@@ -44,14 +45,30 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   loanNumber = '',
   borrowerName = '',
   onSubmit,
+  editData,
 }) => {
-  const [formData, setFormData] = useState<FundingFormData>({
-    loan: loanNumber, borrower: borrowerName, lenderId: '', lenderFullName: '',
-    lenderRate: '', fundingAmount: '', fundingDate: '', interestFrom: '', notes: '', brokerParticipates: false,
-  });
+  const getInitialFormData = (): FundingFormData => {
+    if (editData) return { ...editData };
+    return {
+      loan: loanNumber, borrower: borrowerName, lenderId: '', lenderFullName: '',
+      lenderRate: '', fundingAmount: '', fundingDate: '', interestFrom: '', notes: '', brokerParticipates: false,
+    };
+  };
 
-  const [fundingDate, setFundingDate] = useState<Date | undefined>();
-  const [interestFromDate, setInterestFromDate] = useState<Date | undefined>();
+  const [formData, setFormData] = useState<FundingFormData>(getInitialFormData());
+
+  const [fundingDate, setFundingDate] = useState<Date | undefined>(editData?.fundingDate ? new Date(editData.fundingDate) : undefined);
+  const [interestFromDate, setInterestFromDate] = useState<Date | undefined>(editData?.interestFrom ? new Date(editData.interestFrom) : undefined);
+
+  // Reset form when modal opens with new data
+  React.useEffect(() => {
+    if (open) {
+      const data = getInitialFormData();
+      setFormData(data);
+      setFundingDate(data.fundingDate ? new Date(data.fundingDate) : undefined);
+      setInterestFromDate(data.interestFrom ? new Date(data.interestFrom) : undefined);
+    }
+  }, [open, editData]);
 
   const handleChange = (field: keyof FundingFormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -77,7 +94,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Funding</DialogTitle>
+          <DialogTitle>{editData ? 'Edit Funding' : 'Add Funding'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3 py-3">

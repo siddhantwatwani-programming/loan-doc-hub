@@ -16,9 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, History, Loader2, Trash2 } from 'lucide-react';
+import { Plus, History, Loader2, Trash2, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { AddFundingModal } from './AddFundingModal';
+import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { FundingHistoryDialog } from './FundingHistoryDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
@@ -84,6 +84,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<FundingRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<FundingRecord | null>(null);
+  const [editFundingData, setEditFundingData] = useState<FundingFormData | null>(null);
   const [columns, setColumns] = useTableColumnConfig('funding', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
 
@@ -186,13 +187,13 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                     {col.label.toUpperCase()}
                   </TableHead>
                 ))}
-                {onDeleteRecord && <TableHead className="w-[80px]">ACTIONS</TableHead>}
+                <TableHead className="w-[80px]">ACTIONS</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {fundingRecords.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={visibleColumns.length + (onDeleteRecord ? 1 : 0)} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={visibleColumns.length + 1} className="text-center text-muted-foreground py-8">
                     No funding records found. Click "Add Funding" to add a new funding record.
                   </TableCell>
                 </TableRow>
@@ -211,18 +212,42 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                         {renderCellValue(record, col.id)}
                       </TableCell>
                       ))}
-                      {onDeleteRecord && (
-                        <TableCell onClick={(e) => e.stopPropagation()}>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => setDeleteTarget(record)}
-                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => {
+                              setEditFundingData({
+                                loan: loanNumber || '',
+                                borrower: borrowerName || '',
+                                lenderId: record.lenderAccount,
+                                lenderFullName: record.lenderName,
+                                lenderRate: String(record.lenderRate),
+                                fundingAmount: String(record.originalAmount),
+                                fundingDate: '',
+                                interestFrom: '',
+                                notes: '',
+                                brokerParticipates: false,
+                              });
+                              setIsAddModalOpen(true);
+                            }}
+                            className="h-8 w-8"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Pencil className="h-4 w-4" />
                           </Button>
-                        </TableCell>
-                      )}
+                          {onDeleteRecord && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleteTarget(record)}
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                 ))
               )}
@@ -327,10 +352,14 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       {/* Add Funding Modal */}
       <AddFundingModal
         open={isAddModalOpen}
-        onOpenChange={setIsAddModalOpen}
+        onOpenChange={(open) => {
+          setIsAddModalOpen(open);
+          if (!open) setEditFundingData(null);
+        }}
         loanNumber={loanNumber}
         borrowerName={borrowerName}
         onSubmit={onAddFunding}
+        editData={editFundingData}
       />
 
       {/* Funding History Dialog */}
