@@ -16,13 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, History, Loader2, Trash2, Pencil } from 'lucide-react';
+import { Plus, History, Loader2, Trash2, Pencil, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { FundingHistoryDialog } from './FundingHistoryDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+import { FundingDetailForm } from './FundingDetailForm';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'lenderAccount', label: 'Lender Account', visible: true },
@@ -85,6 +86,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const [selectedRecord, setSelectedRecord] = useState<FundingRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<FundingRecord | null>(null);
   const [editFundingData, setEditFundingData] = useState<FundingFormData | null>(null);
+  const [detailRecord, setDetailRecord] = useState<FundingRecord | null>(null);
   const [columns, setColumns] = useTableColumnConfig('funding', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
 
@@ -105,7 +107,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   };
 
   const handleRowClick = (record: FundingRecord) => {
-    setSelectedRecord(record);
+    setDetailRecord(record);
   };
 
   const renderCellValue = (record: FundingRecord, columnId: string) => {
@@ -140,6 +142,55 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         return '-';
     }
   };
+
+  // If a record is selected for detail view, show the detail form
+  if (detailRecord) {
+    const detailFormData: FundingFormData = {
+      loan: loanNumber || '',
+      borrower: borrowerName || '',
+      lenderId: detailRecord.lenderAccount,
+      lenderFullName: detailRecord.lenderName,
+      lenderRate: String(detailRecord.lenderRate),
+      fundingAmount: String(detailRecord.originalAmount),
+      fundingDate: '',
+      interestFrom: '',
+      notes: '',
+      brokerParticipates: false,
+    };
+
+    return (
+      <div className="p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDetailRecord(null)}
+            className="gap-1"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <h3 className="font-semibold text-lg text-foreground">
+            {detailRecord.lenderName || 'Funding Detail'}
+          </h3>
+        </div>
+        <FundingDetailForm
+          data={detailFormData}
+          onSave={(data) => {
+            onUpdateRecord(detailRecord.id, {
+              lenderAccount: data.lenderId,
+              lenderName: data.lenderFullName,
+              lenderRate: parseFloat(data.lenderRate) || 0,
+              originalAmount: parseFloat(data.fundingAmount) || 0,
+              principalBalance: parseFloat(data.fundingAmount) || 0,
+            });
+            setDetailRecord(null);
+          }}
+          onCancel={() => setDetailRecord(null)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-4">
