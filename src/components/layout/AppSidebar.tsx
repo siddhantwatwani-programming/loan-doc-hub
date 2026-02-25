@@ -180,7 +180,7 @@ export const AppSidebar: React.FC = () => {
       isCollapsed ? "w-16" : "w-64"
     )}>
       {/* Logo Section with Hamburger */}
-      <div className="h-14 px-4 border-b border-sidebar-border flex items-center bg-sidebar/80">
+      <div className="h-12 px-4 border-b border-sidebar-border flex items-center bg-sidebar/80">
         <div className="flex items-center justify-between w-full gap-2">
           <div className={cn("flex items-center", isCollapsed ? "justify-center w-full" : "justify-center flex-1")}>
             <img 
