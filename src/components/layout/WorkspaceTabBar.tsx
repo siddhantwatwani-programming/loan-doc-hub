@@ -15,19 +15,17 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
   const { openFiles, activeFileId, switchToFile, isFileDirty } = useWorkspace();
   const { isCollapsed } = useSidebar();
 
-  const isDashboardActive = !activeFileId || location.pathname === '/dashboard' || !openFiles.find(f => f.id === activeFileId);
+  const isAllDocsActive = !activeFileId || location.pathname === '/deals' || !openFiles.find(f => f.id === activeFileId);
 
-  const handleDashboardClick = () => {
+  const handleAllDocsClick = () => {
     switchToFile('');
-    navigate('/dashboard');
+    navigate('/deals');
   };
 
   const handleFileClick = (fileId: string) => {
     switchToFile(fileId);
     navigate(`/deals/${fileId}/edit`);
   };
-
-  if (openFiles.length === 0) return null;
 
   return (
     <div
@@ -37,22 +35,22 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
       )}
     >
       <div className="flex items-stretch h-10 w-max min-w-full">
-          {/* Dashboard tab */}
+          {/* All Loan Documents tab - always first, not closable */}
           <button
-            onClick={handleDashboardClick}
+            onClick={handleAllDocsClick}
             className={cn(
               'flex items-center px-4 text-sm font-medium border-r border-border transition-colors whitespace-nowrap',
-              isDashboardActive
+              isAllDocsActive
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
           >
-            Dashboard
+            All Loan Documents
           </button>
 
           {/* File tabs */}
           {openFiles.map(file => {
-            const isActive = activeFileId === file.id && !isDashboardActive;
+            const isActive = activeFileId === file.id && !isAllDocsActive;
             const isDirty = isFileDirty(file.id);
 
             return (
