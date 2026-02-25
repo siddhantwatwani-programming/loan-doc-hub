@@ -182,9 +182,15 @@ export const AppSidebar: React.FC = () => {
       {/* Logo Section with Hamburger */}
       <div className="h-12 px-3 border-b border-sidebar-border flex items-center">
         <div className="flex items-center justify-between w-full">
-          <div className={cn("flex items-center", isCollapsed && "justify-center w-full")}>
+          <div className={cn("flex items-center gap-2", isCollapsed && "justify-center w-full")}>
             {!isCollapsed && (
-              <img src={logoNew} alt="Private Lending 360" className="h-9 w-auto max-w-[180px] object-contain drop-shadow-md dark:drop-shadow-[0_2px_4px_rgba(255,255,255,0.2)] dark:brightness-150 dark:contrast-125 dark:saturate-[1.1]" style={{ imageRendering: '-webkit-optimize-contrast' }} />
+              <div className="flex items-center gap-2.5">
+                <img src={logoNew} alt="Private Lending 360" className="h-8 w-auto object-contain drop-shadow-sm dark:drop-shadow-[0_1px_3px_rgba(255,255,255,0.25)] dark:brightness-[1.8] dark:contrast-110" style={{ imageRendering: '-webkit-optimize-contrast' }} />
+                <div className="flex flex-col leading-none">
+                  <span className="text-[13px] font-bold tracking-wide text-sidebar-foreground uppercase">Private Lending</span>
+                  <span className="text-[11px] font-semibold tracking-[0.2em] text-sidebar-foreground/70">360°</span>
+                </div>
+              </div>
             )}
           </div>
           <button
