@@ -131,11 +131,11 @@ export const OriginationServicingForm: React.FC<OriginationServicingFormProps> =
             <div className="flex items-center gap-2">
               <Label className="w-[80px] text-sm shrink-0">Percent</Label>
               <Input value={v(FK.fee_percent)} onChange={(e) => sv(FK.fee_percent, e.target.value)} disabled={disabled}
-                placeholder="0%" className="h-7 text-sm w-[100px] text-left" />
+                placeholder="0%" className="h-7 text-sm w-[140px] text-left" />
             </div>
             <div className="flex items-center gap-2">
               <Label className="w-[80px] text-sm shrink-0">Plus</Label>
-              <div className="relative w-[100px]">
+              <div className="relative w-[140px]">
                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                 <Input type="text" inputMode="decimal" value={v(FK.fee_plus)} onChange={(e) => sv(FK.fee_plus, e.target.value)}
                   disabled={disabled} placeholder="0.00" className="h-7 text-sm pl-6 text-left" />
