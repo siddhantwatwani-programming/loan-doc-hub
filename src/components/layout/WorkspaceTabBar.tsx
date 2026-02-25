@@ -19,7 +19,8 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
 
   const handleAllDocsClick = () => {
     switchToFile('');
-    navigate('/deals');
+    // Navigate to deals and refresh the page
+    window.location.href = '/deals';
   };
 
   const handleFileClick = (fileId: string) => {

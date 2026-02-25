@@ -117,6 +117,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    // Clear workspace session storage on logout
+    sessionStorage.removeItem('workspace_openFiles');
+    sessionStorage.removeItem('workspace_activeFileId');
     await supabase.auth.signOut();
     setRole(null);
   };
