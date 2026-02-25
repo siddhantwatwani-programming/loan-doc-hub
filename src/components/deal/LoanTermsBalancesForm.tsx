@@ -310,7 +310,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               {/* Accept Short Payments */}
               <div>
                 <div className="flex items-center gap-3">
-                  <div className="min-w-[140px] shrink-0">
+                  <div className="min-w-[130px] shrink-0">
                     <div className="flex items-center gap-2">
                       <Checkbox
                         id={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`}
@@ -355,7 +355,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
                   className="h-3.5 w-3.5"
                 />
-                <Label htmlFor={`${FIELD_KEYS.acceptPostMaturity}-cb`} className="text-sm min-w-[140px] shrink-0">Accept Post-maturity</Label>
+                <Label htmlFor={`${FIELD_KEYS.acceptPostMaturity}-cb`} className="text-sm min-w-[130px] shrink-0">Accept Post-maturity</Label>
               </div>
 
               {/* Auto-post Enabled */}
@@ -367,12 +367,12 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
                   className="h-3.5 w-3.5"
                 />
-                <Label htmlFor={`${FIELD_KEYS.autoPostEnabled}-cb`} className="text-sm min-w-[140px] shrink-0">Auto-post Enabled</Label>
+                <Label htmlFor={`${FIELD_KEYS.autoPostEnabled}-cb`} className="text-sm min-w-[130px] shrink-0">Auto-post Enabled</Label>
               </div>
 
               {/* Override Funds Held - last in section */}
               <div className="flex items-center gap-3">
-                <div className="min-w-[140px] shrink-0">
+                <div className="min-w-[130px] shrink-0">
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id={`${FIELD_KEYS.overrideFundsHeld}-cb`}
@@ -389,7 +389,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   value={getValue(FIELD_KEYS.holdDays)}
                   onChange={(e) => setValue(FIELD_KEYS.holdDays, e.target.value)}
                   disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.overrideFundsHeld)}
-                  className="h-7 text-sm w-20"
+                  className="h-7 text-sm flex-1"
                 />
               </div>
             </div>
