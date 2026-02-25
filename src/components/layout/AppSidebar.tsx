@@ -180,20 +180,31 @@ export const AppSidebar: React.FC = () => {
       isCollapsed ? "w-16" : "w-64"
     )}>
       {/* Logo Section with Hamburger */}
-      <div className="h-12 px-3 border-b border-sidebar-border flex items-center">
-        <div className="flex items-center justify-between w-full">
-          <div className={cn("flex items-center gap-2", isCollapsed && "justify-center w-full")}>
-            {!isCollapsed && (
-              <img src={logoNew} alt="Private Lending 360" className="h-11 w-auto max-w-[200px] object-contain drop-shadow-sm dark:drop-shadow-[0_1px_3px_rgba(255,255,255,0.25)] dark:brightness-[1.8] dark:contrast-110" style={{ imageRendering: '-webkit-optimize-contrast' }} />
-            )}
+      <div className="h-14 px-4 border-b border-sidebar-border flex items-center bg-sidebar/80">
+        <div className="flex items-center justify-between w-full gap-2">
+          <div className={cn("flex items-center", isCollapsed ? "justify-center w-full" : "justify-center flex-1")}>
+            <img 
+              src={logoNew} 
+              alt="Private Lending 360" 
+              className={cn(
+                "object-contain drop-shadow-sm dark:drop-shadow-[0_1px_4px_rgba(255,255,255,0.2)] dark:brightness-[1.6] dark:contrast-110 transition-transform duration-200",
+                isCollapsed 
+                  ? "h-7 w-7 rounded object-cover hover:scale-105 cursor-pointer" 
+                  : "h-11 w-auto max-w-[200px] hover:scale-[1.02]"
+              )}
+              style={{ imageRendering: '-webkit-optimize-contrast' }}
+              onClick={isCollapsed ? toggleSidebar : undefined}
+            />
           </div>
-          <button
-            onClick={toggleSidebar}
-            className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors flex-shrink-0"
-            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {isCollapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
-          </button>
+          {!isCollapsed && (
+            <button
+              onClick={toggleSidebar}
+              className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors flex-shrink-0"
+              aria-label="Collapse sidebar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
         </div>
       </div>
 
