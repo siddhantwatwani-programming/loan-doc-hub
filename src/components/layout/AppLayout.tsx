@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Outlet, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSidebar } from '@/contexts/SidebarContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { WorkspaceProvider, useWorkspace } from '@/contexts/WorkspaceContext';
 import { FieldDictionaryCacheProvider } from '@/hooks/useFieldDictionaryCache';
 import { AppSidebar } from './AppSidebar';
