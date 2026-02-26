@@ -159,7 +159,9 @@ export function replaceLabelBasedFields(
   
   for (const [label, mapping] of Object.entries(labelMap)) {
     // Skip labels for fields that were already replaced by merge tags
-    if (replacedFieldKeys?.has(mapping.fieldKey)) {
+    const fieldKeyLower = mapping.fieldKey.toLowerCase();
+    const alreadyReplaced = replacedFieldKeys && [...replacedFieldKeys].some(k => k.toLowerCase() === fieldKeyLower);
+    if (alreadyReplaced) {
       console.log(`[tag-parser] Label "${label}" -> skipped (field ${mapping.fieldKey} already replaced by merge tag)`);
       continue;
     }
