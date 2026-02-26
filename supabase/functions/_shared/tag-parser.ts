@@ -276,6 +276,12 @@ export function replaceLabelBasedFields(
             console.log(`[tag-parser] Label "${label}" -> skipped (adjacent to merge tag)`);
             return match; // Keep static title
           }
+          // Skip replacement if the word is followed by a colon (it's a static document label like "Date:")
+          const immediateAfter = after.replace(/<[^>]*>/g, '').trimStart();
+          if (immediateAfter.startsWith(':')) {
+            console.log(`[tag-parser] Label "${label}" -> skipped (followed by colon, is a static label)`);
+            return match; // Keep static label like "Date:"
+          }
           return formattedValue;
         });
         replacementCount++;

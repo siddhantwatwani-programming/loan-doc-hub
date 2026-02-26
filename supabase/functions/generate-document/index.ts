@@ -255,6 +255,24 @@ async function generateSingleDocument(
       }
     }
 
+    // Auto-compute Broker.Name from broker1 name components if not already set
+    const existingBrokerName = fieldValues.get("Broker.Name") || fieldValues.get("broker.name");
+    if (!existingBrokerName || !existingBrokerName.rawValue) {
+      const firstName = fieldValues.get("broker1.first_name")?.rawValue;
+      const middleName = fieldValues.get("broker1.middle_name")?.rawValue;
+      const lastName = fieldValues.get("broker1.last_name")?.rawValue;
+      const company = fieldValues.get("broker1.company")?.rawValue;
+
+      const nameParts = [firstName, middleName, lastName].filter(Boolean).map(String);
+      const brokerName = nameParts.length > 0 ? nameParts.join(" ") : (company ? String(company) : null);
+
+      if (brokerName) {
+        fieldValues.set("Broker.Name", { rawValue: brokerName, dataType: "text" });
+        fieldValues.set("broker.name", { rawValue: brokerName, dataType: "text" });
+        console.log(`[generate-document] Auto-computed Broker.Name = "${brokerName}"`);
+      }
+    }
+
     // Build set of ALL valid field keys from the complete field_dictionary (for direct tag matching)
     // Use pagination to fetch all rows (table has 1700+ entries, default limit is 1000)
     const PAGE_SIZE = 1000;
