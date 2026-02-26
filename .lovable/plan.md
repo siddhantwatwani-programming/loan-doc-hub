@@ -1,39 +1,34 @@
 
 
-## Fix Plan: Broker Name Mapping and Date Label
+## Fix: Date Field Not Populating in Document
 
-### Issue 1: `{{Broker.Name}}` Not Rendering
+### Root Cause
 
-**Root Cause**: The field `Broker.Name` exists in `field_dictionary` but is never populated. The broker form stores individual fields (`broker1.first_name`, `broker1.middle_name`, `broker1.last_name`). Unlike `borrower.borrower_description` and `property1.address`, there is no auto-computation step for `Broker.Name`.
+The `merge_tag_aliases` table has a label alias: `tag_name: "Date"`, `field_key: "notary.date"`, `replace_next: "Date"`, `tag_type: "label"`. This means the label-based replacement should find the word "Date" in the document and replace it with the formatted date value.
 
-**Fix — File: `supabase/functions/generate-document/index.ts`**
+However, in the previous fix for the "Date label missing" issue, a colon-detection guard was added at **lines 279-284** of `tag-parser.ts`. This guard skips replacement when the matched word is followed by `:` (e.g., `Date:`). While this correctly preserves the "Date:" label text, it also **prevents the date value from being inserted anywhere**, leaving the date field completely empty in the output.
 
-Add an auto-compute block (after the existing `property1.address` block, ~line 256) that:
-1. Checks if `Broker.Name` (or `broker.name`) already has a value
-2. If not, iterates over `fieldValues` looking for `broker1.first_name`, `broker1.middle_name`, `broker1.last_name` (and `broker1.company` as fallback)
-3. Concatenates the name parts into a full name string
-4. Sets both `Broker.Name` and `broker.name` in `fieldValues`
-5. Follows the same pattern as the existing `borrower.borrower_description` auto-compute
+### Fix - File: `supabase/functions/_shared/tag-parser.ts` (lines 279-284)
 
-### Issue 2: Date Label Missing
+Change the colon-protection logic so that instead of skipping the replacement entirely, it:
 
-**Root Cause**: The template likely has a line like `Date: {{date}}` or similar. When the date merge tag resolves, it produces the formatted date value. However, looking at the user's screenshot, the output shows `26/02/2026: ___` — the "Date" text has been replaced by the date value, suggesting a label-based replacement is incorrectly replacing the word "Date" with the date value.
+1. Keeps the label word (e.g., "Date")
+2. Looks ahead past the colon and any XML tags for underscores or blank space
+3. Inserts the formatted date value after the colon, replacing any placeholder underscores
 
-**Fix — File: `supabase/functions/generate-document/index.ts`**
+Specifically, replace the current block:
+```
+if (immediateAfter.startsWith(':')) {
+  return match; // Skip entirely
+}
+```
 
-After the existing date auto-fill logic, also ensure the `date` field key is populated in fieldValues so `{{date}}` resolves. The `date` field already exists in `field_dictionary` (`field_key: 'date'`, `data_type: 'date'`). The existing auto-fill logic should handle this, but the label "Date" in the template text may be getting consumed by a label alias.
+With logic that returns `match` unchanged but then does a secondary replacement on the pattern `Label:___` or `Label: ` to append/insert the formatted value after the colon. This preserves both the label text AND inserts the date value.
 
-**Additional investigation needed**: Check `merge_tag_aliases` for any label alias that maps "Date" to a field key — if one exists, it could be replacing the static "Date:" text with the date value, removing the label.
+### No Other Changes
 
-**Fix — File: `supabase/functions/_shared/tag-parser.ts` (if needed)**
-
-If the label replacement is consuming the "Date:" prefix, the fix would be in the `replaceLabelBasedFields` function to ensure word-boundary matching doesn't replace the label text when a merge tag for the same field exists in the same context.
-
-### Summary of Changes
-
-| File | Change |
-|------|--------|
-| `generate-document/index.ts` | Add `Broker.Name` auto-compute from `broker1.first_name/middle_name/last_name` |
-| `generate-document/index.ts` | Verify date field resolution for the `date` field key |
-| `tag-parser.ts` | If label alias causes "Date:" removal, add protection (only if confirmed) |
+- No changes to date auto-fill logic (already working - logs confirm 96 date fields auto-filled)
+- No changes to `generate-document/index.ts`
+- No changes to formatting functions (DD/MM/YYYY format already correct via `formatByDataType`)
+- No database changes
 
