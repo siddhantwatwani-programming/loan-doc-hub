@@ -1,38 +1,62 @@
 
 
-## Problem
+## Native Word SDT Checkbox Support
 
-The template contains both a merge tag `{{property1.address}}` AND a label alias `('Property Address', 'Property1.Address', 'label', 'Property Address')` with `replaceNext = 'Property Address'`.
+### Problem
+The DOCX processor (`docx-processor.ts`) performs text-only XML replacement. It does not detect or modify Word Structured Document Tags (SDT) — the native checkbox controls inserted via Word's Developer tab. When a template contains an SDT checkbox with its **Tag** property set to a field key (e.g., `tax_exempt`), the checkbox state is not toggled based on the boolean database value.
 
-Here's what happens during document generation:
+### How Word SDT Checkboxes Work in XML
 
-1. The merge tag `{{property1.address}}` is processed first. The canonical key `property1.address` (lowercase) is added to `replacedFieldKeys`.
-2. Label-based replacement then checks if `Property1.Address` (mixed case, from the label alias) is in `replacedFieldKeys` — but the check at line 162 is **case-sensitive**.
-3. `replacedFieldKeys.has("Property1.Address")` returns `false` because only `"property1.address"` is in the set.
-4. The label replacement proceeds, finds "Property Address" text in the document, and replaces the label text itself with the address value — removing the label.
+A checked checkbox in `word/document.xml` looks like:
+```text
+<w:sdt>
+  <w:sdtPr>
+    <w:tag w:val="tax_exempt"/>
+    <w14:checkbox>
+      <w14:checked w14:val="1"/>
+    </w14:checkbox>
+  </w:sdtPr>
+  <w:sdtContent>
+    <w:r><w:t>☒</w:t></w:r>
+  </w:sdtContent>
+</w:sdt>
+```
 
-## Fix
+To toggle it, two things must change:
+1. `<w14:checked w14:val="1"/>` → `"0"` (or vice versa)
+2. The display character inside `<w:t>` — typically `☒` ↔ `☐` (Unicode U+2612 / U+2610)
+
+The `<w:tag w:val="..."/>` attribute is the mapping key that links the SDT to a database field.
+
+### Changes
 
 **File: `supabase/functions/_shared/tag-parser.ts`**
 
-Make the `replacedFieldKeys` check in `replaceLabelBasedFields` case-insensitive (lines 161-165).
+Add a new exported function `processSdtCheckboxes`:
+- Takes XML content string, `fieldValues` map, `mergeTagMap`, and optional `validFieldKeys`
+- Uses regex to find all `<w:sdt>` blocks containing `<w14:checkbox>`
+- Extracts the `<w:tag w:val="..."/>` value from each SDT
+- Resolves the tag value to a canonical field key using `resolveFieldKeyWithMap`
+- Looks up the field value via `getFieldData`
+- Evaluates as truthy (`true`, `1`, `yes`) or falsy
+- If truthy: sets `w14:val="1"` on `<w14:checked>` and replaces the display character with `☒` (U+2612)
+- If falsy: sets `w14:val="0"` and replaces display character with `☐` (U+2610)
+- Also handles the `<w14:checkedState>` and `<w14:uncheckedState>` font references if present (preserves them)
+- Returns the modified XML string
 
-Replace:
-```typescript
-if (replacedFieldKeys?.has(mapping.fieldKey)) {
-```
+**File: `supabase/functions/_shared/tag-parser.ts` — `replaceMergeTags` function**
 
-With:
-```typescript
-const fieldKeyLower = mapping.fieldKey.toLowerCase();
-const alreadyReplaced = replacedFieldKeys && [...replacedFieldKeys].some(k => k.toLowerCase() === fieldKeyLower);
-if (alreadyReplaced) {
-```
+Add one call to `processSdtCheckboxes` after XML normalization but before merge tag parsing. This ensures SDT checkboxes are processed independently from text-based merge tags.
 
-Keep the existing log message unchanged. No other files modified.
+### What is NOT changed
+- No changes to `docx-processor.ts`, `formatting.ts`, `field-resolver.ts`, `types.ts`, or `generate-document/index.ts`
+- Existing text-based checkbox transforms (`{{field|checkbox}}` → ☑/☐) continue to work unchanged
+- No database schema changes needed — uses existing `fieldValues` map
 
-### What this does
-- When the merge tag `{{property1.address}}` adds `property1.address` to `replacedFieldKeys`, the label alias for `Property1.Address` will now correctly match via case-insensitive comparison
-- The label replacement skips the "Property Address" text, preserving the label in the document
-- The merge tag value is already substituted inline, so the output becomes: `Property Address: <value>`
+### Template Setup
+1. In Word, go to Developer tab → Insert Content Control → Check Box
+2. Click the checkbox, then click **Properties** in the Developer tab
+3. Set the **Tag** field to the database field key (e.g., `tax_exempt`)
+4. Save and upload the template
+5. The generation engine will automatically toggle the checkbox based on the boolean value
 
