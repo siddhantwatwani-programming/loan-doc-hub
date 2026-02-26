@@ -649,11 +649,35 @@ export const TemplateManagementPage: React.FC = () => {
         await supabase.storage.from('templates').remove(filesToDelete);
       }
 
+      // Delete dependent records before deleting the template
+      const { error: genDocsError } = await supabase
+        .from('generated_documents')
+        .delete()
+        .eq('template_id', template.id);
+      if (genDocsError) throw genDocsError;
+
+      const { error: fieldMapsError } = await supabase
+        .from('template_field_maps')
+        .delete()
+        .eq('template_id', template.id);
+      if (fieldMapsError) throw fieldMapsError;
+
+      const { error: jobsError } = await supabase
+        .from('generation_jobs')
+        .delete()
+        .eq('template_id', template.id);
+      if (jobsError) throw jobsError;
+
+      const { error: packetTemplatesError } = await supabase
+        .from('packet_templates')
+        .delete()
+        .eq('template_id', template.id);
+      if (packetTemplatesError) throw packetTemplatesError;
+
       const { error } = await supabase
         .from('templates')
         .delete()
         .eq('id', template.id);
-
       if (error) throw error;
 
       toast({ title: 'Template deleted successfully' });
