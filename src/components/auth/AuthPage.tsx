@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/Private-Lending-360-Logo.png';
 
 const loginSchema = z.object({
   email: z.string().trim().email('Please enter a valid email address'),
