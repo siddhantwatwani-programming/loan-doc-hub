@@ -310,6 +310,145 @@ export function replaceLabelBasedFields(
 }
 
 /**
+ * Evaluate whether a conditional field value is truthy.
+ * Checks: non-null, non-empty string, boolean true, non-zero number.
+ * Also supports checking if any field with a given prefix has data (entity existence).
+ */
+function isConditionTruthy(
+  fieldKey: string,
+  fieldValues: Map<string, FieldValueData>,
+  mergeTagMap: Record<string, string>,
+  validFieldKeys?: Set<string>
+): boolean {
+  const canonicalKey = resolveFieldKeyWithMap(fieldKey, mergeTagMap, validFieldKeys);
+  const resolved = getFieldData(canonicalKey, fieldValues);
+
+  if (resolved?.data) {
+    const raw = resolved.data.rawValue;
+    if (raw === null || raw === "") return false;
+    if (typeof raw === "string") {
+      return !["false", "0", "no", "n"].includes(raw.toLowerCase());
+    }
+    if (typeof raw === "number") return raw !== 0;
+    return Boolean(raw);
+  }
+
+  // Entity-existence check: if fieldKey looks like a prefix (e.g., "co_borrower1"),
+  // check if ANY field starting with that prefix has data
+  const prefixLower = canonicalKey.toLowerCase();
+  for (const [k, v] of fieldValues.entries()) {
+    if (k.toLowerCase().startsWith(prefixLower + ".") || k.toLowerCase().startsWith(prefixLower + "_")) {
+      if (v.rawValue !== null && v.rawValue !== "") return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Process conditional blocks: {{#if field_key}}...{{/if}} and {{#unless field_key}}...{{/unless}}
+ * 
+ * Removes entire XML paragraphs (<w:p>...</w:p>) when conditions are false,
+ * ensuring no blank gaps remain. Supports nesting via iterative innermost-first processing.
+ */
+export function processConditionalBlocks(
+  content: string,
+  fieldValues: Map<string, FieldValueData>,
+  mergeTagMap: Record<string, string>,
+  validFieldKeys?: Set<string>
+): string {
+  let result = content;
+  let iterations = 0;
+  const MAX_ITERATIONS = 20;
+
+  while (iterations < MAX_ITERATIONS) {
+    const ifPattern = /\{\{#if\s+([A-Za-z0-9_.]+)\}\}([\s\S]*?)\{\{\/if\}\}/;
+    const unlessPattern = /\{\{#unless\s+([A-Za-z0-9_.]+)\}\}([\s\S]*?)\{\{\/unless\}\}/;
+
+    const ifMatch = ifPattern.exec(result);
+    const unlessMatch = unlessPattern.exec(result);
+
+    if (!ifMatch && !unlessMatch) break;
+
+    if (ifMatch && (!unlessMatch || ifMatch.index < unlessMatch.index)) {
+      const fieldKey = ifMatch[1];
+      const blockContent = ifMatch[2];
+      const truthy = isConditionTruthy(fieldKey, fieldValues, mergeTagMap, validFieldKeys);
+      console.log(`[tag-parser] Conditional {{#if ${fieldKey}}} = ${truthy}`);
+
+      if (truthy) {
+        // Keep inner content, remove tag markers
+        result = result.substring(0, ifMatch.index) + blockContent + result.substring(ifMatch.index + ifMatch[0].length);
+      } else {
+        // Remove block and clean up surrounding empty paragraphs
+        result = removeConditionalBlock(result, ifMatch.index, ifMatch[0].length);
+      }
+    } else if (unlessMatch) {
+      const fieldKey = unlessMatch[1];
+      const blockContent = unlessMatch[2];
+      const truthy = isConditionTruthy(fieldKey, fieldValues, mergeTagMap, validFieldKeys);
+      console.log(`[tag-parser] Conditional {{#unless ${fieldKey}}} = ${!truthy} (inverted)`);
+
+      if (!truthy) {
+        result = result.substring(0, unlessMatch.index) + blockContent + result.substring(unlessMatch.index + unlessMatch[0].length);
+      } else {
+        result = removeConditionalBlock(result, unlessMatch.index, unlessMatch[0].length);
+      }
+    }
+
+    iterations++;
+  }
+
+  if (iterations >= MAX_ITERATIONS) {
+    console.warn("[tag-parser] Hit max iterations for conditional processing — possible malformed tags");
+  }
+
+  return result;
+}
+
+/**
+ * Remove a conditional block and clean up empty XML paragraphs.
+ * 
+ * When a block spans multiple paragraphs, removing its content may leave
+ * empty <w:p> elements. This function removes those to prevent blank gaps.
+ */
+function removeConditionalBlock(content: string, startIndex: number, matchLength: number): string {
+  // First, expand the removal range to include the containing paragraph(s)
+  // if those paragraphs contain ONLY the conditional tag content
+  
+  let removeStart = startIndex;
+  let removeEnd = startIndex + matchLength;
+
+  // Check if the opening tag sits in a paragraph by itself
+  // Look backwards for <w:p or <w:p ... to find paragraph start
+  const beforeMatch = content.substring(Math.max(0, startIndex - 500), startIndex);
+  const pOpenMatch = beforeMatch.match(/.*(<w:p\b[^>]*>(?:\s*<w:pPr>[\s\S]*?<\/w:pPr>)?(?:\s*<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)?\s*)$/);
+  
+  if (pOpenMatch) {
+    // Check if the text before the tag in this paragraph is only XML structure (no actual text)
+    const preamble = pOpenMatch[1];
+    const textBefore = preamble.replace(/<[^>]*>/g, '').trim();
+    if (textBefore === '') {
+      removeStart = startIndex - pOpenMatch[1].length;
+    }
+  }
+
+  // Check if closing tag ends at a paragraph boundary
+  const afterMatch = content.substring(removeEnd, removeEnd + 500);
+  const pCloseMatch = afterMatch.match(/^(\s*(?:<\/w:t>\s*<\/w:r>)?\s*<\/w:p>)/);
+  if (pCloseMatch) {
+    removeEnd = removeEnd + pCloseMatch[1].length;
+  }
+
+  let result = content.substring(0, removeStart) + content.substring(removeEnd);
+
+  // Clean up any remaining empty paragraphs
+  result = result.replace(/<w:p\b[^>]*>(?:\s*<w:pPr>[\s\S]*?<\/w:pPr>)?\s*<\/w:p>/g, '');
+
+  return result;
+}
+
+/**
  * Process native Word SDT (Structured Document Tag) checkboxes.
  * Finds <w:sdt> blocks containing <w14:checkbox>, reads the <w:tag> value,
  * resolves it to a field key, and toggles the checked state + display glyph.
@@ -363,7 +502,6 @@ export function processSdtCheckboxes(
     );
 
     // 2. Replace the display character inside <w:sdtContent>
-    // The glyph is typically in the first <w:t> inside sdtContent
     result = result.replace(
       /(<w:sdtContent\b[\s\S]*?<w:t(?:\s[^>]*)?>)([\s\S]*?)(<\/w:t>)/,
       `$1${displayChar}$3`
