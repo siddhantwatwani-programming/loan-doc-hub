@@ -79,6 +79,20 @@ export function numberToWords(num: number): string {
 // Date Formatters
 // ============================================
 
+export function formatDateDDMMYYYY(value: string | null): string {
+  if (!value) return "";
+  try {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return "";
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  } catch {
+    return "";
+  }
+}
+
 export function formatDateMMDDYYYY(value: string | null): string {
   if (!value) return "";
   try {
@@ -226,6 +240,7 @@ export function applyTransform(value: string | number | null, transform: string)
     case "currency_words":
       return formatCurrencyInWords(value);
     case "date":
+      return formatDateDDMMYYYY(valueStr);
     case "date_mmddyyyy":
       return formatDateMMDDYYYY(valueStr);
     case "date_long":
@@ -268,7 +283,7 @@ export function formatByDataType(value: string | number | null, dataType: string
     case "percentage":
       return formatPercentage(value, 3);
     case "date":
-      return formatDateMMDDYYYY(String(value));
+      return formatDateDDMMYYYY(String(value));
     case "number":
       return formatNumber(value);
     case "boolean":
