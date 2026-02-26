@@ -2,39 +2,37 @@
 
 ## Problem
 
-The field `property1.address` is defined in the field dictionary and referenced in the template merge tag `{{property1.address}}`, but the Property Details form **never renders an input for it**. The form only captures individual address components: `street`, `city`, `state`, `zip`, `county`. No value is ever saved for `property1.address`, so it resolves to empty during document generation.
+The template contains both a merge tag `{{property1.address}}` AND a label alias `('Property Address', 'Property1.Address', 'label', 'Property Address')` with `replaceNext = 'Property Address'`.
+
+Here's what happens during document generation:
+
+1. The merge tag `{{property1.address}}` is processed first. The canonical key `property1.address` (lowercase) is added to `replacedFieldKeys`.
+2. Label-based replacement then checks if `Property1.Address` (mixed case, from the label alias) is in `replacedFieldKeys` — but the check at line 162 is **case-sensitive**.
+3. `replacedFieldKeys.has("Property1.Address")` returns `false` because only `"property1.address"` is in the set.
+4. The label replacement proceeds, finds "Property Address" text in the document, and replaces the label text itself with the address value — removing the label.
 
 ## Fix
 
-**File: `supabase/functions/generate-document/index.ts`**
+**File: `supabase/functions/_shared/tag-parser.ts`**
 
-Add an auto-computation block (similar to the existing `borrower.borrower_description` auto-computation at ~line 223) that constructs `property1.address` from its component fields when not already set.
+Make the `replacedFieldKeys` check in `replaceLabelBasedFields` case-insensitive (lines 161-165).
 
-After the existing borrower description auto-computation block (~line 238), add:
-
+Replace:
 ```typescript
-// Auto-compute property1.address from component fields if not already set
-const existingPropAddr = fieldValues.get("property1.address") || fieldValues.get("Property1.Address");
-if (!existingPropAddr || !existingPropAddr.rawValue) {
-  const street = fieldValues.get("property1.street")?.rawValue;
-  const city = fieldValues.get("property1.city")?.rawValue;
-  const state = fieldValues.get("property1.state")?.rawValue;
-  const zip = fieldValues.get("property1.zip")?.rawValue;
-  const county = fieldValues.get("property1.county")?.rawValue;
-
-  const parts = [street, city, county, state, zip].filter(Boolean).map(String);
-  if (parts.length > 0) {
-    const fullAddress = parts.join(", ");
-    fieldValues.set("property1.address", { rawValue: fullAddress, dataType: "text" });
-    fieldValues.set("Property1.Address", { rawValue: fullAddress, dataType: "text" });
-    console.log(`[generate-document] Auto-computed property1.address = "${fullAddress}"`);
-  }
-}
+if (replacedFieldKeys?.has(mapping.fieldKey)) {
 ```
 
+With:
+```typescript
+const fieldKeyLower = mapping.fieldKey.toLowerCase();
+const alreadyReplaced = replacedFieldKeys && [...replacedFieldKeys].some(k => k.toLowerCase() === fieldKeyLower);
+if (alreadyReplaced) {
+```
+
+Keep the existing log message unchanged. No other files modified.
+
 ### What this does
-- Checks if `property1.address` (or `Property1.Address`) already has a value
-- If empty, constructs the full address from saved component fields (street, city, county, state, zip)
-- Sets both casing variants so merge tags resolve regardless of case
-- No UI, schema, or other logic changes
+- When the merge tag `{{property1.address}}` adds `property1.address` to `replacedFieldKeys`, the label alias for `Property1.Address` will now correctly match via case-insensitive comparison
+- The label replacement skips the "Property Address" text, preserving the label in the document
+- The merge tag value is already substituted inline, so the output becomes: `Property Address: <value>`
 
