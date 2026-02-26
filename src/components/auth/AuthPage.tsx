@@ -121,7 +121,7 @@ export const AuthPage: React.FC = () => {
         <div className="flex flex-col items-center mb-8">
           <img 
             src={logo} 
-            alt="Del Toro Loan Servicing" 
+            alt="Private Lending 360" 
             className="h-24 w-auto mb-4"
           />
           <h1 className="text-xl font-semibold text-foreground">Del Toro Loan Servicing, Inc.</h1>
