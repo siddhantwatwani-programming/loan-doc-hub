@@ -83,7 +83,7 @@ const AppLayoutInner: React.FC = () => {
   const isOnDealsPage = location.pathname === '/deals';
   const isWorkspaceRoute = dealEditMatch && openFiles.find(f => f.id === dealEditMatch[1]);
   // Always show tab bar across the application
-  const hasTabBar = true;
+  const hasTabBar = role === 'csr';
 
   const showWorkspaceRenderer = hasOpenFiles;
 
