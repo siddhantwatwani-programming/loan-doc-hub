@@ -287,7 +287,7 @@ export function formatByDataType(value: string | number | null, dataType: string
     case "number":
       return formatNumber(value);
     case "boolean":
-      return formatBoolean(value);
+      return formatCheckbox(value);
     case "text":
     default:
       return String(value);
