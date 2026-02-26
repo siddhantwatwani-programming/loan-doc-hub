@@ -124,7 +124,7 @@ export const AuthPage: React.FC = () => {
             alt="Private Lending 360" 
             className="h-24 w-auto mb-4"
           />
-          <h1 className="text-xl font-semibold text-foreground">Del Toro Loan Servicing, Inc.</h1>
+          
           <h2 className="text-2xl font-bold text-foreground mt-4">
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h2>
