@@ -526,6 +526,9 @@ export function replaceMergeTags(
   // First normalize the XML to handle fragmented merge fields
   let result = normalizeWordXml(content);
 
+  // Process conditional blocks ({{#if}}/{{/if}}) before any tag replacement
+  result = processConditionalBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
+
   // Process native Word SDT checkboxes before text-based merge tags
   result = processSdtCheckboxes(result, fieldValues, mergeTagMap, validFieldKeys);
   
