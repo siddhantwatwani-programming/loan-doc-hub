@@ -1,38 +1,46 @@
 
 
-## Plan: Change Default Date Format to DD/MM/YYYY
+## Problem
 
-### Problem
-The default date format in document generation outputs `MM/DD/YYYY` (e.g., `02/26/2026`). The requirement is `DD/MM/YYYY` (e.g., `26/02/2026`).
+The foreign key constraint `generated_documents_template_id_fkey` prevents deleting a template when `generated_documents` rows reference it. This is expected database behavior to preserve referential integrity.
 
-### Changes
+## Fix
 
-**File: `supabase/functions/_shared/formatting.ts`**
+**File: `src/pages/admin/TemplateManagementPage.tsx`** — Update `handleDelete` to delete associated `generated_documents` rows before deleting the template.
 
-1. Add a new function `formatDateDDMMYYYY` that outputs `DD/MM/YYYY`:
+Before the existing `supabase.from('templates').delete()` call, add:
+
 ```typescript
-export function formatDateDDMMYYYY(value: string | null): string {
-  if (!value) return "";
-  const date = new Date(value);
-  if (isNaN(date.getTime())) return "";
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
-}
+// Delete associated generated_documents that reference this template
+const { error: genDocsError } = await supabase
+  .from('generated_documents')
+  .delete()
+  .eq('template_id', template.id);
+
+if (genDocsError) throw genDocsError;
+
+// Also delete any template_field_maps referencing this template
+const { error: fieldMapsError } = await supabase
+  .from('template_field_maps')
+  .delete()
+  .eq('template_id', template.id);
+
+if (fieldMapsError) throw fieldMapsError;
 ```
 
-2. Update the **default** `"date"` case in `applyTransform` (line ~228) to call `formatDateDDMMYYYY` instead of `formatDateMMDDYYYY`. The explicit `"date_mmddyyyy"` case remains unchanged for templates that specifically request MM/DD/YYYY.
+Also delete associated `generation_jobs`:
 
-3. Update the **default** `"date"` case in `formatByDataType` (line ~270) to call `formatDateDDMMYYYY`.
+```typescript
+const { error: jobsError } = await supabase
+  .from('generation_jobs')
+  .delete()
+  .eq('template_id', template.id);
 
-**No other files changed.** The `formatDateMMDDYYYY` function is preserved — it remains available for any template that explicitly uses the `date_mmddyyyy` transform rule.
+if (jobsError) throw jobsError;
+```
 
-### Summary of behavior after change
-| Transform rule | Output |
-|---|---|
-| (default / `"date"`) | DD/MM/YYYY |
-| `"date_mmddyyyy"` | MM/DD/YYYY |
-| `"date_long"` | February 26, 2026 |
-| `"date_short"` | Feb 26, 2026 |
+### Files Modified
+| File | Change |
+|------|--------|
+| `src/pages/admin/TemplateManagementPage.tsx` | Delete dependent rows from `generated_documents`, `generation_jobs`, and `template_field_maps` before deleting the template |
 
