@@ -266,32 +266,40 @@ export function replaceLabelBasedFields(
       const textToReplace = mapping.replaceNext;
       const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       // Use word boundaries to prevent partial word matches
-      // Also skip if the match is immediately followed by a merge tag {{...}}
       const replaceNextPattern = new RegExp(`\\b${escapedText}\\b`, 'gi');
       
       if (replaceNextPattern.test(result)) {
+        // Track whether any match was colon-detected so we can do a post-pass replacement
+        let colonDetected = false;
+        
         result = result.replace(new RegExp(`\\b${escapedText}\\b`, 'gi'), (match, offset) => {
           const after = result.substring(offset + match.length, offset + match.length + 200);
           if (/^\s*(?:<[^>]*>\s*)*\{\{/.test(after)) {
             console.log(`[tag-parser] Label "${label}" -> skipped (adjacent to merge tag)`);
             return match; // Keep static title
           }
-          // If the word is followed by a colon (e.g., "Date:"), keep the label and
-          // insert the value after the colon instead of replacing the label word
+          // If the word is followed by a colon (e.g., "Date:"), keep the label word
+          // and flag for post-pass insertion of the value after the colon
           const immediateAfter = after.replace(/<[^>]*>/g, '').trimStart();
           if (immediateAfter.startsWith(':')) {
             console.log(`[tag-parser] Label "${label}" -> colon-detected, will insert value after colon`);
-            // Don't replace the word itself; instead do a secondary replacement
-            // on the full "Label: ___" or "Label:" pattern to append the value
-            const fullPattern = new RegExp(
-              `(\\b${escapedText}\\b(?:\\s|<[^>]*>)*:\\s*)(_+|\\s*)`,
-              'gi'
-            );
-            result = result.replace(fullPattern, `$1${formattedValue} `);
-            return match; // Keep the label word as-is in this pass
+            colonDetected = true;
+            return match; // Keep the label word as-is
           }
           return formattedValue;
         });
+        
+        // Post-pass: if any match was colon-detected, do a secondary replacement
+        // on the full "Label: ___" or "Label:" pattern to insert the value after the colon
+        if (colonDetected) {
+          const fullPattern = new RegExp(
+            `(\\b${escapedText}\\b(?:\\s|<[^>]*>)*:\\s*)(_+|\\s*)`,
+            'gi'
+          );
+          result = result.replace(fullPattern, `$1${formattedValue} `);
+          console.log(`[tag-parser] Label "${label}" -> inserted value after colon: "${formattedValue}"`);
+        }
+        
         replacementCount++;
         console.log(`[tag-parser] Label-replaced "${textToReplace}" -> "${formattedValue}"`);
       }
