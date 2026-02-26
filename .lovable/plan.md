@@ -2,45 +2,39 @@
 
 ## Problem
 
-The foreign key constraint `generated_documents_template_id_fkey` prevents deleting a template when `generated_documents` rows reference it. This is expected database behavior to preserve referential integrity.
+The field `property1.address` is defined in the field dictionary and referenced in the template merge tag `{{property1.address}}`, but the Property Details form **never renders an input for it**. The form only captures individual address components: `street`, `city`, `state`, `zip`, `county`. No value is ever saved for `property1.address`, so it resolves to empty during document generation.
 
 ## Fix
 
-**File: `src/pages/admin/TemplateManagementPage.tsx`** — Update `handleDelete` to delete associated `generated_documents` rows before deleting the template.
+**File: `supabase/functions/generate-document/index.ts`**
 
-Before the existing `supabase.from('templates').delete()` call, add:
+Add an auto-computation block (similar to the existing `borrower.borrower_description` auto-computation at ~line 223) that constructs `property1.address` from its component fields when not already set.
 
-```typescript
-// Delete associated generated_documents that reference this template
-const { error: genDocsError } = await supabase
-  .from('generated_documents')
-  .delete()
-  .eq('template_id', template.id);
-
-if (genDocsError) throw genDocsError;
-
-// Also delete any template_field_maps referencing this template
-const { error: fieldMapsError } = await supabase
-  .from('template_field_maps')
-  .delete()
-  .eq('template_id', template.id);
-
-if (fieldMapsError) throw fieldMapsError;
-```
-
-Also delete associated `generation_jobs`:
+After the existing borrower description auto-computation block (~line 238), add:
 
 ```typescript
-const { error: jobsError } = await supabase
-  .from('generation_jobs')
-  .delete()
-  .eq('template_id', template.id);
+// Auto-compute property1.address from component fields if not already set
+const existingPropAddr = fieldValues.get("property1.address") || fieldValues.get("Property1.Address");
+if (!existingPropAddr || !existingPropAddr.rawValue) {
+  const street = fieldValues.get("property1.street")?.rawValue;
+  const city = fieldValues.get("property1.city")?.rawValue;
+  const state = fieldValues.get("property1.state")?.rawValue;
+  const zip = fieldValues.get("property1.zip")?.rawValue;
+  const county = fieldValues.get("property1.county")?.rawValue;
 
-if (jobsError) throw jobsError;
+  const parts = [street, city, county, state, zip].filter(Boolean).map(String);
+  if (parts.length > 0) {
+    const fullAddress = parts.join(", ");
+    fieldValues.set("property1.address", { rawValue: fullAddress, dataType: "text" });
+    fieldValues.set("Property1.Address", { rawValue: fullAddress, dataType: "text" });
+    console.log(`[generate-document] Auto-computed property1.address = "${fullAddress}"`);
+  }
+}
 ```
 
-### Files Modified
-| File | Change |
-|------|--------|
-| `src/pages/admin/TemplateManagementPage.tsx` | Delete dependent rows from `generated_documents`, `generation_jobs`, and `template_field_maps` before deleting the template |
+### What this does
+- Checks if `property1.address` (or `Property1.Address`) already has a value
+- If empty, constructs the full address from saved component fields (street, city, county, state, zip)
+- Sets both casing variants so merge tags resolve regardless of case
+- No UI, schema, or other logic changes
 
