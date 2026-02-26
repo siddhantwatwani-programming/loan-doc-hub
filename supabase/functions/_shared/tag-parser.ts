@@ -277,6 +277,70 @@ export function replaceLabelBasedFields(
 }
 
 /**
+ * Process native Word SDT (Structured Document Tag) checkboxes.
+ * Finds <w:sdt> blocks containing <w14:checkbox>, reads the <w:tag> value,
+ * resolves it to a field key, and toggles the checked state + display glyph.
+ */
+export function processSdtCheckboxes(
+  content: string,
+  fieldValues: Map<string, FieldValueData>,
+  mergeTagMap: Record<string, string>,
+  validFieldKeys?: Set<string>
+): string {
+  // Match entire <w:sdt>…</w:sdt> blocks that contain a w14:checkbox element
+  const sdtPattern = /<w:sdt\b[\s\S]*?<\/w:sdt>/g;
+
+  return content.replace(sdtPattern, (sdtBlock) => {
+    // Only process SDTs that are checkboxes
+    if (!/<w14:checkbox\b/.test(sdtBlock)) return sdtBlock;
+
+    // Extract the tag value (the mapping key)
+    const tagMatch = /<w:tag\s+w:val="([^"]+)"/i.exec(sdtBlock);
+    if (!tagMatch) {
+      console.log("[tag-parser] SDT checkbox found but no <w:tag> — skipping");
+      return sdtBlock;
+    }
+
+    const tagName = tagMatch[1];
+    const canonicalKey = resolveFieldKeyWithMap(tagName, mergeTagMap, validFieldKeys);
+    const resolved = getFieldData(canonicalKey, fieldValues);
+
+    // Determine boolean state
+    let isChecked = false;
+    if (resolved?.data) {
+      const raw = resolved.data.rawValue;
+      if (typeof raw === "string") {
+        isChecked = ["true", "1", "yes"].includes(raw.toLowerCase());
+      } else if (typeof raw === "number") {
+        isChecked = raw !== 0;
+      } else {
+        isChecked = Boolean(raw);
+      }
+    }
+
+    const checkedVal = isChecked ? "1" : "0";
+    const displayChar = isChecked ? "\u2612" : "\u2610"; // ☒ or ☐
+
+    console.log(`[tag-parser] SDT checkbox "${tagName}" -> ${canonicalKey} = ${isChecked} (${displayChar})`);
+
+    // 1. Toggle <w14:checked w14:val="..."/>
+    let result = sdtBlock.replace(
+      /(<w14:checked\s+w14:val=")([^"]*)("\s*\/>)/,
+      `$1${checkedVal}$3`
+    );
+
+    // 2. Replace the display character inside <w:sdtContent>
+    // The glyph is typically in the first <w:t> inside sdtContent
+    result = result.replace(
+      /(<w:sdtContent\b[\s\S]*?<w:t(?:\s[^>]*)?>)([\s\S]*?)(<\/w:t>)/,
+      `$1${displayChar}$3`
+    );
+
+    return result;
+  });
+}
+
+/**
  * Main function to replace all merge tags in content
  * @param validFieldKeys - Set of valid field keys from field_dictionary for direct matching
  */
@@ -290,6 +354,9 @@ export function replaceMergeTags(
 ): string {
   // First normalize the XML to handle fragmented merge fields
   let result = normalizeWordXml(content);
+
+  // Process native Word SDT checkboxes before text-based merge tags
+  result = processSdtCheckboxes(result, fieldValues, mergeTagMap, validFieldKeys);
   
   // Parse and replace merge tags
   const tags = parseWordMergeFields(result);
