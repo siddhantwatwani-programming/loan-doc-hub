@@ -182,6 +182,22 @@ async function generateSingleDocument(
 
     console.log(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);
 
+    // Auto-fill empty date fields with current system date
+    const systemDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    let dateFieldsFilled = 0;
+    for (const fd of allFieldDictEntries) {
+      if (fd.data_type === "date") {
+        const existing = fieldValues.get(fd.field_key);
+        if (!existing || !existing.rawValue || String(existing.rawValue).trim() === "") {
+          fieldValues.set(fd.field_key, { rawValue: systemDate, dataType: "date" });
+          dateFieldsFilled++;
+        }
+      }
+    }
+    if (dateFieldsFilled > 0) {
+      console.log(`[generate-document] Auto-filled ${dateFieldsFilled} empty date fields with system date: ${systemDate}`);
+    }
+
     // Auto-compute borrower.borrower_description if not already set
     const existingDesc = fieldValues.get("borrower.borrower_description");
     if (!existingDesc || !existingDesc.rawValue) {
