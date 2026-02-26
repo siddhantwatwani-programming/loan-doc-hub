@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 
 const AppLayoutInner: React.FC = () => {
   const { isCollapsed } = useSidebar();
+  const { role } = useAuth();
   const { openFiles, activeFileId, closeFile, isFileDirty, setFileDirty } = useWorkspace();
   const location = useLocation();
   const navigate = useNavigate();
