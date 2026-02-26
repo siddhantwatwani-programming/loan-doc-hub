@@ -84,6 +84,39 @@ export function normalizeWordXml(xmlContent: string): string {
     }
     return `{{${fieldName}|${transform}}}`;
   });
+
+  // Handle fragmented conditional block tags: {{#if ...}} and {{/if}}
+  const ifFragmented = /\{\{((?:<[^>]*>|\s)*?)#if\s*((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
+  result = result.replace(ifFragmented, (match, pre, mid, fieldName, post) => {
+    if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
+      console.log(`[tag-parser] Consolidated fragmented {{#if ${fieldName}}}`);
+    }
+    return `{{#if ${fieldName}}}`;
+  });
+
+  const unlessFragmented = /\{\{((?:<[^>]*>|\s)*?)#unless\s*((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
+  result = result.replace(unlessFragmented, (match, pre, mid, fieldName, post) => {
+    if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
+      console.log(`[tag-parser] Consolidated fragmented {{#unless ${fieldName}}}`);
+    }
+    return `{{#unless ${fieldName}}}`;
+  });
+
+  const endIfFragmented = /\{\{((?:<[^>]*>|\s)*?)\/((?:<[^>]*>|\s)*?)if((?:<[^>]*>|\s)*?)\}\}/g;
+  result = result.replace(endIfFragmented, (match, pre, mid, post) => {
+    if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
+      console.log(`[tag-parser] Consolidated fragmented {{/if}}`);
+    }
+    return `{{/if}}`;
+  });
+
+  const endUnlessFragmented = /\{\{((?:<[^>]*>|\s)*?)\/((?:<[^>]*>|\s)*?)unless((?:<[^>]*>|\s)*?)\}\}/g;
+  result = result.replace(endUnlessFragmented, (match, pre, mid, post) => {
+    if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
+      console.log(`[tag-parser] Consolidated fragmented {{/unless}}`);
+    }
+    return `{{/unless}}`;
+  });
   
   return result;
 }
