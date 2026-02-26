@@ -237,6 +237,24 @@ async function generateSingleDocument(
       }
     }
 
+    // Auto-compute property1.address from component fields if not already set
+    const existingPropAddr = fieldValues.get("property1.address") || fieldValues.get("Property1.Address");
+    if (!existingPropAddr || !existingPropAddr.rawValue) {
+      const street = fieldValues.get("property1.street")?.rawValue;
+      const city = fieldValues.get("property1.city")?.rawValue;
+      const state = fieldValues.get("property1.state")?.rawValue;
+      const zip = fieldValues.get("property1.zip")?.rawValue;
+      const county = fieldValues.get("property1.county")?.rawValue;
+
+      const parts = [street, city, county, state, zip].filter(Boolean).map(String);
+      if (parts.length > 0) {
+        const fullAddress = parts.join(", ");
+        fieldValues.set("property1.address", { rawValue: fullAddress, dataType: "text" });
+        fieldValues.set("Property1.Address", { rawValue: fullAddress, dataType: "text" });
+        console.log(`[generate-document] Auto-computed property1.address = "${fullAddress}"`);
+      }
+    }
+
     // Build set of ALL valid field keys from the complete field_dictionary (for direct tag matching)
     // Use pagination to fetch all rows (table has 1700+ entries, default limit is 1000)
     const PAGE_SIZE = 1000;
