@@ -198,6 +198,27 @@ async function generateSingleDocument(
       console.log(`[generate-document] Auto-filled ${dateFieldsFilled} empty date fields with system date: ${systemDate}`);
     }
 
+    // Second pass: fetch ALL date-type fields from field_dictionary
+    // to cover fields not present in deal_section_values at all
+    const { data: allDateFields, error: dateFieldsError } = await supabase
+      .from("field_dictionary")
+      .select("field_key")
+      .eq("data_type", "date");
+
+    if (!dateFieldsError && allDateFields) {
+      let globalDateFills = 0;
+      for (const df of allDateFields) {
+        const existing = fieldValues.get(df.field_key);
+        if (!existing || !existing.rawValue || String(existing.rawValue).trim() === "") {
+          fieldValues.set(df.field_key, { rawValue: systemDate, dataType: "date" });
+          globalDateFills++;
+        }
+      }
+      if (globalDateFills > 0) {
+        console.log(`[generate-document] Auto-filled ${globalDateFills} additional date fields (not in deal data) with system date: ${systemDate}`);
+      }
+    }
+
     // Auto-compute borrower.borrower_description if not already set
     const existingDesc = fieldValues.get("borrower.borrower_description");
     if (!existingDesc || !existingDesc.rawValue) {
