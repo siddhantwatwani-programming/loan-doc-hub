@@ -238,7 +238,7 @@ export const AppSidebar: React.FC = () => {
           <TooltipProvider delayDuration={0}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <button className="sidebar-item w-full justify-center px-2">
+                <button className="sidebar-item w-full justify-center px-2" onClick={toggleSidebar}>
                   <Search className="h-5 w-5" />
                 </button>
               </TooltipTrigger>
