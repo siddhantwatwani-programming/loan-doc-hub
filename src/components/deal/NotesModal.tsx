@@ -89,7 +89,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden p-4">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-sm">
             <StickyNote className="h-4 w-4 text-primary" />
