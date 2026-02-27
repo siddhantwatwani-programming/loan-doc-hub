@@ -182,42 +182,10 @@ async function generateSingleDocument(
 
     console.log(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);
 
-    // Auto-fill empty date fields with current system date
+    // Inject systemDate so only templates using {{systemDate}} get the current date
     const systemDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-    let dateFieldsFilled = 0;
-    for (const fd of allFieldDictEntries) {
-      if (fd.data_type === "date") {
-        const existing = fieldValues.get(fd.field_key);
-        if (!existing || !existing.rawValue || String(existing.rawValue).trim() === "") {
-          fieldValues.set(fd.field_key, { rawValue: systemDate, dataType: "date" });
-          dateFieldsFilled++;
-        }
-      }
-    }
-    if (dateFieldsFilled > 0) {
-      console.log(`[generate-document] Auto-filled ${dateFieldsFilled} empty date fields with system date: ${systemDate}`);
-    }
-
-    // Second pass: fetch ALL date-type fields from field_dictionary
-    // to cover fields not present in deal_section_values at all
-    const { data: allDateFields, error: dateFieldsError } = await supabase
-      .from("field_dictionary")
-      .select("field_key")
-      .eq("data_type", "date");
-
-    if (!dateFieldsError && allDateFields) {
-      let globalDateFills = 0;
-      for (const df of allDateFields) {
-        const existing = fieldValues.get(df.field_key);
-        if (!existing || !existing.rawValue || String(existing.rawValue).trim() === "") {
-          fieldValues.set(df.field_key, { rawValue: systemDate, dataType: "date" });
-          globalDateFills++;
-        }
-      }
-      if (globalDateFills > 0) {
-        console.log(`[generate-document] Auto-filled ${globalDateFills} additional date fields (not in deal data) with system date: ${systemDate}`);
-      }
-    }
+    fieldValues.set("systemDate", { rawValue: systemDate, dataType: "date" });
+    console.log(`[generate-document] Injected systemDate: ${systemDate}`);
 
     // Auto-compute borrower.borrower_description if not already set
     const existingDesc = fieldValues.get("borrower.borrower_description");

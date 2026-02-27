@@ -240,7 +240,7 @@ export function applyTransform(value: string | number | null, transform: string)
     case "currency_words":
       return formatCurrencyInWords(value);
     case "date":
-      return formatDateDDMMYYYY(valueStr);
+      return formatDateMMDDYYYY(valueStr);
     case "date_mmddyyyy":
       return formatDateMMDDYYYY(valueStr);
     case "date_long":
@@ -283,7 +283,7 @@ export function formatByDataType(value: string | number | null, dataType: string
     case "percentage":
       return formatPercentage(value, 3);
     case "date":
-      return formatDateDDMMYYYY(String(value));
+      return formatDateMMDDYYYY(String(value));
     case "number":
       return formatNumber(value);
     case "boolean":
