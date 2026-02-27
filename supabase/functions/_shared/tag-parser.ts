@@ -25,6 +25,15 @@ export function normalizeWordXml(xmlContent: string): string {
   // Removing them lets the simple run-boundary regex work for styled runs too.
   result = result.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g, '');
   
+  // Strip non-text inline elements that sit between <w:r> and <w:t> and prevent
+  // adjacent-run consolidation: lastRenderedPageBreak, bookmarkStart/End, noBreakHyphen, softHyphen, tab
+  result = result.replace(/<w:lastRenderedPageBreak\/>/g, '');
+  result = result.replace(/<w:bookmarkStart[^/]*\/>/g, '');
+  result = result.replace(/<w:bookmarkEnd[^/]*\/>/g, '');
+  result = result.replace(/<w:noBreakHyphen\/>/g, '');
+  result = result.replace(/<w:softHyphen\/>/g, '');
+  result = result.replace(/<w:tab\/>/g, '');
+  
   // Consolidate adjacent text runs: Word often splits text like {{Lender.Name}} across
   // multiple <w:r><w:t>...</w:t></w:r> elements. After stripping rPr, merge adjacent
   // runs so that fragmented tags become contiguous text that regex can match.
