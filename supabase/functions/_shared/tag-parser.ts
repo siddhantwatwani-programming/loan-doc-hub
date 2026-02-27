@@ -20,10 +20,10 @@ export function normalizeWordXml(xmlContent: string): string {
   // These self-closing elements have no content value and break tag detection
   result = result.replace(/<w:proofErr[^/]*\/>/g, '');
   
-  // Strip run property blocks (<w:rPr>...</w:rPr>) that sit between <w:r> and <w:t>.
-  // These contain formatting metadata (fonts, sizes, bold, etc.) but no text content.
-  // Removing them lets the simple run-boundary regex work for styled runs too.
-  result = result.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g, '');
+  // NOTE: We intentionally preserve <w:rPr> blocks (run properties) which contain
+  // font names, sizes, bold, italic, colors, etc. Stripping them would collapse
+  // formatted documents to default styling. The run-consolidation regex below
+  // handles skipping over <w:rPr> blocks between adjacent runs.
   
   // Strip non-text inline elements that sit between <w:r> and <w:t> and prevent
   // adjacent-run consolidation: lastRenderedPageBreak, bookmarkStart/End, noBreakHyphen, softHyphen, tab
@@ -39,7 +39,7 @@ export function normalizeWordXml(xmlContent: string): string {
   // runs so that fragmented tags become contiguous text that regex can match.
   // This handles: </w:t></w:r><w:r><w:t> → (removed, merging text content)
   // Also handles <w:r> with attributes and <w:t xml:space="preserve">
-  result = result.replace(/<\/w:t><\/w:r><w:r(?:\s[^>]*)?>(?:\s*)<w:t(?:\s[^>]*)?>/g, '');
+  result = result.replace(/<\/w:t><\/w:r><w:r(?:\s[^>]*)?>(?:\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>)?\s*)<w:t(?:\s[^>]*)?>/g, '');
   
   // Handle fragmented merge fields
   const fragmentedPattern = /«((?:<[^>]*>|\s)*?)([A-Za-z0-9_]+)((?:<[^>]*>|\s)*?)»/g;
@@ -480,8 +480,15 @@ function removeConditionalBlock(content: string, startIndex: number, matchLength
 
   let result = content.substring(0, removeStart) + content.substring(removeEnd);
 
-  // Clean up any remaining empty paragraphs
-  result = result.replace(/<w:p\b[^>]*>(?:\s*<w:pPr>[\s\S]*?<\/w:pPr>)?\s*<\/w:p>/g, '');
+  // Clean up empty paragraphs only near the removed block (within 500 chars)
+  // to avoid stripping intentional spacing paragraphs elsewhere in the document
+  const cleanupStart = Math.max(0, removeStart - 500);
+  const cleanupEnd = Math.min(result.length, removeStart + 500);
+  const before = result.substring(0, cleanupStart);
+  const region = result.substring(cleanupStart, cleanupEnd);
+  const after = result.substring(cleanupEnd);
+  const cleanedRegion = region.replace(/<w:p\b[^>]*>(?:\s*<w:pPr>[\s\S]*?<\/w:pPr>)?\s*<\/w:p>/g, '');
+  result = before + cleanedRegion + after;
 
   return result;
 }
