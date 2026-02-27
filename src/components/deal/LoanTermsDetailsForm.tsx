@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -98,6 +98,57 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
   const getBoolValue = (key: string) => values[key] === 'true';
   const setBoolValue = (key: string, value: boolean) => onValueChange(key, String(value));
 
+  const [focusedCurrencyField, setFocusedCurrencyField] = useState<string | null>(null);
+
+  const formatCurrencyDisplay = useCallback((val: string) => {
+    if (!val) return '';
+    const num = parseFloat(val);
+    if (isNaN(num)) return val;
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(num);
+  }, []);
+
+  const handleCurrencyChange = useCallback((key: string, raw: string) => {
+    const cleaned = raw.replace(/[^0-9.]/g, '');
+    setValue(key, cleaned);
+  }, []);
+
+  const handleCurrencyBlur = useCallback((key: string) => {
+    setFocusedCurrencyField(null);
+    const val = getValue(key);
+    if (!val) return;
+    const num = parseFloat(val);
+    if (!isNaN(num)) {
+      setValue(key, num.toFixed(2));
+    }
+  }, [values]);
+
+  const renderInlineCurrencyField = (fieldKey: string, label: string) => {
+    const isFocused = focusedCurrencyField === fieldKey;
+    const rawValue = getValue(fieldKey);
+    const displayValue = isFocused ? rawValue : formatCurrencyDisplay(rawValue);
+    return (
+      <div className="flex items-center gap-2">
+        <Label className="w-[130px] shrink-0 text-xs">{label}</Label>
+        <div className="relative flex-1">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+          <Input
+            id={fieldKey}
+            value={displayValue}
+            onChange={(e) => handleCurrencyChange(fieldKey, e.target.value)}
+            onFocus={() => setFocusedCurrencyField(fieldKey)}
+            onBlur={() => handleCurrencyBlur(fieldKey)}
+            disabled={disabled}
+            className="h-8 text-xs flex-1 pl-5"
+            placeholder="0.00"
+          />
+        </div>
+      </div>
+    );
+  };
+
   const renderInlineField = (fieldKey: string, label: string, type: 'text' | 'date' = 'text') => (
     <div className="flex items-center gap-2">
       <Label className="w-[130px] shrink-0 text-xs">{label}</Label>
@@ -127,7 +178,7 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
         <div className="space-y-1.5">
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Details</h3>
           {renderInlineField(FIELD_KEYS.company, 'Company')}
-          {renderInlineField(FIELD_KEYS.loanNumber, 'Loan Number')}
+          {renderInlineCurrencyField(FIELD_KEYS.loanNumber, 'Loan Number')}
           {renderInlineField(FIELD_KEYS.assignedCsr, 'Assigned CSR')}
           {renderInlineField(FIELD_KEYS.originatingVendor, 'Originating Vendor')}
           {renderInlineField(FIELD_KEYS.origination, 'Origination', 'date')}
