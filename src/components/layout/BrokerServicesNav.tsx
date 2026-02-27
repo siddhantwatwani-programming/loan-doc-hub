@@ -132,7 +132,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
           <button
             className={cn(
               'sidebar-item w-full justify-between',
-              isAnyActive && 'text-sidebar-primary-foreground bg-sidebar-accent'
+              isAnyActive && 'sidebar-item-active'
             )}
           >
             <div className="flex items-center gap-3">
