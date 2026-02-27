@@ -1,22 +1,30 @@
 
 
-## Plan: Sidebar Collapsed Mode — Logo-Only Display & Search Icon Expand
+## Plan: Fix Account Number Currency Formatting in Generated Documents
 
-### 1. Show only the logo in collapsed mode (match attached screenshot)
-**File: `src/components/layout/AppSidebar.tsx` (lines 183-210)**
-- In collapsed mode, the logo container should center the logo mark without excess padding or the X button (already hidden).
-- Adjust collapsed logo sizing to show the circular "PL" logo mark clearly: keep `h-8 w-auto max-w-[40px]` but ensure the container centers it properly. The current implementation already does this — no change needed for logo display.
+### Problem
+The `Terms.LoanNumber` field (displayed as "Account Number" in the Personal Guaranty document) has `data_type: "text"` in the field_dictionary. During document generation, `formatByDataType("text")` returns the raw numeric value without currency formatting.
 
-### 2. Search icon click expands sidebar when collapsed
-**File: `src/components/layout/AppSidebar.tsx` (line 241)**
-- Add `onClick={toggleSidebar}` to the collapsed search icon button so clicking it expands the sidebar.
+### Solution
+Add a post-processing step in `supabase/functions/generate-document/index.ts` (after field values are resolved, around line 183) that overrides the `dataType` to `"currency"` for the `Terms.LoanNumber` field. This ensures `formatByDataType` applies `$1,000,300.00` formatting when the merge tag is replaced in the template.
 
-**Change at line 241:**
+### File: `supabase/functions/generate-document/index.ts`
+**Change (after line 181, before the log on line 183):**
+- Add a block that checks if `Terms.LoanNumber` exists in `fieldValues` and overrides its `dataType` from `"text"` to `"currency"`, so the existing `formatByDataType` pipeline applies US currency formatting automatically.
+
 ```
-<button className="sidebar-item w-full justify-center px-2" onClick={toggleSidebar}>
+// Force currency formatting for Loan/Account Number in generated documents
+const loanNumberKeys = ["Terms.LoanNumber", "terms.loannumber"];
+for (const lnKey of loanNumberKeys) {
+  const existing = fieldValues.get(lnKey);
+  if (existing && existing.dataType !== "currency") {
+    fieldValues.set(lnKey, { rawValue: existing.rawValue, dataType: "currency" });
+  }
+}
 ```
 
 ### No other files modified
-- No backend changes needed (no new fields to persist)
-- No database or schema changes
+- No UI changes
+- No database schema changes
+- No changes to formatting.ts, tag-parser.ts, or any other shared modules
 
