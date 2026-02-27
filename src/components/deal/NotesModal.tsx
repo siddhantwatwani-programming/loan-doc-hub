@@ -143,7 +143,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
 
           {/* Notes content - Rich Text Editor with its own scroll */}
           <div className="space-y-1">
-            <Label className="text-xs text-foreground">Notes</Label>
+            <Label className="text-xs text-foreground">Conversation Log</Label>
             <div className="max-h-[300px] overflow-y-auto border border-border rounded-md">
               <RichTextEditor
                 value={formData.content}
