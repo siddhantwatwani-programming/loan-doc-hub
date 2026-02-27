@@ -241,6 +241,40 @@ async function generateSingleDocument(
       }
     }
 
+    // Auto-compute Borrower.Address from component fields if not already set
+    const existingBorrowerAddr = fieldValues.get("Borrower.Address") || fieldValues.get("borrower.address");
+    if (!existingBorrowerAddr || !existingBorrowerAddr.rawValue) {
+      const street = fieldValues.get("borrower1.address.street")?.rawValue || fieldValues.get("borrower.address.street")?.rawValue;
+      const city = fieldValues.get("borrower1.address.city")?.rawValue || fieldValues.get("borrower.address.city")?.rawValue;
+      const state = fieldValues.get("borrower1.state")?.rawValue || fieldValues.get("borrower.state")?.rawValue;
+      const zip = fieldValues.get("borrower1.address.zip")?.rawValue || fieldValues.get("borrower.address.zip")?.rawValue;
+
+      const parts = [street, city, state, zip].filter(Boolean).map(String);
+      if (parts.length > 0) {
+        const fullAddress = parts.join(", ");
+        fieldValues.set("Borrower.Address", { rawValue: fullAddress, dataType: "text" });
+        fieldValues.set("borrower.address", { rawValue: fullAddress, dataType: "text" });
+        console.log(`[generate-document] Auto-computed Borrower.Address = "${fullAddress}"`);
+      }
+    }
+
+    // Auto-compute Lender.Address from component fields if not already set
+    const existingLenderAddr = fieldValues.get("Lender.Address") || fieldValues.get("lender.address");
+    if (!existingLenderAddr || !existingLenderAddr.rawValue) {
+      const street = fieldValues.get("lender1.primary_address.street")?.rawValue || fieldValues.get("lender.primary_address.street")?.rawValue;
+      const city = fieldValues.get("lender1.primary_address.city")?.rawValue || fieldValues.get("lender.primary_address.city")?.rawValue;
+      const state = fieldValues.get("lender1.primary_address.state")?.rawValue || fieldValues.get("lender.primary_address.state")?.rawValue;
+      const zip = fieldValues.get("lender1.primary_address.zip")?.rawValue || fieldValues.get("lender.primary_address.zip")?.rawValue;
+
+      const parts = [street, city, state, zip].filter(Boolean).map(String);
+      if (parts.length > 0) {
+        const fullAddress = parts.join(", ");
+        fieldValues.set("Lender.Address", { rawValue: fullAddress, dataType: "text" });
+        fieldValues.set("lender.address", { rawValue: fullAddress, dataType: "text" });
+        console.log(`[generate-document] Auto-computed Lender.Address = "${fullAddress}"`);
+      }
+    }
+
     // Auto-compute has_co_borrower boolean flag from existing co-borrower field data
     let hasCoBorrowerData = false;
     for (const [key, val] of fieldValues.entries()) {
@@ -559,29 +593,21 @@ serve(async (req) => {
       });
     }
 
-    // Validate JWT via claims (Lovable Cloud signing-keys compatible)
-    const token = authHeader.replace("Bearer ", "").trim();
-    if (!token) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
+    // Validate user via getUser() - reliable across all Supabase environments
     const authClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims?.sub) {
-      console.error("[generate-document] Auth error:", claimsError?.message);
+    const { data: userData, error: userError } = await authClient.auth.getUser();
+    if (userError || !userData?.user) {
+      console.error("[generate-document] Auth error:", userError?.message);
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userId = claimsData.claims.sub;
+    const userId = userData.user.id;
 
     // Use service role client for all data operations (bypasses RLS)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
