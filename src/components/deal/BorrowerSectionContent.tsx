@@ -838,18 +838,13 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
         );
       case 'co_borrowers':
         return (
-          <CoBorrowersTableView
-            coBorrowers={paginatedCoBorrowers}
-            onAddCoBorrower={handleAddCoBorrower}
-            onEditCoBorrower={handleEditCoBorrower}
-            onRowClick={handleCoBorrowerRowClick}
-            onPrimaryChange={handleCoBorrowerPrimaryChange}
-            onDeleteCoBorrower={handleDeleteCoBorrower}
+          <CoBorrowerPrimaryForm
+            fields={fields}
+            values={getCoBorrowerInlineValues()}
+            onValueChange={handleCoBorrowerInlineValueChange}
+            showValidation={showValidation}
             disabled={disabled}
-            isLoading={isLoading}
-            currentPage={coBorrowerCurrentPage}
-            totalPages={coBorrowerTotalPages}
-            onPageChange={handleCoBorrowerPageChange}
+            calculationResults={calculationResults}
           />
         );
       case 'primary':
