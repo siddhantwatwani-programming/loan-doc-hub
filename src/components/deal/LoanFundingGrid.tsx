@@ -371,11 +371,27 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         open={isAddModalOpen}
         onOpenChange={(open) => {
           setIsAddModalOpen(open);
-          if (!open) setEditFundingData(null);
+          if (!open) {
+            setEditFundingData(null);
+            setSelectedRecord(null);
+          }
         }}
         loanNumber={loanNumber}
         borrowerName={borrowerName}
-        onSubmit={onAddFunding}
+        onSubmit={(data) => {
+          if (selectedRecord) {
+            // Editing existing record
+            onUpdateRecord(selectedRecord.id, {
+              lenderAccount: data.lenderId,
+              lenderName: data.lenderFullName,
+              lenderRate: parseFloat(data.lenderRate) || 0,
+              originalAmount: parseFloat(data.fundingAmount) || 0,
+              principalBalance: parseFloat(data.fundingAmount) || 0,
+            });
+          } else {
+            onAddFunding(data);
+          }
+        }}
         editData={editFundingData}
       />
 
