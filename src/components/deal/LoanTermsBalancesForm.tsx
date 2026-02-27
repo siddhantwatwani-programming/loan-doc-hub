@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -103,22 +103,58 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
   const isChecked = (key: string) => getValue(key) === 'true';
   const toggleCheck = (key: string) => setValue(key, isChecked(key) ? '' : 'true');
 
-  const renderCurrencyField = (key: string, label: string, labelClassName?: string) => (
-    <div className="flex items-center gap-3">
-      <Label className={labelClassName || LABEL_CLASS}>{label}</Label>
-      <div className="relative flex-1">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-        <Input
-          id={key}
-          value={getValue(key)}
-          onChange={(e) => setValue(key, e.target.value)}
-          disabled={disabled}
-          className="h-8 text-sm pl-7"
-          placeholder="0.00"
-        />
+  const [focusedCurrencyField, setFocusedCurrencyField] = useState<string | null>(null);
+
+  const formatCurrencyDisplay = useCallback((val: string) => {
+    if (!val) return '';
+    const num = parseFloat(val);
+    if (isNaN(num)) return val;
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(num);
+  }, []);
+
+  const handleCurrencyChange = useCallback((key: string, raw: string) => {
+    // Strip everything except digits and decimal
+    const cleaned = raw.replace(/[^0-9.]/g, '');
+    setValue(key, cleaned);
+  }, []);
+
+  const handleCurrencyBlur = useCallback((key: string) => {
+    setFocusedCurrencyField(null);
+    const val = getValue(key);
+    if (!val) return;
+    const num = parseFloat(val);
+    if (!isNaN(num)) {
+      setValue(key, num.toFixed(2));
+    }
+  }, [values]);
+
+  const renderCurrencyField = (key: string, label: string, labelClassName?: string) => {
+    const isFocused = focusedCurrencyField === key;
+    const rawValue = getValue(key);
+    const displayValue = isFocused ? rawValue : formatCurrencyDisplay(rawValue);
+
+    return (
+      <div className="flex items-center gap-3">
+        <Label className={labelClassName || LABEL_CLASS}>{label}</Label>
+        <div className="relative flex-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+          <Input
+            id={key}
+            value={displayValue}
+            onChange={(e) => handleCurrencyChange(key, e.target.value)}
+            onFocus={() => setFocusedCurrencyField(key)}
+            onBlur={() => handleCurrencyBlur(key)}
+            disabled={disabled}
+            className="h-8 text-sm pl-7"
+            placeholder="0.00"
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderPercentField = (key: string, label: string) => (
     <div className="flex items-center gap-3">
