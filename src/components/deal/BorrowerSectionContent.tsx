@@ -381,7 +381,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
       // From borrower detail tabs, go back to borrowers table
       setActiveSubSection('borrowers');
     }
-  }, [isCoBorrowerDetailView, isViewingCoBorrowersTable]);
+  }, [isCoBorrowerDetailView]);
 
   // Handle primary borrower change - only one can be primary
   const handlePrimaryChange = useCallback((borrowerId: string, isPrimary: boolean) => {
