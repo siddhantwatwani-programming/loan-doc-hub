@@ -593,13 +593,15 @@ serve(async (req) => {
       });
     }
 
-    // Validate user via getUser() - reliable across all Supabase environments
+    // Validate user via getUser(token) - passes JWT directly for validation
+    // without requiring an active session on the server
+    const token = authHeader.replace("Bearer ", "").trim();
     const authClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: userData, error: userError } = await authClient.auth.getUser();
-    if (userError || !userData?.user) {
+    const { data: { user }, error: userError } = await authClient.auth.getUser(token);
+    if (userError || !user) {
       console.error("[generate-document] Auth error:", userError?.message);
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401,
@@ -607,7 +609,7 @@ serve(async (req) => {
       });
     }
 
-    const userId = userData.user.id;
+    const userId = user.id;
 
     // Use service role client for all data operations (bypasses RLS)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
