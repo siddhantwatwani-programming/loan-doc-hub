@@ -116,7 +116,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
             ) : notes.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
-                  No notes added. Click "Add Notes" to add one.
+                  No conversation logs added. Click "Add Conversation Logs" to add one.
                 </TableCell>
               </TableRow>
             ) : (
