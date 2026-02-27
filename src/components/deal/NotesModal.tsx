@@ -97,7 +97,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 mt-3">
+        <div className="space-y-3 mt-3 flex-1 min-h-0 flex flex-col">
           {/* High Priority */}
           <div className="flex items-center gap-2">
             <Checkbox
