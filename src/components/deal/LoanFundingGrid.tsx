@@ -23,7 +23,7 @@ import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { FundingHistoryDialog } from './FundingHistoryDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
-import { FundingDetailForm } from './FundingDetailForm';
+import { AddFundingModal, FundingFormData } from './AddFundingModal';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'lenderAccount', label: 'Lender Account', visible: true },
