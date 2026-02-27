@@ -37,10 +37,26 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
   const hasCalculationError = calculationResult?.error !== undefined;
   
   const [isFocused, setIsFocused] = useState(false);
+  const [currencyValidationError, setCurrencyValidationError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const rawValue = e.target.value;
     const canonicalValue = parseToCanonical(rawValue, field.data_type);
+
+    // Validate currency fields
+    if (field.data_type === 'currency' && canonicalValue) {
+      // Check for multiple decimal points
+      if ((canonicalValue.match(/\./g) || []).length > 1) {
+        setCurrencyValidationError('Invalid number format');
+        return;
+      }
+      const num = parseFloat(canonicalValue);
+      if (isNaN(num)) {
+        setCurrencyValidationError('Please enter a valid dollar amount');
+        return;
+      }
+    }
+    setCurrencyValidationError(null);
     onChange(canonicalValue);
   };
 
@@ -356,6 +372,13 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
         </p>
       )}
       
+      {currencyValidationError && (
+        <p className="text-[10px] text-destructive flex items-center gap-0.5 animate-fade-in pl-[148px]">
+          <AlertCircle className="h-2.5 w-2.5 flex-shrink-0" />
+          {currencyValidationError}
+        </p>
+      )}
+
       {hasCalculationError && (
         <p className="text-[10px] text-amber-600 flex items-center gap-0.5 pl-[148px]">
           <AlertCircle className="h-2.5 w-2.5 flex-shrink-0" />
