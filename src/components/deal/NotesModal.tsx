@@ -89,7 +89,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden p-4">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-sm">
             <StickyNote className="h-4 w-4 text-primary" />
@@ -97,7 +97,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 mt-3">
+        <div className="space-y-3 mt-3 flex-1 min-h-0 flex flex-col">
           {/* High Priority */}
           <div className="flex items-center gap-2">
             <Checkbox
@@ -145,15 +145,15 @@ export const NotesModal: React.FC<NotesModalProps> = ({
           {/* Row 3: Reference (full width) */}
           {renderInlineField('reference', 'Reference')}
 
-          {/* Notes content - Rich Text Editor with its own scroll */}
-          <div className="space-y-1">
-            <Label className="text-xs text-foreground">Conversation Log</Label>
-            <div className="max-h-[150px] overflow-y-auto border border-border rounded-md">
+          {/* Notes content - Rich Text Editor: toolbar stays, edit area scrolls */}
+          <div className="space-y-1 flex-1 min-h-0 flex flex-col">
+            <Label className="text-xs text-foreground shrink-0">Conversation Log</Label>
+            <div className="flex-1 min-h-0 border border-border rounded-md overflow-hidden">
               <RichTextEditor
                 value={formData.content}
                 onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
                 placeholder="Enter conversation log content..."
-                minHeight="120px"
+                minHeight="80px"
               />
             </div>
           </div>

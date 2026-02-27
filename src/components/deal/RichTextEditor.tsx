@@ -66,9 +66,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   }, [onChange]);
 
   return (
-    <div className="border border-input rounded-md overflow-hidden bg-background">
-      {/* Menu bar */}
-      <div className="border-b border-input px-1 py-0.5">
+    <div className="flex flex-col h-full border border-input rounded-md overflow-hidden bg-background">
+      {/* Menu bar - fixed */}
+      <div className="border-b border-input px-1 py-0.5 shrink-0">
         <Menubar className="border-none bg-transparent shadow-none p-0 h-auto">
           {['Edit', 'View', 'Insert', 'Format'].map(menu => (
             <MenubarMenu key={menu}>
@@ -84,8 +84,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         </Menubar>
       </div>
 
-      {/* Formatting toolbar */}
-      <div className="flex items-center gap-0.5 px-2 py-1 border-b border-input flex-wrap">
+      {/* Formatting toolbar - fixed */}
+      <div className="flex items-center gap-0.5 px-2 py-1 border-b border-input flex-wrap shrink-0">
         <ToolbarButton onClick={() => exec('undo')} icon={<Undo className="h-4 w-4" />} title="Undo" />
         <ToolbarButton onClick={() => exec('redo')} icon={<Redo className="h-4 w-4" />} title="Redo" />
 
@@ -113,11 +113,11 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <ToolbarButton onClick={() => {}} icon={<MoreHorizontal className="h-4 w-4" />} title="More" />
       </div>
 
-      {/* Editable area */}
+      {/* Editable area - scrollable */}
       <div
         ref={editorRef}
         contentEditable
-        className="px-3 py-2 text-sm outline-none overflow-y-auto"
+        className="px-3 py-2 text-sm outline-none overflow-y-auto flex-1 min-h-0"
         style={{ minHeight }}
         onInput={handleInput}
         data-placeholder={placeholder}
