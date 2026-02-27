@@ -952,17 +952,6 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
               />
             </TabsContent>
 
-            {/* Conversation Log - Coming Soon */}
-            <TabsContent value="conversation_log" forceMount className={cn("animate-fade-in", activeTab !== "conversation_log" && "hidden")}>
-              <div className="flex items-center justify-center min-h-[300px]">
-                <div className="text-center">
-                  <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Conversation Log</h3>
-                  <p className="text-muted-foreground">Coming Soon</p>
-                </div>
-              </div>
-            </TabsContent>
-
             {/* Event Journal - Coming Soon */}
             <TabsContent value="event_journal" forceMount className={cn("animate-fade-in", activeTab !== "event_journal" && "hidden")}>
               <div className="flex items-center justify-center min-h-[300px]">
