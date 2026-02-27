@@ -287,6 +287,53 @@ async function generateSingleDocument(
     fieldValues.set("has_co_borrower", { rawValue: hasCoBorrowerData ? "true" : "false", dataType: "boolean" });
     console.log(`[generate-document] Auto-computed has_co_borrower = ${hasCoBorrowerData}`);
 
+    // Auto-compute co_borrower_section: conditionally rendered content block
+    // Check for co-borrower name across common field key patterns
+    let coBorrowerName = "";
+    const coBorrowerNameKeys = [
+      "borrower.co_borrower_name", "borrower1.co_borrower_name",
+      "coborrower.name", "co_borrower.name",
+      "co_borrower1.first_name", "coborrower.first_name",
+    ];
+    for (const nameKey of coBorrowerNameKeys) {
+      const match = fieldValues.get(nameKey);
+      if (match && match.rawValue != null && String(match.rawValue).trim() !== "") {
+        coBorrowerName = String(match.rawValue).trim();
+        break;
+      }
+    }
+    // Also try assembling from first + last name
+    if (!coBorrowerName) {
+      const firstKeys = ["co_borrower1.first_name", "coborrower.first_name", "co_borrower.first_name"];
+      const lastKeys = ["co_borrower1.last_name", "coborrower.last_name", "co_borrower.last_name"];
+      let first = "", last = "";
+      for (const k of firstKeys) { const m = fieldValues.get(k); if (m?.rawValue && String(m.rawValue).trim()) { first = String(m.rawValue).trim(); break; } }
+      for (const k of lastKeys) { const m = fieldValues.get(k); if (m?.rawValue && String(m.rawValue).trim()) { last = String(m.rawValue).trim(); break; } }
+      if (first || last) coBorrowerName = [first, last].filter(Boolean).join(" ");
+    }
+
+    let coBorrowerSection = "";
+    if (coBorrowerName) {
+      // Resolve co-borrower address from common keys
+      let coBorrowerAddress = "";
+      const addrKeys = [
+        "borrower.co_borrower_address", "coborrower.address", "co_borrower.address",
+        "co_borrower1.address", "coborrower.full_address",
+      ];
+      for (const ak of addrKeys) {
+        const m = fieldValues.get(ak);
+        if (m?.rawValue && String(m.rawValue).trim()) { coBorrowerAddress = String(m.rawValue).trim(); break; }
+      }
+
+      coBorrowerSection = `☐ Co-Borrower Included\n\nCo-Borrower Name: ${coBorrowerName}`;
+      if (coBorrowerAddress) {
+        coBorrowerSection += `\nCo-Borrower Address: ${coBorrowerAddress}`;
+      }
+    }
+    fieldValues.set("co_borrower_section", { rawValue: coBorrowerSection, dataType: "text" });
+    fieldValues.set("CoBorrower.Section", { rawValue: coBorrowerSection, dataType: "text" });
+    console.log(`[generate-document] Auto-computed co_borrower_section = "${coBorrowerSection ? "populated" : "empty"}"`);
+
     // Build set of ALL valid field keys from the complete field_dictionary (for direct tag matching)
     // Use pagination to fetch all rows (table has 1700+ entries, default limit is 1000)
     const PAGE_SIZE = 1000;
@@ -593,14 +640,13 @@ serve(async (req) => {
       });
     }
 
-    // Validate user via getUser(token) - passes JWT directly for validation
-    // without requiring an active session on the server
-    const token = authHeader.replace("Bearer ", "").trim();
-    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    // Use service role client for all data operations (bypasses RLS)
+    // Also used for auth validation since it has admin privileges to verify any JWT
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: { user }, error: userError } = await authClient.auth.getUser(token);
+    // Validate user via service role client - reliable across all Deno/Supabase environments
+    const token = authHeader.replace("Bearer ", "").trim();
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     if (userError || !user) {
       console.error("[generate-document] Auth error:", userError?.message);
       return new Response(JSON.stringify({ error: "Invalid token" }), {
@@ -610,9 +656,6 @@ serve(async (req) => {
     }
 
     const userId = user.id;
-
-    // Use service role client for all data operations (bypasses RLS)
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     console.log(`[generate-document] User: ${userId}`);
 
