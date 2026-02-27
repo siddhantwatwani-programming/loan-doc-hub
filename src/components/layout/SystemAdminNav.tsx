@@ -200,7 +200,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                       (i) =>
                         location.pathname === i.path ||
                         (i.children && i.children.some((c) => location.pathname === c.path))
-                    ) && 'text-sidebar-primary-foreground bg-sidebar-accent'
+                    ) && 'sidebar-item-active'
                   )}
                 >
                   <span>{section.label}</span>

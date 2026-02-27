@@ -172,7 +172,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
                   className={cn(
                     'sidebar-item w-full justify-between text-sm text-left',
                     section.items.some((i) => location.pathname === i.path) &&
-                      'text-sidebar-primary-foreground bg-sidebar-accent'
+                      'sidebar-item-active'
                   )}
                 >
                   <span className="text-left">{section.label}</span>
