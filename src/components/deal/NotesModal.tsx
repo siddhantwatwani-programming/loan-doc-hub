@@ -107,38 +107,42 @@ export const NotesModal: React.FC<NotesModalProps> = ({
             <Label className="text-xs text-foreground">High Priority</Label>
           </div>
 
-          {/* Date - Time (read-only) */}
-          <div className="flex items-center gap-2">
-            <Label className="w-[100px] shrink-0 text-xs text-foreground">Date - Time</Label>
-            <Input
-              value={formatDateTimeDisplay(formData.date)}
-              readOnly
-              disabled
-              className="h-7 text-xs flex-1 bg-muted"
-            />
+          {/* Row 1: Date-Time | Account */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs text-foreground">Date - Time</Label>
+              <Input
+                value={formatDateTimeDisplay(formData.date)}
+                readOnly
+                disabled
+                className="h-7 text-xs flex-1 bg-muted"
+              />
+            </div>
+            {renderInlineField('account', 'Account')}
           </div>
 
-          {renderInlineField('account', 'Account')}
-
-          {/* Type dropdown */}
-          <div className="flex items-center gap-2">
-            <Label className="w-[100px] shrink-0 text-xs text-foreground">Type</Label>
-            <Select
-              value={formData.type}
-              onValueChange={(val) => setFormData(prev => ({ ...prev, type: val }))}
-            >
-              <SelectTrigger className="h-7 text-xs flex-1">
-                <SelectValue placeholder="Select type..." />
-              </SelectTrigger>
-              <SelectContent>
-                {NOTE_TYPES.map(t => (
-                  <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Row 2: Name | Type */}
+          <div className="grid grid-cols-2 gap-4">
+            {renderInlineField('name', 'Name')}
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs text-foreground">Type</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(val) => setFormData(prev => ({ ...prev, type: val }))}
+              >
+                <SelectTrigger className="h-7 text-xs flex-1">
+                  <SelectValue placeholder="Select type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {NOTE_TYPES.map(t => (
+                    <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {renderInlineField('name', 'Name')}
+          {/* Row 3: Reference (full width) */}
           {renderInlineField('reference', 'Reference')}
 
           {/* Notes content - Rich Text Editor with its own scroll */}
