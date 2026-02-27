@@ -714,12 +714,29 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     onValueChange(actualKey, value);
   }, [selectedCoBorrowerPrefix, onValueChange]);
 
+  // Create co-borrower inline values for the form (similar to Additional Guarantor pattern)
+  const getCoBorrowerInlineValues = useCallback((): Record<string, string> => {
+    const result: Record<string, string> = {};
+    const prefix = `${selectedBorrowerPrefix}.coborrower.`;
+    Object.entries(values).forEach(([key, value]) => {
+      if (key.startsWith(prefix)) {
+        const fieldName = key.replace(prefix, 'coborrower.');
+        result[fieldName] = value;
+      }
+    });
+    return result;
+  }, [values, selectedBorrowerPrefix]);
+
+  // Handle value change for co-borrower inline form
+  const handleCoBorrowerInlineValueChange = useCallback((fieldKey: string, value: string) => {
+    const actualKey = fieldKey.replace('coborrower.', `${selectedBorrowerPrefix}.coborrower.`);
+    onValueChange(actualKey, value);
+  }, [selectedBorrowerPrefix, onValueChange]);
+
   // Get the display name for detail view header
   const getDetailViewName = () => {
     if (isCoBorrowerDetailView) {
       return selectedCoBorrowerName;
-    } else if (isViewingCoBorrowersTable) {
-      return `${selectedBorrowerName} - Co-Borrowers`;
     } else {
       return selectedBorrowerName;
     }
