@@ -79,7 +79,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-lg text-foreground">Notes</h3>
+        <h3 className="font-semibold text-lg text-foreground">Conversation Log</h3>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onExport} disabled={disabled || notes.length === 0} className="gap-1">
             <Download className="h-4 w-4" />
