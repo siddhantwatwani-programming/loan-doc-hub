@@ -559,23 +559,33 @@ serve(async (req) => {
       });
     }
 
-    // Use anon key client with the user's auth header to validate the token
-    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: userData, error: userError } = await authClient.auth.getUser();
-    if (userError || !userData.user) {
-      console.error("[generate-document] Auth error:", userError?.message);
+    // Validate JWT via claims (Lovable Cloud signing-keys compatible)
+    const token = authHeader.replace("Bearer ", "").trim();
+    if (!token) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) {
+      console.error("[generate-document] Auth error:", claimsError?.message);
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userId = claimsData.claims.sub;
+
     // Use service role client for all data operations (bypasses RLS)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const userId = userData.user.id;
     console.log(`[generate-document] User: ${userId}`);
 
     // Parse request
