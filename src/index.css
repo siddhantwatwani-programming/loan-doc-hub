@@ -196,7 +196,11 @@
   }
 
   .sidebar-item-active {
-    @apply bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary;
+    @apply bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground;
+  }
+
+  .sidebar-item-active-parent {
+    @apply bg-sidebar-primary/80 text-sidebar-primary-foreground hover:bg-sidebar-primary/80 hover:text-sidebar-primary-foreground;
   }
 
   /* Page container  max-w-7xl*/

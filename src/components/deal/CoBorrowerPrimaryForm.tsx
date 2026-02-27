@@ -81,6 +81,16 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
     onValueChange(`coborrower.${key}`, value);
   };
 
+  const handleSameAsPrimaryChange = (checked: boolean) => {
+    handleChange('mailing_same_as_primary', String(checked));
+    if (checked) {
+      handleChange('mailing_address.street', getValue('primary_address.street'));
+      handleChange('mailing_address.city', getValue('primary_address.city'));
+      handleChange('mailing_address.state', getValue('primary_address.state'));
+      handleChange('mailing_address.zip', getValue('primary_address.zip'));
+    }
+  };
+
   const phoneRows = [
     { key: 'phone.home', label: 'Home', prefKey: 'preferred.home', prefId: 'prefHome' },
     { key: 'phone.work', label: 'Work', prefKey: 'preferred.work', prefId: 'prefWork' },
@@ -197,7 +207,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           <h4 className="font-semibold text-sm text-foreground pb-1 pt-2 flex items-center gap-3">
             Mailing Address
             <div className="flex items-center gap-1.5 ml-4">
-              <Checkbox id="mailingSameAsPrimary" checked={getBoolValue('mailing_same_as_primary')} onCheckedChange={(checked) => handleChange('mailing_same_as_primary', String(!!checked))} disabled={disabled} />
+              <Checkbox id="mailingSameAsPrimary" checked={getBoolValue('mailing_same_as_primary')} onCheckedChange={(checked) => handleSameAsPrimaryChange(!!checked)} disabled={disabled} />
               <Label htmlFor="mailingSameAsPrimary" className="text-xs font-normal text-muted-foreground">Same as Primary</Label>
             </div>
           </h4>
@@ -275,7 +285,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           ))}
 
           <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">Vesting</h4>
-          <Textarea value={getValue('vesting')} onChange={(e) => handleChange('vesting', e.target.value)} disabled={true} className="text-sm min-h-[80px] resize-none bg-muted/50 cursor-not-allowed" />
+          <Textarea value={getValue('vesting')} onChange={(e) => handleChange('vesting', e.target.value)} disabled={disabled} className="text-sm min-h-[80px] resize-none" />
 
           <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">FORD</h4>
           <div className="space-y-1">
