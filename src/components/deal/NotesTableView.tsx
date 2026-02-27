@@ -147,7 +147,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
       {/* Footer */}
       {notes.length > 0 && (
         <div className="flex justify-end">
-          <div className="text-sm text-muted-foreground">Total Notes: {notes.length}</div>
+          <div className="text-sm text-muted-foreground">Total Conversation Logs: {notes.length}</div>
         </div>
       )}
       {/* Delete Confirmation Dialog */}
