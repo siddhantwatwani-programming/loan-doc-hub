@@ -241,6 +241,18 @@ async function generateSingleDocument(
       }
     }
 
+    // Auto-compute has_co_borrower boolean flag from existing co-borrower field data
+    let hasCoBorrowerData = false;
+    for (const [key, val] of fieldValues.entries()) {
+      const lk = key.toLowerCase();
+      if ((lk.startsWith("co_borrower") || lk.startsWith("coborrower")) && val.rawValue != null && String(val.rawValue).trim() !== "") {
+        hasCoBorrowerData = true;
+        break;
+      }
+    }
+    fieldValues.set("has_co_borrower", { rawValue: hasCoBorrowerData ? "true" : "false", dataType: "boolean" });
+    console.log(`[generate-document] Auto-computed has_co_borrower = ${hasCoBorrowerData}`);
+
     // Build set of ALL valid field keys from the complete field_dictionary (for direct tag matching)
     // Use pagination to fetch all rows (table has 1700+ entries, default limit is 1000)
     const PAGE_SIZE = 1000;
