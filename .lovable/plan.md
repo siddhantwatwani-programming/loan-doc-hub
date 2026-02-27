@@ -1,33 +1,30 @@
 
 
-## Plan: Fix Auth 401 + Add `co_borrower_section` Computed Field
+## Plan: Fix Account Number Currency Formatting in Generated Documents
 
-### Fix A: Auth 401 Error
+### Problem
+The `Terms.LoanNumber` field (displayed as "Account Number" in the Personal Guaranty document) has `data_type: "text"` in the field_dictionary. During document generation, `formatByDataType("text")` returns the raw numeric value without currency formatting.
 
-**File: `supabase/functions/generate-document/index.ts` (lines 596-612)**
+### Solution
+Add a post-processing step in `supabase/functions/generate-document/index.ts` (after field values are resolved, around line 183) that overrides the `dataType` to `"currency"` for the `Terms.LoanNumber` field. This ensures `formatByDataType` applies `$1,000,300.00` formatting when the merge tag is replaced in the template.
 
-The `authClient.auth.getUser(token)` call is unreliable in the Deno Supabase JS v2 runtime. Fix: use the **service role client** (already created on line 615) to validate the token via `supabase.auth.getUser(token)`. The service role client has admin privileges to validate any JWT.
+### File: `supabase/functions/generate-document/index.ts`
+**Change (after line 181, before the log on line 183):**
+- Add a block that checks if `Terms.LoanNumber` exists in `fieldValues` and overrides its `dataType` from `"text"` to `"currency"`, so the existing `formatByDataType` pipeline applies US currency formatting automatically.
 
-- Move service role client creation **before** auth validation
-- Call `serviceClient.auth.getUser(token)` instead of creating a separate `authClient`
-- Remove the `authClient` entirely
+```
+// Force currency formatting for Loan/Account Number in generated documents
+const loanNumberKeys = ["Terms.LoanNumber", "terms.loannumber"];
+for (const lnKey of loanNumberKeys) {
+  const existing = fieldValues.get(lnKey);
+  if (existing && existing.dataType !== "currency") {
+    fieldValues.set(lnKey, { rawValue: existing.rawValue, dataType: "currency" });
+  }
+}
+```
 
-### Fix B: Add `co_borrower_section` Computed Field
-
-**File: `supabase/functions/generate-document/index.ts` (after line 288, after `has_co_borrower` computation)**
-
-Add ~20 lines to compute `co_borrower_section`:
-
-1. Check if `borrower.co_borrower_name` (or `borrower1.co_borrower_name`, `coborrower.name`, `co_borrower1.first_name` + `co_borrower1.last_name`) has a valid non-empty, non-whitespace value
-2. If valid: build section string with co-borrower name and address
-3. If invalid: set to empty string `""`
-4. Set both `co_borrower_section` and `CoBorrower.Section` in `fieldValues`
-
-The template can then use `{{co_borrower_section}}` — no conditionals needed.
-
-### What is NOT changed
-- No database, UI, routes, or schema changes
-- No changes to tag-parser, validate-template, or docx-processor
-- No changes to existing `has_co_borrower` logic (kept for backward compatibility)
-- No changes to field mappings or document layout
+### No other files modified
+- No UI changes
+- No database schema changes
+- No changes to formatting.ts, tag-parser.ts, or any other shared modules
 
