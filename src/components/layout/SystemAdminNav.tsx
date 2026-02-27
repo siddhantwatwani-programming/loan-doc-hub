@@ -159,7 +159,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
           <button
             className={cn(
               'sidebar-item w-full justify-between text-left',
-              isAnyActive && 'text-sidebar-primary-foreground bg-sidebar-accent'
+              isAnyActive && 'sidebar-item-active'
             )}
           >
             <div className="flex items-center gap-3">
@@ -181,7 +181,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                 onClick={() => section.path ? (collapseAll(), navigate(section.path)) : undefined}
                 className={cn(
                   'sidebar-item w-full text-sm',
-                  section.path && location.pathname === section.path && 'text-sidebar-primary-foreground bg-sidebar-accent'
+                  section.path && location.pathname === section.path && 'sidebar-item-active'
                 )}
               >
                 <span>{section.label}</span>
@@ -200,7 +200,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                       (i) =>
                         location.pathname === i.path ||
                         (i.children && i.children.some((c) => location.pathname === c.path))
-                    ) && 'text-sidebar-primary-foreground bg-sidebar-accent'
+                    ) && 'sidebar-item-active'
                   )}
                 >
                   <span>{section.label}</span>

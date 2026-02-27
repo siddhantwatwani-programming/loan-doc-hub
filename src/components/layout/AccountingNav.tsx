@@ -169,7 +169,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
           <button
             className={cn(
               'sidebar-item w-full justify-between',
-              isAnyActive && 'text-sidebar-primary-foreground bg-sidebar-accent'
+              isAnyActive && 'sidebar-item-active'
             )}
           >
             <div className="flex items-center gap-3">
@@ -191,7 +191,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                 onClick={() => section.path ? (collapseAll(), navigate(section.path)) : undefined}
                 className={cn(
                   'sidebar-item w-full text-sm',
-                  section.path && location.pathname === section.path && 'text-sidebar-primary-foreground bg-sidebar-accent'
+                  section.path && location.pathname === section.path && 'sidebar-item-active'
                 )}
               >
                 <span>{section.label}</span>
@@ -207,7 +207,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                   className={cn(
                     'sidebar-item w-full justify-between text-sm',
                     section.items.some((i) => location.pathname === i.path) &&
-                      'text-sidebar-primary-foreground bg-sidebar-accent'
+                      'sidebar-item-active'
                   )}
                 >
                   <span>{section.label}</span>
@@ -232,7 +232,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                             className={cn(
                               'sidebar-item w-full justify-between text-sm',
                               location.pathname.startsWith(item.path) &&
-                                'text-sidebar-primary-foreground bg-sidebar-accent'
+                                'sidebar-item-active'
                             )}
                           >
                             <span>{item.label}</span>
@@ -256,7 +256,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                                     className={cn(
                                       'sidebar-item w-full justify-between text-sm',
                                       location.pathname.startsWith(child.path) &&
-                                        'text-sidebar-primary-foreground bg-sidebar-accent'
+                                        'sidebar-item-active'
                                     )}
                                   >
                                     <span>{child.label}</span>
@@ -280,7 +280,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                                             className={cn(
                                               'sidebar-item w-full justify-between text-sm',
                                               location.pathname.startsWith(nested.path) &&
-                                                'text-sidebar-primary-foreground bg-sidebar-accent'
+                                                'sidebar-item-active'
                                             )}
                                           >
                                             <span>{nested.label}</span>

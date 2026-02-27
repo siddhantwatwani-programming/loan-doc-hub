@@ -1,34 +1,45 @@
 
 
-## Problem
+## Plan: Conditional System Date & US Date Format Standardization
 
-In light mode, selected parent navigation items (like "Broker Services", "New Account Intake", etc.) use `text-sidebar-primary-foreground bg-sidebar-accent` which renders as **white text on a light gray background** — nearly invisible.
+### Requirement 1: Conditional `{{systemDate}}` Population
 
-The `sidebar-item-active` class (used for leaf items) correctly uses `bg-sidebar-primary` (blue) with white text, but parent collapsible sections use `bg-sidebar-accent` (light gray) with white text instead.
+**Current behavior**: The `generate-document` edge function (lines 185-220) auto-fills ALL empty date fields with the current system date. This is incorrect — it should only populate fields explicitly mapped with `{{systemDate}}`.
 
-## Solution
+**Changes**:
 
-Update the CSS variable for `--sidebar-accent` in light mode to use a more visible color that provides sufficient contrast with white text, OR change the active parent styling pattern.
+1. **`supabase/functions/generate-document/index.ts`** (lines 185-220):
+   - Remove the two-pass logic that auto-fills every empty date field with system date
+   - Replace with: inject a single `systemDate` key into `fieldValues` with the current date in `YYYY-MM-DD` format
+   - This way, only templates using `{{systemDate}}` merge tags will get the system date populated
+   - Other unmapped/empty date fields will remain blank
 
-The cleanest fix: change all parent active highlights from `text-sidebar-primary-foreground bg-sidebar-accent` to use `sidebar-item-active` class (same as leaf items — blue background, white text). This makes all selected navigation items consistent and readable.
+2. **`supabase/functions/_shared/formatting.ts`** — handle `systemDate` as a recognized tag by ensuring it resolves as a date type (no changes needed here, the existing merge tag pipeline already handles `{{systemDate}}` as a tag name that resolves to the injected field value)
 
-## Files to Change
+### Requirement 2: US Date Format (MM/DD/YYYY) Standardization
 
-### 1. `src/components/layout/BrokerServicesNav.tsx`
-- Line 135: Change `'text-sidebar-primary-foreground bg-sidebar-accent'` to `'sidebar-item-active'`
-- Line 175: Same change for child section triggers
+**Current behavior**: The backend `formatting.ts` uses `formatDateDDMMYYYY` (DD/MM/YYYY) as the default date format in `formatByDataType` and in `applyTransform` for the `"date"` transform. One form (`LenderInfoForm.tsx`) displays DOB in DD/MM/YYYY.
 
-### 2. `src/components/layout/AccountingNav.tsx`
-- Lines 172, 194, 210, 235, 259, 283: Change all `'text-sidebar-primary-foreground bg-sidebar-accent'` to `'sidebar-item-active'`
+**Changes**:
 
-### 3. `src/components/layout/SystemAdminNav.tsx`
-- Lines 162, 184, 203: Same change
+3. **`supabase/functions/_shared/formatting.ts`**:
+   - In `formatByDataType` function (line 286): change `formatDateDDMMYYYY` to `formatDateMMDDYYYY`
+   - In `applyTransform` function (line 243): change `formatDateDDMMYYYY` to `formatDateMMDDYYYY` for the `"date"` case
 
-### 4. `src/components/layout/PromotedNavSection.tsx`
-- Line 88: Same change
+4. **`src/components/deal/LenderInfoForm.tsx`** (line 345):
+   - Change `'dd/MM/yyyy'` to `'MM/dd/yyyy'` for the DOB date display format
 
-### 5. `src/components/layout/AppSidebar.tsx`
-- Lines 286, 585: Same change (parent group triggers)
+### Files Modified
 
-This ensures all active/selected navigation items — both parent sections and leaf items — use the same readable blue background with white text in light mode.
+| File | Change |
+|------|--------|
+| `supabase/functions/generate-document/index.ts` | Remove blanket date auto-fill; inject `systemDate` field value only |
+| `supabase/functions/_shared/formatting.ts` | Default date format DD/MM → MM/DD in `formatByDataType` and `applyTransform` |
+| `src/components/deal/LenderInfoForm.tsx` | DOB display format DD/MM → MM/DD |
+
+### No changes to
+- Database schema
+- Document layout/styling
+- Other field mappings
+- Date storage format (remains YYYY-MM-DD internally)
 

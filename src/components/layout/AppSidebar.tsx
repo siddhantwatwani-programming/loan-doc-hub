@@ -283,7 +283,7 @@ export const AppSidebar: React.FC = () => {
                   <button
                     className={cn(
                       'sidebar-item w-full',
-                      searchedMyWorkItems.some((item) => isActive(item.path)) && 'text-sidebar-primary-foreground bg-sidebar-accent'
+                      searchedMyWorkItems.some((item) => isActive(item.path)) && 'sidebar-item-active'
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -582,7 +582,7 @@ export const AppSidebar: React.FC = () => {
                 <button
                   className={cn(
                     'sidebar-item w-full justify-between',
-                    isGroupActive(group) && 'text-sidebar-primary-foreground bg-sidebar-accent'
+                    isGroupActive(group) && 'sidebar-item-active'
                   )}
                 >
                   <div className="flex items-center gap-3">
