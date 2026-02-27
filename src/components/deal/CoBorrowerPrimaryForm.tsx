@@ -81,6 +81,16 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
     onValueChange(`coborrower.${key}`, value);
   };
 
+  const handleSameAsPrimaryChange = (checked: boolean) => {
+    handleChange('mailing_same_as_primary', String(checked));
+    if (checked) {
+      handleChange('mailing_address.street', getValue('primary_address.street'));
+      handleChange('mailing_address.city', getValue('primary_address.city'));
+      handleChange('mailing_address.state', getValue('primary_address.state'));
+      handleChange('mailing_address.zip', getValue('primary_address.zip'));
+    }
+  };
+
   const phoneRows = [
     { key: 'phone.home', label: 'Home', prefKey: 'preferred.home', prefId: 'prefHome' },
     { key: 'phone.work', label: 'Work', prefKey: 'preferred.work', prefId: 'prefWork' },
