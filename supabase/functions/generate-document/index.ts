@@ -285,10 +285,13 @@ async function generateSingleDocument(
     }
 
     // Auto-compute has_co_borrower boolean flag from existing co-borrower field data
+    // Co-borrower keys can appear as: co_borrower1.*, coborrower.*, or borrower1.coborrower.*
     let hasCoBorrowerData = false;
     for (const [key, val] of fieldValues.entries()) {
       const lk = key.toLowerCase();
-      if ((lk.startsWith("co_borrower") || lk.startsWith("coborrower")) && val.rawValue != null && String(val.rawValue).trim() !== "") {
+      const isCoBorrowerKey = lk.startsWith("co_borrower") || lk.startsWith("coborrower") ||
+        lk.includes(".coborrower.") || lk.includes(".co_borrower.");
+      if (isCoBorrowerKey && val.rawValue != null && String(val.rawValue).trim() !== "") {
         hasCoBorrowerData = true;
         break;
       }
@@ -303,6 +306,7 @@ async function generateSingleDocument(
       "borrower.co_borrower_name", "borrower1.co_borrower_name",
       "coborrower.name", "co_borrower.name",
       "co_borrower1.first_name", "coborrower.first_name",
+      "borrower1.coborrower.full_name", "borrower1.co_borrower.full_name",
     ];
     for (const nameKey of coBorrowerNameKeys) {
       const match = fieldValues.get(nameKey);
@@ -311,14 +315,40 @@ async function generateSingleDocument(
         break;
       }
     }
-    // Also try assembling from first + last name
+    // Also try assembling from first + last name (check all common key patterns)
     if (!coBorrowerName) {
-      const firstKeys = ["co_borrower1.first_name", "coborrower.first_name", "co_borrower.first_name"];
-      const lastKeys = ["co_borrower1.last_name", "coborrower.last_name", "co_borrower.last_name"];
+      const firstKeys = [
+        "co_borrower1.first_name", "coborrower.first_name", "co_borrower.first_name",
+        "borrower1.coborrower.first_name", "borrower1.co_borrower.first_name",
+      ];
+      const lastKeys = [
+        "co_borrower1.last_name", "coborrower.last_name", "co_borrower.last_name",
+        "borrower1.coborrower.last_name", "borrower1.co_borrower.last_name",
+      ];
       let first = "", last = "";
       for (const k of firstKeys) { const m = fieldValues.get(k); if (m?.rawValue && String(m.rawValue).trim()) { first = String(m.rawValue).trim(); break; } }
       for (const k of lastKeys) { const m = fieldValues.get(k); if (m?.rawValue && String(m.rawValue).trim()) { last = String(m.rawValue).trim(); break; } }
       if (first || last) coBorrowerName = [first, last].filter(Boolean).join(" ");
+    }
+    // Fallback: scan all field values for any co-borrower name-like fields
+    if (!coBorrowerName) {
+      for (const [key, val] of fieldValues.entries()) {
+        const lk = key.toLowerCase();
+        if ((lk.includes("coborrower") || lk.includes("co_borrower")) && 
+            (lk.endsWith(".first_name") || lk.endsWith(".full_name") || lk.endsWith(".name")) &&
+            val.rawValue != null && String(val.rawValue).trim() !== "") {
+          coBorrowerName = String(val.rawValue).trim();
+          // If it's first_name, try to find matching last_name
+          if (lk.endsWith(".first_name")) {
+            const lastKey = key.replace(/\.first_name$/, ".last_name");
+            const lastVal = fieldValues.get(lastKey);
+            if (lastVal?.rawValue && String(lastVal.rawValue).trim()) {
+              coBorrowerName += " " + String(lastVal.rawValue).trim();
+            }
+          }
+          break;
+        }
+      }
     }
 
     let coBorrowerSection = "";
@@ -328,10 +358,23 @@ async function generateSingleDocument(
       const addrKeys = [
         "borrower.co_borrower_address", "coborrower.address", "co_borrower.address",
         "co_borrower1.address", "coborrower.full_address",
+        "borrower1.coborrower.address", "borrower1.co_borrower.address",
       ];
       for (const ak of addrKeys) {
         const m = fieldValues.get(ak);
         if (m?.rawValue && String(m.rawValue).trim()) { coBorrowerAddress = String(m.rawValue).trim(); break; }
+      }
+      // Fallback: assemble from component fields
+      if (!coBorrowerAddress) {
+        for (const [key, val] of fieldValues.entries()) {
+          const lk = key.toLowerCase();
+          if ((lk.includes("coborrower") || lk.includes("co_borrower")) && 
+              (lk.endsWith(".address") || lk.endsWith(".full_address")) &&
+              val.rawValue != null && String(val.rawValue).trim() !== "") {
+            coBorrowerAddress = String(val.rawValue).trim();
+            break;
+          }
+        }
       }
 
       coBorrowerSection = `☐ Co-Borrower Included\n\nCo-Borrower Name: ${coBorrowerName}`;
@@ -341,7 +384,13 @@ async function generateSingleDocument(
     }
     fieldValues.set("co_borrower_section", { rawValue: coBorrowerSection, dataType: "text" });
     fieldValues.set("CoBorrower.Section", { rawValue: coBorrowerSection, dataType: "text" });
-    console.log(`[generate-document] Auto-computed co_borrower_section = "${coBorrowerSection ? "populated" : "empty"}"`);
+    // Also set the co-borrower name as individual merge tag values for direct tag usage
+    if (coBorrowerName) {
+      fieldValues.set("borrower.co_borrower_name", { rawValue: coBorrowerName, dataType: "text" });
+      fieldValues.set("coborrower.name", { rawValue: coBorrowerName, dataType: "text" });
+      fieldValues.set("co_borrower.name", { rawValue: coBorrowerName, dataType: "text" });
+    }
+    console.log(`[generate-document] Auto-computed co_borrower_section = "${coBorrowerSection ? "populated" : "empty"}", name = "${coBorrowerName || "none"}"`);
 
     // Build set of ALL valid field keys from the complete field_dictionary (for direct tag matching)
     // Use pagination to fetch all rows (table has 1700+ entries, default limit is 1000)
