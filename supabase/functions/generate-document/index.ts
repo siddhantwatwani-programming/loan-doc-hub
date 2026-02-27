@@ -628,34 +628,40 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
   try {
     // Authenticate user
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Missing authorization header" }), {
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Missing or invalid authorization header" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // Use service role client for all data operations (bypasses RLS)
-    // Also used for auth validation since it has admin privileges to verify any JWT
+    // and for token validation
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Validate user via service role client - reliable across all Deno/Supabase environments
     const token = authHeader.replace("Bearer ", "").trim();
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-      console.error("[generate-document] Auth error:", userError?.message);
-      return new Response(JSON.stringify({ error: "Invalid token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    let userId: string | null = null;
 
-    const userId = user.id;
+    // Preferred path: validate JWT claims directly (doesn't depend on an active auth session row)
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (!claimsError && claimsData?.claims?.sub) {
+      userId = claimsData.claims.sub;
+    } else {
+      // Fallback path: fetch user from token
+      const { data: userData, error: userError } = await supabase.auth.getUser(token);
+      if (userError || !userData?.user) {
+        console.error("[generate-document] Auth error:", claimsError?.message || userError?.message);
+        return new Response(JSON.stringify({ error: "Invalid token" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      userId = userData.user.id;
+    }
 
     console.log(`[generate-document] User: ${userId}`);
 

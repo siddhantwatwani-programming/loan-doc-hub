@@ -152,7 +152,7 @@ export const DealDocumentsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { role } = useAuth();
+  const { role, signOut } = useAuth();
 
   const [deal, setDeal] = useState<Deal | null>(null);
   const [packet, setPacket] = useState<Packet | null>(null);
@@ -332,6 +332,18 @@ export const DealDocumentsPage: React.FC = () => {
     setGenerating(true);
 
     try {
+      // Ensure we have a valid, refreshable auth session before invoking backend function
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session?.access_token) {
+        throw new Error('Your session has expired. Please sign in again.');
+      }
+
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        await signOut();
+        throw new Error('Your session has expired. Please sign in again.');
+      }
+
       const body: any = {
         dealId: deal!.id,
         outputType,
