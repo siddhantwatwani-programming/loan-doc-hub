@@ -107,7 +107,20 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   };
 
   const handleRowClick = (record: FundingRecord) => {
-    setDetailRecord(record);
+    setEditFundingData({
+      loan: loanNumber || '',
+      borrower: borrowerName || '',
+      lenderId: record.lenderAccount,
+      lenderFullName: record.lenderName,
+      lenderRate: String(record.lenderRate),
+      fundingAmount: String(record.originalAmount),
+      fundingDate: '',
+      interestFrom: '',
+      notes: '',
+      brokerParticipates: false,
+    });
+    setSelectedRecord(record);
+    setIsAddModalOpen(true);
   };
 
   const renderCellValue = (record: FundingRecord, columnId: string) => {
