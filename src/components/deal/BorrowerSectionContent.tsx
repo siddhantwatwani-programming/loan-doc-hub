@@ -324,13 +324,10 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   const [editingTrustLedgerEntry, setEditingTrustLedgerEntry] = useState<TrustLedgerEntry | null>(null);
 
   // Check if we're in detail view
-  // Borrower detail includes: primary, additional_guarantor, banking, tax_detail, note, AND co_borrowers (table within detail)
+  // Borrower detail includes: primary, additional_guarantor, banking, tax_detail, note, AND co_borrowers (inline form)
   const isBorrowerDetailView = ['primary', 'additional_guarantor', 'authorized_party', 'trust_ledger', 'banking', 'tax_detail', 'note', 'co_borrowers'].includes(activeSubSection);
   const isCoBorrowerDetailView = ['coborrower_primary', 'coborrower_note', 'coborrower_attachment'].includes(activeSubSection);
   const isDetailView = isBorrowerDetailView || isCoBorrowerDetailView;
-  
-  // Check if we're viewing the co-borrowers table within borrower detail
-  const isViewingCoBorrowersTable = activeSubSection === 'co_borrowers';
 
   // Extract borrowers from values
   const allBorrowers = useMemo(() => extractBorrowersFromValues(values), [values]);
@@ -378,16 +375,13 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   // Handle back navigation
   const handleBackToTable = useCallback(() => {
     if (isCoBorrowerDetailView) {
-      // From co-borrower detail, go back to co-borrowers table (within borrower detail)
-      setActiveSubSection('co_borrowers');
-    } else if (isViewingCoBorrowersTable) {
-      // From co-borrowers table, go back to borrowers table
+      // From co-borrower detail, go back to borrowers table
       setActiveSubSection('borrowers');
     } else {
       // From borrower detail tabs, go back to borrowers table
       setActiveSubSection('borrowers');
     }
-  }, [isCoBorrowerDetailView, isViewingCoBorrowersTable]);
+  }, [isCoBorrowerDetailView]);
 
   // Handle primary borrower change - only one can be primary
   const handlePrimaryChange = useCallback((borrowerId: string, isPrimary: boolean) => {
@@ -720,12 +714,29 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     onValueChange(actualKey, value);
   }, [selectedCoBorrowerPrefix, onValueChange]);
 
+  // Create co-borrower inline values for the form (similar to Additional Guarantor pattern)
+  const getCoBorrowerInlineValues = useCallback((): Record<string, string> => {
+    const result: Record<string, string> = {};
+    const prefix = `${selectedBorrowerPrefix}.coborrower.`;
+    Object.entries(values).forEach(([key, value]) => {
+      if (key.startsWith(prefix)) {
+        const fieldName = key.replace(prefix, 'coborrower.');
+        result[fieldName] = value;
+      }
+    });
+    return result;
+  }, [values, selectedBorrowerPrefix]);
+
+  // Handle value change for co-borrower inline form
+  const handleCoBorrowerInlineValueChange = useCallback((fieldKey: string, value: string) => {
+    const actualKey = fieldKey.replace('coborrower.', `${selectedBorrowerPrefix}.coborrower.`);
+    onValueChange(actualKey, value);
+  }, [selectedBorrowerPrefix, onValueChange]);
+
   // Get the display name for detail view header
   const getDetailViewName = () => {
     if (isCoBorrowerDetailView) {
       return selectedCoBorrowerName;
-    } else if (isViewingCoBorrowersTable) {
-      return `${selectedBorrowerName} - Co-Borrowers`;
     } else {
       return selectedBorrowerName;
     }
@@ -827,18 +838,13 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
         );
       case 'co_borrowers':
         return (
-          <CoBorrowersTableView
-            coBorrowers={paginatedCoBorrowers}
-            onAddCoBorrower={handleAddCoBorrower}
-            onEditCoBorrower={handleEditCoBorrower}
-            onRowClick={handleCoBorrowerRowClick}
-            onPrimaryChange={handleCoBorrowerPrimaryChange}
-            onDeleteCoBorrower={handleDeleteCoBorrower}
+          <CoBorrowerPrimaryForm
+            fields={fields}
+            values={getCoBorrowerInlineValues()}
+            onValueChange={handleCoBorrowerInlineValueChange}
+            showValidation={showValidation}
             disabled={disabled}
-            isLoading={isLoading}
-            currentPage={coBorrowerCurrentPage}
-            totalPages={coBorrowerTotalPages}
-            onPageChange={handleCoBorrowerPageChange}
+            calculationResults={calculationResults}
           />
         );
       case 'primary':
