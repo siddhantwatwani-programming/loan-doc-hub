@@ -148,7 +148,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               <RichTextEditor
                 value={formData.content}
                 onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
-                placeholder="Enter note content..."
+                placeholder="Enter conversation log content..."
                 minHeight="200px"
               />
             </div>

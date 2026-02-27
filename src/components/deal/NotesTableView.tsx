@@ -160,8 +160,8 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
           }
           setDeleteTarget(null);
         }}
-        title="Delete Note"
-        description="Are you sure you want to delete this note? This action cannot be undone."
+        title="Delete Conversation Log"
+        description="Are you sure you want to delete this conversation log? This action cannot be undone."
       />
     </div>
   );
