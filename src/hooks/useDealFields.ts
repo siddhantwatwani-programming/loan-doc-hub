@@ -131,7 +131,7 @@ function mapChargeFieldKey(canonicalKey: string, toDict: boolean): string {
 //   so we normalize propertyN.* -> property1.* for consistent lookup.
 // - Charge keys use a different format in the dictionary (charge_date vs charge.date_of_charge)
 function getCanonicalKey(indexedKey: string): string {
-  return indexedKey
+  const stripped = indexedKey
     .replace(/^(borrower)\d+\./, '$1.')
     .replace(/^(coborrower)\d+\./, 'coborrower.')
     .replace(/^(co_borrower)\d+\./, 'co_borrower.')
@@ -143,6 +143,10 @@ function getCanonicalKey(indexedKey: string): string {
     .replace(/^(insurance)\d+\./, 'insurance.')
     .replace(/^(notes_entry)\d+\./, 'notes_entry.')
     .replace(/^(trust_ledger)\d+\./, 'trust_ledger.');
+  // Inline co-borrower keys (borrower.coborrower.X) -> coborrower.X for dictionary lookup
+  return stripped
+    .replace(/^borrower\.coborrower\./, 'coborrower.')
+    .replace(/^borrower\.co_borrower\./, 'co_borrower.');
 }
 
 // Extract indexed prefix from field key (e.g., "borrower1.first_name" -> "borrower1", "charge1.date_of_charge" -> "charge1")
