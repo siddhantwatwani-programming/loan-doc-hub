@@ -1,45 +1,45 @@
 
 
-## Plan: Conditional System Date & US Date Format Standardization
+## Plan: Conditional Co-Borrower Section in Document Generation
 
-### Requirement 1: Conditional `{{systemDate}}` Population
+### Analysis
 
-**Current behavior**: The `generate-document` edge function (lines 185-220) auto-fills ALL empty date fields with the current system date. This is incorrect — it should only populate fields explicitly mapped with `{{systemDate}}`.
+The system **already supports** `{{#if field_key}}...{{/if}}` conditional blocks with entity-existence checks. The `isConditionTruthy` function in `tag-parser.ts` checks if any field with a given prefix has data. No new conditional logic is needed.
 
-**Changes**:
+### What needs to change
 
-1. **`supabase/functions/generate-document/index.ts`** (lines 185-220):
-   - Remove the two-pass logic that auto-fills every empty date field with system date
-   - Replace with: inject a single `systemDate` key into `fieldValues` with the current date in `YYYY-MM-DD` format
-   - This way, only templates using `{{systemDate}}` merge tags will get the system date populated
-   - Other unmapped/empty date fields will remain blank
+**1. `supabase/functions/generate-document/index.ts`** — Auto-inject `has_co_borrower` boolean flag
 
-2. **`supabase/functions/_shared/formatting.ts`** — handle `systemDate` as a recognized tag by ensuring it resolves as a date type (no changes needed here, the existing merge tag pipeline already handles `{{systemDate}}` as a tag name that resolves to the injected field value)
+After the existing auto-compute blocks (around line 242), add logic to:
+- Scan `fieldValues` for any key starting with `co_borrower` or `coborrower` that has a non-empty value
+- Set `fieldValues.set("has_co_borrower", { rawValue: "true"/"false", dataType: "boolean" })`
+- This gives template authors a clean `{{#if has_co_borrower}}` tag to use
 
-### Requirement 2: US Date Format (MM/DD/YYYY) Standardization
+This is the **only code change** required. The conditional block processing, paragraph removal, and gap-free cleanup already work correctly.
 
-**Current behavior**: The backend `formatting.ts` uses `formatDateDDMMYYYY` (DD/MM/YYYY) as the default date format in `formatByDataType` and in `applyTransform` for the `"date"` transform. One form (`LenderInfoForm.tsx`) displays DOB in DD/MM/YYYY.
+### How to use in templates
 
-**Changes**:
+Template authors wrap Co-Borrower sections with:
+```
+{{#if has_co_borrower}}
+Co-Borrower Name: {{coborrower.first_name}} {{coborrower.last_name}}
+Co-Borrower Address: {{coborrower.address}}
+...signature block...
+{{/if}}
+```
 
-3. **`supabase/functions/_shared/formatting.ts`**:
-   - In `formatByDataType` function (line 286): change `formatDateDDMMYYYY` to `formatDateMMDDYYYY`
-   - In `applyTransform` function (line 243): change `formatDateDDMMYYYY` to `formatDateMMDDYYYY` for the `"date"` case
-
-4. **`src/components/deal/LenderInfoForm.tsx`** (line 345):
-   - Change `'dd/MM/yyyy'` to `'MM/dd/yyyy'` for the DOB date display format
+When `has_co_borrower` is false, the entire block (including all XML paragraphs) is removed with no blank gaps.
 
 ### Files Modified
 
 | File | Change |
 |------|--------|
-| `supabase/functions/generate-document/index.ts` | Remove blanket date auto-fill; inject `systemDate` field value only |
-| `supabase/functions/_shared/formatting.ts` | Default date format DD/MM → MM/DD in `formatByDataType` and `applyTransform` |
-| `src/components/deal/LenderInfoForm.tsx` | DOB display format DD/MM → MM/DD |
+| `supabase/functions/generate-document/index.ts` | Add ~15 lines to auto-compute `has_co_borrower` from existing co-borrower field data |
 
 ### No changes to
 - Database schema
-- Document layout/styling
-- Other field mappings
-- Date storage format (remains YYYY-MM-DD internally)
+- UI components
+- Tag parser / conditional block logic
+- Document formatting or layout
+- Existing field mappings
 
