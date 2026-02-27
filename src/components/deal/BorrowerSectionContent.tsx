@@ -375,10 +375,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   // Handle back navigation
   const handleBackToTable = useCallback(() => {
     if (isCoBorrowerDetailView) {
-      // From co-borrower detail, go back to co-borrowers table (within borrower detail)
-      setActiveSubSection('co_borrowers');
-    } else if (isViewingCoBorrowersTable) {
-      // From co-borrowers table, go back to borrowers table
+      // From co-borrower detail, go back to borrowers table
       setActiveSubSection('borrowers');
     } else {
       // From borrower detail tabs, go back to borrowers table
