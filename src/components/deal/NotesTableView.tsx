@@ -79,7 +79,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-lg text-foreground">Notes</h3>
+        <h3 className="font-semibold text-lg text-foreground">Conversation Log</h3>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onExport} disabled={disabled || notes.length === 0} className="gap-1">
             <Download className="h-4 w-4" />
@@ -88,7 +88,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
           <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} disabled={disabled} />
           <Button variant="outline" size="sm" onClick={onAddNote} disabled={disabled} className="gap-1">
             <Plus className="h-4 w-4" />
-            Add Notes
+            Add Conversation Logs
           </Button>
         </div>
       </div>
@@ -116,7 +116,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
             ) : notes.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
-                  No notes added. Click "Add Notes" to add one.
+                  No conversation logs added. Click "Add Conversation Logs" to add one.
                 </TableCell>
               </TableRow>
             ) : (
@@ -147,7 +147,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
       {/* Footer */}
       {notes.length > 0 && (
         <div className="flex justify-end">
-          <div className="text-sm text-muted-foreground">Total Notes: {notes.length}</div>
+          <div className="text-sm text-muted-foreground">Total Conversation Logs: {notes.length}</div>
         </div>
       )}
       {/* Delete Confirmation Dialog */}
@@ -160,8 +160,8 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
           }
           setDeleteTarget(null);
         }}
-        title="Delete Note"
-        description="Are you sure you want to delete this note? This action cannot be undone."
+        title="Delete Conversation Log"
+        description="Are you sure you want to delete this conversation log? This action cannot be undone."
       />
     </div>
   );

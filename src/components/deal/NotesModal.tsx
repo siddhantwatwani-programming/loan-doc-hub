@@ -93,7 +93,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-sm">
             <StickyNote className="h-4 w-4 text-primary" />
-            {isEdit ? 'Edit Note' : 'Add Note'}
+            {isEdit ? 'Edit Conversation Log' : 'Add New Conversation Log'}
           </DialogTitle>
         </DialogHeader>
 
@@ -143,12 +143,12 @@ export const NotesModal: React.FC<NotesModalProps> = ({
 
           {/* Notes content - Rich Text Editor with its own scroll */}
           <div className="space-y-1">
-            <Label className="text-xs text-foreground">Notes</Label>
+            <Label className="text-xs text-foreground">Conversation Log</Label>
             <div className="max-h-[300px] overflow-y-auto border border-border rounded-md">
               <RichTextEditor
                 value={formData.content}
                 onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
-                placeholder="Enter note content..."
+                placeholder="Enter conversation log content..."
                 minHeight="200px"
               />
             </div>
