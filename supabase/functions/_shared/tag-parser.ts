@@ -39,7 +39,7 @@ export function normalizeWordXml(xmlContent: string): string {
   // runs so that fragmented tags become contiguous text that regex can match.
   // This handles: </w:t></w:r><w:r><w:t> → (removed, merging text content)
   // Also handles <w:r> with attributes and <w:t xml:space="preserve">
-  result = result.replace(/<\/w:t><\/w:r><w:r(?:\s[^>]*)?>(?:\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>)?\s*)<w:t(?:\s[^>]*)?>/g, '');
+  result = result.replace(/<\/w:t><\/w:r><w:r(?:\s[^>]*)?>(?:\s*)<w:t(?:\s[^>]*)?>/g, '');
   
   // Handle fragmented merge fields
   const fragmentedPattern = /«((?:<[^>]*>|\s)*?)([A-Za-z0-9_]+)((?:<[^>]*>|\s)*?)»/g;
