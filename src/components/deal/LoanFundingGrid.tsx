@@ -16,14 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, History, Loader2, Trash2, Pencil, ArrowLeft } from 'lucide-react';
+import { Plus, History, Loader2, Trash2, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { FundingHistoryDialog } from './FundingHistoryDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
-import { FundingDetailForm } from './FundingDetailForm';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'lenderAccount', label: 'Lender Account', visible: true },
@@ -86,7 +85,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const [selectedRecord, setSelectedRecord] = useState<FundingRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<FundingRecord | null>(null);
   const [editFundingData, setEditFundingData] = useState<FundingFormData | null>(null);
-  const [detailRecord, setDetailRecord] = useState<FundingRecord | null>(null);
   const [columns, setColumns] = useTableColumnConfig('funding', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
 
@@ -107,7 +105,20 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   };
 
   const handleRowClick = (record: FundingRecord) => {
-    setDetailRecord(record);
+    setEditFundingData({
+      loan: loanNumber || '',
+      borrower: borrowerName || '',
+      lenderId: record.lenderAccount,
+      lenderFullName: record.lenderName,
+      lenderRate: String(record.lenderRate),
+      fundingAmount: String(record.originalAmount),
+      fundingDate: '',
+      interestFrom: '',
+      notes: '',
+      brokerParticipates: false,
+    });
+    setSelectedRecord(record);
+    setIsAddModalOpen(true);
   };
 
   const renderCellValue = (record: FundingRecord, columnId: string) => {
@@ -143,82 +154,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
     }
   };
 
-  // Track detail form data separately so changes persist while viewing
-  const [detailFormData, setDetailFormData] = useState<FundingFormData | null>(null);
-
-  // Initialize detail form data when a record is selected
-  React.useEffect(() => {
-    if (detailRecord) {
-      setDetailFormData({
-        loan: loanNumber || '',
-        borrower: borrowerName || '',
-        lenderId: detailRecord.lenderAccount,
-        lenderFullName: detailRecord.lenderName,
-        lenderRate: String(detailRecord.lenderRate),
-        fundingAmount: String(detailRecord.originalAmount),
-        fundingDate: '',
-        interestFrom: '',
-        notes: '',
-        brokerParticipates: false,
-      });
-    }
-  }, [detailRecord]);
-
-  const handleDetailChange = (updatedData: FundingFormData) => {
-    setDetailFormData(updatedData);
-    if (detailRecord) {
-      onUpdateRecord(detailRecord.id, {
-        lenderAccount: updatedData.lenderId,
-        lenderName: updatedData.lenderFullName,
-        lenderRate: parseFloat(updatedData.lenderRate) || 0,
-        originalAmount: parseFloat(updatedData.fundingAmount) || 0,
-        principalBalance: parseFloat(updatedData.fundingAmount) || 0,
-      });
-    }
-  };
-
-  // If a record is selected for detail view, show Borrower-style layout
-  if (detailRecord && detailFormData) {
-    return (
-      <div>
-        {/* Back header */}
-        <div className="flex items-center gap-3 p-4 border-b border-border">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => { setDetailRecord(null); setDetailFormData(null); }}
-            className="gap-1"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-          <h3 className="font-semibold text-lg text-foreground">
-            {detailRecord.lenderName || 'Funding Detail'}
-          </h3>
-        </div>
-
-        {/* Borrower-style layout: sidebar + content */}
-        <div className="flex">
-          {/* Left sidebar nav */}
-          <div className="flex flex-col border-r border-border bg-background min-w-[180px]">
-            <button
-              className="px-4 py-3 text-sm font-medium transition-colors text-left border-l-2 border-primary text-foreground bg-muted/30"
-            >
-              General
-            </button>
-          </div>
-
-          {/* Right content area */}
-          <div className="flex-1 min-w-0 overflow-auto">
-            <FundingDetailForm
-              data={detailFormData}
-              onChange={handleDetailChange}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Footer totals
+  const totalFundingAmount = fundingRecords.reduce((sum, r) => sum + r.originalAmount, 0);
 
   return (
     <div className="p-6 space-y-4">
@@ -428,16 +365,42 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         </p>
       )}
 
+      {/* Footer with totals - Property style */}
+      {fundingRecords.length > 0 && (
+        <div className="flex justify-end">
+          <div className="text-sm text-muted-foreground">
+            Total Funding Records: {fundingRecords.length} | 
+            Total Funding Amount: {formatCurrency(totalFundingAmount)}
+          </div>
+        </div>
+      )}
+
       {/* Add Funding Modal */}
       <AddFundingModal
         open={isAddModalOpen}
         onOpenChange={(open) => {
           setIsAddModalOpen(open);
-          if (!open) setEditFundingData(null);
+          if (!open) {
+            setEditFundingData(null);
+            setSelectedRecord(null);
+          }
         }}
         loanNumber={loanNumber}
         borrowerName={borrowerName}
-        onSubmit={onAddFunding}
+        onSubmit={(data) => {
+          if (selectedRecord) {
+            // Editing existing record
+            onUpdateRecord(selectedRecord.id, {
+              lenderAccount: data.lenderId,
+              lenderName: data.lenderFullName,
+              lenderRate: parseFloat(data.lenderRate) || 0,
+              originalAmount: parseFloat(data.fundingAmount) || 0,
+              principalBalance: parseFloat(data.fundingAmount) || 0,
+            });
+          } else {
+            onAddFunding(data);
+          }
+        }}
         editData={editFundingData}
       />
 
