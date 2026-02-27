@@ -159,7 +159,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
           <button
             className={cn(
               'sidebar-item w-full justify-between text-left',
-              isAnyActive && 'text-sidebar-primary-foreground bg-sidebar-accent'
+              isAnyActive && 'sidebar-item-active'
             )}
           >
             <div className="flex items-center gap-3">
