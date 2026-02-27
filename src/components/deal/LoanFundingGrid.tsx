@@ -365,6 +365,16 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         </p>
       )}
 
+      {/* Footer with totals - Property style */}
+      {fundingRecords.length > 0 && (
+        <div className="flex justify-end">
+          <div className="text-sm text-muted-foreground">
+            Total Funding Records: {fundingRecords.length} | 
+            Total Funding Amount: {formatCurrency(totalFundingAmount)}
+          </div>
+        </div>
+      )}
+
       {/* Add Funding Modal */}
       <AddFundingModal
         open={isAddModalOpen}
