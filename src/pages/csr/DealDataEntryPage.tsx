@@ -56,7 +56,7 @@ interface Deal {
 
 // Section labels for display (partial - only includes displayable main sections)
 const SECTION_LABELS: Partial<
-  Record<FieldSection | "origination_fees" | "funding" | "conversation_log" | "event_journal", string>
+  Record<FieldSection | "origination_fees" | "funding" | "event_journal", string>
 > = {
   borrower: "Borrower",
   property: "Property",
