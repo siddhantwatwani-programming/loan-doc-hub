@@ -563,8 +563,7 @@ serve(async (req) => {
     const authClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await authClient.auth.getUser(token);
+    const { data: userData, error: userError } = await authClient.auth.getUser();
     if (userError || !userData.user) {
       console.error("[generate-document] Auth error:", userError?.message);
       return new Response(JSON.stringify({ error: "Invalid token" }), {
