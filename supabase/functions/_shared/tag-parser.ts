@@ -25,6 +25,13 @@ export function normalizeWordXml(xmlContent: string): string {
   // Removing them lets the simple run-boundary regex work for styled runs too.
   result = result.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g, '');
   
+  // Consolidate adjacent text runs: Word often splits text like {{Lender.Name}} across
+  // multiple <w:r><w:t>...</w:t></w:r> elements. After stripping rPr, merge adjacent
+  // runs so that fragmented tags become contiguous text that regex can match.
+  // This handles: </w:t></w:r><w:r><w:t> → (removed, merging text content)
+  // Also handles <w:r> with attributes and <w:t xml:space="preserve">
+  result = result.replace(/<\/w:t><\/w:r><w:r(?:\s[^>]*)?>(?:\s*)<w:t(?:\s[^>]*)?>/g, '');
+  
   // Handle fragmented merge fields
   const fragmentedPattern = /«((?:<[^>]*>|\s)*?)([A-Za-z0-9_]+)((?:<[^>]*>|\s)*?)»/g;
   result = result.replace(fragmentedPattern, (match, pre, fieldName, post) => {
