@@ -1,30 +1,40 @@
 
 
-## Plan: Remove "No Role Assigned" Flash on Login
+## Investigation: Why Generated Document is 1 Page Instead of 3
 
-### Problem
-After login, the auth state resolves before the role is fetched (async call to `user_roles` table). During that brief window, `user` is set but `role` is still `null`, triggering the "No Role Assigned" message block in `AppLayout.tsx`.
+### Root Cause
 
-### Fix
-**File: `src/components/layout/AppLayout.tsx` (lines 150-161)**
+The `normalizeWordXml` function in `supabase/functions/_shared/tag-parser.ts` **destructively strips all `<w:rPr>` (run property) blocks** from the document XML at line 26:
 
-Replace the "No Role Assigned" block with the same loading spinner used for the `loading` state. This way, while the role is being fetched, the user sees a spinner instead of an error message.
-
-```tsx
-if (!role) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4 animate-fade-in">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+```js
+result = result.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g, '');
 ```
 
-### No other changes
-- No database, schema, or API changes
-- No UI layout or component changes
-- No route changes
+`<w:rPr>` blocks contain **all run-level formatting**: font name, font size, bold, italic, colors, spacing, etc. Removing them causes every text run to fall back to the default (small) font, collapsing a 3-page formatted document into ~1 page.
+
+A secondary contributor is line 484 in `removeConditionalBlock`, which removes **all empty paragraphs globally** — including intentional spacing paragraphs used for layout.
+
+### Fix (2 changes in `supabase/functions/_shared/tag-parser.ts`)
+
+**Change 1 — Remove the global `<w:rPr>` strip (line 26)**
+Delete this line entirely. Instead, update the run consolidation regex (line 42) to optionally skip over `<w:rPr>` blocks between adjacent runs, so tag detection still works while preserving formatting:
+
+```js
+// Before (line 42):
+result = result.replace(/<\/w:t><\/w:r><w:r(?:\s[^>]*)?>(?:\s*)<w:t(?:\s[^>]*)?>/g, '');
+
+// After:
+result = result.replace(/<\/w:t><\/w:r><w:r(?:\s[^>]*)?>(?:\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>)?\s*)<w:t(?:\s[^>]*)?>/g, '');
+```
+
+**Change 2 — Scope empty paragraph cleanup to the conditional block area only (line 484)**
+Currently removes all empty `<w:p>` elements from the entire document. Change it to only clean up empty paragraphs near the removed block (within a limited range), preserving intentional spacing elsewhere.
+
+### Files Modified
+- `supabase/functions/_shared/tag-parser.ts` (lines 26, 42, 484)
+
+### No Other Changes
+- No UI changes
+- No database/schema changes
+- No changes to other shared modules or the generate-document function
 
