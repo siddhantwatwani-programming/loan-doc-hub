@@ -74,6 +74,11 @@ function normalizeWordXml(xmlContent: string): string {
   // but no text content. Removing them lets tag detection work for styled runs.
   result = result.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g, '');
   
+  // Consolidate adjacent text runs: Word often splits text like {{Lender.Name}} across
+  // multiple <w:r><w:t>...</w:t></w:r> elements. After stripping rPr, merge adjacent
+  // runs so that fragmented tags become contiguous text that regex can match.
+  result = result.replace(/<\/w:t><\/w:r><w:r(?:\s[^>]*)?>(?:\s*)<w:t(?:\s[^>]*)?>/g, '');
+  
   // Pattern to find « possibly followed by fragmented XML until »
   const fragmentedPattern = /«((?:<[^>]*>|\s)*?)([A-Za-z0-9_]+)((?:<[^>]*>|\s)*?)»/g;
   result = result.replace(fragmentedPattern, (match, pre, fieldName, post) => {
