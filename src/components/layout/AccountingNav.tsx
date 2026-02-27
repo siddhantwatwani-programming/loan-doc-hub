@@ -207,7 +207,7 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
                   className={cn(
                     'sidebar-item w-full justify-between text-sm',
                     section.items.some((i) => location.pathname === i.path) &&
-                      'text-sidebar-primary-foreground bg-sidebar-accent'
+                      'sidebar-item-active'
                   )}
                 >
                   <span>{section.label}</span>
