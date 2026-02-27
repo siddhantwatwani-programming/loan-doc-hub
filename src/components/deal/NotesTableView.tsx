@@ -88,7 +88,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
           <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} disabled={disabled} />
           <Button variant="outline" size="sm" onClick={onAddNote} disabled={disabled} className="gap-1">
             <Plus className="h-4 w-4" />
-            Add Notes
+            Add Conversation Logs
           </Button>
         </div>
       </div>
