@@ -181,7 +181,7 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
                 onClick={() => section.path ? (collapseAll(), navigate(section.path)) : undefined}
                 className={cn(
                   'sidebar-item w-full text-sm',
-                  section.path && location.pathname === section.path && 'text-sidebar-primary-foreground bg-sidebar-accent'
+                  section.path && location.pathname === section.path && 'sidebar-item-active'
                 )}
               >
                 <span>{section.label}</span>
