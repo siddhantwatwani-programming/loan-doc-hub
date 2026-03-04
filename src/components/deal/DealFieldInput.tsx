@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -298,6 +299,22 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     />
   );
 
+  // Render checkbox for boolean fields
+  const renderCheckbox = () => (
+    <div className="flex items-center h-7">
+      <Checkbox
+        id={field.field_key}
+        checked={value === 'true'}
+        onCheckedChange={(checked) => onChange(checked ? 'true' : 'false')}
+        disabled={isDisabled}
+        className={cn(
+          showError && 'border-destructive',
+          isDisabled && 'cursor-not-allowed opacity-50'
+        )}
+      />
+    </div>
+  );
+
   // Choose the right input based on data type
   const renderFieldInput = () => {
     if (field.data_type === 'section') return renderSectionHeader();
@@ -307,6 +324,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     if (field.data_type === 'file') return renderFileInput();
     if (field.data_type === 'phone') return renderPhoneInput();
     if (field.data_type === 'date') return renderDatePicker();
+    if (field.data_type === 'boolean') return renderCheckbox();
     if (field.data_type === 'text' && field.field_key.includes('address')) return renderTextarea();
     return renderInput();
   };
