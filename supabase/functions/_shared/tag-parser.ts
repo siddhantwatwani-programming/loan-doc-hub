@@ -703,10 +703,24 @@ export function processEachBlocks(
         expandedBlocks.push(blockContent);
       }
 
-      // Separate each iteration: if block contains paragraph-level XML, join directly;
-      // otherwise insert a Word line break between iterations
+      // Separate each iteration safely for Word XML:
+      // - Paragraph blocks already contain their own structure, so concatenate directly
+      // - Inline blocks inside <w:t> need an in-run Word break (<w:br/>)
+      // - Fallback to plain newline when not in a text-run context
       const hasParagraphs = expandedBlocks.some(b => b.includes('<w:p>') || b.includes('<w:p '));
-      const separator = hasParagraphs ? '' : '<w:r><w:br/></w:r>';
+      const insideTextRun = (() => {
+        const beforeIndex = eachMatch.index;
+        const lastOpenText = result.lastIndexOf('<w:t', beforeIndex);
+        const lastCloseText = result.lastIndexOf('</w:t>', beforeIndex);
+        return lastOpenText > lastCloseText;
+      })();
+
+      const separator = hasParagraphs
+        ? ''
+        : insideTextRun
+          ? '</w:t><w:br/><w:t xml:space="preserve">'
+          : '\n';
+
       const expandedContent = expandedBlocks.join(separator);
       result = result.substring(0, eachMatch.index) + expandedContent + result.substring(eachMatch.index + eachMatch[0].length);
     }
