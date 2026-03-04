@@ -703,8 +703,8 @@ export function processEachBlocks(
         expandedBlocks.push(blockContent);
       }
 
-      // Join iterations with a Word XML line break for proper separation
-      const expandedContent = expandedBlocks.join('<w:r><w:br/></w:r>');
+      // Join iterations with plain text newline to avoid invalid Word XML injection
+      const expandedContent = expandedBlocks.join('\n');
       result = result.substring(0, eachMatch.index) + expandedContent + result.substring(eachMatch.index + eachMatch[0].length);
     }
 
