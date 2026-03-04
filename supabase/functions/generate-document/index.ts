@@ -173,8 +173,15 @@ async function generateSingleDocument(
           const resolvedKey = indexedKey || fieldDict.field_key;
           fieldValues.set(resolvedKey, { rawValue, dataType });
           // Also set the canonical field_key so merge tags can match either way
+          // BUT only if the canonical key doesn't already belong to a different indexed entity
+          // e.g., don't overwrite property1.street (canonical) with property2's data
           if (indexedKey && indexedKey !== fieldDict.field_key) {
-            fieldValues.set(fieldDict.field_key, { rawValue, dataType });
+            // Check if the canonical key looks like it belongs to a specific indexed entity
+            // (e.g., "property1.street") — if so, only set it if no indexed entry has already claimed it
+            const canonicalHasIndex = /^[a-zA-Z_]+\d+\./.test(fieldDict.field_key);
+            if (!canonicalHasIndex) {
+              fieldValues.set(fieldDict.field_key, { rawValue, dataType });
+            }
           }
         }
       });
