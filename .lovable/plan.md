@@ -1,40 +1,30 @@
 
 
-## Investigation: Why Generated Document is 1 Page Instead of 3
+## Plan: Add Boolean/Checkbox Rendering in DealFieldInput
 
-### Root Cause
+### Problem
+The `DealFieldInput` component has no renderer for `boolean` data type fields. When a field with `data_type = 'boolean'` exists in the field dictionary (e.g., in the "Other" section), it falls through to the default text input renderer instead of displaying as a checkbox. This means users can't check/uncheck boolean fields, and `true`/`false` values aren't stored properly.
 
-The `normalizeWordXml` function in `supabase/functions/_shared/tag-parser.ts` **destructively strips all `<w:rPr>` (run property) blocks** from the document XML at line 26:
+### Change: Single File
 
-```js
-result = result.replace(/<w:rPr>[\s\S]*?<\/w:rPr>/g, '');
-```
+**File: `src/components/deal/DealFieldInput.tsx`**
 
-`<w:rPr>` blocks contain **all run-level formatting**: font name, font size, bold, italic, colors, spacing, etc. Removing them causes every text run to fall back to the default (small) font, collapsing a 3-page formatted document into ~1 page.
+1. Import the `Checkbox` component from `@/components/ui/checkbox`
+2. Add a `renderCheckbox()` function that renders a Radix checkbox, reading `value === 'true'` as checked and calling `onChange('true')` / `onChange('false')` on toggle
+3. Add a case for `boolean` in the `renderFieldInput()` switch (line ~309, before the default `renderInput()` fallback):
+   ```
+   if (field.data_type === 'boolean') return renderCheckbox();
+   ```
+4. The checkbox layout will use the existing label/input row structure — the checkbox replaces the text input in the right column, maintaining alignment with all other fields
 
-A secondary contributor is line 484 in `removeConditionalBlock`, which removes **all empty paragraphs globally** — including intentional spacing paragraphs used for layout.
-
-### Fix (2 changes in `supabase/functions/_shared/tag-parser.ts`)
-
-**Change 1 — Remove the global `<w:rPr>` strip (line 26)**
-Delete this line entirely. Instead, update the run consolidation regex (line 42) to optionally skip over `<w:rPr>` blocks between adjacent runs, so tag detection still works while preserving formatting:
-
-```js
-// Before (line 42):
-result = result.replace(/<\/w:t><\/w:r><w:r(?:\s[^>]*)?>(?:\s*)<w:t(?:\s[^>]*)?>/g, '');
-
-// After:
-result = result.replace(/<\/w:t><\/w:r><w:r(?:\s[^>]*)?>(?:\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>)?\s*)<w:t(?:\s[^>]*)?>/g, '');
-```
-
-**Change 2 — Scope empty paragraph cleanup to the conditional block area only (line 484)**
-Currently removes all empty `<w:p>` elements from the entire document. Change it to only clean up empty paragraphs near the removed block (within a limited range), preserving intentional spacing elsewhere.
-
-### Files Modified
-- `supabase/functions/_shared/tag-parser.ts` (lines 26, 42, 484)
+### How It Works
+- Checking the box calls `onChange('true')` → stored as `"true"` in the JSONB `deal_section_values`
+- Unchecking calls `onChange('false')` → stored as `"false"`
+- On load, `value === 'true'` determines checked state
+- The existing document generation already handles boolean values via `formatCheckbox` (☑/☐) and `processSdtCheckboxes`
 
 ### No Other Changes
-- No UI changes
-- No database/schema changes
-- No changes to other shared modules or the generate-document function
+- No database, schema, or migration changes
+- No UI layout changes outside the new checkbox renderer
+- No changes to document generation, APIs, or other components
 
