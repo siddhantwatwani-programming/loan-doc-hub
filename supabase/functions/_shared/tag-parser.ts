@@ -133,6 +133,15 @@ export function normalizeWordXml(xmlContent: string): string {
     }
     return `{{/unless}}`;
   });
+
+  // Handle fragmented {{else}} tags
+  const elseFragmented = /\{\{((?:<[^>]*>|\s)*?)else((?:<[^>]*>|\s)*?)\}\}/g;
+  result = result.replace(elseFragmented, (match, pre, post) => {
+    if (pre.includes("<") || post.includes("<")) {
+      console.log(`[tag-parser] Consolidated fragmented {{else}}`);
+    }
+    return `{{else}}`;
+  });
   
   return result;
 }
@@ -414,12 +423,22 @@ export function processConditionalBlocks(
       const truthy = isConditionTruthy(fieldKey, fieldValues, mergeTagMap, validFieldKeys);
       console.log(`[tag-parser] Conditional {{#if ${fieldKey}}} = ${truthy}`);
 
+      // Check for {{else}} within the block
+      const elseIndex = blockContent.indexOf('{{else}}');
+
       if (truthy) {
-        // Keep inner content, remove tag markers
-        result = result.substring(0, ifMatch.index) + blockContent + result.substring(ifMatch.index + ifMatch[0].length);
+        // Keep the true branch (content before {{else}}, or all if no else)
+        const keepContent = elseIndex !== -1 ? blockContent.substring(0, elseIndex) : blockContent;
+        result = result.substring(0, ifMatch.index) + keepContent + result.substring(ifMatch.index + ifMatch[0].length);
       } else {
-        // Remove block and clean up surrounding empty paragraphs
-        result = removeConditionalBlock(result, ifMatch.index, ifMatch[0].length);
+        if (elseIndex !== -1) {
+          // Keep the else branch (content after {{else}})
+          const elseContent = blockContent.substring(elseIndex + '{{else}}'.length);
+          result = result.substring(0, ifMatch.index) + elseContent + result.substring(ifMatch.index + ifMatch[0].length);
+        } else {
+          // No else branch — remove block and clean up surrounding empty paragraphs
+          result = removeConditionalBlock(result, ifMatch.index, ifMatch[0].length);
+        }
       }
     } else if (unlessMatch) {
       const fieldKey = unlessMatch[1];
@@ -427,10 +446,19 @@ export function processConditionalBlocks(
       const truthy = isConditionTruthy(fieldKey, fieldValues, mergeTagMap, validFieldKeys);
       console.log(`[tag-parser] Conditional {{#unless ${fieldKey}}} = ${!truthy} (inverted)`);
 
+      // Check for {{else}} within the block
+      const elseIndex = blockContent.indexOf('{{else}}');
+
       if (!truthy) {
-        result = result.substring(0, unlessMatch.index) + blockContent + result.substring(unlessMatch.index + unlessMatch[0].length);
+        const keepContent = elseIndex !== -1 ? blockContent.substring(0, elseIndex) : blockContent;
+        result = result.substring(0, unlessMatch.index) + keepContent + result.substring(unlessMatch.index + unlessMatch[0].length);
       } else {
-        result = removeConditionalBlock(result, unlessMatch.index, unlessMatch[0].length);
+        if (elseIndex !== -1) {
+          const elseContent = blockContent.substring(elseIndex + '{{else}}'.length);
+          result = result.substring(0, unlessMatch.index) + elseContent + result.substring(unlessMatch.index + unlessMatch[0].length);
+        } else {
+          result = removeConditionalBlock(result, unlessMatch.index, unlessMatch[0].length);
+        }
       }
     }
 
