@@ -142,6 +142,24 @@ export function normalizeWordXml(xmlContent: string): string {
     }
     return `{{else}}`;
   });
+
+  // Handle fragmented {{#each ...}} tags
+  const eachFragmented = /\{\{((?:<[^>]*>|\s)*?)#each\s*((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
+  result = result.replace(eachFragmented, (match, pre, mid, collectionName, post) => {
+    if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
+      console.log(`[tag-parser] Consolidated fragmented {{#each ${collectionName}}}`);
+    }
+    return `{{#each ${collectionName}}}`;
+  });
+
+  // Handle fragmented {{/each}} tags
+  const endEachFragmented = /\{\{((?:<[^>]*>|\s)*?)\/((?:<[^>]*>|\s)*?)each((?:<[^>]*>|\s)*?)\}\}/g;
+  result = result.replace(endEachFragmented, (match, pre, mid, post) => {
+    if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
+      console.log(`[tag-parser] Consolidated fragmented {{/each}}`);
+    }
+    return `{{/each}}`;
+  });
   
   return result;
 }
@@ -585,6 +603,121 @@ export function processSdtCheckboxes(
 }
 
 /**
+ * Process {{#each collection}}...{{/each}} iteration blocks.
+ * 
+ * Finds all entities matching the collection prefix (e.g., "property" matches
+ * property1, property2, etc.) and repeats the block content for each entity,
+ * resolving inner tags like {{address}} to propertyN.address.
+ */
+export function processEachBlocks(
+  content: string,
+  fieldValues: Map<string, FieldValueData>,
+  mergeTagMap: Record<string, string>,
+  validFieldKeys?: Set<string>
+): string {
+  let result = content;
+  let iterations = 0;
+  const MAX_ITERATIONS = 20;
+
+  while (iterations < MAX_ITERATIONS) {
+    const eachPattern = /\{\{#each\s+([A-Za-z0-9_.]+)\}\}([\s\S]*?)\{\{\/each\}\}/;
+    const eachMatch = eachPattern.exec(result);
+
+    if (!eachMatch) break;
+
+    const collectionPrefix = eachMatch[1]; // e.g., "property"
+    const blockTemplate = eachMatch[2]; // content between {{#each}} and {{/each}}
+
+    console.log(`[tag-parser] Processing {{#each ${collectionPrefix}}}`);
+
+    // Find all indexed entities matching this prefix (e.g., property1, property2, ...)
+    const entityIndices = new Set<number>();
+    const prefixLower = collectionPrefix.toLowerCase();
+
+    for (const [key] of fieldValues.entries()) {
+      const keyLower = key.toLowerCase();
+      // Match patterns like "property1.address", "property2.city", etc.
+      const indexMatch = keyLower.match(new RegExp(`^${prefixLower}(\\d+)\\.`));
+      if (indexMatch) {
+        entityIndices.add(parseInt(indexMatch[1], 10));
+      }
+    }
+
+    // Sort indices numerically
+    const sortedIndices = [...entityIndices].sort((a, b) => a - b);
+    console.log(`[tag-parser] Found ${sortedIndices.length} entities for "${collectionPrefix}": [${sortedIndices.join(', ')}]`);
+
+    if (sortedIndices.length === 0) {
+      // No entities found — remove the entire block
+      result = result.substring(0, eachMatch.index) + result.substring(eachMatch.index + eachMatch[0].length);
+    } else {
+      // For each entity, clone the block and replace inner field references
+      const expandedBlocks: string[] = [];
+
+      for (const idx of sortedIndices) {
+        let blockContent = blockTemplate;
+        const entityPrefix = `${collectionPrefix}${idx}`; // e.g., "property1"
+
+        // Find all merge tags within the block: {{fieldName}}, {{fieldName|transform}}, «fieldName»
+        const innerCurlyTags = [...blockContent.matchAll(/\{\{([^}#/|]+)(?:\|([^}]+))?\}\}/g)];
+        const innerChevronTags = [...blockContent.matchAll(/«([^»]+)»/g)];
+
+        for (const tag of innerCurlyTags) {
+          const innerFieldName = tag[1].trim();
+          // Skip control tags
+          if (innerFieldName.startsWith('#') || innerFieldName.startsWith('/') || innerFieldName === 'else') continue;
+
+          const qualifiedKey = `${entityPrefix}.${innerFieldName}`; // e.g., "property1.address"
+          const transform = tag[2]?.trim() || null;
+
+          // Resolve the qualified key
+          const canonicalKey = resolveFieldKeyWithMap(qualifiedKey, mergeTagMap, validFieldKeys);
+          const resolved = getFieldData(canonicalKey, fieldValues);
+
+          let resolvedValue = "";
+          if (resolved?.data) {
+            if (transform) {
+              resolvedValue = applyTransform(resolved.data.rawValue, transform);
+            } else {
+              resolvedValue = formatByDataType(resolved.data.rawValue, resolved.data.dataType);
+            }
+          }
+
+          blockContent = blockContent.split(tag[0]).join(resolvedValue);
+        }
+
+        for (const tag of innerChevronTags) {
+          const innerFieldName = tag[1].trim();
+          const qualifiedKey = `${entityPrefix}.${innerFieldName}`;
+          const canonicalKey = resolveFieldKeyWithMap(qualifiedKey, mergeTagMap, validFieldKeys);
+          const resolved = getFieldData(canonicalKey, fieldValues);
+
+          let resolvedValue = "";
+          if (resolved?.data) {
+            resolvedValue = formatByDataType(resolved.data.rawValue, resolved.data.dataType);
+          }
+
+          blockContent = blockContent.split(tag[0]).join(resolvedValue);
+        }
+
+        expandedBlocks.push(blockContent);
+      }
+
+      const expandedContent = expandedBlocks.join('');
+      result = result.substring(0, eachMatch.index) + expandedContent + result.substring(eachMatch.index + eachMatch[0].length);
+    }
+
+    iterations++;
+  }
+
+  if (iterations >= MAX_ITERATIONS) {
+    console.warn("[tag-parser] Hit max iterations for {{#each}} processing");
+  }
+
+  return result;
+}
+
+/**
  * Main function to replace all merge tags in content
  * @param validFieldKeys - Set of valid field keys from field_dictionary for direct matching
  */
@@ -598,6 +731,9 @@ export function replaceMergeTags(
 ): string {
   // First normalize the XML to handle fragmented merge fields
   let result = normalizeWordXml(content);
+
+  // Process {{#each}} iteration blocks before conditionals and tag replacement
+  result = processEachBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
 
   // Process conditional blocks ({{#if}}/{{/if}}) before any tag replacement
   result = processConditionalBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
