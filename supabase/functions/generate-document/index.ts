@@ -214,21 +214,35 @@ async function generateSingleDocument(
       }
     }
 
-    // Auto-compute property1.address from component fields if not already set
-    const existingPropAddr = fieldValues.get("property1.address") || fieldValues.get("Property1.Address");
-    if (!existingPropAddr || !existingPropAddr.rawValue) {
-      const street = fieldValues.get("property1.street")?.rawValue;
-      const city = fieldValues.get("property1.city")?.rawValue;
-      const state = fieldValues.get("property1.state")?.rawValue;
-      const zip = fieldValues.get("property1.zip")?.rawValue;
-      const county = fieldValues.get("property1.county")?.rawValue;
+    // Auto-compute propertyN.address from component fields for all properties
+    // First, discover all property indices from field values
+    const propertyIndices = new Set<number>();
+    for (const [key] of fieldValues.entries()) {
+      const propMatch = key.match(/^property(\d+)\./i);
+      if (propMatch) {
+        propertyIndices.add(parseInt(propMatch[1], 10));
+      }
+    }
+    // Ensure at least property1 is checked
+    propertyIndices.add(1);
 
-      const parts = [street, city, county, state, zip].filter(Boolean).map(String);
-      if (parts.length > 0) {
-        const fullAddress = parts.join(", ");
-        fieldValues.set("property1.address", { rawValue: fullAddress, dataType: "text" });
-        fieldValues.set("Property1.Address", { rawValue: fullAddress, dataType: "text" });
-        console.log(`[generate-document] Auto-computed property1.address = "${fullAddress}"`);
+    for (const idx of [...propertyIndices].sort((a, b) => a - b)) {
+      const prefix = `property${idx}`;
+      const existingAddr = fieldValues.get(`${prefix}.address`) || fieldValues.get(`Property${idx}.Address`);
+      if (!existingAddr || !existingAddr.rawValue) {
+        const street = fieldValues.get(`${prefix}.street`)?.rawValue;
+        const city = fieldValues.get(`${prefix}.city`)?.rawValue;
+        const state = fieldValues.get(`${prefix}.state`)?.rawValue;
+        const zip = fieldValues.get(`${prefix}.zip`)?.rawValue;
+        const county = fieldValues.get(`${prefix}.county`)?.rawValue;
+
+        const parts = [street, city, county, state, zip].filter(Boolean).map(String);
+        if (parts.length > 0) {
+          const fullAddress = parts.join(", ");
+          fieldValues.set(`${prefix}.address`, { rawValue: fullAddress, dataType: "text" });
+          fieldValues.set(`Property${idx}.Address`, { rawValue: fullAddress, dataType: "text" });
+          console.log(`[generate-document] Auto-computed ${prefix}.address = "${fullAddress}"`);
+        }
       }
     }
 
