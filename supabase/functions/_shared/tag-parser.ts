@@ -703,8 +703,11 @@ export function processEachBlocks(
         expandedBlocks.push(blockContent);
       }
 
-      // Join iterations with plain text newline to avoid invalid Word XML injection
-      const expandedContent = expandedBlocks.join('\n');
+      // Separate each iteration: if block contains paragraph-level XML, join directly;
+      // otherwise insert a Word line break between iterations
+      const hasParagraphs = expandedBlocks.some(b => b.includes('<w:p>') || b.includes('<w:p '));
+      const separator = hasParagraphs ? '' : '<w:r><w:br/></w:r>';
+      const expandedContent = expandedBlocks.join(separator);
       result = result.substring(0, eachMatch.index) + expandedContent + result.substring(eachMatch.index + eachMatch[0].length);
     }
 
