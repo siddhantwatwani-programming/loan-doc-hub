@@ -165,7 +165,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                     {formData.asOfDate ? formatAsOfDisplay(formData.asOfDate) : <span>Select date...</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 pointer-events-auto z-[9999]" align="start">
                   <Calendar
                     mode="single"
                     selected={asOfDateObj}
