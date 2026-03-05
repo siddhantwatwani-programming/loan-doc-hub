@@ -91,16 +91,17 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
           </div>
         </DirtyFieldWrapper>
 
-        {/* Name */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Name</Label>
-          <Input
-            value={getValue('name')}
-            onChange={(e) => handleChange('name', e.target.value)}
-            disabled={disabled}
-            className="h-7 text-sm flex-1"
-          />
-        </div>
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.name}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Name</Label>
+            <Input
+              value={getValue('name')}
+              onChange={(e) => handleChange('name', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </DirtyFieldWrapper>
 
         {/* Address | Account Number */}
         <div className="grid grid-cols-2 gap-4">
