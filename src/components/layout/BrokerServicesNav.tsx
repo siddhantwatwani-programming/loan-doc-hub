@@ -90,6 +90,8 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
   const openParent = isOpen !== undefined ? isOpen : internalOpen;
   const handleOpenChange = onOpenChange || setInternalOpen;
   const [openChildren, setOpenChildren] = React.useState<string[]>([]);
+  // Track which section the user last navigated from (for shared paths like /deals)
+  const [activeSection, setActiveSection] = React.useState<string | null>(null);
 
   const collapseAll = () => {
     setOpenChildren([]);
@@ -194,8 +196,11 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
                 <button
                   className={cn(
                     'sidebar-item w-full justify-between text-sm text-left',
-                    section.items.some((i) => location.pathname === i.path) &&
-                      'sidebar-item-active'
+                    section.items.some((i) => {
+                      if (location.pathname !== i.path) return false;
+                      const isSharedPath = brokerServicesData.some(s => s.label !== section.label && s.items.some(si => si.path === i.path));
+                      return !isSharedPath || activeSection === section.label;
+                    }) && 'sidebar-item-active'
                   )}
                 >
                   <span className="text-left">{section.label}</span>
@@ -207,18 +212,23 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent className="pl-4 pt-0.5 space-y-0.5">
-                {section.items.map((item) => (
-                  <button
-                    key={item.path}
-                    onClick={() => { setOpenChildren([section.label]); navigate(item.path); }}
-                    className={cn(
-                      'sidebar-item w-full text-sm',
-                      location.pathname === item.path && 'sidebar-item-active'
-                    )}
-                  >
-                    <span>{item.label}</span>
-                  </button>
-                ))}
+                {section.items.map((item) => {
+                  // For shared paths, only highlight if this is the active section
+                  const isSharedPath = brokerServicesData.filter(s => s.label !== section.label).some(s => s.items.some(si => si.path === item.path));
+                  const isItemActive = location.pathname === item.path && (!isSharedPath || activeSection === section.label || activeSection === null);
+                  return (
+                    <button
+                      key={item.path + '-' + section.label}
+                      onClick={() => { setOpenChildren([section.label]); setActiveSection(section.label); navigate(item.path); }}
+                      className={cn(
+                        'sidebar-item w-full text-sm',
+                        isItemActive && 'sidebar-item-active'
+                      )}
+                    >
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
               </CollapsibleContent>
             </Collapsible>
           ))}
