@@ -63,16 +63,18 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
     <div className="p-6 space-y-6">
       {/* Override and Lender Split Dropdown */}
       <div className="flex items-center justify-between gap-8">
-        <div className="flex items-center gap-3">
-          <Label className="text-sm font-medium">Override</Label>
-          <Checkbox
-            checked={values['loan_terms.servicing.override'] === 'true'}
-            onCheckedChange={(checked) => 
-              onValueChange('loan_terms.servicing.override', checked ? 'true' : 'false')
-            }
-            disabled={disabled}
-          />
-        </div>
+        <DirtyFieldWrapper fieldKey="loan_terms.servicing.override">
+          <div className="flex items-center gap-3">
+            <Label className="text-sm font-medium">Override</Label>
+            <Checkbox
+              checked={values['loan_terms.servicing.override'] === 'true'}
+              onCheckedChange={(checked) => 
+                onValueChange('loan_terms.servicing.override', checked ? 'true' : 'false')
+              }
+              disabled={disabled}
+            />
+          </div>
+        </DirtyFieldWrapper>
       </div>
 
       {/* Services Grid */}
