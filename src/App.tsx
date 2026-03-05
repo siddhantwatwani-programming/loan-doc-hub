@@ -27,6 +27,7 @@ import PacketManagementPage from "./pages/admin/PacketManagementPage";
 import FieldDictionaryPage from "./pages/admin/FieldDictionaryPage";
 import FieldMapEditorPage from "./pages/admin/FieldMapEditorPage";
 import SystemSettingsPage from "./pages/admin/SystemSettingsPage";
+import PermissionManagementPage from "./pages/admin/PermissionManagementPage";
 import MagicLinkAccessPage from "./pages/MagicLinkAccessPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 
@@ -127,6 +128,7 @@ const App = () => (
                     <Route path="/admin/fields" element={<FieldDictionaryPage />} />
                     <Route path="/admin/field-maps" element={<FieldMapEditorPage />} />
                     <Route path="/admin/settings" element={<SystemSettingsPage />} />
+                    <Route path="/admin/permissions" element={<PermissionManagementPage />} />
                   </Route>
                 </Route>
 

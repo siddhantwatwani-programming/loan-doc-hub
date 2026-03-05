@@ -10,6 +10,7 @@ import { useDealFields } from "@/hooks/useDealFields";
 import { useEntryOrchestration } from "@/hooks/useEntryOrchestration";
 import { useFieldPermissions } from "@/hooks/useFieldPermissions";
 import { useExternalModificationDetector } from "@/hooks/useExternalModificationDetector";
+import { useFormPermissions } from "@/hooks/useFormPermissions";
 import { useAuth } from "@/contexts/AuthContext";
 import { DealNavigationProvider, useDealNavigation } from "@/contexts/DealNavigationContext";
 import { useWorkspaceOptional } from "@/contexts/WorkspaceContext";
@@ -203,6 +204,33 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
 
   // Field permissions for filtering visible fields/sections
   const { checkCanView, loading: permissionsLoading } = useFieldPermissions();
+
+  // Form-level access permissions (editable vs view-only)
+  const { isFormViewOnly, loading: formPermLoading } = useFormPermissions();
+
+  // Helper: check if a section/form is disabled due to form permissions
+  const isSectionDisabledByFormPerm = (section: string): boolean => {
+    // Map section names to form_keys
+    const sectionToFormKey: Record<string, string> = {
+      borrower: 'borrower',
+      co_borrower: 'co_borrower',
+      property: 'property',
+      loan_terms: 'loan_terms',
+      lender: 'lender',
+      broker: 'broker',
+      charges: 'charges',
+      notes: 'notes',
+      insurance: 'insurance',
+      liens: 'liens',
+      origination_fees: 'origination',
+      trust_ledger: 'trust_ledger',
+      funding: 'loan_terms',
+      escrow: 'loan_terms',
+      other: 'loan_terms',
+    };
+    const formKey = sectionToFormKey[section] || section;
+    return isFormViewOnly(formKey);
+  };
 
   // Entry orchestration for external users
   const {
@@ -737,7 +765,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
       )}
 
       {/* Content */}
-      {fieldsLoading || permissionsLoading ? (
+      {fieldsLoading || permissionsLoading || formPermLoading ? (
         <div className="section-card flex items-center justify-center min-h-[300px]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -805,6 +833,9 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       {sectionHasDirtyFields && (
                         <span className="text-warning text-xs leading-none" title="Unsaved changes">★</span>
                       )}
+                      {isSectionDisabledByFormPerm(section) && (
+                        <Lock className="h-3 w-3 text-muted-foreground" />
+                      )}
                       {SECTION_LABELS[section as keyof typeof SECTION_LABELS]}
 
                       {!isComplete && hasRequiredFields && (
@@ -838,7 +869,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       onValueChange={updateValue}
                       onRemoveValuesByPrefix={removeValuesByPrefix}
                       showValidation={showValidation}
-                      disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                      disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
                     />
                   ) : section === "property" ? (
@@ -848,7 +879,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       onValueChange={updateValue}
                       onRemoveValuesByPrefix={removeValuesByPrefix}
                       showValidation={showValidation}
-                      disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                      disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
                     />
                   ) : section === "loan_terms" ? (
@@ -857,7 +888,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       values={values}
                       onValueChange={updateValue}
                       showValidation={showValidation}
-                      disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                      disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
                       dealId={id || ""}
                     />
@@ -868,7 +899,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       onValueChange={updateValue}
                       onRemoveValuesByPrefix={removeValuesByPrefix}
                       showValidation={showValidation}
-                      disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                      disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
                     />
                   ) : section === "broker" ? (
@@ -878,7 +909,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       onValueChange={updateValue}
                       onRemoveValuesByPrefix={removeValuesByPrefix}
                       showValidation={showValidation}
-                      disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                      disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
                     />
                   ) : section === "charges" ? (
@@ -888,7 +919,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       onValueChange={updateValue}
                       onRemoveValuesByPrefix={removeValuesByPrefix}
                       showValidation={showValidation}
-                      disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                      disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
                     />
                   ) : section === "notes" ? (
@@ -898,7 +929,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       onValueChange={updateValue}
                       onRemoveValuesByPrefix={removeValuesByPrefix}
                       showValidation={showValidation}
-                      disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                      disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
                       dealNumber={deal.deal_number}
                     />
@@ -955,7 +986,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                 onValueChange={updateValue}
                 saveDraft={saveDraft}
                 showValidation={showValidation}
-                disabled={isExternalUser && (!orchestrationCanEdit || hasCompleted)}
+                disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm("funding")}
                 calculationResults={calculationResults}
                 dealId={id || ""}
               />

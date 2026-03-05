@@ -37,6 +37,7 @@ import {
   Scale,
   FolderLock,
   BarChart3,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import logoNew from '@/assets/Private-Lending-360-Logo.png';
@@ -88,6 +89,7 @@ const adminItems: NavItem[] = [
   { label: 'Templates', icon: FileText, path: '/admin/templates', roles: ['admin'] },
   { label: 'Field Dictionary', icon: Key, path: '/admin/fields', roles: ['admin'] },
   { label: 'Field Mapping', icon: Link, path: '/admin/field-maps', roles: ['admin'] },
+  { label: 'Permission Management', icon: ShieldCheck, path: '/admin/permissions', roles: ['admin'] },
 ];
 
 // Simplified Configuration group - only Packets and Settings
