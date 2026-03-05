@@ -5,8 +5,6 @@ import { type BorrowerData } from './BorrowersTableView';
 import { type CoBorrowerData } from './CoBorrowersTableView';
 import { BorrowerModal } from './BorrowerModal';
 import { CoBorrowerModal } from './CoBorrowerModal';
-import { BorrowerModal } from './BorrowerModal';
-import { CoBorrowerModal } from './CoBorrowerModal';
 import { BorrowerPrimaryForm } from './BorrowerPrimaryForm';
 import { BorrowerAdditionalGuarantorForm } from './BorrowerAdditionalGuarantorForm';
 import { BorrowerBankingForm } from './BorrowerBankingForm';
