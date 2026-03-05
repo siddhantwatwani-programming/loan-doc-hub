@@ -385,7 +385,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
 
             {/* Tax ID Section */}
             <div className="space-y-3 mt-2">
-              <div className="flex items-center gap-3">
+              {wrapField('taxIdType', <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Tax ID Type</Label>
                 <Select
                   value={getValue('taxIdType')}
@@ -403,8 +403,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="flex items-center gap-3">
+              </div>)}
+              {wrapField('taxId', <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">TIN</Label>
                 <Input
                   value={getValue('taxId')}
@@ -412,15 +412,15 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   disabled={disabled}
                   className="h-8"
                 />
-              </div>
-              <div className="flex items-center gap-2">
+              </div>)}
+              {wrapField('tinVerified', <div className="flex items-center gap-2">
                 <Checkbox
                   checked={getBoolValue('tinVerified')}
                   onCheckedChange={(checked) => handleChange('tinVerified', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground font-semibold">TIN Verified</Label>
-              </div>
+              </div>)}
             </div>
           </div>
         </div>
