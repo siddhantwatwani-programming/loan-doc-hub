@@ -26,6 +26,7 @@ import { LoanTermsFundingForm } from "@/components/deal/LoanTermsFundingForm";
 import { ChargesSectionContent } from "@/components/deal/ChargesSectionContent";
 import { OriginationFeesSectionContent } from "@/components/deal/OriginationFeesSectionContent";
 import { NotesSectionContent } from "@/components/deal/NotesSectionContent";
+import { EventJournalViewer } from "@/components/deal/EventJournalViewer";
 import { logDealUpdated, logDealMarkedReady, logDealRevertedToDraft } from "@/hooks/useActivityLog";
 import {
   ArrowLeft,
@@ -992,15 +993,9 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
               />
             </TabsContent>
 
-            {/* Event Journal - Coming Soon */}
+            {/* Event Journal */}
             <TabsContent value="event_journal" forceMount className={cn("animate-fade-in", activeTab !== "event_journal" && "hidden")}>
-              <div className="flex items-center justify-center min-h-[300px]">
-                <div className="text-center">
-                  <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Events Journal</h3>
-                  <p className="text-muted-foreground">Coming Soon</p>
-                </div>
-              </div>
+              <EventJournalViewer dealId={id || ""} />
             </TabsContent>
 
             {/* Origination Fees - Custom UI Tab Content */}

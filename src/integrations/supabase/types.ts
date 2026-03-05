@@ -284,6 +284,44 @@ export type Database = {
           },
         ]
       }
+      event_journal: {
+        Row: {
+          actor_user_id: string
+          created_at: string
+          deal_id: string
+          details: Json
+          event_number: number
+          id: string
+          section: string
+        }
+        Insert: {
+          actor_user_id: string
+          created_at?: string
+          deal_id: string
+          details?: Json
+          event_number?: number
+          id?: string
+          section: string
+        }
+        Update: {
+          actor_user_id?: string
+          created_at?: string
+          deal_id?: string
+          details?: Json
+          event_number?: number
+          id?: string
+          section?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_journal_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       field_dictionary: {
         Row: {
           allowed_roles: string[] | null
