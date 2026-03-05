@@ -373,9 +373,9 @@ async function generateSingleDocument(
     }
 
     let coBorrowerSection = "";
+    let coBorrowerAddress = "";
     if (coBorrowerName) {
       // Resolve co-borrower address from common keys
-      let coBorrowerAddress = "";
       const addrKeys = [
         "borrower.co_borrower_address", "coborrower.address", "co_borrower.address",
         "co_borrower1.address", "coborrower.full_address",
