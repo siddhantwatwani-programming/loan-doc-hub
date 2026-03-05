@@ -222,7 +222,7 @@ const DefaultInterestColumn: React.FC<{
       </DirtyFieldWrapper>
 
       <div className="space-y-2">
-        <FieldRow label="Triggered By">
+        <FieldRow label="Triggered By" fieldKey={`${prefix}.triggered_by`}>
           <Select
             value={values[`${prefix}.triggered_by`] || ''}
             onValueChange={(val) => onValueChange(`${prefix}.triggered_by`, val)}
@@ -238,7 +238,7 @@ const DefaultInterestColumn: React.FC<{
             </SelectContent>
           </Select>
         </FieldRow>
-        <FieldRow label="Grace Period">
+        <FieldRow label="Grace Period" fieldKey={`${prefix}.grace_period`}>
           <Input
             value={values[`${prefix}.grace_period`] || ''}
             onChange={(e) => onValueChange(`${prefix}.grace_period`, e.target.value)}
@@ -248,6 +248,7 @@ const DefaultInterestColumn: React.FC<{
         </FieldRow>
         <FieldRow
           label="Flat Rate"
+          fieldKey={`${prefix}.flat_rate`}
           checkboxValue={values[`${prefix}.flat_rate_enabled`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.flat_rate_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
@@ -261,6 +262,7 @@ const DefaultInterestColumn: React.FC<{
         </FieldRow>
         <FieldRow
           label="Modifier"
+          fieldKey={`${prefix}.modifier`}
           checkboxValue={values[`${prefix}.modifier_enabled`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.modifier_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
@@ -272,7 +274,7 @@ const DefaultInterestColumn: React.FC<{
             className="h-7 text-sm"
           />
         </FieldRow>
-        <FieldRow label="Active Until">
+        <FieldRow label="Active Until" fieldKey={`${prefix}.active_until`}>
           <Input
             type="date"
             value={values[`${prefix}.active_until`] || ''}
@@ -281,7 +283,7 @@ const DefaultInterestColumn: React.FC<{
             className="h-7 text-sm w-full max-w-full overflow-hidden"
           />
         </FieldRow>
-        <FieldRow label="Additional Daily Charge">
+        <FieldRow label="Additional Daily Charge" fieldKey={`${prefix}.additional_daily_charge`}>
           <Input
             value={values[`${prefix}.additional_daily_charge`] || ''}
             onChange={(e) => onValueChange(`${prefix}.additional_daily_charge`, e.target.value)}
