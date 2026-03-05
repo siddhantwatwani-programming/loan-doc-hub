@@ -87,23 +87,30 @@ const DistributionFields: React.FC<{
 const FieldRow: React.FC<{
   label: string;
   children: React.ReactNode;
+  fieldKey?: string;
   checkboxValue?: boolean;
   onCheckboxChange?: (checked: boolean) => void;
   disabled?: boolean;
-}> = ({ label, children, checkboxValue, onCheckboxChange, disabled }) => (
-  <div className="flex items-center gap-3">
-    <Label className="text-sm min-w-[160px] max-w-[160px]">{label}</Label>
-    {onCheckboxChange !== undefined && (
-      <Checkbox
-        checked={checkboxValue}
-        onCheckedChange={(checked) => onCheckboxChange(!!checked)}
-        disabled={disabled}
-        className="h-4 w-4"
-      />
-    )}
-    <div className="flex-1 min-w-0">{children}</div>
-  </div>
-);
+}> = ({ label, children, fieldKey, checkboxValue, onCheckboxChange, disabled }) => {
+  const content = (
+    <div className="flex items-center gap-3">
+      <Label className="text-sm min-w-[160px] max-w-[160px]">{label}</Label>
+      {onCheckboxChange !== undefined && (
+        <Checkbox
+          checked={checkboxValue}
+          onCheckedChange={(checked) => onCheckboxChange(!!checked)}
+          disabled={disabled}
+          className="h-4 w-4"
+        />
+      )}
+      <div className="flex-1 min-w-0">{children}</div>
+    </div>
+  );
+  if (fieldKey) {
+    return <DirtyFieldWrapper fieldKey={fieldKey}>{content}</DirtyFieldWrapper>;
+  }
+  return content;
+};
 
 // Late Fee Column (I or II)
 const LateFeeColumn: React.FC<{
