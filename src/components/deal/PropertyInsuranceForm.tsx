@@ -131,41 +131,29 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          <div>
-            <Label className="text-sm text-foreground">Policy Number</Label>
-            <Input
-              value={getFieldValue(FIELD_KEYS.policyNumber)}
-              onChange={(e) => onValueChange(FIELD_KEYS.policyNumber, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-            />
-          </div>
-
-          <div>
-            <Label className="text-sm text-foreground">Expiration</Label>
-            <Input
-              type="date"
-              value={getFieldValue(FIELD_KEYS.expiration)}
-              onChange={(e) => onValueChange(FIELD_KEYS.expiration, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-            />
-          </div>
-
-          <div>
-            <Label className="text-sm text-foreground">Coverage</Label>
-            <div className="flex items-center gap-1 mt-1">
-              <span className="text-sm text-muted-foreground">$</span>
-              <Input
-                value={getFieldValue(FIELD_KEYS.coverage)}
-                onChange={(e) => onValueChange(FIELD_KEYS.coverage, e.target.value)}
-                disabled={disabled}
-                className="h-8 text-sm text-right"
-                inputMode="decimal"
-                placeholder="0.00"
-              />
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.policyNumber}>
+            <div>
+              <Label className="text-sm text-foreground">Policy Number</Label>
+              <Input value={getFieldValue(FIELD_KEYS.policyNumber)} onChange={(e) => onValueChange(FIELD_KEYS.policyNumber, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
             </div>
-          </div>
+          </DirtyFieldWrapper>
+
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.expiration}>
+            <div>
+              <Label className="text-sm text-foreground">Expiration</Label>
+              <Input type="date" value={getFieldValue(FIELD_KEYS.expiration)} onChange={(e) => onValueChange(FIELD_KEYS.expiration, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+            </div>
+          </DirtyFieldWrapper>
+
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.coverage}>
+            <div>
+              <Label className="text-sm text-foreground">Coverage</Label>
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-sm text-muted-foreground">$</span>
+                <Input value={getFieldValue(FIELD_KEYS.coverage)} onChange={(e) => onValueChange(FIELD_KEYS.coverage, e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+              </div>
+            </div>
+          </DirtyFieldWrapper>
 
           <div className="flex items-center gap-2 pt-2">
             <Checkbox
