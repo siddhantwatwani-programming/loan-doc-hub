@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationServicingFormProps {
@@ -67,10 +68,12 @@ export const OriginationServicingForm: React.FC<OriginationServicingFormProps> =
   }, [sameAsTP, values[FK.tp_name], values[FK.tp_street], values[FK.tp_city], values[FK.tp_state], values[FK.tp_zip], values[FK.tp_phone], values[FK.tp_email]]);
 
   const renderTextField = (label: string, key: string, extraDisabled = false) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[80px] text-sm shrink-0">{label}</Label>
-      <Input value={v(key)} onChange={(e) => sv(key, e.target.value)} disabled={disabled || extraDisabled} className="h-7 text-sm" />
-    </div>
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[80px] text-sm shrink-0">{label}</Label>
+        <Input value={v(key)} onChange={(e) => sv(key, e.target.value)} disabled={disabled || extraDisabled} className="h-7 text-sm" />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderAddressBlock = (prefix: string, keys: { name: string; street: string; city: string; state: string; zip: string; phone: string; email: string }, extraDisabled = false) => (
@@ -90,19 +93,21 @@ export const OriginationServicingForm: React.FC<OriginationServicingFormProps> =
       {/* Servicing Agent */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Servicing Agent</h3>
-        <div className="flex items-center gap-2 max-w-xs">
-          <Label className="w-[120px] text-sm shrink-0">Servicing Agent</Label>
-          <Select value={v(FK.servicing_agent)} onValueChange={(val) => sv(FK.servicing_agent, val)} disabled={disabled}>
-            <SelectTrigger className="h-7 text-sm">
-              <SelectValue placeholder="Select..." />
-            </SelectTrigger>
-            <SelectContent className="bg-popover z-50">
-              {AGENT_OPTIONS.map((opt) => (
-                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <DirtyFieldWrapper fieldKey={FK.servicing_agent}>
+          <div className="flex items-center gap-2 max-w-xs">
+            <Label className="w-[120px] text-sm shrink-0">Servicing Agent</Label>
+            <Select value={v(FK.servicing_agent)} onValueChange={(val) => sv(FK.servicing_agent, val)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm">
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                {AGENT_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </DirtyFieldWrapper>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-6">
@@ -116,10 +121,12 @@ export const OriginationServicingForm: React.FC<OriginationServicingFormProps> =
         <div className="space-y-3">
           <div className="flex items-center justify-between border-b border-border pb-1">
             <h3 className="text-sm font-semibold text-foreground">Send Payments To</h3>
-            <div className="flex items-center gap-2">
-              <Checkbox checked={sameAsTP} onCheckedChange={(c) => sbv(FK.sp_same_as_tp, !!c)} disabled={disabled} />
-              <Label className="text-sm cursor-pointer">Same as 3rd Party</Label>
-            </div>
+            <DirtyFieldWrapper fieldKey={FK.sp_same_as_tp}>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={sameAsTP} onCheckedChange={(c) => sbv(FK.sp_same_as_tp, !!c)} disabled={disabled} />
+                <Label className="text-sm cursor-pointer">Same as 3rd Party</Label>
+              </div>
+            </DirtyFieldWrapper>
           </div>
           {renderAddressBlock('sp', { name: FK.sp_name, street: FK.sp_street, city: FK.sp_city, state: FK.sp_state, zip: FK.sp_zip, phone: FK.sp_phone, email: FK.sp_email }, sameAsTP)}
         </div>
@@ -128,45 +135,53 @@ export const OriginationServicingForm: React.FC<OriginationServicingFormProps> =
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Broker Servicing Fee (Not NR/SR or Differential)</h3>
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="w-[80px] text-sm shrink-0">Percent</Label>
-              <Input value={v(FK.fee_percent)} onChange={(e) => sv(FK.fee_percent, e.target.value)} disabled={disabled}
-                placeholder="0%" className="h-7 text-sm w-[140px] text-left" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="w-[80px] text-sm shrink-0">Plus</Label>
-              <div className="relative w-[140px]">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-                <Input type="text" inputMode="decimal" value={v(FK.fee_plus)} onChange={(e) => sv(FK.fee_plus, e.target.value)}
-                  disabled={disabled} placeholder="0.00" className="h-7 text-sm pl-6 text-left" />
+            <DirtyFieldWrapper fieldKey={FK.fee_percent}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[80px] text-sm shrink-0">Percent</Label>
+                <Input value={v(FK.fee_percent)} onChange={(e) => sv(FK.fee_percent, e.target.value)} disabled={disabled}
+                  placeholder="0%" className="h-7 text-sm w-[140px] text-left" />
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="w-[80px] text-sm shrink-0">Per</Label>
-              <Select value={v(FK.fee_per)} onValueChange={(val) => sv(FK.fee_per, val)} disabled={disabled}>
-                <SelectTrigger className="h-7 text-sm w-[140px]">
-                  <SelectValue placeholder="Select..." />
-                </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  {PERIOD_OPTIONS.map((opt) => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="w-[80px] text-sm shrink-0">Payable</Label>
-              <Select value={v(FK.fee_payable)} onValueChange={(val) => sv(FK.fee_payable, val)} disabled={disabled}>
-                <SelectTrigger className="h-7 text-sm w-[140px]">
-                  <SelectValue placeholder="Select..." />
-                </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  {PERIOD_OPTIONS.map((opt) => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            </DirtyFieldWrapper>
+            <DirtyFieldWrapper fieldKey={FK.fee_plus}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[80px] text-sm shrink-0">Plus</Label>
+                <div className="relative w-[140px]">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                  <Input type="text" inputMode="decimal" value={v(FK.fee_plus)} onChange={(e) => sv(FK.fee_plus, e.target.value)}
+                    disabled={disabled} placeholder="0.00" className="h-7 text-sm pl-6 text-left" />
+                </div>
+              </div>
+            </DirtyFieldWrapper>
+            <DirtyFieldWrapper fieldKey={FK.fee_per}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[80px] text-sm shrink-0">Per</Label>
+                <Select value={v(FK.fee_per)} onValueChange={(val) => sv(FK.fee_per, val)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm w-[140px]">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {PERIOD_OPTIONS.map((opt) => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </DirtyFieldWrapper>
+            <DirtyFieldWrapper fieldKey={FK.fee_payable}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[80px] text-sm shrink-0">Payable</Label>
+                <Select value={v(FK.fee_payable)} onValueChange={(val) => sv(FK.fee_payable, val)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm w-[140px]">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {PERIOD_OPTIONS.map((opt) => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </DirtyFieldWrapper>
           </div>
         </div>
       </div>
