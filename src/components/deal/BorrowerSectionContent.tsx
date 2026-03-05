@@ -323,11 +323,10 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   const [trustLedgerModalOpen, setTrustLedgerModalOpen] = useState(false);
   const [editingTrustLedgerEntry, setEditingTrustLedgerEntry] = useState<TrustLedgerEntry | null>(null);
 
-  // Check if we're in detail view
-  // Borrower detail includes: primary, additional_guarantor, banking, tax_detail, note, AND co_borrowers (inline form)
+  // Always in detail view now (no table view)
   const isBorrowerDetailView = ['primary', 'additional_guarantor', 'authorized_party', 'trust_ledger', 'banking', 'tax_detail', 'note', 'co_borrowers'].includes(activeSubSection);
   const isCoBorrowerDetailView = ['coborrower_primary', 'coborrower_note', 'coborrower_attachment'].includes(activeSubSection);
-  const isDetailView = isBorrowerDetailView || isCoBorrowerDetailView;
+  const isDetailView = true;
 
   // Extract borrowers from values
   const allBorrowers = useMemo(() => extractBorrowersFromValues(values), [values]);
