@@ -46,15 +46,19 @@ export const PropertyLegalDescriptionForm: React.FC<PropertyLegalDescriptionForm
           <span className="font-semibold text-sm text-primary">Property Legal Description</span>
         </div>
 
-        <div className="flex items-start gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0 pt-2">Legal Description</Label>
-          <Textarea value={getFieldValue(FIELD_KEYS.legalDescription)} onChange={(e) => onValueChange(FIELD_KEYS.legalDescription, e.target.value)} disabled={disabled} className="min-h-[150px] text-sm" placeholder="Enter legal description..." />
-        </div>
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.legalDescription}>
+          <div className="flex items-start gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0 pt-2">Legal Description</Label>
+            <Textarea value={getFieldValue(FIELD_KEYS.legalDescription)} onChange={(e) => onValueChange(FIELD_KEYS.legalDescription, e.target.value)} disabled={disabled} className="min-h-[150px] text-sm" placeholder="Enter legal description..." />
+          </div>
+        </DirtyFieldWrapper>
 
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">APN</Label>
-          <Input value={getFieldValue(FIELD_KEYS.apn)} onChange={(e) => onValueChange(FIELD_KEYS.apn, e.target.value)} disabled={disabled} className="h-7 text-sm max-w-md" placeholder="Enter APN" />
-        </div>
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.apn}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">APN</Label>
+            <Input value={getFieldValue(FIELD_KEYS.apn)} onChange={(e) => onValueChange(FIELD_KEYS.apn, e.target.value)} disabled={disabled} className="h-7 text-sm max-w-md" placeholder="Enter APN" />
+          </div>
+        </DirtyFieldWrapper>
       </div>
     </div>
   );

@@ -84,57 +84,38 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
         <div className="grid grid-cols-2 gap-x-6 gap-y-3">
           {/* Left column */}
           <div className="space-y-3">
-            {/* Property (formerly Payee) */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">Property</Label>
-              <Input
-                value={getValue('payee')}
-                onChange={(e) => handleChange('payee', e.target.value)}
-                disabled={disabled}
-                className="h-7 text-sm flex-1"
-              />
-            </div>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.payee}>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">Property</Label>
+                <Input value={getValue('payee')} onChange={(e) => handleChange('payee', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              </div>
+            </DirtyFieldWrapper>
 
-            {/* Authority */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">Authority</Label>
-              <Input
-                value={getValue('authority')}
-                onChange={(e) => handleChange('authority', e.target.value)}
-                disabled={disabled}
-                className="h-7 text-sm flex-1"
-              />
-            </div>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.authority}>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">Authority</Label>
+                <Input value={getValue('authority')} onChange={(e) => handleChange('authority', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              </div>
+            </DirtyFieldWrapper>
 
-            {/* Address (multiline) */}
-            <div className="flex items-start gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px] mt-1.5">Address</Label>
-              <Textarea
-                value={getValue('payeeAddress')}
-                onChange={(e) => handleChange('payeeAddress', e.target.value)}
-                disabled={disabled}
-                className="text-sm min-h-[70px] resize-none flex-1"
-              />
-            </div>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.payeeAddress}>
+              <div className="flex items-start gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px] mt-1.5">Address</Label>
+                <Textarea value={getValue('payeeAddress')} onChange={(e) => handleChange('payeeAddress', e.target.value)} disabled={disabled} className="text-sm min-h-[70px] resize-none flex-1" />
+              </div>
+            </DirtyFieldWrapper>
 
-            {/* Type */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">Type</Label>
-              <Select
-                value={getValue('type')}
-                onValueChange={(value) => handleChange('type', value)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-7 text-sm flex-1 bg-background">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  {TYPE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.type}>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">Type</Label>
+                <Select value={getValue('type')} onValueChange={(value) => handleChange('type', value)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </DirtyFieldWrapper>
 
             {/* APN */}
             <div className="flex items-center gap-3">
@@ -146,16 +127,12 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               />
             </div>
 
-            {/* Memo */}
-            <div className="flex items-start gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px] mt-1.5">Memo</Label>
-              <Textarea
-                value={getValue('memo')}
-                onChange={(e) => handleChange('memo', e.target.value)}
-                disabled={disabled}
-                className="text-sm min-h-[70px] resize-none flex-1"
-              />
-            </div>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.memo}>
+              <div className="flex items-start gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px] mt-1.5">Memo</Label>
+                <Textarea value={getValue('memo')} onChange={(e) => handleChange('memo', e.target.value)} disabled={disabled} className="text-sm min-h-[70px] resize-none flex-1" />
+              </div>
+            </DirtyFieldWrapper>
           </div>
 
           {/* Right column */}

@@ -138,54 +138,46 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
     const displayValue = isFocused ? rawValue : formatCurrencyDisplay(rawValue);
 
     return (
-      <div className="flex items-center gap-3">
-        <Label className={labelClassName || LABEL_CLASS}>{label}</Label>
-        <div className="relative flex-1">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-          <Input
-            id={key}
-            value={displayValue}
-            onChange={(e) => handleCurrencyChange(key, e.target.value)}
-            onFocus={() => setFocusedCurrencyField(key)}
-            onBlur={() => handleCurrencyBlur(key)}
-            disabled={disabled}
-            className="h-8 text-sm pl-7"
-            placeholder="0.00"
-          />
+      <DirtyFieldWrapper fieldKey={key}>
+        <div className="flex items-center gap-3">
+          <Label className={labelClassName || LABEL_CLASS}>{label}</Label>
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+            <Input
+              id={key}
+              value={displayValue}
+              onChange={(e) => handleCurrencyChange(key, e.target.value)}
+              onFocus={() => setFocusedCurrencyField(key)}
+              onBlur={() => handleCurrencyBlur(key)}
+              disabled={disabled}
+              className="h-8 text-sm pl-7"
+              placeholder="0.00"
+            />
+          </div>
         </div>
-      </div>
+      </DirtyFieldWrapper>
     );
   };
 
   const renderPercentField = (key: string, label: string) => (
-    <div className="flex items-center gap-3">
-      <Label className={LABEL_CLASS}>{label}</Label>
-      <div className="relative flex-1">
-        <Input
-          id={key}
-          value={getValue(key)}
-          onChange={(e) => setValue(key, e.target.value)}
-          disabled={disabled}
-          className="h-8 text-sm pr-7"
-          placeholder="0.000"
-        />
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-3">
+        <Label className={LABEL_CLASS}>{label}</Label>
+        <div className="relative flex-1">
+          <Input id={key} value={getValue(key)} onChange={(e) => setValue(key, e.target.value)} disabled={disabled} className="h-8 text-sm pr-7" placeholder="0.000" />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+        </div>
       </div>
-    </div>
+    </DirtyFieldWrapper>
   );
 
   const renderDateField = (key: string, label: string) => (
-    <div className="flex items-center gap-3">
-      <Label className={LABEL_CLASS}>{label}</Label>
-      <Input
-        id={key}
-        type="date"
-        value={getValue(key)}
-        onChange={(e) => setValue(key, e.target.value)}
-        disabled={disabled}
-        className="h-8 text-sm flex-1"
-      />
-    </div>
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-3">
+        <Label className={LABEL_CLASS}>{label}</Label>
+        <Input id={key} type="date" value={getValue(key)} onChange={(e) => setValue(key, e.target.value)} disabled={disabled} className="h-8 text-sm flex-1" />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   return (

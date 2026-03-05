@@ -15,20 +15,14 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
   const { openFiles, activeFileId, switchToFile, isFileDirty } = useWorkspace();
   const { isCollapsed } = useSidebar();
 
-  const isAllDocsActive = !activeFileId || location.pathname === '/deals' || !openFiles.find(f => f.id === activeFileId);
+  const isAllDocsActive = location.pathname === '/deals';
 
   const handleAllDocsClick = () => {
     switchToFile('');
-    if (location.pathname === '/deals') {
-      // Already on deals page — force re-mount by navigating away then back
-      navigate('/deals', { replace: true });
-      // Trigger a state-based refresh by using a key trick via search params
-      const params = new URLSearchParams(location.search);
-      params.set('_r', Date.now().toString());
-      navigate(`/deals?${params.toString()}`, { replace: true });
-    } else {
+    if (location.pathname !== '/deals') {
       navigate('/deals');
     }
+    // If already on /deals, do nothing — no refresh
   };
 
   const handleFileClick = (fileId: string) => {
