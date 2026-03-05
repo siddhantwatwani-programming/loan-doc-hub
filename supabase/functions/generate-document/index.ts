@@ -385,7 +385,22 @@ async function generateSingleDocument(
         const m = fieldValues.get(ak);
         if (m?.rawValue && String(m.rawValue).trim()) { coBorrowerAddress = String(m.rawValue).trim(); break; }
       }
-      // Fallback: assemble from component fields
+      // Fallback: assemble from component address fields (coborrower.primary_address.*)
+      if (!coBorrowerAddress) {
+        const coPrefixes = ["coborrower", "co_borrower", "co_borrower1", "borrower1.coborrower", "borrower1.co_borrower", "borrower2.coborrower", "borrower2.co_borrower"];
+        for (const cp of coPrefixes) {
+          const street = fieldValues.get(`${cp}.primary_address.street`)?.rawValue;
+          const city = fieldValues.get(`${cp}.primary_address.city`)?.rawValue;
+          const state = fieldValues.get(`${cp}.primary_address.state`)?.rawValue;
+          const zip = fieldValues.get(`${cp}.primary_address.zip`)?.rawValue;
+          const parts = [street, city, state, zip].filter(Boolean).map(String);
+          if (parts.length > 0) {
+            coBorrowerAddress = parts.join(", ");
+            break;
+          }
+        }
+      }
+      // Fallback: scan for any co-borrower address/full_address field
       if (!coBorrowerAddress) {
         for (const [key, val] of fieldValues.entries()) {
           const lk = key.toLowerCase();
@@ -405,13 +420,18 @@ async function generateSingleDocument(
     }
     fieldValues.set("co_borrower_section", { rawValue: coBorrowerSection, dataType: "text" });
     fieldValues.set("CoBorrower.Section", { rawValue: coBorrowerSection, dataType: "text" });
-    // Also set the co-borrower name as individual merge tag values for direct tag usage
+    // Also set the co-borrower name and address as individual merge tag values for direct tag usage
     if (coBorrowerName) {
       fieldValues.set("borrower.co_borrower_name", { rawValue: coBorrowerName, dataType: "text" });
       fieldValues.set("coborrower.name", { rawValue: coBorrowerName, dataType: "text" });
       fieldValues.set("co_borrower.name", { rawValue: coBorrowerName, dataType: "text" });
     }
-    console.log(`[generate-document] Auto-computed co_borrower_section = "${coBorrowerSection ? "populated" : "empty"}", name = "${coBorrowerName || "none"}"`);
+    if (coBorrowerAddress) {
+      fieldValues.set("borrower.co_borrower_address", { rawValue: coBorrowerAddress, dataType: "text" });
+      fieldValues.set("coborrower.address", { rawValue: coBorrowerAddress, dataType: "text" });
+      fieldValues.set("co_borrower.address", { rawValue: coBorrowerAddress, dataType: "text" });
+    }
+    console.log(`[generate-document] Auto-computed co_borrower_section = "${coBorrowerSection ? "populated" : "empty"}", name = "${coBorrowerName || "none"}", address = "${coBorrowerAddress || "none"}"`);
 
     // Build set of ALL valid field keys from the complete field_dictionary (for direct tag matching)
     // Use pagination to fetch all rows (table has 1700+ entries, default limit is 1000)
