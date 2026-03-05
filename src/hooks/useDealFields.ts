@@ -46,6 +46,7 @@ export interface DealFieldsData {
   saving: boolean;
   error: string | null;
   isDirty: boolean;
+  dirtyFieldKeys: Set<string>;
 }
 
 export interface UseDealFieldsReturn extends DealFieldsData {
@@ -214,6 +215,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
+  const [dirtyFieldKeys, setDirtyFieldKeys] = useState<Set<string>>(new Set());
   const [requiredFieldChanged, setRequiredFieldChanged] = useState(false);
   const [deletedPrefixes, setDeletedPrefixes] = useState<string[]>([]);
   const isFetchingRef = useRef(false);
@@ -456,6 +458,11 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
       [fieldKey]: value
     }));
     setIsDirty(true);
+    setDirtyFieldKeys(prev => {
+      const next = new Set(prev);
+      next.add(fieldKey);
+      return next;
+    });
     
     // Track if a required field was changed
     if (isRequiredField || resolvedFields?.requiredFieldKeys.includes(fieldKey)) {
@@ -855,6 +862,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
 
   const resetDirty = useCallback(() => {
     setIsDirty(false);
+    setDirtyFieldKeys(new Set());
     setRequiredFieldChanged(false);
   }, []);
 
@@ -869,6 +877,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
     saving,
     error,
     isDirty,
+    dirtyFieldKeys,
     updateValue,
     removeValuesByPrefix,
     saveDraft,

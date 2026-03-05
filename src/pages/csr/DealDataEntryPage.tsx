@@ -13,6 +13,7 @@ import { useExternalModificationDetector } from "@/hooks/useExternalModification
 import { useAuth } from "@/contexts/AuthContext";
 import { DealNavigationProvider, useDealNavigation } from "@/contexts/DealNavigationContext";
 import { useWorkspaceOptional } from "@/contexts/WorkspaceContext";
+import { DirtyFieldsProvider } from "@/contexts/DirtyFieldsContext";
 import { SaveConfirmationDialog } from "@/components/workspace/SaveConfirmationDialog";
 import { DealSectionTab } from "@/components/deal/DealSectionTab";
 import { BorrowerSectionContent } from "@/components/deal/BorrowerSectionContent";
@@ -187,6 +188,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
     loading: fieldsLoading,
     saving,
     isDirty,
+    dirtyFieldKeys,
     updateValue,
     removeValuesByPrefix,
     saveDraft,
@@ -753,6 +755,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
         </div>
       ) : (
         <div className="section-card">
+          <DirtyFieldsProvider dirtyFieldKeys={dirtyFieldKeys}>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6 flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
               {(() => {
@@ -787,6 +790,9 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                   const isComplete = sectionMissing === 0;
                   const hasRequiredFields = sectionFields.some((f) => f.is_required);
 
+                  // Check if any field in this section has been modified (dirty)
+                  const sectionHasDirtyFields = sectionFields.some((f) => dirtyFieldKeys.has(f.field_key));
+
                   return (
                     <TabsTrigger
                       key={section}
@@ -796,6 +802,9 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                         !isComplete && hasRequiredFields && showValidation && "text-warning",
                       )}
                     >
+                      {sectionHasDirtyFields && (
+                        <span className="text-warning text-xs leading-none" title="Unsaved changes">★</span>
+                      )}
                       {SECTION_LABELS[section as keyof typeof SECTION_LABELS]}
 
                       {!isComplete && hasRequiredFields && (
@@ -977,6 +986,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
               </TabsContent>
             )}
           </Tabs>
+          </DirtyFieldsProvider>
         </div>
       )}
 

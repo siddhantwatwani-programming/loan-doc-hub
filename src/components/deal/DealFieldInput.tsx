@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { AlertCircle, Lock, Calculator, Asterisk, CheckCircle2, CalendarIcon } from 'lucide-react';
 import { format, parseISO, isValid } from 'date-fns';
 import { parseToCanonical, formatForDisplay } from '@/lib/fieldTransforms';
+import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -36,6 +37,8 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
   const showError = error && showValidation;
   const isComputed = calculationResult?.computed === true;
   const hasCalculationError = calculationResult?.error !== undefined;
+  const { dirtyFieldKeys } = useDirtyFields();
+  const isFieldDirty = dirtyFieldKeys.has(field.field_key);
   
   const [isFocused, setIsFocused] = useState(false);
   const [currencyValidationError, setCurrencyValidationError] = useState<string | null>(null);
@@ -345,6 +348,9 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
       {/* Inline label + input row */}
       <div className="flex items-start gap-2">
         <div className="flex items-center gap-1 w-[140px] shrink-0 pt-1.5">
+          {isFieldDirty && (
+            <span className="text-warning text-xs leading-none flex-shrink-0" title="Unsaved change">★</span>
+          )}
           <Label
             htmlFor={field.field_key}
             className={cn(
