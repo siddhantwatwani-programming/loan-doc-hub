@@ -43,7 +43,6 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
         isCollapsed ? 'left-16' : 'left-64'
       )}
     >
-    >
       <div className="flex items-stretch h-10 w-max min-w-full">
           {/* All Loan Documents tab - always first, not closable */}
           <button

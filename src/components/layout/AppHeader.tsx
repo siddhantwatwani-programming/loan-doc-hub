@@ -31,7 +31,6 @@ export const AppHeader: React.FC = () => {
         isCollapsed ? 'left-16' : 'left-64'
       )}
     >
-    >
       <TooltipProvider delayDuration={0}>
         {/* User Info */}
         <div className="flex items-center gap-2 mr-2">
