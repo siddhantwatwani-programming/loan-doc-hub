@@ -538,21 +538,23 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           </div>
           <div className="space-y-3">
             {PHONE_FIELDS.map((phone) => (
-              <div key={phone.label} className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground min-w-[50px] text-left shrink-0">{phone.label}</Label>
-                <Input
-                  type="tel"
-                  value={getValue(phone.fieldKey)}
-                  onChange={(e) => handleChange(phone.fieldKey, e.target.value)}
-                  disabled={disabled}
-                  className="h-8"
-                />
-                <Checkbox
-                  checked={getBoolValue(phone.prefKey)}
-                  onCheckedChange={(checked) => handleChange(phone.prefKey, !!checked)}
-                  disabled={disabled}
-                />
-              </div>
+              <DirtyFieldWrapper key={phone.label} fieldKey={FIELD_KEYS[phone.fieldKey]}>
+                <div className="flex items-center gap-3">
+                  <Label className="text-sm text-muted-foreground min-w-[50px] text-left shrink-0">{phone.label}</Label>
+                  <Input
+                    type="tel"
+                    value={getValue(phone.fieldKey)}
+                    onChange={(e) => handleChange(phone.fieldKey, e.target.value)}
+                    disabled={disabled}
+                    className="h-8"
+                  />
+                  <Checkbox
+                    checked={getBoolValue(phone.prefKey)}
+                    onCheckedChange={(checked) => handleChange(phone.prefKey, !!checked)}
+                    disabled={disabled}
+                  />
+                </div>
+              </DirtyFieldWrapper>
             ))}
           </div>
 
