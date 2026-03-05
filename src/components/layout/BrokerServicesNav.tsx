@@ -197,6 +197,8 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
                   className={cn(
                     'sidebar-item w-full justify-between text-sm text-left',
                     section.items.some((i) => location.pathname === i.path) &&
+                      (activeSection === section.label || !activeSection || !section.items.some(i => brokerServicesData.filter(s => s.label !== section.label).some(s2 => s2.items.some(s2i => s2i.path === i.path && location.pathname === i.path)))) &&
+                      (activeSection === null || activeSection === section.label) &&
                       'sidebar-item-active'
                   )}
                 >
@@ -209,18 +211,23 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent className="pl-4 pt-0.5 space-y-0.5">
-                {section.items.map((item) => (
-                  <button
-                    key={item.path}
-                    onClick={() => { setOpenChildren([section.label]); navigate(item.path); }}
-                    className={cn(
-                      'sidebar-item w-full text-sm',
-                      location.pathname === item.path && 'sidebar-item-active'
-                    )}
-                  >
-                    <span>{item.label}</span>
-                  </button>
-                ))}
+                {section.items.map((item) => {
+                  // For shared paths, only highlight if this is the active section
+                  const isSharedPath = brokerServicesData.filter(s => s.label !== section.label).some(s => s.items.some(si => si.path === item.path));
+                  const isItemActive = location.pathname === item.path && (!isSharedPath || activeSection === section.label || activeSection === null);
+                  return (
+                    <button
+                      key={item.path + '-' + section.label}
+                      onClick={() => { setOpenChildren([section.label]); setActiveSection(section.label); navigate(item.path); }}
+                      className={cn(
+                        'sidebar-item w-full text-sm',
+                        isItemActive && 'sidebar-item-active'
+                      )}
+                    >
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
               </CollapsibleContent>
             </Collapsible>
           ))}
