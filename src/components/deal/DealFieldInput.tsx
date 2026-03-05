@@ -37,6 +37,8 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
   const showError = error && showValidation;
   const isComputed = calculationResult?.computed === true;
   const hasCalculationError = calculationResult?.error !== undefined;
+  const { dirtyFieldKeys } = useDirtyFields();
+  const isFieldDirty = dirtyFieldKeys.has(field.field_key);
   
   const [isFocused, setIsFocused] = useState(false);
   const [currencyValidationError, setCurrencyValidationError] = useState<string | null>(null);
