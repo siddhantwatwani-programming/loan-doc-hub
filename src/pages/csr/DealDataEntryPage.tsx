@@ -789,6 +789,9 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                   const isComplete = sectionMissing === 0;
                   const hasRequiredFields = sectionFields.some((f) => f.is_required);
 
+                  // Check if any field in this section has been modified (dirty)
+                  const sectionHasDirtyFields = sectionFields.some((f) => dirtyFieldKeys.has(f.field_key));
+
                   return (
                     <TabsTrigger
                       key={section}
@@ -798,6 +801,9 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                         !isComplete && hasRequiredFields && showValidation && "text-warning",
                       )}
                     >
+                      {sectionHasDirtyFields && (
+                        <span className="text-warning text-xs leading-none" title="Unsaved changes">★</span>
+                      )}
                       {SECTION_LABELS[section as keyof typeof SECTION_LABELS]}
 
                       {!isComplete && hasRequiredFields && (
