@@ -257,65 +257,30 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
           <h3 className="text-sm font-semibold text-foreground border-b pb-2">Credit Card</h3>
           
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 items-center">
+            {wrapField('ccName', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Name</Label>
-              <Input
-                value={getValue('ccName')}
-                onChange={(e) => handleChange('ccName', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
+              <Input value={getValue('ccName')} onChange={(e) => handleChange('ccName', e.target.value)} disabled={disabled} className="h-8" />
+            </div>)}
             
-            <div className="grid grid-cols-2 gap-2 items-center">
+            {wrapField('ccNumber', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Card Number</Label>
-              <Input
-                value={getValue('ccNumber')}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, '');
-                  handleChange('ccNumber', value);
-                }}
-                disabled={disabled}
-                className="h-8"
-                maxLength={16}
-              />
-            </div>
+              <Input value={getValue('ccNumber')} onChange={(e) => { const value = e.target.value.replace(/\D/g, ''); handleChange('ccNumber', value); }} disabled={disabled} className="h-8" maxLength={16} />
+            </div>)}
             
-            <div className="grid grid-cols-2 gap-2 items-center">
+            {wrapField('ccSecurityCode', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Security Code</Label>
-              <Input
-                value={getValue('ccSecurityCode')}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, '');
-                  handleChange('ccSecurityCode', value);
-                }}
-                disabled={disabled}
-                className="h-8"
-                maxLength={4}
-                type="password"
-              />
-            </div>
+              <Input value={getValue('ccSecurityCode')} onChange={(e) => { const value = e.target.value.replace(/\D/g, ''); handleChange('ccSecurityCode', value); }} disabled={disabled} className="h-8" maxLength={4} type="password" />
+            </div>)}
             
-            <div className="grid grid-cols-2 gap-2 items-center">
+            {wrapField('ccExpiration', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Expiration</Label>
-              <Input
-                value={getValue('ccExpiration')}
-                onChange={(e) => handleChange('ccExpiration', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-                placeholder="MM/YY"
-              />
-            </div>
+              <Input value={getValue('ccExpiration')} onChange={(e) => handleChange('ccExpiration', e.target.value)} disabled={disabled} className="h-8" placeholder="MM/YY" />
+            </div>)}
             
-            <div className="grid grid-cols-2 gap-2 items-center">
+            {wrapField('ccZip', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Zip Code</Label>
-              <Input
-                value={getValue('ccZip')}
-                onChange={(e) => handleChange('ccZip', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
+              <Input value={getValue('ccZip')} onChange={(e) => handleChange('ccZip', e.target.value)} disabled={disabled} className="h-8" />
+            </div>)}
           </div>
         </div>
       </div>
