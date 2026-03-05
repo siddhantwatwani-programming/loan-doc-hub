@@ -187,6 +187,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
     loading: fieldsLoading,
     saving,
     isDirty,
+    dirtyFieldKeys,
     updateValue,
     removeValuesByPrefix,
     saveDraft,
