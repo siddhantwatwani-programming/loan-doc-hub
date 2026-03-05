@@ -344,7 +344,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
   }
 
   return (
-    <div className="space-y-0.5" id={`field-${field.field_key}`}>
+    <div className={cn("space-y-0.5 rounded-sm px-1 -mx-1 transition-colors", isFieldDirty && "bg-warning/10 ring-1 ring-warning/30")} id={`field-${field.field_key}`}>
       {/* Inline label + input row */}
       <div className="flex items-start gap-2">
         <div className="flex items-center gap-1 w-[140px] shrink-0 pt-1.5">
