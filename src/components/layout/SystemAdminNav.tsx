@@ -148,7 +148,26 @@ export const SystemAdminNav: React.FC<SystemAdminNavProps> = ({ isCollapsed, sea
   const isAnyActive = allPaths.some((p) => location.pathname === p);
 
   if (isCollapsed) {
-    return null;
+    return (
+      <>
+        <div className="my-3 border-t border-sidebar-border" />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              className={cn(
+                'sidebar-item w-full justify-center px-2',
+                isAnyActive && 'sidebar-item-active'
+              )}
+            >
+              <ShieldCheck className="h-5 w-5 flex-shrink-0" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="font-medium">
+            System Administration
+          </TooltipContent>
+        </Tooltip>
+      </>
+    );
   }
 
   return (

@@ -58,7 +58,25 @@ export const CLevelModuleNav: React.FC<CLevelModuleNavProps> = ({ isCollapsed, s
   const [openSections, setOpenSections] = React.useState<string[]>([]);
   const [openSubNavs, setOpenSubNavs] = React.useState<string[]>([]);
 
-  if (isCollapsed) return null;
+  if (isCollapsed) {
+    return (
+      <React.Fragment>
+        <div className="my-3 border-t border-sidebar-border" />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              className="sidebar-item w-full justify-center px-2"
+            >
+              <Crown className="h-5 w-5 flex-shrink-0" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="font-medium">
+            C-Level Module
+          </TooltipContent>
+        </Tooltip>
+      </React.Fragment>
+    );
+  }
 
   const searchFilter = (label: string) =>
     !searchQuery || label.toLowerCase().includes(searchQuery.toLowerCase());

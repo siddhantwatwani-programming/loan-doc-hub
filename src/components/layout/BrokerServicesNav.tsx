@@ -122,7 +122,25 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
   );
 
   if (isCollapsed) {
-    return null; // Too complex for collapsed view; hidden when collapsed
+    return (
+      <>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              className={cn(
+                'sidebar-item w-full justify-center px-2',
+                isAnyActive && 'sidebar-item-active'
+              )}
+            >
+              <Building2 className="h-5 w-5 flex-shrink-0" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="font-medium">
+            Broker Services
+          </TooltipContent>
+        </Tooltip>
+      </>
+    );
   }
 
   return (

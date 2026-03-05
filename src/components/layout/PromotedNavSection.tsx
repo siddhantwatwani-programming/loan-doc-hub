@@ -7,6 +7,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export interface PromotedSubItem {
   label: string;
@@ -40,8 +45,6 @@ export const PromotedNavSection: React.FC<PromotedNavSectionProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
 
-  if (isCollapsed) return null;
-
   const matchesSearch = (text: string) =>
     !searchQuery || text.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -54,6 +57,31 @@ export const PromotedNavSection: React.FC<PromotedNavSectionProps> = ({
   const isAnyActive =
     (directPath && location.pathname === directPath) ||
     items.some((i) => location.pathname === i.path);
+
+  // Collapsed: show icon-only with tooltip
+  if (isCollapsed) {
+    return (
+      <>
+        {showSeparator && <div className="my-3 border-t border-sidebar-border" />}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => directPath && navigate(directPath)}
+              className={cn(
+                'sidebar-item w-full justify-center px-2',
+                isAnyActive && 'sidebar-item-active'
+              )}
+            >
+              <Icon className="h-5 w-5 flex-shrink-0" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="font-medium">
+            {label}
+          </TooltipContent>
+        </Tooltip>
+      </>
+    );
+  }
 
   // Direct link (no sub-items)
   if (directPath || items.length === 0) {
