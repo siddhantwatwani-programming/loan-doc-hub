@@ -522,14 +522,16 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
 
   // Simple row for bottom sections (label + amount only)
   const renderSimpleRow = (label: string, dKey: string, labelKey?: string) => (
-    <div className="flex items-center gap-2 py-1 border-b border-border/50">
-      {labelKey ? (
-        <Input value={getValue(labelKey)} onChange={(e) => setValue(labelKey, e.target.value)} disabled={disabled} placeholder="Enter description" className="h-7 text-xs flex-1" />
-      ) : (
-        <div className="text-xs text-foreground flex-1">{label}</div>
-      )}
-      <Input inputMode="decimal" value={getValue(dKey)} onChange={(e) => setValue(dKey, e.target.value)} disabled={disabled} placeholder="" className="h-7 text-xs text-right w-24" />
-    </div>
+    <DirtyFieldWrapper fieldKey={dKey}>
+      <div className="flex items-center gap-2 py-1 border-b border-border/50">
+        {labelKey ? (
+          <Input value={getValue(labelKey)} onChange={(e) => setValue(labelKey, e.target.value)} disabled={disabled} placeholder="Enter description" className="h-7 text-xs flex-1" />
+        ) : (
+          <div className="text-xs text-foreground flex-1">{label}</div>
+        )}
+        <Input inputMode="decimal" value={getValue(dKey)} onChange={(e) => setValue(dKey, e.target.value)} disabled={disabled} placeholder="" className="h-7 text-xs text-right w-24" />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const makeKeys = (prefix: string) => ({
