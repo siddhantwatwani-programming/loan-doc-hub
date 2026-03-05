@@ -441,9 +441,11 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Preferred</h4>
           {phoneRows.map(({ prefKey, prefId }) => (
-            <div key={prefId} className="flex items-center justify-center h-7">
-              <Checkbox id={`borrower-${prefId}`} checked={getBoolValue(prefKey)} onCheckedChange={(checked) => handleChange(prefKey, !!checked)} disabled={disabled} />
-            </div>
+            <DirtyFieldWrapper key={prefId} fieldKey={FIELD_KEYS[prefKey]}>
+              <div className="flex items-center justify-center h-7">
+                <Checkbox id={`borrower-${prefId}`} checked={getBoolValue(prefKey)} onCheckedChange={(checked) => handleChange(prefKey, !!checked)} disabled={disabled} />
+              </div>
+            </DirtyFieldWrapper>
           ))}
         </div>
       </div>
