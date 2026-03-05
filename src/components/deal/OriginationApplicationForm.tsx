@@ -8,6 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationApplicationFormProps {
@@ -84,125 +85,139 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
   };
 
   const renderDatePicker = (label: string, key: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[140px] text-sm shrink-0">{label}</Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className={cn('h-7 w-full justify-start text-left font-normal text-sm', !getValue(key) && 'text-muted-foreground')}
-            disabled={disabled}
-          >
-            {getValue(key) ? format(parseDate(getValue(key))!, 'MM/dd/yyyy') : 'Date'}
-            <CalendarIcon className="ml-auto h-3.5 w-3.5" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={parseDate(getValue(key))}
-            onSelect={(date) => date && setValue(key, format(date, 'yyyy-MM-dd'))}
-            initialFocus
-            className={cn('p-3 pointer-events-auto')}
-          />
-        </PopoverContent>
-      </Popover>
-    </div>
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[140px] text-sm shrink-0">{label}</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn('h-7 w-full justify-start text-left font-normal text-sm', !getValue(key) && 'text-muted-foreground')}
+              disabled={disabled}
+            >
+              {getValue(key) ? format(parseDate(getValue(key))!, 'MM/dd/yyyy') : 'Date'}
+              <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={parseDate(getValue(key))}
+              onSelect={(date) => date && setValue(key, format(date, 'yyyy-MM-dd'))}
+              initialFocus
+              className={cn('p-3 pointer-events-auto')}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderTextField = (label: string, key: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[140px] text-sm shrink-0">{label}</Label>
-      <Input
-        value={getValue(key)}
-        onChange={(e) => setValue(key, e.target.value)}
-        disabled={disabled}
-        className="h-7 text-sm"
-      />
-    </div>
-  );
-
-  const renderCurrencyField = (label: string, key: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[140px] text-sm shrink-0">{label}</Label>
-      <div className="relative flex-1">
-        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[140px] text-sm shrink-0">{label}</Label>
         <Input
-          type="text"
-          inputMode="decimal"
           value={getValue(key)}
           onChange={(e) => setValue(key, e.target.value)}
           disabled={disabled}
-          placeholder="0.00"
-          className="h-7 text-sm pl-6 text-left"
+          className="h-7 text-sm"
         />
       </div>
-    </div>
+    </DirtyFieldWrapper>
+  );
+
+  const renderCurrencyField = (label: string, key: string) => (
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[140px] text-sm shrink-0">{label}</Label>
+        <div className="relative flex-1">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+          <Input
+            type="text"
+            inputMode="decimal"
+            value={getValue(key)}
+            onChange={(e) => setValue(key, e.target.value)}
+            disabled={disabled}
+            placeholder="0.00"
+            className="h-7 text-sm pl-6 text-left"
+          />
+        </div>
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderCheckboxField = (label: string, key: string) => (
-    <div className="flex items-center gap-2">
-      <Checkbox
-        checked={getBoolValue(key)}
-        onCheckedChange={(checked) => setBoolValue(key, !!checked)}
-        disabled={disabled}
-      />
-      <Label className="text-sm cursor-pointer">{label}</Label>
-    </div>
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Checkbox
+          checked={getBoolValue(key)}
+          onCheckedChange={(checked) => setBoolValue(key, !!checked)}
+          disabled={disabled}
+        />
+        <Label className="text-sm cursor-pointer">{label}</Label>
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderDualCheckboxField = (label: string, key1: string, key2: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="text-sm shrink-0 flex-1">{label}</Label>
-      <Checkbox
-        checked={getBoolValue(key1)}
-        onCheckedChange={(checked) => setBoolValue(key1, !!checked)}
-        disabled={disabled}
-      />
-      <Checkbox
-        checked={getBoolValue(key2)}
-        onCheckedChange={(checked) => setBoolValue(key2, !!checked)}
-        disabled={disabled}
-      />
-    </div>
+    <DirtyFieldWrapper fieldKey={key1}>
+      <div className="flex items-center gap-2">
+        <Label className="text-sm shrink-0 flex-1">{label}</Label>
+        <Checkbox
+          checked={getBoolValue(key1)}
+          onCheckedChange={(checked) => setBoolValue(key1, !!checked)}
+          disabled={disabled}
+        />
+        <Checkbox
+          checked={getBoolValue(key2)}
+          onCheckedChange={(checked) => setBoolValue(key2, !!checked)}
+          disabled={disabled}
+        />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderLabelInputPair = (labelKey: string, valueKey: string) => (
-    <div className="flex items-center gap-2">
-      <Input
-        value={getValue(labelKey)}
-        onChange={(e) => setValue(labelKey, e.target.value)}
-        disabled={disabled}
-        className="h-7 text-sm w-[140px] shrink-0"
-      />
-      <Input
-        value={getValue(valueKey)}
-        onChange={(e) => setValue(valueKey, e.target.value)}
-        disabled={disabled}
-        className="h-7 text-sm"
-      />
-    </div>
+    <DirtyFieldWrapper fieldKey={valueKey}>
+      <div className="flex items-center gap-2">
+        <Input
+          value={getValue(labelKey)}
+          onChange={(e) => setValue(labelKey, e.target.value)}
+          disabled={disabled}
+          className="h-7 text-sm w-[140px] shrink-0"
+        />
+        <Input
+          value={getValue(valueKey)}
+          onChange={(e) => setValue(valueKey, e.target.value)}
+          disabled={disabled}
+          className="h-7 text-sm"
+        />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderAdditionalDocRow = (row: typeof ADDITIONAL_ROWS[0]) => (
-    <div className="flex items-center gap-2" key={row.text}>
-      <Input
-        value={getValue(row.text)}
-        onChange={(e) => setValue(row.text, e.target.value)}
-        disabled={disabled}
-        className="h-7 text-sm flex-1"
-      />
-      <Checkbox
-        checked={getBoolValue(row.check1)}
-        onCheckedChange={(checked) => setBoolValue(row.check1, !!checked)}
-        disabled={disabled}
-      />
-      <Checkbox
-        checked={getBoolValue(row.check2)}
-        onCheckedChange={(checked) => setBoolValue(row.check2, !!checked)}
-        disabled={disabled}
-      />
-    </div>
+    <DirtyFieldWrapper fieldKey={row.text} key={row.text}>
+      <div className="flex items-center gap-2">
+        <Input
+          value={getValue(row.text)}
+          onChange={(e) => setValue(row.text, e.target.value)}
+          disabled={disabled}
+          className="h-7 text-sm flex-1"
+        />
+        <Checkbox
+          checked={getBoolValue(row.check1)}
+          onCheckedChange={(checked) => setBoolValue(row.check1, !!checked)}
+          disabled={disabled}
+        />
+        <Checkbox
+          checked={getBoolValue(row.check2)}
+          onCheckedChange={(checked) => setBoolValue(row.check2, !!checked)}
+          disabled={disabled}
+        />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   return (
@@ -255,19 +270,21 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
           {renderDualCheckboxField('Income Statement Received', FIELD_KEYS.doc_income_statement, FIELD_KEYS.doc_income_statement_2)}
           {renderDualCheckboxField('Audited Financials', FIELD_KEYS.doc_audited_financials, FIELD_KEYS.doc_audited_financials_2)}
           {renderTextField('Periods Reviewed', FIELD_KEYS.doc_periods_reviewed)}
-          <div className="flex items-center gap-2">
-            <Label className="text-sm shrink-0 flex-1">Additional Information Attached</Label>
-            <Checkbox
-              checked={getBoolValue('origination_app.doc.additional_info_check1')}
-              onCheckedChange={(checked) => setBoolValue('origination_app.doc.additional_info_check1', !!checked)}
-              disabled={disabled}
-            />
-            <Checkbox
-              checked={getBoolValue('origination_app.doc.additional_info_check2')}
-              onCheckedChange={(checked) => setBoolValue('origination_app.doc.additional_info_check2', !!checked)}
-              disabled={disabled}
-            />
-          </div>
+          <DirtyFieldWrapper fieldKey="origination_app.doc.additional_info_check1">
+            <div className="flex items-center gap-2">
+              <Label className="text-sm shrink-0 flex-1">Additional Information Attached</Label>
+              <Checkbox
+                checked={getBoolValue('origination_app.doc.additional_info_check1')}
+                onCheckedChange={(checked) => setBoolValue('origination_app.doc.additional_info_check1', !!checked)}
+                disabled={disabled}
+              />
+              <Checkbox
+                checked={getBoolValue('origination_app.doc.additional_info_check2')}
+                onCheckedChange={(checked) => setBoolValue('origination_app.doc.additional_info_check2', !!checked)}
+                disabled={disabled}
+              />
+            </div>
+          </DirtyFieldWrapper>
           {ADDITIONAL_ROWS.map(renderAdditionalDocRow)}
         </div>
       </div>

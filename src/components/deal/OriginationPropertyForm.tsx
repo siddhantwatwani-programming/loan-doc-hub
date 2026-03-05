@@ -9,6 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationPropertyFormProps {
@@ -62,28 +63,34 @@ export const OriginationPropertyForm: React.FC<OriginationPropertyFormProps> = (
   };
 
   const renderTextField = (label: string, key: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[180px] text-sm shrink-0">{label}</Label>
-      <Input value={v(key)} onChange={(e) => sv(key, e.target.value)} disabled={disabled} className="h-7 text-sm" />
-    </div>
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[180px] text-sm shrink-0">{label}</Label>
+        <Input value={v(key)} onChange={(e) => sv(key, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderCurrencyField = (label: string, key: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[180px] text-sm shrink-0">{label}</Label>
-      <div className="relative flex-1">
-        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-        <Input type="text" inputMode="decimal" value={v(key)} onChange={(e) => sv(key, e.target.value)}
-          disabled={disabled} placeholder="0.00" className="h-7 text-sm pl-6 text-right" />
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[180px] text-sm shrink-0">{label}</Label>
+        <div className="relative flex-1">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+          <Input type="text" inputMode="decimal" value={v(key)} onChange={(e) => sv(key, e.target.value)}
+            disabled={disabled} placeholder="0.00" className="h-7 text-sm pl-6 text-right" />
+        </div>
       </div>
-    </div>
+    </DirtyFieldWrapper>
   );
 
   const renderCheckboxField = (label: string, key: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[180px] text-sm shrink-0">{label}</Label>
-      <Checkbox checked={bv(key)} onCheckedChange={(c) => sbv(key, !!c)} disabled={disabled} />
-    </div>
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[180px] text-sm shrink-0">{label}</Label>
+        <Checkbox checked={bv(key)} onCheckedChange={(c) => sbv(key, !!c)} disabled={disabled} />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   return (
@@ -102,55 +109,61 @@ export const OriginationPropertyForm: React.FC<OriginationPropertyFormProps> = (
 
       <div className="pt-4" />
 
-      <div className="flex items-center gap-2">
-        <Label className="w-[180px] text-sm shrink-0">Year Built</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-sm', !v(FK.year_built) && 'text-muted-foreground')} disabled={disabled}>
-              {v(FK.year_built) ? format(parseDate(v(FK.year_built))!, 'MM/dd/yyyy') : 'Date'}
-              <CalendarIcon className="ml-auto h-3.5 w-3.5" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar mode="single" selected={parseDate(v(FK.year_built))}
-              onSelect={(date) => date && sv(FK.year_built, format(date, 'yyyy-MM-dd'))}
-              initialFocus className="p-3 pointer-events-auto" />
-          </PopoverContent>
-        </Popover>
-      </div>
+      <DirtyFieldWrapper fieldKey={FK.year_built}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[180px] text-sm shrink-0">Year Built</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-sm', !v(FK.year_built) && 'text-muted-foreground')} disabled={disabled}>
+                {v(FK.year_built) ? format(parseDate(v(FK.year_built))!, 'MM/dd/yyyy') : 'Date'}
+                <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={parseDate(v(FK.year_built))}
+                onSelect={(date) => date && sv(FK.year_built, format(date, 'yyyy-MM-dd'))}
+                initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </DirtyFieldWrapper>
 
       {renderTextField('Square Feet', FK.square_feet)}
 
-      <div className="flex items-center gap-2">
-        <Label className="w-[180px] text-sm shrink-0">Type of Construction</Label>
-        <Select value={v(FK.construction_type)} onValueChange={(val) => sv(FK.construction_type, val)} disabled={disabled}>
-          <SelectTrigger className="h-7 text-sm">
-            <SelectValue placeholder="Select..." />
-          </SelectTrigger>
-          <SelectContent className="bg-popover z-50">
-            {CONSTRUCTION_TYPES.map((opt) => (
-              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <DirtyFieldWrapper fieldKey={FK.construction_type}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[180px] text-sm shrink-0">Type of Construction</Label>
+          <Select value={v(FK.construction_type)} onValueChange={(val) => sv(FK.construction_type, val)} disabled={disabled}>
+            <SelectTrigger className="h-7 text-sm">
+              <SelectValue placeholder="Select..." />
+            </SelectTrigger>
+            <SelectContent className="bg-popover z-50">
+              {CONSTRUCTION_TYPES.map((opt) => (
+                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </DirtyFieldWrapper>
 
       {renderCurrencyField('Generates Monthly Income', FK.monthly_income)}
       {renderCurrencyField('Lien (Protective Equity)', FK.lien_protective_equity)}
 
-      <div className="flex items-center gap-2">
-        <Label className="w-[180px] text-sm shrink-0">Source of Lien Information</Label>
-        <Select value={v(FK.source_lien_info)} onValueChange={(val) => sv(FK.source_lien_info, val)} disabled={disabled}>
-          <SelectTrigger className="h-7 text-sm">
-            <SelectValue placeholder="Select..." />
-          </SelectTrigger>
-          <SelectContent className="bg-popover z-50">
-            {LIEN_SOURCES.map((opt) => (
-              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <DirtyFieldWrapper fieldKey={FK.source_lien_info}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[180px] text-sm shrink-0">Source of Lien Information</Label>
+          <Select value={v(FK.source_lien_info)} onValueChange={(val) => sv(FK.source_lien_info, val)} disabled={disabled}>
+            <SelectTrigger className="h-7 text-sm">
+              <SelectValue placeholder="Select..." />
+            </SelectTrigger>
+            <SelectContent className="bg-popover z-50">
+              {LIEN_SOURCES.map((opt) => (
+                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </DirtyFieldWrapper>
 
       <p className="text-sm text-foreground font-medium pt-3 pb-1">During Previous 12 Months</p>
       {renderCheckboxField('60-day + Delinquencies', FK.delinquencies_60day)}

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationFeesFormProps {
@@ -469,23 +470,25 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
     },
     labelKey?: string
   ) => (
-    <div style={GRID_STYLE} className="py-1 border-b border-border/50">
-      {labelKey ? (
-        <Input value={getValue(labelKey)} onChange={(e) => setValue(labelKey, e.target.value)} disabled={disabled} placeholder="Enter description" className="h-7 text-xs" />
-      ) : (
-        <div className="text-xs text-foreground">{label}</div>
-      )}
-      <div className="flex items-center gap-1">
-        <span className="text-xs text-muted-foreground whitespace-nowrap">Payable to</span>
+    <DirtyFieldWrapper fieldKey={keys.d}>
+      <div style={GRID_STYLE} className="py-1 border-b border-border/50">
+        {labelKey ? (
+          <Input value={getValue(labelKey)} onChange={(e) => setValue(labelKey, e.target.value)} disabled={disabled} placeholder="Enter description" className="h-7 text-xs" />
+        ) : (
+          <div className="text-xs text-foreground">{label}</div>
+        )}
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">Payable to</span>
+        </div>
+        <Input value={getValue(keys.d)} onChange={(e) => setValue(keys.d, e.target.value)} disabled={disabled} placeholder="" className="h-7 text-xs text-right" inputMode="decimal" />
+        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.charge)} onCheckedChange={(c) => setBoolValue(keys.charge, !!c)} disabled={disabled} /></div>
+        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.broker)} onCheckedChange={(c) => setBoolValue(keys.broker, !!c)} disabled={disabled} /></div>
+        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.others)} onCheckedChange={(c) => setBoolValue(keys.others, !!c)} disabled={disabled} /></div>
+        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
+        <Input value={getValue(keys.paidToCompany)} onChange={(e) => setValue(keys.paidToCompany, e.target.value)} disabled={disabled} className="h-7 text-xs" />
+        <Input value={getValue(keys.oralDisclosure)} onChange={(e) => setValue(keys.oralDisclosure, e.target.value)} disabled={disabled} className="h-7 text-xs" />
       </div>
-      <Input value={getValue(keys.d)} onChange={(e) => setValue(keys.d, e.target.value)} disabled={disabled} placeholder="" className="h-7 text-xs text-right" inputMode="decimal" />
-      <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.charge)} onCheckedChange={(c) => setBoolValue(keys.charge, !!c)} disabled={disabled} /></div>
-      <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.broker)} onCheckedChange={(c) => setBoolValue(keys.broker, !!c)} disabled={disabled} /></div>
-      <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.others)} onCheckedChange={(c) => setBoolValue(keys.others, !!c)} disabled={disabled} /></div>
-      <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
-      <Input value={getValue(keys.paidToCompany)} onChange={(e) => setValue(keys.paidToCompany, e.target.value)} disabled={disabled} className="h-7 text-xs" />
-      <Input value={getValue(keys.oralDisclosure)} onChange={(e) => setValue(keys.oralDisclosure, e.target.value)} disabled={disabled} className="h-7 text-xs" />
-    </div>
+    </DirtyFieldWrapper>
   );
 
   // Insurance row for 1000 section: Label | months | "months at" | per month | Total | Charge | Broker | Others | APR
@@ -496,35 +499,39 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
     totalKey: string,
     keys: { charge: string; broker: string; others: string; apr: string; paidToCompany: string; oralDisclosure: string }
   ) => (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'minmax(160px, 1fr) 50px 60px 70px 40px 40px 40px 40px 100px 110px',
-      gap: '4px',
-      alignItems: 'center',
-    }} className="py-1 border-b border-border/50">
-      <div className="text-xs text-foreground">{label}</div>
-      <Input type="number" inputMode="numeric" value={getValue(monthsKey)} onChange={(e) => setValue(monthsKey, e.target.value)} disabled={disabled} placeholder="0" className="h-7 text-xs text-right" />
-      <span className="text-xs text-muted-foreground text-center">months at</span>
-      <Input inputMode="decimal" value={getValue(perMonthKey)} onChange={(e) => setValue(perMonthKey, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right" />
-      <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.charge)} onCheckedChange={(c) => setBoolValue(keys.charge, !!c)} disabled={disabled} /></div>
-      <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.broker)} onCheckedChange={(c) => setBoolValue(keys.broker, !!c)} disabled={disabled} /></div>
-      <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.others)} onCheckedChange={(c) => setBoolValue(keys.others, !!c)} disabled={disabled} /></div>
-      <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
-      <Input value={getValue(keys.paidToCompany)} onChange={(e) => setValue(keys.paidToCompany, e.target.value)} disabled={disabled} className="h-7 text-xs" />
-      <Input value={getValue(keys.oralDisclosure)} onChange={(e) => setValue(keys.oralDisclosure, e.target.value)} disabled={disabled} className="h-7 text-xs" />
-    </div>
+    <DirtyFieldWrapper fieldKey={monthsKey}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'minmax(160px, 1fr) 50px 60px 70px 40px 40px 40px 40px 100px 110px',
+        gap: '4px',
+        alignItems: 'center',
+      }} className="py-1 border-b border-border/50">
+        <div className="text-xs text-foreground">{label}</div>
+        <Input type="number" inputMode="numeric" value={getValue(monthsKey)} onChange={(e) => setValue(monthsKey, e.target.value)} disabled={disabled} placeholder="0" className="h-7 text-xs text-right" />
+        <span className="text-xs text-muted-foreground text-center">months at</span>
+        <Input inputMode="decimal" value={getValue(perMonthKey)} onChange={(e) => setValue(perMonthKey, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right" />
+        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.charge)} onCheckedChange={(c) => setBoolValue(keys.charge, !!c)} disabled={disabled} /></div>
+        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.broker)} onCheckedChange={(c) => setBoolValue(keys.broker, !!c)} disabled={disabled} /></div>
+        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.others)} onCheckedChange={(c) => setBoolValue(keys.others, !!c)} disabled={disabled} /></div>
+        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
+        <Input value={getValue(keys.paidToCompany)} onChange={(e) => setValue(keys.paidToCompany, e.target.value)} disabled={disabled} className="h-7 text-xs" />
+        <Input value={getValue(keys.oralDisclosure)} onChange={(e) => setValue(keys.oralDisclosure, e.target.value)} disabled={disabled} className="h-7 text-xs" />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   // Simple row for bottom sections (label + amount only)
   const renderSimpleRow = (label: string, dKey: string, labelKey?: string) => (
-    <div className="flex items-center gap-2 py-1 border-b border-border/50">
-      {labelKey ? (
-        <Input value={getValue(labelKey)} onChange={(e) => setValue(labelKey, e.target.value)} disabled={disabled} placeholder="Enter description" className="h-7 text-xs flex-1" />
-      ) : (
-        <div className="text-xs text-foreground flex-1">{label}</div>
-      )}
-      <Input inputMode="decimal" value={getValue(dKey)} onChange={(e) => setValue(dKey, e.target.value)} disabled={disabled} placeholder="" className="h-7 text-xs text-right w-24" />
-    </div>
+    <DirtyFieldWrapper fieldKey={dKey}>
+      <div className="flex items-center gap-2 py-1 border-b border-border/50">
+        {labelKey ? (
+          <Input value={getValue(labelKey)} onChange={(e) => setValue(labelKey, e.target.value)} disabled={disabled} placeholder="Enter description" className="h-7 text-xs flex-1" />
+        ) : (
+          <div className="text-xs text-foreground flex-1">{label}</div>
+        )}
+        <Input inputMode="decimal" value={getValue(dKey)} onChange={(e) => setValue(dKey, e.target.value)} disabled={disabled} placeholder="" className="h-7 text-xs text-right w-24" />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const makeKeys = (prefix: string) => ({

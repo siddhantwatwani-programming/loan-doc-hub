@@ -9,6 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationEscrowTitleFormProps {
@@ -101,80 +102,88 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
   };
 
   const renderTextField = (label: string, key: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[120px] text-sm shrink-0">{label}</Label>
-      <Input value={v(key)} onChange={(e) => sv(key, e.target.value)} disabled={disabled} className="h-7 text-sm" />
-    </div>
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[120px] text-sm shrink-0">{label}</Label>
+        <Input value={v(key)} onChange={(e) => sv(key, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderDatePicker = (label: string, key: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[120px] text-sm shrink-0">{label}</Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-sm', !v(key) && 'text-muted-foreground')} disabled={disabled}>
-            {v(key) ? format(parseDate(v(key))!, 'MM/dd/yyyy') : 'Date'}
-            <CalendarIcon className="ml-auto h-3.5 w-3.5" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar mode="single" selected={parseDate(v(key))}
-            onSelect={(date) => date && sv(key, format(date, 'yyyy-MM-dd'))}
-            initialFocus className="p-3 pointer-events-auto" />
-        </PopoverContent>
-      </Popover>
-    </div>
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[120px] text-sm shrink-0">{label}</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-sm', !v(key) && 'text-muted-foreground')} disabled={disabled}>
+              {v(key) ? format(parseDate(v(key))!, 'MM/dd/yyyy') : 'Date'}
+              <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar mode="single" selected={parseDate(v(key))}
+              onSelect={(date) => date && sv(key, format(date, 'yyyy-MM-dd'))}
+              initialFocus className="p-3 pointer-events-auto" />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderCheckboxField = (label: string, key: string) => (
-    <div className="flex items-center gap-2">
-      <Checkbox checked={bv(key)} onCheckedChange={(c) => sbv(key, !!c)} disabled={disabled} />
-      <Label className="text-sm cursor-pointer">{label}</Label>
-    </div>
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Checkbox checked={bv(key)} onCheckedChange={(c) => sbv(key, !!c)} disabled={disabled} />
+        <Label className="text-sm cursor-pointer">{label}</Label>
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderDeliveryDropdown = (label: string, dropdownKey: string, otherKeys: { name: string; street: string; city: string; state: string; zip: string }) => {
     const isOther = v(dropdownKey) === 'Other';
     return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Label className="w-[160px] text-sm shrink-0">{label}</Label>
-          <Select value={v(dropdownKey)} onValueChange={(val) => sv(dropdownKey, val)} disabled={disabled}>
-            <SelectTrigger className="h-7 text-sm">
-              <SelectValue placeholder="Select..." />
-            </SelectTrigger>
-            <SelectContent className="bg-popover z-50">
-              {DELIVERY_OPTIONS.map((opt) => (
-                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        {isOther && (
-          <div className="ml-[160px] space-y-1 pl-2 border-l-2 border-border">
-            <div className="flex items-center gap-2">
-              <Label className="w-[60px] text-sm shrink-0">Name</Label>
-              <Input value={v(otherKeys.name)} onChange={(e) => sv(otherKeys.name, e.target.value)} disabled={disabled} className="h-7 text-sm" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="w-[60px] text-sm shrink-0">Street</Label>
-              <Input value={v(otherKeys.street)} onChange={(e) => sv(otherKeys.street, e.target.value)} disabled={disabled} className="h-7 text-sm" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="w-[60px] text-sm shrink-0">City</Label>
-              <Input value={v(otherKeys.city)} onChange={(e) => sv(otherKeys.city, e.target.value)} disabled={disabled} className="h-7 text-sm" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="w-[60px] text-sm shrink-0">State</Label>
-              <Input value={v(otherKeys.state)} onChange={(e) => sv(otherKeys.state, e.target.value)} disabled={disabled} className="h-7 text-sm" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="w-[60px] text-sm shrink-0">ZIP</Label>
-              <Input value={v(otherKeys.zip)} onChange={(e) => sv(otherKeys.zip, e.target.value)} disabled={disabled} className="h-7 text-sm" />
-            </div>
+      <DirtyFieldWrapper fieldKey={dropdownKey}>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Label className="w-[160px] text-sm shrink-0">{label}</Label>
+            <Select value={v(dropdownKey)} onValueChange={(val) => sv(dropdownKey, val)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm">
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                {DELIVERY_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        )}
-      </div>
+          {isOther && (
+            <div className="ml-[160px] space-y-1 pl-2 border-l-2 border-border">
+              <div className="flex items-center gap-2">
+                <Label className="w-[60px] text-sm shrink-0">Name</Label>
+                <Input value={v(otherKeys.name)} onChange={(e) => sv(otherKeys.name, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[60px] text-sm shrink-0">Street</Label>
+                <Input value={v(otherKeys.street)} onChange={(e) => sv(otherKeys.street, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[60px] text-sm shrink-0">City</Label>
+                <Input value={v(otherKeys.city)} onChange={(e) => sv(otherKeys.city, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[60px] text-sm shrink-0">State</Label>
+                <Input value={v(otherKeys.state)} onChange={(e) => sv(otherKeys.state, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[60px] text-sm shrink-0">ZIP</Label>
+                <Input value={v(otherKeys.zip)} onChange={(e) => sv(otherKeys.zip, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+            </div>
+          )}
+        </div>
+      </DirtyFieldWrapper>
     );
   };
 
