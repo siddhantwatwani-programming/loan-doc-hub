@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export type PropertySubSection = 'properties' | 'property_details' | 'legal_description' | 'liens' | 'insurance' | 'property_tax' | 'origination_property';
+export type PropertySubSection = 'properties' | 'property_details' | 'legal_description' | 'liens' | 'insurance' | 'property_tax';
 
 interface PropertySubNavigationProps {
   activeSubSection: PropertySubSection;
@@ -11,7 +11,6 @@ interface PropertySubNavigationProps {
 
 const PROPERTY_DETAIL_SECTIONS: { key: PropertySubSection; label: string }[] = [
   { key: 'property_details', label: 'Property Details' },
-  { key: 'origination_property', label: 'Property' },
   { key: 'legal_description', label: 'Legal Description' },
   { key: 'liens', label: 'Liens' },
   { key: 'insurance', label: 'Insurance' },
