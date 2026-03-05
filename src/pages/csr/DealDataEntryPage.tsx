@@ -755,6 +755,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
         </div>
       ) : (
         <div className="section-card">
+          <DirtyFieldsProvider dirtyFieldKeys={dirtyFieldKeys}>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6 flex flex-wrap h-auto gap-1 bg-muted/50 p-1">
               {(() => {
