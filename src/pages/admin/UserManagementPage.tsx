@@ -100,29 +100,19 @@ export const UserManagementPage: React.FC = () => {
 
     setSaving(true);
     try {
-      // Check if user already has a role
-      const { data: existing } = await supabase
+      // Replace user role safely (avoids duplicate unique key errors under RLS)
+      const { error: deleteRoleError } = await supabase
         .from('user_roles')
-        .select('*')
-        .eq('user_id', selectedUser.id)
-        .maybeSingle();
+        .delete()
+        .eq('user_id', selectedUser.id);
 
-      if (existing) {
-        // Update existing role
-        const { error } = await supabase
-          .from('user_roles')
-          .update({ role: newRole as 'admin' | 'csr' })
-          .eq('user_id', selectedUser.id);
+      if (deleteRoleError) throw deleteRoleError;
 
-        if (error) throw error;
-      } else {
-        // Insert new role
-        const { error } = await supabase
-          .from('user_roles')
-          .insert({ user_id: selectedUser.id, role: newRole as 'admin' | 'csr' });
+      const { error: insertRoleError } = await supabase
+        .from('user_roles')
+        .insert({ user_id: selectedUser.id, role: newRole as 'admin' | 'csr' });
 
-        if (error) throw error;
-      }
+      if (insertRoleError) throw insertRoleError;
 
       // If CSR role, also save permission level
       if (newRole === 'csr') {
