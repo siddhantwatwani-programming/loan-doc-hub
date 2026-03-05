@@ -20,6 +20,7 @@ import {
   Sliders,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Eye,
   Menu,
   X,
