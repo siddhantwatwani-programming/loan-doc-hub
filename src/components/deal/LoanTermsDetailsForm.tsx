@@ -131,44 +131,50 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
     const rawValue = getValue(fieldKey);
     const displayValue = isFocused ? rawValue : formatCurrencyDisplay(rawValue);
     return (
-      <div className="flex items-center gap-2">
-        <Label className="w-[130px] shrink-0 text-xs">{label}</Label>
-        <div className="relative flex-1">
-          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-          <Input
-            id={fieldKey}
-            value={displayValue}
-            onChange={(e) => handleCurrencyChange(fieldKey, e.target.value)}
-            onFocus={() => setFocusedCurrencyField(fieldKey)}
-            onBlur={() => handleCurrencyBlur(fieldKey)}
-            disabled={disabled}
-            className="h-8 text-xs flex-1 pl-5"
-            placeholder="0.00"
-          />
+      <DirtyFieldWrapper fieldKey={fieldKey}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[130px] shrink-0 text-xs">{label}</Label>
+          <div className="relative flex-1">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+            <Input
+              id={fieldKey}
+              value={displayValue}
+              onChange={(e) => handleCurrencyChange(fieldKey, e.target.value)}
+              onFocus={() => setFocusedCurrencyField(fieldKey)}
+              onBlur={() => handleCurrencyBlur(fieldKey)}
+              disabled={disabled}
+              className="h-8 text-xs flex-1 pl-5"
+              placeholder="0.00"
+            />
+          </div>
         </div>
-      </div>
+      </DirtyFieldWrapper>
     );
   };
 
   const renderInlineField = (fieldKey: string, label: string, type: 'text' | 'date' = 'text') => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[130px] shrink-0 text-xs">{label}</Label>
-      <Input id={fieldKey} value={getValue(fieldKey)} onChange={(e) => setValue(fieldKey, e.target.value)} disabled={disabled} type={type} className={`h-8 text-xs ${type === 'date' ? 'w-[220px] 3xl:w-[280px]' : 'flex-1'}`} />
-    </div>
+    <DirtyFieldWrapper fieldKey={fieldKey}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[130px] shrink-0 text-xs">{label}</Label>
+        <Input id={fieldKey} value={getValue(fieldKey)} onChange={(e) => setValue(fieldKey, e.target.value)} disabled={disabled} type={type} className={`h-8 text-xs ${type === 'date' ? 'w-[220px] 3xl:w-[280px]' : 'flex-1'}`} />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderInlineSelect = (fieldKey: string, label: string, options: { value: string; label: string }[], placeholder: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[130px] shrink-0 text-xs">{label}</Label>
-      <Select value={getValue(fieldKey)} onValueChange={(value) => setValue(fieldKey, value)} disabled={disabled}>
-        <SelectTrigger id={fieldKey} className="h-8 text-xs flex-1">
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}
-        </SelectContent>
-      </Select>
-    </div>
+    <DirtyFieldWrapper fieldKey={fieldKey}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[130px] shrink-0 text-xs">{label}</Label>
+        <Select value={getValue(fieldKey)} onValueChange={(value) => setValue(fieldKey, value)} disabled={disabled}>
+          <SelectTrigger id={fieldKey} className="h-8 text-xs flex-1">
+            <SelectValue placeholder={placeholder} />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}
+          </SelectContent>
+        </Select>
+      </div>
+    </DirtyFieldWrapper>
   );
 
   return (

@@ -33,16 +33,18 @@ export const PropertyNoteForm: React.FC<PropertyNoteFormProps> = ({
         <span className="font-semibold text-base text-primary">Property Notes</span>
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-sm text-foreground">Note</Label>
-        <Textarea
-          value={getValue('note')}
-          onChange={(e) => handleChange('note', e.target.value)}
-          disabled={disabled}
-          className="min-h-[300px] text-sm"
-          placeholder="Enter property notes..."
-        />
-      </div>
+      <DirtyFieldWrapper fieldKey="property1.note">
+        <div className="space-y-2">
+          <Label className="text-sm text-foreground">Note</Label>
+          <Textarea
+            value={getValue('note')}
+            onChange={(e) => handleChange('note', e.target.value)}
+            disabled={disabled}
+            className="min-h-[300px] text-sm"
+            placeholder="Enter property notes..."
+          />
+        </div>
+      </DirtyFieldWrapper>
 
       <div className="pt-4 border-t border-border">
         <p className="text-sm text-muted-foreground">
