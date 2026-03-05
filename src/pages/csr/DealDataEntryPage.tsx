@@ -13,6 +13,7 @@ import { useExternalModificationDetector } from "@/hooks/useExternalModification
 import { useAuth } from "@/contexts/AuthContext";
 import { DealNavigationProvider, useDealNavigation } from "@/contexts/DealNavigationContext";
 import { useWorkspaceOptional } from "@/contexts/WorkspaceContext";
+import { DirtyFieldsProvider } from "@/contexts/DirtyFieldsContext";
 import { SaveConfirmationDialog } from "@/components/workspace/SaveConfirmationDialog";
 import { DealSectionTab } from "@/components/deal/DealSectionTab";
 import { BorrowerSectionContent } from "@/components/deal/BorrowerSectionContent";
