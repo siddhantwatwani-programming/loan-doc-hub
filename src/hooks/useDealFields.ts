@@ -458,6 +458,11 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
       [fieldKey]: value
     }));
     setIsDirty(true);
+    setDirtyFieldKeys(prev => {
+      const next = new Set(prev);
+      next.add(fieldKey);
+      return next;
+    });
     
     // Track if a required field was changed
     if (isRequiredField || resolvedFields?.requiredFieldKeys.includes(fieldKey)) {
