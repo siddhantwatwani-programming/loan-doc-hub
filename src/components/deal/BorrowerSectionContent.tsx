@@ -817,22 +817,6 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
 
   const renderSubSectionContent = () => {
     switch (activeSubSection) {
-      case 'borrowers':
-        return (
-          <BorrowersTableView
-            borrowers={paginatedBorrowers}
-            onAddBorrower={handleAddBorrower}
-            onEditBorrower={handleEditBorrower}
-            onRowClick={handleRowClick}
-            onPrimaryChange={handlePrimaryChange}
-            onDeleteBorrower={handleDeleteBorrower}
-            disabled={disabled}
-            isLoading={isLoading}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
-        );
       case 'co_borrowers':
         return (
           <CoBorrowerPrimaryForm
