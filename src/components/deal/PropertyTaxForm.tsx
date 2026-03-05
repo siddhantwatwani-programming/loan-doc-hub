@@ -84,16 +84,12 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
         <div className="grid grid-cols-2 gap-x-6 gap-y-3">
           {/* Left column */}
           <div className="space-y-3">
-            {/* Property (formerly Payee) */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">Property</Label>
-              <Input
-                value={getValue('payee')}
-                onChange={(e) => handleChange('payee', e.target.value)}
-                disabled={disabled}
-                className="h-7 text-sm flex-1"
-              />
-            </div>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.payee}>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">Property</Label>
+                <Input value={getValue('payee')} onChange={(e) => handleChange('payee', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              </div>
+            </DirtyFieldWrapper>
 
             {/* Authority */}
             <div className="flex items-center gap-3">
