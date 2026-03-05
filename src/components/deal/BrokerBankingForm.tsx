@@ -80,19 +80,23 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({
         <div className="space-y-3">
           <h3 className="font-semibold text-sm text-foreground border-b border-border pb-2">Check / Mailing</h3>
           
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground min-w-[120px] max-w-[120px] text-left shrink-0">By Check</Label>
-            <div className="w-[160px] 3xl:w-[200px] flex items-center">
-              <Checkbox id="byCheck" checked={getBoolValue('byCheck')} onCheckedChange={(checked) => handleChange('byCheck', !!checked)} disabled={disabled} />
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.byCheck}>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground min-w-[120px] max-w-[120px] text-left shrink-0">By Check</Label>
+              <div className="w-[160px] 3xl:w-[200px] flex items-center">
+                <Checkbox id="byCheck" checked={getBoolValue('byCheck')} onCheckedChange={(checked) => handleChange('byCheck', !!checked)} disabled={disabled} />
+              </div>
             </div>
-          </div>
+          </DirtyFieldWrapper>
 
-          <div className="flex items-center gap-2">
-            <Label className="text-sm text-muted-foreground min-w-[120px] max-w-[120px] text-left shrink-0">Same as Mailing</Label>
-            <div className="w-[160px] 3xl:w-[200px] flex items-center">
-              <Checkbox id="checkSameAsMailing" checked={getBoolValue('checkSameAsMailing')} onCheckedChange={(checked) => handleChange('checkSameAsMailing', !!checked)} disabled={disabled} />
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.checkSameAsMailing}>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground min-w-[120px] max-w-[120px] text-left shrink-0">Same as Mailing</Label>
+              <div className="w-[160px] 3xl:w-[200px] flex items-center">
+                <Checkbox id="checkSameAsMailing" checked={getBoolValue('checkSameAsMailing')} onCheckedChange={(checked) => handleChange('checkSameAsMailing', !!checked)} disabled={disabled} />
+              </div>
             </div>
-          </div>
+          </DirtyFieldWrapper>
 
           {renderField('checkAddress', 'Address', { placeholder: 'Enter address' })}
           {renderField('checkCity', 'City', { placeholder: 'Enter city' })}
