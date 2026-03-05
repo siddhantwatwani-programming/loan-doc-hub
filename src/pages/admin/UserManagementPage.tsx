@@ -105,7 +105,7 @@ export const UserManagementPage: React.FC = () => {
         .from('user_roles')
         .select('*')
         .eq('user_id', selectedUser.id)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         // Update existing role
@@ -130,7 +130,7 @@ export const UserManagementPage: React.FC = () => {
           .from('user_permission_levels')
           .select('*')
           .eq('user_id', selectedUser.id)
-          .single();
+          .maybeSingle();
 
         if (existingLevel) {
           await supabase
