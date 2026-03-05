@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -183,9 +183,12 @@ export const DealDocumentsPage: React.FC = () => {
   const isAdminViewOnly = role === 'admin';
   const canGenerate = (role === 'csr' || role === 'admin') && (deal?.status === 'ready' || deal?.status === 'generated');
 
+  const initialLoadDone = useRef(false);
+  const realtimeDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     if (id) {
-      fetchData();
+      fetchDataInitial();
     }
   }, [id]);
 
@@ -204,7 +207,7 @@ export const DealDocumentsPage: React.FC = () => {
           filter: `deal_id=eq.${id}`,
         },
         () => {
-          fetchGeneratedDocuments();
+          debouncedBackgroundRefresh();
         }
       )
       .on(
@@ -216,17 +219,26 @@ export const DealDocumentsPage: React.FC = () => {
           filter: `deal_id=eq.${id}`,
         },
         () => {
-          fetchRecentJobs();
+          debouncedBackgroundRefresh();
         }
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
+      if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current);
     };
   }, [id]);
 
-  const fetchData = async () => {
+  const debouncedBackgroundRefresh = useCallback(() => {
+    if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current);
+    realtimeDebounceRef.current = setTimeout(() => {
+      refreshDataInBackground();
+    }, 500);
+  }, [id]);
+
+  // Initial load — sets loading=true, shows spinner
+  const fetchDataInitial = async () => {
     setLoading(true);
     try {
       await Promise.all([
@@ -234,8 +246,34 @@ export const DealDocumentsPage: React.FC = () => {
         fetchGeneratedDocuments(),
         fetchRecentJobs(),
       ]);
+      initialLoadDone.current = true;
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Background refresh — does NOT set loading, preserves UI state
+  const refreshDataInBackground = async () => {
+    try {
+      await Promise.all([
+        fetchGeneratedDocuments(),
+        fetchRecentJobs(),
+      ]);
+    } catch (err) {
+      console.error('Background refresh error:', err);
+    }
+  };
+
+  // Full background refresh including deal data (for after upload)
+  const refreshAllInBackground = async () => {
+    try {
+      await Promise.all([
+        fetchDeal(),
+        fetchGeneratedDocuments(),
+        fetchRecentJobs(),
+      ]);
+    } catch (err) {
+      console.error('Background refresh error:', err);
     }
   };
 
@@ -391,7 +429,7 @@ export const DealDocumentsPage: React.FC = () => {
       }
 
       // Refresh data
-      fetchData();
+      refreshDataInBackground();
     } catch (error: any) {
       toast({
         title: 'Generation Failed',
@@ -577,7 +615,7 @@ export const DealDocumentsPage: React.FC = () => {
       });
 
       // Refresh data
-      fetchData();
+      refreshAllInBackground();
     } catch (error: any) {
       console.error('Upload error:', error);
       toast({
