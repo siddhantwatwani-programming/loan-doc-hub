@@ -179,29 +179,31 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
                 </td>
                 {GRID_COLUMNS.map((col) => (
                   <td key={col.key} className="px-1 py-1">
-                    {col.key === 'lenders_split' ? (
-                      <Select
-                        value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
-                        onValueChange={(value) => onValueChange(`loan_terms.servicing.custom.${col.key}`, value)}
-                        disabled={disabled}
-                      >
-                        <SelectTrigger className="h-7 text-xs border-border">
-                          <SelectValue placeholder="Select..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="fee_per_lender">Fee Per Lender - No Split</SelectItem>
-                          <SelectItem value="pro_rata">Pro Rata</SelectItem>
-                          <SelectItem value="split_50_50">Split 50/50</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input
-                        value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
-                        onChange={(e) => onValueChange(`loan_terms.servicing.custom.${col.key}`, e.target.value)}
-                        disabled={disabled}
-                        className="h-7 text-xs border-border"
-                      />
-                    )}
+                    <DirtyFieldWrapper fieldKey={`loan_terms.servicing.custom.${col.key}`}>
+                      {col.key === 'lenders_split' ? (
+                        <Select
+                          value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
+                          onValueChange={(value) => onValueChange(`loan_terms.servicing.custom.${col.key}`, value)}
+                          disabled={disabled}
+                        >
+                          <SelectTrigger className="h-7 text-xs border-border">
+                            <SelectValue placeholder="Select..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="fee_per_lender">Fee Per Lender - No Split</SelectItem>
+                            <SelectItem value="pro_rata">Pro Rata</SelectItem>
+                            <SelectItem value="split_50_50">Split 50/50</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
+                          onChange={(e) => onValueChange(`loan_terms.servicing.custom.${col.key}`, e.target.value)}
+                          disabled={disabled}
+                          className="h-7 text-xs border-border"
+                        />
+                      )}
+                    </DirtyFieldWrapper>
                   </td>
                 ))}
               </tr>
