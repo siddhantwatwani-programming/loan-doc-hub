@@ -44,16 +44,18 @@ export const BorrowerNoteForm: React.FC<BorrowerNoteFormProps> = ({
         <span className="font-semibold text-base text-foreground">Borrower Note</span>
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-sm text-foreground">Note</Label>
-        <Textarea
-          value={getValue('note')}
-          onChange={(e) => handleChange('note', e.target.value)}
-          disabled={disabled}
-          className={`min-h-[200px] text-sm ${showError ? 'border-destructive' : ''}`}
-          placeholder="Enter borrower notes..."
-        />
-      </div>
+      <DirtyFieldWrapper fieldKey={FIELD_KEYS.note}>
+        <div className="space-y-2">
+          <Label className="text-sm text-foreground">Note</Label>
+          <Textarea
+            value={getValue('note')}
+            onChange={(e) => handleChange('note', e.target.value)}
+            disabled={disabled}
+            className={`min-h-[200px] text-sm ${showError ? 'border-destructive' : ''}`}
+            placeholder="Enter borrower notes..."
+          />
+        </div>
+      </DirtyFieldWrapper>
 
       <div className="pt-4 border-t border-border">
         <p className="text-sm text-muted-foreground">
