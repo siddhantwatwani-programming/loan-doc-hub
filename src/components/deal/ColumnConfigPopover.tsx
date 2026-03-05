@@ -1,5 +1,5 @@
 import React from 'react';
-import { GripVertical, Settings2 } from 'lucide-react';
+import { GripVertical, Settings2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -17,12 +17,14 @@ export interface ColumnConfig {
 interface ColumnConfigPopoverProps {
   columns: ColumnConfig[];
   onColumnsChange: (columns: ColumnConfig[]) => void;
+  onResetColumns?: () => void;
   disabled?: boolean;
 }
 
 export const ColumnConfigPopover: React.FC<ColumnConfigPopoverProps> = ({
   columns,
   onColumnsChange,
+  onResetColumns,
   disabled = false,
 }) => {
   const visibleCount = columns.filter((col) => col.visible).length;
@@ -77,9 +79,22 @@ export const ColumnConfigPopover: React.FC<ColumnConfigPopoverProps> = ({
       </PopoverTrigger>
       <PopoverContent className="w-64 p-3" align="end">
         <div className="space-y-1">
-          <p className="text-sm font-medium text-foreground mb-3">
-            Configure Columns
-          </p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium text-foreground">
+              Configure Columns
+            </p>
+            {onResetColumns && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onResetColumns}
+                className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Reset
+              </Button>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground mb-3">
             Drag to reorder, toggle to show/hide
           </p>

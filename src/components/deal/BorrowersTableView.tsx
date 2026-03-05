@@ -124,7 +124,7 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
   totalPages,
   onPageChange,
 }) => {
-  const [columns, setColumns] = useTableColumnConfig(BORROWERS_TABLE_ID, DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig(BORROWERS_TABLE_ID, DEFAULT_COLUMNS);
   const [deleteTarget, setDeleteTarget] = useState<BorrowerData | null>(null);
   
   const visibleColumns = columns.filter((col) => col.visible);
@@ -220,6 +220,7 @@ export const BorrowersTableView: React.FC<BorrowersTableViewProps> = ({
           <ColumnConfigPopover
             columns={columns}
             onColumnsChange={setColumns}
+            onResetColumns={resetColumns}
             disabled={disabled}
           />
           <Button

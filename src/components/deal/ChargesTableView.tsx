@@ -80,7 +80,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   totalPages = 1,
   onPageChange,
 }) => {
-  const [columns, setColumns] = useTableColumnConfig('charges_v6', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('charges_v6', DEFAULT_COLUMNS);
   const [deleteTarget, setDeleteTarget] = useState<ChargeData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
 
@@ -128,6 +128,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
           <ColumnConfigPopover
             columns={columns}
             onColumnsChange={setColumns}
+            onResetColumns={resetColumns}
             disabled={disabled}
           />
           <Button

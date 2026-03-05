@@ -85,7 +85,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const [selectedRecord, setSelectedRecord] = useState<FundingRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<FundingRecord | null>(null);
   const [editFundingData, setEditFundingData] = useState<FundingFormData | null>(null);
-  const [columns, setColumns] = useTableColumnConfig('funding', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('funding', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
 
   // Calculate totals
@@ -166,6 +166,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
           <ColumnConfigPopover
             columns={columns}
             onColumnsChange={setColumns}
+            onResetColumns={resetColumns}
           />
           <Button
             variant="outline"

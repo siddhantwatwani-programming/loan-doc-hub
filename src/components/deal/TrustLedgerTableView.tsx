@@ -110,7 +110,7 @@ const filterByDate = (entries: TrustLedgerEntry[], filter: string): TrustLedgerE
 export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
   entries, onAddEntry, onEditEntry, onRowClick, onDeleteEntry, onExport, disabled = false, isLoading = false,
 }) => {
-  const [columns, setColumns] = useTableColumnConfig('trust_ledger', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('trust_ledger', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
   const [activeTab, setActiveTab] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
@@ -244,7 +244,7 @@ export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
           </TabsList>
         </Tabs>
         <div className="flex items-center gap-2">
-          <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} disabled={disabled} />
+          <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} disabled={disabled} />
           <Button variant="outline" size="sm" onClick={onAddEntry} disabled={disabled} className="gap-1 text-xs">
             <Plus className="h-4 w-4" />
             Add Entry
