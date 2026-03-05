@@ -71,7 +71,7 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
   totalPages = 1,
   onPageChange,
 }) => {
-  const [columns, setColumns] = useTableColumnConfig('lenders_v2', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('lenders_v2', DEFAULT_COLUMNS);
   const [deleteTarget, setDeleteTarget] = useState<LenderData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
 
@@ -114,6 +114,7 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
           <ColumnConfigPopover
             columns={columns}
             onColumnsChange={setColumns}
+            onResetColumns={resetColumns}
             disabled={disabled}
           />
           <Button

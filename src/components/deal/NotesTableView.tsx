@@ -44,7 +44,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
 export const NotesTableView: React.FC<NotesTableViewProps> = ({
   notes, onAddNote, onEditNote, onRowClick, onDeleteNote, onExport, disabled = false, isLoading = false,
 }) => {
-  const [columns, setColumns] = useTableColumnConfig('notes_v2', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('notes_v2', DEFAULT_COLUMNS);
   const [deleteTarget, setDeleteTarget] = useState<NoteData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
 
@@ -85,7 +85,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
             <Download className="h-4 w-4" />
             Export
           </Button>
-          <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} disabled={disabled} />
+          <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} disabled={disabled} />
           <Button variant="outline" size="sm" onClick={onAddNote} disabled={disabled} className="gap-1">
             <Plus className="h-4 w-4" />
             Add Conversation Logs

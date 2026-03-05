@@ -71,7 +71,7 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   onDeleteProperty,
   disabled = false,
 }) => {
-  const [columns, setColumns] = useTableColumnConfig('properties', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('properties', DEFAULT_COLUMNS);
   const [deleteTarget, setDeleteTarget] = useState<PropertyData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
 
@@ -119,6 +119,7 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
           <ColumnConfigPopover
             columns={columns}
             onColumnsChange={setColumns}
+            onResetColumns={resetColumns}
             disabled={disabled}
           />
           <Button

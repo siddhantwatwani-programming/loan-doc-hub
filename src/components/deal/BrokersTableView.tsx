@@ -67,7 +67,7 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
   totalPages = 1,
   onPageChange,
 }) => {
-  const [columns, setColumns] = useTableColumnConfig('brokers', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('brokers', DEFAULT_COLUMNS);
   const [deleteTarget, setDeleteTarget] = useState<BrokerData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
 
@@ -113,6 +113,7 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
           <ColumnConfigPopover
             columns={columns}
             onColumnsChange={setColumns}
+            onResetColumns={resetColumns}
             disabled={disabled}
           />
           <Button
