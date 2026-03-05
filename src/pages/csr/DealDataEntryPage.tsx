@@ -986,6 +986,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
               </TabsContent>
             )}
           </Tabs>
+          </DirtyFieldsProvider>
         </div>
       )}
 
