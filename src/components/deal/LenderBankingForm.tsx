@@ -70,6 +70,10 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
     onValueChange(FIELD_KEYS[key], String(value));
   };
 
+  const wrapField = (key: keyof typeof FIELD_KEYS, children: React.ReactNode) => (
+    <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>{children}</DirtyFieldWrapper>
+  );
+
   return (
     <div className="p-6 space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
