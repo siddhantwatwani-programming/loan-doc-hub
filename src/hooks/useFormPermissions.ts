@@ -25,13 +25,60 @@ export function useFormPermissions() {
   const fetchPermissions = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('form_permissions' as any)
-        .select('form_key, access_mode, screen_visible')
-        .eq('role', role);
 
-      if (error) throw error;
-      setPermissions((data || []) as unknown as FormPermission[]);
+      if (role === 'csr' && user) {
+        // Get user's permission level
+        const { data: levelData } = await supabase
+          .from('user_permission_levels')
+          .select('permission_level')
+          .eq('user_id', user.id)
+          .single();
+
+        const permLevel = (levelData as any)?.permission_level || 'full';
+
+        // For "full" level, treat everything as editable (default behavior)
+        if (permLevel === 'full') {
+          setPermissions([]);
+          setLoading(false);
+          return;
+        }
+
+        // For "view_only" level, all forms are view-only
+        if (permLevel === 'view_only') {
+          const { data, error } = await supabase
+            .from('form_permissions' as any)
+            .select('form_key, access_mode, screen_visible')
+            .eq('role', 'csr');
+
+          if (error) throw error;
+          // Override all to view_only
+          const allViewOnly = (data || []).map((d: any) => ({
+            ...d,
+            access_mode: 'view_only',
+          }));
+          setPermissions(allViewOnly as unknown as FormPermission[]);
+          setLoading(false);
+          return;
+        }
+
+        // For "limited" level, check level-specific permissions
+        const { data, error } = await supabase
+          .from('form_permissions' as any)
+          .select('form_key, access_mode, screen_visible')
+          .eq('role', 'csr')
+          .eq('permission_level', 'limited');
+
+        if (error) throw error;
+        setPermissions((data || []) as unknown as FormPermission[]);
+      } else {
+        const { data, error } = await supabase
+          .from('form_permissions' as any)
+          .select('form_key, access_mode, screen_visible')
+          .eq('role', role);
+
+        if (error) throw error;
+        setPermissions((data || []) as unknown as FormPermission[]);
+      }
     } catch (err) {
       console.error('Error fetching form permissions:', err);
       setPermissions([]);
@@ -56,7 +103,7 @@ export function useFormPermissions() {
 
 // Hook for admin to manage all permissions
 export function useFormPermissionsAdmin() {
-  const [allPermissions, setAllPermissions] = useState<Array<FormPermission & { id: string; role: string }>>([]);
+  const [allPermissions, setAllPermissions] = useState<Array<FormPermission & { id: string; role: string; permission_level?: string | null }>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -91,5 +138,33 @@ export function useFormPermissionsAdmin() {
     await fetchAll();
   };
 
-  return { allPermissions, loading, updatePermission, refetch: fetchAll };
+  // Ensure CSR permission level rows exist for a given level
+  const ensureLevelPermissions = async (level: string) => {
+    // Get existing CSR base permissions (no permission_level)
+    const basePerms = allPermissions.filter(p => p.role === 'csr' && !p.permission_level);
+    const levelPerms = allPermissions.filter(p => p.role === 'csr' && p.permission_level === level);
+
+    if (basePerms.length > 0 && levelPerms.length === 0) {
+      // Seed level-specific rows from base CSR permissions
+      const inserts = basePerms.map(bp => ({
+        form_key: bp.form_key,
+        role: 'csr' as const,
+        access_mode: level === 'view_only' ? 'view_only' : bp.access_mode,
+        screen_visible: bp.screen_visible,
+        permission_level: level,
+      }));
+
+      const { error } = await supabase
+        .from('form_permissions' as any)
+        .insert(inserts as any);
+
+      if (error) {
+        console.error('Error seeding level permissions:', error);
+      } else {
+        await fetchAll();
+      }
+    }
+  };
+
+  return { allPermissions, loading, updatePermission, ensureLevelPermissions, refetch: fetchAll };
 }

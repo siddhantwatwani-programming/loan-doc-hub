@@ -48,19 +48,44 @@ const ROLE_LABELS: Record<string, string> = {
   lender: 'Lender',
 };
 
+const PERMISSION_LEVEL_LABELS: Record<string, string> = {
+  full: 'Full',
+  limited: 'Limited',
+  view_only: 'View-Only',
+};
+
+const PERMISSION_LEVELS = ['full', 'limited', 'view_only'];
+
 const ROLES = ['admin', 'csr', 'borrower', 'broker', 'lender'];
 
 const PermissionManagementPage: React.FC = () => {
-  const { allPermissions, loading, updatePermission } = useFormPermissionsAdmin();
+  const { allPermissions, loading, updatePermission, ensureLevelPermissions } = useFormPermissionsAdmin();
   const { toast } = useToast();
   const [selectedRole, setSelectedRole] = React.useState<string>('csr');
+  const [selectedLevel, setSelectedLevel] = React.useState<string>('full');
+
+  // Auto-seed level-specific permissions when a CSR level is selected
+  React.useEffect(() => {
+    if (selectedRole === 'csr' && selectedLevel !== 'full' && !loading) {
+      ensureLevelPermissions(selectedLevel);
+    }
+  }, [selectedRole, selectedLevel, loading]);
 
   const filteredPermissions = useMemo(() => {
-    return allPermissions.filter(p => p.role === selectedRole);
-  }, [allPermissions, selectedRole]);
+    if (selectedRole === 'csr') {
+      if (selectedLevel === 'full') {
+        // "Full" level uses the base CSR permissions (no permission_level set)
+        return allPermissions.filter(p => p.role === 'csr' && !p.permission_level);
+      }
+      // For limited/view_only, filter by permission_level
+      return allPermissions.filter(p => p.role === 'csr' && (p as any).permission_level === selectedLevel);
+    }
+    return allPermissions.filter(p => p.role === selectedRole && !(p as any).permission_level);
+  }, [allPermissions, selectedRole, selectedLevel]);
 
   const handleToggle = async (id: string, currentMode: string) => {
     const newMode = currentMode === 'editable' ? 'view_only' : 'editable';
+    const permLevel = selectedRole === 'csr' ? selectedLevel : null;
     try {
       await updatePermission(id, newMode as 'editable' | 'view_only');
       toast({
@@ -97,9 +122,12 @@ const PermissionManagementPage: React.FC = () => {
       </div>
 
       {/* Role Selector */}
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-6 flex items-center gap-3 flex-wrap">
         <span className="text-sm font-medium text-foreground">Role:</span>
-        <Select value={selectedRole} onValueChange={setSelectedRole}>
+        <Select value={selectedRole} onValueChange={(val) => {
+          setSelectedRole(val);
+          if (val !== 'csr') setSelectedLevel('full');
+        }}>
           <SelectTrigger className="w-[200px]">
             <SelectValue />
           </SelectTrigger>
@@ -109,6 +137,22 @@ const PermissionManagementPage: React.FC = () => {
             ))}
           </SelectContent>
         </Select>
+
+        {selectedRole === 'csr' && (
+          <>
+            <span className="text-sm font-medium text-foreground">Permission Level:</span>
+            <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PERMISSION_LEVELS.map(l => (
+                  <SelectItem key={l} value={l}>{PERMISSION_LEVEL_LABELS[l]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        )}
       </div>
 
       {/* Permissions Grid */}

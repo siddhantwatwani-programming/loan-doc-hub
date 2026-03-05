@@ -448,6 +448,7 @@ export type Database = {
           created_at: string
           form_key: string
           id: string
+          permission_level: string | null
           role: Database["public"]["Enums"]["app_role"]
           screen_visible: boolean
           updated_at: string
@@ -457,6 +458,7 @@ export type Database = {
           created_at?: string
           form_key: string
           id?: string
+          permission_level?: string | null
           role: Database["public"]["Enums"]["app_role"]
           screen_visible?: boolean
           updated_at?: string
@@ -466,6 +468,7 @@ export type Database = {
           created_at?: string
           form_key?: string
           id?: string
+          permission_level?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           screen_visible?: boolean
           updated_at?: string
@@ -945,6 +948,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_permission_levels: {
+        Row: {
+          created_at: string
+          id: string
+          permission_level: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission_level?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission_level?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -992,6 +1019,7 @@ export type Database = {
         Returns: boolean
       }
       generate_deal_number: { Args: never; Returns: string }
+      get_user_permission_level: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
