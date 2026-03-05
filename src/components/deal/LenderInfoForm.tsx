@@ -202,6 +202,26 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
     }
   };
 
+  const primaryStreetVal = getValue('primaryStreet');
+  const primaryCityVal = getValue('primaryCity');
+  const primaryStateVal = getValue('primaryState');
+  const primaryZipVal = getValue('primaryZip');
+  const isMailingSame = getBoolValue('mailingSameAsPrimary');
+
+  useEffect(() => {
+    if (isMailingSame) {
+      const mappings: [keyof typeof FIELD_KEYS, string][] = [
+        ['mailingStreet', primaryStreetVal],
+        ['mailingCity', primaryCityVal],
+        ['mailingState', primaryStateVal],
+        ['mailingZip', primaryZipVal],
+      ];
+      mappings.forEach(([dst, srcVal]) => {
+        if (getValue(dst) !== srcVal) handleChange(dst, srcVal);
+      });
+    }
+  }, [isMailingSame, primaryStreetVal, primaryCityVal, primaryStateVal, primaryZipVal]);
+
   const lenderType = getValue('type');
   const taxedAs = getValue('taxedAs');
   
