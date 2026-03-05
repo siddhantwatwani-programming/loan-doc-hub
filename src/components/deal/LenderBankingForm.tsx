@@ -214,76 +214,41 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
           <h3 className="text-sm font-semibold text-foreground border-b pb-2">Check / Mailing</h3>
           
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 items-center">
+            {wrapField('byCheck', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">By Check</Label>
-              <Checkbox
-                checked={getBoolValue('byCheck')}
-                onCheckedChange={(checked) => handleChange('byCheck', !!checked)}
-                disabled={disabled}
-              />
-            </div>
+              <Checkbox checked={getBoolValue('byCheck')} onCheckedChange={(checked) => handleChange('byCheck', !!checked)} disabled={disabled} />
+            </div>)}
             
-            <div className="grid grid-cols-2 gap-2 items-center">
+            {wrapField('checkSameAsMailing', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Same as Mailing</Label>
-              <Checkbox
-                checked={getBoolValue('checkSameAsMailing')}
-                onCheckedChange={(checked) => handleChange('checkSameAsMailing', !!checked)}
-                disabled={disabled}
-              />
-            </div>
+              <Checkbox checked={getBoolValue('checkSameAsMailing')} onCheckedChange={(checked) => handleChange('checkSameAsMailing', !!checked)} disabled={disabled} />
+            </div>)}
             
-            <div className="grid grid-cols-2 gap-2 items-center">
+            {wrapField('checkAddress', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Address</Label>
-              <Input
-                value={getValue('checkAddress')}
-                onChange={(e) => handleChange('checkAddress', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
+              <Input value={getValue('checkAddress')} onChange={(e) => handleChange('checkAddress', e.target.value)} disabled={disabled} className="h-8" />
+            </div>)}
             
-            <div className="grid grid-cols-2 gap-2 items-center">
+            {wrapField('checkCity', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">City</Label>
-              <Input
-                value={getValue('checkCity')}
-                onChange={(e) => handleChange('checkCity', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
+              <Input value={getValue('checkCity')} onChange={(e) => handleChange('checkCity', e.target.value)} disabled={disabled} className="h-8" />
+            </div>)}
             
-            <div className="grid grid-cols-2 gap-2 items-center">
+            {wrapField('checkZip', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Zip Code</Label>
-              <Input
-                value={getValue('checkZip')}
-                onChange={(e) => handleChange('checkZip', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
+              <Input value={getValue('checkZip')} onChange={(e) => handleChange('checkZip', e.target.value)} disabled={disabled} className="h-8" />
+            </div>)}
           </div>
 
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 items-center">
+            {wrapField('achEmail', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Add ACH Email</Label>
-              <Input
-                type="email"
-                value={getValue('achEmail')}
-                onChange={(e) => handleChange('achEmail', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2 items-center">
+              <Input type="email" value={getValue('achEmail')} onChange={(e) => handleChange('achEmail', e.target.value)} disabled={disabled} className="h-8" />
+            </div>)}
+            {wrapField('achEmail2', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Add ACH Email</Label>
-              <Input
-                type="email"
-                value={getValue('achEmail2')}
-                onChange={(e) => handleChange('achEmail2', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
+              <Input type="email" value={getValue('achEmail2')} onChange={(e) => handleChange('achEmail2', e.target.value)} disabled={disabled} className="h-8" />
+            </div>)}
           </div>
         </div>
 
