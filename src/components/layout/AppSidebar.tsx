@@ -176,10 +176,7 @@ export const AppSidebar: React.FC = () => {
   };
 
   return (
-    <aside className={cn(
-      "fixed left-0 top-0 h-full bg-sidebar flex flex-col z-50 transition-all duration-300",
-      isCollapsed ? "w-16" : "w-64"
-    )}>
+    <aside className="fixed left-0 top-0 h-full bg-sidebar flex flex-col z-50 w-64">
       {/* Logo Section with Hamburger */}
       <div className="h-12 px-4 border-b border-sidebar-border flex items-center bg-sidebar/80">
         <div className="flex items-center justify-between w-full gap-2">
