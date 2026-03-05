@@ -958,13 +958,6 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   return (
     <>
       <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
-        {/* Borrower section header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/20">
-          <span className="text-sm font-medium text-foreground">
-            {detailViewName}
-          </span>
-        </div>
-
         <div className="flex flex-1">
           {/* Sub-navigation tabs on the left */}
           <BorrowerSubNavigation
