@@ -175,71 +175,377 @@ export const AppSidebar: React.FC = () => {
     );
   };
 
+  // Height of the fixed top portion (logo 48px + search 40px = 88px)
+  const topHeight = isExternalUser ? 'h-[120px]' : 'h-[88px]';
+  const topHeightPx = isExternalUser ? 120 : 88;
+
   return (
-    <aside className="fixed left-0 top-0 h-full bg-sidebar flex flex-col z-50 w-64">
-      {/* Logo Section with collapse arrow */}
-      <div className="h-12 px-4 border-b border-sidebar-border flex items-center bg-sidebar/80">
-        <div className="flex items-center justify-between w-full gap-2">
-          <div className="flex items-center justify-center flex-1">
-            <img 
-              src={logoNew} 
-              alt="Private Lending 360"
-              title="Private Lending 360"
-              className="object-contain drop-shadow-sm dark:drop-shadow-[0_1px_4px_rgba(255,255,255,0.2)] dark:brightness-[1.6] dark:contrast-110 transition-transform duration-200 cursor-pointer h-11 w-auto max-w-[200px] hover:scale-[1.02]"
-              style={{ imageRendering: '-webkit-optimize-contrast' }}
-              onClick={() => navigate('/dashboard')}
+    <>
+      {/* Fixed top bar - always w-64 */}
+      <div className="fixed left-0 top-0 w-64 z-[51] bg-sidebar flex flex-col">
+        {/* Logo Section with collapse arrow */}
+        <div className="h-12 px-4 border-b border-sidebar-border flex items-center bg-sidebar/80">
+          <div className="flex items-center justify-between w-full gap-2">
+            <div className="flex items-center justify-center flex-1">
+              <img 
+                src={logoNew} 
+                alt="Private Lending 360"
+                title="Private Lending 360"
+                className="object-contain drop-shadow-sm dark:drop-shadow-[0_1px_4px_rgba(255,255,255,0.2)] dark:brightness-[1.6] dark:contrast-110 transition-transform duration-200 cursor-pointer h-11 w-auto max-w-[200px] hover:scale-[1.02]"
+                style={{ imageRendering: '-webkit-optimize-contrast' }}
+                onClick={() => navigate('/dashboard')}
+              />
+            </div>
+            <button
+              onClick={toggleSidebar}
+              className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors flex-shrink-0"
+              aria-label={isCollapsed ? "Expand navigation" : "Collapse navigation"}
+            >
+              {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* External User Banner */}
+        {isExternalUser && (
+          <div className="px-4 py-2 bg-primary/10 border-b border-sidebar-border">
+            <div className="flex items-center gap-2 text-xs text-primary">
+              <Eye className="h-3 w-3" />
+              <span>External Access</span>
+            </div>
+          </div>
+        )}
+
+        {/* Search Bar - always visible */}
+        <div className="h-10 px-3 border-b border-sidebar-border flex items-center">
+          <div className="relative w-full">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-sidebar-foreground/50" />
+            <input
+              type="text"
+              placeholder="Site Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-sidebar-border bg-sidebar text-sidebar-foreground placeholder:text-sidebar-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
-          <button
-            onClick={toggleSidebar}
-            className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors flex-shrink-0"
-            aria-label={isCollapsed ? "Expand navigation" : "Collapse navigation"}
-          >
-            {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-          </button>
         </div>
       </div>
 
-      {/* External User Banner */}
-      {isExternalUser && (
-        <div className="px-4 py-2 bg-primary/10 border-b border-sidebar-border">
-          <div className="flex items-center gap-2 text-xs text-primary">
-            <Eye className="h-3 w-3" />
-            <span>External Access</span>
-          </div>
-        </div>
-      )}
+      {/* Nav panel - collapses width */}
+      <aside 
+        className={cn(
+          "fixed left-0 h-full bg-sidebar flex flex-col z-50 transition-all duration-300",
+          isCollapsed ? "w-16" : "w-64"
+        )}
+        style={{ top: `${topHeightPx}px` }}
+      >
+        <nav className="flex-1 p-2 space-y-1 overflow-y-auto sidebar-scrollbar">
+          <TooltipProvider delayDuration={0}>
+            {/* My Work Section */}
+            {searchedMyWorkItems.length > 0 && (
+              isCollapsed ? (
+                <React.Fragment>
+                  {searchedMyWorkItems.map((item) => (
+                    <Tooltip key={item.path}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => navigate(item.path)}
+                          className={cn(
+                            'sidebar-item w-full justify-center px-2',
+                            isActive(item.path) && 'sidebar-item-active'
+                          )}
+                        >
+                          <item.icon className="h-5 w-5 flex-shrink-0" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="font-medium">
+                        {item.label}
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                  <div className="my-3 border-t border-sidebar-border" />
+                </React.Fragment>
+              ) : (
+                <React.Fragment>
+                  <div>
+                    <button
+                      className={cn(
+                        'sidebar-item w-full',
+                        searchedMyWorkItems.some((item) => isActive(item.path)) && 'sidebar-item-active'
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Briefcase className="h-5 w-5" />
+                        <span>My Work</span>
+                      </div>
+                    </button>
+                    <div className="pl-4 pt-1 space-y-1">
+                      {searchedMyWorkItems.map((item) => (
+                        <button
+                          key={item.path}
+                          onClick={() => navigate(item.path)}
+                          className={cn(
+                            'sidebar-item w-full text-sm',
+                            isActive(item.path) && 'sidebar-item-active'
+                          )}
+                        >
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="my-3 border-t border-sidebar-border" />
+                </React.Fragment>
+              )
+            )}
 
-      {/* Search Bar - always visible */}
-      <div className="h-10 px-3 border-b border-sidebar-border flex items-center">
-        <div className="relative w-full">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-sidebar-foreground/50" />
-          <input
-            type="text"
-            placeholder="Site Search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-sidebar-border bg-sidebar text-sidebar-foreground placeholder:text-sidebar-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-        </div>
-      </div>
+            {/* CSR-specific sections - hidden from admin */}
+            {!isCollapsed && role === 'csr' && (
+              <BrokerServicesNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'broker'} onOpenChange={handleSectionToggle('broker')} />
+            )}
 
-      {/* Navigation - collapsible */}
-      {!isCollapsed && (
-      <nav className="flex-1 p-2 space-y-1 overflow-y-auto sidebar-scrollbar">
-        <TooltipProvider delayDuration={0}>
-          {/* My Work Section */}
-          {searchedMyWorkItems.length > 0 && (
-            isCollapsed ? (
-              <React.Fragment>
-                {searchedMyWorkItems.map((item) => (
+            {/* Loan Servicing (promoted from Broker Services) - CSR only */}
+            {!isCollapsed && role === 'csr' && (
+              <PromotedNavSection
+                label="Loan Servicing"
+                icon={Landmark}
+                items={[
+                  { label: 'Management Dashboard', path: '/broker-services/servicing/management' },
+                  { label: 'Department Alerts', path: '/broker-services/servicing/alerts' },
+                  { label: 'Department Dashboard', path: '/broker-services/servicing/dashboard' },
+                  { label: 'All Loan Document Files', path: '/deals' },
+                  { label: 'Custom Views', path: '/broker-services/servicing/custom-views' },
+                  { label: 'Activity Journal', path: '/broker-services/servicing/activity' },
+                ]}
+                isCollapsed={isCollapsed}
+                searchQuery={searchQuery}
+                isOpen={activeSection === 'loan-servicing'}
+                onOpenChange={handleSectionToggle('loan-servicing')}
+              />
+            )}
+
+            {/* Default Services (promoted from Broker Services) - CSR only */}
+            {!isCollapsed && role === 'csr' && (
+              <PromotedNavSection
+                label="Default Services"
+                icon={AlertTriangle}
+                items={[
+                  { label: 'Management Dashboard', path: '/broker-services/default/management' },
+                  { label: 'Department Alerts', path: '/broker-services/default/alerts' },
+                  { label: 'Department Dashboard', path: '/broker-services/default/dashboard' },
+                  { label: 'Mod & Forbearance Wizard', path: '/broker-services/default/mod-forbearance' },
+                  { label: 'Foreclosure Processing', path: '/broker-services/default/foreclosure' },
+                  { label: 'Bankruptcy Monitoring', path: '/broker-services/default/bankruptcy' },
+                  { label: 'Activity Journal', path: '/broker-services/default/activity' },
+                ]}
+                isCollapsed={isCollapsed}
+                searchQuery={searchQuery}
+                isOpen={activeSection === 'default-services'}
+                onOpenChange={handleSectionToggle('default-services')}
+              />
+            )}
+
+            {/* Operations (promoted from Broker Services) - CSR only */}
+            {!isCollapsed && role === 'csr' && (
+              <PromotedNavSection
+                label="Operations"
+                icon={Workflow}
+                items={[
+                  { label: 'Management Dashboard', path: '/broker-services/operations/management' },
+                  { label: 'Department Alerts', path: '/broker-services/operations/alerts' },
+                  { label: 'Department Dashboard', path: '/broker-services/operations/dashboard' },
+                  { label: 'Senior Lien Tracking', path: '/broker-services/operations/senior-lien' },
+                  { label: 'Insurance Tracking', path: '/broker-services/operations/insurance' },
+                  { label: 'Tax Tracking', path: '/broker-services/operations/tax' },
+                  { label: 'Account Maintenance', path: '/broker-services/operations/maintenance' },
+                  { label: 'Outstanding / Missing Items', path: '/broker-services/operations/outstanding' },
+                  { label: 'Activity Journal', path: '/broker-services/operations/activity' },
+                ]}
+                isCollapsed={isCollapsed}
+                searchQuery={searchQuery}
+                isOpen={activeSection === 'operations'}
+                onOpenChange={handleSectionToggle('operations')}
+              />
+            )}
+
+            {/* Accounting Section - CSR only */}
+            {!isCollapsed && role === 'csr' && (
+              <AccountingNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'accounting'} onOpenChange={handleSectionToggle('accounting')} />
+            )}
+
+            {/* Knowledge Center (promoted from Accounting) - CSR only */}
+            {!isCollapsed && role === 'csr' && (
+              <PromotedNavSection
+                label="Knowledge Center"
+                icon={BookOpen}
+                items={[
+                  { label: 'Fee Sheet', path: '/accounting/knowledge/fee-sheet' },
+                  { label: 'Policies & Processes', path: '/accounting/knowledge/policies' },
+                  { label: 'Industry News', path: '/accounting/knowledge/news' },
+                  { label: 'Smart AI', path: '/accounting/knowledge/smart-ai' },
+                ]}
+                isCollapsed={isCollapsed}
+                searchQuery={searchQuery}
+                isOpen={activeSection === 'knowledge-center'}
+                onOpenChange={handleSectionToggle('knowledge-center')}
+              />
+            )}
+
+            {/* Legal (promoted from Accounting) - CSR only */}
+            {!isCollapsed && role === 'csr' && (
+              <PromotedNavSection
+                label="Legal"
+                icon={Scale}
+                items={[
+                  { label: 'Management Dashboard', path: '/accounting/legal/management' },
+                  { label: 'Department Alerts', path: '/accounting/legal/alerts' },
+                  { label: 'Department Dashboard', path: '/accounting/legal/dashboard' },
+                  { label: 'Accounts', path: '/accounting/legal/accounts' },
+                  { label: 'Calendar', path: '/accounting/legal/calendar' },
+                  { label: 'Activity Journal', path: '/accounting/legal/activity' },
+                ]}
+                isCollapsed={isCollapsed}
+                searchQuery={searchQuery}
+                isOpen={activeSection === 'legal'}
+                onOpenChange={handleSectionToggle('legal')}
+              />
+            )}
+
+            {/* Documents Vault - CSR only */}
+            {!isCollapsed && role === 'csr' && (
+              <PromotedNavSection
+                label="Documents Vault"
+                icon={FolderLock}
+                items={[]}
+                directPath="/documents"
+                isCollapsed={isCollapsed}
+                searchQuery={searchQuery}
+              />
+            )}
+
+            {/* Contacts - CSR only */}
+            {!isCollapsed && role === 'csr' && (
+              <PromotedNavSection
+                label="Contacts"
+                icon={Users}
+                items={[]}
+                isCollapsed={isCollapsed}
+                searchQuery={searchQuery}
+              />
+            )}
+
+            {/* Statements & Reports - CSR only */}
+            {!isCollapsed && role === 'csr' && (
+              <PromotedNavSection
+                label="Statements & Reports"
+                icon={BarChart3}
+                items={[]}
+                isCollapsed={isCollapsed}
+                searchQuery={searchQuery}
+              />
+            )}
+
+            {/* System Administration Section - CSR only */}
+            {!isCollapsed && role === 'csr' && (
+              <SystemAdminNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'sysadmin'} onOpenChange={handleSectionToggle('sysadmin')} />
+            )}
+
+            {/* C Level Module Section - CSR only */}
+            {!isCollapsed && role === 'csr' && (
+              <CLevelModuleNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'clevel'} onOpenChange={handleSectionToggle('clevel')} />
+            )}
+
+            {/* Regular Nav Items */}
+            {searchedItems.map((item) => (
+              isCollapsed ? (
+                <Tooltip key={item.path}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => navigate(item.path)}
+                      className={cn(
+                        'sidebar-item w-full justify-center px-2',
+                        isActive(item.path) && 'sidebar-item-active'
+                      )}
+                    >
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="font-medium">
+                    {item.label}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={cn(
+                    'sidebar-item w-full',
+                    isActive(item.path) && 'sidebar-item-active'
+                  )}
+                >
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  <span>{item.label}</span>
+                </button>
+              )
+            ))}
+
+            {/* Separator before admin items */}
+            {searchedAdminItems.length > 0 && (
+              <div className="my-3 border-t border-sidebar-border" />
+            )}
+
+            {/* Top-level Admin Items */}
+            {searchedAdminItems.map((item) => (
+              isCollapsed ? (
+                <Tooltip key={item.path}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => navigate(item.path)}
+                      className={cn(
+                        'sidebar-item w-full justify-center px-2',
+                        isActive(item.path) && 'sidebar-item-active'
+                      )}
+                    >
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="font-medium">
+                    {item.label}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={cn(
+                    'sidebar-item w-full',
+                    isActive(item.path) && 'sidebar-item-active'
+                  )}
+                >
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  <span>{item.label}</span>
+                </button>
+              )
+            ))}
+
+            {/* Separator before Configuration group */}
+            {searchedGroups.length > 0 && !isCollapsed && (
+              <div className="my-3 border-t border-sidebar-border" />
+            )}
+
+            {/* Configuration items shown as tooltips when collapsed */}
+            {isCollapsed && searchedGroups.map((group) => (
+              <React.Fragment key={group.label}>
+                <div className="my-3 border-t border-sidebar-border" />
+                {group.items.map((item) => (
                   <Tooltip key={item.path}>
                     <TooltipTrigger asChild>
                       <button
                         onClick={() => navigate(item.path)}
                         className={cn(
                           'sidebar-item w-full justify-center px-2',
-                          isActive(item.path) && 'sidebar-item-active'
+                          location.pathname === item.path && 'sidebar-item-active'
                         )}
                       >
                         <item.icon className="h-5 w-5 flex-shrink-0" />
@@ -250,349 +556,54 @@ export const AppSidebar: React.FC = () => {
                     </TooltipContent>
                   </Tooltip>
                 ))}
-                <div className="my-3 border-t border-sidebar-border" />
               </React.Fragment>
-            ) : (
-              <React.Fragment>
-                <div>
+            ))}
+
+            {/* Grouped Nav Items (Configuration) - only show when not collapsed */}
+            {!isCollapsed && searchedGroups.map((group) => (
+              <Collapsible
+                key={group.label}
+                open={openGroups.includes(group.label)}
+                onOpenChange={() => toggleGroup(group.label)}
+              >
+                <CollapsibleTrigger asChild>
                   <button
                     className={cn(
-                      'sidebar-item w-full',
-                      searchedMyWorkItems.some((item) => isActive(item.path)) && 'sidebar-item-active'
+                      'sidebar-item w-full justify-between',
+                      isGroupActive(group) && 'sidebar-item-active'
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <Briefcase className="h-5 w-5" />
-                      <span>My Work</span>
+                      <group.icon className="h-5 w-5" />
+                      <span>{group.label}</span>
                     </div>
-                  </button>
-                  <div className="pl-4 pt-1 space-y-1">
-                    {searchedMyWorkItems.map((item) => (
-                      <button
-                        key={item.path}
-                        onClick={() => navigate(item.path)}
-                        className={cn(
-                          'sidebar-item w-full text-sm',
-                          isActive(item.path) && 'sidebar-item-active'
-                        )}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="my-3 border-t border-sidebar-border" />
-              </React.Fragment>
-            )
-          )}
-
-          {/* CSR-specific sections - hidden from admin */}
-          {!isCollapsed && role === 'csr' && (
-            <BrokerServicesNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'broker'} onOpenChange={handleSectionToggle('broker')} />
-          )}
-
-          {/* Loan Servicing (promoted from Broker Services) - CSR only */}
-          {!isCollapsed && role === 'csr' && (
-            <PromotedNavSection
-              label="Loan Servicing"
-              icon={Landmark}
-              items={[
-                { label: 'Management Dashboard', path: '/broker-services/servicing/management' },
-                { label: 'Department Alerts', path: '/broker-services/servicing/alerts' },
-                { label: 'Department Dashboard', path: '/broker-services/servicing/dashboard' },
-                { label: 'All Loan Document Files', path: '/deals' },
-                { label: 'Custom Views', path: '/broker-services/servicing/custom-views' },
-                { label: 'Activity Journal', path: '/broker-services/servicing/activity' },
-              ]}
-              isCollapsed={isCollapsed}
-              searchQuery={searchQuery}
-              isOpen={activeSection === 'loan-servicing'}
-              onOpenChange={handleSectionToggle('loan-servicing')}
-            />
-          )}
-
-          {/* Default Services (promoted from Broker Services) - CSR only */}
-          {!isCollapsed && role === 'csr' && (
-            <PromotedNavSection
-              label="Default Services"
-              icon={AlertTriangle}
-              items={[
-                { label: 'Management Dashboard', path: '/broker-services/default/management' },
-                { label: 'Department Alerts', path: '/broker-services/default/alerts' },
-                { label: 'Department Dashboard', path: '/broker-services/default/dashboard' },
-                { label: 'Mod & Forbearance Wizard', path: '/broker-services/default/mod-forbearance' },
-                { label: 'Foreclosure Processing', path: '/broker-services/default/foreclosure' },
-                { label: 'Bankruptcy Monitoring', path: '/broker-services/default/bankruptcy' },
-                { label: 'Activity Journal', path: '/broker-services/default/activity' },
-              ]}
-              isCollapsed={isCollapsed}
-              searchQuery={searchQuery}
-              isOpen={activeSection === 'default-services'}
-              onOpenChange={handleSectionToggle('default-services')}
-            />
-          )}
-
-          {/* Operations (promoted from Broker Services) - CSR only */}
-          {!isCollapsed && role === 'csr' && (
-            <PromotedNavSection
-              label="Operations"
-              icon={Workflow}
-              items={[
-                { label: 'Management Dashboard', path: '/broker-services/operations/management' },
-                { label: 'Department Alerts', path: '/broker-services/operations/alerts' },
-                { label: 'Department Dashboard', path: '/broker-services/operations/dashboard' },
-                { label: 'Senior Lien Tracking', path: '/broker-services/operations/senior-lien' },
-                { label: 'Insurance Tracking', path: '/broker-services/operations/insurance' },
-                { label: 'Tax Tracking', path: '/broker-services/operations/tax' },
-                { label: 'Account Maintenance', path: '/broker-services/operations/maintenance' },
-                { label: 'Outstanding / Missing Items', path: '/broker-services/operations/outstanding' },
-                { label: 'Activity Journal', path: '/broker-services/operations/activity' },
-              ]}
-              isCollapsed={isCollapsed}
-              searchQuery={searchQuery}
-              isOpen={activeSection === 'operations'}
-              onOpenChange={handleSectionToggle('operations')}
-            />
-          )}
-
-          {/* Accounting Section - CSR only */}
-          {!isCollapsed && role === 'csr' && (
-            <AccountingNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'accounting'} onOpenChange={handleSectionToggle('accounting')} />
-          )}
-
-          {/* Knowledge Center (promoted from Accounting) - CSR only */}
-          {!isCollapsed && role === 'csr' && (
-            <PromotedNavSection
-              label="Knowledge Center"
-              icon={BookOpen}
-              items={[
-                { label: 'Fee Sheet', path: '/accounting/knowledge/fee-sheet' },
-                { label: 'Policies & Processes', path: '/accounting/knowledge/policies' },
-                { label: 'Industry News', path: '/accounting/knowledge/news' },
-                { label: 'Smart AI', path: '/accounting/knowledge/smart-ai' },
-              ]}
-              isCollapsed={isCollapsed}
-              searchQuery={searchQuery}
-              isOpen={activeSection === 'knowledge-center'}
-              onOpenChange={handleSectionToggle('knowledge-center')}
-            />
-          )}
-
-          {/* Legal (promoted from Accounting) - CSR only */}
-          {!isCollapsed && role === 'csr' && (
-            <PromotedNavSection
-              label="Legal"
-              icon={Scale}
-              items={[
-                { label: 'Management Dashboard', path: '/accounting/legal/management' },
-                { label: 'Department Alerts', path: '/accounting/legal/alerts' },
-                { label: 'Department Dashboard', path: '/accounting/legal/dashboard' },
-                { label: 'Accounts', path: '/accounting/legal/accounts' },
-                { label: 'Calendar', path: '/accounting/legal/calendar' },
-                { label: 'Activity Journal', path: '/accounting/legal/activity' },
-              ]}
-              isCollapsed={isCollapsed}
-              searchQuery={searchQuery}
-              isOpen={activeSection === 'legal'}
-              onOpenChange={handleSectionToggle('legal')}
-            />
-          )}
-
-          {/* Documents Vault - CSR only */}
-          {!isCollapsed && role === 'csr' && (
-            <PromotedNavSection
-              label="Documents Vault"
-              icon={FolderLock}
-              items={[]}
-              directPath="/documents"
-              isCollapsed={isCollapsed}
-              searchQuery={searchQuery}
-            />
-          )}
-
-          {/* Contacts - CSR only */}
-          {!isCollapsed && role === 'csr' && (
-            <PromotedNavSection
-              label="Contacts"
-              icon={Users}
-              items={[]}
-              isCollapsed={isCollapsed}
-              searchQuery={searchQuery}
-            />
-          )}
-
-          {/* Statements & Reports - CSR only */}
-          {!isCollapsed && role === 'csr' && (
-            <PromotedNavSection
-              label="Statements & Reports"
-              icon={BarChart3}
-              items={[]}
-              isCollapsed={isCollapsed}
-              searchQuery={searchQuery}
-            />
-          )}
-
-          {/* System Administration Section - CSR only */}
-          {!isCollapsed && role === 'csr' && (
-            <SystemAdminNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'sysadmin'} onOpenChange={handleSectionToggle('sysadmin')} />
-          )}
-
-          {/* C Level Module Section - CSR only */}
-          {!isCollapsed && role === 'csr' && (
-            <CLevelModuleNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'clevel'} onOpenChange={handleSectionToggle('clevel')} />
-          )}
-
-          {/* Regular Nav Items */}
-          {searchedItems.map((item) => (
-            isCollapsed ? (
-              <Tooltip key={item.path}>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => navigate(item.path)}
-                    className={cn(
-                      'sidebar-item w-full justify-center px-2',
-                      isActive(item.path) && 'sidebar-item-active'
+                    {openGroups.includes(group.label) ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
                     )}
-                  >
-                    <item.icon className="h-5 w-5 flex-shrink-0" />
                   </button>
-                </TooltipTrigger>
-                <TooltipContent side="right" className="font-medium">
-                  {item.label}
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={cn(
-                  'sidebar-item w-full',
-                  isActive(item.path) && 'sidebar-item-active'
-                )}
-              >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
-                <span>{item.label}</span>
-              </button>
-            )
-          ))}
-
-          {/* Separator before admin items */}
-          {searchedAdminItems.length > 0 && (
-            <div className="my-3 border-t border-sidebar-border" />
-          )}
-
-          {/* Top-level Admin Items */}
-          {searchedAdminItems.map((item) => (
-            isCollapsed ? (
-              <Tooltip key={item.path}>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => navigate(item.path)}
-                    className={cn(
-                      'sidebar-item w-full justify-center px-2',
-                      isActive(item.path) && 'sidebar-item-active'
-                    )}
-                  >
-                    <item.icon className="h-5 w-5 flex-shrink-0" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="right" className="font-medium">
-                  {item.label}
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={cn(
-                  'sidebar-item w-full',
-                  isActive(item.path) && 'sidebar-item-active'
-                )}
-              >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
-                <span>{item.label}</span>
-              </button>
-            )
-          ))}
-
-          {/* Separator before Configuration group */}
-          {searchedGroups.length > 0 && !isCollapsed && (
-            <div className="my-3 border-t border-sidebar-border" />
-          )}
-
-          {/* Configuration items shown as tooltips when collapsed */}
-          {isCollapsed && searchedGroups.map((group) => (
-            <React.Fragment key={group.label}>
-              <div className="my-3 border-t border-sidebar-border" />
-              {group.items.map((item) => (
-                <Tooltip key={item.path}>
-                  <TooltipTrigger asChild>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pl-4 pt-1 space-y-1">
+                  {group.items.map((item) => (
                     <button
+                      key={item.path}
                       onClick={() => navigate(item.path)}
                       className={cn(
-                        'sidebar-item w-full justify-center px-2',
+                        'sidebar-item w-full text-sm',
                         location.pathname === item.path && 'sidebar-item-active'
                       )}
                     >
-                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.label}</span>
                     </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="font-medium">
-                    {item.label}
-                  </TooltipContent>
-                </Tooltip>
-              ))}
-            </React.Fragment>
-          ))}
-
-          {/* Grouped Nav Items (Configuration) - only show when not collapsed */}
-          {!isCollapsed && searchedGroups.map((group) => (
-            <Collapsible
-              key={group.label}
-              open={openGroups.includes(group.label)}
-              onOpenChange={() => toggleGroup(group.label)}
-            >
-              <CollapsibleTrigger asChild>
-                <button
-                  className={cn(
-                    'sidebar-item w-full justify-between',
-                    isGroupActive(group) && 'sidebar-item-active'
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <group.icon className="h-5 w-5" />
-                    <span>{group.label}</span>
-                  </div>
-                  {openGroups.includes(group.label) ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pl-4 pt-1 space-y-1">
-                {group.items.map((item) => (
-                  <button
-                    key={item.path}
-                    onClick={() => navigate(item.path)}
-                    className={cn(
-                      'sidebar-item w-full text-sm',
-                      location.pathname === item.path && 'sidebar-item-active'
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.label}</span>
-                  </button>
-                ))}
-              </CollapsibleContent>
-            </Collapsible>
-          ))}
-        </TooltipProvider>
-      </nav>
-      )}
-
-
-    </aside>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
+          </TooltipProvider>
+        </nav>
+      </aside>
+    </>
   );
 };
