@@ -91,7 +91,13 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
   const handleOpenChange = onOpenChange || setInternalOpen;
   const [openChildren, setOpenChildren] = React.useState<string[]>([]);
   // Track which section the user last navigated from (for shared paths like /deals)
-  const [activeSection, setActiveSection] = React.useState<string | null>(null);
+  // Default to 'Loan Documents Processing' for /deals so only that section highlights
+  const [activeSection, setActiveSection] = React.useState<string | null>(() => {
+    if (location.pathname === '/deals' || location.pathname.startsWith('/deals/')) {
+      return 'Loan Documents Processing';
+    }
+    return null;
+  });
 
   const collapseAll = () => {
     setOpenChildren([]);
@@ -215,7 +221,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
                 {section.items.map((item) => {
                   // For shared paths, only highlight if this is the active section
                   const isSharedPath = brokerServicesData.filter(s => s.label !== section.label).some(s => s.items.some(si => si.path === item.path));
-                  const isItemActive = location.pathname === item.path && (!isSharedPath || activeSection === section.label || activeSection === null);
+                  const isItemActive = location.pathname === item.path && (!isSharedPath || activeSection === section.label);
                   return (
                     <button
                       key={item.path + '-' + section.label}
