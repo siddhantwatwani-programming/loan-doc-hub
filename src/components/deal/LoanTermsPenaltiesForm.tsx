@@ -474,15 +474,17 @@ const MaturitySection: React.FC<{
 
   return (
     <div className="space-y-2 p-4 border border-border rounded-lg bg-card">
-      <div className="flex items-center gap-2 border-b border-border pb-2">
-        <h3 className="font-semibold text-sm text-foreground">Maturity</h3>
-        <Checkbox
-          checked={isEnabled}
-          onCheckedChange={(checked) => onValueChange(`${prefix}.enabled`, checked ? 'true' : 'false')}
-          disabled={disabled}
-          className="h-4 w-4"
-        />
-      </div>
+      <DirtyFieldWrapper fieldKey={`${prefix}.enabled`}>
+        <div className="flex items-center gap-2 border-b border-border pb-2">
+          <h3 className="font-semibold text-sm text-foreground">Maturity</h3>
+          <Checkbox
+            checked={isEnabled}
+            onCheckedChange={(checked) => onValueChange(`${prefix}.enabled`, checked ? 'true' : 'false')}
+            disabled={disabled}
+            className="h-4 w-4"
+          />
+        </div>
+      </DirtyFieldWrapper>
 
       <div className="space-y-2">
         <FieldRow label="Grace Period (Days)">
