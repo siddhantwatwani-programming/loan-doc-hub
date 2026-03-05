@@ -69,25 +69,27 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
 
       <div className="max-w-[700px] space-y-3">
         {/* Designated Recipient + Dropdown Populates */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Designated Recipient</Label>
-          <Select
-            value={getValue('designatedRecipient')}
-            onValueChange={(value) => handleChange('designatedRecipient', value)}
-            disabled={disabled}
-          >
-            <SelectTrigger className="h-7 text-sm flex-1 max-w-[200px] bg-background">
-              <SelectValue placeholder="Dropdown Populates" />
-            </SelectTrigger>
-            <SelectContent className="bg-background z-50">
-              {DESIGNATED_RECIPIENT_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.designatedRecipient}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Designated Recipient</Label>
+            <Select
+              value={getValue('designatedRecipient')}
+              onValueChange={(value) => handleChange('designatedRecipient', value)}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-7 text-sm flex-1 max-w-[200px] bg-background">
+                <SelectValue placeholder="Dropdown Populates" />
+              </SelectTrigger>
+              <SelectContent className="bg-background z-50">
+                {DESIGNATED_RECIPIENT_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </DirtyFieldWrapper>
 
         {/* Name */}
         <div className="flex items-center gap-3">
