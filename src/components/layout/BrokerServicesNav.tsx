@@ -221,7 +221,7 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
                 {section.items.map((item) => {
                   // For shared paths, only highlight if this is the active section
                   const isSharedPath = brokerServicesData.filter(s => s.label !== section.label).some(s => s.items.some(si => si.path === item.path));
-                  const isItemActive = location.pathname === item.path && (!isSharedPath || activeSection === section.label || activeSection === null);
+                  const isItemActive = location.pathname === item.path && (!isSharedPath || activeSection === section.label);
                   return (
                     <button
                       key={item.path + '-' + section.label}
