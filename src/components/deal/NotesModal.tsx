@@ -123,12 +123,6 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-w-2xl max-h-[90vh] overflow-y-auto p-4"
-        onPointerDownOutside={(e) => {
-          const target = e.target as HTMLElement | null;
-          if (target?.closest('[data-radix-popper-content-wrapper]')) {
-            e.preventDefault();
-          }
-        }}
         onInteractOutside={(e) => {
           const target = e.target as HTMLElement | null;
           if (target?.closest('[data-radix-popper-content-wrapper]')) {
