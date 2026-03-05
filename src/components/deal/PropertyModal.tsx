@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Home } from 'lucide-react';
+import { Home, CalendarIcon } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -11,6 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format, parse } from 'date-fns';
+import { cn } from '@/lib/utils';
 import type { PropertyData } from './PropertiesTableView';
 
 interface PropertyModalProps {
@@ -33,6 +37,8 @@ const OCCUPANCY_OPTIONS = ['Investor', 'Other', 'Owner', 'Primary Borrower', 'Se
 const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
 const FLOOD_ZONE_OPTIONS = ['Zone A', 'Zone AE', 'Zone AO', 'Zone X', 'Zone V', 'Zone VE', 'Zone D', 'Unknown'];
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
+const CONSTRUCTION_TYPES = ['Wood/Stucco', 'Stick', 'Concrete Block'];
+const LIEN_SOURCES = ['Broker', 'Borrower', 'Other'];
 
 const US_STATES = [
   { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' },
@@ -68,6 +74,11 @@ const getEmptyProperty = (): PropertyData => ({
   id: generatePropertyId(), isPrimary: false, description: '', street: '', city: '', state: '', zipCode: '', county: '',
   propertyType: '', occupancy: '', appraisedValue: '', appraisedDate: '', ltv: '', apn: '',
   loanPriority: '', floodZone: '', pledgedEquity: '', zoning: '', performedBy: '', copyBorrowerAddress: false,
+  purchasePrice: '', downPayment: '', delinquentTaxes: '',
+  appraiserStreet: '', appraiserCity: '', appraiserState: '', appraiserZip: '', appraiserPhone: '', appraiserEmail: '',
+  yearBuilt: '', squareFeet: '', constructionType: '', monthlyIncome: '', lienProtectiveEquity: '', sourceLienInfo: '',
+  delinquencies60day: false, delinquenciesHowMany: '', currentlyDelinquent: false, paidByLoan: false,
+  sourceOfPayment: '', recordingNumber: '',
 });
 
 export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange, property, onSave, isEdit = false }) => {
@@ -85,6 +96,11 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   const sanitizeNumericValue = (value: string): string => value.replace(/[^0-9.-]/g, '');
   const handleCurrencyChange = (field: keyof PropertyData, value: string) => setFormData(prev => ({ ...prev, [field]: sanitizeNumericValue(value) }));
   const handlePercentageChange = (field: keyof PropertyData, value: string) => setFormData(prev => ({ ...prev, [field]: sanitizeNumericValue(value) }));
+
+  const parseDate = (val: string): Date | undefined => {
+    if (!val) return undefined;
+    try { return parse(val, 'yyyy-MM-dd', new Date()); } catch { return undefined; }
+  };
 
   const handleSave = () => { onSave(formData); onOpenChange(false); };
 
@@ -108,6 +124,23 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
           })}
         </SelectContent>
       </Select>
+    </div>
+  );
+
+  const renderCurrencyField = (field: keyof PropertyData, label: string) => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+      <div className="relative flex-1">
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+        <Input value={String(formData[field] || '')} onChange={(e) => handleCurrencyChange(field, e.target.value)} className="h-7 text-xs pl-6" inputMode="decimal" placeholder="0.00" />
+      </div>
+    </div>
+  );
+
+  const renderCheckboxField = (field: keyof PropertyData, label: string) => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+      <Checkbox checked={!!formData[field]} onCheckedChange={(c) => handleFieldChange(field, !!c)} className="h-3.5 w-3.5" />
     </div>
   );
 
@@ -163,22 +196,61 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                   </div>
                 </div>
                 {renderInlineField('zoning', 'Zoning')}
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Appraised Value</Label>
-                  <div className="relative flex-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-                    <Input value={formData.appraisedValue} onChange={(e) => handleCurrencyChange('appraisedValue', e.target.value)} className="h-7 text-xs pl-6" inputMode="decimal" placeholder="0.00" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Pledged Equity</Label>
-                  <div className="relative flex-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-                    <Input value={formData.pledgedEquity || ''} onChange={(e) => handleCurrencyChange('pledgedEquity', e.target.value)} className="h-7 text-xs pl-6" inputMode="decimal" placeholder="0.00" />
-                  </div>
-                </div>
+                {renderCurrencyField('appraisedValue', 'Appraised Value')}
+                {renderCurrencyField('pledgedEquity', 'Pledged Equity')}
                 {renderInlineSelect('loanPriority', 'Priority', PRIORITY_OPTIONS, 'Select')}
                 {renderInlineSelect('floodZone', 'Flood Zone', FLOOD_ZONE_OPTIONS, 'Select')}
+              </div>
+            </div>
+
+            {/* Additional Property Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0 mt-4">
+              {/* Left - Purchase & Appraiser Contact */}
+              <div className="space-y-1.5">
+                {renderCurrencyField('purchasePrice', 'Purchase Price')}
+                {renderCurrencyField('downPayment', 'Down Payment')}
+                {renderCurrencyField('delinquentTaxes', 'Delinquent Taxes')}
+
+                <p className="text-xs italic text-foreground pt-3 pb-1">Appraiser Contact</p>
+                {renderInlineField('appraiserStreet', 'Street')}
+                {renderInlineField('appraiserCity', 'City')}
+                {renderInlineField('appraiserState', 'State')}
+                {renderInlineField('appraiserZip', 'ZIP')}
+                {renderInlineField('appraiserPhone', 'Phone')}
+                {renderInlineField('appraiserEmail', 'Email')}
+              </div>
+
+              {/* Right - Construction & Delinquency */}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Year Built</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !formData.yearBuilt && 'text-muted-foreground')}>
+                        {formData.yearBuilt ? format(parseDate(formData.yearBuilt)!, 'MM/dd/yyyy') : 'Date'}
+                        <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={parseDate(formData.yearBuilt || '')}
+                        onSelect={(date) => date && handleFieldChange('yearBuilt', format(date, 'yyyy-MM-dd'))}
+                        initialFocus className="p-3 pointer-events-auto" />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                {renderInlineField('squareFeet', 'Square Feet')}
+                {renderInlineSelect('constructionType', 'Type of Construction', CONSTRUCTION_TYPES, 'Select...')}
+                {renderCurrencyField('monthlyIncome', 'Generates Monthly Income')}
+                {renderCurrencyField('lienProtectiveEquity', 'Lien (Protective Equity)')}
+                {renderInlineSelect('sourceLienInfo', 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
+
+                <p className="text-xs font-medium text-foreground pt-3 pb-1">During Previous 12 Months</p>
+                {renderCheckboxField('delinquencies60day', '60-day + Delinquencies')}
+                {renderInlineField('delinquenciesHowMany', 'How Many')}
+                {renderCheckboxField('currentlyDelinquent', 'Currently Delinquent')}
+                {renderCheckboxField('paidByLoan', 'Will be Paid by this Loan')}
+                {renderInlineField('sourceOfPayment', 'If No, List Source of Payment')}
+                {renderInlineField('recordingNumber', 'Recording number')}
               </div>
             </div>
           </TabsContent>

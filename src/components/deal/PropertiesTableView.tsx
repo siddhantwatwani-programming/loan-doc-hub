@@ -35,6 +35,28 @@ export interface PropertyData {
   zoning?: string;
   performedBy?: string;
   copyBorrowerAddress?: boolean;
+  // Origination property fields
+  purchasePrice?: string;
+  downPayment?: string;
+  delinquentTaxes?: string;
+  appraiserStreet?: string;
+  appraiserCity?: string;
+  appraiserState?: string;
+  appraiserZip?: string;
+  appraiserPhone?: string;
+  appraiserEmail?: string;
+  yearBuilt?: string;
+  squareFeet?: string;
+  constructionType?: string;
+  monthlyIncome?: string;
+  lienProtectiveEquity?: string;
+  sourceLienInfo?: string;
+  delinquencies60day?: boolean;
+  delinquenciesHowMany?: string;
+  currentlyDelinquent?: boolean;
+  paidByLoan?: boolean;
+  sourceOfPayment?: string;
+  recordingNumber?: string;
 }
 
 interface PropertiesTableViewProps {

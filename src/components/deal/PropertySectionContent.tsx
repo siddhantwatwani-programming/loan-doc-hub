@@ -6,7 +6,7 @@ import { PropertySubNavigation, type PropertySubSection } from './PropertySubNav
 import { PropertyDetailsForm } from './PropertyDetailsForm';
 import { PropertyLegalDescriptionForm } from './PropertyLegalDescriptionForm';
 import { PropertyTaxForm } from './PropertyTaxForm';
-import { OriginationPropertyForm } from './OriginationPropertyForm';
+
 import { PropertiesTableView, type PropertyData } from './PropertiesTableView';
 import { PropertyModal } from './PropertyModal';
 import { LienSectionContent } from './LienSectionContent';
@@ -60,6 +60,27 @@ const extractPropertiesFromValues = (values: Record<string, string>): PropertyDa
       zoning: values[`${prefix}.zoning`] || '',
       performedBy: values[`${prefix}.appraisal_performed_by`] || '',
       copyBorrowerAddress: values[`${prefix}.copy_borrower_address`] === 'true',
+      purchasePrice: values[`${prefix}.purchase_price`] || '',
+      downPayment: values[`${prefix}.down_payment`] || '',
+      delinquentTaxes: values[`${prefix}.delinquent_taxes`] || '',
+      appraiserStreet: values[`${prefix}.appraiser_street`] || '',
+      appraiserCity: values[`${prefix}.appraiser_city`] || '',
+      appraiserState: values[`${prefix}.appraiser_state`] || '',
+      appraiserZip: values[`${prefix}.appraiser_zip`] || '',
+      appraiserPhone: values[`${prefix}.appraiser_phone`] || '',
+      appraiserEmail: values[`${prefix}.appraiser_email`] || '',
+      yearBuilt: values[`${prefix}.year_built`] || '',
+      squareFeet: values[`${prefix}.square_feet`] || '',
+      constructionType: values[`${prefix}.construction_type`] || '',
+      monthlyIncome: values[`${prefix}.monthly_income`] || '',
+      lienProtectiveEquity: values[`${prefix}.lien_protective_equity`] || '',
+      sourceLienInfo: values[`${prefix}.source_lien_info`] || '',
+      delinquencies60day: values[`${prefix}.delinquencies_60day`] === 'true',
+      delinquenciesHowMany: values[`${prefix}.delinquencies_how_many`] || '',
+      currentlyDelinquent: values[`${prefix}.currently_delinquent`] === 'true',
+      paidByLoan: values[`${prefix}.paid_by_loan`] === 'true',
+      sourceOfPayment: values[`${prefix}.source_of_payment`] || '',
+      recordingNumber: values[`${prefix}.recording_number`] || '',
     };
     properties.push(property);
   });
@@ -109,7 +130,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const [editingProperty, setEditingProperty] = useState<PropertyData | null>(null);
   
   // Check if we're in detail view (liens and insurance sections are handled separately)
-  const isDetailView = ['property_details', 'legal_description', 'property_tax', 'origination_property'].includes(activeSubSection);
+  const isDetailView = ['property_details', 'legal_description', 'property_tax'].includes(activeSubSection);
   
   // Check if liens section is active (rendered separately)
   const isLiensSection = activeSubSection === 'liens';
@@ -197,6 +218,27 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     onValueChange(`${prefix}.zoning`, propertyData.zoning || '');
     onValueChange(`${prefix}.appraisal_performed_by`, propertyData.performedBy || '');
     onValueChange(`${prefix}.copy_borrower_address`, String(!!propertyData.copyBorrowerAddress));
+    onValueChange(`${prefix}.purchase_price`, propertyData.purchasePrice || '');
+    onValueChange(`${prefix}.down_payment`, propertyData.downPayment || '');
+    onValueChange(`${prefix}.delinquent_taxes`, propertyData.delinquentTaxes || '');
+    onValueChange(`${prefix}.appraiser_street`, propertyData.appraiserStreet || '');
+    onValueChange(`${prefix}.appraiser_city`, propertyData.appraiserCity || '');
+    onValueChange(`${prefix}.appraiser_state`, propertyData.appraiserState || '');
+    onValueChange(`${prefix}.appraiser_zip`, propertyData.appraiserZip || '');
+    onValueChange(`${prefix}.appraiser_phone`, propertyData.appraiserPhone || '');
+    onValueChange(`${prefix}.appraiser_email`, propertyData.appraiserEmail || '');
+    onValueChange(`${prefix}.year_built`, propertyData.yearBuilt || '');
+    onValueChange(`${prefix}.square_feet`, propertyData.squareFeet || '');
+    onValueChange(`${prefix}.construction_type`, propertyData.constructionType || '');
+    onValueChange(`${prefix}.monthly_income`, propertyData.monthlyIncome || '');
+    onValueChange(`${prefix}.lien_protective_equity`, propertyData.lienProtectiveEquity || '');
+    onValueChange(`${prefix}.source_lien_info`, propertyData.sourceLienInfo || '');
+    onValueChange(`${prefix}.delinquencies_60day`, String(!!propertyData.delinquencies60day));
+    onValueChange(`${prefix}.delinquencies_how_many`, propertyData.delinquenciesHowMany || '');
+    onValueChange(`${prefix}.currently_delinquent`, String(!!propertyData.currentlyDelinquent));
+    onValueChange(`${prefix}.paid_by_loan`, String(!!propertyData.paidByLoan));
+    onValueChange(`${prefix}.source_of_payment`, propertyData.sourceOfPayment || '');
+    onValueChange(`${prefix}.recording_number`, propertyData.recordingNumber || '');
     
     // If this is marked as primary, unset others
     if (propertyData.isPrimary) {
@@ -295,16 +337,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             fields={fields}
             values={getPropertySpecificValues()}
             onValueChange={handlePropertyValueChange}
-            showValidation={showValidation}
-            disabled={disabled}
-            calculationResults={calculationResults}
-          />
-        );
-      case 'origination_property':
-        return (
-          <OriginationPropertyForm
-            values={values}
-            onValueChange={onValueChange}
             showValidation={showValidation}
             disabled={disabled}
             calculationResults={calculationResults}
