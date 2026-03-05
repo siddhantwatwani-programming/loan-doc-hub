@@ -124,29 +124,31 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
                   {GRID_COLUMNS.map((col) => (
                     <td key={col.key} className="px-1 py-1">
                       {!row.isSpacer && (
-                        col.key === 'lenders_split' ? (
-                          <Select
-                            value={values[getFieldKey(row.key, col.key)] || ''}
-                            onValueChange={(value) => onValueChange(getFieldKey(row.key, col.key), value)}
-                            disabled={disabled}
-                          >
-                            <SelectTrigger className="h-7 text-xs border-border">
-                              <SelectValue placeholder="Select..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="fee_per_lender">Fee Per Lender - No Split</SelectItem>
-                              <SelectItem value="pro_rata">Pro Rata</SelectItem>
-                              <SelectItem value="split_50_50">Split 50/50</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Input
-                            value={values[getFieldKey(row.key, col.key)] || ''}
-                            onChange={(e) => onValueChange(getFieldKey(row.key, col.key), e.target.value)}
-                            disabled={disabled}
-                            className="h-7 text-xs border-border"
-                          />
-                        )
+                        <DirtyFieldWrapper fieldKey={getFieldKey(row.key, col.key)}>
+                          {col.key === 'lenders_split' ? (
+                            <Select
+                              value={values[getFieldKey(row.key, col.key)] || ''}
+                              onValueChange={(value) => onValueChange(getFieldKey(row.key, col.key), value)}
+                              disabled={disabled}
+                            >
+                              <SelectTrigger className="h-7 text-xs border-border">
+                                <SelectValue placeholder="Select..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="fee_per_lender">Fee Per Lender - No Split</SelectItem>
+                                <SelectItem value="pro_rata">Pro Rata</SelectItem>
+                                <SelectItem value="split_50_50">Split 50/50</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input
+                              value={values[getFieldKey(row.key, col.key)] || ''}
+                              onChange={(e) => onValueChange(getFieldKey(row.key, col.key), e.target.value)}
+                              disabled={disabled}
+                              className="h-7 text-xs border-border"
+                            />
+                          )}
+                        </DirtyFieldWrapper>
                       )}
                     </td>
                   ))}
