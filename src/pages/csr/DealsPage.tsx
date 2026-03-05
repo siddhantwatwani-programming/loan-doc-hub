@@ -258,10 +258,15 @@ export const DealsPage: React.FC = () => {
             {hasActiveFilters && ' (filtered)'}
           </p>
         </div>
-        <Button onClick={() => navigate('/deals/new')} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Create File
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={() => fetchDeals(currentPage)} title="Refresh">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          <Button onClick={() => navigate('/deals/new')} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Create File
+          </Button>
+        </div>
       </div>
 
       <div className="section-card mb-6">
