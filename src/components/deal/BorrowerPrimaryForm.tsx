@@ -141,12 +141,18 @@ interface BorrowerPrimaryFormProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
-const InlineField = ({ label, children, labelWidth = 'min-w-[140px]' }: { label: string; children: React.ReactNode; labelWidth?: string }) => (
-  <div className="flex items-center gap-3">
-    <Label className={`text-sm text-muted-foreground ${labelWidth} text-left shrink-0`}>{label}</Label>
-    <div className="flex-1">{children}</div>
-  </div>
-);
+const InlineField = ({ label, children, labelWidth = 'min-w-[140px]', fieldKey }: { label: string; children: React.ReactNode; labelWidth?: string; fieldKey?: string }) => {
+  const content = (
+    <div className="flex items-center gap-3">
+      <Label className={`text-sm text-muted-foreground ${labelWidth} text-left shrink-0`}>{label}</Label>
+      <div className="flex-1">{children}</div>
+    </div>
+  );
+  if (fieldKey) {
+    return <DirtyFieldWrapper fieldKey={fieldKey}>{content}</DirtyFieldWrapper>;
+  }
+  return content;
+};
 
 export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
   fields,

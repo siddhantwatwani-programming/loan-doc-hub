@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 const FIELD_KEYS = {
   designatedRecipient: 'borrower.1098.designated_recipient',
