@@ -960,23 +960,12 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   return (
     <>
       <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
-        {/* Back button and borrower/co-borrower name when in detail view */}
-        {isDetailView && (
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/20">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleBackToTable}
-              className="gap-1 h-8"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-            <span className="text-sm font-medium text-foreground">
-              {detailViewName}
-            </span>
-          </div>
-        )}
+        {/* Borrower section header */}
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/20">
+          <span className="text-sm font-medium text-foreground">
+            {detailViewName}
+          </span>
+        </div>
 
         <div className="flex flex-1">
           {/* Sub-navigation tabs on the left */}
