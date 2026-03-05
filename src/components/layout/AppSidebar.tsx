@@ -301,7 +301,7 @@ export const AppSidebar: React.FC = () => {
             )}
 
             {/* CSR-specific sections - hidden from admin */}
-            {!isCollapsed && role === 'csr' && (
+            {role === 'csr' && (
               <BrokerServicesNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'broker'} onOpenChange={handleSectionToggle('broker')} />
             )}
 
