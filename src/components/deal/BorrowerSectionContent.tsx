@@ -371,14 +371,12 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     setActiveSubSection('primary');
   }, []);
 
-  // Handle back navigation
+  // Handle back navigation (co-borrower detail goes back to primary)
   const handleBackToTable = useCallback(() => {
     if (isCoBorrowerDetailView) {
-      // From co-borrower detail, go back to borrowers table
-      setActiveSubSection('borrowers');
+      setActiveSubSection('primary');
     } else {
-      // From borrower detail tabs, go back to borrowers table
-      setActiveSubSection('borrowers');
+      setActiveSubSection('primary');
     }
   }, [isCoBorrowerDetailView]);
 
