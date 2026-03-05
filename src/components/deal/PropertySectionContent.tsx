@@ -10,7 +10,6 @@ import { PropertiesTableView, type PropertyData } from './PropertiesTableView';
 import { PropertyModal } from './PropertyModal';
 import { LienSectionContent } from './LienSectionContent';
 import { InsuranceSectionContent } from './InsuranceSectionContent';
-import { OriginationPropertyForm } from './OriginationPropertyForm';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -109,7 +108,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const [editingProperty, setEditingProperty] = useState<PropertyData | null>(null);
   
   // Check if we're in detail view (liens and insurance sections are handled separately)
-  const isDetailView = ['property_details', 'legal_description', 'property_tax', 'origination_property'].includes(activeSubSection);
+  const isDetailView = ['property_details', 'legal_description', 'property_tax'].includes(activeSubSection);
   
   // Check if liens section is active (rendered separately)
   const isLiensSection = activeSubSection === 'liens';
@@ -293,16 +292,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         return (
           <PropertyTaxForm
             fields={fields}
-            values={getPropertySpecificValues()}
-            onValueChange={handlePropertyValueChange}
-            showValidation={showValidation}
-            disabled={disabled}
-            calculationResults={calculationResults}
-          />
-        );
-      case 'origination_property':
-        return (
-          <OriginationPropertyForm
             values={getPropertySpecificValues()}
             onValueChange={handlePropertyValueChange}
             showValidation={showValidation}
