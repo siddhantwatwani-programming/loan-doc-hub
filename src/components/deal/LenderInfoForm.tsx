@@ -562,30 +562,30 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           <div className="mt-4">
             <h4 className="text-sm font-semibold text-foreground border-b pb-1 mb-2">Delivery Options</h4>
             <div className="flex items-center gap-4 mb-3">
-              <div className="flex items-center gap-1">
+              {wrapField('deliveryPrint', <div className="flex items-center gap-1">
                 <Checkbox
                   checked={getBoolValue('deliveryPrint')}
                   onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground">Print</Label>
-              </div>
-              <div className="flex items-center gap-1">
+              </div>)}
+              {wrapField('deliveryEmail', <div className="flex items-center gap-1">
                 <Checkbox
                   checked={getBoolValue('deliveryEmail')}
                   onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground">Email</Label>
-              </div>
-              <div className="flex items-center gap-1">
+              </div>)}
+              {wrapField('deliverySms', <div className="flex items-center gap-1">
                 <Checkbox
                   checked={getBoolValue('deliverySms')}
                   onCheckedChange={(checked) => handleChange('deliverySms', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground">SMS</Label>
-              </div>
+              </div>)}
             </div>
 
             {/* Send section below */}
