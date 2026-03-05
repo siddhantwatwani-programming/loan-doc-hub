@@ -90,6 +90,8 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
   const openParent = isOpen !== undefined ? isOpen : internalOpen;
   const handleOpenChange = onOpenChange || setInternalOpen;
   const [openChildren, setOpenChildren] = React.useState<string[]>([]);
+  // Track which section the user last navigated from (for shared paths like /deals)
+  const [activeSection, setActiveSection] = React.useState<string | null>(null);
 
   const collapseAll = () => {
     setOpenChildren([]);
