@@ -34,42 +34,50 @@ const DistributionFields: React.FC<{
     <div className="space-y-2 pt-3">
       <h4 className="font-semibold text-sm text-foreground border-b border-border pb-1">Distribution</h4>
       <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <Label className="text-sm min-w-[160px] max-w-[160px]">Lenders</Label>
-          <Input
-            value={values[`${prefix}.distribution.lenders`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.distribution.lenders`, e.target.value)}
-            disabled={disabled}
-            className="h-7 text-sm flex-1"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <Label className="text-sm min-w-[160px] max-w-[160px]">Origination Vendors</Label>
-          <Input
-            value={values[`${prefix}.distribution.origination_vendors`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.distribution.origination_vendors`, e.target.value)}
-            disabled={disabled}
-            className="h-7 text-sm flex-1"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <Label className="text-sm min-w-[160px] max-w-[160px]">Company</Label>
-          <Input
-            value={values[`${prefix}.distribution.company`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.distribution.company`, e.target.value)}
-            disabled={disabled}
-            className="h-7 text-sm flex-1"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <Label className="text-sm min-w-[160px] max-w-[160px]">Other</Label>
-          <Input
-            value={values[`${prefix}.distribution.other`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.distribution.other`, e.target.value)}
-            disabled={disabled}
-            className="h-7 text-sm flex-1"
-          />
-        </div>
+        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.lenders`}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Lenders</Label>
+            <Input
+              value={values[`${prefix}.distribution.lenders`] || ''}
+              onChange={(e) => onValueChange(`${prefix}.distribution.lenders`, e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </DirtyFieldWrapper>
+        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.origination_vendors`}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Origination Vendors</Label>
+            <Input
+              value={values[`${prefix}.distribution.origination_vendors`] || ''}
+              onChange={(e) => onValueChange(`${prefix}.distribution.origination_vendors`, e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </DirtyFieldWrapper>
+        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.company`}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Company</Label>
+            <Input
+              value={values[`${prefix}.distribution.company`] || ''}
+              onChange={(e) => onValueChange(`${prefix}.distribution.company`, e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </DirtyFieldWrapper>
+        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.other`}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Other</Label>
+            <Input
+              value={values[`${prefix}.distribution.other`] || ''}
+              onChange={(e) => onValueChange(`${prefix}.distribution.other`, e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </DirtyFieldWrapper>
       </div>
     </div>
   );
