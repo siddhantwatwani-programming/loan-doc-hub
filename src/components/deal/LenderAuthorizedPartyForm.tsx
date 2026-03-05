@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 const FIELD_KEYS = {
   firstName: 'lender.authorized_party.first_name',
@@ -72,6 +73,15 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
     onValueChange(FIELD_KEYS[key], String(value));
   };
 
+  const renderInlineField = (key: keyof typeof FIELD_KEYS, label: string, labelWidth = 'min-w-[60px]', props: Record<string, any> = {}) => (
+    <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
+      <div className="flex items-center gap-2">
+        <Label className={`text-sm text-muted-foreground ${labelWidth}`}>{label}</Label>
+        <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" {...props} />
+      </div>
+    </DirtyFieldWrapper>
+  );
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -85,35 +95,25 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
         <div className="space-y-2">
           <h4 className="text-sm font-semibold text-foreground">Name</h4>
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[60px]">First</Label>
-              <Input value={getValue('firstName')} onChange={(e) => handleChange('firstName', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[60px]">Middle</Label>
-              <Input value={getValue('middleName')} onChange={(e) => handleChange('middleName', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[60px]">Last</Label>
-              <Input value={getValue('lastName')} onChange={(e) => handleChange('lastName', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[60px]">Capacity</Label>
-              <Select value={getValue('capacity')} onValueChange={(v) => handleChange('capacity', v)} disabled={disabled}>
-                <SelectTrigger className="h-7 text-sm flex-1 bg-background">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  {CAPACITY_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[60px]">Email</Label>
-              <Input type="email" value={getValue('email')} onChange={(e) => handleChange('email', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-            </div>
+            {renderInlineField('firstName', 'First')}
+            {renderInlineField('middleName', 'Middle')}
+            {renderInlineField('lastName', 'Last')}
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.capacity}>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground min-w-[60px]">Capacity</Label>
+                <Select value={getValue('capacity')} onValueChange={(v) => handleChange('capacity', v)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm flex-1 bg-background">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {CAPACITY_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </DirtyFieldWrapper>
+            {renderInlineField('email', 'Email', 'min-w-[60px]', { type: 'email' })}
           </div>
         </div>
 
@@ -121,22 +121,10 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
         <div className="space-y-2">
           <h4 className="text-sm font-semibold text-foreground">Address</h4>
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[50px]">Street</Label>
-              <Input value={getValue('street')} onChange={(e) => handleChange('street', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[50px]">City</Label>
-              <Input value={getValue('city')} onChange={(e) => handleChange('city', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[50px]">State</Label>
-              <Input value={getValue('state')} onChange={(e) => handleChange('state', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[50px]">ZIP</Label>
-              <Input value={getValue('zip')} onChange={(e) => handleChange('zip', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-            </div>
+            {renderInlineField('street', 'Street', 'min-w-[50px]')}
+            {renderInlineField('city', 'City', 'min-w-[50px]')}
+            {renderInlineField('state', 'State', 'min-w-[50px]')}
+            {renderInlineField('zip', 'ZIP', 'min-w-[50px]')}
           </div>
         </div>
 
@@ -144,22 +132,10 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
         <div className="space-y-2">
           <h4 className="text-sm font-semibold text-foreground">Phone</h4>
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[40px]">Home</Label>
-              <Input type="tel" value={getValue('phoneHome')} onChange={(e) => handleChange('phoneHome', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[40px]">Work</Label>
-              <Input type="tel" value={getValue('phoneWork')} onChange={(e) => handleChange('phoneWork', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[40px]">Cell</Label>
-              <Input type="tel" value={getValue('phoneCell')} onChange={(e) => handleChange('phoneCell', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[40px]">Fax</Label>
-              <Input type="tel" value={getValue('phoneFax')} onChange={(e) => handleChange('phoneFax', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-            </div>
+            {renderInlineField('phoneHome', 'Home', 'min-w-[40px]')}
+            {renderInlineField('phoneWork', 'Work', 'min-w-[40px]')}
+            {renderInlineField('phoneCell', 'Cell', 'min-w-[40px]')}
+            {renderInlineField('phoneFax', 'Fax', 'min-w-[40px]')}
           </div>
         </div>
       </div>
@@ -170,22 +146,30 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
         <div className="space-y-2">
           <h4 className="text-sm font-semibold text-foreground">Send:</h4>
           <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground">Payment Notification</Label>
-              <Checkbox checked={getBoolValue('sendPaymentNotification')} onCheckedChange={(c) => handleChange('sendPaymentNotification', !!c)} disabled={disabled} />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground">Borrower Statement</Label>
-              <Checkbox checked={getBoolValue('sendBorrowerStatement')} onCheckedChange={(c) => handleChange('sendBorrowerStatement', !!c)} disabled={disabled} />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground">Late Notice</Label>
-              <Checkbox checked={getBoolValue('sendLateNotice')} onCheckedChange={(c) => handleChange('sendLateNotice', !!c)} disabled={disabled} />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground">Maturity Notice</Label>
-              <Checkbox checked={getBoolValue('sendMaturityNotice')} onCheckedChange={(c) => handleChange('sendMaturityNotice', !!c)} disabled={disabled} />
-            </div>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendPaymentNotification}>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground">Payment Notification</Label>
+                <Checkbox checked={getBoolValue('sendPaymentNotification')} onCheckedChange={(c) => handleChange('sendPaymentNotification', !!c)} disabled={disabled} />
+              </div>
+            </DirtyFieldWrapper>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendBorrowerStatement}>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground">Borrower Statement</Label>
+                <Checkbox checked={getBoolValue('sendBorrowerStatement')} onCheckedChange={(c) => handleChange('sendBorrowerStatement', !!c)} disabled={disabled} />
+              </div>
+            </DirtyFieldWrapper>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendLateNotice}>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground">Late Notice</Label>
+                <Checkbox checked={getBoolValue('sendLateNotice')} onCheckedChange={(c) => handleChange('sendLateNotice', !!c)} disabled={disabled} />
+              </div>
+            </DirtyFieldWrapper>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendMaturityNotice}>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground">Maturity Notice</Label>
+                <Checkbox checked={getBoolValue('sendMaturityNotice')} onCheckedChange={(c) => handleChange('sendMaturityNotice', !!c)} disabled={disabled} />
+              </div>
+            </DirtyFieldWrapper>
           </div>
         </div>
 
@@ -193,30 +177,38 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
         <div className="space-y-2">
           <h4 className="text-sm font-semibold text-foreground">Delivery</h4>
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[40px]">Email</Label>
-              <Checkbox checked={getBoolValue('deliveryEmail')} onCheckedChange={(c) => handleChange('deliveryEmail', !!c)} disabled={disabled} />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[40px]">Mail</Label>
-              <Checkbox checked={getBoolValue('deliveryMail')} onCheckedChange={(c) => handleChange('deliveryMail', !!c)} disabled={disabled} />
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[40px]">SMS</Label>
-              <Checkbox checked={getBoolValue('deliverySms')} onCheckedChange={(c) => handleChange('deliverySms', !!c)} disabled={disabled} />
-            </div>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliveryEmail}>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground min-w-[40px]">Email</Label>
+                <Checkbox checked={getBoolValue('deliveryEmail')} onCheckedChange={(c) => handleChange('deliveryEmail', !!c)} disabled={disabled} />
+              </div>
+            </DirtyFieldWrapper>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliveryMail}>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground min-w-[40px]">Mail</Label>
+                <Checkbox checked={getBoolValue('deliveryMail')} onCheckedChange={(c) => handleChange('deliveryMail', !!c)} disabled={disabled} />
+              </div>
+            </DirtyFieldWrapper>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliverySms}>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground min-w-[40px]">SMS</Label>
+                <Checkbox checked={getBoolValue('deliverySms')} onCheckedChange={(c) => handleChange('deliverySms', !!c)} disabled={disabled} />
+              </div>
+            </DirtyFieldWrapper>
           </div>
         </div>
 
         {/* Details */}
         <div className="space-y-2">
           <h4 className="text-sm font-semibold text-foreground">Details</h4>
-          <Textarea
-            value={getValue('details')}
-            onChange={(e) => handleChange('details', e.target.value)}
-            disabled={disabled}
-            className="min-h-[80px] text-sm"
-          />
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.details}>
+            <Textarea
+              value={getValue('details')}
+              onChange={(e) => handleChange('details', e.target.value)}
+              disabled={disabled}
+              className="min-h-[80px] text-sm"
+            />
+          </DirtyFieldWrapper>
         </div>
       </div>
     </div>

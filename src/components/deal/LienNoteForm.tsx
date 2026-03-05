@@ -2,18 +2,34 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FileText } from 'lucide-react';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 interface LienNoteFormProps {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  fieldKey?: string;
 }
 
 export const LienNoteForm: React.FC<LienNoteFormProps> = ({
   value,
   onChange,
   disabled = false,
+  fieldKey,
 }) => {
+  const content = (
+    <div>
+      <Label className="text-sm text-foreground sr-only">Notes</Label>
+      <Textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Enter notes about this lien..."
+        disabled={disabled}
+        className="min-h-[300px] text-sm"
+      />
+    </div>
+  );
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center gap-2">
@@ -25,16 +41,11 @@ export const LienNoteForm: React.FC<LienNoteFormProps> = ({
         <span className="font-semibold text-sm text-primary">Lien Notes</span>
       </div>
 
-      <div>
-        <Label className="text-sm text-foreground sr-only">Notes</Label>
-        <Textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Enter notes about this lien..."
-          disabled={disabled}
-          className="min-h-[300px] text-sm"
-        />
-      </div>
+      {fieldKey ? (
+        <DirtyFieldWrapper fieldKey={fieldKey}>{content}</DirtyFieldWrapper>
+      ) : (
+        content
+      )}
 
       <div className="pt-4 border-t border-border">
         <p className="text-sm text-muted-foreground">
