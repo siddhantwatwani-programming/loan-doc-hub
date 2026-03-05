@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 export interface NoteData {
   id: string;
