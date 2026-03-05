@@ -91,27 +91,19 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               </div>
             </DirtyFieldWrapper>
 
-            {/* Authority */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">Authority</Label>
-              <Input
-                value={getValue('authority')}
-                onChange={(e) => handleChange('authority', e.target.value)}
-                disabled={disabled}
-                className="h-7 text-sm flex-1"
-              />
-            </div>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.authority}>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">Authority</Label>
+                <Input value={getValue('authority')} onChange={(e) => handleChange('authority', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              </div>
+            </DirtyFieldWrapper>
 
-            {/* Address (multiline) */}
-            <div className="flex items-start gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px] mt-1.5">Address</Label>
-              <Textarea
-                value={getValue('payeeAddress')}
-                onChange={(e) => handleChange('payeeAddress', e.target.value)}
-                disabled={disabled}
-                className="text-sm min-h-[70px] resize-none flex-1"
-              />
-            </div>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.payeeAddress}>
+              <div className="flex items-start gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px] mt-1.5">Address</Label>
+                <Textarea value={getValue('payeeAddress')} onChange={(e) => handleChange('payeeAddress', e.target.value)} disabled={disabled} className="text-sm min-h-[70px] resize-none flex-1" />
+              </div>
+            </DirtyFieldWrapper>
 
             {/* Type */}
             <div className="flex items-center gap-3">
