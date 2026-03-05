@@ -404,6 +404,36 @@ export type Database = {
         }
         Relationships: []
       }
+      form_permissions: {
+        Row: {
+          access_mode: string
+          created_at: string
+          form_key: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          screen_visible: boolean
+          updated_at: string
+        }
+        Insert: {
+          access_mode?: string
+          created_at?: string
+          form_key: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          screen_visible?: boolean
+          updated_at?: string
+        }
+        Update: {
+          access_mode?: string
+          created_at?: string
+          form_key?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          screen_visible?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       generated_documents: {
         Row: {
           created_at: string
