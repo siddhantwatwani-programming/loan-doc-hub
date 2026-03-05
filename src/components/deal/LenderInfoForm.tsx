@@ -429,22 +429,22 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-foreground border-b pb-2">Primary Address</h3>
           <div className="space-y-3">
-            <div className="flex items-center gap-3">
+            {wrapField('primaryStreet', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Street</Label>
               <Input value={getValue('primaryStreet')} onChange={(e) => handleChange('primaryStreet', e.target.value)} disabled={disabled} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('primaryCity', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">City</Label>
               <Input value={getValue('primaryCity')} onChange={(e) => handleChange('primaryCity', e.target.value)} disabled={disabled} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('primaryState', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">State</Label>
               <Input value={getValue('primaryState')} onChange={(e) => handleChange('primaryState', e.target.value)} disabled={disabled} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('primaryZip', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">ZIP</Label>
               <Input value={getValue('primaryZip')} onChange={(e) => handleChange('primaryZip', e.target.value)} disabled={disabled} className="h-8" />
-            </div>
+            </div>)}
           </div>
 
           {/* Mailing Address */}
