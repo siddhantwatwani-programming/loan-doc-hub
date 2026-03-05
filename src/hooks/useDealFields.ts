@@ -215,6 +215,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
+  const [dirtyFieldKeys, setDirtyFieldKeys] = useState<Set<string>>(new Set());
   const [requiredFieldChanged, setRequiredFieldChanged] = useState(false);
   const [deletedPrefixes, setDeletedPrefixes] = useState<string[]>([]);
   const isFetchingRef = useRef(false);
