@@ -176,32 +176,24 @@ export const AppSidebar: React.FC = () => {
   };
 
   return (
-    <aside className={cn(
-      "fixed left-0 top-0 h-full bg-sidebar flex flex-col z-50 transition-all duration-300",
-      isCollapsed ? "w-16" : "w-64"
-    )}>
-      {/* Logo Section with Hamburger */}
+    <aside className="fixed left-0 top-0 h-full bg-sidebar flex flex-col z-50 w-64">
+      {/* Logo Section with collapse arrow */}
       <div className="h-12 px-4 border-b border-sidebar-border flex items-center bg-sidebar/80">
         <div className="flex items-center justify-between w-full gap-2">
-          <div className={cn("flex items-center", isCollapsed ? "justify-center w-full" : "justify-center flex-1")}>
+          <div className="flex items-center justify-center flex-1">
             <img 
               src={logoNew} 
               alt="Private Lending 360"
               title="Private Lending 360"
-              className={cn(
-                "object-contain drop-shadow-sm dark:drop-shadow-[0_1px_4px_rgba(255,255,255,0.2)] dark:brightness-[1.6] dark:contrast-110 transition-transform duration-200 cursor-pointer",
-              isCollapsed 
-                  ? "h-8 w-auto max-w-[40px] hover:scale-105" 
-                  : "h-11 w-auto max-w-[200px] hover:scale-[1.02]"
-              )}
+              className="object-contain drop-shadow-sm dark:drop-shadow-[0_1px_4px_rgba(255,255,255,0.2)] dark:brightness-[1.6] dark:contrast-110 transition-transform duration-200 cursor-pointer h-11 w-auto max-w-[200px] hover:scale-[1.02]"
               style={{ imageRendering: '-webkit-optimize-contrast' }}
-              onClick={() => isCollapsed ? toggleSidebar() : navigate('/dashboard')}
+              onClick={() => navigate('/dashboard')}
             />
           </div>
           <button
             onClick={toggleSidebar}
             className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors flex-shrink-0"
-            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={isCollapsed ? "Expand navigation" : "Collapse navigation"}
           >
             {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
           </button>
@@ -209,7 +201,7 @@ export const AppSidebar: React.FC = () => {
       </div>
 
       {/* External User Banner */}
-      {isExternalUser && !isCollapsed && (
+      {isExternalUser && (
         <div className="px-4 py-2 bg-primary/10 border-b border-sidebar-border">
           <div className="flex items-center gap-2 text-xs text-primary">
             <Eye className="h-3 w-3" />
@@ -218,38 +210,22 @@ export const AppSidebar: React.FC = () => {
         </div>
       )}
 
-      {/* Search Bar */}
-      {!isCollapsed ? (
-        <div className="h-10 px-3 border-b border-sidebar-border flex items-center">
-          <div className="relative w-full">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-sidebar-foreground/50" />
-            <input
-              type="text"
-              placeholder="Site Search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-sidebar-border bg-sidebar text-sidebar-foreground placeholder:text-sidebar-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
+      {/* Search Bar - always visible */}
+      <div className="h-10 px-3 border-b border-sidebar-border flex items-center">
+        <div className="relative w-full">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-sidebar-foreground/50" />
+          <input
+            type="text"
+            placeholder="Site Search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-sidebar-border bg-sidebar text-sidebar-foreground placeholder:text-sidebar-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
+          />
         </div>
-      ) : (
-        <div className="h-10 px-2 border-b border-sidebar-border flex items-center">
-          <TooltipProvider delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button className="sidebar-item w-full justify-center px-2" onClick={toggleSidebar}>
-                  <Search className="h-5 w-5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="font-medium">
-                Site Search
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      )}
+      </div>
 
-      {/* Navigation */}
+      {/* Navigation - collapsible */}
+      {!isCollapsed && (
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto sidebar-scrollbar">
         <TooltipProvider delayDuration={0}>
           {/* My Work Section */}
@@ -614,6 +590,8 @@ export const AppSidebar: React.FC = () => {
           ))}
         </TooltipProvider>
       </nav>
+      )}
+
 
     </aside>
   );
