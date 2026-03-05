@@ -355,7 +355,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             </div>)}
 
             {/* DOB */}
-            <div className="flex items-center gap-3">
+            {wrapField('dob', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">DOB</Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -381,7 +381,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   />
                 </PopoverContent>
               </Popover>
-            </div>
+            </div>)}
 
             {/* Tax ID Section */}
             <div className="space-y-3 mt-2">
