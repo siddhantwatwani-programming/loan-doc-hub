@@ -1,21 +1,22 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export type PropertySubSection = 'properties' | 'property_details' | 'legal_description' | 'liens' | 'insurance' | 'property_tax';
+export type PropertySubSection = 'properties' | 'property_details' | 'legal_description' | 'liens' | 'insurance' | 'property_tax' | 'origination_property';
+
+const PROPERTY_DETAIL_SECTIONS: { key: PropertySubSection; label: string }[] = [
+  { key: 'property_details', label: 'Property Details' },
+  { key: 'legal_description', label: 'Legal Description' },
+  { key: 'origination_property', label: 'Property' },
+  { key: 'liens', label: 'Liens' },
+  { key: 'insurance', label: 'Insurance' },
+  { key: 'property_tax', label: 'Property Tax' },
+];
 
 interface PropertySubNavigationProps {
   activeSubSection: PropertySubSection;
   onSubSectionChange: (subSection: PropertySubSection) => void;
   isDetailView?: boolean;
 }
-
-const PROPERTY_DETAIL_SECTIONS: { key: PropertySubSection; label: string }[] = [
-  { key: 'property_details', label: 'Property Details' },
-  { key: 'legal_description', label: 'Legal Description' },
-  { key: 'liens', label: 'Liens' },
-  { key: 'insurance', label: 'Insurance' },
-  { key: 'property_tax', label: 'Property Tax' },
-];
 
 export const PropertySubNavigation: React.FC<PropertySubNavigationProps> = ({
   activeSubSection,
