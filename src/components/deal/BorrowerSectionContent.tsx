@@ -1,10 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { BorrowerSubNavigation, type BorrowerSubSection } from './BorrowerSubNavigation';
-import { BorrowersTableView, type BorrowerData } from './BorrowersTableView';
-import { CoBorrowersTableView, type CoBorrowerData } from './CoBorrowersTableView';
+import { type BorrowerData } from './BorrowersTableView';
+import { type CoBorrowerData } from './CoBorrowersTableView';
 import { BorrowerModal } from './BorrowerModal';
 import { CoBorrowerModal } from './CoBorrowerModal';
 import { BorrowerPrimaryForm } from './BorrowerPrimaryForm';
@@ -303,9 +301,9 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   calculationResults = {},
 }) => {
   const nav = useDealNavigationOptional();
-  const activeSubSection = (nav?.getSubSection('borrower') ?? 'borrowers') as BorrowerSubSection;
+  const activeSubSection = (nav?.getSubSection('borrower') ?? 'primary') as BorrowerSubSection;
   const setActiveSubSection = (sub: BorrowerSubSection) => nav?.setSubSection('borrower', sub);
-  const selectedBorrowerPrefix = nav?.getSelectedPrefix('borrower') ?? 'borrower';
+  const selectedBorrowerPrefix = nav?.getSelectedPrefix('borrower') ?? 'borrower1';
   const setSelectedBorrowerPrefix = (prefix: string) => nav?.setSelectedPrefix('borrower', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBorrower, setEditingBorrower] = useState<BorrowerData | null>(null);
@@ -323,11 +321,10 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   const [trustLedgerModalOpen, setTrustLedgerModalOpen] = useState(false);
   const [editingTrustLedgerEntry, setEditingTrustLedgerEntry] = useState<TrustLedgerEntry | null>(null);
 
-  // Check if we're in detail view
-  // Borrower detail includes: primary, additional_guarantor, banking, tax_detail, note, AND co_borrowers (inline form)
+  // Always in detail view now (no table view)
   const isBorrowerDetailView = ['primary', 'additional_guarantor', 'authorized_party', 'trust_ledger', 'banking', 'tax_detail', 'note', 'co_borrowers'].includes(activeSubSection);
   const isCoBorrowerDetailView = ['coborrower_primary', 'coborrower_note', 'coborrower_attachment'].includes(activeSubSection);
-  const isDetailView = isBorrowerDetailView || isCoBorrowerDetailView;
+  const isDetailView = true;
 
   // Extract borrowers from values
   const allBorrowers = useMemo(() => extractBorrowersFromValues(values), [values]);
@@ -372,14 +369,12 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     setActiveSubSection('primary');
   }, []);
 
-  // Handle back navigation
+  // Handle back navigation (co-borrower detail goes back to primary)
   const handleBackToTable = useCallback(() => {
     if (isCoBorrowerDetailView) {
-      // From co-borrower detail, go back to borrowers table
-      setActiveSubSection('borrowers');
+      setActiveSubSection('primary');
     } else {
-      // From borrower detail tabs, go back to borrowers table
-      setActiveSubSection('borrowers');
+      setActiveSubSection('primary');
     }
   }, [isCoBorrowerDetailView]);
 
@@ -820,22 +815,6 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
 
   const renderSubSectionContent = () => {
     switch (activeSubSection) {
-      case 'borrowers':
-        return (
-          <BorrowersTableView
-            borrowers={paginatedBorrowers}
-            onAddBorrower={handleAddBorrower}
-            onEditBorrower={handleEditBorrower}
-            onRowClick={handleRowClick}
-            onPrimaryChange={handlePrimaryChange}
-            onDeleteBorrower={handleDeleteBorrower}
-            disabled={disabled}
-            isLoading={isLoading}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
-        );
       case 'co_borrowers':
         return (
           <CoBorrowerPrimaryForm
@@ -979,23 +958,12 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   return (
     <>
       <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
-        {/* Back button and borrower/co-borrower name when in detail view */}
-        {isDetailView && (
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/20">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleBackToTable}
-              className="gap-1 h-8"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-            <span className="text-sm font-medium text-foreground">
-              {detailViewName}
-            </span>
-          </div>
-        )}
+        {/* Borrower section header */}
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/20">
+          <span className="text-sm font-medium text-foreground">
+            {detailViewName}
+          </span>
+        </div>
 
         <div className="flex flex-1">
           {/* Sub-navigation tabs on the left */}

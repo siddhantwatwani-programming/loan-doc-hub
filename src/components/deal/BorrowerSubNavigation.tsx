@@ -46,18 +46,8 @@ export const BorrowerSubNavigation: React.FC<BorrowerSubNavigationProps> = ({
   isCoBorrowerDetail = false,
   isDetailView = false,
 }) => {
-  // Only show navigation when in detail view (matching Lender pattern)
-  if (!isDetailView) {
-    return null;
-  }
-
-  let sections: { key: BorrowerSubSection; label: string }[];
-  
-  if (showDetailTabs) {
-    sections = isCoBorrowerDetail ? COBORROWER_DETAIL_SECTIONS : BORROWER_DETAIL_SECTIONS;
-  } else {
-    sections = BORROWER_DETAIL_SECTIONS;
-  }
+  // Always show navigation (no table view anymore)
+  const sections = isCoBorrowerDetail ? COBORROWER_DETAIL_SECTIONS : BORROWER_DETAIL_SECTIONS;
 
   return (
     <div className="flex flex-col border-r border-border bg-background min-w-[180px]">
