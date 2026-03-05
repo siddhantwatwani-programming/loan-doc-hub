@@ -196,10 +196,11 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
                 <button
                   className={cn(
                     'sidebar-item w-full justify-between text-sm text-left',
-                    section.items.some((i) => location.pathname === i.path) &&
-                      (activeSection === section.label || !activeSection || !section.items.some(i => brokerServicesData.filter(s => s.label !== section.label).some(s2 => s2.items.some(s2i => s2i.path === i.path && location.pathname === i.path)))) &&
-                      (activeSection === null || activeSection === section.label) &&
-                      'sidebar-item-active'
+                    section.items.some((i) => {
+                      if (location.pathname !== i.path) return false;
+                      const isSharedPath = brokerServicesData.some(s => s.label !== section.label && s.items.some(si => si.path === i.path));
+                      return !isSharedPath || activeSection === section.label;
+                    }) && 'sidebar-item-active'
                   )}
                 >
                   <span className="text-left">{section.label}</span>
