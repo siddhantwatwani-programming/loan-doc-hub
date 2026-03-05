@@ -29,6 +29,7 @@ interface UserWithRole {
   full_name: string | null;
   role: 'admin' | 'csr' | null;
   created_at: string;
+  permission_level: string | null;
 }
 
 export const UserManagementPage: React.FC = () => {
@@ -38,6 +39,7 @@ export const UserManagementPage: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [newRole, setNewRole] = useState<string>('');
+  const [newPermissionLevel, setNewPermissionLevel] = useState<string>('full');
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
@@ -61,15 +63,22 @@ export const UserManagementPage: React.FC = () => {
 
       if (rolesError) throw rolesError;
 
+      // Fetch permission levels
+      const { data: permLevels } = await supabase
+        .from('user_permission_levels')
+        .select('*');
+
       // Combine data
       const usersWithRoles: UserWithRole[] = (profiles || []).map((profile) => {
         const userRole = roles?.find((r) => r.user_id === profile.user_id);
+        const userPermLevel = (permLevels as any[] || []).find((p: any) => p.user_id === profile.user_id);
         return {
           id: profile.user_id,
           email: profile.email || '',
           full_name: profile.full_name,
           role: userRole?.role as 'admin' | 'csr' | null,
           created_at: profile.created_at,
+          permission_level: userPermLevel?.permission_level || null,
         };
       });
 
@@ -115,9 +124,29 @@ export const UserManagementPage: React.FC = () => {
         if (error) throw error;
       }
 
+      // If CSR role, also save permission level
+      if (newRole === 'csr') {
+        const { data: existingLevel } = await supabase
+          .from('user_permission_levels')
+          .select('*')
+          .eq('user_id', selectedUser.id)
+          .single();
+
+        if (existingLevel) {
+          await supabase
+            .from('user_permission_levels')
+            .update({ permission_level: newPermissionLevel, updated_at: new Date().toISOString() } as any)
+            .eq('user_id', selectedUser.id);
+        } else {
+          await supabase
+            .from('user_permission_levels')
+            .insert({ user_id: selectedUser.id, permission_level: newPermissionLevel } as any);
+        }
+      }
+
       toast({
         title: 'Role assigned',
-        description: `${selectedUser.email} has been assigned the ${newRole.toUpperCase()} role.`,
+        description: `${selectedUser.email} has been assigned the ${newRole.toUpperCase()} role${newRole === 'csr' ? ` with ${newPermissionLevel.replace('_', '-')} permission level` : ''}.`,
       });
 
       setIsDialogOpen(false);
@@ -186,6 +215,7 @@ export const UserManagementPage: React.FC = () => {
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">User</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Email</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Role</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Permission Level</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Joined</th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
                 </tr>
@@ -221,6 +251,22 @@ export const UserManagementPage: React.FC = () => {
                         <span className="text-sm text-muted-foreground">No role</span>
                       )}
                     </td>
+                    <td className="py-4 px-4">
+                      {user.role === 'csr' ? (
+                        <span className={cn(
+                          'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium',
+                          user.permission_level === 'view_only'
+                            ? 'bg-destructive/10 text-destructive'
+                            : user.permission_level === 'limited'
+                            ? 'bg-warning/10 text-warning'
+                            : 'bg-success/10 text-success'
+                        )}>
+                          {(user.permission_level || 'full').replace('_', '-').replace(/\b\w/g, l => l.toUpperCase())}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="py-4 px-4 text-sm text-muted-foreground">
                       {new Date(user.created_at).toLocaleDateString()}
                     </td>
@@ -230,6 +276,7 @@ export const UserManagementPage: React.FC = () => {
                         if (open) {
                           setSelectedUser(user);
                           setNewRole(user.role || '');
+                          setNewPermissionLevel(user.permission_level || 'full');
                         }
                       }}>
                         <DialogTrigger asChild>
@@ -244,17 +291,37 @@ export const UserManagementPage: React.FC = () => {
                               Assign a role to {user.email}
                             </DialogDescription>
                           </DialogHeader>
-                          <div className="py-4">
-                            <Label htmlFor="role">Role</Label>
-                            <Select value={newRole} onValueChange={setNewRole}>
-                              <SelectTrigger className="mt-2">
-                                <SelectValue placeholder="Select a role" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="admin">Admin</SelectItem>
-                                <SelectItem value="csr">CSR</SelectItem>
-                              </SelectContent>
-                            </Select>
+                          <div className="py-4 space-y-4">
+                            <div>
+                              <Label htmlFor="role">Role</Label>
+                              <Select value={newRole} onValueChange={(val) => {
+                                setNewRole(val);
+                                if (val !== 'csr') setNewPermissionLevel('full');
+                              }}>
+                                <SelectTrigger className="mt-2">
+                                  <SelectValue placeholder="Select a role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                  <SelectItem value="csr">CSR</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            {newRole === 'csr' && (
+                              <div>
+                                <Label htmlFor="permission_level">Permission Level</Label>
+                                <Select value={newPermissionLevel} onValueChange={setNewPermissionLevel}>
+                                  <SelectTrigger className="mt-2">
+                                    <SelectValue placeholder="Select permission level" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="full">Full — Can edit all forms</SelectItem>
+                                    <SelectItem value="limited">Limited — Edit only allowed forms</SelectItem>
+                                    <SelectItem value="view_only">View-Only — Cannot edit any form</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
                           </div>
                           <DialogFooter>
                             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
