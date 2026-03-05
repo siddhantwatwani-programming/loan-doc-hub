@@ -257,7 +257,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>)}
 
-            <div className="flex items-center gap-3">
+            {wrapField('type', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Lender Type</Label>
               <Select
                 value={getValue('type')}
@@ -275,9 +275,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div>)}
 
-            <div className="flex items-center gap-3">
+            {wrapField('capacity', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Capacity</Label>
               <Select
                 value={getValue('capacity')}
@@ -295,7 +295,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div>)}
 
             <div className="flex items-start gap-3">
               <div className="min-w-[140px] shrink-0 pt-1">
