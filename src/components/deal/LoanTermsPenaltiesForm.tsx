@@ -487,7 +487,7 @@ const MaturitySection: React.FC<{
       </DirtyFieldWrapper>
 
       <div className="space-y-2">
-        <FieldRow label="Grace Period (Days)">
+        <FieldRow label="Grace Period (Days)" fieldKey={`${prefix}.grace_period_days`}>
           <Input
             value={values[`${prefix}.grace_period_days`] || ''}
             onChange={(e) => onValueChange(`${prefix}.grace_period_days`, e.target.value)}
@@ -497,6 +497,7 @@ const MaturitySection: React.FC<{
         </FieldRow>
         <FieldRow
           label="Standard 10% of Payment Only"
+          fieldKey={`${prefix}.standard_10_percent`}
           checkboxValue={values[`${prefix}.standard_10_percent`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.standard_10_percent`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
@@ -505,6 +506,7 @@ const MaturitySection: React.FC<{
         </FieldRow>
         <FieldRow
           label="Additional Flat Fee"
+          fieldKey={`${prefix}.additional_flat_fee`}
           checkboxValue={values[`${prefix}.additional_flat_fee_enabled`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.additional_flat_fee_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
