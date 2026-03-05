@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 interface LenderTaxInfoFormProps {
   fields: FieldDefinition[];
@@ -68,82 +69,19 @@ export const LenderTaxInfoForm: React.FC<LenderTaxInfoFormProps> = ({
 
       <div className="max-w-[700px] space-y-3">
         {/* Designated Recipient */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Designated Recipient</Label>
-          <Select
-            value={getValue('designatedRecipient')}
-            onValueChange={(value) => handleChange('designatedRecipient', value)}
-            disabled={disabled}
-          >
-            <SelectTrigger className="h-7 text-sm flex-1 max-w-[200px] bg-background">
-              <SelectValue placeholder="Dropdown Populates" />
-            </SelectTrigger>
-            <SelectContent className="bg-background z-50">
-              {DESIGNATED_RECIPIENT_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Name */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Name</Label>
-          <Input
-            value={getValue('name')}
-            onChange={(e) => handleChange('name', e.target.value)}
-            disabled={disabled}
-            className="h-7 text-sm flex-1"
-          />
-        </div>
-
-        {/* Address | Account Number */}
-        <div className="grid grid-cols-2 gap-4">
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.designatedRecipient}>
           <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Address</Label>
-            <Input
-              value={getValue('address')}
-              onChange={(e) => handleChange('address', e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Account Number</Label>
-            <Input
-              value={getValue('accountNumber')}
-              onChange={(e) => handleChange('accountNumber', e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
-        </div>
-
-        {/* City | TIN Type */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">City</Label>
-            <Input
-              value={getValue('city')}
-              onChange={(e) => handleChange('city', e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN Type</Label>
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Designated Recipient</Label>
             <Select
-              value={getValue('tinType')}
-              onValueChange={(value) => handleChange('tinType', value)}
+              value={getValue('designatedRecipient')}
+              onValueChange={(value) => handleChange('designatedRecipient', value)}
               disabled={disabled}
             >
-              <SelectTrigger className="h-7 text-sm flex-1 bg-background">
-                <SelectValue placeholder="Select" />
+              <SelectTrigger className="h-7 text-sm flex-1 max-w-[200px] bg-background">
+                <SelectValue placeholder="Dropdown Populates" />
               </SelectTrigger>
               <SelectContent className="bg-background z-50">
-                {TIN_TYPE_OPTIONS.map((opt) => (
+                {DESIGNATED_RECIPIENT_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
                   </SelectItem>
@@ -151,49 +89,132 @@ export const LenderTaxInfoForm: React.FC<LenderTaxInfoFormProps> = ({
               </SelectContent>
             </Select>
           </div>
+        </DirtyFieldWrapper>
+
+        {/* Name */}
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.name}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Name</Label>
+            <Input
+              value={getValue('name')}
+              onChange={(e) => handleChange('name', e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </DirtyFieldWrapper>
+
+        {/* Address | Account Number */}
+        <div className="grid grid-cols-2 gap-4">
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.address}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Address</Label>
+              <Input
+                value={getValue('address')}
+                onChange={(e) => handleChange('address', e.target.value)}
+                disabled={disabled}
+                className="h-7 text-sm flex-1"
+              />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.accountNumber}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Account Number</Label>
+              <Input
+                value={getValue('accountNumber')}
+                onChange={(e) => handleChange('accountNumber', e.target.value)}
+                disabled={disabled}
+                className="h-7 text-sm flex-1"
+              />
+            </div>
+          </DirtyFieldWrapper>
+        </div>
+
+        {/* City | TIN Type */}
+        <div className="grid grid-cols-2 gap-4">
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.city}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">City</Label>
+              <Input
+                value={getValue('city')}
+                onChange={(e) => handleChange('city', e.target.value)}
+                disabled={disabled}
+                className="h-7 text-sm flex-1"
+              />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.tinType}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN Type</Label>
+              <Select
+                value={getValue('tinType')}
+                onValueChange={(value) => handleChange('tinType', value)}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-7 text-sm flex-1 bg-background">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {TIN_TYPE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
         {/* State | TIN */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">State</Label>
-            <Input
-              value={getValue('state')}
-              onChange={(e) => handleChange('state', e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN</Label>
-            <Input
-              value={getValue('tin')}
-              onChange={(e) => handleChange('tin', e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.state}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">State</Label>
+              <Input
+                value={getValue('state')}
+                onChange={(e) => handleChange('state', e.target.value)}
+                disabled={disabled}
+                className="h-7 text-sm flex-1"
+              />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.tin}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN</Label>
+              <Input
+                value={getValue('tin')}
+                onChange={(e) => handleChange('tin', e.target.value)}
+                disabled={disabled}
+                className="h-7 text-sm flex-1"
+              />
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
         {/* ZIP | Send 1099 */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">ZIP</Label>
-            <Input
-              value={getValue('zip')}
-              onChange={(e) => handleChange('zip', e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Send 1099</Label>
-            <Checkbox
-              checked={getValue('send1099') === 'true'}
-              onCheckedChange={(checked) => handleChange('send1099', checked === true ? 'true' : 'false')}
-              disabled={disabled}
-            />
-          </div>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.zip}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">ZIP</Label>
+              <Input
+                value={getValue('zip')}
+                onChange={(e) => handleChange('zip', e.target.value)}
+                disabled={disabled}
+                className="h-7 text-sm flex-1"
+              />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.send1099}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Send 1099</Label>
+              <Checkbox
+                checked={getValue('send1099') === 'true'}
+                onCheckedChange={(checked) => handleChange('send1099', checked === true ? 'true' : 'false')}
+                disabled={disabled}
+              />
+            </div>
+          </DirtyFieldWrapper>
         </div>
       </div>
     </div>
