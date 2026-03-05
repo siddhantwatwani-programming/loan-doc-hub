@@ -95,8 +95,7 @@ const AppLayoutInner: React.FC = () => {
         <WorkspaceTabBar onRequestClose={handleRequestClose} />
       )}
         <main className={cn(
-          "min-h-screen transition-all duration-300",
-          isCollapsed ? "pl-16" : "pl-64",
+          "min-h-screen pl-64",
           hasTabBar ? "pt-[88px]" : "pt-12"
         )}>
         <div className="animate-fade-in">
