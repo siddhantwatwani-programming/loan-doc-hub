@@ -74,30 +74,34 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   const handlePercentageChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value));
 
   const renderInlineField = (fieldKey: string, label: string, type: 'text' | 'date' = 'text') => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
-      <Input
-        value={getFieldValue(fieldKey)}
-        onChange={(e) => onValueChange(fieldKey, e.target.value)}
-        disabled={disabled}
-        type={type}
-        className="h-7 text-xs flex-1"
-      />
-    </div>
+    <DirtyFieldWrapper fieldKey={fieldKey}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
+        <Input
+          value={getFieldValue(fieldKey)}
+          onChange={(e) => onValueChange(fieldKey, e.target.value)}
+          disabled={disabled}
+          type={type}
+          className="h-7 text-xs flex-1"
+        />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderInlineSelect = (fieldKey: string, label: string, options: string[], placeholder: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
-      <Select value={getFieldValue(fieldKey)} onValueChange={(val) => onValueChange(fieldKey, val)} disabled={disabled}>
-        <SelectTrigger className="h-7 text-xs flex-1">
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent className="bg-background border border-border z-50 max-h-60">
-          {options.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-        </SelectContent>
-      </Select>
-    </div>
+    <DirtyFieldWrapper fieldKey={fieldKey}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
+        <Select value={getFieldValue(fieldKey)} onValueChange={(val) => onValueChange(fieldKey, val)} disabled={disabled}>
+          <SelectTrigger className="h-7 text-xs flex-1">
+            <SelectValue placeholder={placeholder} />
+          </SelectTrigger>
+          <SelectContent className="bg-background border border-border z-50 max-h-60">
+            {options.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+          </SelectContent>
+        </Select>
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderCurrencyField = (fieldKey: string, label: string) => (

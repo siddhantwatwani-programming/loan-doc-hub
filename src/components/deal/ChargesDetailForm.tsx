@@ -39,20 +39,24 @@ const FIELD_KEYS = {
 };
 
 const renderInlineField = (key: string, label: string, values: Record<string, string>, onValueChange: (k: string, v: string) => void, disabled: boolean, props: Record<string, any> = {}) => (
-  <div className="flex items-center gap-3">
-    <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
-    <Input value={values[key] || ''} onChange={(e) => onValueChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" {...props} />
-  </div>
+  <DirtyFieldWrapper fieldKey={key}>
+    <div className="flex items-center gap-3">
+      <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
+      <Input value={values[key] || ''} onChange={(e) => onValueChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" {...props} />
+    </div>
+  </DirtyFieldWrapper>
 );
 
 const renderCurrencyField = (key: string, label: string, values: Record<string, string>, onValueChange: (k: string, v: string) => void, disabled: boolean) => (
-  <div className="flex items-center gap-3">
-    <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
-    <div className="relative flex-1">
-      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-      <Input type="number" step="0.01" value={values[key] || ''} onChange={(e) => onValueChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" />
+  <DirtyFieldWrapper fieldKey={key}>
+    <div className="flex items-center gap-3">
+      <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
+      <div className="relative flex-1">
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+        <Input type="number" step="0.01" value={values[key] || ''} onChange={(e) => onValueChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" />
+      </div>
     </div>
-  </div>
+  </DirtyFieldWrapper>
 );
 
 export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
