@@ -257,7 +257,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>)}
 
-            <div className="flex items-center gap-3">
+            {wrapField('type', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Lender Type</Label>
               <Select
                 value={getValue('type')}
@@ -275,9 +275,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div>)}
 
-            <div className="flex items-center gap-3">
+            {wrapField('capacity', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Capacity</Label>
               <Select
                 value={getValue('capacity')}
@@ -295,9 +295,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div>)}
 
-            <div className="flex items-start gap-3">
+            {wrapField('fullName', <div className="flex items-start gap-3">
               <div className="min-w-[140px] shrink-0 pt-1">
                 <Label className="text-sm text-muted-foreground text-left">Full Name:</Label>
                 <p className="text-[10px] text-muted-foreground/70 leading-tight">If Entity, Use Entity</p>
@@ -308,9 +308,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
             
-            <div className="flex items-start gap-3">
+            {wrapField('firstName', <div className="flex items-start gap-3">
               <div className="min-w-[140px] shrink-0 pt-1">
                 <Label className="text-sm text-muted-foreground text-left">First:</Label>
                 <p className="text-[10px] text-muted-foreground/70 leading-tight">If Entity, Use Signer</p>
@@ -321,9 +321,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
             
-            <div className="flex items-center gap-3">
+            {wrapField('middleName', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Middle</Label>
               <Input
                 value={getValue('middleName')}
@@ -331,9 +331,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
             
-            <div className="flex items-center gap-3">
+            {wrapField('lastName', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Last</Label>
               <Input
                 value={getValue('lastName')}
@@ -341,9 +341,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
             
-            <div className="flex items-center gap-3">
+            {wrapField('email', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Email</Label>
               <Input
                 type="email"
@@ -352,10 +352,10 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
 
             {/* DOB */}
-            <div className="flex items-center gap-3">
+            {wrapField('dob', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">DOB</Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -381,11 +381,11 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   />
                 </PopoverContent>
               </Popover>
-            </div>
+            </div>)}
 
             {/* Tax ID Section */}
             <div className="space-y-3 mt-2">
-              <div className="flex items-center gap-3">
+              {wrapField('taxIdType', <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Tax ID Type</Label>
                 <Select
                   value={getValue('taxIdType')}
@@ -403,8 +403,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="flex items-center gap-3">
+              </div>)}
+              {wrapField('taxId', <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">TIN</Label>
                 <Input
                   value={getValue('taxId')}
@@ -412,15 +412,15 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   disabled={disabled}
                   className="h-8"
                 />
-              </div>
-              <div className="flex items-center gap-2">
+              </div>)}
+              {wrapField('tinVerified', <div className="flex items-center gap-2">
                 <Checkbox
                   checked={getBoolValue('tinVerified')}
                   onCheckedChange={(checked) => handleChange('tinVerified', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground font-semibold">TIN Verified</Label>
-              </div>
+              </div>)}
             </div>
           </div>
         </div>
@@ -429,27 +429,27 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-foreground border-b pb-2">Primary Address</h3>
           <div className="space-y-3">
-            <div className="flex items-center gap-3">
+            {wrapField('primaryStreet', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Street</Label>
               <Input value={getValue('primaryStreet')} onChange={(e) => handleChange('primaryStreet', e.target.value)} disabled={disabled} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('primaryCity', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">City</Label>
               <Input value={getValue('primaryCity')} onChange={(e) => handleChange('primaryCity', e.target.value)} disabled={disabled} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('primaryState', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">State</Label>
               <Input value={getValue('primaryState')} onChange={(e) => handleChange('primaryState', e.target.value)} disabled={disabled} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('primaryZip', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">ZIP</Label>
               <Input value={getValue('primaryZip')} onChange={(e) => handleChange('primaryZip', e.target.value)} disabled={disabled} className="h-8" />
-            </div>
+            </div>)}
           </div>
 
           {/* Mailing Address */}
           <h3 className="text-sm font-semibold text-foreground border-b pb-2 mt-4">Mailing Address</h3>
-          <div className="flex items-center gap-2 mb-2">
+          {wrapField('mailingSameAsPrimary', <div className="flex items-center gap-2 mb-2">
             <Checkbox
               checked={getBoolValue('mailingSameAsPrimary')}
               onCheckedChange={(checked) => {
@@ -464,45 +464,45 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               disabled={disabled}
             />
             <Label className="text-xs text-muted-foreground">Same as Primary Address</Label>
-          </div>
+          </div>)}
           <div className="space-y-3">
-            <div className="flex items-center gap-3">
+            {wrapField('mailingStreet', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Street</Label>
               <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('mailingCity', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">City</Label>
               <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('mailingState', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">State</Label>
               <Input value={getValue('mailingState')} onChange={(e) => handleChange('mailingState', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('mailingZip', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">ZIP</Label>
               <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
+            </div>)}
           </div>
 
           {/* Extra fields */}
           <div className="space-y-3 mt-4 border-t pt-3">
-            <div className="flex items-center gap-2">
+            {wrapField('servicingAgreementOnFile', <div className="flex items-center gap-2">
               <Checkbox
                 checked={getBoolValue('servicingAgreementOnFile')}
                 onCheckedChange={(checked) => handleChange('servicingAgreementOnFile', !!checked)}
                 disabled={disabled}
               />
               <Label className="text-sm text-muted-foreground">Servicing Agreement on File</Label>
-            </div>
-            <div className="flex items-center gap-2">
+            </div>)}
+            {wrapField('freezeOutgoingDisbursements', <div className="flex items-center gap-2">
               <Checkbox
                 checked={getBoolValue('freezeOutgoingDisbursements')}
                 onCheckedChange={(checked) => handleChange('freezeOutgoingDisbursements', !!checked)}
                 disabled={disabled}
               />
               <Label className="text-sm text-muted-foreground">Freeze Outgoing Disbursements</Label>
-            </div>
-            <div className="flex items-center gap-2">
+            </div>)}
+            {wrapField('investorQuestionnaireDue', <div className="flex items-center gap-2">
               <Checkbox
                 checked={getBoolValue('investorQuestionnaireDue')}
                 onCheckedChange={(checked) => handleChange('investorQuestionnaireDue', !!checked)}
@@ -526,7 +526,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   />
                 </PopoverContent>
               </Popover>
-            </div>
+            </div>)}
           </div>
         </div>
 
@@ -538,21 +538,23 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           </div>
           <div className="space-y-3">
             {PHONE_FIELDS.map((phone) => (
-              <div key={phone.label} className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground min-w-[50px] text-left shrink-0">{phone.label}</Label>
-                <Input
-                  type="tel"
-                  value={getValue(phone.fieldKey)}
-                  onChange={(e) => handleChange(phone.fieldKey, e.target.value)}
-                  disabled={disabled}
-                  className="h-8"
-                />
-                <Checkbox
-                  checked={getBoolValue(phone.prefKey)}
-                  onCheckedChange={(checked) => handleChange(phone.prefKey, !!checked)}
-                  disabled={disabled}
-                />
-              </div>
+              <DirtyFieldWrapper key={phone.label} fieldKey={FIELD_KEYS[phone.fieldKey]}>
+                <div className="flex items-center gap-3">
+                  <Label className="text-sm text-muted-foreground min-w-[50px] text-left shrink-0">{phone.label}</Label>
+                  <Input
+                    type="tel"
+                    value={getValue(phone.fieldKey)}
+                    onChange={(e) => handleChange(phone.fieldKey, e.target.value)}
+                    disabled={disabled}
+                    className="h-8"
+                  />
+                  <Checkbox
+                    checked={getBoolValue(phone.prefKey)}
+                    onCheckedChange={(checked) => handleChange(phone.prefKey, !!checked)}
+                    disabled={disabled}
+                  />
+                </div>
+              </DirtyFieldWrapper>
             ))}
           </div>
 
@@ -560,67 +562,67 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           <div className="mt-4">
             <h4 className="text-sm font-semibold text-foreground border-b pb-1 mb-2">Delivery Options</h4>
             <div className="flex items-center gap-4 mb-3">
-              <div className="flex items-center gap-1">
+              {wrapField('deliveryPrint', <div className="flex items-center gap-1">
                 <Checkbox
                   checked={getBoolValue('deliveryPrint')}
                   onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground">Print</Label>
-              </div>
-              <div className="flex items-center gap-1">
+              </div>)}
+              {wrapField('deliveryEmail', <div className="flex items-center gap-1">
                 <Checkbox
                   checked={getBoolValue('deliveryEmail')}
                   onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground">Email</Label>
-              </div>
-              <div className="flex items-center gap-1">
+              </div>)}
+              {wrapField('deliverySms', <div className="flex items-center gap-1">
                 <Checkbox
                   checked={getBoolValue('deliverySms')}
                   onCheckedChange={(checked) => handleChange('deliverySms', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground">SMS</Label>
-              </div>
+              </div>)}
             </div>
 
             {/* Send section below */}
             <h4 className="text-sm font-semibold text-foreground border-b pb-1 mb-2">Send</h4>
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
+              {wrapField('sendPaymentNotification', <div className="flex items-center gap-2">
                 <Checkbox
                   checked={getBoolValue('sendPaymentNotification')}
                   onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground">Payment Notification</Label>
-              </div>
-              <div className="flex items-center gap-2">
+              </div>)}
+              {wrapField('sendLateNotice', <div className="flex items-center gap-2">
                 <Checkbox
                   checked={getBoolValue('sendLateNotice')}
                   onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground">Late Notice</Label>
-              </div>
-              <div className="flex items-center gap-2">
+              </div>)}
+              {wrapField('sendBorrowerStatement', <div className="flex items-center gap-2">
                 <Checkbox
                   checked={getBoolValue('sendBorrowerStatement')}
                   onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground">Borrower Statement</Label>
-              </div>
-              <div className="flex items-center gap-2">
+              </div>)}
+              {wrapField('sendMaturityNotice', <div className="flex items-center gap-2">
                 <Checkbox
                   checked={getBoolValue('sendMaturityNotice')}
                   onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground">Maturity Notice</Label>
-              </div>
+              </div>)}
             </div>
           </div>
         </div>
@@ -629,25 +631,27 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
         <div className="space-y-4">
           {/* Vesting */}
           <h4 className="text-sm font-semibold text-foreground border-b pb-2">Vesting</h4>
-          <Textarea
+          {wrapField('vesting', <Textarea
             value={getValue('vesting')}
             onChange={(e) => handleChange('vesting', e.target.value)}
             disabled={disabled}
             rows={3}
             className="resize-none w-full"
-          />
+          />)}
 
           {/* FORD */}
           <h4 className="text-sm font-semibold text-foreground mt-4 mb-2">FORD</h4>
           <div className="space-y-2">
             {([['ford1', 'ford2'], ['ford3', 'ford4'], ['ford5', 'ford6'], ['ford7', 'ford8']] as const).map(([dropdownKey, inputKey], idx) => (
-              <div key={idx} className="grid grid-cols-2 gap-2">
-                <Select value={getValue(dropdownKey)} onValueChange={(v) => handleChange(dropdownKey, v)} disabled={disabled}>
-                  <SelectTrigger className="h-8"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-                </Select>
-                <Input value={getValue(inputKey)} onChange={(e) => handleChange(inputKey, e.target.value)} disabled={disabled} className="h-8" />
-              </div>
+              <DirtyFieldWrapper key={idx} fieldKey={FIELD_KEYS[dropdownKey]}>
+                <div className="grid grid-cols-2 gap-2">
+                  <Select value={getValue(dropdownKey)} onValueChange={(v) => handleChange(dropdownKey, v)} disabled={disabled}>
+                    <SelectTrigger className="h-8"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                  <Input value={getValue(inputKey)} onChange={(e) => handleChange(inputKey, e.target.value)} disabled={disabled} className="h-8" />
+                </div>
+              </DirtyFieldWrapper>
             ))}
           </div>
         </div>
@@ -657,30 +661,30 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
       <div className="mt-6 border-t pt-4">
         <h3 className="text-sm font-semibold text-destructive mb-3">If Entity, sig line should be:</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-3">
-          <div className="flex items-center gap-2">
+          {wrapField('entitySignBorrower', <div className="flex items-center gap-2">
             <Label className="text-xs text-muted-foreground min-w-[100px] max-w-[100px] shrink-0">Borrower:</Label>
             <Input value={getValue('entitySignBorrower')} onChange={(e) => handleChange('entitySignBorrower', e.target.value)} disabled={disabled} className="h-8 flex-1" />
-          </div>
-          <div className="flex items-center gap-2">
+          </div>)}
+          {wrapField('entitySignEntityName', <div className="flex items-center gap-2">
             <Label className="text-xs text-muted-foreground min-w-[100px] max-w-[100px] shrink-0">Entity Name</Label>
             <Input value={getValue('entitySignEntityName')} onChange={(e) => handleChange('entitySignEntityName', e.target.value)} disabled={disabled} className="h-8 flex-1" />
-          </div>
-          <div className="flex items-center gap-2">
+          </div>)}
+          {wrapField('entitySignBy', <div className="flex items-center gap-2">
             <Label className="text-xs text-muted-foreground min-w-[100px] max-w-[100px] shrink-0">By:</Label>
             <Input value={getValue('entitySignBy')} onChange={(e) => handleChange('entitySignBy', e.target.value)} disabled={disabled} className="h-8 flex-1" />
-          </div>
-          <div className="flex items-center gap-2">
+          </div>)}
+          {wrapField('entitySignFirstLast', <div className="flex items-center gap-2">
             <Label className="text-xs text-muted-foreground min-w-[100px] max-w-[100px] shrink-0">First, Last</Label>
             <Input value={getValue('entitySignFirstLast')} onChange={(e) => handleChange('entitySignFirstLast', e.target.value)} disabled={disabled} className="h-8 flex-1" />
-          </div>
-          <div className="flex items-center gap-2">
+          </div>)}
+          {wrapField('entitySignIts', <div className="flex items-center gap-2">
             <Label className="text-xs text-muted-foreground min-w-[100px] max-w-[100px] shrink-0">Its:</Label>
             <Input value={getValue('entitySignIts')} onChange={(e) => handleChange('entitySignIts', e.target.value)} disabled={disabled} className="h-8 flex-1" />
-          </div>
-          <div className="flex items-center gap-2">
+          </div>)}
+          {wrapField('entitySignCapacity', <div className="flex items-center gap-2">
             <Label className="text-xs text-muted-foreground min-w-[100px] max-w-[100px] shrink-0">Capacity</Label>
             <Input value={getValue('entitySignCapacity')} onChange={(e) => handleChange('entitySignCapacity', e.target.value)} disabled={disabled} className="h-8 flex-1" />
-          </div>
+          </div>)}
         </div>
       </div>
     </div>

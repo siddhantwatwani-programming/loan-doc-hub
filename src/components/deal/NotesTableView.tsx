@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 export interface NoteData {
   id: string;
@@ -153,23 +154,25 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
               </TableRow>
             ) : (
               notes.map((note) => (
-                <TableRow key={note.id} className="cursor-pointer hover:bg-muted/30" onClick={() => onRowClick(note)}>
-                  {visibleColumns.map((col) => (
-                    <TableCell key={col.id}>{renderCellValue(note, col.id)}</TableCell>
-                  ))}
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => onEditNote(note)} disabled={disabled} className="h-8 w-8">
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      {onDeleteNote && (
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(note)} disabled={disabled} className="h-8 w-8 text-destructive hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
+                <DirtyFieldWrapper key={note.id} fieldKey={`${note.id}.content`}>
+                  <TableRow className="cursor-pointer hover:bg-muted/30" onClick={() => onRowClick(note)}>
+                    {visibleColumns.map((col) => (
+                      <TableCell key={col.id}>{renderCellValue(note, col.id)}</TableCell>
+                    ))}
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => onEditNote(note)} disabled={disabled} className="h-8 w-8">
+                          <Pencil className="h-4 w-4" />
                         </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
+                        {onDeleteNote && (
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(note)} disabled={disabled} className="h-8 w-8 text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                </DirtyFieldWrapper>
               ))
             )}
           </TableBody>
