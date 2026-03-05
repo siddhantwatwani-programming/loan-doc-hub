@@ -329,6 +329,7 @@ const InterestGuaranteeSection: React.FC<{
       <div className="space-y-2">
         <FieldRow
           label="Months"
+          fieldKey={`${prefix}.months`}
           checkboxValue={values[`${prefix}.months_enabled`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.months_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
@@ -342,6 +343,7 @@ const InterestGuaranteeSection: React.FC<{
         </FieldRow>
         <FieldRow
           label="Include Odd Days Interest"
+          fieldKey={`${prefix}.include_odd_days`}
           checkboxValue={values[`${prefix}.include_odd_days`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.include_odd_days`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
@@ -350,6 +352,7 @@ const InterestGuaranteeSection: React.FC<{
         </FieldRow>
         <FieldRow
           label="Amount"
+          fieldKey={`${prefix}.amount`}
           checkboxValue={values[`${prefix}.amount_enabled`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.amount_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
