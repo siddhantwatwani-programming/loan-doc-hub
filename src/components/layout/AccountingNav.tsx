@@ -11,6 +11,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface SubItem {
   label: string;
@@ -158,7 +163,26 @@ export const AccountingNav: React.FC<AccountingNavProps> = ({ isCollapsed, searc
   );
 
   if (isCollapsed) {
-    return null;
+    return (
+      <>
+        <div className="my-3 border-t border-sidebar-border" />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              className={cn(
+                'sidebar-item w-full justify-center px-2',
+                isAnyActive && 'sidebar-item-active'
+              )}
+            >
+              <Calculator className="h-5 w-5 flex-shrink-0" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="font-medium">
+            Accounting
+          </TooltipContent>
+        </Tooltip>
+      </>
+    );
   }
 
   return (
