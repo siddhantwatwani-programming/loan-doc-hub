@@ -30,6 +30,7 @@ const extractNotesFromValues = (values: Record<string, string>): NoteData[] => {
       id: prefix,
       highPriority: values[`${prefix}.high_priority`] === 'true',
       date: values[`${prefix}.date`] || '',
+      asOfDate: values[`${prefix}.as_of_date`] || '',
       account: values[`${prefix}.account`] || '',
       name: values[`${prefix}.name`] || '',
       reference: values[`${prefix}.reference`] || '',
@@ -64,8 +65,14 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<NoteData | null>(null);
+  const [asOfFilter, setAsOfFilter] = useState('');
 
   const notes = useMemo(() => extractNotesFromValues(values), [values]);
+
+  const filteredNotes = useMemo(() => {
+    if (!asOfFilter) return notes;
+    return notes.filter(n => n.asOfDate === asOfFilter);
+  }, [notes, asOfFilter]);
 
   const handleAddNote = useCallback(() => { setEditingNote(null); setModalOpen(true); }, []);
   const handleEditNote = useCallback((note: NoteData) => { setEditingNote(note); setModalOpen(true); }, []);
@@ -85,6 +92,7 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
     const prefix = editingNote ? editingNote.id : getNextNotePrefix(values);
     onValueChange(`${prefix}.high_priority`, noteData.highPriority ? 'true' : 'false');
     onValueChange(`${prefix}.date`, noteData.date);
+    onValueChange(`${prefix}.as_of_date`, noteData.asOfDate || '');
     onValueChange(`${prefix}.account`, noteData.account);
     onValueChange(`${prefix}.name`, noteData.name);
     onValueChange(`${prefix}.reference`, noteData.reference);
@@ -110,13 +118,15 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
   return (
     <>
       <NotesTableView
-        notes={notes}
+        notes={filteredNotes}
         onAddNote={handleAddNote}
         onEditNote={handleEditNote}
         onRowClick={handleRowClick}
         onDeleteNote={handleDeleteNote}
         onExport={handleExport}
         disabled={disabled}
+        asOfFilter={asOfFilter}
+        onAsOfFilterChange={setAsOfFilter}
       />
 
       <NotesModal

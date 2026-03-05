@@ -13,6 +13,7 @@ export interface NoteData {
   id: string;
   highPriority: boolean;
   date: string;
+  asOfDate: string;
   account: string;
   name: string;
   reference: string;
@@ -30,10 +31,13 @@ interface NotesTableViewProps {
   onExport?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
+  asOfFilter?: string;
+  onAsOfFilterChange?: (value: string) => void;
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'date', label: 'Date - Time', visible: true },
+  { id: 'asOfDate', label: 'As Of', visible: true },
   { id: 'highPriority', label: 'High Priority', visible: true },
   { id: 'type', label: 'Type', visible: true },
   { id: 'account', label: 'Account', visible: true },
@@ -41,10 +45,23 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'reference', label: 'Reference', visible: true },
 ];
 
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${mm}/${dd}/${yyyy}`;
+  } catch { return dateStr; }
+};
+
 export const NotesTableView: React.FC<NotesTableViewProps> = ({
   notes, onAddNote, onEditNote, onRowClick, onDeleteNote, onExport, disabled = false, isLoading = false,
+  asOfFilter, onAsOfFilterChange,
 }) => {
-  const [columns, setColumns, resetColumns] = useTableColumnConfig('notes_v2', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('notes_v3', DEFAULT_COLUMNS);
   const [deleteTarget, setDeleteTarget] = useState<NoteData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
 
@@ -66,6 +83,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
   const renderCellValue = (note: NoteData, columnId: string) => {
     switch (columnId) {
       case 'date': return formatDateTime(note.date);
+      case 'asOfDate': return formatDate(note.asOfDate);
       case 'highPriority': return note.highPriority ? 'Yes' : 'No';
       case 'type': return note.type || '-';
       case 'account': return note.account || '-';
@@ -78,13 +96,27 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="font-semibold text-lg text-foreground">Conversation Log</h3>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onExport} disabled={disabled || notes.length === 0} className="gap-1">
             <Download className="h-4 w-4" />
             Export
           </Button>
+          <div className="flex items-center gap-1">
+            <label className="text-xs text-muted-foreground whitespace-nowrap">As Of:</label>
+            <input
+              type="date"
+              value={asOfFilter || ''}
+              onChange={(e) => onAsOfFilterChange?.(e.target.value)}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+            />
+            {asOfFilter && (
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onAsOfFilterChange?.('')}>
+                <span className="text-xs">✕</span>
+              </Button>
+            )}
+          </div>
           <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} disabled={disabled} />
           <Button variant="outline" size="sm" onClick={onAddNote} disabled={disabled} className="gap-1">
             <Plus className="h-4 w-4" />
