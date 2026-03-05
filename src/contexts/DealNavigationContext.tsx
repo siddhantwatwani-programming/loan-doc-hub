@@ -12,7 +12,7 @@ interface DealNavigationState {
 const DealNavigationContext = createContext<DealNavigationState | null>(null);
 
 const DEFAULT_SUB_SECTIONS: Record<string, string> = {
-  borrower: 'borrowers',
+  borrower: 'primary',
   property: 'properties',
   loan_terms: 'balances_loan_details',
   lender: 'lenders',
@@ -24,7 +24,7 @@ const DEFAULT_SUB_SECTIONS: Record<string, string> = {
 };
 
 const DEFAULT_PREFIXES: Record<string, string> = {
-  borrower: 'borrower',
+  borrower: 'borrower1',
   property: 'property1',
   lender: 'lender1',
   broker: 'broker1',
