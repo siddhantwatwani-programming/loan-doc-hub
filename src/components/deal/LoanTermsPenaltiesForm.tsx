@@ -138,7 +138,7 @@ const LateFeeColumn: React.FC<{
       </DirtyFieldWrapper>
 
       <div className="space-y-2">
-        <FieldRow label="Type">
+        <FieldRow label="Type" fieldKey={`${prefix}.type`}>
           <Input
             value={values[`${prefix}.type`] || ''}
             onChange={(e) => onValueChange(`${prefix}.type`, e.target.value)}
@@ -146,7 +146,7 @@ const LateFeeColumn: React.FC<{
             className="h-7 text-sm"
           />
         </FieldRow>
-        <FieldRow label="Grace Period">
+        <FieldRow label="Grace Period" fieldKey={`${prefix}.grace_period`}>
           <Input
             value={values[`${prefix}.grace_period`] || ''}
             onChange={(e) => onValueChange(`${prefix}.grace_period`, e.target.value)}
@@ -154,7 +154,7 @@ const LateFeeColumn: React.FC<{
             className="h-7 text-sm"
           />
         </FieldRow>
-        <FieldRow label="Calendar / Actual">
+        <FieldRow label="Calendar / Actual" fieldKey={`${prefix}.calendar_actual`}>
           <Input
             value={values[`${prefix}.calendar_actual`] || ''}
             onChange={(e) => onValueChange(`${prefix}.calendar_actual`, e.target.value)}
@@ -162,7 +162,7 @@ const LateFeeColumn: React.FC<{
             className="h-7 text-sm"
           />
         </FieldRow>
-        <FieldRow label="Minimum Late Fee">
+        <FieldRow label="Minimum Late Fee" fieldKey={`${prefix}.minimum_late_fee`}>
           <Input
             value={values[`${prefix}.minimum_late_fee`] || ''}
             onChange={(e) => onValueChange(`${prefix}.minimum_late_fee`, e.target.value)}
@@ -170,7 +170,7 @@ const LateFeeColumn: React.FC<{
             className="h-7 text-sm"
           />
         </FieldRow>
-        <FieldRow label={percentageLabel}>
+        <FieldRow label={percentageLabel} fieldKey={`${prefix}.percentage_of_payment`}>
           <Input
             value={values[`${prefix}.percentage_of_payment`] || ''}
             onChange={(e) => onValueChange(`${prefix}.percentage_of_payment`, e.target.value)}
@@ -178,7 +178,7 @@ const LateFeeColumn: React.FC<{
             className="h-7 text-sm"
           />
         </FieldRow>
-        <FieldRow label="Additional Daily Charge">
+        <FieldRow label="Additional Daily Charge" fieldKey={`${prefix}.additional_daily_charge`}>
           <Input
             value={values[`${prefix}.additional_daily_charge`] || ''}
             onChange={(e) => onValueChange(`${prefix}.additional_daily_charge`, e.target.value)}
