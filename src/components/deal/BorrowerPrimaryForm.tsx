@@ -279,22 +279,22 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Primary Address</h4>
 
-          <InlineField label="Street" labelWidth="min-w-[60px]">
+          <InlineField label="Street" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.primaryStreet}>
             <Input value={getValue('primaryStreet')} onChange={(e) => handleChange('primaryStreet', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <InlineField label="City" labelWidth="min-w-[60px]">
+          <InlineField label="City" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.primaryCity}>
             <Input value={getValue('primaryCity')} onChange={(e) => handleChange('primaryCity', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <InlineField label="State" labelWidth="min-w-[60px]">
+          <InlineField label="State" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.primaryState}>
             <Select value={getValue('primaryState')} onValueChange={(value) => handleChange('primaryState', value)} disabled={disabled}>
               <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>{STATE_OPTIONS.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}</SelectContent>
             </Select>
           </InlineField>
 
-          <InlineField label="ZIP" labelWidth="min-w-[60px]">
+          <InlineField label="ZIP" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.primaryZip}>
             <Input value={getValue('primaryZip')} onChange={(e) => handleChange('primaryZip', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
@@ -306,22 +306,22 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
             </div>
           </h4>
 
-          <InlineField label="Street" labelWidth="min-w-[60px]">
+          <InlineField label="Street" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.mailingStreet}>
             <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
           </InlineField>
 
-          <InlineField label="City" labelWidth="min-w-[60px]">
+          <InlineField label="City" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.mailingCity}>
             <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
           </InlineField>
 
-          <InlineField label="State" labelWidth="min-w-[60px]">
+          <InlineField label="State" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.mailingState}>
             <Select value={getValue('mailingState')} onValueChange={(value) => handleChange('mailingState', value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')}>
               <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>{STATE_OPTIONS.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}</SelectContent>
             </Select>
           </InlineField>
 
-          <InlineField label="ZIP" labelWidth="min-w-[60px]">
+          <InlineField label="ZIP" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.mailingZip}>
             <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
           </InlineField>
 
