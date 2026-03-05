@@ -310,7 +310,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>)}
             
-            <div className="flex items-start gap-3">
+            {wrapField('firstName', <div className="flex items-start gap-3">
               <div className="min-w-[140px] shrink-0 pt-1">
                 <Label className="text-sm text-muted-foreground text-left">First:</Label>
                 <p className="text-[10px] text-muted-foreground/70 leading-tight">If Entity, Use Signer</p>
@@ -321,9 +321,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
             
-            <div className="flex items-center gap-3">
+            {wrapField('middleName', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Middle</Label>
               <Input
                 value={getValue('middleName')}
@@ -331,9 +331,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
             
-            <div className="flex items-center gap-3">
+            {wrapField('lastName', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Last</Label>
               <Input
                 value={getValue('lastName')}
@@ -341,9 +341,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
             
-            <div className="flex items-center gap-3">
+            {wrapField('email', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Email</Label>
               <Input
                 type="email"
@@ -352,7 +352,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
 
             {/* DOB */}
             <div className="flex items-center gap-3">
