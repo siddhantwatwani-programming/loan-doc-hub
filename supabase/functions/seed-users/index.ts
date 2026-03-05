@@ -28,6 +28,10 @@ serve(async (req) => {
       { email: "csr2@deltoro.test", password: "Csr123!", role: "csr", name: "CSR User 2" },
       { email: "testuser1@deltoro.test", password: "Test123!", role: "csr", name: "Test User 1 - Editable" },
       { email: "testuser2@deltoro.test", password: "Test123!", role: "csr", name: "Test User 2 - View Only" },
+      { email: "csrtest1@deltoro.test", password: "CsrTest123!", role: "csr", name: "CSR Test User 1" },
+      { email: "csrtest2@deltoro.test", password: "CsrTest123!", role: "csr", name: "CSR Test User 2" },
+      { email: "csrtest3@deltoro.test", password: "CsrTest123!", role: "csr", name: "CSR Test User 3" },
+      { email: "csrtest4@deltoro.test", password: "CsrTest123!", role: "csr", name: "CSR Test User 4" },
     ];
 
     const results = [];
