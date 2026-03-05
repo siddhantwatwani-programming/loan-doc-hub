@@ -426,6 +426,18 @@ export const AppSidebar: React.FC = () => {
               />
             )}
 
+            {/* Event Journal - CSR and Admin */}
+            {(role === 'csr' || role === 'admin') && (
+              <PromotedNavSection
+                label="Event Journal"
+                icon={BookOpen}
+                items={[]}
+                directPath="/event-journal"
+                isCollapsed={isCollapsed}
+                searchQuery={searchQuery}
+              />
+            )}
+
             {/* Contacts - CSR only */}
             {role === 'csr' && (
               <PromotedNavSection

@@ -30,6 +30,7 @@ import SystemSettingsPage from "./pages/admin/SystemSettingsPage";
 import PermissionManagementPage from "./pages/admin/PermissionManagementPage";
 import MagicLinkAccessPage from "./pages/MagicLinkAccessPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
+import GlobalEventJournalPage from "./pages/csr/GlobalEventJournalPage";
 
 const queryClient = new QueryClient();
 
@@ -109,6 +110,7 @@ const App = () => (
                   {/* CSR-only routes - creating deals */}
                   <Route element={<RoleGuard requiredRoles={['csr', 'admin']} blockExternalUsers />}>
                     <Route path="/deals/new" element={<CreateDealPage />} />
+                    <Route path="/event-journal" element={<GlobalEventJournalPage />} />
                     <Route path="/deals/:id/edit" element={<DealDataEntryPage />} />
                     <Route path="/users" element={<UsersPage />} />
                     <Route path="/documents" element={<DocumentsPage />} />

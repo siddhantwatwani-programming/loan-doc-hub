@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useEventJournalLogger, type FieldChange } from '@/hooks/useEventJournal';
 import { useToast } from '@/hooks/use-toast';
 import { useFieldDictionaryCacheOptional } from '@/hooks/useFieldDictionaryCache';
 import { 
@@ -220,6 +221,8 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
   const [deletedPrefixes, setDeletedPrefixes] = useState<string[]>([]);
   const isFetchingRef = useRef(false);
   const hasLoadedRef = useRef(false);
+  const savedValuesSnapshotRef = useRef<Record<string, string>>({});
+  const { logFieldChanges } = useEventJournalLogger();
 
   // Fetch resolved fields and values - deferred until active
   useEffect(() => {
@@ -437,6 +440,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
         });
 
         setValues(valuesMap);
+        savedValuesSnapshotRef.current = { ...valuesMap };
       }
     } catch (err: any) {
       console.error('Error fetching deal fields:', err);
@@ -818,6 +822,47 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
 
       // Clear deleted prefixes after successful save
       setDeletedPrefixes([]);
+
+      // --- Event Journal: compute diff and log changes ---
+      try {
+        const snapshot = savedValuesSnapshotRef.current;
+        const changedBySection: Record<string, FieldChange[]> = {};
+
+        for (const fieldKey of dirtyFieldKeys) {
+          const oldVal = snapshot[fieldKey] || '';
+          const newVal = finalValues[fieldKey] || '';
+          if (oldVal === newVal) continue;
+
+          // Resolve field label and section
+          const canonicalKey = getCanonicalKey(fieldKey);
+          const field = resolvedFields?.fields.find(
+            f => f.field_key === canonicalKey || f.field_key === fieldKey
+          );
+          const label = field?.label || fieldKey;
+          const section = field?.section || 'other';
+
+          if (!changedBySection[section]) changedBySection[section] = [];
+          changedBySection[section].push({
+            fieldLabel: label,
+            oldValue: oldVal,
+            newValue: newVal,
+          });
+        }
+
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser) {
+          for (const [section, changes] of Object.entries(changedBySection)) {
+            if (changes.length > 0) {
+              await logFieldChanges(dealId, section, changes, currentUser.id);
+            }
+          }
+        }
+
+        // Update snapshot
+        savedValuesSnapshotRef.current = { ...finalValues };
+      } catch (journalErr) {
+        console.error('Event journal logging failed (non-blocking):', journalErr);
+      }
 
       toast({
         title: 'Saved',
