@@ -400,49 +400,55 @@ const PrepaymentPenaltySection: React.FC<{
       </DirtyFieldWrapper>
 
         <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
-            <span className="whitespace-nowrap">A Principal paydown in the first</span>
-            <Input
-              value={values[`${prefix}.first_years`] || ''}
-              onChange={(e) => onValueChange(`${prefix}.first_years`, e.target.value)}
-              disabled={disabled || !isEnabled}
-              className="h-7 text-sm w-16 shrink-0"
-            />
-            <span className="whitespace-nowrap">years, greater than</span>
-          </div>
+          <DirtyFieldWrapper fieldKey={`${prefix}.first_years`}>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
+              <span className="whitespace-nowrap">A Principal paydown in the first</span>
+              <Input
+                value={values[`${prefix}.first_years`] || ''}
+                onChange={(e) => onValueChange(`${prefix}.first_years`, e.target.value)}
+                disabled={disabled || !isEnabled}
+                className="h-7 text-sm w-16 shrink-0"
+              />
+              <span className="whitespace-nowrap">years, greater than</span>
+            </div>
+          </DirtyFieldWrapper>
 
-          <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
-            <Input
-              value={values[`${prefix}.greater_than`] || ''}
-              onChange={(e) => onValueChange(`${prefix}.greater_than`, e.target.value)}
-              disabled={disabled || !isEnabled}
-              className="h-7 text-sm w-16 shrink-0"
-            />
-            <span className="whitespace-nowrap">of the</span>
-            <Select
-              value={values[`${prefix}.of_the`] || ''}
-              onValueChange={(val) => onValueChange(`${prefix}.of_the`, val)}
-              disabled={disabled || !isEnabled}
-            >
-              <SelectTrigger className="h-7 text-sm w-28 shrink-0">
-                <SelectValue placeholder="Select..." />
-              </SelectTrigger>
-              <SelectContent className="bg-background border border-border z-50">
-                <SelectItem value="original">Original</SelectItem>
-                <SelectItem value="unpaid">Unpaid</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <DirtyFieldWrapper fieldKey={`${prefix}.greater_than`}>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
+              <Input
+                value={values[`${prefix}.greater_than`] || ''}
+                onChange={(e) => onValueChange(`${prefix}.greater_than`, e.target.value)}
+                disabled={disabled || !isEnabled}
+                className="h-7 text-sm w-16 shrink-0"
+              />
+              <span className="whitespace-nowrap">of the</span>
+              <Select
+                value={values[`${prefix}.of_the`] || ''}
+                onValueChange={(val) => onValueChange(`${prefix}.of_the`, val)}
+                disabled={disabled || !isEnabled}
+              >
+                <SelectTrigger className="h-7 text-sm w-28 shrink-0">
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  <SelectItem value="original">Original</SelectItem>
+                  <SelectItem value="unpaid">Unpaid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
 
-          <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
-            <span className="whitespace-nowrap">will result in a penalty of</span>
-            <Input
-              value={values[`${prefix}.penalty_months`] || ''}
-              onChange={(e) => onValueChange(`${prefix}.penalty_months`, e.target.value)}
-              disabled={disabled || !isEnabled}
-              className="h-7 text-sm w-16 shrink-0"
-            />
-          </div>
+          <DirtyFieldWrapper fieldKey={`${prefix}.penalty_months`}>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
+              <span className="whitespace-nowrap">will result in a penalty of</span>
+              <Input
+                value={values[`${prefix}.penalty_months`] || ''}
+                onChange={(e) => onValueChange(`${prefix}.penalty_months`, e.target.value)}
+                disabled={disabled || !isEnabled}
+                className="h-7 text-sm w-16 shrink-0"
+              />
+            </div>
+          </DirtyFieldWrapper>
 
           <p className="text-sm text-foreground">months of interest at note rate.</p>
         </div>
