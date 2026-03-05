@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -90,6 +90,26 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
       handleChange('mailing_address.zip', getValue('primary_address.zip'));
     }
   };
+
+  const isSameAsPrimary = getBoolValue('mailing_same_as_primary');
+  const primaryStreetVal = getValue('primary_address.street');
+  const primaryCityVal = getValue('primary_address.city');
+  const primaryStateVal = getValue('primary_address.state');
+  const primaryZipVal = getValue('primary_address.zip');
+
+  useEffect(() => {
+    if (isSameAsPrimary) {
+      const mappings: [string, string][] = [
+        ['mailing_address.street', primaryStreetVal],
+        ['mailing_address.city', primaryCityVal],
+        ['mailing_address.state', primaryStateVal],
+        ['mailing_address.zip', primaryZipVal],
+      ];
+      mappings.forEach(([dst, srcVal]) => {
+        if (getValue(dst) !== srcVal) handleChange(dst, srcVal);
+      });
+    }
+  }, [isSameAsPrimary, primaryStreetVal, primaryCityVal, primaryStateVal, primaryZipVal]);
 
   const phoneRows = [
     { key: 'phone.home', label: 'Home', prefKey: 'preferred.home', prefId: 'prefHome' },

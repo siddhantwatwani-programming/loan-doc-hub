@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -102,6 +102,26 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   const handleCurrencyChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value));
   const handlePercentageChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value));
 
+  const isCopyBorrower = getFieldValue(FIELD_KEYS.copyBorrowerAddress) === 'true';
+  const borrowerStreet = values['borrower.address.street'] || '';
+  const borrowerCity = values['borrower.address.city'] || '';
+  const borrowerState = values['borrower.state'] || '';
+  const borrowerZip = values['borrower.address.zip'] || '';
+
+  useEffect(() => {
+    if (isCopyBorrower) {
+      const mappings: [string, string][] = [
+        [FIELD_KEYS.street, borrowerStreet],
+        [FIELD_KEYS.city, borrowerCity],
+        [FIELD_KEYS.state, borrowerState],
+        [FIELD_KEYS.zip, borrowerZip],
+      ];
+      mappings.forEach(([dst, srcVal]) => {
+        if (getFieldValue(dst) !== srcVal) onValueChange(dst, srcVal);
+      });
+    }
+  }, [isCopyBorrower, borrowerStreet, borrowerCity, borrowerState, borrowerZip]);
+
   const parseDate = (val: string): Date | undefined => {
     if (!val) return undefined;
     try { return parse(val, 'yyyy-MM-dd', new Date()); } catch { return undefined; }
@@ -181,10 +201,35 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             <Checkbox id="copy-borrower-address" checked={getFieldValue(FIELD_KEYS.copyBorrowerAddress) === 'true'} onCheckedChange={(checked) => onValueChange(FIELD_KEYS.copyBorrowerAddress, String(!!checked))} disabled={disabled} className="h-3.5 w-3.5" />
             <Label htmlFor="copy-borrower-address" className="text-xs text-primary">Copy Borrower's Address</Label>
           </div>
-          {renderInlineField(FIELD_KEYS.street, 'Street')}
-          {renderInlineField(FIELD_KEYS.city, 'City')}
-          {renderInlineSelect(FIELD_KEYS.state, 'State', ['CA', 'TX', 'FL', 'NY', 'WA'], 'Select state')}
-          {renderInlineField(FIELD_KEYS.zip, 'Zip Code')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.street}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Street</Label>
+              <Input value={getFieldValue(FIELD_KEYS.street)} onChange={(e) => onValueChange(FIELD_KEYS.street, e.target.value)} disabled={disabled || isCopyBorrower} className="h-7 text-xs flex-1" />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.city}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">City</Label>
+              <Input value={getFieldValue(FIELD_KEYS.city)} onChange={(e) => onValueChange(FIELD_KEYS.city, e.target.value)} disabled={disabled || isCopyBorrower} className="h-7 text-xs flex-1" />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.state}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">State</Label>
+              <Select value={getFieldValue(FIELD_KEYS.state)} onValueChange={(val) => onValueChange(FIELD_KEYS.state, val)} disabled={disabled || isCopyBorrower}>
+                <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select state" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50 max-h-60">
+                  {['CA', 'TX', 'FL', 'NY', 'WA'].map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.zip}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Zip Code</Label>
+              <Input value={getFieldValue(FIELD_KEYS.zip)} onChange={(e) => onValueChange(FIELD_KEYS.zip, e.target.value)} disabled={disabled || isCopyBorrower} className="h-7 text-xs flex-1" />
+            </div>
+          </DirtyFieldWrapper>
           {renderInlineField(FIELD_KEYS.county, 'County')}
           <div className="flex items-center gap-2 pt-1">
             <Checkbox id="primary-property" checked={getFieldValue(FIELD_KEYS.primaryProperty) === 'true'} onCheckedChange={(checked) => onValueChange(FIELD_KEYS.primaryProperty, String(!!checked))} disabled={disabled} className="h-3.5 w-3.5" />

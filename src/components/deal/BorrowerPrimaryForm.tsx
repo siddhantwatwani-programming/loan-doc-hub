@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -182,6 +182,26 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
       handleChange('mailingZip', getValue('primaryZip'));
     }
   };
+
+  const isSameAsPrimary = getBoolValue('mailingSameAsPrimary');
+  const primaryStreetVal = getValue('primaryStreet');
+  const primaryCityVal = getValue('primaryCity');
+  const primaryStateVal = getValue('primaryState');
+  const primaryZipVal = getValue('primaryZip');
+
+  useEffect(() => {
+    if (isSameAsPrimary) {
+      const mappings: [keyof typeof FIELD_KEYS, string][] = [
+        ['mailingStreet', primaryStreetVal],
+        ['mailingCity', primaryCityVal],
+        ['mailingState', primaryStateVal],
+        ['mailingZip', primaryZipVal],
+      ];
+      mappings.forEach(([dst, srcVal]) => {
+        if (getValue(dst) !== srcVal) handleChange(dst, srcVal);
+      });
+    }
+  }, [isSameAsPrimary, primaryStreetVal, primaryCityVal, primaryStateVal, primaryZipVal]);
 
   const phoneRows: { key: keyof typeof FIELD_KEYS; prefKey: keyof typeof FIELD_KEYS; label: string; prefId: string }[] = [
     { key: 'phoneHome', prefKey: 'preferredHome', label: 'Home', prefId: 'prefHome' },
