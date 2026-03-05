@@ -109,14 +109,16 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
                   </td>
                   <td className="px-1 py-1.5">
                     {!row.isSpacer && (
-                      <Checkbox
-                        checked={values[`loan_terms.servicing.${row.key}.enabled`] === 'true'}
-                        onCheckedChange={(checked) => 
-                          onValueChange(`loan_terms.servicing.${row.key}.enabled`, checked ? 'true' : 'false')
-                        }
-                        disabled={disabled}
-                        className="h-4 w-4"
-                      />
+                      <DirtyFieldWrapper fieldKey={`loan_terms.servicing.${row.key}.enabled`}>
+                        <Checkbox
+                          checked={values[`loan_terms.servicing.${row.key}.enabled`] === 'true'}
+                          onCheckedChange={(checked) => 
+                            onValueChange(`loan_terms.servicing.${row.key}.enabled`, checked ? 'true' : 'false')
+                          }
+                          disabled={disabled}
+                          className="h-4 w-4"
+                        />
+                      </DirtyFieldWrapper>
                     )}
                   </td>
                   {GRID_COLUMNS.map((col) => (
