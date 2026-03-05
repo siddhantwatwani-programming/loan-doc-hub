@@ -187,14 +187,7 @@ async function generateSingleDocument(
       });
     });
 
-    // Force currency formatting for Loan/Account Number in generated documents
-    const loanNumberKeys = ["Terms.LoanNumber", "terms.loannumber"];
-    for (const lnKey of loanNumberKeys) {
-      const existing = fieldValues.get(lnKey);
-      if (existing && existing.dataType !== "currency") {
-        fieldValues.set(lnKey, { rawValue: existing.rawValue, dataType: "currency" });
-      }
-    }
+    // Loan Number is an identifier, not currency — no formatting override needed
 
     console.log(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);
 

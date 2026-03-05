@@ -185,7 +185,7 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
         <div className="space-y-1.5">
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Details</h3>
           {renderInlineField(FIELD_KEYS.company, 'Company')}
-          {renderInlineCurrencyField(FIELD_KEYS.loanNumber, 'Loan Number')}
+          {renderInlineField(FIELD_KEYS.loanNumber, 'Loan Number')}
           {renderInlineField(FIELD_KEYS.assignedCsr, 'Assigned CSR')}
           {renderInlineField(FIELD_KEYS.originatingVendor, 'Originating Vendor')}
           {renderInlineField(FIELD_KEYS.origination, 'Origination', 'date')}
