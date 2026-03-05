@@ -862,6 +862,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
 
   const resetDirty = useCallback(() => {
     setIsDirty(false);
+    setDirtyFieldKeys(new Set());
     setRequiredFieldChanged(false);
   }, []);
 
