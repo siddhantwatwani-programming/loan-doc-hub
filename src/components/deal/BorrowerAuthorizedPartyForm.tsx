@@ -77,16 +77,18 @@ export const BorrowerAuthorizedPartyForm: React.FC<BorrowerAuthorizedPartyFormPr
   };
 
   const renderInlineField = (key: keyof typeof FIELD_KEYS, label: string, type?: string) => (
-    <div key={key} className="flex items-center gap-2">
-      <Label className="w-[100px] shrink-0 text-xs text-muted-foreground">{label}</Label>
-      <Input
-        type={type}
-        value={getValue(key)}
-        onChange={(e) => handleChange(key, e.target.value)}
-        disabled={disabled}
-        className="h-7 text-xs flex-1"
-      />
-    </div>
+    <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]} key={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[100px] shrink-0 text-xs text-muted-foreground">{label}</Label>
+        <Input
+          type={type}
+          value={getValue(key)}
+          onChange={(e) => handleChange(key, e.target.value)}
+          disabled={disabled}
+          className="h-7 text-xs flex-1"
+        />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   return (
