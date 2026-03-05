@@ -7,13 +7,7 @@ export type OriginationFeesSubSection =
   | 'document_provisions'
   | 'insurance_conditions'
   | 'servicing'
-  | 'origination_fees'
-  | 'property';
-
-interface OriginationFeesSubNavigationProps {
-  activeSubSection: OriginationFeesSubSection;
-  onSubSectionChange: (subSection: OriginationFeesSubSection) => void;
-}
+  | 'origination_fees';
 
 const SECTIONS: { key: OriginationFeesSubSection; label: string }[] = [
   { key: 'application', label: 'Application' },
@@ -22,8 +16,12 @@ const SECTIONS: { key: OriginationFeesSubSection; label: string }[] = [
   { key: 'insurance_conditions', label: 'Insurance Conditions' },
   { key: 'servicing', label: 'Servicing' },
   { key: 'origination_fees', label: 'Origination Fees' },
-  { key: 'property', label: 'Property' },
 ];
+
+interface OriginationFeesSubNavigationProps {
+  activeSubSection: OriginationFeesSubSection;
+  onSubSectionChange: (subSection: OriginationFeesSubSection) => void;
+}
 
 export const OriginationFeesSubNavigation: React.FC<OriginationFeesSubNavigationProps> = ({
   activeSubSection,
