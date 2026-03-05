@@ -34,42 +34,50 @@ const DistributionFields: React.FC<{
     <div className="space-y-2 pt-3">
       <h4 className="font-semibold text-sm text-foreground border-b border-border pb-1">Distribution</h4>
       <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <Label className="text-sm min-w-[160px] max-w-[160px]">Lenders</Label>
-          <Input
-            value={values[`${prefix}.distribution.lenders`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.distribution.lenders`, e.target.value)}
-            disabled={disabled}
-            className="h-7 text-sm flex-1"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <Label className="text-sm min-w-[160px] max-w-[160px]">Origination Vendors</Label>
-          <Input
-            value={values[`${prefix}.distribution.origination_vendors`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.distribution.origination_vendors`, e.target.value)}
-            disabled={disabled}
-            className="h-7 text-sm flex-1"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <Label className="text-sm min-w-[160px] max-w-[160px]">Company</Label>
-          <Input
-            value={values[`${prefix}.distribution.company`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.distribution.company`, e.target.value)}
-            disabled={disabled}
-            className="h-7 text-sm flex-1"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <Label className="text-sm min-w-[160px] max-w-[160px]">Other</Label>
-          <Input
-            value={values[`${prefix}.distribution.other`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.distribution.other`, e.target.value)}
-            disabled={disabled}
-            className="h-7 text-sm flex-1"
-          />
-        </div>
+        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.lenders`}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Lenders</Label>
+            <Input
+              value={values[`${prefix}.distribution.lenders`] || ''}
+              onChange={(e) => onValueChange(`${prefix}.distribution.lenders`, e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </DirtyFieldWrapper>
+        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.origination_vendors`}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Origination Vendors</Label>
+            <Input
+              value={values[`${prefix}.distribution.origination_vendors`] || ''}
+              onChange={(e) => onValueChange(`${prefix}.distribution.origination_vendors`, e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </DirtyFieldWrapper>
+        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.company`}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Company</Label>
+            <Input
+              value={values[`${prefix}.distribution.company`] || ''}
+              onChange={(e) => onValueChange(`${prefix}.distribution.company`, e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </DirtyFieldWrapper>
+        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.other`}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Other</Label>
+            <Input
+              value={values[`${prefix}.distribution.other`] || ''}
+              onChange={(e) => onValueChange(`${prefix}.distribution.other`, e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </DirtyFieldWrapper>
       </div>
     </div>
   );
@@ -79,23 +87,30 @@ const DistributionFields: React.FC<{
 const FieldRow: React.FC<{
   label: string;
   children: React.ReactNode;
+  fieldKey?: string;
   checkboxValue?: boolean;
   onCheckboxChange?: (checked: boolean) => void;
   disabled?: boolean;
-}> = ({ label, children, checkboxValue, onCheckboxChange, disabled }) => (
-  <div className="flex items-center gap-3">
-    <Label className="text-sm min-w-[160px] max-w-[160px]">{label}</Label>
-    {onCheckboxChange !== undefined && (
-      <Checkbox
-        checked={checkboxValue}
-        onCheckedChange={(checked) => onCheckboxChange(!!checked)}
-        disabled={disabled}
-        className="h-4 w-4"
-      />
-    )}
-    <div className="flex-1 min-w-0">{children}</div>
-  </div>
-);
+}> = ({ label, children, fieldKey, checkboxValue, onCheckboxChange, disabled }) => {
+  const content = (
+    <div className="flex items-center gap-3">
+      <Label className="text-sm min-w-[160px] max-w-[160px]">{label}</Label>
+      {onCheckboxChange !== undefined && (
+        <Checkbox
+          checked={checkboxValue}
+          onCheckedChange={(checked) => onCheckboxChange(!!checked)}
+          disabled={disabled}
+          className="h-4 w-4"
+        />
+      )}
+      <div className="flex-1 min-w-0">{children}</div>
+    </div>
+  );
+  if (fieldKey) {
+    return <DirtyFieldWrapper fieldKey={fieldKey}>{content}</DirtyFieldWrapper>;
+  }
+  return content;
+};
 
 // Late Fee Column (I or II)
 const LateFeeColumn: React.FC<{
@@ -110,18 +125,20 @@ const LateFeeColumn: React.FC<{
 
   return (
     <div className="space-y-2 p-4 border border-border rounded-lg bg-card">
-      <div className="flex items-center gap-2 border-b border-border pb-2">
-        <h3 className="font-semibold text-sm text-foreground">{title}</h3>
-        <Checkbox
-          checked={isEnabled}
-          onCheckedChange={(checked) => onValueChange(`${prefix}.enabled`, checked ? 'true' : 'false')}
-          disabled={disabled}
-          className="h-4 w-4"
-        />
-      </div>
+      <DirtyFieldWrapper fieldKey={`${prefix}.enabled`}>
+        <div className="flex items-center gap-2 border-b border-border pb-2">
+          <h3 className="font-semibold text-sm text-foreground">{title}</h3>
+          <Checkbox
+            checked={isEnabled}
+            onCheckedChange={(checked) => onValueChange(`${prefix}.enabled`, checked ? 'true' : 'false')}
+            disabled={disabled}
+            className="h-4 w-4"
+          />
+        </div>
+      </DirtyFieldWrapper>
 
       <div className="space-y-2">
-        <FieldRow label="Type">
+        <FieldRow label="Type" fieldKey={`${prefix}.type`}>
           <Input
             value={values[`${prefix}.type`] || ''}
             onChange={(e) => onValueChange(`${prefix}.type`, e.target.value)}
@@ -129,7 +146,7 @@ const LateFeeColumn: React.FC<{
             className="h-7 text-sm"
           />
         </FieldRow>
-        <FieldRow label="Grace Period">
+        <FieldRow label="Grace Period" fieldKey={`${prefix}.grace_period`}>
           <Input
             value={values[`${prefix}.grace_period`] || ''}
             onChange={(e) => onValueChange(`${prefix}.grace_period`, e.target.value)}
@@ -137,7 +154,7 @@ const LateFeeColumn: React.FC<{
             className="h-7 text-sm"
           />
         </FieldRow>
-        <FieldRow label="Calendar / Actual">
+        <FieldRow label="Calendar / Actual" fieldKey={`${prefix}.calendar_actual`}>
           <Input
             value={values[`${prefix}.calendar_actual`] || ''}
             onChange={(e) => onValueChange(`${prefix}.calendar_actual`, e.target.value)}
@@ -145,7 +162,7 @@ const LateFeeColumn: React.FC<{
             className="h-7 text-sm"
           />
         </FieldRow>
-        <FieldRow label="Minimum Late Fee">
+        <FieldRow label="Minimum Late Fee" fieldKey={`${prefix}.minimum_late_fee`}>
           <Input
             value={values[`${prefix}.minimum_late_fee`] || ''}
             onChange={(e) => onValueChange(`${prefix}.minimum_late_fee`, e.target.value)}
@@ -153,7 +170,7 @@ const LateFeeColumn: React.FC<{
             className="h-7 text-sm"
           />
         </FieldRow>
-        <FieldRow label={percentageLabel}>
+        <FieldRow label={percentageLabel} fieldKey={`${prefix}.percentage_of_payment`}>
           <Input
             value={values[`${prefix}.percentage_of_payment`] || ''}
             onChange={(e) => onValueChange(`${prefix}.percentage_of_payment`, e.target.value)}
@@ -161,7 +178,7 @@ const LateFeeColumn: React.FC<{
             className="h-7 text-sm"
           />
         </FieldRow>
-        <FieldRow label="Additional Daily Charge">
+        <FieldRow label="Additional Daily Charge" fieldKey={`${prefix}.additional_daily_charge`}>
           <Input
             value={values[`${prefix}.additional_daily_charge`] || ''}
             onChange={(e) => onValueChange(`${prefix}.additional_daily_charge`, e.target.value)}
@@ -192,18 +209,20 @@ const DefaultInterestColumn: React.FC<{
 
   return (
     <div className="space-y-2 p-4 border border-border rounded-lg bg-card">
-      <div className="flex items-center gap-2 border-b border-border pb-2">
-        <h3 className="font-semibold text-sm text-foreground">Default Interest</h3>
-        <Checkbox
-          checked={isEnabled}
-          onCheckedChange={(checked) => onValueChange(`${prefix}.enabled`, checked ? 'true' : 'false')}
-          disabled={disabled}
-          className="h-4 w-4"
-        />
-      </div>
+      <DirtyFieldWrapper fieldKey={`${prefix}.enabled`}>
+        <div className="flex items-center gap-2 border-b border-border pb-2">
+          <h3 className="font-semibold text-sm text-foreground">Default Interest</h3>
+          <Checkbox
+            checked={isEnabled}
+            onCheckedChange={(checked) => onValueChange(`${prefix}.enabled`, checked ? 'true' : 'false')}
+            disabled={disabled}
+            className="h-4 w-4"
+          />
+        </div>
+      </DirtyFieldWrapper>
 
       <div className="space-y-2">
-        <FieldRow label="Triggered By">
+        <FieldRow label="Triggered By" fieldKey={`${prefix}.triggered_by`}>
           <Select
             value={values[`${prefix}.triggered_by`] || ''}
             onValueChange={(val) => onValueChange(`${prefix}.triggered_by`, val)}
@@ -219,7 +238,7 @@ const DefaultInterestColumn: React.FC<{
             </SelectContent>
           </Select>
         </FieldRow>
-        <FieldRow label="Grace Period">
+        <FieldRow label="Grace Period" fieldKey={`${prefix}.grace_period`}>
           <Input
             value={values[`${prefix}.grace_period`] || ''}
             onChange={(e) => onValueChange(`${prefix}.grace_period`, e.target.value)}
@@ -229,6 +248,7 @@ const DefaultInterestColumn: React.FC<{
         </FieldRow>
         <FieldRow
           label="Flat Rate"
+          fieldKey={`${prefix}.flat_rate`}
           checkboxValue={values[`${prefix}.flat_rate_enabled`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.flat_rate_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
@@ -242,6 +262,7 @@ const DefaultInterestColumn: React.FC<{
         </FieldRow>
         <FieldRow
           label="Modifier"
+          fieldKey={`${prefix}.modifier`}
           checkboxValue={values[`${prefix}.modifier_enabled`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.modifier_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
@@ -253,7 +274,7 @@ const DefaultInterestColumn: React.FC<{
             className="h-7 text-sm"
           />
         </FieldRow>
-        <FieldRow label="Active Until">
+        <FieldRow label="Active Until" fieldKey={`${prefix}.active_until`}>
           <Input
             type="date"
             value={values[`${prefix}.active_until`] || ''}
@@ -262,7 +283,7 @@ const DefaultInterestColumn: React.FC<{
             className="h-7 text-sm w-full max-w-full overflow-hidden"
           />
         </FieldRow>
-        <FieldRow label="Additional Daily Charge">
+        <FieldRow label="Additional Daily Charge" fieldKey={`${prefix}.additional_daily_charge`}>
           <Input
             value={values[`${prefix}.additional_daily_charge`] || ''}
             onChange={(e) => onValueChange(`${prefix}.additional_daily_charge`, e.target.value)}
@@ -293,19 +314,22 @@ const InterestGuaranteeSection: React.FC<{
 
   return (
     <div className="space-y-2 p-4 border border-border rounded-lg bg-card">
-      <div className="flex items-center gap-2 border-b border-border pb-2">
-        <h3 className="font-semibold text-sm text-foreground">Interest Guarantee</h3>
-        <Checkbox
-          checked={isEnabled}
-          onCheckedChange={(checked) => onValueChange(`${prefix}.enabled`, checked ? 'true' : 'false')}
-          disabled={disabled}
-          className="h-4 w-4"
-        />
-      </div>
+      <DirtyFieldWrapper fieldKey={`${prefix}.enabled`}>
+        <div className="flex items-center gap-2 border-b border-border pb-2">
+          <h3 className="font-semibold text-sm text-foreground">Interest Guarantee</h3>
+          <Checkbox
+            checked={isEnabled}
+            onCheckedChange={(checked) => onValueChange(`${prefix}.enabled`, checked ? 'true' : 'false')}
+            disabled={disabled}
+            className="h-4 w-4"
+          />
+        </div>
+      </DirtyFieldWrapper>
 
       <div className="space-y-2">
         <FieldRow
           label="Months"
+          fieldKey={`${prefix}.months`}
           checkboxValue={values[`${prefix}.months_enabled`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.months_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
@@ -319,6 +343,7 @@ const InterestGuaranteeSection: React.FC<{
         </FieldRow>
         <FieldRow
           label="Include Odd Days Interest"
+          fieldKey={`${prefix}.include_odd_days`}
           checkboxValue={values[`${prefix}.include_odd_days`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.include_odd_days`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
@@ -327,6 +352,7 @@ const InterestGuaranteeSection: React.FC<{
         </FieldRow>
         <FieldRow
           label="Amount"
+          fieldKey={`${prefix}.amount`}
           checkboxValue={values[`${prefix}.amount_enabled`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.amount_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
@@ -361,60 +387,68 @@ const PrepaymentPenaltySection: React.FC<{
 
   return (
     <div className="space-y-2 p-4 border border-border rounded-lg bg-card">
-      <div className="flex items-center gap-2 border-b border-border pb-2">
-        <h3 className="font-semibold text-sm text-foreground">Pre-payment Penalty</h3>
-        <Checkbox
-          checked={isEnabled}
-          onCheckedChange={(checked) => onValueChange(`${prefix}.enabled`, checked ? 'true' : 'false')}
-          disabled={disabled}
-          className="h-4 w-4"
-        />
-      </div>
+      <DirtyFieldWrapper fieldKey={`${prefix}.enabled`}>
+        <div className="flex items-center gap-2 border-b border-border pb-2">
+          <h3 className="font-semibold text-sm text-foreground">Pre-payment Penalty</h3>
+          <Checkbox
+            checked={isEnabled}
+            onCheckedChange={(checked) => onValueChange(`${prefix}.enabled`, checked ? 'true' : 'false')}
+            disabled={disabled}
+            className="h-4 w-4"
+          />
+        </div>
+      </DirtyFieldWrapper>
 
         <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
-            <span className="whitespace-nowrap">A Principal paydown in the first</span>
-            <Input
-              value={values[`${prefix}.first_years`] || ''}
-              onChange={(e) => onValueChange(`${prefix}.first_years`, e.target.value)}
-              disabled={disabled || !isEnabled}
-              className="h-7 text-sm w-16 shrink-0"
-            />
-            <span className="whitespace-nowrap">years, greater than</span>
-          </div>
+          <DirtyFieldWrapper fieldKey={`${prefix}.first_years`}>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
+              <span className="whitespace-nowrap">A Principal paydown in the first</span>
+              <Input
+                value={values[`${prefix}.first_years`] || ''}
+                onChange={(e) => onValueChange(`${prefix}.first_years`, e.target.value)}
+                disabled={disabled || !isEnabled}
+                className="h-7 text-sm w-16 shrink-0"
+              />
+              <span className="whitespace-nowrap">years, greater than</span>
+            </div>
+          </DirtyFieldWrapper>
 
-          <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
-            <Input
-              value={values[`${prefix}.greater_than`] || ''}
-              onChange={(e) => onValueChange(`${prefix}.greater_than`, e.target.value)}
-              disabled={disabled || !isEnabled}
-              className="h-7 text-sm w-16 shrink-0"
-            />
-            <span className="whitespace-nowrap">of the</span>
-            <Select
-              value={values[`${prefix}.of_the`] || ''}
-              onValueChange={(val) => onValueChange(`${prefix}.of_the`, val)}
-              disabled={disabled || !isEnabled}
-            >
-              <SelectTrigger className="h-7 text-sm w-28 shrink-0">
-                <SelectValue placeholder="Select..." />
-              </SelectTrigger>
-              <SelectContent className="bg-background border border-border z-50">
-                <SelectItem value="original">Original</SelectItem>
-                <SelectItem value="unpaid">Unpaid</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <DirtyFieldWrapper fieldKey={`${prefix}.greater_than`}>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
+              <Input
+                value={values[`${prefix}.greater_than`] || ''}
+                onChange={(e) => onValueChange(`${prefix}.greater_than`, e.target.value)}
+                disabled={disabled || !isEnabled}
+                className="h-7 text-sm w-16 shrink-0"
+              />
+              <span className="whitespace-nowrap">of the</span>
+              <Select
+                value={values[`${prefix}.of_the`] || ''}
+                onValueChange={(val) => onValueChange(`${prefix}.of_the`, val)}
+                disabled={disabled || !isEnabled}
+              >
+                <SelectTrigger className="h-7 text-sm w-28 shrink-0">
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  <SelectItem value="original">Original</SelectItem>
+                  <SelectItem value="unpaid">Unpaid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
 
-          <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
-            <span className="whitespace-nowrap">will result in a penalty of</span>
-            <Input
-              value={values[`${prefix}.penalty_months`] || ''}
-              onChange={(e) => onValueChange(`${prefix}.penalty_months`, e.target.value)}
-              disabled={disabled || !isEnabled}
-              className="h-7 text-sm w-16 shrink-0"
-            />
-          </div>
+          <DirtyFieldWrapper fieldKey={`${prefix}.penalty_months`}>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
+              <span className="whitespace-nowrap">will result in a penalty of</span>
+              <Input
+                value={values[`${prefix}.penalty_months`] || ''}
+                onChange={(e) => onValueChange(`${prefix}.penalty_months`, e.target.value)}
+                disabled={disabled || !isEnabled}
+                className="h-7 text-sm w-16 shrink-0"
+              />
+            </div>
+          </DirtyFieldWrapper>
 
           <p className="text-sm text-foreground">months of interest at note rate.</p>
         </div>
@@ -440,18 +474,20 @@ const MaturitySection: React.FC<{
 
   return (
     <div className="space-y-2 p-4 border border-border rounded-lg bg-card">
-      <div className="flex items-center gap-2 border-b border-border pb-2">
-        <h3 className="font-semibold text-sm text-foreground">Maturity</h3>
-        <Checkbox
-          checked={isEnabled}
-          onCheckedChange={(checked) => onValueChange(`${prefix}.enabled`, checked ? 'true' : 'false')}
-          disabled={disabled}
-          className="h-4 w-4"
-        />
-      </div>
+      <DirtyFieldWrapper fieldKey={`${prefix}.enabled`}>
+        <div className="flex items-center gap-2 border-b border-border pb-2">
+          <h3 className="font-semibold text-sm text-foreground">Maturity</h3>
+          <Checkbox
+            checked={isEnabled}
+            onCheckedChange={(checked) => onValueChange(`${prefix}.enabled`, checked ? 'true' : 'false')}
+            disabled={disabled}
+            className="h-4 w-4"
+          />
+        </div>
+      </DirtyFieldWrapper>
 
       <div className="space-y-2">
-        <FieldRow label="Grace Period (Days)">
+        <FieldRow label="Grace Period (Days)" fieldKey={`${prefix}.grace_period_days`}>
           <Input
             value={values[`${prefix}.grace_period_days`] || ''}
             onChange={(e) => onValueChange(`${prefix}.grace_period_days`, e.target.value)}
@@ -461,6 +497,7 @@ const MaturitySection: React.FC<{
         </FieldRow>
         <FieldRow
           label="Standard 10% of Payment Only"
+          fieldKey={`${prefix}.standard_10_percent`}
           checkboxValue={values[`${prefix}.standard_10_percent`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.standard_10_percent`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
@@ -469,6 +506,7 @@ const MaturitySection: React.FC<{
         </FieldRow>
         <FieldRow
           label="Additional Flat Fee"
+          fieldKey={`${prefix}.additional_flat_fee`}
           checkboxValue={values[`${prefix}.additional_flat_fee_enabled`] === 'true'}
           onCheckboxChange={(checked) => onValueChange(`${prefix}.additional_flat_fee_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}

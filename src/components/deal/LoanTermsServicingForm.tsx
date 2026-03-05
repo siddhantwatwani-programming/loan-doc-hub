@@ -63,16 +63,18 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
     <div className="p-6 space-y-6">
       {/* Override and Lender Split Dropdown */}
       <div className="flex items-center justify-between gap-8">
-        <div className="flex items-center gap-3">
-          <Label className="text-sm font-medium">Override</Label>
-          <Checkbox
-            checked={values['loan_terms.servicing.override'] === 'true'}
-            onCheckedChange={(checked) => 
-              onValueChange('loan_terms.servicing.override', checked ? 'true' : 'false')
-            }
-            disabled={disabled}
-          />
-        </div>
+        <DirtyFieldWrapper fieldKey="loan_terms.servicing.override">
+          <div className="flex items-center gap-3">
+            <Label className="text-sm font-medium">Override</Label>
+            <Checkbox
+              checked={values['loan_terms.servicing.override'] === 'true'}
+              onCheckedChange={(checked) => 
+                onValueChange('loan_terms.servicing.override', checked ? 'true' : 'false')
+              }
+              disabled={disabled}
+            />
+          </div>
+        </DirtyFieldWrapper>
       </div>
 
       {/* Services Grid */}
@@ -107,42 +109,46 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
                   </td>
                   <td className="px-1 py-1.5">
                     {!row.isSpacer && (
-                      <Checkbox
-                        checked={values[`loan_terms.servicing.${row.key}.enabled`] === 'true'}
-                        onCheckedChange={(checked) => 
-                          onValueChange(`loan_terms.servicing.${row.key}.enabled`, checked ? 'true' : 'false')
-                        }
-                        disabled={disabled}
-                        className="h-4 w-4"
-                      />
+                      <DirtyFieldWrapper fieldKey={`loan_terms.servicing.${row.key}.enabled`}>
+                        <Checkbox
+                          checked={values[`loan_terms.servicing.${row.key}.enabled`] === 'true'}
+                          onCheckedChange={(checked) => 
+                            onValueChange(`loan_terms.servicing.${row.key}.enabled`, checked ? 'true' : 'false')
+                          }
+                          disabled={disabled}
+                          className="h-4 w-4"
+                        />
+                      </DirtyFieldWrapper>
                     )}
                   </td>
                   {GRID_COLUMNS.map((col) => (
                     <td key={col.key} className="px-1 py-1">
                       {!row.isSpacer && (
-                        col.key === 'lenders_split' ? (
-                          <Select
-                            value={values[getFieldKey(row.key, col.key)] || ''}
-                            onValueChange={(value) => onValueChange(getFieldKey(row.key, col.key), value)}
-                            disabled={disabled}
-                          >
-                            <SelectTrigger className="h-7 text-xs border-border">
-                              <SelectValue placeholder="Select..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="fee_per_lender">Fee Per Lender - No Split</SelectItem>
-                              <SelectItem value="pro_rata">Pro Rata</SelectItem>
-                              <SelectItem value="split_50_50">Split 50/50</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Input
-                            value={values[getFieldKey(row.key, col.key)] || ''}
-                            onChange={(e) => onValueChange(getFieldKey(row.key, col.key), e.target.value)}
-                            disabled={disabled}
-                            className="h-7 text-xs border-border"
-                          />
-                        )
+                        <DirtyFieldWrapper fieldKey={getFieldKey(row.key, col.key)}>
+                          {col.key === 'lenders_split' ? (
+                            <Select
+                              value={values[getFieldKey(row.key, col.key)] || ''}
+                              onValueChange={(value) => onValueChange(getFieldKey(row.key, col.key), value)}
+                              disabled={disabled}
+                            >
+                              <SelectTrigger className="h-7 text-xs border-border">
+                                <SelectValue placeholder="Select..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="fee_per_lender">Fee Per Lender - No Split</SelectItem>
+                                <SelectItem value="pro_rata">Pro Rata</SelectItem>
+                                <SelectItem value="split_50_50">Split 50/50</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input
+                              value={values[getFieldKey(row.key, col.key)] || ''}
+                              onChange={(e) => onValueChange(getFieldKey(row.key, col.key), e.target.value)}
+                              disabled={disabled}
+                              className="h-7 text-xs border-border"
+                            />
+                          )}
+                        </DirtyFieldWrapper>
                       )}
                     </td>
                   ))}
@@ -160,40 +166,44 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
                   />
                 </td>
                 <td className="px-1 py-1.5">
-                  <Checkbox
-                    checked={values['loan_terms.servicing.custom.enabled'] === 'true'}
-                    onCheckedChange={(checked) => 
-                      onValueChange('loan_terms.servicing.custom.enabled', checked ? 'true' : 'false')
-                    }
-                    disabled={disabled}
-                    className="h-4 w-4"
-                  />
+                  <DirtyFieldWrapper fieldKey="loan_terms.servicing.custom.enabled">
+                    <Checkbox
+                      checked={values['loan_terms.servicing.custom.enabled'] === 'true'}
+                      onCheckedChange={(checked) => 
+                        onValueChange('loan_terms.servicing.custom.enabled', checked ? 'true' : 'false')
+                      }
+                      disabled={disabled}
+                      className="h-4 w-4"
+                    />
+                  </DirtyFieldWrapper>
                 </td>
                 {GRID_COLUMNS.map((col) => (
                   <td key={col.key} className="px-1 py-1">
-                    {col.key === 'lenders_split' ? (
-                      <Select
-                        value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
-                        onValueChange={(value) => onValueChange(`loan_terms.servicing.custom.${col.key}`, value)}
-                        disabled={disabled}
-                      >
-                        <SelectTrigger className="h-7 text-xs border-border">
-                          <SelectValue placeholder="Select..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="fee_per_lender">Fee Per Lender - No Split</SelectItem>
-                          <SelectItem value="pro_rata">Pro Rata</SelectItem>
-                          <SelectItem value="split_50_50">Split 50/50</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input
-                        value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
-                        onChange={(e) => onValueChange(`loan_terms.servicing.custom.${col.key}`, e.target.value)}
-                        disabled={disabled}
-                        className="h-7 text-xs border-border"
-                      />
-                    )}
+                    <DirtyFieldWrapper fieldKey={`loan_terms.servicing.custom.${col.key}`}>
+                      {col.key === 'lenders_split' ? (
+                        <Select
+                          value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
+                          onValueChange={(value) => onValueChange(`loan_terms.servicing.custom.${col.key}`, value)}
+                          disabled={disabled}
+                        >
+                          <SelectTrigger className="h-7 text-xs border-border">
+                            <SelectValue placeholder="Select..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="fee_per_lender">Fee Per Lender - No Split</SelectItem>
+                            <SelectItem value="pro_rata">Pro Rata</SelectItem>
+                            <SelectItem value="split_50_50">Split 50/50</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
+                          onChange={(e) => onValueChange(`loan_terms.servicing.custom.${col.key}`, e.target.value)}
+                          disabled={disabled}
+                          className="h-7 text-xs border-border"
+                        />
+                      )}
+                    </DirtyFieldWrapper>
                   </td>
                 ))}
               </tr>
