@@ -486,23 +486,23 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
 
           {/* Extra fields */}
           <div className="space-y-3 mt-4 border-t pt-3">
-            <div className="flex items-center gap-2">
+            {wrapField('servicingAgreementOnFile', <div className="flex items-center gap-2">
               <Checkbox
                 checked={getBoolValue('servicingAgreementOnFile')}
                 onCheckedChange={(checked) => handleChange('servicingAgreementOnFile', !!checked)}
                 disabled={disabled}
               />
               <Label className="text-sm text-muted-foreground">Servicing Agreement on File</Label>
-            </div>
-            <div className="flex items-center gap-2">
+            </div>)}
+            {wrapField('freezeOutgoingDisbursements', <div className="flex items-center gap-2">
               <Checkbox
                 checked={getBoolValue('freezeOutgoingDisbursements')}
                 onCheckedChange={(checked) => handleChange('freezeOutgoingDisbursements', !!checked)}
                 disabled={disabled}
               />
               <Label className="text-sm text-muted-foreground">Freeze Outgoing Disbursements</Label>
-            </div>
-            <div className="flex items-center gap-2">
+            </div>)}
+            {wrapField('investorQuestionnaireDue', <div className="flex items-center gap-2">
               <Checkbox
                 checked={getBoolValue('investorQuestionnaireDue')}
                 onCheckedChange={(checked) => handleChange('investorQuestionnaireDue', !!checked)}
@@ -526,7 +526,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   />
                 </PopoverContent>
               </Popover>
-            </div>
+            </div>)}
           </div>
         </div>
 
