@@ -224,7 +224,8 @@ export const AppSidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* Navigation */}
+      {/* Navigation - collapsible */}
+      {!isCollapsed && (
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto sidebar-scrollbar">
         <TooltipProvider delayDuration={0}>
           {/* My Work Section */}
