@@ -20,6 +20,7 @@ import {
   Sliders,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Eye,
   Menu,
   X,
@@ -197,15 +198,13 @@ export const AppSidebar: React.FC = () => {
               onClick={() => isCollapsed ? toggleSidebar() : navigate('/dashboard')}
             />
           </div>
-          {!isCollapsed && (
-            <button
-              onClick={toggleSidebar}
-              className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors flex-shrink-0"
-              aria-label="Collapse sidebar"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          )}
+          <button
+            onClick={toggleSidebar}
+            className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground transition-colors flex-shrink-0"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+          </button>
         </div>
       </div>
 
