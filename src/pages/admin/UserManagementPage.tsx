@@ -100,39 +100,13 @@ export const UserManagementPage: React.FC = () => {
 
     setSaving(true);
     try {
-      // Replace user role safely (avoids duplicate unique key errors under RLS)
-      const { error: deleteRoleError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', selectedUser.id);
+      const { error: assignError } = await supabase.rpc('assign_user_role_and_permission', {
+        p_user_id: selectedUser.id,
+        p_role: newRole as 'admin' | 'csr',
+        p_permission_level: newRole === 'csr' ? newPermissionLevel : 'full',
+      });
 
-      if (deleteRoleError) throw deleteRoleError;
-
-      const { error: insertRoleError } = await supabase
-        .from('user_roles')
-        .insert({ user_id: selectedUser.id, role: newRole as 'admin' | 'csr' });
-
-      if (insertRoleError) throw insertRoleError;
-
-      // If CSR role, also save permission level
-      if (newRole === 'csr') {
-        const { data: existingLevel } = await supabase
-          .from('user_permission_levels')
-          .select('*')
-          .eq('user_id', selectedUser.id)
-          .maybeSingle();
-
-        if (existingLevel) {
-          await supabase
-            .from('user_permission_levels')
-            .update({ permission_level: newPermissionLevel, updated_at: new Date().toISOString() } as any)
-            .eq('user_id', selectedUser.id);
-        } else {
-          await supabase
-            .from('user_permission_levels')
-            .insert({ user_id: selectedUser.id, permission_level: newPermissionLevel } as any);
-        }
-      }
+      if (assignError) throw assignError;
 
       toast({
         title: 'Role assigned',

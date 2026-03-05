@@ -998,6 +998,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_user_role_and_permission: {
+        Args: {
+          p_permission_level?: string
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       can_edit_field: {
         Args: { _field_key: string; _user_id: string }
         Returns: boolean
