@@ -372,10 +372,12 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Phone</h4>
           {phoneRows.map(({ key, label }) => (
-            <div key={key} className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[40px] text-left shrink-0">{label}</Label>
-              <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-            </div>
+            <DirtyFieldWrapper key={key} fieldKey={FIELD_KEYS[key]}>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground min-w-[40px] text-left shrink-0">{label}</Label>
+                <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              </div>
+            </DirtyFieldWrapper>
           ))}
 
           <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">Vesting</h4>
