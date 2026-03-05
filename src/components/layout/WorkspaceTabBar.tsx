@@ -39,8 +39,7 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
   return (
     <div
       className={cn(
-        'fixed top-12 right-0 z-30 h-10 border-b border-border bg-background overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent transition-all duration-300',
-        isCollapsed ? 'left-16' : 'left-64'
+        'fixed top-12 right-0 left-64 z-30 h-10 border-b border-border bg-background overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent'
       )}
     >
       <div className="flex items-stretch h-10 w-max min-w-full">
