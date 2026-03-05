@@ -46,6 +46,7 @@ export interface DealFieldsData {
   saving: boolean;
   error: string | null;
   isDirty: boolean;
+  dirtyFieldKeys: Set<string>;
 }
 
 export interface UseDealFieldsReturn extends DealFieldsData {
