@@ -26,7 +26,10 @@ export const AppHeader: React.FC = () => {
 
   return (
     <header
-      className="fixed top-0 right-0 left-64 z-40 h-12 border-b border-border bg-background flex items-center justify-end px-4 gap-4"
+      className={cn(
+        'fixed top-0 right-0 z-40 h-12 border-b border-border bg-background flex items-center justify-end px-4 gap-4 transition-all duration-300',
+        isCollapsed ? 'left-16' : 'left-64'
+      )}
     >
       <TooltipProvider delayDuration={0}>
         {/* User Info */}
