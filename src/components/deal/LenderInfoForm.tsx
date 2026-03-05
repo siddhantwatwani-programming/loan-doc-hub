@@ -449,7 +449,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
 
           {/* Mailing Address */}
           <h3 className="text-sm font-semibold text-foreground border-b pb-2 mt-4">Mailing Address</h3>
-          <div className="flex items-center gap-2 mb-2">
+          {wrapField('mailingSameAsPrimary', <div className="flex items-center gap-2 mb-2">
             <Checkbox
               checked={getBoolValue('mailingSameAsPrimary')}
               onCheckedChange={(checked) => {
@@ -464,7 +464,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               disabled={disabled}
             />
             <Label className="text-xs text-muted-foreground">Same as Primary Address</Label>
-          </div>
+          </div>)}
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Street</Label>
