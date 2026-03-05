@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { BorrowerSubNavigation, type BorrowerSubSection } from './BorrowerSubNavigation';
-import { BorrowersTableView, type BorrowerData } from './BorrowersTableView';
-import { CoBorrowersTableView, type CoBorrowerData } from './CoBorrowersTableView';
+import { type BorrowerData } from './BorrowersTableView';
+import { type CoBorrowerData } from './CoBorrowersTableView';
+import { BorrowerModal } from './BorrowerModal';
+import { CoBorrowerModal } from './CoBorrowerModal';
 import { BorrowerModal } from './BorrowerModal';
 import { CoBorrowerModal } from './CoBorrowerModal';
 import { BorrowerPrimaryForm } from './BorrowerPrimaryForm';
