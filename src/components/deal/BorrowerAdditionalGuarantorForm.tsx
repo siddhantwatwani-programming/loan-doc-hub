@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 const FORD_DROPDOWN_OPTIONS = [
   { value: 'Spouse, Kids, Grandkids', label: 'Spouse, Kids, Grandkids' },
