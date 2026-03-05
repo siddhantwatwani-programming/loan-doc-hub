@@ -1,33 +1,61 @@
 
 
-## Plan: Fix Loan Documents Page Unexpected Refresh
+## Plan: Fix "Same as Primary Address" Logic Across All Main Forms
 
-### Root Cause Analysis
+### Problem
+The "Same as Primary Address" checkboxes across forms only copy values once on check. They do not dynamically sync when the primary address is updated, breaking the expected behavior. The Property form's "Copy Borrower's Address" checkbox has no copy logic at all.
 
-After reviewing the `DealDocumentsPage.tsx` and related components, I identified these issues causing state resets:
+### Root Cause
+Each form's `handleSameAsPrimaryChange` copies the four address fields on checkbox click but has no `useEffect` to watch for subsequent primary address changes. The `OriginationServicingForm` already implements this correctly with a `useEffect` -- the same pattern needs to be applied everywhere.
 
-1. **`fetchData()` resets loading state**: The `fetchData` function (line 231) sets `setLoading(true)` every time it's called — including after generation (line 394) and after template upload (line 580). When `loading` becomes `true`, the entire page unmounts and shows a spinner (lines 593-598), destroying all UI state (selections, scroll position, filters, form values). When loading finishes, everything remounts from scratch.
+### Changes (5 files)
 
-2. **Real-time subscription cascade**: The Supabase real-time channel (lines 196-227) calls `fetchGeneratedDocuments()` and `fetchRecentJobs()` on every database change event. While these don't set `loading=true`, they update state that feeds into `useMemo` computations (line 462), causing unnecessary re-renders.
+**1. `src/components/deal/BorrowerPrimaryForm.tsx`**
+- Add `useEffect` that watches `mailingSameAsPrimary` and all four primary address values (`primaryStreet`, `primaryCity`, `primaryState`, `primaryZip`)
+- When `mailingSameAsPrimary` is true, auto-copy primary values to mailing fields on every primary address change
+- Mailing fields are already disabled when checked (line 310-326) -- no change needed there
 
-3. **`handleAllDocsClick` force-remount trick**: In `WorkspaceTabBar.tsx` (lines 22-28), when already on `/deals`, it appends a `_r=timestamp` search param to force a remount. If the user clicks "All Loan Documents" from the documents page, it navigates to `/deals`, unmounting the documents page entirely.
+**2. `src/components/deal/CoBorrowerPrimaryForm.tsx`**
+- Add `useEffect` watching `mailing_same_as_primary` and all four primary address values
+- Same dynamic sync pattern: when checked, copy `primary_address.*` to `mailing_address.*`
+- Fields already disabled when checked (line 216-231)
 
-### Planned Changes
+**3. `src/components/deal/BorrowerAdditionalGuarantorForm.tsx`**
+- Add `useEffect` watching `mailingSameAsPrimary` and primary address fields
+- Same sync pattern as Borrower
 
-**File: `src/pages/csr/DealDocumentsPage.tsx`**
-- Split `fetchData` into two flows:
-  - **Initial load**: Sets `loading = true`, shows spinner, fetches everything — only on first mount.
-  - **Refresh/reload**: Fetches data in the background WITHOUT setting `loading = true`, preserving all UI state.
-- Update `handleGenerate` (line 394) and `handleTemplateUpload` (line 580) to call the background refresh instead of the full `fetchData`.
-- Add a dedicated `handleRefresh` function for the Refresh button that also does a background data reload.
-- Wrap real-time subscription callbacks with a guard to prevent rapid consecutive fetches (simple debounce/flag).
+**4. `src/components/deal/LenderInfoForm.tsx`**
+- Add `useEffect` watching `mailingSameAsPrimary` and primary address fields (`primaryStreet`, `primaryCity`, `primaryState`, `primaryZip`)
+- Same sync pattern
+- Refactor the inline checkbox handler (lines 435-443) to only toggle the flag (the `useEffect` handles the copy)
 
-**No other files will be modified.** The WorkspaceTabBar behavior is standard navigation (clicking "All Loan Documents" should navigate to `/deals`), so it stays as-is.
+**5. `src/components/deal/PropertyDetailsForm.tsx`**
+- Add actual copy logic for "Copy Borrower's Address" checkbox
+- When `copyBorrowerAddress` is true, read `borrower.address.street`, `borrower.address.city`, `borrower.state`, `borrower.address.zip` from `values` and copy to `property1.street`, `property1.city`, `property1.state`, `property1.zip`
+- Add `useEffect` for dynamic sync when borrower address changes while checkbox is checked
+- Disable address fields (street, city, state, zip) when checkbox is checked
 
-### What This Fixes
-- Clicking Generate → data refreshes silently, UI state preserved
-- Clicking Upload → data refreshes silently, UI state preserved
-- Real-time updates → data refreshes silently, no visible state reset
-- Explicit Refresh button → controlled data reload, UI state preserved
-- All other clicks (checkboxes, fields, sort buttons, tabs) → no data fetch triggered, state preserved
+### Pattern (same as existing OriginationServicingForm)
+```typescript
+const isSameAsPrimary = getBoolValue('mailingSameAsPrimary');
+useEffect(() => {
+  if (isSameAsPrimary) {
+    const mappings = [
+      ['primaryStreet', 'mailingStreet'],
+      ['primaryCity', 'mailingCity'],
+      ['primaryState', 'mailingState'],
+      ['primaryZip', 'mailingZip'],
+    ];
+    mappings.forEach(([src, dst]) => {
+      if (getValue(src) !== getValue(dst)) handleChange(dst, getValue(src));
+    });
+  }
+}, [isSameAsPrimary, /* primary address values */]);
+```
+
+### What This Preserves
+- All existing field keys and database mappings remain unchanged
+- No changes to modals, APIs, database schema, or document generation
+- No changes to UI layout or component structure
+- Existing disable logic on mailing fields stays as-is
 
