@@ -105,24 +105,17 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               </div>
             </DirtyFieldWrapper>
 
-            {/* Type */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">Type</Label>
-              <Select
-                value={getValue('type')}
-                onValueChange={(value) => handleChange('type', value)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-7 text-sm flex-1 bg-background">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  {TYPE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.type}>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">Type</Label>
+                <Select value={getValue('type')} onValueChange={(value) => handleChange('type', value)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </DirtyFieldWrapper>
 
             {/* APN */}
             <div className="flex items-center gap-3">
