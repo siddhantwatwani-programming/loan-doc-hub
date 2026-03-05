@@ -105,43 +105,31 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
             </Select>
           </div>
 
-          <div>
-            <Label className="text-sm text-foreground">Description</Label>
-            <Select
-              value={getFieldValue(FIELD_KEYS.description)}
-              onValueChange={(val) => onValueChange(FIELD_KEYS.description, val)}
-              disabled={disabled}
-            >
-              <SelectTrigger className="h-8 text-sm mt-1">
-                <SelectValue placeholder="Select description" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border border-border z-50">
-                {INSURANCE_DESCRIPTION_OPTIONS.map(opt => (
-                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.description}>
+            <div>
+              <Label className="text-sm text-foreground">Description</Label>
+              <Select value={getFieldValue(FIELD_KEYS.description)} onValueChange={(val) => onValueChange(FIELD_KEYS.description, val)} disabled={disabled}>
+                <SelectTrigger className="h-8 text-sm mt-1"><SelectValue placeholder="Select description" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  {INSURANCE_DESCRIPTION_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
 
-          <div>
-            <Label className="text-sm text-foreground">Insured's Name</Label>
-            <Input
-              value={getFieldValue(FIELD_KEYS.insuredName)}
-              onChange={(e) => onValueChange(FIELD_KEYS.insuredName, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-            />
-          </div>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.insuredName}>
+            <div>
+              <Label className="text-sm text-foreground">Insured's Name</Label>
+              <Input value={getFieldValue(FIELD_KEYS.insuredName)} onChange={(e) => onValueChange(FIELD_KEYS.insuredName, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+            </div>
+          </DirtyFieldWrapper>
 
-          <div>
-            <Label className="text-sm text-foreground">Company Name</Label>
-            <Input
-              value={getFieldValue(FIELD_KEYS.companyName)}
-              onChange={(e) => onValueChange(FIELD_KEYS.companyName, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-            />
-          </div>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.companyName}>
+            <div>
+              <Label className="text-sm text-foreground">Company Name</Label>
+              <Input value={getFieldValue(FIELD_KEYS.companyName)} onChange={(e) => onValueChange(FIELD_KEYS.companyName, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+            </div>
+          </DirtyFieldWrapper>
 
           <div>
             <Label className="text-sm text-foreground">Policy Number</Label>
