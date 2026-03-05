@@ -82,25 +82,54 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
           <h3 className="text-sm font-semibold text-foreground border-b pb-2">Bank / ACH</h3>
           
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 items-center">
+            {wrapField('achStatus', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">ACH Status</Label>
-              <Input
-                value={getValue('achStatus')}
-                onChange={(e) => handleChange('achStatus', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
+              <Input value={getValue('achStatus')} onChange={(e) => handleChange('achStatus', e.target.value)} disabled={disabled} className="h-8" />
+            </div>)}
             
-            <div className="grid grid-cols-2 gap-2 items-center">
+            {wrapField('bank', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Bank</Label>
-              <Input
-                value={getValue('bank')}
-                onChange={(e) => handleChange('bank', e.target.value)}
-                disabled={disabled}
-                className="h-8"
-              />
-            </div>
+              <Input value={getValue('bank')} onChange={(e) => handleChange('bank', e.target.value)} disabled={disabled} className="h-8" />
+            </div>)}
+            
+            {wrapField('routingNumber', <div className="grid grid-cols-2 gap-2 items-center">
+              <Label className="text-sm text-muted-foreground">Routing Number</Label>
+              <Input value={getValue('routingNumber')} onChange={(e) => { const value = e.target.value.replace(/\D/g, ''); handleChange('routingNumber', value); }} disabled={disabled} className="h-8" maxLength={9} />
+            </div>)}
+            
+            {wrapField('accountNumber', <div className="grid grid-cols-2 gap-2 items-center">
+              <Label className="text-sm text-muted-foreground">Account Number</Label>
+              <Input value={getValue('accountNumber')} onChange={(e) => { const value = e.target.value.replace(/\D/g, ''); handleChange('accountNumber', value); }} disabled={disabled} className="h-8" />
+            </div>)}
+            
+            {wrapField('accountType', <div className="grid grid-cols-2 gap-2 items-center">
+              <Label className="text-sm text-muted-foreground">Type</Label>
+              <Select value={getValue('accountType')} onValueChange={(value) => handleChange('accountType', value)} disabled={disabled}>
+                <SelectTrigger className="h-8"><SelectValue placeholder="Select type" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Personal Banking">Personal Banking</SelectItem>
+                  <SelectItem value="Business Banking">Business Banking</SelectItem>
+                  <SelectItem value="Personal Checking">Personal Checking</SelectItem>
+                  <SelectItem value="Business Checking">Business Checking</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>)}
+            
+            {wrapField('accountName', <div className="grid grid-cols-2 gap-2 items-center">
+              <Label className="text-sm text-muted-foreground">Name</Label>
+              <Input value={getValue('accountName')} onChange={(e) => handleChange('accountName', e.target.value)} disabled={disabled} className="h-8" />
+            </div>)}
+            
+            {wrapField('accountId', <div className="grid grid-cols-2 gap-2 items-center">
+              <Label className="text-sm text-muted-foreground">ID</Label>
+              <Input value={getValue('accountId')} onChange={(e) => handleChange('accountId', e.target.value)} disabled={disabled} className="h-8" />
+            </div>)}
+            
+            {wrapField('furtherCreditTo', <div className="grid grid-cols-2 gap-2 items-center">
+              <Label className="text-sm text-muted-foreground">Further Credit To</Label>
+              <Input value={getValue('furtherCreditTo')} onChange={(e) => handleChange('furtherCreditTo', e.target.value)} disabled={disabled} className="h-8" />
+            </div>)}
+          </div>
             
             <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Routing Number</Label>
