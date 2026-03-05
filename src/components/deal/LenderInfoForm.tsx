@@ -591,38 +591,38 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             {/* Send section below */}
             <h4 className="text-sm font-semibold text-foreground border-b pb-1 mb-2">Send</h4>
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
+              {wrapField('sendPaymentNotification', <div className="flex items-center gap-2">
                 <Checkbox
                   checked={getBoolValue('sendPaymentNotification')}
                   onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground">Payment Notification</Label>
-              </div>
-              <div className="flex items-center gap-2">
+              </div>)}
+              {wrapField('sendLateNotice', <div className="flex items-center gap-2">
                 <Checkbox
                   checked={getBoolValue('sendLateNotice')}
                   onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground">Late Notice</Label>
-              </div>
-              <div className="flex items-center gap-2">
+              </div>)}
+              {wrapField('sendBorrowerStatement', <div className="flex items-center gap-2">
                 <Checkbox
                   checked={getBoolValue('sendBorrowerStatement')}
                   onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground">Borrower Statement</Label>
-              </div>
-              <div className="flex items-center gap-2">
+              </div>)}
+              {wrapField('sendMaturityNotice', <div className="flex items-center gap-2">
                 <Checkbox
                   checked={getBoolValue('sendMaturityNotice')}
                   onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground">Maturity Notice</Label>
-              </div>
+              </div>)}
             </div>
           </div>
         </div>
