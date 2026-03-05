@@ -121,7 +121,15 @@ export const NotesModal: React.FC<NotesModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4">
+      <DialogContent
+        className="max-w-2xl max-h-[90vh] overflow-y-auto p-4"
+        onInteractOutside={(e) => {
+          const target = e.target as HTMLElement | null;
+          if (target?.closest('[data-radix-popper-content-wrapper]')) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-sm">
             <StickyNote className="h-4 w-4 text-primary" />
