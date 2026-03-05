@@ -103,26 +103,19 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
           </div>
         </DirtyFieldWrapper>
 
-        {/* Address | Account Number */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Address</Label>
-            <Input
-              value={getValue('address')}
-              onChange={(e) => handleChange('address', e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Account Number</Label>
-            <Input
-              value={getValue('accountNumber')}
-              onChange={(e) => handleChange('accountNumber', e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.address}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Address</Label>
+              <Input value={getValue('address')} onChange={(e) => handleChange('address', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.accountNumber}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Account Number</Label>
+              <Input value={getValue('accountNumber')} onChange={(e) => handleChange('accountNumber', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
         {/* City | TIN Type */}
