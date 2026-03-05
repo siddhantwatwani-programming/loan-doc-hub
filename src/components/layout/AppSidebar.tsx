@@ -306,7 +306,7 @@ export const AppSidebar: React.FC = () => {
             )}
 
             {/* Loan Servicing (promoted from Broker Services) - CSR only */}
-            {!isCollapsed && role === 'csr' && (
+            {role === 'csr' && (
               <PromotedNavSection
                 label="Loan Servicing"
                 icon={Landmark}
@@ -326,7 +326,7 @@ export const AppSidebar: React.FC = () => {
             )}
 
             {/* Default Services (promoted from Broker Services) - CSR only */}
-            {!isCollapsed && role === 'csr' && (
+            {role === 'csr' && (
               <PromotedNavSection
                 label="Default Services"
                 icon={AlertTriangle}
@@ -347,7 +347,7 @@ export const AppSidebar: React.FC = () => {
             )}
 
             {/* Operations (promoted from Broker Services) - CSR only */}
-            {!isCollapsed && role === 'csr' && (
+            {role === 'csr' && (
               <PromotedNavSection
                 label="Operations"
                 icon={Workflow}
@@ -370,12 +370,12 @@ export const AppSidebar: React.FC = () => {
             )}
 
             {/* Accounting Section - CSR only */}
-            {!isCollapsed && role === 'csr' && (
+            {role === 'csr' && (
               <AccountingNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'accounting'} onOpenChange={handleSectionToggle('accounting')} />
             )}
 
             {/* Knowledge Center (promoted from Accounting) - CSR only */}
-            {!isCollapsed && role === 'csr' && (
+            {role === 'csr' && (
               <PromotedNavSection
                 label="Knowledge Center"
                 icon={BookOpen}
@@ -393,7 +393,7 @@ export const AppSidebar: React.FC = () => {
             )}
 
             {/* Legal (promoted from Accounting) - CSR only */}
-            {!isCollapsed && role === 'csr' && (
+            {role === 'csr' && (
               <PromotedNavSection
                 label="Legal"
                 icon={Scale}
@@ -413,7 +413,7 @@ export const AppSidebar: React.FC = () => {
             )}
 
             {/* Documents Vault - CSR only */}
-            {!isCollapsed && role === 'csr' && (
+            {role === 'csr' && (
               <PromotedNavSection
                 label="Documents Vault"
                 icon={FolderLock}
@@ -425,7 +425,7 @@ export const AppSidebar: React.FC = () => {
             )}
 
             {/* Contacts - CSR only */}
-            {!isCollapsed && role === 'csr' && (
+            {role === 'csr' && (
               <PromotedNavSection
                 label="Contacts"
                 icon={Users}
@@ -436,7 +436,7 @@ export const AppSidebar: React.FC = () => {
             )}
 
             {/* Statements & Reports - CSR only */}
-            {!isCollapsed && role === 'csr' && (
+            {role === 'csr' && (
               <PromotedNavSection
                 label="Statements & Reports"
                 icon={BarChart3}
@@ -447,12 +447,12 @@ export const AppSidebar: React.FC = () => {
             )}
 
             {/* System Administration Section - CSR only */}
-            {!isCollapsed && role === 'csr' && (
+            {role === 'csr' && (
               <SystemAdminNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'sysadmin'} onOpenChange={handleSectionToggle('sysadmin')} />
             )}
 
             {/* C Level Module Section - CSR only */}
-            {!isCollapsed && role === 'csr' && (
+            {role === 'csr' && (
               <CLevelModuleNav isCollapsed={isCollapsed} searchQuery={searchQuery} isOpen={activeSection === 'clevel'} onOpenChange={handleSectionToggle('clevel')} />
             )}
 
