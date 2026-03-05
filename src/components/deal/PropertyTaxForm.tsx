@@ -127,16 +127,12 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               />
             </div>
 
-            {/* Memo */}
-            <div className="flex items-start gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px] mt-1.5">Memo</Label>
-              <Textarea
-                value={getValue('memo')}
-                onChange={(e) => handleChange('memo', e.target.value)}
-                disabled={disabled}
-                className="text-sm min-h-[70px] resize-none flex-1"
-              />
-            </div>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.memo}>
+              <div className="flex items-start gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px] mt-1.5">Memo</Label>
+                <Textarea value={getValue('memo')} onChange={(e) => handleChange('memo', e.target.value)} disabled={disabled} className="text-sm min-h-[70px] resize-none flex-1" />
+              </div>
+            </DirtyFieldWrapper>
           </div>
 
           {/* Right column */}

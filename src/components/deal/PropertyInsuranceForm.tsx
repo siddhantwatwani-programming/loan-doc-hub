@@ -175,56 +175,40 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
             <span className="font-semibold text-sm text-primary">Insurance Agent Information</span>
           </div>
 
-          <div>
-            <Label className="text-sm text-foreground">Agent's Name</Label>
-            <Input
-              value={getFieldValue(FIELD_KEYS.agentName)}
-              onChange={(e) => onValueChange(FIELD_KEYS.agentName, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-            />
-          </div>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.agentName}>
+            <div>
+              <Label className="text-sm text-foreground">Agent's Name</Label>
+              <Input value={getFieldValue(FIELD_KEYS.agentName)} onChange={(e) => onValueChange(FIELD_KEYS.agentName, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+            </div>
+          </DirtyFieldWrapper>
 
-          <div>
-            <Label className="text-sm text-foreground">Bus. Address</Label>
-            <Input
-              value={getFieldValue(FIELD_KEYS.businessAddress)}
-              onChange={(e) => onValueChange(FIELD_KEYS.businessAddress, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-            />
-          </div>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.businessAddress}>
+            <div>
+              <Label className="text-sm text-foreground">Bus. Address</Label>
+              <Input value={getFieldValue(FIELD_KEYS.businessAddress)} onChange={(e) => onValueChange(FIELD_KEYS.businessAddress, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+            </div>
+          </DirtyFieldWrapper>
 
-          <div>
-            <Label className="text-sm text-foreground">Phone Number</Label>
-            <Input
-              value={getFieldValue(FIELD_KEYS.phoneNumber)}
-              onChange={(e) => onValueChange(FIELD_KEYS.phoneNumber, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-            />
-          </div>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.phoneNumber}>
+            <div>
+              <Label className="text-sm text-foreground">Phone Number</Label>
+              <Input value={getFieldValue(FIELD_KEYS.phoneNumber)} onChange={(e) => onValueChange(FIELD_KEYS.phoneNumber, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+            </div>
+          </DirtyFieldWrapper>
 
-          <div>
-            <Label className="text-sm text-foreground">Fax Number</Label>
-            <Input
-              value={getFieldValue(FIELD_KEYS.faxNumber)}
-              onChange={(e) => onValueChange(FIELD_KEYS.faxNumber, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-            />
-          </div>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.faxNumber}>
+            <div>
+              <Label className="text-sm text-foreground">Fax Number</Label>
+              <Input value={getFieldValue(FIELD_KEYS.faxNumber)} onChange={(e) => onValueChange(FIELD_KEYS.faxNumber, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+            </div>
+          </DirtyFieldWrapper>
 
-          <div>
-            <Label className="text-sm text-foreground">E-mail</Label>
-            <Input
-              type="email"
-              value={getFieldValue(FIELD_KEYS.email)}
-              onChange={(e) => onValueChange(FIELD_KEYS.email, e.target.value)}
-              disabled={disabled}
-              className="h-8 text-sm mt-1"
-            />
-          </div>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.email}>
+            <div>
+              <Label className="text-sm text-foreground">E-mail</Label>
+              <Input type="email" value={getFieldValue(FIELD_KEYS.email)} onChange={(e) => onValueChange(FIELD_KEYS.email, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+            </div>
+          </DirtyFieldWrapper>
         </div>
       </div>
 

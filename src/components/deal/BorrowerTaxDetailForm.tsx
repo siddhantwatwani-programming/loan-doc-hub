@@ -118,79 +118,54 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
           </DirtyFieldWrapper>
         </div>
 
-        {/* City | TIN Type */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">City</Label>
-            <Input
-              value={getValue('city')}
-              onChange={(e) => handleChange('city', e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN Type</Label>
-            <Select
-              value={getValue('tinType')}
-              onValueChange={(value) => handleChange('tinType', value)}
-              disabled={disabled}
-            >
-              <SelectTrigger className="h-7 text-sm flex-1 bg-background">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent className="bg-background z-50">
-                {TIN_TYPE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.city}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">City</Label>
+              <Input value={getValue('city')} onChange={(e) => handleChange('city', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.tinType}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN Type</Label>
+              <Select value={getValue('tinType')} onValueChange={(value) => handleChange('tinType', value)} disabled={disabled}>
+                <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {TIN_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
-        {/* State | TIN */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">State</Label>
-            <Input
-              value={getValue('state')}
-              onChange={(e) => handleChange('state', e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN</Label>
-            <Input
-              value={getValue('tin')}
-              onChange={(e) => handleChange('tin', e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.state}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">State</Label>
+              <Input value={getValue('state')} onChange={(e) => handleChange('state', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.tin}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN</Label>
+              <Input value={getValue('tin')} onChange={(e) => handleChange('tin', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
-        {/* ZIP | Send 1098 */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">ZIP</Label>
-            <Input
-              value={getValue('zip')}
-              onChange={(e) => handleChange('zip', e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Send 1098</Label>
-            <Checkbox
-              checked={getValue('send1098') === 'true'}
-              onCheckedChange={(checked) => handleChange('send1098', checked === true ? 'true' : 'false')}
-              disabled={disabled}
-            />
-          </div>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.zip}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">ZIP</Label>
+              <Input value={getValue('zip')} onChange={(e) => handleChange('zip', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.send1098}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Send 1098</Label>
+              <Checkbox checked={getValue('send1098') === 'true'} onCheckedChange={(checked) => handleChange('send1098', checked === true ? 'true' : 'false')} disabled={disabled} />
+            </div>
+          </DirtyFieldWrapper>
         </div>
       </div>
     </div>

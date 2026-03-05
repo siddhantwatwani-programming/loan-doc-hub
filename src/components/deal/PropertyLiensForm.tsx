@@ -61,41 +61,96 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
           <span className="font-semibold text-sm text-primary">Property Lien Information</span>
         </div>
 
-        <div>
-          <Label className="text-sm text-foreground">Property</Label>
-          <Select
-            value={getFieldValue(FIELD_KEYS.property)}
-            onValueChange={(val) => onValueChange(FIELD_KEYS.property, val)}
-            disabled={disabled}
-          >
-            <SelectTrigger className="h-8 text-sm mt-1">
-              <SelectValue placeholder="Unassigned" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border border-border z-50">
-              <SelectItem value="unassigned">Unassigned</SelectItem>
-              <SelectItem value="primary">Primary Property</SelectItem>
-              <SelectItem value="secondary">Secondary Property</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.property}>
+          <div>
+            <Label className="text-sm text-foreground">Property</Label>
+            <Select value={getFieldValue(FIELD_KEYS.property)} onValueChange={(val) => onValueChange(FIELD_KEYS.property, val)} disabled={disabled}>
+              <SelectTrigger className="h-8 text-sm mt-1"><SelectValue placeholder="Unassigned" /></SelectTrigger>
+              <SelectContent className="bg-background border border-border z-50">
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                <SelectItem value="primary">Primary Property</SelectItem>
+                <SelectItem value="secondary">Secondary Property</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </DirtyFieldWrapper>
 
-        <div>
-          <Label className="text-sm text-foreground">Priority</Label>
-          <Select
-            value={getFieldValue(FIELD_KEYS.priority)}
-            onValueChange={(val) => onValueChange(FIELD_KEYS.priority, val)}
-            disabled={disabled}
-          >
-            <SelectTrigger className="h-8 text-sm mt-1">
-              <SelectValue placeholder="Select priority" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border border-border z-50">
-              {PRIORITY_OPTIONS.map(opt => (
-                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.priority}>
+          <div>
+            <Label className="text-sm text-foreground">Priority</Label>
+            <Select value={getFieldValue(FIELD_KEYS.priority)} onValueChange={(val) => onValueChange(FIELD_KEYS.priority, val)} disabled={disabled}>
+              <SelectTrigger className="h-8 text-sm mt-1"><SelectValue placeholder="Select priority" /></SelectTrigger>
+              <SelectContent className="bg-background border border-border z-50">
+                {PRIORITY_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </div>
+        </DirtyFieldWrapper>
+
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.holder}>
+          <div>
+            <Label className="text-sm text-foreground">Lien Holder</Label>
+            <Input value={getFieldValue(FIELD_KEYS.holder)} onChange={(e) => onValueChange(FIELD_KEYS.holder, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+          </div>
+        </DirtyFieldWrapper>
+
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.account}>
+          <div>
+            <Label className="text-sm text-foreground">Account</Label>
+            <Input value={getFieldValue(FIELD_KEYS.account)} onChange={(e) => onValueChange(FIELD_KEYS.account, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+          </div>
+        </DirtyFieldWrapper>
+
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.contact}>
+          <div>
+            <Label className="text-sm text-foreground">Contact</Label>
+            <Input value={getFieldValue(FIELD_KEYS.contact)} onChange={(e) => onValueChange(FIELD_KEYS.contact, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+          </div>
+        </DirtyFieldWrapper>
+
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.phone}>
+          <div>
+            <Label className="text-sm text-foreground">Phone</Label>
+            <Input value={getFieldValue(FIELD_KEYS.phone)} onChange={(e) => onValueChange(FIELD_KEYS.phone, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+          </div>
+        </DirtyFieldWrapper>
+
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.originalBalance}>
+          <div>
+            <Label className="text-sm text-foreground">Original Balance</Label>
+            <div className="relative mt-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+              <Input value={getFieldValue(FIELD_KEYS.originalBalance)} onChange={(e) => onValueChange(FIELD_KEYS.originalBalance, e.target.value)} disabled={disabled} className="h-8 text-sm pl-7" inputMode="decimal" placeholder="0.00" />
+            </div>
+          </div>
+        </DirtyFieldWrapper>
+
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.currentBalance}>
+          <div>
+            <Label className="text-sm text-foreground">Current Balance</Label>
+            <div className="relative mt-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+              <Input value={getFieldValue(FIELD_KEYS.currentBalance)} onChange={(e) => onValueChange(FIELD_KEYS.currentBalance, e.target.value)} disabled={disabled} className="h-8 text-sm pl-7" inputMode="decimal" placeholder="0.00" />
+            </div>
+          </div>
+        </DirtyFieldWrapper>
+
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.regularPayment}>
+          <div>
+            <Label className="text-sm text-foreground">Regular Payment</Label>
+            <div className="relative mt-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+              <Input value={getFieldValue(FIELD_KEYS.regularPayment)} onChange={(e) => onValueChange(FIELD_KEYS.regularPayment, e.target.value)} disabled={disabled} className="h-8 text-sm pl-7" inputMode="decimal" placeholder="0.00" />
+            </div>
+          </div>
+        </DirtyFieldWrapper>
+
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.lastChecked}>
+          <div>
+            <Label className="text-sm text-foreground">Last Checked</Label>
+            <Input type="date" value={getFieldValue(FIELD_KEYS.lastChecked)} onChange={(e) => onValueChange(FIELD_KEYS.lastChecked, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+          </div>
+        </DirtyFieldWrapper>
 
         <div>
           <Label className="text-sm text-foreground">Lien Holder</Label>
