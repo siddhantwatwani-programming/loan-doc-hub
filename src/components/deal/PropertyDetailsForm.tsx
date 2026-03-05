@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 interface PropertyDetailsFormProps {
   fields: FieldDefinition[];

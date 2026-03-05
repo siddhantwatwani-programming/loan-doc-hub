@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Home } from 'lucide-react';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 interface PropertyLegalDescriptionFormProps {
   fields: FieldDefinition[];
