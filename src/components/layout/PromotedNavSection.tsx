@@ -54,9 +54,10 @@ export const PromotedNavSection: React.FC<PromotedNavSectionProps> = ({
   if (!parentMatches && filteredItems.length === 0 && !directPath) return null;
   if (!parentMatches && directPath) return null;
 
+  // Exclude '/deals' from highlighting parent sections since it's the workspace root
   const isAnyActive =
     (directPath && location.pathname === directPath) ||
-    items.some((i) => location.pathname === i.path);
+    items.some((i) => i.path !== '/deals' && location.pathname === i.path);
 
   // Collapsed: show icon-only with tooltip
   if (isCollapsed) {

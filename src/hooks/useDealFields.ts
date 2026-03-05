@@ -877,6 +877,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
     saving,
     error,
     isDirty,
+    dirtyFieldKeys,
     updateValue,
     removeValuesByPrefix,
     saveDraft,
