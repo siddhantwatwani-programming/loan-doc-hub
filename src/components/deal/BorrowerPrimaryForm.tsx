@@ -415,17 +415,23 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
           ))}
 
           <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">Vesting</h4>
-          <Textarea value={getValue('vesting')} onChange={(e) => handleChange('vesting', e.target.value)} disabled={disabled} className="text-sm min-h-[80px] resize-none" />
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.vesting}>
+            <Textarea value={getValue('vesting')} onChange={(e) => handleChange('vesting', e.target.value)} disabled={disabled} className="text-sm min-h-[80px] resize-none" />
+          </DirtyFieldWrapper>
 
           <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">FORD</h4>
           <div className="space-y-1">
             {([['ford1', 'ford2'], ['ford3', 'ford4'], ['ford5', 'ford6'], ['ford7', 'ford8']] as const).map(([dropdownKey, inputKey], idx) => (
               <div key={idx} className="grid grid-cols-2 gap-1">
-                <Select value={getValue(dropdownKey)} onValueChange={(v) => handleChange(dropdownKey, v)} disabled={disabled}>
-                  <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-                </Select>
-                <Input value={getValue(inputKey)} onChange={(e) => handleChange(inputKey, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+                <DirtyFieldWrapper fieldKey={FIELD_KEYS[dropdownKey]}>
+                  <Select value={getValue(dropdownKey)} onValueChange={(v) => handleChange(dropdownKey, v)} disabled={disabled}>
+                    <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                </DirtyFieldWrapper>
+                <DirtyFieldWrapper fieldKey={FIELD_KEYS[inputKey]}>
+                  <Input value={getValue(inputKey)} onChange={(e) => handleChange(inputKey, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+                </DirtyFieldWrapper>
               </div>
             ))}
           </div>
