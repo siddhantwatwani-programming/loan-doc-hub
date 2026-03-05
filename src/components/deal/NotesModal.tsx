@@ -152,7 +152,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
             </div>
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs text-foreground">As Of</Label>
-              <Popover>
+              <Popover modal={true}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
