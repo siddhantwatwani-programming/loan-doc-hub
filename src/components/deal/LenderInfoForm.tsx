@@ -297,7 +297,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               </Select>
             </div>)}
 
-            <div className="flex items-start gap-3">
+            {wrapField('fullName', <div className="flex items-start gap-3">
               <div className="min-w-[140px] shrink-0 pt-1">
                 <Label className="text-sm text-muted-foreground text-left">Full Name:</Label>
                 <p className="text-[10px] text-muted-foreground/70 leading-tight">If Entity, Use Entity</p>
@@ -308,7 +308,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
             
             <div className="flex items-start gap-3">
               <div className="min-w-[140px] shrink-0 pt-1">
