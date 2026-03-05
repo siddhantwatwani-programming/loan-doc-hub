@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 const FORD_DROPDOWN_OPTIONS = [
   { value: 'Spouse, Kids, Grandkids', label: 'Spouse, Kids, Grandkids' },
@@ -140,12 +141,18 @@ interface BorrowerPrimaryFormProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
-const InlineField = ({ label, children, labelWidth = 'min-w-[140px]' }: { label: string; children: React.ReactNode; labelWidth?: string }) => (
-  <div className="flex items-center gap-3">
-    <Label className={`text-sm text-muted-foreground ${labelWidth} text-left shrink-0`}>{label}</Label>
-    <div className="flex-1">{children}</div>
-  </div>
-);
+const InlineField = ({ label, children, labelWidth = 'min-w-[140px]', fieldKey }: { label: string; children: React.ReactNode; labelWidth?: string; fieldKey?: string }) => {
+  const content = (
+    <div className="flex items-center gap-3">
+      <Label className={`text-sm text-muted-foreground ${labelWidth} text-left shrink-0`}>{label}</Label>
+      <div className="flex-1">{children}</div>
+    </div>
+  );
+  if (fieldKey) {
+    return <DirtyFieldWrapper fieldKey={fieldKey}>{content}</DirtyFieldWrapper>;
+  }
+  return content;
+};
 
 export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
   fields,
@@ -190,18 +197,18 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Name</h4>
 
-          <InlineField label="Borrower ID">
+          <InlineField label="Borrower ID" fieldKey={FIELD_KEYS.borrowerId}>
             <Input value={getValue('borrowerId')} onChange={(e) => handleChange('borrowerId', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <InlineField label="Borrower Type">
+          <InlineField label="Borrower Type" fieldKey={FIELD_KEYS.borrowerType}>
             <Select value={getValue('borrowerType')} onValueChange={(value) => handleChange('borrowerType', value)} disabled={disabled}>
               <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>{BORROWER_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
             </Select>
           </InlineField>
 
-          <InlineField label="Capacity">
+          <InlineField label="Capacity" fieldKey={FIELD_KEYS.capacity}>
             <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
               <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>
@@ -210,78 +217,84 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
             </Select>
           </InlineField>
 
-          <div className="flex items-start gap-3">
-            <div className="min-w-[140px] text-left shrink-0">
-              <Label className="text-sm text-muted-foreground">Full Name</Label>
-              <p className="text-xs text-muted-foreground">If Entity, Use Entity</p>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.fullName}>
+            <div className="flex items-start gap-3">
+              <div className="min-w-[140px] text-left shrink-0">
+                <Label className="text-sm text-muted-foreground">Full Name</Label>
+                <p className="text-xs text-muted-foreground">If Entity, Use Entity</p>
+              </div>
+              <Input value={getValue('fullName')} onChange={(e) => handleChange('fullName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
             </div>
-            <Input value={getValue('fullName')} onChange={(e) => handleChange('fullName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </div>
+          </DirtyFieldWrapper>
 
-          <div className="flex items-start gap-3">
-            <div className="min-w-[140px] text-left shrink-0">
-              <Label className="text-sm text-muted-foreground">First</Label>
-              <p className="text-xs text-muted-foreground">If Entity, Use Signer</p>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.firstName}>
+            <div className="flex items-start gap-3">
+              <div className="min-w-[140px] text-left shrink-0">
+                <Label className="text-sm text-muted-foreground">First</Label>
+                <p className="text-xs text-muted-foreground">If Entity, Use Signer</p>
+              </div>
+              <Input value={getValue('firstName')} onChange={(e) => handleChange('firstName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
             </div>
-            <Input value={getValue('firstName')} onChange={(e) => handleChange('firstName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </div>
+          </DirtyFieldWrapper>
 
-          <InlineField label="Middle">
+          <InlineField label="Middle" fieldKey={FIELD_KEYS.middleName}>
             <Input value={getValue('middleName')} onChange={(e) => handleChange('middleName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <InlineField label="Last">
+          <InlineField label="Last" fieldKey={FIELD_KEYS.lastName}>
             <Input value={getValue('lastName')} onChange={(e) => handleChange('lastName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <InlineField label="Email">
+          <InlineField label="Email" fieldKey={FIELD_KEYS.email}>
             <Input type="email" value={getValue('email')} onChange={(e) => handleChange('email', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
           <div className="h-0.5" />
 
-          <InlineField label="Credit Score">
+          <InlineField label="Credit Score" fieldKey={FIELD_KEYS.creditScore}>
             <Input value={getValue('creditScore')} onChange={(e) => handleChange('creditScore', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
           {/* Tax Identification */}
-          <InlineField label="Tax ID Type">
+          <InlineField label="Tax ID Type" fieldKey={FIELD_KEYS.taxIdType}>
             <Select value={getValue('taxIdType')} onValueChange={(value) => handleChange('taxIdType', value)} disabled={disabled}>
               <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>{TAX_ID_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
             </Select>
           </InlineField>
 
-          <InlineField label="TIN">
+          <InlineField label="TIN" fieldKey={FIELD_KEYS.tin}>
             <Input value={getValue('tin')} onChange={(e) => handleChange('tin', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <div className="flex items-center gap-2">
-            <Checkbox id="borrower-tinVerified" checked={getBoolValue('tinVerified')} onCheckedChange={(checked) => handleChange('tinVerified', !!checked)} disabled={disabled} />
-            <Label htmlFor="borrower-tinVerified" className="text-sm font-normal">TIN Verified</Label>
-          </div>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.tinVerified}>
+            <div className="flex items-center gap-2">
+              <Checkbox id="borrower-tinVerified" checked={getBoolValue('tinVerified')} onCheckedChange={(checked) => handleChange('tinVerified', !!checked)} disabled={disabled} />
+              <Label htmlFor="borrower-tinVerified" className="text-sm font-normal">TIN Verified</Label>
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
         {/* Column 2 - Primary Address & Mailing Address & Delivery Options & Send */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Primary Address</h4>
 
-          <InlineField label="Street" labelWidth="min-w-[60px]">
+          <InlineField label="Street" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.primaryStreet}>
             <Input value={getValue('primaryStreet')} onChange={(e) => handleChange('primaryStreet', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <InlineField label="City" labelWidth="min-w-[60px]">
+          <InlineField label="City" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.primaryCity}>
             <Input value={getValue('primaryCity')} onChange={(e) => handleChange('primaryCity', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <InlineField label="State" labelWidth="min-w-[60px]">
+          <InlineField label="State" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.primaryState}>
             <Select value={getValue('primaryState')} onValueChange={(value) => handleChange('primaryState', value)} disabled={disabled}>
               <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>{STATE_OPTIONS.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}</SelectContent>
             </Select>
           </InlineField>
 
-          <InlineField label="ZIP" labelWidth="min-w-[60px]">
+          <InlineField label="ZIP" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.primaryZip}>
             <Input value={getValue('primaryZip')} onChange={(e) => handleChange('primaryZip', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
@@ -293,22 +306,22 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
             </div>
           </h4>
 
-          <InlineField label="Street" labelWidth="min-w-[60px]">
+          <InlineField label="Street" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.mailingStreet}>
             <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
           </InlineField>
 
-          <InlineField label="City" labelWidth="min-w-[60px]">
+          <InlineField label="City" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.mailingCity}>
             <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
           </InlineField>
 
-          <InlineField label="State" labelWidth="min-w-[60px]">
+          <InlineField label="State" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.mailingState}>
             <Select value={getValue('mailingState')} onValueChange={(value) => handleChange('mailingState', value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')}>
               <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>{STATE_OPTIONS.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}</SelectContent>
             </Select>
           </InlineField>
 
-          <InlineField label="ZIP" labelWidth="min-w-[60px]">
+          <InlineField label="ZIP" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.mailingZip}>
             <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
           </InlineField>
 
@@ -359,10 +372,12 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Phone</h4>
           {phoneRows.map(({ key, label }) => (
-            <div key={key} className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[40px] text-left shrink-0">{label}</Label>
-              <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-            </div>
+            <DirtyFieldWrapper key={key} fieldKey={FIELD_KEYS[key]}>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground min-w-[40px] text-left shrink-0">{label}</Label>
+                <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              </div>
+            </DirtyFieldWrapper>
           ))}
 
           <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">Vesting</h4>

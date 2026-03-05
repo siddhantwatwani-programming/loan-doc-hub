@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 // Issue 1099 mapping based on Lender Type (per reference document)
 const LENDER_TYPE_ISSUE_1099_MAP: Record<string, 'Yes' | 'No' | 'Situational'> = {
@@ -187,6 +188,10 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
     onValueChange(FIELD_KEYS[key], String(value));
   };
 
+  const wrapField = (key: keyof typeof FIELD_KEYS, children: React.ReactNode) => (
+    <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>{children}</DirtyFieldWrapper>
+  );
+
   const handleSameAsPrimaryChange = (checked: boolean) => {
     handleChange('isPrimary', checked);
     if (checked) {
@@ -222,7 +227,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-foreground border-b pb-2">Name</h3>
           <div className="space-y-3">
-            <div className="flex items-center gap-3">
+            {wrapField('lenderId', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Lender ID</Label>
               <Input
                 value={getValue('lenderId')}
@@ -230,7 +235,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
 
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Lender Type</Label>

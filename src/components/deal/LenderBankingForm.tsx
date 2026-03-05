@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 // Field key mapping for lender banking fields
 const FIELD_KEYS = {
@@ -68,6 +69,10 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
   const handleChange = (key: keyof typeof FIELD_KEYS, value: string | boolean) => {
     onValueChange(FIELD_KEYS[key], String(value));
   };
+
+  const wrapField = (key: keyof typeof FIELD_KEYS, children: React.ReactNode) => (
+    <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>{children}</DirtyFieldWrapper>
+  );
 
   return (
     <div className="p-6 space-y-8">

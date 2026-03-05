@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertCircle } from 'lucide-react';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 const FIELD_KEYS = {
   brokerId: 'broker.id',
@@ -59,23 +60,27 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
   }, [values]);
 
   const renderInlineField = (key: keyof typeof FIELD_KEYS, label: string, required = false) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[100px] shrink-0 text-xs">{label}{required && <span className="text-destructive"> *</span>}</Label>
-      <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-xs flex-1" />
-    </div>
+    <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[100px] shrink-0 text-xs">{label}{required && <span className="text-destructive"> *</span>}</Label>
+        <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-xs flex-1" />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderPhoneField = (key: keyof typeof FIELD_KEYS, prefKey: keyof typeof FIELD_KEYS, label: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-14 shrink-0 text-xs">{label}</Label>
-      <Input type="tel" value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-xs flex-1" />
-      <Checkbox
-        checked={getBoolValue(prefKey)}
-        onCheckedChange={(checked) => handleChange(prefKey, !!checked)}
-        disabled={disabled}
-        className="h-3.5 w-3.5 shrink-0"
-      />
-    </div>
+    <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
+      <div className="flex items-center gap-2">
+        <Label className="w-14 shrink-0 text-xs">{label}</Label>
+        <Input type="tel" value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-xs flex-1" />
+        <Checkbox
+          checked={getBoolValue(prefKey)}
+          onCheckedChange={(checked) => handleChange(prefKey, !!checked)}
+          disabled={disabled}
+          className="h-3.5 w-3.5 shrink-0"
+        />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   return (

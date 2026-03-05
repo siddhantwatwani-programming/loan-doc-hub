@@ -2,6 +2,7 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { FileText } from 'lucide-react';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 interface InsuranceNoteFormProps {
   value: string;
