@@ -466,22 +466,22 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             <Label className="text-xs text-muted-foreground">Same as Primary Address</Label>
           </div>)}
           <div className="space-y-3">
-            <div className="flex items-center gap-3">
+            {wrapField('mailingStreet', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Street</Label>
               <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('mailingCity', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">City</Label>
               <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('mailingState', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">State</Label>
               <Input value={getValue('mailingState')} onChange={(e) => handleChange('mailingState', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('mailingZip', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">ZIP</Label>
               <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
+            </div>)}
           </div>
 
           {/* Extra fields */}
