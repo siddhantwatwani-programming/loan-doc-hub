@@ -52,10 +52,12 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({
   };
 
   const renderField = (key: keyof typeof FIELD_KEYS, label: string, props: Record<string, any> = {}) => (
-    <div className="flex items-center gap-2">
-      <Label className="text-sm text-muted-foreground min-w-[120px] max-w-[120px] text-left shrink-0">{label}</Label>
-      <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-8 text-sm w-[160px] 3xl:w-[200px]" {...props} />
-    </div>
+    <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
+      <div className="flex items-center gap-2">
+        <Label className="text-sm text-muted-foreground min-w-[120px] max-w-[120px] text-left shrink-0">{label}</Label>
+        <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-8 text-sm w-[160px] 3xl:w-[200px]" {...props} />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   return (
