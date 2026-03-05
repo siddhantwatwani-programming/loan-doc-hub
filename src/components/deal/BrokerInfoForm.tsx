@@ -60,10 +60,12 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
   }, [values]);
 
   const renderInlineField = (key: keyof typeof FIELD_KEYS, label: string, required = false) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[100px] shrink-0 text-xs">{label}{required && <span className="text-destructive"> *</span>}</Label>
-      <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-xs flex-1" />
-    </div>
+    <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[100px] shrink-0 text-xs">{label}{required && <span className="text-destructive"> *</span>}</Label>
+        <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-xs flex-1" />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderPhoneField = (key: keyof typeof FIELD_KEYS, prefKey: keyof typeof FIELD_KEYS, label: string) => (
