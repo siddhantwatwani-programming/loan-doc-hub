@@ -828,7 +828,9 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
         const snapshot = savedValuesSnapshotRef.current;
         const changedBySection: Record<string, FieldChange[]> = {};
 
-        for (const fieldKey of dirtyFieldKeys) {
+        // Compare ALL keys between snapshot and finalValues to detect changes
+        const allKeys = new Set([...Object.keys(snapshot), ...Object.keys(finalValues)]);
+        for (const fieldKey of allKeys) {
           const oldVal = snapshot[fieldKey] || '';
           const newVal = finalValues[fieldKey] || '';
           if (oldVal === newVal) continue;
