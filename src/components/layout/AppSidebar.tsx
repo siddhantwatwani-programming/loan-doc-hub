@@ -590,6 +590,7 @@ export const AppSidebar: React.FC = () => {
           ))}
         </TooltipProvider>
       </nav>
+      )
 
     </aside>
   );
