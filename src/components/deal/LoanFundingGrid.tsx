@@ -55,6 +55,7 @@ interface LoanFundingGridProps {
   onUpdateRecord: (id: string, data: Partial<FundingRecord>) => void;
   onRefresh?: () => void;
   isLoading?: boolean;
+  disabled?: boolean;
   currentPage: number;
   totalPages: number;
   pageSize: number;
@@ -81,6 +82,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   pageSize,
   onPageChange,
   onPageSizeChange,
+  disabled = false,
 }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -176,11 +178,11 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         <h3 className="font-semibold text-lg text-foreground">Loan Funding</h3>
         <div className="flex items-center gap-2">
           <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
-          <Button variant="outline" size="sm" onClick={() => setIsAddModalOpen(true)} className="gap-1">
+          <Button variant="outline" size="sm" onClick={() => setIsAddModalOpen(true)} className="gap-1" disabled={disabled}>
             <Plus className="h-4 w-4" />
             Add Funding
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(true)} className="gap-1">
+          <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(true)} className="gap-1" disabled={disabled}>
             <History className="h-4 w-4" />
             History
           </Button>
@@ -197,6 +199,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         onFilterChange={setFilter}
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
+        disabled={disabled}
         selectedCount={selectedCount}
         onBulkDelete={() => setBulkDeleteOpen(true)}
         onExport={() => setExportOpen(true)}
@@ -247,11 +250,11 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                 filteredData.map((record) => (
                   <TableRow
                     key={record.id}
-                    className={cn('cursor-pointer hover:bg-muted/30', selectedRecord?.id === record.id && 'bg-primary/10')}
-                    onClick={() => handleRowClick(record)}
+                    className={cn(!disabled && 'cursor-pointer hover:bg-muted/30', selectedRecord?.id === record.id && 'bg-primary/10')}
+                    onClick={() => !disabled && handleRowClick(record)}
                   >
                     <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Checkbox checked={selectedIds.has(record.id)} onCheckedChange={() => toggleOne(record.id)} />
+                      <Checkbox checked={selectedIds.has(record.id)} onCheckedChange={() => toggleOne(record.id)} disabled={disabled} />
                     </TableCell>
                     {visibleColumns.map((col) => (
                       <TableCell key={col.id}>{renderCellValue(record, col.id)}</TableCell>

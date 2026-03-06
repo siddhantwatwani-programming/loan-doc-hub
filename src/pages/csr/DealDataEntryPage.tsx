@@ -1032,7 +1032,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       ].filter((f) => f.is_required && !values[f.field_key]?.trim())}
                       showValidation={showValidation}
                       calculationResults={calculationResults}
-                      orchestrationCanEdit={orchestrationCanEdit}
+                      orchestrationCanEdit={isSectionDisabledByFormPerm('other') ? false : orchestrationCanEdit}
                       isWaitingForPrevious={isWaiting}
                       blockingRole={blockingParticipant?.role}
                       hasCompleted={hasCompleted}
@@ -1049,7 +1049,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       ).filter((f) => f.is_required && !values[f.field_key]?.trim())}
                       showValidation={showValidation}
                       calculationResults={calculationResults}
-                      orchestrationCanEdit={orchestrationCanEdit}
+                      orchestrationCanEdit={isSectionDisabledByFormPerm(section) ? false : orchestrationCanEdit}
                       isWaitingForPrevious={isWaiting}
                       blockingRole={blockingParticipant?.role}
                       hasCompleted={hasCompleted}
@@ -1075,7 +1075,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
 
             {/* Event Journal */}
             <TabsContent value="event_journal" forceMount className={cn("animate-fade-in", activeTab !== "event_journal" && "hidden")}>
-              <EventJournalViewer dealId={id || ""} />
+              <EventJournalViewer dealId={id || ""} disabled={isSectionDisabledByFormPerm("event_journal")} />
             </TabsContent>
 
             {/* Origination Fees - Custom UI Tab Content */}
@@ -1086,7 +1086,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                   values={values}
                   onValueChange={updateValue}
                   showValidation={showValidation}
-                  disabled={false}
+                  disabled={isSectionDisabledByFormPerm('origination_fees')}
                   calculationResults={calculationResults}
                 />
               </TabsContent>

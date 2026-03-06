@@ -19,6 +19,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 interface EventJournalViewerProps {
   dealId: string;
+  disabled?: boolean;
 }
 
 function formatDetailsPreview(details: FieldChange[]): string {
@@ -69,7 +70,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'created_at', label: 'Timestamp' },
 ];
 
-export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId }) => {
+export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, disabled = false }) => {
   const { data: entries, isLoading } = useEventJournalEntries(dealId);
   const [selectedEntry, setSelectedEntry] = useState<EventJournalEntry | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
@@ -122,6 +123,7 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId }
         onFilterChange={setFilter}
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
+        disabled={disabled}
         onExport={() => setExportOpen(true)}
       />
 

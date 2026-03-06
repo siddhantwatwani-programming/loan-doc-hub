@@ -56,8 +56,8 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
       .filter(f => {
         // Field-level permission check
         if (!checkCanEdit(f.field_key)) return true;
-        // Orchestration-based restriction for external users
-        if (isExternalUser && !orchestrationCanEdit) return true;
+        // Orchestration-based restriction (external users or form-permission disabled)
+        if (!orchestrationCanEdit) return true;
         return false;
       })
       .map(f => f.field_key)

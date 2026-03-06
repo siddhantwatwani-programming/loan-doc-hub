@@ -160,8 +160,9 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
               value={asOfFilter || ''}
               onChange={(e) => onAsOfFilterChange?.(e.target.value)}
               className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+              disabled={disabled}
             />
-            {asOfFilter && (
+            {asOfFilter && !disabled && (
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onAsOfFilterChange?.('')}>
                 <span className="text-xs">✕</span>
               </Button>
