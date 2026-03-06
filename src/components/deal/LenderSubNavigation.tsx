@@ -7,6 +7,7 @@ interface LenderSubNavigationProps {
   activeSubSection: LenderSubSection;
   onSubSectionChange: (subSection: LenderSubSection) => void;
   isDetailView?: boolean;
+  dirtySubSections?: Set<LenderSubSection>;
 }
 
 const LENDER_DETAIL_SECTIONS: { key: LenderSubSection; label: string }[] = [
