@@ -82,6 +82,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   pageSize,
   onPageChange,
   onPageSizeChange,
+  disabled = false,
 }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
