@@ -450,21 +450,21 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
     if (isDirty) {
       setShowRefreshConfirm(true);
     } else {
-      // No unsaved changes, just reload data
-      window.location.reload();
+      // No unsaved changes, just reload grid data
+      refetchData();
     }
-  }, [isDirty]);
+  }, [isDirty, refetchData]);
 
   const handleRefreshSave = async () => {
     setShowRefreshConfirm(false);
     await performSave();
-    window.location.reload();
+    refetchData();
   };
 
   const handleRefreshDiscard = () => {
     setShowRefreshConfirm(false);
     resetDirty();
-    window.location.reload();
+    refetchData();
   };
 
   const handleRefreshCancel = () => {
