@@ -593,8 +593,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
     const silent = options?.silent === true;
 
     try {
-      // Skip setting saving state for silent saves to avoid visual re-renders
-      if (!silent) setSaving(true);
+      setSaving(true);
 
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -905,7 +904,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
       }
       return false;
     } finally {
-      if (!silent) setSaving(false);
+      setSaving(false);
     }
   }, [dealId, values, fieldDataTypes, fieldIdMap, resolvedFields, computeCalculatedFields, deletedPrefixes, toast]);
 

@@ -286,27 +286,23 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
     isActiveRef.current = isActive;
   }, [isActive]);
 
-  // Use a ref for the persist function to avoid re-registering event listeners on every values change
-  const saveDraftRef = useRef(saveDraft);
-  const resetDirtyRef = useRef(resetDirty);
-  useEffect(() => { saveDraftRef.current = saveDraft; }, [saveDraft]);
-  useEffect(() => { resetDirtyRef.current = resetDirty; }, [resetDirty]);
+  const persistDraftOnBackground = useCallback(async () => {
+    if (!id || !shouldHandleBackgroundPersist) return;
+    if (!isDirtyRef.current || savingRef.current) return;
+
+    // saveDraft already calls computeCalculatedFields internally — no need to call it here
+    const success = await saveDraft({ silent: true });
+
+    if (success) {
+      resetDirty();
+      if (workspaceRef.current) {
+        workspaceRef.current.setFileDirty(id, false);
+      }
+    }
+  }, [id, shouldHandleBackgroundPersist, saveDraft, resetDirty]);
 
   useEffect(() => {
     if (!id || !shouldHandleBackgroundPersist) return;
-
-    const persistDraftOnBackground = async () => {
-      if (!isDirtyRef.current || savingRef.current) return;
-
-      const success = await saveDraftRef.current({ silent: true });
-
-      if (success) {
-        resetDirtyRef.current();
-        if (workspaceRef.current) {
-          workspaceRef.current.setFileDirty(id, false);
-        }
-      }
-    };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
@@ -325,7 +321,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("pagehide", handlePageHide);
     };
-  }, [id, shouldHandleBackgroundPersist]);
+  }, [id, shouldHandleBackgroundPersist, persistDraftOnBackground]);
 
   // Register save function with workspace
   useEffect(() => {
