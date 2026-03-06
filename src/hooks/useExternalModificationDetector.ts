@@ -7,7 +7,7 @@
  * Optimized: Uses batch queries instead of N+1 loop.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFieldDictionaryCacheOptional } from '@/hooks/useFieldDictionaryCache';
 
