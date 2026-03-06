@@ -348,9 +348,6 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
       {/* Inline label + input row */}
       <div className="flex items-start gap-2">
         <div className="flex items-center gap-1 w-[140px] shrink-0 pt-1.5">
-          {isFieldDirty && (
-            <span className="text-warning text-xs leading-none flex-shrink-0" title="Unsaved change">★</span>
-          )}
           <Label
             htmlFor={field.field_key}
             className={cn(
