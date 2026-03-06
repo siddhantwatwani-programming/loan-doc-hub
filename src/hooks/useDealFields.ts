@@ -567,6 +567,26 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
     setDeletedPrefixes(prev => [...prev, prefix]);
     setIsDirty(true);
 
+    // Update sessionStorage cache: remove keys with this prefix
+    setDirtyFieldKeys(prev => {
+      const next = new Set(prev);
+      for (const key of prev) {
+        if (key.startsWith(`${prefix}.`)) {
+          next.delete(key);
+        }
+      }
+      // Rebuild unsaved cache without the deleted prefix keys
+      const cachedData = readSessionCache(dealId);
+      if (cachedData) {
+        const unsaved = { ...cachedData.unsavedValues };
+        Object.keys(unsaved).forEach(k => {
+          if (k.startsWith(`${prefix}.`)) delete unsaved[k];
+        });
+        writeSessionCache(dealId, unsaved, [...next]);
+      }
+      return next;
+    });
+
     // Immediately persist the deletion to backend by cleaning JSONB storage
     try {
       const { data: allSections, error: fetchError } = await supabase
