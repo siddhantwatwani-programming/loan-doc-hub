@@ -7,6 +7,8 @@ import { BrokerInfoForm } from './BrokerInfoForm';
 import { BrokerBankingForm } from './BrokerBankingForm';
 import { BrokersTableView, type BrokerData } from './BrokersTableView';
 import { BrokerModal } from './BrokerModal';
+import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
+import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -98,9 +100,21 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBroker, setEditingBroker] = useState<BrokerData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { dirtyFieldKeys } = useDirtyFields();
   
   // Check if we're in detail view
   const isDetailView = ['broker', 'banking'].includes(activeSubSection);
+
+  // Remap dirty field keys: broker1.xxx → broker.xxx for selected prefix
+  const remappedDirtyKeys = useMemo(() => {
+    const remapped = new Set<string>();
+    dirtyFieldKeys.forEach(key => {
+      if (key.startsWith(`${selectedBrokerPrefix}.`)) {
+        remapped.add(key.replace(`${selectedBrokerPrefix}.`, 'broker.'));
+      }
+    });
+    return remapped;
+  }, [dirtyFieldKeys, selectedBrokerPrefix]);
   
   // Extract brokers from values
   const brokers = extractBrokersFromValues(values);
@@ -264,9 +278,11 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
             isDetailView={isDetailView}
           />
 
-          {/* Sub-section content on the right */}
+          {/* Sub-section content on the right, with remapped dirty keys */}
           <div className="flex-1 min-w-0 overflow-auto">
-            {renderSubSectionContent()}
+            <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+              {renderSubSectionContent()}
+            </DirtyFieldsProvider>
           </div>
         </div>
       </div>
