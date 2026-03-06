@@ -1,22 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
+import {
   FieldVisibility,
   fetchFieldVisibility,
   canViewFieldWithVisibility,
   canEditFieldWithVisibility,
-  isInternalRole 
+  isInternalRole
 } from '@/lib/accessControl';
 import { useFieldDictionaryCacheOptional } from '@/hooks/useFieldDictionaryCache';
 
 export const useFieldPermissions = () => {
   const { role, user } = useAuth();
+  const userId = user?.id ?? null;
   const cache = useFieldDictionaryCacheOptional();
   const [visibility, setVisibility] = useState<Map<string, FieldVisibility>>(new Map());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || !role) {
+    if (!userId || !role) {
       setVisibility(new Map());
       setLoading(false);
       return;
@@ -37,8 +38,8 @@ export const useFieldPermissions = () => {
       setLoading(false);
     };
 
-    loadVisibility();
-  }, [user, role, cache]);
+    void loadVisibility();
+  }, [userId, role, cache]);
 
   const checkCanView = useCallback((fieldKey: string): boolean => {
     return canViewFieldWithVisibility(role, fieldKey, visibility);

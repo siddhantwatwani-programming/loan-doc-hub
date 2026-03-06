@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -10,28 +10,26 @@ export interface FormPermission {
 
 export function useFormPermissions() {
   const { role, user } = useAuth();
+  const userId = user?.id ?? null;
   const [permissions, setPermissions] = useState<FormPermission[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!role || !user) {
+  const fetchPermissions = useCallback(async (currentRole: typeof role, currentUserId: string | null) => {
+    if (!currentRole || !currentUserId) {
       setPermissions([]);
       setLoading(false);
       return;
     }
-    fetchPermissions();
-  }, [role, user]);
 
-  const fetchPermissions = async () => {
     try {
       setLoading(true);
 
-      if (role === 'csr' && user) {
+      if (currentRole === 'csr') {
         // Get user's permission level
         const { data: levelData } = await supabase
           .from('user_permission_levels')
           .select('permission_level')
-          .eq('user_id', user.id)
+          .eq('user_id', currentUserId)
           .single();
 
         const permLevel = (levelData as any)?.permission_level || 'full';
@@ -74,7 +72,7 @@ export function useFormPermissions() {
         const { data, error } = await supabase
           .from('form_permissions' as any)
           .select('form_key, access_mode, screen_visible')
-          .eq('role', role);
+          .eq('role', currentRole);
 
         if (error) throw error;
         setPermissions((data || []) as unknown as FormPermission[]);
@@ -85,7 +83,11 @@ export function useFormPermissions() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void fetchPermissions(role, userId);
+  }, [role, userId, fetchPermissions]);
 
   const isFormViewOnly = (formKey: string): boolean => {
     const perm = permissions.find(p => p.form_key === formKey);
@@ -98,7 +100,7 @@ export function useFormPermissions() {
     return !perm || perm.access_mode === 'editable';
   };
 
-  return { permissions, loading, isFormViewOnly, isFormEditable, refetch: fetchPermissions };
+  return { permissions, loading, isFormViewOnly, isFormEditable, refetch: () => fetchPermissions(role, userId) };
 }
 
 // Hook for admin to manage all permissions
