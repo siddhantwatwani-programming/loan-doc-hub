@@ -244,6 +244,11 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
       handleChange('mailing_address.city', getValue('primary_address.city'));
       handleChange('mailing_address.state', getValue('primary_address.state'));
       handleChange('mailing_address.zip', getValue('primary_address.zip'));
+    } else {
+      handleChange('mailing_address.street', '');
+      handleChange('mailing_address.city', '');
+      handleChange('mailing_address.state', '');
+      handleChange('mailing_address.zip', '');
     }
   };
 
