@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { getRoleDisplayName } from '@/lib/accessControl';
-import { Sun, Moon, LogOut } from 'lucide-react';
+import { Sun, Moon, LogOut, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -12,12 +12,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { GlobalMessageDialog } from '@/components/messaging/GlobalMessageDialog';
 
 export const AppHeader: React.FC = () => {
   const navigate = useNavigate();
   const { role, signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { isCollapsed } = useSidebar();
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -43,6 +45,22 @@ export const AppHeader: React.FC = () => {
 
         {/* Separator */}
         <div className="h-5 w-px bg-border" />
+
+        {/* Global Message Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => setMessageDialogOpen(true)}
+              className="p-1.5 rounded-md hover:bg-muted text-foreground transition-colors"
+              aria-label="New Message"
+            >
+              <Mail className="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            New Message
+          </TooltipContent>
+        </Tooltip>
 
         {/* Dark Mode Toggle */}
         <Tooltip>
@@ -76,6 +94,11 @@ export const AppHeader: React.FC = () => {
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
+
+      <GlobalMessageDialog
+        open={messageDialogOpen}
+        onOpenChange={setMessageDialogOpen}
+      />
     </header>
   );
 };
