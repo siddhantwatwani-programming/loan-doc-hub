@@ -35,6 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [role, setRole] = useState<AppRole>(null);
   const [loading, setLoading] = useState(true);
   const recoveringSessionRef = useRef(false);
+  const manualSignOutRef = useRef(false);
 
   const isExternalUser = role !== null && EXTERNAL_ROLES.includes(role);
   const isInternalUser = role !== null && INTERNAL_ROLES.includes(role);
@@ -104,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (!isMounted) return;
 
           if (authSession?.user) {
+            manualSignOutRef.current = false;
             await applySessionState(authSession);
             if (isMounted) setLoading(false);
             return;
@@ -111,14 +113,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           const recoveredSession = await recoverSession();
           if (recoveredSession?.user) {
+            manualSignOutRef.current = false;
             await applySessionState(recoveredSession);
             if (isMounted) setLoading(false);
             return;
           }
 
-          // Only clear auth state on a confirmed sign-out.
-          // For transient null sessions (tab switching/app focus changes), preserve current state.
-          if (event === 'SIGNED_OUT') {
+          // Clear auth state only for explicit user sign-outs.
+          // Ignore transient SIGNED_OUT events caused by tab/focus/session race conditions.
+          if (event === 'SIGNED_OUT' && manualSignOutRef.current) {
+            manualSignOutRef.current = false;
             await applySessionState(null);
           }
 
@@ -167,6 +171,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    manualSignOutRef.current = true;
+
     // Clear all workspace session storage on logout
     sessionStorage.removeItem('workspace_openFiles');
     sessionStorage.removeItem('workspace_activeFileId');
