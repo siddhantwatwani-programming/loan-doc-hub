@@ -359,11 +359,14 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
             activeSubSection={activeSubSection}
             onSubSectionChange={setActiveSubSection}
             isDetailView={isDetailView}
+            dirtySubSections={dirtySubSections}
           />
 
-          {/* Sub-section content on the right */}
+          {/* Sub-section content on the right, with remapped dirty keys */}
           <div className="flex-1 min-w-0 overflow-auto">
-            {renderSubSectionContent()}
+            <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+              {renderSubSectionContent()}
+            </DirtyFieldsProvider>
           </div>
         </div>
       </div>
