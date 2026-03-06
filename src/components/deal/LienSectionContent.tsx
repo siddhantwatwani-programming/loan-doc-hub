@@ -16,6 +16,7 @@ interface LienSectionContentProps {
   disabled?: boolean;
   propertyOptions?: { id: string; label: string }[];
   onBack?: () => void;
+  onRefresh?: () => void;
 }
 
 const DEFAULT_LIEN: LienData = {
