@@ -107,6 +107,18 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCharge, setEditingCharge] = useState<ChargeData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { dirtyFieldKeys } = useDirtyFields();
+
+  // Remap dirty field keys: chargeN.xxx → charges.xxx for selected prefix
+  const remappedDirtyKeys = useMemo(() => {
+    const remapped = new Set<string>();
+    dirtyFieldKeys.forEach(key => {
+      if (key.startsWith(`${selectedChargePrefix}.`)) {
+        remapped.add(key.replace(`${selectedChargePrefix}.`, 'charges.'));
+      }
+    });
+    return remapped;
+  }, [dirtyFieldKeys, selectedChargePrefix]);
   
   const isDetailView = activeSubSection === 'detail';
   const charges = extractChargesFromValues(values);
