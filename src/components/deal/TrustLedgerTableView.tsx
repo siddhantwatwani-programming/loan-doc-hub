@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Pencil, Download, Search, DollarSign, FileText, ArrowRightLeft, Ban, CheckSquare, Building, RefreshCw, FileCheck, Trash2 } from 'lucide-react';
+import { Plus, DollarSign, FileText, ArrowRightLeft, Ban, CheckSquare, Building, RefreshCw, FileCheck } from 'lucide-react';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table, TableBody, TableCell, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -19,6 +19,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { GridToolbar } from './GridToolbar';
+import { GridExportDialog, ExportColumn } from './GridExportDialog';
+import { SortableTableHead } from './SortableTableHead';
+import { useGridSortFilter } from '@/hooks/useGridSortFilter';
+import { useGridSelection } from '@/hooks/useGridSelection';
 
 export interface TrustLedgerEntry {
   id: string;
@@ -39,7 +44,9 @@ interface TrustLedgerTableViewProps {
   onEditEntry: (entry: TrustLedgerEntry) => void;
   onRowClick: (entry: TrustLedgerEntry) => void;
   onDeleteEntry?: (entry: TrustLedgerEntry) => void;
+  onBulkDelete?: (entries: TrustLedgerEntry[]) => void;
   onExport?: () => void;
+  onRefresh?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
 }
@@ -70,6 +77,21 @@ const DATE_FILTER_OPTIONS = [
   { value: 'last_year', label: 'Last Year' },
 ];
 
+const EXPORT_COLUMNS: ExportColumn[] = DEFAULT_COLUMNS.map((c) => ({ id: c.id, label: c.label }));
+
+const SEARCHABLE_FIELDS = ['reference', 'fromWhomReceivedPaid', 'memo', 'date'];
+
+const FILTER_OPTIONS = [
+  {
+    id: 'category',
+    label: 'Category',
+    options: [
+      { value: 'reserve', label: 'Reserve' },
+      { value: 'impound', label: 'Impound' },
+    ],
+  },
+];
+
 const formatCurrency = (val: string) => {
   if (!val) return '';
   const num = parseFloat(val);
@@ -84,11 +106,7 @@ const filterByDate = (entries: TrustLedgerEntry[], filter: string): TrustLedgerE
   const now = new Date();
   let cutoff: Date;
   switch (filter) {
-    case 'quarter_to_date': {
-      const q = Math.floor(now.getMonth() / 3) * 3;
-      cutoff = new Date(now.getFullYear(), q, 1);
-      break;
-    }
+    case 'quarter_to_date': { const q = Math.floor(now.getMonth() / 3) * 3; cutoff = new Date(now.getFullYear(), q, 1); break; }
     case 'year_to_date': cutoff = new Date(now.getFullYear(), 0, 1); break;
     case 'last_3_months': cutoff = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()); break;
     case 'last_6_months': cutoff = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()); break;
@@ -101,42 +119,36 @@ const filterByDate = (entries: TrustLedgerEntry[], filter: string): TrustLedgerE
     case 'last_year': cutoff = new Date(now.getFullYear() - 1, 0, 1); break;
     default: return entries;
   }
-  return entries.filter(e => {
-    if (!e.date) return false;
-    return new Date(e.date) >= cutoff;
-  });
+  return entries.filter(e => { if (!e.date) return false; return new Date(e.date) >= cutoff; });
 };
 
 export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
-  entries, onAddEntry, onEditEntry, onRowClick, onDeleteEntry, onExport, disabled = false, isLoading = false,
+  entries, onAddEntry, onEditEntry, onRowClick, onDeleteEntry, onBulkDelete, onExport, onRefresh, disabled = false, isLoading = false,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig('trust_ledger', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
   const [activeTab, setActiveTab] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [deleteTarget, setDeleteTarget] = useState<TrustLedgerEntry | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
-  const filteredEntries = useMemo(() => {
+  // Pre-filter by tab and date before passing to useGridSortFilter
+  const preFilteredEntries = useMemo(() => {
     let result = entries;
-    // Tab filter
-    if (activeTab !== 'all') {
-      result = result.filter(e => e.category === activeTab);
-    }
-    // Date filter
+    if (activeTab !== 'all') result = result.filter(e => e.category === activeTab);
     result = filterByDate(result, dateFilter);
-    // Search filter
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(e =>
-        e.reference.toLowerCase().includes(q) ||
-        e.fromWhomReceivedPaid.toLowerCase().includes(q) ||
-        e.memo.toLowerCase().includes(q) ||
-        e.date.toLowerCase().includes(q)
-      );
-    }
     return result;
-  }, [entries, activeTab, dateFilter, searchQuery]);
+  }, [entries, activeTab, dateFilter]);
+
+  const {
+    searchQuery, setSearchQuery, sortState, toggleSort,
+    activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
+  } = useGridSortFilter(preFilteredEntries, SEARCHABLE_FIELDS);
+
+  const {
+    selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
+    isAllSelected, isSomeSelected, selectedCount,
+  } = useGridSelection(filteredData);
 
   const renderCellValue = (entry: TrustLedgerEntry, columnId: string) => {
     switch (columnId) {
@@ -152,21 +164,28 @@ export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
     }
   };
 
+  const handleBulkDelete = () => {
+    if (onBulkDelete) {
+      onBulkDelete(selectedItems);
+    } else if (onDeleteEntry) {
+      selectedItems.forEach((e) => onDeleteEntry(e));
+    }
+    clearSelection();
+    setBulkDeleteOpen(false);
+  };
+
   return (
     <div className="p-6 space-y-4">
-      {/* Title */}
       <h3 className="font-semibold text-lg text-foreground">Trust Ledger</h3>
 
-      {/* Toolbar */}
+      {/* Toolbar row with action buttons */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-1">
           <TooltipProvider>
-            {/* 1 - Delete */}
             <Tooltip><TooltipTrigger asChild>
               <Button variant="outline" size="icon" className="h-8 w-8" disabled={disabled}><Ban className="h-4 w-4" /></Button>
             </TooltipTrigger><TooltipContent>Void Transaction</TooltipContent></Tooltip>
 
-            {/* 3 - Enter Deposit */}
             <DropdownMenu>
               <Tooltip><TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
@@ -184,12 +203,10 @@ export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* 4 - Info */}
             <Tooltip><TooltipTrigger asChild>
               <Button variant="outline" size="icon" className="h-8 w-8" disabled={disabled}><FileText className="h-4 w-4" /></Button>
             </TooltipTrigger><TooltipContent>Info</TooltipContent></Tooltip>
 
-            {/* 5 - Group deposits / Bank */}
             <DropdownMenu>
               <Tooltip><TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
@@ -203,36 +220,39 @@ export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* 7 - Select & Print */}
             <Tooltip><TooltipTrigger asChild>
               <Button variant="outline" size="icon" className="h-8 w-8" disabled={disabled}><FileCheck className="h-4 w-4" /></Button>
             </TooltipTrigger><TooltipContent>Select & Print Checks</TooltipContent></Tooltip>
           </TooltipProvider>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Select value={dateFilter} onValueChange={setDateFilter}>
-            <SelectTrigger className="h-8 w-[140px] text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {DATE_FILTER_OPTIONS.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="search"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="h-8 w-[150px] pl-7 text-xs"
-            />
-          </div>
-        </div>
+        <Select value={dateFilter} onValueChange={setDateFilter}>
+          <SelectTrigger className="h-8 w-[140px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DATE_FILTER_OPTIONS.map(opt => (
+              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+
+      {/* GridToolbar with search, filters, bulk delete, export, refresh */}
+      <GridToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onRefresh={onRefresh}
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        activeFilterCount={activeFilterCount}
+        disabled={disabled}
+        selectedCount={selectedCount}
+        onBulkDelete={() => setBulkDeleteOpen(true)}
+        onExport={() => setExportDialogOpen(true)}
+      />
 
       {/* Tabs */}
       <div className="flex items-center justify-between">
@@ -257,10 +277,20 @@ export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
         <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <SortableTableHead columnId="__select" label="" sortColumnId={null} sortDirection={null} onSort={() => toggleAll()} className="w-[40px]">
+                <Checkbox checked={isAllSelected} ref={(el) => { if (el) (el as any).indeterminate = isSomeSelected; }} onCheckedChange={() => toggleAll()} aria-label="Select all" />
+              </SortableTableHead>
               {visibleColumns.map((col) => (
-                <TableHead key={col.id} className="text-xs">{col.label.toUpperCase()}</TableHead>
+                <SortableTableHead
+                  key={col.id}
+                  columnId={col.id}
+                  label={col.label}
+                  sortColumnId={sortState.columnId}
+                  sortDirection={sortState.direction}
+                  onSort={toggleSort}
+                  className="text-xs"
+                />
               ))}
-              <TableHead className="w-[60px] text-xs">ACTIONS</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -272,34 +302,25 @@ export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
                   ))}
                 </TableRow>
               ))
-            ) : filteredEntries.length === 0 ? (
+            ) : filteredData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
                   No entries found. Click "Add Entry" to add one.
                 </TableCell>
               </TableRow>
             ) : (
-              filteredEntries.map((entry, idx) => (
+              filteredData.map((entry, idx) => (
                 <TableRow
                   key={entry.id}
                   className={`cursor-pointer hover:bg-muted/30 ${idx === 0 ? 'bg-accent/20' : ''}`}
                   onClick={() => onRowClick(entry)}
                 >
+                  <TableCell onClick={(e) => e.stopPropagation()} className="w-[40px]">
+                    <Checkbox checked={selectedIds.has(entry.id)} onCheckedChange={() => toggleOne(entry.id)} aria-label="Select entry" />
+                  </TableCell>
                   {visibleColumns.map((col) => (
                     <TableCell key={col.id} className="text-xs py-2">{renderCellValue(entry, col.id)}</TableCell>
                   ))}
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => onEditEntry(entry)} disabled={disabled} className="h-7 w-7">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      {onDeleteEntry && (
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(entry)} disabled={disabled} className="h-7 w-7 text-destructive hover:text-destructive">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -307,24 +328,26 @@ export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
         </Table>
       </div>
 
-      {/* Footer */}
-      {filteredEntries.length > 0 && (
+      {filteredData.length > 0 && (
         <div className="flex justify-end">
-          <div className="text-sm text-muted-foreground">Total Entries: {filteredEntries.length}</div>
+          <div className="text-sm text-muted-foreground">Total Entries: {filteredData.length}</div>
         </div>
       )}
-      {/* Delete Confirmation Dialog */}
+
       <DeleteConfirmationDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
-        onConfirm={() => {
-          if (deleteTarget && onDeleteEntry) {
-            onDeleteEntry(deleteTarget);
-          }
-          setDeleteTarget(null);
-        }}
-        title="Delete Entry"
-        description="Are you sure you want to delete this trust ledger entry? This action cannot be undone."
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        onConfirm={handleBulkDelete}
+        title="Delete Selected Entries"
+        description={`Are you sure you want to delete ${selectedCount} selected entry(ies)? This action cannot be undone.`}
+      />
+
+      <GridExportDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        columns={EXPORT_COLUMNS}
+        data={filteredData}
+        fileName="trust_ledger_export"
       />
     </div>
   );
