@@ -200,32 +200,43 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
   // Handle saving insurance from modal
   const handleSaveInsurance = useCallback((insuranceData: InsuranceData) => {
     const prefix = editingInsurance ? editingInsurance.id : getNextInsurancePrefix(values);
+    const isEdit = !!editingInsurance;
     
-    // Save all insurance fields
-    onValueChange(`${prefix}.property`, insuranceData.property);
-    onValueChange(`${prefix}.description`, insuranceData.description);
-    onValueChange(`${prefix}.insured_name`, insuranceData.insuredName);
-    onValueChange(`${prefix}.company_name`, insuranceData.companyName);
-    onValueChange(`${prefix}.policy_number`, insuranceData.policyNumber);
-    onValueChange(`${prefix}.expiration`, insuranceData.expiration);
-    onValueChange(`${prefix}.coverage`, insuranceData.coverage);
-    onValueChange(`${prefix}.active`, String(insuranceData.active));
-    onValueChange(`${prefix}.agent_name`, insuranceData.agentName);
-    onValueChange(`${prefix}.business_address`, insuranceData.businessAddress);
-    onValueChange(`${prefix}.business_address_city`, insuranceData.businessAddressCity);
-    onValueChange(`${prefix}.business_address_state`, insuranceData.businessAddressState);
-    onValueChange(`${prefix}.business_address_zip`, insuranceData.businessAddressZip);
-    onValueChange(`${prefix}.phone_number`, insuranceData.phoneNumber);
-    onValueChange(`${prefix}.fax_number`, insuranceData.faxNumber);
-    onValueChange(`${prefix}.email`, insuranceData.email);
-    onValueChange(`${prefix}.note`, insuranceData.note);
-    onValueChange(`${prefix}.payment_mailing_street`, insuranceData.paymentMailingStreet);
-    onValueChange(`${prefix}.payment_mailing_city`, insuranceData.paymentMailingCity);
-    onValueChange(`${prefix}.payment_mailing_state`, insuranceData.paymentMailingState);
-    onValueChange(`${prefix}.payment_mailing_zip`, insuranceData.paymentMailingZip);
-    onValueChange(`${prefix}.insurance_tracking`, String(insuranceData.insuranceTracking));
-    onValueChange(`${prefix}.last_verified`, insuranceData.lastVerified);
-    onValueChange(`${prefix}.tracking_status`, insuranceData.trackingStatus);
+    // Field map: InsuranceData key → db suffix, with defaults for new entries
+    const fieldEntries: { key: keyof InsuranceData; dbField: string; defaultVal: string }[] = [
+      { key: 'property', dbField: 'property', defaultVal: '' },
+      { key: 'description', dbField: 'description', defaultVal: '' },
+      { key: 'insuredName', dbField: 'insured_name', defaultVal: '' },
+      { key: 'companyName', dbField: 'company_name', defaultVal: '' },
+      { key: 'policyNumber', dbField: 'policy_number', defaultVal: '' },
+      { key: 'expiration', dbField: 'expiration', defaultVal: '' },
+      { key: 'coverage', dbField: 'coverage', defaultVal: '' },
+      { key: 'active', dbField: 'active', defaultVal: 'true' },
+      { key: 'agentName', dbField: 'agent_name', defaultVal: '' },
+      { key: 'businessAddress', dbField: 'business_address', defaultVal: '' },
+      { key: 'businessAddressCity', dbField: 'business_address_city', defaultVal: '' },
+      { key: 'businessAddressState', dbField: 'business_address_state', defaultVal: '' },
+      { key: 'businessAddressZip', dbField: 'business_address_zip', defaultVal: '' },
+      { key: 'phoneNumber', dbField: 'phone_number', defaultVal: '' },
+      { key: 'faxNumber', dbField: 'fax_number', defaultVal: '' },
+      { key: 'email', dbField: 'email', defaultVal: '' },
+      { key: 'note', dbField: 'note', defaultVal: '' },
+      { key: 'paymentMailingStreet', dbField: 'payment_mailing_street', defaultVal: '' },
+      { key: 'paymentMailingCity', dbField: 'payment_mailing_city', defaultVal: '' },
+      { key: 'paymentMailingState', dbField: 'payment_mailing_state', defaultVal: '' },
+      { key: 'paymentMailingZip', dbField: 'payment_mailing_zip', defaultVal: '' },
+      { key: 'insuranceTracking', dbField: 'insurance_tracking', defaultVal: 'false' },
+      { key: 'lastVerified', dbField: 'last_verified', defaultVal: '' },
+      { key: 'trackingStatus', dbField: 'tracking_status', defaultVal: '' },
+    ];
+
+    fieldEntries.forEach(({ key, dbField, defaultVal }) => {
+      const val = String(insuranceData[key] ?? '');
+      // Only write fields that differ from defaults to avoid false dirty flags
+      if (val !== defaultVal || isEdit) {
+        onValueChange(`${prefix}.${dbField}`, val);
+      }
+    });
     
     setModalOpen(false);
   }, [editingInsurance, values, onValueChange]);

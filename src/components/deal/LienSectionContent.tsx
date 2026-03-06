@@ -192,7 +192,12 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
     const prefix = editingLien ? editingLien.id : getNextLienPrefix(values);
     Object.entries(LIEN_FIELD_MAP).forEach(([lienKey, dbField]) => {
       if (lienKey === 'id') return;
-      onValueChange(`${prefix}.${dbField}`, (lienData as any)[lienKey] || '');
+      const val = (lienData as any)[lienKey] || '';
+      const defaultVal = (DEFAULT_LIEN as any)[lienKey] || '';
+      // Only write fields that differ from defaults to avoid false dirty flags
+      if (val !== defaultVal || editingLien) {
+        onValueChange(`${prefix}.${dbField}`, val);
+      }
     });
     setModalOpen(false);
   }, [editingLien, values, onValueChange]);
