@@ -243,7 +243,11 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
         )}
         <div className="flex flex-1">
           <LienSubNavigation activeSubSection={activeSubSection} onSubSectionChange={setActiveSubSection} isDetailView={isDetailView} />
-          <div className="flex-1 min-w-0 overflow-auto">{renderSubSectionContent()}</div>
+          <div className="flex-1 min-w-0 overflow-auto">
+            <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+              {renderSubSectionContent()}
+            </DirtyFieldsProvider>
+          </div>
         </div>
       </div>
       <LienModal open={modalOpen} onOpenChange={setModalOpen} lien={editingLien} onSave={handleSaveLien} isEdit={!!editingLien} propertyOptions={propertyOptions} />
