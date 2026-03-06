@@ -16,6 +16,7 @@ import { DealNavigationProvider, useDealNavigation } from "@/contexts/DealNaviga
 import { useWorkspaceOptional } from "@/contexts/WorkspaceContext";
 import { DirtyFieldsProvider } from "@/contexts/DirtyFieldsContext";
 import { SaveConfirmationDialog } from "@/components/workspace/SaveConfirmationDialog";
+import { RefreshConfirmationDialog } from "@/components/deal/RefreshConfirmationDialog";
 import { DealSectionTab } from "@/components/deal/DealSectionTab";
 import { BorrowerSectionContent } from "@/components/deal/BorrowerSectionContent";
 import { LenderSectionContent } from "@/components/deal/LenderSectionContent";
