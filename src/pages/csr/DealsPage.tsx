@@ -165,7 +165,7 @@ export const DealsPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchDeals(1);
+    fetchDeals(currentPage, { silent: !!cachedState });
 
     // Real-time subscription - refresh current page
     const channel = supabase
@@ -173,7 +173,7 @@ export const DealsPage: React.FC = () => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'deals' },
-        () => fetchDeals(1) // Always go to page 1 on changes to show newest
+        () => fetchDeals(1, { silent: true }) // silent background refresh
       )
       .subscribe();
 
