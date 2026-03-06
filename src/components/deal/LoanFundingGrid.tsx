@@ -178,11 +178,11 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         <h3 className="font-semibold text-lg text-foreground">Loan Funding</h3>
         <div className="flex items-center gap-2">
           <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
-          <Button variant="outline" size="sm" onClick={() => setIsAddModalOpen(true)} className="gap-1">
+          <Button variant="outline" size="sm" onClick={() => setIsAddModalOpen(true)} className="gap-1" disabled={disabled}>
             <Plus className="h-4 w-4" />
             Add Funding
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(true)} className="gap-1">
+          <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(true)} className="gap-1" disabled={disabled}>
             <History className="h-4 w-4" />
             History
           </Button>
