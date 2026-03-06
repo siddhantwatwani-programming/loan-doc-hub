@@ -823,7 +823,13 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
 
                   // Check if any field in this section has been modified (dirty)
                   // For dictionary fields: exact key match
-                  const sectionHasDirtyFields = sectionFields.some((f) => dirtyFieldKeys.has(f.field_key));
+                  // For 'other' tab: exclude origination-prefixed keys (those belong to the origination_fees tab)
+                  const ORIGINATION_PREFIXES = ['origination_fees.', 'origination_app.', 'origination_svc.', 'origination_esc.', 'origination_ins.'];
+                  const sectionHasDirtyFields = sectionFields.some((f) => {
+                    if (!dirtyFieldKeys.has(f.field_key)) return false;
+                    if (section === 'other' && ORIGINATION_PREFIXES.some(p => f.field_key.startsWith(p))) return false;
+                    return true;
+                  });
                   
                   // For multi-entity sections: check prefixed dirty keys (e.g., borrower1.xxx, property2.xxx)
                   const SECTION_PREFIX_MAP: Record<string, string[]> = {
