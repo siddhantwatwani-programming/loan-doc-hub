@@ -756,6 +756,11 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
       if (key.startsWith(inlinePrefix)) {
         remapped.add(key.replace(inlinePrefix, 'coborrower.'));
       }
+      // Pass through keys that don't have an entity prefix (e.g., ach.*, borrower.authorized_party.*)
+      // These are used directly by sub-forms like BorrowerBankingForm
+      if (!key.match(/^(borrower\d+|coborrower\d+)\./)) {
+        remapped.add(key);
+      }
     });
     return remapped;
   }, [dirtyFieldKeys, selectedBorrowerPrefix, selectedCoBorrowerPrefix]);
