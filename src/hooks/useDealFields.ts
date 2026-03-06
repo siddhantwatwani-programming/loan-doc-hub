@@ -482,8 +482,25 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
           }
         });
 
-        setValues(valuesMap);
-        savedValuesSnapshotRef.current = { ...valuesMap };
+        // Restore any unsaved values from sessionStorage cache
+        const cached = readSessionCache(dealId);
+        if (cached && cached.dirtyKeys.length > 0) {
+          // Merge cached unsaved values on top of DB values
+          const mergedValues = { ...valuesMap };
+          for (const key of cached.dirtyKeys) {
+            if (key in cached.unsavedValues) {
+              mergedValues[key] = cached.unsavedValues[key];
+            }
+          }
+          setValues(mergedValues);
+          savedValuesSnapshotRef.current = { ...valuesMap }; // snapshot is DB state
+          // Restore dirty state
+          setDirtyFieldKeys(new Set(cached.dirtyKeys));
+          setIsDirty(true);
+        } else {
+          setValues(valuesMap);
+          savedValuesSnapshotRef.current = { ...valuesMap };
+        }
       }
     } catch (err: any) {
       console.error('Error fetching deal fields:', err);
