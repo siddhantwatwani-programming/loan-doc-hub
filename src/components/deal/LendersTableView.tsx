@@ -119,13 +119,9 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
   const renderCellValue = (lender: LenderData, columnId: string) => {
     switch (columnId) {
       case 'isPrimary':
-        return (
-          <Checkbox
-            checked={lender.isPrimary}
-            onCheckedChange={(checked) => onPrimaryChange(lender.id, !!checked)}
-            disabled={disabled}
-          />
-        );
+        return lender.isPrimary ? (
+          <Check className="h-5 w-5 text-primary" />
+        ) : null;
       case 'fullName':
         return <span className="font-medium">{lender.fullName || '-'}</span>;
       default:

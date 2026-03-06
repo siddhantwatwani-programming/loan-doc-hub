@@ -225,6 +225,14 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
         </DialogContent>
       </Dialog>
 
+      <DeleteConfirmationDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selectedCount} Event(s)`}
+        description={`Are you sure you want to delete ${selectedCount} selected event journal entries? This action cannot be undone.`}
+      />
+
       <GridExportDialog
         open={exportOpen}
         onOpenChange={setExportOpen}
