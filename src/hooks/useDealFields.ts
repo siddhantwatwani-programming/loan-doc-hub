@@ -517,35 +517,41 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
   };
 
   const updateValue = useCallback((fieldKey: string, value: string, isRequiredField?: boolean) => {
-    setValues(prev => ({
-      ...prev,
-      [fieldKey]: value
-    }));
+    setValues(prev => {
+      const next = { ...prev, [fieldKey]: value };
 
-    // Only mark as dirty if the value actually differs from the saved snapshot
-    const savedValue = savedValuesSnapshotRef.current[fieldKey] ?? '';
-    if (value !== savedValue) {
-      setIsDirty(true);
-      setDirtyFieldKeys(prev => {
-        const next = new Set(prev);
-        next.add(fieldKey);
-        return next;
+      // Update sessionStorage cache with current unsaved state
+      const savedValue = savedValuesSnapshotRef.current[fieldKey] ?? '';
+      const newIsDirty = value !== savedValue;
+
+      setDirtyFieldKeys(prevDirty => {
+        const nextDirty = new Set(prevDirty);
+        if (newIsDirty) {
+          nextDirty.add(fieldKey);
+        } else {
+          nextDirty.delete(fieldKey);
+        }
+
+        // Build unsaved values object (only dirty keys)
+        const unsavedValues: Record<string, string> = {};
+        nextDirty.forEach(k => {
+          unsavedValues[k] = k === fieldKey ? value : (next[k] ?? '');
+        });
+        writeSessionCache(dealId, unsavedValues, [...nextDirty]);
+
+        if (nextDirty.size === 0) setIsDirty(false);
+        else setIsDirty(true);
+        return nextDirty;
       });
-    } else {
-      // Value reverted to saved — remove from dirty set
-      setDirtyFieldKeys(prev => {
-        const next = new Set(prev);
-        next.delete(fieldKey);
-        if (next.size === 0) setIsDirty(false);
-        return next;
-      });
-    }
+
+      return next;
+    });
     
     // Track if a required field was changed
     if (isRequiredField || resolvedFields?.requiredFieldKeys.includes(fieldKey)) {
       setRequiredFieldChanged(true);
     }
-  }, [resolvedFields]);
+  }, [resolvedFields, dealId]);
 
   // Remove all values with a given prefix (e.g., "borrower2") from state and persist deletion to backend
   const removeValuesByPrefix = useCallback(async (prefix: string) => {
