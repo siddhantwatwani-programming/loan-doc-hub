@@ -7,7 +7,7 @@
  * Optimized: Uses batch queries instead of N+1 loop.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFieldDictionaryCacheOptional } from '@/hooks/useFieldDictionaryCache';
 
@@ -42,6 +42,9 @@ export function useExternalModificationDetector(
   const [loading, setLoading] = useState(true);
   const [lastReviewedAt, setLastReviewedAt] = useState<string | null>(null);
   const cache = useFieldDictionaryCacheOptional();
+  const hasLoadedRef = useRef(false);
+  const cacheRef = useRef(cache);
+  cacheRef.current = cache;
 
   const fetchModifications = useCallback(async () => {
     if (!dealId || !enabled) {
@@ -93,11 +96,12 @@ export function useExternalModificationDetector(
 
       if (svError) throw svError;
 
-      // Use cache for field_key lookup if available, otherwise fetch
+      // Use cache ref for field_key lookup if available, otherwise fetch
+      const currentCache = cacheRef.current;
       let fieldDictMap: Map<string, string>;
-      if (cache && !cache.loading) {
+      if (currentCache && !currentCache.loading) {
         fieldDictMap = new Map<string, string>();
-        cache.entriesById.forEach((entry, id) => {
+        currentCache.entriesById.forEach((entry, id) => {
           fieldDictMap.set(id, entry.field_key);
         });
       } else {
@@ -194,11 +198,15 @@ export function useExternalModificationDetector(
     } finally {
       setLoading(false);
     }
-  }, [dealId, enabled, cache]);
+  }, [dealId, enabled]);
 
+  // Only fetch once per dealId, guarded by ref to prevent re-fetches on tab switch
   useEffect(() => {
+    if (!dealId || !enabled) return;
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
     fetchModifications();
-  }, [fetchModifications]);
+  }, [dealId, enabled, fetchModifications]);
 
   const markAsReviewed = async (): Promise<boolean> => {
     try {
