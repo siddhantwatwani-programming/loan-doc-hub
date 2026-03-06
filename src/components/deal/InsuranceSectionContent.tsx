@@ -299,6 +299,7 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
             onRowClick={handleRowClick}
             onDeleteInsurance={handleDeleteInsurance}
             onBack={onBack}
+            onRefresh={onRefresh}
             disabled={disabled}
           />
         );
