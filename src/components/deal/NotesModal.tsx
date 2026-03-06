@@ -186,6 +186,50 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
                   />
+                  <div className="flex items-center gap-1 px-3 pb-3 border-t border-border pt-2">
+                    <Label className="text-xs text-muted-foreground mr-1">Time:</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={23}
+                      value={asOfDateObj ? String(asOfDateObj.getHours()).padStart(2, '0') : '00'}
+                      onChange={(e) => {
+                        const h = Math.max(0, Math.min(23, parseInt(e.target.value) || 0));
+                        const d = asOfDateObj ? new Date(asOfDateObj) : new Date();
+                        d.setHours(h);
+                        setFormData(prev => ({ ...prev, asOfDate: d.toISOString() }));
+                      }}
+                      className="h-7 w-12 text-xs text-center px-1"
+                    />
+                    <span className="text-xs text-muted-foreground">:</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={59}
+                      value={asOfDateObj ? String(asOfDateObj.getMinutes()).padStart(2, '0') : '00'}
+                      onChange={(e) => {
+                        const m = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
+                        const d = asOfDateObj ? new Date(asOfDateObj) : new Date();
+                        d.setMinutes(m);
+                        setFormData(prev => ({ ...prev, asOfDate: d.toISOString() }));
+                      }}
+                      className="h-7 w-12 text-xs text-center px-1"
+                    />
+                    <span className="text-xs text-muted-foreground">:</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={59}
+                      value={asOfDateObj ? String(asOfDateObj.getSeconds()).padStart(2, '0') : '00'}
+                      onChange={(e) => {
+                        const s = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
+                        const d = asOfDateObj ? new Date(asOfDateObj) : new Date();
+                        d.setSeconds(s);
+                        setFormData(prev => ({ ...prev, asOfDate: d.toISOString() }));
+                      }}
+                      className="h-7 w-12 text-xs text-center px-1"
+                    />
+                  </div>
                 </PopoverContent>
               </Popover>
             </div>
