@@ -53,28 +53,37 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'reference', label: 'Reference', visible: true },
 ];
 
-const SEARCH_FIELDS = ['name', 'account', 'reference', 'type', 'content', 'date'];
+const SEARCH_FIELDS = ['name', 'account', 'reference', 'type', 'content', 'date', 'asOfDate'];
 
-const FILTER_OPTIONS: FilterOption[] = [
-  {
-    id: 'type',
-    label: 'Type',
-    options: [
-      { value: 'note', label: 'Note' },
-      { value: 'call', label: 'Call' },
-      { value: 'email', label: 'Email' },
-      { value: 'meeting', label: 'Meeting' },
-    ],
-  },
-  {
-    id: 'highPriority',
-    label: 'Priority',
-    options: [
-      { value: 'true', label: 'High Priority' },
-      { value: 'false', label: 'Normal' },
-    ],
-  },
-];
+const buildFilterOptions = (notes: NoteData[]): FilterOption[] => {
+  const uniqueAsOfDates = [...new Set(notes.map(n => n.asOfDate).filter(Boolean))].sort();
+
+  return [
+    {
+      id: 'type',
+      label: 'Type',
+      options: [
+        { value: 'note', label: 'Note' },
+        { value: 'call', label: 'Call' },
+        { value: 'email', label: 'Email' },
+        { value: 'meeting', label: 'Meeting' },
+      ],
+    },
+    {
+      id: 'highPriority',
+      label: 'Priority',
+      options: [
+        { value: 'true', label: 'High Priority' },
+        { value: 'false', label: 'Normal' },
+      ],
+    },
+    ...(uniqueAsOfDates.length > 0 ? [{
+      id: 'asOfDate',
+      label: 'As Of Date',
+      options: uniqueAsOfDates.map(d => ({ value: d, label: d })),
+    }] : []),
+  ];
+};
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '-';

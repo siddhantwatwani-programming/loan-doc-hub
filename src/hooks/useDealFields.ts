@@ -555,6 +555,19 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
 
   // Remove all values with a given prefix (e.g., "borrower2") from state and persist deletion to backend
   const removeValuesByPrefix = useCallback(async (prefix: string) => {
+    // Capture deleted values for event journal logging before removing
+    const deletedFields: FieldChange[] = [];
+    const currentValues = { ...values };
+    Object.keys(currentValues).forEach(key => {
+      if (key.startsWith(`${prefix}.`) && currentValues[key]) {
+        deletedFields.push({
+          fieldLabel: key,
+          oldValue: currentValues[key],
+          newValue: '(deleted)',
+        });
+      }
+    });
+
     setValues(prev => {
       const updated = { ...prev };
       Object.keys(updated).forEach(key => {
@@ -566,6 +579,25 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
     });
     setDeletedPrefixes(prev => [...prev, prefix]);
     setIsDirty(true);
+
+    // Log deletion to event journal
+    if (deletedFields.length > 0) {
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser) {
+          // Determine section from prefix (e.g., "borrower1" -> "borrower", "lender2" -> "lender")
+          const sectionMatch = prefix.match(/^([a-z_]+)\d*$/);
+          const section = sectionMatch ? sectionMatch[1] : 'unknown';
+          await logFieldChanges(dealId, section, [{
+            fieldLabel: `${prefix} (Bulk Delete)`,
+            oldValue: `${deletedFields.length} field(s)`,
+            newValue: '(deleted)',
+          }], currentUser.id);
+        }
+      } catch (err) {
+        console.error('Error logging deletion to event journal:', err);
+      }
+    }
 
     // Update sessionStorage cache: remove keys with this prefix
     setDirtyFieldKeys(prev => {
