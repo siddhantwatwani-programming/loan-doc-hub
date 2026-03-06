@@ -139,10 +139,27 @@ Deno.serve(async (req) => {
       });
 
       if (!resendResponse.ok) {
-        const resendError = await resendResponse.text();
-        console.error("Resend API error:", resendError);
+        const resendErrorText = await resendResponse.text();
+        console.error("Resend API error:", resendErrorText);
+
+        let parsedMessage = resendErrorText;
+        try {
+          const parsed = JSON.parse(resendErrorText);
+          parsedMessage = parsed?.message || resendErrorText;
+        } catch {
+          // keep raw text
+        }
+
         status = "failed";
-        errorMessage = `Email send failed: ${resendError}`;
+        if (
+          resendResponse.status === 403 &&
+          parsedMessage.includes("only send testing emails to your own email address")
+        ) {
+          errorMessage =
+            "Email service is in test mode. Verify a sending domain and use a domain-based From address to send to external recipients.";
+        } else {
+          errorMessage = `Email send failed: ${parsedMessage}`;
+        }
       }
     } else if (message_type === "sms") {
       // SMS not yet implemented - store as pending
