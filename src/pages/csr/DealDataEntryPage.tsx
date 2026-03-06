@@ -665,6 +665,18 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Refresh button - refreshes grid data without full page reload */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              onClick={handleGridRefresh}
+              disabled={saving}
+              title="Refresh data"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+
             {/* Save button - always visible unless completed */}
             {(!isExternalUser || !hasCompleted) && (
               <Button
