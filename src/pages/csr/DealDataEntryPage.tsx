@@ -853,7 +853,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       className={cn(
                         "gap-2 data-[state=active]:bg-background relative",
                         !isComplete && hasRequiredFields && showValidation && "text-warning",
-                        (sectionHasDirtyFields || sectionHasPrefixedDirty) && "bg-warning/10 ring-1 ring-warning/30",
+                        (sectionHasDirtyFields || sectionHasPrefixedDirty || fallbackHasDirty) && "bg-warning/10 ring-1 ring-warning/30",
                       )}
                     >
                       {isSectionDisabledByFormPerm(section) && (
