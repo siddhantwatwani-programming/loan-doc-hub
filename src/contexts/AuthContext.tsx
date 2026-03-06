@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else {
       setRole(null);
     }
-  }, []);
+  }, [fetchUserRole]);
 
   useEffect(() => {
     let isMounted = true;
