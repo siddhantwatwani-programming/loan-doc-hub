@@ -103,9 +103,44 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLender, setEditingLender] = useState<LenderData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { dirtyFieldKeys } = useDirtyFields();
   
   // Check if we're in detail view
   const isDetailView = ['lender', 'authorized_party', 'funding', 'banking', 'tax_info'].includes(activeSubSection);
+
+  // Remap dirty field keys: lender1.xxx → lender.xxx for selected prefix
+  const remappedDirtyKeys = useMemo(() => {
+    const remapped = new Set<string>();
+    dirtyFieldKeys.forEach(key => {
+      if (key.startsWith(`${selectedLenderPrefix}.`)) {
+        remapped.add(key.replace(`${selectedLenderPrefix}.`, 'lender.'));
+      }
+    });
+    return remapped;
+  }, [dirtyFieldKeys, selectedLenderPrefix]);
+
+  // Compute which sub-sections have dirty fields
+  const dirtySubSections = useMemo(() => {
+    const result = new Set<LenderSubSection>();
+    const prefix = `${selectedLenderPrefix}.`;
+    
+    dirtyFieldKeys.forEach(key => {
+      if (!key.startsWith(prefix)) return;
+      const fieldPart = key.slice(prefix.length);
+      
+      if (fieldPart.startsWith('authorized_party.')) {
+        result.add('authorized_party');
+      } else if (fieldPart.startsWith('banking.')) {
+        result.add('banking');
+      } else if (fieldPart.startsWith('tax_payer.')) {
+        result.add('tax_info');
+      } else {
+        result.add('lender');
+      }
+    });
+    
+    return result;
+  }, [dirtyFieldKeys, selectedLenderPrefix]);
   
   // Extract lenders from values
   const lenders = useMemo(() => extractLendersFromValues(values), [values]);
