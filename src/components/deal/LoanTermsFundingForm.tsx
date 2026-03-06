@@ -221,6 +221,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       onDeleteRecord={handleDeleteRecord}
       onUpdateRecord={handleUpdateRecord}
       isLoading={isLoading}
+      disabled={disabled}
       currentPage={currentPage}
       totalPages={totalPages}
       pageSize={pageSize}

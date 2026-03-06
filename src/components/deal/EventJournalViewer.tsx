@@ -123,6 +123,7 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
         onFilterChange={setFilter}
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
+        disabled={disabled}
         onExport={() => setExportOpen(true)}
       />
 

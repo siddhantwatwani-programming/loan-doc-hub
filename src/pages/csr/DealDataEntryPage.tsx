@@ -1086,7 +1086,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                   values={values}
                   onValueChange={updateValue}
                   showValidation={showValidation}
-                  disabled={false}
+                  disabled={isSectionDisabledByFormPerm('origination_fees')}
                   calculationResults={calculationResults}
                 />
               </TabsContent>

@@ -254,7 +254,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                     onClick={() => !disabled && handleRowClick(record)}
                   >
                     <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Checkbox checked={selectedIds.has(record.id)} onCheckedChange={() => toggleOne(record.id)} />
+                      <Checkbox checked={selectedIds.has(record.id)} onCheckedChange={() => toggleOne(record.id)} disabled={disabled} />
                     </TableCell>
                     {visibleColumns.map((col) => (
                       <TableCell key={col.id}>{renderCellValue(record, col.id)}</TableCell>
