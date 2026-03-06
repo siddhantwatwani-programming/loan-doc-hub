@@ -447,9 +447,11 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             isDetailView={isDetailView}
           />
 
-          {/* Sub-section content on the right */}
+          {/* Sub-section content on the right, with remapped dirty keys */}
           <div className="flex-1 min-w-0 overflow-auto">
-            {renderSubSectionContent()}
+            <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+              {renderSubSectionContent()}
+            </DirtyFieldsProvider>
           </div>
         </div>
       </div>
