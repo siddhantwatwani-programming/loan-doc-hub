@@ -50,15 +50,15 @@ export const AppHeader: React.FC = () => {
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              onClick={() => setMessageDialogOpen(true)}
-              className="p-1.5 rounded-md hover:bg-muted text-foreground transition-colors"
+              disabled
+              className="p-1.5 rounded-md text-muted-foreground cursor-not-allowed opacity-50"
               aria-label="New Message"
             >
               <Mail className="h-4 w-4" />
             </button>
           </TooltipTrigger>
           <TooltipContent>
-            New Message
+            Coming Soon
           </TooltipContent>
         </Tooltip>
 
