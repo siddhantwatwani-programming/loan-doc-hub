@@ -180,6 +180,11 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
       handleChange('mailingCity', getValue('primaryCity'));
       handleChange('mailingState', getValue('primaryState'));
       handleChange('mailingZip', getValue('primaryZip'));
+    } else {
+      handleChange('mailingStreet', '');
+      handleChange('mailingCity', '');
+      handleChange('mailingState', '');
+      handleChange('mailingZip', '');
     }
   };
 
