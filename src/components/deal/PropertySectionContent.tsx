@@ -11,6 +11,8 @@ import { PropertiesTableView, type PropertyData } from './PropertiesTableView';
 import { PropertyModal } from './PropertyModal';
 import { LienSectionContent } from './LienSectionContent';
 import { InsuranceSectionContent } from './InsuranceSectionContent';
+import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
+import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -128,6 +130,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const setSelectedPropertyPrefix = (prefix: string) => nav?.setSelectedPrefix('property', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<PropertyData | null>(null);
+  const { dirtyFieldKeys } = useDirtyFields();
   
   // Check if we're in detail view (liens and insurance sections are handled separately)
   const isDetailView = ['property_details', 'legal_description', 'property_tax'].includes(activeSubSection);
@@ -137,6 +140,17 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   
   // Check if insurance section is active (rendered separately)
   const isInsuranceSection = activeSubSection === 'insurance';
+
+  // Remap dirty field keys: propertyN.xxx → property1.xxx for selected prefix
+  const remappedDirtyKeys = useMemo(() => {
+    const remapped = new Set<string>();
+    dirtyFieldKeys.forEach(key => {
+      if (key.startsWith(`${selectedPropertyPrefix}.`)) {
+        remapped.add(key.replace(`${selectedPropertyPrefix}.`, 'property1.'));
+      }
+    });
+    return remapped;
+  }, [dirtyFieldKeys, selectedPropertyPrefix]);
   
   // Extract properties from values
   const properties = extractPropertiesFromValues(values);
@@ -433,9 +447,11 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             isDetailView={isDetailView}
           />
 
-          {/* Sub-section content on the right */}
+          {/* Sub-section content on the right, with remapped dirty keys */}
           <div className="flex-1 min-w-0 overflow-auto">
-            {renderSubSectionContent()}
+            <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+              {renderSubSectionContent()}
+            </DirtyFieldsProvider>
           </div>
         </div>
       </div>
