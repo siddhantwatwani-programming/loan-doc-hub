@@ -13,6 +13,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { GridToolbar, FilterOption } from './GridToolbar';
+import { SortableTableHead } from './SortableTableHead';
+import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 
 export interface ChargeData {
   id: string;
@@ -48,6 +51,7 @@ interface ChargesTableViewProps {
   onEditCharge: (charge: ChargeData) => void;
   onRowClick: (charge: ChargeData) => void;
   onDeleteCharge?: (charge: ChargeData) => void;
+  onRefresh?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
   currentPage?: number;
@@ -68,12 +72,38 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'accruedInterest', label: 'Accrued Interest', visible: true },
 ];
 
+const SEARCH_FIELDS = ['description', 'reference', 'chargeType', 'dateOfCharge', 'owedTo', 'owedFrom'];
+
+const FILTER_OPTIONS: FilterOption[] = [
+  {
+    id: 'chargeType',
+    label: 'Charge Type',
+    options: [
+      { value: 'interest', label: 'Interest' },
+      { value: 'fee', label: 'Fee' },
+      { value: 'advance', label: 'Advance' },
+      { value: 'escrow', label: 'Escrow' },
+      { value: 'insurance', label: 'Insurance' },
+      { value: 'tax', label: 'Tax' },
+    ],
+  },
+  {
+    id: 'deferred',
+    label: 'Deferred',
+    options: [
+      { value: 'yes', label: 'Yes' },
+      { value: 'no', label: 'No' },
+    ],
+  },
+];
+
 export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   charges,
   onAddCharge,
   onEditCharge,
   onRowClick,
   onDeleteCharge,
+  onRefresh,
   disabled = false,
   isLoading = false,
   currentPage = 1,
@@ -83,6 +113,11 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   const [columns, setColumns, resetColumns] = useTableColumnConfig('charges_v6', DEFAULT_COLUMNS);
   const [deleteTarget, setDeleteTarget] = useState<ChargeData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
+
+  const {
+    searchQuery, setSearchQuery, sortState, toggleSort,
+    activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
+  } = useGridSortFilter(charges, SEARCH_FIELDS);
 
   const parseCurrency = (value: string): number => {
     if (!value) return 0;
@@ -144,15 +179,33 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
         </div>
       </div>
 
+      {/* Grid Toolbar */}
+      <GridToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onRefresh={onRefresh}
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        activeFilterCount={activeFilterCount}
+        disabled={disabled}
+      />
+
       {/* Charges Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
         <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               {visibleColumns.map((col) => (
-                <TableHead key={col.id}>
-                  {col.label.toUpperCase()}
-                </TableHead>
+                <SortableTableHead
+                  key={col.id}
+                  columnId={col.id}
+                  label={col.label.toUpperCase()}
+                  sortColumnId={sortState.columnId}
+                  sortDirection={sortState.direction}
+                  onSort={toggleSort}
+                />
               ))}
               <TableHead className="w-[80px]">ACTIONS</TableHead>
             </TableRow>
@@ -168,14 +221,16 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
                   ))}
                 </TableRow>
               ))
-            ) : charges.length === 0 ? (
+            ) : filteredData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
-                  No charges added. Click "Add Charge" to add one.
+                  {charges.length === 0
+                    ? 'No charges added. Click "Add Charge" to add one.'
+                    : 'No charges match your search or filters.'}
                 </TableCell>
               </TableRow>
             ) : (
-              charges.map((charge) => (
+              filteredData.map((charge) => (
                 <TableRow
                   key={charge.id}
                   className="cursor-pointer hover:bg-muted/30"
@@ -264,6 +319,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
       {charges.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
+            {filteredData.length !== charges.length && `Showing ${filteredData.length} of `}
             Total Charges: {charges.length}
           </div>
         </div>

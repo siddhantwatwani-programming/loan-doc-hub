@@ -18,6 +18,10 @@ import {
 } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { BookOpen } from 'lucide-react';
+import { GridToolbar, FilterOption } from './GridToolbar';
+import { SortableTableHead } from './SortableTableHead';
+import { useGridSortFilter } from '@/hooks/useGridSortFilter';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface EventJournalViewerProps {
   dealId: string;
@@ -45,9 +49,38 @@ function formatDetailsFull(details: FieldChange[]): React.ReactNode {
   );
 }
 
+const SEARCH_FIELDS = ['actor_name', 'section', 'event_number'];
+
+const FILTER_OPTIONS: FilterOption[] = [
+  {
+    id: 'section',
+    label: 'Section',
+    options: [
+      { value: 'borrower', label: 'Borrower' },
+      { value: 'co_borrower', label: 'Co-Borrower' },
+      { value: 'loan_terms', label: 'Loan Terms' },
+      { value: 'property', label: 'Property' },
+      { value: 'lender', label: 'Lender' },
+      { value: 'broker', label: 'Broker' },
+      { value: 'charges', label: 'Charges' },
+      { value: 'notes', label: 'Notes' },
+    ],
+  },
+];
+
 export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId }) => {
   const { data: entries, isLoading } = useEventJournalEntries(dealId);
   const [selectedEntry, setSelectedEntry] = useState<EventJournalEntry | null>(null);
+  const queryClient = useQueryClient();
+
+  const {
+    searchQuery, setSearchQuery, sortState, toggleSort,
+    activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
+  } = useGridSortFilter(entries || [], SEARCH_FIELDS);
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['event-journal', dealId] });
+  };
 
   if (isLoading) {
     return (
@@ -71,46 +104,76 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId }
 
   return (
     <div className="space-y-4">
+      {/* Grid Toolbar */}
+      <GridToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onRefresh={handleRefresh}
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        activeFilterCount={activeFilterCount}
+      />
+
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[80px]">Event #</TableHead>
-            <TableHead className="w-[150px]">User</TableHead>
-            <TableHead className="w-[120px]">Section</TableHead>
+            <SortableTableHead columnId="event_number" label="Event #" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[80px]" />
+            <SortableTableHead columnId="actor_name" label="User" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[150px]" />
+            <SortableTableHead columnId="section" label="Section" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[120px]" />
             <TableHead>Details</TableHead>
-            <TableHead className="w-[160px]">Timestamp</TableHead>
+            <SortableTableHead columnId="created_at" label="Timestamp" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[160px]" />
           </TableRow>
         </TableHeader>
         <TableBody>
-          {entries.map((entry) => (
-            <TableRow key={entry.id}>
-              <TableCell className="font-mono">{entry.event_number}</TableCell>
-              <TableCell>{entry.actor_name}</TableCell>
-              <TableCell className="capitalize">{entry.section.replace(/_/g, ' ')}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground truncate max-w-[300px]">
-                    {formatDetailsPreview(entry.details)}
-                  </span>
-                  {entry.details.length > 0 && (
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="shrink-0 px-1 h-auto"
-                      onClick={() => setSelectedEntry(entry)}
-                    >
-                      Show More
-                    </Button>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
+          {filteredData.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                No events match your search or filters.
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            filteredData.map((entry) => (
+              <TableRow key={entry.id}>
+                <TableCell className="font-mono">{entry.event_number}</TableCell>
+                <TableCell>{entry.actor_name}</TableCell>
+                <TableCell className="capitalize">{entry.section.replace(/_/g, ' ')}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground truncate max-w-[300px]">
+                      {formatDetailsPreview(entry.details)}
+                    </span>
+                    {entry.details.length > 0 && (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="shrink-0 px-1 h-auto"
+                        onClick={() => setSelectedEntry(entry)}
+                      >
+                        Show More
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
+
+      {/* Footer */}
+      {entries.length > 0 && (
+        <div className="flex justify-end">
+          <div className="text-sm text-muted-foreground">
+            {filteredData.length !== entries.length && `Showing ${filteredData.length} of `}
+            Total Events: {entries.length}
+          </div>
+        </div>
+      )}
 
       <Dialog open={!!selectedEntry} onOpenChange={() => setSelectedEntry(null)}>
         <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto">
