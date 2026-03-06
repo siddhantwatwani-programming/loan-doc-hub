@@ -99,6 +99,10 @@ export const DealsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Use a ref for toast to keep fetchDeals stable and prevent re-fetching on parent re-renders
+  const toastRef = React.useRef(toast);
+  toastRef.current = toast;
+
   const fetchDeals = useCallback(async (page: number = 1) => {
     setLoading(true);
     try {
@@ -123,7 +127,7 @@ export const DealsPage: React.FC = () => {
       setCurrentPage(page);
     } catch (error) {
       console.error('Error fetching deals:', error);
-      toast({
+      toastRef.current({
         title: 'Error',
         description: 'Failed to load files',
         variant: 'destructive',
@@ -131,7 +135,7 @@ export const DealsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     fetchDeals(1);
