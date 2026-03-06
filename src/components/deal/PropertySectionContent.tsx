@@ -142,11 +142,16 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const isInsuranceSection = activeSubSection === 'insurance';
 
   // Remap dirty field keys: propertyN.xxx → property1.xxx for selected prefix
+  // Also pass through lien/insurance keys for sub-sections
   const remappedDirtyKeys = useMemo(() => {
     const remapped = new Set<string>();
     dirtyFieldKeys.forEach(key => {
       if (key.startsWith(`${selectedPropertyPrefix}.`)) {
         remapped.add(key.replace(`${selectedPropertyPrefix}.`, 'property1.'));
+      }
+      // Pass through lien and insurance keys unchanged (they handle their own remapping)
+      if (key.match(/^(lien\d+|insurance\d+)\./)) {
+        remapped.add(key);
       }
     });
     return remapped;
@@ -376,14 +381,16 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
 
             {/* Liens content */}
             <div className="flex-1 min-w-0 overflow-auto">
-              <LienSectionContent
-                values={values}
-                onValueChange={onValueChange}
-                onRemoveValuesByPrefix={onRemoveValuesByPrefix}
-                disabled={disabled}
-                propertyOptions={propertyOptions}
-                onBack={handleBackToTable}
-              />
+              <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+                <LienSectionContent
+                  values={values}
+                  onValueChange={onValueChange}
+                  onRemoveValuesByPrefix={onRemoveValuesByPrefix}
+                  disabled={disabled}
+                  propertyOptions={propertyOptions}
+                  onBack={handleBackToTable}
+                />
+              </DirtyFieldsProvider>
             </div>
           </div>
         </div>
@@ -406,14 +413,16 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
 
             {/* Insurance content */}
             <div className="flex-1 min-w-0 overflow-auto">
-              <InsuranceSectionContent
-                values={values}
-                onValueChange={onValueChange}
-                onRemoveValuesByPrefix={onRemoveValuesByPrefix}
-                disabled={disabled}
-                propertyOptions={propertyOptions}
-                onBack={handleBackToTable}
-              />
+              <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+                <InsuranceSectionContent
+                  values={values}
+                  onValueChange={onValueChange}
+                  onRemoveValuesByPrefix={onRemoveValuesByPrefix}
+                  disabled={disabled}
+                  propertyOptions={propertyOptions}
+                  onBack={handleBackToTable}
+                />
+              </DirtyFieldsProvider>
             </div>
           </div>
         </div>

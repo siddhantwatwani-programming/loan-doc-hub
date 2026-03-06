@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { InsuranceData } from './InsuranceTableView';
+import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 interface InsuranceDetailFormProps {
   insurance: InsuranceData;
@@ -39,6 +40,34 @@ const TRACKING_STATUS_OPTIONS = [
   'Force Placed Coverage',
 ];
 
+// Map from InsuranceData keys to db field keys used in dirty tracking
+const DIRTY_KEY_MAP: Record<string, string> = {
+  property: 'insurance1.property',
+  description: 'insurance1.description',
+  insuredName: 'insurance1.insured_name',
+  companyName: 'insurance1.company_name',
+  policyNumber: 'insurance1.policy_number',
+  expiration: 'insurance1.expiration',
+  coverage: 'insurance1.coverage',
+  active: 'insurance1.active',
+  agentName: 'insurance1.agent_name',
+  businessAddress: 'insurance1.business_address',
+  businessAddressCity: 'insurance1.business_address_city',
+  businessAddressState: 'insurance1.business_address_state',
+  businessAddressZip: 'insurance1.business_address_zip',
+  phoneNumber: 'insurance1.phone_number',
+  faxNumber: 'insurance1.fax_number',
+  email: 'insurance1.email',
+  note: 'insurance1.note',
+  paymentMailingStreet: 'insurance1.payment_mailing_street',
+  paymentMailingCity: 'insurance1.payment_mailing_city',
+  paymentMailingState: 'insurance1.payment_mailing_state',
+  paymentMailingZip: 'insurance1.payment_mailing_zip',
+  insuranceTracking: 'insurance1.insurance_tracking',
+  lastVerified: 'insurance1.last_verified',
+  trackingStatus: 'insurance1.tracking_status',
+};
+
 export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
   insurance,
   onChange,
@@ -46,10 +75,12 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
   propertyOptions = [],
 }) => {
   const renderField = (field: keyof InsuranceData, label: string, props: Record<string, any> = {}) => (
-    <div className="flex items-center gap-3">
-      <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
-      <Input value={String(insurance[field] || '')} onChange={(e) => onChange(field, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" {...props} />
-    </div>
+    <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP[field] || `insurance1.${field}`}>
+      <div className="flex items-center gap-3">
+        <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
+        <Input value={String(insurance[field] || '')} onChange={(e) => onChange(field, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" {...props} />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   return (
@@ -66,39 +97,45 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
             <span className="font-semibold text-sm text-primary">Insurance Policy Information</span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Property</Label>
-            <Select value={insurance.property} onValueChange={(val) => onChange('property', val)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Unassigned" /></SelectTrigger>
-              <SelectContent className="bg-background border border-border z-50">
-                <SelectItem value="unassigned">Unassigned</SelectItem>
-                {propertyOptions.map(opt => (<SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>))}
-              </SelectContent>
-            </Select>
-          </div>
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.property}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Property</Label>
+              <Select value={insurance.property} onValueChange={(val) => onChange('property', val)} disabled={disabled}>
+                <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {propertyOptions.map(opt => (<SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
 
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Description</Label>
-            <Select value={insurance.description} onValueChange={(val) => onChange('description', val)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent className="bg-background border border-border z-50">
-                {INSURANCE_DESCRIPTION_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-              </SelectContent>
-            </Select>
-          </div>
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.description}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Description</Label>
+              <Select value={insurance.description} onValueChange={(val) => onChange('description', val)} disabled={disabled}>
+                <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  {INSURANCE_DESCRIPTION_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
 
           {renderField('insuredName', "Insured's Name")}
           {renderField('companyName', 'Insurance Company')}
           {renderField('policyNumber', 'Policy Number')}
           {renderField('expiration', 'Expiration', { type: 'date' })}
 
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Coverage</Label>
-            <div className="flex items-center gap-1 flex-1">
-              <span className="text-sm text-muted-foreground">$</span>
-              <Input value={insurance.coverage} onChange={(e) => onChange('coverage', e.target.value)} disabled={disabled} className="h-7 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.coverage}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Coverage</Label>
+              <div className="flex items-center gap-1 flex-1">
+                <span className="text-sm text-muted-foreground">$</span>
+                <Input value={insurance.coverage} onChange={(e) => onChange('coverage', e.target.value)} disabled={disabled} className="h-7 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+              </div>
             </div>
-          </div>
+          </DirtyFieldWrapper>
 
           {/* Payment Mailing Address */}
           <div className="border-b border-border pb-2 pt-2">
@@ -109,10 +146,12 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
           {renderField('paymentMailingState', 'State')}
           {renderField('paymentMailingZip', 'ZIP')}
 
-          <div className="flex items-center gap-2 pt-1">
-            <Checkbox id="detail-insurance-active" checked={insurance.active} onCheckedChange={(checked) => onChange('active', !!checked)} disabled={disabled} className="h-4 w-4" />
-            <Label htmlFor="detail-insurance-active" className="text-sm text-foreground">Active</Label>
-          </div>
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.active}>
+            <div className="flex items-center gap-2 pt-1">
+              <Checkbox id="detail-insurance-active" checked={insurance.active} onCheckedChange={(checked) => onChange('active', !!checked)} disabled={disabled} className="h-4 w-4" />
+              <Label htmlFor="detail-insurance-active" className="text-sm text-foreground">Active</Label>
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
         {/* Right Column */}
@@ -135,23 +174,27 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
             <span className="font-semibold text-sm text-primary">Insurance Tracking</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Checkbox id="detail-insurance-tracking" checked={insurance.insuranceTracking} onCheckedChange={(checked) => onChange('insuranceTracking', !!checked)} disabled={disabled} className="h-4 w-4" />
-            <Label htmlFor="detail-insurance-tracking" className="text-sm text-foreground">Insurance Tracking</Label>
-          </div>
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.insuranceTracking}>
+            <div className="flex items-center gap-2">
+              <Checkbox id="detail-insurance-tracking" checked={insurance.insuranceTracking} onCheckedChange={(checked) => onChange('insuranceTracking', !!checked)} disabled={disabled} className="h-4 w-4" />
+              <Label htmlFor="detail-insurance-tracking" className="text-sm text-foreground">Insurance Tracking</Label>
+            </div>
+          </DirtyFieldWrapper>
 
           {insurance.insuranceTracking && (
             <>
               {renderField('lastVerified', 'Last Verified', { type: 'date' })}
-              <div className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Status</Label>
-                <Select value={insurance.trackingStatus} onValueChange={(val) => onChange('trackingStatus', val)} disabled={disabled}>
-                  <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select status" /></SelectTrigger>
-                  <SelectContent className="bg-background border border-border z-50">
-                    {TRACKING_STATUS_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.trackingStatus}>
+                <div className="flex items-center gap-3">
+                  <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Status</Label>
+                  <Select value={insurance.trackingStatus} onValueChange={(val) => onChange('trackingStatus', val)} disabled={disabled}>
+                    <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select status" /></SelectTrigger>
+                    <SelectContent className="bg-background border border-border z-50">
+                      {TRACKING_STATUS_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </DirtyFieldWrapper>
             </>
           )}
         </div>

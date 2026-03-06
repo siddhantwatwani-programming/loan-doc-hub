@@ -6,6 +6,8 @@ import { InsuranceSubNavigation, type InsuranceSubSection } from './InsuranceSub
 import { InsuranceTableView, type InsuranceData } from './InsuranceTableView';
 import { InsuranceModal } from './InsuranceModal';
 import { InsuranceDetailForm } from './InsuranceDetailForm';
+import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
+import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 
 interface InsuranceSectionContentProps {
   values: Record<string, string>;
@@ -111,6 +113,18 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
   const setSelectedInsurancePrefix = (prefix: string) => nav?.setSelectedPrefix('insurance', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingInsurance, setEditingInsurance] = useState<InsuranceData | null>(null);
+  const { dirtyFieldKeys } = useDirtyFields();
+
+  // Remap dirty field keys: insuranceN.xxx → insurance1.xxx for selected prefix
+  const remappedDirtyKeys = useMemo(() => {
+    const remapped = new Set<string>();
+    dirtyFieldKeys.forEach(key => {
+      if (key.startsWith(`${selectedInsurancePrefix}.`)) {
+        remapped.add(key.replace(`${selectedInsurancePrefix}.`, 'insurance1.'));
+      }
+    });
+    return remapped;
+  }, [dirtyFieldKeys, selectedInsurancePrefix]);
   
   // Check if we're in detail view
   const isDetailView = activeSubSection === 'insurance_details';
@@ -320,7 +334,9 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
 
           {/* Sub-section content on the right */}
           <div className="flex-1 min-w-0 overflow-auto">
-            {renderSubSectionContent()}
+            <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+              {renderSubSectionContent()}
+            </DirtyFieldsProvider>
           </div>
         </div>
       </div>
