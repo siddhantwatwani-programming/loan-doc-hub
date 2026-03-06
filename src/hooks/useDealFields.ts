@@ -53,7 +53,7 @@ export interface DealFieldsData {
 export interface UseDealFieldsReturn extends DealFieldsData {
   updateValue: (fieldKey: string, value: string, isRequiredField?: boolean) => void;
   removeValuesByPrefix: (prefix: string) => void;
-  saveDraft: () => Promise<boolean>;
+  saveDraft: (options?: { silent?: boolean }) => Promise<boolean>;
   getValidationErrors: (section?: FieldSection) => string[];
   getMissingRequiredFields: (section?: FieldSection) => ResolvedField[];
   isSectionComplete: (section: FieldSection) => boolean;
@@ -585,7 +585,9 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
     return newValues;
   }, [resolvedFields, calculatedFieldsList, values]);
 
-  const saveDraft = useCallback(async (): Promise<boolean> => {
+  const saveDraft = useCallback(async (options?: { silent?: boolean }): Promise<boolean> => {
+    const silent = options?.silent === true;
+
     try {
       setSaving(true);
 
@@ -879,19 +881,23 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
         console.error('Event journal logging failed (non-blocking):', journalErr);
       }
 
-      toast({
-        title: 'Saved',
-        description: 'Deal data saved successfully',
-      });
+      if (!silent) {
+        toast({
+          title: 'Saved',
+          description: 'Deal data saved successfully',
+        });
+      }
 
       return true;
     } catch (err: any) {
       console.error('Error saving deal data:', err);
-      toast({
-        title: 'Error',
-        description: err.message || 'Failed to save deal data',
-        variant: 'destructive',
-      });
+      if (!silent) {
+        toast({
+          title: 'Error',
+          description: err.message || 'Failed to save deal data',
+          variant: 'destructive',
+        });
+      }
       return false;
     } finally {
       setSaving(false);
