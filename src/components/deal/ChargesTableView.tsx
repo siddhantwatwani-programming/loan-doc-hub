@@ -94,6 +94,42 @@ const FILTER_OPTIONS: FilterOption[] = [
       { value: 'no', label: 'No' },
     ],
   },
+  {
+    id: 'owedTo',
+    label: 'Owed To',
+    options: [
+      { value: 'lender', label: 'Lender' },
+      { value: 'servicer', label: 'Servicer' },
+      { value: 'broker', label: 'Broker' },
+      { value: 'other', label: 'Other' },
+    ],
+  },
+  {
+    id: 'owedFrom',
+    label: 'Owed By',
+    options: [
+      { value: 'borrower', label: 'Borrower' },
+      { value: 'co-borrower', label: 'Co-Borrower' },
+      { value: 'guarantor', label: 'Guarantor' },
+      { value: 'other', label: 'Other' },
+    ],
+  },
+  {
+    id: 'paid',
+    label: 'Paid',
+    options: [
+      { value: 'yes', label: 'Yes' },
+      { value: 'no', label: 'No' },
+    ],
+  },
+  {
+    id: 'deleted',
+    label: 'Deleted',
+    options: [
+      { value: 'yes', label: 'Yes' },
+      { value: 'no', label: 'No' },
+    ],
+  },
 ];
 
 export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
