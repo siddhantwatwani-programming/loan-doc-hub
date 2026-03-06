@@ -2,35 +2,24 @@
 
 ## Analysis
 
-After exhaustive search of the entire codebase, **there is no application-level auto-reload logic**:
+The application has **no auto-reload logic**. The reloads the user experiences when switching browser tabs are caused by **Vite HMR in the Lovable preview environment**, not by application code.
 
-- No `window.location.reload()`, `location.reload()`, or `location.href` reassignment
-- No `setInterval` or `setTimeout` with reload behavior
-- No polling mechanisms
-- `refetchOnWindowFocus` is already set to `false` in the QueryClient config
-- No `visibilitychange` handler that triggers reloads (the one in DealDataEntryPage only persists drafts on background, it does not reload)
+However, there is one application-level behavior triggered on tab switch: the `visibilitychange` and `pagehide` event listeners in `DealDataEntryPage.tsx` (lines 304-324) that auto-save drafts when the tab becomes hidden. While this doesn't cause a reload, it does trigger network requests on every tab switch, which combined with Vite HMR could contribute to instability. Per the user's confirmation, these handlers should be disabled.
 
-### What IS happening
+The unsaved data is already protected by the `sessionStorage` cache in `useDealFields`, so removing background auto-save will not cause data loss.
 
-The "automatic reloads" are caused by **Vite's Hot Module Replacement (HMR)** — when Lovable pushes code changes to the project, Vite detects file changes and performs a full page reload (when it can't do a hot update). This is a development-environment behavior, not application code.
+## Plan
 
-The realtime subscriptions (e.g., `DealsPage` subscribing to `deals` table changes) do **silent background data refetches**, not page reloads. These are working correctly.
+### 1. Remove visibilitychange and pagehide handlers from DealDataEntryPage.tsx
 
-### Recommendation
+**File**: `src/pages/csr/DealDataEntryPage.tsx`
 
-**There are no code changes to make.** The application does not contain any auto-reload logic. The reloads observed are from:
+Remove the `useEffect` block (lines 304-324) that registers `visibilitychange` and `pagehide` event listeners. Also remove the `persistDraftOnBackground` callback (lines 289-302) and the related refs/variables (`shouldHandleBackgroundPersist` at line 264, `isDirtyRef`, `savingRef`, `isActiveRef` at lines 273-287) that are only used by these handlers.
 
-1. **Vite HMR** — triggered when code is edited/saved in Lovable (development only; will not happen in production/published builds)
-2. **Browser-level behavior** — the preview iframe may reload when Lovable's build system detects changes
+No other functionality references these variables or handlers — they exist solely for the background auto-save feature.
 
-The `hmr.overlay: false` is already configured in `vite.config.ts` (line 13), which suppresses the error overlay but doesn't prevent HMR reloads.
+### Files to modify
+- `src/pages/csr/DealDataEntryPage.tsx` — Remove background persistence logic (lines 264, 273-324)
 
-### What's already protected
-
-- Session storage preserves workspace tabs (`WorkspaceContext`)
-- Session storage preserves deal navigation state (`DealNavigationContext`)  
-- Session storage preserves unsaved form values (`useDealFields` sessionStorage cache — recently added)
-- `hasLoadedRef` guards prevent unnecessary refetches on tab switches
-
-**No code changes are needed.** The application state is already well-preserved across navigation, and there is no auto-reload code to disable. The reloads the user sees are from the Lovable development environment's build system, which does not affect production deployments.
+No database changes. No UI changes. No other files affected.
 
