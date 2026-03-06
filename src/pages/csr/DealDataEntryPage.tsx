@@ -470,6 +470,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
     setShowRefreshConfirm(false);
   };
 
+  const handleMarkReady = async () => {
     if (!isPacketComplete()) {
       toast({
         title: "Cannot mark ready",
