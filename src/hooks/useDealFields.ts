@@ -53,7 +53,7 @@ export interface DealFieldsData {
 export interface UseDealFieldsReturn extends DealFieldsData {
   updateValue: (fieldKey: string, value: string, isRequiredField?: boolean) => void;
   removeValuesByPrefix: (prefix: string) => void;
-  saveDraft: () => Promise<boolean>;
+  saveDraft: (options?: { silent?: boolean }) => Promise<boolean>;
   getValidationErrors: (section?: FieldSection) => string[];
   getMissingRequiredFields: (section?: FieldSection) => ResolvedField[];
   isSectionComplete: (section: FieldSection) => boolean;
