@@ -63,7 +63,7 @@ export const GridToolbar: React.FC<GridToolbarProps> = ({
       <div className="relative flex-1 min-w-[180px] max-w-[280px]">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <Input
-          placeholder="Search..."
+          placeholder={searchPlaceholder}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           className="h-8 pl-8 text-xs"
