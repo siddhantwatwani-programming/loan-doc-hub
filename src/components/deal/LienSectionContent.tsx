@@ -159,9 +159,21 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   const setSelectedLienPrefix = (prefix: string) => nav?.setSelectedPrefix('lien', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLien, setEditingLien] = useState<LienData | null>(null);
+  const { dirtyFieldKeys } = useDirtyFields();
 
   const isDetailView = activeSubSection === 'lien_details';
   const liens = extractLiensFromValues(values);
+
+  // Remap dirty field keys: lienN.xxx → lien1.xxx for selected prefix
+  const remappedDirtyKeys = useMemo(() => {
+    const remapped = new Set<string>();
+    dirtyFieldKeys.forEach(key => {
+      if (key.startsWith(`${selectedLienPrefix}.`)) {
+        remapped.add(key.replace(`${selectedLienPrefix}.`, 'lien1.'));
+      }
+    });
+    return remapped;
+  }, [dirtyFieldKeys, selectedLienPrefix]);
 
   const selectedLien = useMemo(() => {
     return liens.find(l => l.id === selectedLienPrefix) || { ...DEFAULT_LIEN, id: selectedLienPrefix };
