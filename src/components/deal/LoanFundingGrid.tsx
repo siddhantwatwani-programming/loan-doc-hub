@@ -55,6 +55,7 @@ interface LoanFundingGridProps {
   onUpdateRecord: (id: string, data: Partial<FundingRecord>) => void;
   onRefresh?: () => void;
   isLoading?: boolean;
+  disabled?: boolean;
   currentPage: number;
   totalPages: number;
   pageSize: number;
