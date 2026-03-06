@@ -79,15 +79,32 @@ const modeLabels: Record<string, string> = {
 };
 
 const PAGE_SIZE = 10;
+const DEALS_CACHE_KEY = 'deals_page_cache';
+
+interface DealsPageCache {
+  deals: Deal[];
+  totalCount: number;
+  currentPage: number;
+}
+
+function loadDealsPageCache(): DealsPageCache | null {
+  try {
+    const raw = sessionStorage.getItem(DEALS_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as DealsPageCache) : null;
+  } catch {
+    return null;
+  }
+}
 
 export const DealsPage: React.FC = () => {
+  const cachedState = loadDealsPageCache();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const refreshKey = searchParams.get('_r');
   const { toast } = useToast();
   const workspace = useWorkspaceOptional();
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [deals, setDeals] = useState<Deal[]>(cachedState?.deals || []);
+  const [loading, setLoading] = useState(!cachedState);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterState, setFilterState] = useState<string>('');
@@ -96,15 +113,16 @@ export const DealsPage: React.FC = () => {
   const [showMaxFilesDialog, setShowMaxFilesDialog] = useState(false);
   
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(cachedState?.currentPage || 1);
+  const [totalCount, setTotalCount] = useState(cachedState?.totalCount || 0);
 
   // Use a ref for toast to keep fetchDeals stable and prevent re-fetching on parent re-renders
   const toastRef = React.useRef(toast);
   toastRef.current = toast;
 
-  const fetchDeals = useCallback(async (page: number = 1) => {
-    setLoading(true);
+  const fetchDeals = useCallback(async (page: number = 1, options?: { silent?: boolean }) => {
+    const silent = options?.silent === true;
+    if (!silent) setLoading(true);
     try {
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -117,14 +135,23 @@ export const DealsPage: React.FC = () => {
 
       if (error) throw error;
 
-      setDeals(
-        (data || []).map((d: any) => ({
-          ...d,
-          packet: d.packets,
-        }))
-      );
+      const mappedDeals = (data || []).map((d: any) => ({
+        ...d,
+        packet: d.packets,
+      }));
+
+      setDeals(mappedDeals);
       setTotalCount(count || 0);
       setCurrentPage(page);
+
+      try {
+        sessionStorage.setItem(
+          DEALS_CACHE_KEY,
+          JSON.stringify({ deals: mappedDeals, totalCount: count || 0, currentPage: page })
+        );
+      } catch {
+        // ignore cache write errors
+      }
     } catch (error) {
       console.error('Error fetching deals:', error);
       toastRef.current({
@@ -133,12 +160,12 @@ export const DealsPage: React.FC = () => {
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchDeals(1);
+    fetchDeals(currentPage, { silent: !!cachedState });
 
     // Real-time subscription - refresh current page
     const channel = supabase
@@ -146,7 +173,7 @@ export const DealsPage: React.FC = () => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'deals' },
-        () => fetchDeals(1) // Always go to page 1 on changes to show newest
+        () => fetchDeals(1, { silent: true }) // silent background refresh
       )
       .subscribe();
 
