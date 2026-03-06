@@ -1055,6 +1055,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                 disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm("funding")}
                 calculationResults={calculationResults}
                 dealId={id || ""}
+                onRefresh={handleGridRefresh}
               />
             </TabsContent>
 
