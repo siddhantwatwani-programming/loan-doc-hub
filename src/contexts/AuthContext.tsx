@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -34,6 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole>(null);
   const [loading, setLoading] = useState(true);
+  const recoveringSessionRef = useRef(false);
 
   const isExternalUser = role !== null && EXTERNAL_ROLES.includes(role);
   const isInternalUser = role !== null && INTERNAL_ROLES.includes(role);
@@ -69,6 +70,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [fetchUserRole]);
 
+  const recoverSession = useCallback(async (): Promise<Session | null> => {
+    if (recoveringSessionRef.current) return null;
+    recoveringSessionRef.current = true;
+
+    try {
+      const { data: current, error: currentError } = await supabase.auth.getSession();
+      if (!currentError && current.session?.user) {
+        return current.session;
+      }
+
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      if (!refreshError && refreshed.session?.user) {
+        return refreshed.session;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error recovering session:', error);
+      return null;
+    } finally {
+      recoveringSessionRef.current = false;
+    }
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -84,17 +109,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return;
           }
 
-          // Recovery guard: avoid forced redirects on transient tab-return auth glitches.
-          if (event === 'SIGNED_OUT') {
-            const { data: refreshed, error } = await supabase.auth.refreshSession();
-            if (!error && refreshed.session?.user) {
-              await applySessionState(refreshed.session);
-              if (isMounted) setLoading(false);
-              return;
-            }
+          const recoveredSession = await recoverSession();
+          if (recoveredSession?.user) {
+            await applySessionState(recoveredSession);
+            if (isMounted) setLoading(false);
+            return;
           }
 
-          await applySessionState(null);
+          // Only clear auth state on a confirmed sign-out.
+          // For transient null sessions (tab switching/app focus changes), preserve current state.
+          if (event === 'SIGNED_OUT') {
+            await applySessionState(null);
+          }
+
           if (isMounted) setLoading(false);
         })();
       }
@@ -102,10 +129,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // THEN check for existing session
     void (async () => {
-      const { data: { session: existingSession } } = await supabase.auth.getSession();
+      const recoveredSession = await recoverSession();
       if (!isMounted) return;
 
-      await applySessionState(existingSession ?? null);
+      await applySessionState(recoveredSession);
       if (isMounted) setLoading(false);
     })();
 
@@ -113,7 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [applySessionState]);
+  }, [applySessionState, recoverSession]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
