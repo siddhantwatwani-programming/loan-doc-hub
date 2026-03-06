@@ -113,8 +113,8 @@ export const DealsPage: React.FC = () => {
   const [showMaxFilesDialog, setShowMaxFilesDialog] = useState(false);
   
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(cachedState?.currentPage || 1);
+  const [totalCount, setTotalCount] = useState(cachedState?.totalCount || 0);
 
   // Use a ref for toast to keep fetchDeals stable and prevent re-fetching on parent re-renders
   const toastRef = React.useRef(toast);
