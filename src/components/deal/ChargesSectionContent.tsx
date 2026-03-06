@@ -6,6 +6,8 @@ import { ChargesSubNavigation, ChargesSubSection } from './ChargesSubNavigation'
 import { ChargesDetailForm } from './ChargesDetailForm';
 import { ChargesTableView, type ChargeData } from './ChargesTableView';
 import { ChargesModal } from './ChargesModal';
+import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
+import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
