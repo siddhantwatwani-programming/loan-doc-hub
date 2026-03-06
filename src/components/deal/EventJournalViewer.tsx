@@ -19,6 +19,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 interface EventJournalViewerProps {
   dealId: string;
+  disabled?: boolean;
 }
 
 function formatDetailsPreview(details: FieldChange[]): string {
