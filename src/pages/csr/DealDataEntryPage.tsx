@@ -126,6 +126,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
   const [markingReady, setMarkingReady] = useState(false);
   const [completingSection, setCompletingSection] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [showRefreshConfirm, setShowRefreshConfirm] = useState(false);
 
   const [hasEverBeenActive, setHasEverBeenActive] = useState(isActive);
 
