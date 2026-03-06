@@ -1059,6 +1059,13 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
     clearSessionCache(dealId);
   }, [dealId]);
 
+  const refetchData = useCallback(async () => {
+    hasLoadedRef.current = false;
+    isFetchingRef.current = false;
+    setDeletedPrefixes([]);
+    await fetchData();
+  }, [dealId, packetId]);
+
   return {
     fields: resolvedFields?.fields || [],
     fieldsBySection: resolvedFields?.fieldsBySection || ({} as Record<FieldSection, ResolvedField[]>),
