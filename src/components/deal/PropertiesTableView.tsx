@@ -1,21 +1,18 @@
-import React, { useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { GridToolbar, FilterOption } from './GridToolbar';
+import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
+import { useGridSelection } from '@/hooks/useGridSelection';
 
 export interface PropertyData {
   id: string;
@@ -68,6 +65,7 @@ interface PropertiesTableViewProps {
   onRowClick: (property: PropertyData) => void;
   onPrimaryChange: (propertyId: string, isPrimary: boolean) => void;
   onDeleteProperty?: (property: PropertyData) => void;
+  onBulkDelete?: (properties: PropertyData[]) => void;
   onRefresh?: () => void;
   disabled?: boolean;
 }
@@ -132,17 +130,24 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   onRowClick,
   onPrimaryChange,
   onDeleteProperty,
+  onBulkDelete,
   onRefresh,
   disabled = false,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig('properties', DEFAULT_COLUMNS);
-  const [deleteTarget, setDeleteTarget] = useState<PropertyData | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const {
     searchQuery, setSearchQuery, sortState, toggleSort,
     activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
   } = useGridSortFilter(properties, SEARCH_FIELDS);
+
+  const {
+    selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
+    isAllSelected, isSomeSelected, selectedCount,
+  } = useGridSelection(filteredData);
 
   const formatCurrency = (value: string) => {
     if (!value) return '$0.00';
@@ -176,6 +181,18 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         return property[columnId as keyof PropertyData] || '-';
     }
   };
+
+  const handleBulkDelete = () => {
+    if (onBulkDelete) {
+      onBulkDelete(selectedItems);
+    } else if (onDeleteProperty) {
+      selectedItems.forEach((item) => onDeleteProperty(item));
+    }
+    clearSelection();
+    setBulkDeleteOpen(false);
+  };
+
+  const exportColumns: ExportColumn[] = DEFAULT_COLUMNS.filter(c => c.id !== 'isPrimary').map(c => ({ id: c.id, label: c.label }));
 
   return (
     <div className="p-6 space-y-4">
@@ -215,6 +232,9 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
         disabled={disabled}
+        selectedCount={selectedCount}
+        onBulkDelete={() => setBulkDeleteOpen(true)}
+        onExport={() => setExportOpen(true)}
       />
 
       {/* Properties Table */}
@@ -222,6 +242,16 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         <Table className="min-w-[1400px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={isAllSelected}
+                  ref={(el) => {
+                    if (el) (el as any).indeterminate = isSomeSelected;
+                  }}
+                  onCheckedChange={toggleAll}
+                  disabled={disabled || filteredData.length === 0}
+                />
+              </TableHead>
               {visibleColumns.map((col) => (
                 col.id === 'isPrimary' ? (
                   <TableHead key={col.id} className="w-[80px]">{col.label.toUpperCase()}</TableHead>
@@ -236,7 +266,6 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
                   />
                 )
               ))}
-              <TableHead className="w-[80px]">ACTIONS</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -255,6 +284,13 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
                   className="cursor-pointer hover:bg-muted/30"
                   onClick={() => onRowClick(property)}
                 >
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedIds.has(property.id)}
+                      onCheckedChange={() => toggleOne(property.id)}
+                      disabled={disabled}
+                    />
+                  </TableCell>
                   {visibleColumns.map((col) => (
                     <TableCell
                       key={col.id}
@@ -263,30 +299,6 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
                       {renderCellValue(property, col.id)}
                     </TableCell>
                   ))}
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEditProperty(property)}
-                        disabled={disabled}
-                        className="h-8 w-8"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      {onDeleteProperty && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteTarget(property)}
-                          disabled={disabled}
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -306,18 +318,23 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
           </div>
         </div>
       )}
-      {/* Delete Confirmation Dialog */}
+
+      {/* Bulk Delete Confirmation */}
       <DeleteConfirmationDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
-        onConfirm={() => {
-          if (deleteTarget && onDeleteProperty) {
-            onDeleteProperty(deleteTarget);
-          }
-          setDeleteTarget(null);
-        }}
-        title="Delete Property"
-        description="Are you sure you want to delete this property? This action cannot be undone."
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selectedCount} Properties`}
+        description={`Are you sure you want to delete ${selectedCount} selected properties? This action cannot be undone.`}
+      />
+
+      {/* Export Dialog */}
+      <GridExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        columns={exportColumns}
+        data={properties}
+        fileName="properties"
       />
     </div>
   );

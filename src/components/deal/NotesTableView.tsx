@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, Pencil, Download, Trash2 } from 'lucide-react';
+import { Plus, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -9,8 +10,10 @@ import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { GridToolbar, FilterOption } from './GridToolbar';
+import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
+import { useGridSelection } from '@/hooks/useGridSelection';
 
 export interface NoteData {
   id: string;
@@ -31,6 +34,7 @@ interface NotesTableViewProps {
   onEditNote: (note: NoteData) => void;
   onRowClick: (note: NoteData) => void;
   onDeleteNote?: (note: NoteData) => void;
+  onBulkDelete?: (notes: NoteData[]) => void;
   onExport?: () => void;
   onRefresh?: () => void;
   disabled?: boolean;
@@ -85,17 +89,23 @@ const formatDate = (dateStr: string) => {
 };
 
 export const NotesTableView: React.FC<NotesTableViewProps> = ({
-  notes, onAddNote, onEditNote, onRowClick, onDeleteNote, onExport, onRefresh, disabled = false, isLoading = false,
+  notes, onAddNote, onEditNote, onRowClick, onDeleteNote, onBulkDelete, onExport, onRefresh, disabled = false, isLoading = false,
   asOfFilter, onAsOfFilterChange,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig('notes_v3', DEFAULT_COLUMNS);
-  const [deleteTarget, setDeleteTarget] = useState<NoteData | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const {
     searchQuery, setSearchQuery, sortState, toggleSort,
     activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
   } = useGridSortFilter(notes, SEARCH_FIELDS);
+
+  const {
+    selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
+    isAllSelected, isSomeSelected, selectedCount,
+  } = useGridSelection(filteredData);
 
   const formatDateTime = (dateStr: string) => {
     if (!dateStr) return '-';
@@ -125,16 +135,24 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
     }
   };
 
+  const handleBulkDelete = () => {
+    if (onBulkDelete) {
+      onBulkDelete(selectedItems);
+    } else if (onDeleteNote) {
+      selectedItems.forEach((item) => onDeleteNote(item));
+    }
+    clearSelection();
+    setBulkDeleteOpen(false);
+  };
+
+  const exportColumns: ExportColumn[] = DEFAULT_COLUMNS.map(c => ({ id: c.id, label: c.label }));
+
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="font-semibold text-lg text-foreground">Conversation Log</h3>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={onExport} disabled={disabled || notes.length === 0} className="gap-1">
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
           <div className="flex items-center gap-1">
             <label className="text-xs text-muted-foreground whitespace-nowrap">As Of:</label>
             <input
@@ -168,6 +186,9 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
         disabled={disabled}
+        selectedCount={selectedCount}
+        onBulkDelete={() => setBulkDeleteOpen(true)}
+        onExport={() => setExportOpen(true)}
       />
 
       {/* Table */}
@@ -175,6 +196,14 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
         <Table className="min-w-[600px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={isAllSelected}
+                  ref={(el) => { if (el) (el as any).indeterminate = isSomeSelected; }}
+                  onCheckedChange={toggleAll}
+                  disabled={disabled || filteredData.length === 0}
+                />
+              </TableHead>
               {visibleColumns.map((col) => (
                 <SortableTableHead
                   key={col.id}
@@ -185,14 +214,14 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
                   onSort={toggleSort}
                 />
               ))}
-              <TableHead className="w-[80px]">ACTIONS</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <TableRow key={`skeleton-${i}`}>
-                  {Array.from({ length: visibleColumns.length + 1 }).map((_, ci) => (
+                  <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                  {Array.from({ length: visibleColumns.length }).map((_, ci) => (
                     <TableCell key={`sc-${ci}`}><Skeleton className="h-4 w-full" /></TableCell>
                   ))}
                 </TableRow>
@@ -200,29 +229,18 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
             ) : filteredData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
-                  {notes.length === 0
-                    ? 'No conversation logs added. Click "Add Conversation Logs" to add one.'
-                    : 'No conversation logs match your search or filters.'}
+                  {notes.length === 0 ? 'No conversation logs added. Click "Add Conversation Logs" to add one.' : 'No conversation logs match your search or filters.'}
                 </TableCell>
               </TableRow>
             ) : (
               filteredData.map((note) => (
                 <TableRow key={note.id} className="cursor-pointer hover:bg-muted/30" onClick={() => onRowClick(note)}>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox checked={selectedIds.has(note.id)} onCheckedChange={() => toggleOne(note.id)} disabled={disabled} />
+                  </TableCell>
                   {visibleColumns.map((col) => (
                     <TableCell key={col.id}>{renderCellValue(note, col.id)}</TableCell>
                   ))}
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => onEditNote(note)} disabled={disabled} className="h-8 w-8">
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      {onDeleteNote && (
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(note)} disabled={disabled} className="h-8 w-8 text-destructive hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -239,18 +257,21 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
           </div>
         </div>
       )}
-      {/* Delete Confirmation Dialog */}
+
       <DeleteConfirmationDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
-        onConfirm={() => {
-          if (deleteTarget && onDeleteNote) {
-            onDeleteNote(deleteTarget);
-          }
-          setDeleteTarget(null);
-        }}
-        title="Delete Conversation Log"
-        description="Are you sure you want to delete this conversation log? This action cannot be undone."
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selectedCount} Conversation Logs`}
+        description={`Are you sure you want to delete ${selectedCount} selected conversation logs? This action cannot be undone.`}
+      />
+
+      <GridExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        columns={exportColumns}
+        data={notes}
+        fileName="conversation_log"
       />
     </div>
   );

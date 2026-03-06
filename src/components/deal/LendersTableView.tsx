@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { GridToolbar, FilterOption } from './GridToolbar';
+import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
+import { useGridSelection } from '@/hooks/useGridSelection';
 
 export interface LenderData {
   id: string;
@@ -42,6 +39,7 @@ interface LendersTableViewProps {
   onRowClick: (lender: LenderData) => void;
   onPrimaryChange: (lenderId: string, isPrimary: boolean) => void;
   onDeleteLender?: (lender: LenderData) => void;
+  onBulkDelete?: (lenders: LenderData[]) => void;
   onRefresh?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
@@ -95,6 +93,7 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
   onRowClick,
   onPrimaryChange,
   onDeleteLender,
+  onBulkDelete,
   onRefresh,
   disabled = false,
   isLoading = false,
@@ -103,13 +102,19 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
   onPageChange,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig('lenders_v2', DEFAULT_COLUMNS);
-  const [deleteTarget, setDeleteTarget] = useState<LenderData | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const {
     searchQuery, setSearchQuery, sortState, toggleSort,
     activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
   } = useGridSortFilter(lenders, SEARCH_FIELDS);
+
+  const {
+    selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
+    isAllSelected, isSomeSelected, selectedCount,
+  } = useGridSelection(filteredData);
 
   const renderCellValue = (lender: LenderData, columnId: string) => {
     switch (columnId) {
@@ -132,34 +137,35 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
     <>
       {[1, 2, 3].map((i) => (
         <TableRow key={i}>
+          <TableCell><Skeleton className="h-4 w-4" /></TableCell>
           {visibleColumns.map((col) => (
             <TableCell key={col.id}><Skeleton className="h-4 w-20" /></TableCell>
           ))}
-          <TableCell><Skeleton className="h-8 w-8" /></TableCell>
         </TableRow>
       ))}
     </>
   );
 
+  const handleBulkDelete = () => {
+    if (onBulkDelete) {
+      onBulkDelete(selectedItems);
+    } else if (onDeleteLender) {
+      selectedItems.forEach((item) => onDeleteLender(item));
+    }
+    clearSelection();
+    setBulkDeleteOpen(false);
+  };
+
+  const exportColumns: ExportColumn[] = DEFAULT_COLUMNS.filter(c => c.id !== 'isPrimary').map(c => ({ id: c.id, label: c.label }));
+
   return (
     <div className="p-6 space-y-4">
-      {/* Header with title and actions */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-lg text-foreground">Lenders</h3>
         <div className="flex items-center gap-2">
-          <ColumnConfigPopover
-            columns={columns}
-            onColumnsChange={setColumns}
-            onResetColumns={resetColumns}
-            disabled={disabled}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onAddLender}
-            disabled={disabled}
-            className="gap-1"
-          >
+          <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} disabled={disabled} />
+          <Button variant="outline" size="sm" onClick={onAddLender} disabled={disabled} className="gap-1">
             <Plus className="h-4 w-4" />
             Add Lender
           </Button>
@@ -177,13 +183,24 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
         disabled={disabled}
+        selectedCount={selectedCount}
+        onBulkDelete={() => setBulkDeleteOpen(true)}
+        onExport={() => setExportOpen(true)}
       />
 
-      {/* Lenders Table */}
+      {/* Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
         <Table className="min-w-[1000px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={isAllSelected}
+                  ref={(el) => { if (el) (el as any).indeterminate = isSomeSelected; }}
+                  onCheckedChange={toggleAll}
+                  disabled={disabled || filteredData.length === 0}
+                />
+              </TableHead>
               {visibleColumns.map((col) => (
                 col.id === 'isPrimary' ? (
                   <TableHead key={col.id} className="w-[80px]">{col.label.toUpperCase()}</TableHead>
@@ -198,59 +215,26 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
                   />
                 )
               ))}
-              <TableHead className="w-[80px]">ACTIONS</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              renderLoadingSkeleton()
-            ) : filteredData.length === 0 ? (
+            {isLoading ? renderLoadingSkeleton() : filteredData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
-                  {lenders.length === 0
-                    ? 'No lenders added. Click "Add Lender" to add one.'
-                    : 'No lenders match your search or filters.'}
+                  {lenders.length === 0 ? 'No lenders added. Click "Add Lender" to add one.' : 'No lenders match your search or filters.'}
                 </TableCell>
               </TableRow>
             ) : (
               filteredData.map((lender) => (
-                <TableRow
-                  key={lender.id}
-                  className="cursor-pointer hover:bg-muted/30"
-                  onClick={() => onRowClick(lender)}
-                >
+                <TableRow key={lender.id} className="cursor-pointer hover:bg-muted/30" onClick={() => onRowClick(lender)}>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox checked={selectedIds.has(lender.id)} onCheckedChange={() => toggleOne(lender.id)} disabled={disabled} />
+                  </TableCell>
                   {visibleColumns.map((col) => (
-                    <TableCell
-                      key={col.id}
-                      onClick={col.id === 'isPrimary' ? (e) => e.stopPropagation() : undefined}
-                    >
+                    <TableCell key={col.id} onClick={col.id === 'isPrimary' ? (e) => e.stopPropagation() : undefined}>
                       {renderCellValue(lender, col.id)}
                     </TableCell>
                   ))}
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEditLender(lender)}
-                        disabled={disabled}
-                        className="h-8 w-8"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      {onDeleteLender && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteTarget(lender)}
-                          disabled={disabled}
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -261,29 +245,13 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange?.(currentPage - 1)}
-            disabled={currentPage <= 1 || isLoading}
-          >
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange?.(currentPage + 1)}
-            disabled={currentPage >= totalPages || isLoading}
-          >
-            Next
-          </Button>
+          <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage - 1)} disabled={currentPage <= 1 || isLoading}>Previous</Button>
+          <span className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</span>
+          <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage + 1)} disabled={currentPage >= totalPages || isLoading}>Next</Button>
         </div>
       )}
 
-      {/* Footer with count */}
+      {/* Footer */}
       {lenders.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
@@ -292,18 +260,21 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
           </div>
         </div>
       )}
-      {/* Delete Confirmation Dialog */}
+
       <DeleteConfirmationDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
-        onConfirm={() => {
-          if (deleteTarget && onDeleteLender) {
-            onDeleteLender(deleteTarget);
-          }
-          setDeleteTarget(null);
-        }}
-        title="Delete Lender"
-        description="Are you sure you want to delete this lender? This action cannot be undone."
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selectedCount} Lenders`}
+        description={`Are you sure you want to delete ${selectedCount} selected lenders? This action cannot be undone.`}
+      />
+
+      <GridExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        columns={exportColumns}
+        data={lenders}
+        fileName="lenders"
       />
     </div>
   );

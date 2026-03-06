@@ -2,30 +2,23 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Plus, History, Loader2, Trash2, Pencil } from 'lucide-react';
+import { Plus, History, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { FundingHistoryDialog } from './FundingHistoryDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
-import { GridToolbar, FilterOption } from './GridToolbar';
+import { GridToolbar } from './GridToolbar';
+import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
+import { useGridSelection } from '@/hooks/useGridSelection';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'lenderAccount', label: 'Lender Account', visible: true },
@@ -58,6 +51,7 @@ interface LoanFundingGridProps {
   historyRecords?: any[];
   onAddFunding: (data: any) => void;
   onDeleteRecord?: (record: FundingRecord) => void;
+  onBulkDelete?: (records: FundingRecord[]) => void;
   onUpdateRecord: (id: string, data: Partial<FundingRecord>) => void;
   onRefresh?: () => void;
   isLoading?: boolean;
@@ -78,6 +72,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   historyRecords = [],
   onAddFunding,
   onDeleteRecord,
+  onBulkDelete,
   onUpdateRecord,
   onRefresh,
   isLoading = false,
@@ -90,7 +85,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<FundingRecord | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<FundingRecord | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [editFundingData, setEditFundingData] = useState<FundingFormData | null>(null);
   const [columns, setColumns, resetColumns] = useTableColumnConfig('funding', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
@@ -100,21 +96,18 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
     activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
   } = useGridSortFilter(fundingRecords, SEARCH_FIELDS);
 
-  // Calculate totals
+  const {
+    selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
+    isAllSelected, isSomeSelected, selectedCount,
+  } = useGridSelection(filteredData);
+
   const totalOwnership = fundingRecords.reduce((sum, r) => sum + r.pctOwned, 0);
   const totalPrincipalBalance = fundingRecords.reduce((sum, r) => sum + r.principalBalance, 0);
   const totalPayment = fundingRecords.reduce((sum, r) => sum + r.regularPayment, 0);
+  const totalFundingAmount = fundingRecords.reduce((sum, r) => sum + r.originalAmount, 0);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(value);
-  };
-
-  const formatPercentage = (value: number) => {
-    return `${value.toFixed(3)}%`;
-  };
+  const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+  const formatPercentage = (value: number) => `${value.toFixed(3)}%`;
 
   const handleRowClick = (record: FundingRecord) => {
     setEditFundingData({
@@ -154,9 +147,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
           <div className="text-center">
             <Checkbox
               checked={record.roundingError}
-              onCheckedChange={(checked) => {
-                onUpdateRecord(record.id, { roundingError: !!checked });
-              }}
+              onCheckedChange={(checked) => onUpdateRecord(record.id, { roundingError: !!checked })}
               onClick={(e) => e.stopPropagation()}
             />
           </div>
@@ -166,35 +157,30 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
     }
   };
 
-  // Footer totals
-  const totalFundingAmount = fundingRecords.reduce((sum, r) => sum + r.originalAmount, 0);
+  const handleBulkDelete = () => {
+    if (onBulkDelete) {
+      onBulkDelete(selectedItems);
+    } else if (onDeleteRecord) {
+      selectedItems.forEach((item) => onDeleteRecord(item));
+    }
+    clearSelection();
+    setBulkDeleteOpen(false);
+  };
+
+  const exportColumns: ExportColumn[] = DEFAULT_COLUMNS.map(c => ({ id: c.id, label: c.label }));
 
   return (
     <div className="p-6 space-y-4">
-      {/* Header with title and actions */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-lg text-foreground">Loan Funding</h3>
         <div className="flex items-center gap-2">
-          <ColumnConfigPopover
-            columns={columns}
-            onColumnsChange={setColumns}
-            onResetColumns={resetColumns}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsAddModalOpen(true)}
-            className="gap-1"
-          >
+          <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
+          <Button variant="outline" size="sm" onClick={() => setIsAddModalOpen(true)} className="gap-1">
             <Plus className="h-4 w-4" />
             Add Funding
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsHistoryOpen(true)}
-            className="gap-1"
-          >
+          <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(true)} className="gap-1">
             <History className="h-4 w-4" />
             History
           </Button>
@@ -211,6 +197,9 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         onFilterChange={setFilter}
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
+        selectedCount={selectedCount}
+        onBulkDelete={() => setBulkDeleteOpen(true)}
+        onExport={() => setExportOpen(true)}
       />
 
       {/* Grid */}
@@ -223,6 +212,14 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
           <Table className="min-w-[900px]">
             <TableHeader>
               <TableRow className="bg-muted/50">
+                <TableHead className="w-[40px]">
+                  <Checkbox
+                    checked={isAllSelected}
+                    ref={(el) => { if (el) (el as any).indeterminate = isSomeSelected; }}
+                    onCheckedChange={toggleAll}
+                    disabled={filteredData.length === 0}
+                  />
+                </TableHead>
                 {visibleColumns.map((col) => (
                   col.id === 'roundingError' ? (
                     <TableHead key={col.id}>{col.label.toUpperCase()}</TableHead>
@@ -237,94 +234,39 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                     />
                   )
                 ))}
-                <TableHead className="w-[80px]">ACTIONS</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={visibleColumns.length + 1} className="text-center text-muted-foreground py-8">
-                    {fundingRecords.length === 0
-                      ? 'No funding records found. Click "Add Funding" to add a new funding record.'
-                      : 'No funding records match your search.'}
+                    {fundingRecords.length === 0 ? 'No funding records found. Click "Add Funding" to add a new funding record.' : 'No funding records match your search.'}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredData.map((record) => (
                   <TableRow
                     key={record.id}
-                    className={cn(
-                      'cursor-pointer hover:bg-muted/30',
-                      selectedRecord?.id === record.id && 'bg-primary/10'
-                    )}
+                    className={cn('cursor-pointer hover:bg-muted/30', selectedRecord?.id === record.id && 'bg-primary/10')}
                     onClick={() => handleRowClick(record)}
                   >
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox checked={selectedIds.has(record.id)} onCheckedChange={() => toggleOne(record.id)} />
+                    </TableCell>
                     {visibleColumns.map((col) => (
-                      <TableCell key={col.id}>
-                        {renderCellValue(record, col.id)}
-                      </TableCell>
-                      ))}
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setEditFundingData({
-                                loan: loanNumber || '',
-                                borrower: borrowerName || '',
-                                lenderId: record.lenderAccount,
-                                lenderFullName: record.lenderName,
-                                lenderRate: String(record.lenderRate),
-                                fundingAmount: String(record.originalAmount),
-                                fundingDate: '',
-                                interestFrom: '',
-                                notes: '',
-                                brokerParticipates: false,
-                              });
-                              setIsAddModalOpen(true);
-                            }}
-                            className="h-8 w-8"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          {onDeleteRecord && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setDeleteTarget(record)}
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                      <TableCell key={col.id}>{renderCellValue(record, col.id)}</TableCell>
+                    ))}
+                  </TableRow>
                 ))
               )}
-              {/* Totals Row */}
               {fundingRecords.length > 0 && (
                 <TableRow className="bg-muted/30 font-semibold border-t-2">
+                  <TableCell />
                   {visibleColumns.map((col, idx) => {
-                    if (col.id === 'pctOwned') {
-                      return (
-                        <TableCell key={col.id} className="text-right">
-                          <span className={cn(totalOwnership !== 100 && 'text-destructive')}>
-                            {formatPercentage(totalOwnership)}
-                          </span>
-                        </TableCell>
-                      );
-                    }
-                    if (col.id === 'principalBalance') {
-                      return <TableCell key={col.id} className="text-right">{formatCurrency(totalPrincipalBalance)}</TableCell>;
-                    }
-                    if (col.id === 'regularPayment') {
-                      return <TableCell key={col.id} className="text-right">{formatCurrency(totalPayment)}</TableCell>;
-                    }
-                    if (idx === 0) {
-                      return <TableCell key={col.id} className="text-right font-semibold">Totals:</TableCell>;
-                    }
+                    if (col.id === 'pctOwned') return <TableCell key={col.id} className="text-right"><span className={cn(totalOwnership !== 100 && 'text-destructive')}>{formatPercentage(totalOwnership)}</span></TableCell>;
+                    if (col.id === 'principalBalance') return <TableCell key={col.id} className="text-right">{formatCurrency(totalPrincipalBalance)}</TableCell>;
+                    if (col.id === 'regularPayment') return <TableCell key={col.id} className="text-right">{formatCurrency(totalPayment)}</TableCell>;
+                    if (idx === 0) return <TableCell key={col.id} className="text-right font-semibold">Totals:</TableCell>;
                     return <TableCell key={col.id}></TableCell>;
                   })}
                 </TableRow>
@@ -338,13 +280,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>Show</span>
-          <Select
-            value={pageSize.toString()}
-            onValueChange={(value) => onPageSizeChange(Number(value))}
-          >
-            <SelectTrigger className="w-[70px] h-8">
-              <SelectValue />
-            </SelectTrigger>
+          <Select value={pageSize.toString()} onValueChange={(value) => onPageSizeChange(Number(value))}>
+            <SelectTrigger className="w-[70px] h-8"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="10">10</SelectItem>
               <SelectItem value="25">25</SelectItem>
@@ -355,72 +292,30 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
           <span>entries</span>
         </div>
         <div className="flex items-center gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(1)}
-            disabled={currentPage === 1}
-          >
-            First
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </Button>
-          <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">
-            {currentPage}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-          >
-            Next
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onPageChange(totalPages)}
-            disabled={currentPage >= totalPages}
-          >
-            Last
-          </Button>
+          <Button variant="outline" size="sm" onClick={() => onPageChange(1)} disabled={currentPage === 1}>First</Button>
+          <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}>Previous</Button>
+          <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">{currentPage}</span>
+          <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage >= totalPages}>Next</Button>
+          <Button variant="outline" size="sm" onClick={() => onPageChange(totalPages)} disabled={currentPage >= totalPages}>Last</Button>
         </div>
       </div>
 
-      {/* Validation Messages */}
       {totalOwnership !== 100 && fundingRecords.length > 0 && (
-        <p className="text-sm text-destructive">
-          Total ownership must equal 100% (currently {formatPercentage(totalOwnership)})
-        </p>
+        <p className="text-sm text-destructive">Total ownership must equal 100% (currently {formatPercentage(totalOwnership)})</p>
       )}
 
-      {/* Footer with totals */}
       {fundingRecords.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
             {filteredData.length !== fundingRecords.length && `Showing ${filteredData.length} of `}
-            Total Funding Records: {fundingRecords.length} | 
-            Total Funding Amount: {formatCurrency(totalFundingAmount)}
+            Total Funding Records: {fundingRecords.length} | Total Funding Amount: {formatCurrency(totalFundingAmount)}
           </div>
         </div>
       )}
 
-      {/* Add Funding Modal */}
       <AddFundingModal
         open={isAddModalOpen}
-        onOpenChange={(open) => {
-          setIsAddModalOpen(open);
-          if (!open) {
-            setEditFundingData(null);
-            setSelectedRecord(null);
-          }
-        }}
+        onOpenChange={(open) => { setIsAddModalOpen(open); if (!open) { setEditFundingData(null); setSelectedRecord(null); } }}
         loanNumber={loanNumber}
         borrowerName={borrowerName}
         onSubmit={(data) => {
@@ -439,26 +334,22 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         editData={editFundingData}
       />
 
-      {/* Funding History Dialog */}
-      <FundingHistoryDialog
-        open={isHistoryOpen}
-        onOpenChange={setIsHistoryOpen}
-        dealId={dealId}
-        historyRecords={historyRecords}
+      <FundingHistoryDialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen} dealId={dealId} historyRecords={historyRecords} />
+
+      <DeleteConfirmationDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selectedCount} Funding Records`}
+        description={`Are you sure you want to delete ${selectedCount} selected funding records? This action cannot be undone.`}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <DeleteConfirmationDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
-        onConfirm={() => {
-          if (deleteTarget && onDeleteRecord) {
-            onDeleteRecord(deleteTarget);
-          }
-          setDeleteTarget(null);
-        }}
-        title="Delete Funding Record"
-        description="Are you sure you want to delete this funding record? This action cannot be undone."
+      <GridExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        columns={exportColumns}
+        data={fundingRecords}
+        fileName="funding"
       />
     </div>
   );

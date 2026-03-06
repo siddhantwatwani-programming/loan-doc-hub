@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, ArrowLeft, Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, ArrowLeft } from 'lucide-react';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { Badge } from '@/components/ui/badge';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { GridToolbar, FilterOption } from './GridToolbar';
+import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
+import { useGridSelection } from '@/hooks/useGridSelection';
 
 export interface InsuranceData {
   id: string;
@@ -49,6 +47,7 @@ interface InsuranceTableViewProps {
   onEditInsurance: (insurance: InsuranceData) => void;
   onRowClick: (insurance: InsuranceData) => void;
   onDeleteInsurance?: (insurance: InsuranceData) => void;
+  onBulkDelete?: (insurances: InsuranceData[]) => void;
   onBack?: () => void;
   onRefresh?: () => void;
   disabled?: boolean;
@@ -67,32 +66,55 @@ const FILTER_OPTIONS: FilterOption[] = [
   },
 ];
 
+const EXPORT_COLUMNS: ExportColumn[] = [
+  { id: 'description', label: 'Description' },
+  { id: 'companyName', label: 'Company' },
+  { id: 'policyNumber', label: 'Policy #' },
+  { id: 'expiration', label: 'Expiration' },
+  { id: 'coverage', label: 'Coverage' },
+  { id: 'active', label: 'Status' },
+  { id: 'agentName', label: 'Agent' },
+];
+
 export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
   insurances,
   onAddInsurance,
   onEditInsurance,
   onRowClick,
   onDeleteInsurance,
+  onBulkDelete,
   onBack,
   onRefresh,
   disabled = false,
 }) => {
-  const [deleteTarget, setDeleteTarget] = useState<InsuranceData | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const {
     searchQuery, setSearchQuery, sortState, toggleSort,
     activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
   } = useGridSortFilter(insurances, SEARCH_FIELDS);
 
+  const {
+    selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
+    isAllSelected, isSomeSelected, selectedCount,
+  } = useGridSelection(filteredData);
+
   const formatCurrency = (value: string) => {
     if (!value) return '';
     const num = parseFloat(value.replace(/[^0-9.-]/g, ''));
     if (isNaN(num)) return value;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(num);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(num);
+  };
+
+  const handleBulkDelete = () => {
+    if (onBulkDelete) {
+      onBulkDelete(selectedItems);
+    } else if (onDeleteInsurance) {
+      selectedItems.forEach((item) => onDeleteInsurance(item));
+    }
+    clearSelection();
+    setBulkDeleteOpen(false);
   };
 
   return (
@@ -100,24 +122,14 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {onBack && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBack}
-              className="gap-1 h-8"
-            >
+            <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 h-8">
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
           )}
           <h3 className="text-lg font-semibold text-foreground">Insurance</h3>
         </div>
-        <Button
-          size="sm"
-          onClick={onAddInsurance}
-          disabled={disabled}
-          className="gap-1"
-        >
+        <Button size="sm" onClick={onAddInsurance} disabled={disabled} className="gap-1">
           <Plus className="h-4 w-4" />
           Add Insurance
         </Button>
@@ -134,6 +146,9 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
         disabled={disabled}
+        selectedCount={selectedCount}
+        onBulkDelete={() => setBulkDeleteOpen(true)}
+        onExport={() => setExportOpen(true)}
       />
 
       <div className="border border-border rounded-lg overflow-hidden">
@@ -141,6 +156,14 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
+                <TableHead className="w-[40px]">
+                  <Checkbox
+                    checked={isAllSelected}
+                    ref={(el) => { if (el) (el as any).indeterminate = isSomeSelected; }}
+                    onCheckedChange={toggleAll}
+                    disabled={disabled || filteredData.length === 0}
+                  />
+                </TableHead>
                 <SortableTableHead columnId="description" label="Description" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
                 <SortableTableHead columnId="companyName" label="Company" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[150px]" />
                 <SortableTableHead columnId="policyNumber" label="Policy #" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
@@ -148,70 +171,32 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
                 <SortableTableHead columnId="coverage" label="Coverage" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px] text-right" />
                 <SortableTableHead columnId="active" label="Status" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[80px]" />
                 <SortableTableHead columnId="agentName" label="Agent" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[150px]" />
-                <TableHead className="min-w-[80px] text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    {insurances.length === 0
-                      ? 'No insurance records added. Click "Add Insurance" to create one.'
-                      : 'No insurance records match your search or filters.'}
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    {insurances.length === 0 ? 'No insurance records added. Click "Add Insurance" to create one.' : 'No insurance records match your search or filters.'}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredData.map((insurance) => (
-                  <TableRow
-                    key={insurance.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => onRowClick(insurance)}
-                  >
-                    <TableCell className="font-medium">
-                      {insurance.description || '-'}
+                  <TableRow key={insurance.id} className="cursor-pointer hover:bg-muted/50" onClick={() => onRowClick(insurance)}>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox checked={selectedIds.has(insurance.id)} onCheckedChange={() => toggleOne(insurance.id)} disabled={disabled} />
                     </TableCell>
+                    <TableCell className="font-medium">{insurance.description || '-'}</TableCell>
                     <TableCell>{insurance.companyName || '-'}</TableCell>
                     <TableCell>{insurance.policyNumber || '-'}</TableCell>
                     <TableCell>{insurance.expiration || '-'}</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(insurance.coverage) || '-'}
-                    </TableCell>
+                    <TableCell className="text-right">{formatCurrency(insurance.coverage) || '-'}</TableCell>
                     <TableCell>
                       <Badge variant={insurance.active ? 'default' : 'secondary'}>
                         {insurance.active ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
                     <TableCell>{insurance.agentName || '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditInsurance(insurance);
-                          }}
-                          disabled={disabled}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {onDeleteInsurance && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteTarget(insurance);
-                            }}
-                            disabled={disabled}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -230,18 +215,20 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
       <DeleteConfirmationDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
-        onConfirm={() => {
-          if (deleteTarget && onDeleteInsurance) {
-            onDeleteInsurance(deleteTarget);
-          }
-          setDeleteTarget(null);
-        }}
-        title="Delete Insurance"
-        description="Are you sure you want to delete this insurance record? This action cannot be undone."
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selectedCount} Insurance Records`}
+        description={`Are you sure you want to delete ${selectedCount} selected insurance records? This action cannot be undone.`}
+      />
+
+      <GridExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        columns={EXPORT_COLUMNS}
+        data={insurances}
+        fileName="insurance"
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, RefreshCw, X } from 'lucide-react';
+import { Search, Filter, RefreshCw, X, Trash2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -32,6 +32,11 @@ interface GridToolbarProps {
   onClearFilters?: () => void;
   activeFilterCount?: number;
   disabled?: boolean;
+  // Bulk delete
+  selectedCount?: number;
+  onBulkDelete?: () => void;
+  // Export
+  onExport?: () => void;
 }
 
 export const GridToolbar: React.FC<GridToolbarProps> = ({
@@ -44,6 +49,9 @@ export const GridToolbar: React.FC<GridToolbarProps> = ({
   onClearFilters,
   activeFilterCount = 0,
   disabled = false,
+  selectedCount = 0,
+  onBulkDelete,
+  onExport,
 }) => {
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -131,6 +139,34 @@ export const GridToolbar: React.FC<GridToolbarProps> = ({
             </div>
           </PopoverContent>
         </Popover>
+      )}
+
+      {/* Bulk Delete */}
+      {onBulkDelete && selectedCount > 0 && (
+        <Button
+          variant="destructive"
+          size="sm"
+          className="h-8 gap-1 text-xs"
+          onClick={onBulkDelete}
+          disabled={disabled}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          Delete ({selectedCount})
+        </Button>
+      )}
+
+      {/* Export */}
+      {onExport && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1 text-xs"
+          onClick={onExport}
+          disabled={disabled}
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export
+        </Button>
       )}
 
       {/* Refresh */}
