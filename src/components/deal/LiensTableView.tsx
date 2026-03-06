@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, ArrowLeft, Trash2 } from 'lucide-react';
+import { Plus, ArrowLeft } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { GridToolbar } from './GridToolbar';
+import { GridExportDialog, ExportColumn } from './GridExportDialog';
+import { SortableTableHead } from './SortableTableHead';
+import { useGridSortFilter } from '@/hooks/useGridSortFilter';
+import { useGridSelection } from '@/hooks/useGridSelection';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 
 export interface LienData {
@@ -54,30 +55,73 @@ interface LiensTableViewProps {
   onEditLien: (lien: LienData) => void;
   onRowClick: (lien: LienData) => void;
   onDeleteLien?: (lien: LienData) => void;
+  onBulkDelete?: (liens: LienData[]) => void;
+  onRefresh?: () => void;
   onBack?: () => void;
   disabled?: boolean;
 }
 
+const SEARCHABLE_FIELDS = ['property', 'holder', 'loanType', 'lienPriorityNow', 'lienPriorityAfter', 'recordingNumber', 'lastVerified'];
+
+const FILTER_OPTIONS = [
+  {
+    id: 'loanType',
+    label: 'Loan Type',
+    options: [
+      { value: 'conventional', label: 'Conventional' },
+      { value: 'fha', label: 'FHA' },
+      { value: 'va', label: 'VA' },
+      { value: 'heloc', label: 'HELOC' },
+      { value: 'commercial', label: 'Commercial' },
+    ],
+  },
+];
+
+const EXPORT_COLUMNS: ExportColumn[] = [
+  { id: 'property', label: 'Related Property' },
+  { id: 'holder', label: 'Lien Holder' },
+  { id: 'loanType', label: 'Loan Type' },
+  { id: 'lienPriorityNow', label: 'Lien Priority Now' },
+  { id: 'lienPriorityAfter', label: 'Lien Priority After' },
+  { id: 'interestRate', label: 'Interest Rate' },
+  { id: 'originalBalance', label: 'Original Balance' },
+  { id: 'balanceAfter', label: 'Balance After' },
+  { id: 'regularPayment', label: 'Regular Payment' },
+  { id: 'recordingNumber', label: 'Recording Number' },
+  { id: 'lastVerified', label: 'Last Verified' },
+];
+
 export const LiensTableView: React.FC<LiensTableViewProps> = ({
-  liens,
-  onAddLien,
-  onEditLien,
-  onRowClick,
-  onDeleteLien,
-  onBack,
-  disabled = false,
+  liens, onAddLien, onEditLien, onRowClick, onDeleteLien, onBulkDelete, onRefresh, onBack, disabled = false,
 }) => {
-  const [deleteTarget, setDeleteTarget] = useState<LienData | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+
+  const {
+    searchQuery, setSearchQuery, sortState, toggleSort,
+    activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
+  } = useGridSortFilter(liens, SEARCHABLE_FIELDS);
+
+  const {
+    selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
+    isAllSelected, isSomeSelected, selectedCount,
+  } = useGridSelection(filteredData);
 
   const formatCurrency = (value: string) => {
     if (!value) return '';
     const num = parseFloat(value.replace(/[^0-9.-]/g, ''));
     if (isNaN(num)) return value;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(num);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(num);
+  };
+
+  const handleBulkDelete = () => {
+    if (onBulkDelete) {
+      onBulkDelete(selectedItems);
+    } else if (onDeleteLien) {
+      selectedItems.forEach((l) => onDeleteLien(l));
+    }
+    clearSelection();
+    setBulkDeleteOpen(false);
   };
 
   return (
@@ -85,27 +129,34 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           {onBack && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBack}
-              className="gap-1 h-8"
-            >
+            <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 h-8">
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
           )}
           <h3 className="text-lg font-semibold text-foreground">Liens</h3>
         </div>
-        <Button
-          size="sm"
-          onClick={onAddLien}
-          disabled={disabled}
-          className="gap-1"
-        >
+        <Button size="sm" onClick={onAddLien} disabled={disabled} className="gap-1">
           <Plus className="h-4 w-4" />
           Add Lien
         </Button>
+      </div>
+
+      <div className="mb-3">
+        <GridToolbar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onRefresh={onRefresh}
+          filterOptions={FILTER_OPTIONS}
+          activeFilters={activeFilters}
+          onFilterChange={setFilter}
+          onClearFilters={clearFilters}
+          activeFilterCount={activeFilterCount}
+          disabled={disabled}
+          selectedCount={selectedCount}
+          onBulkDelete={() => setBulkDeleteOpen(true)}
+          onExport={() => setExportOpen(true)}
+        />
       </div>
 
       <div className="border border-border rounded-lg overflow-hidden">
@@ -113,83 +164,46 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="min-w-[120px]">Related Property</TableHead>
-                <TableHead className="min-w-[100px]">Lien Holder</TableHead>
-                <TableHead className="min-w-[100px]">Loan Type</TableHead>
-                <TableHead className="min-w-[80px]">Lien Priority Now</TableHead>
-                <TableHead className="min-w-[80px]">Lien Priority After</TableHead>
-                <TableHead className="min-w-[100px]">Interest Rate</TableHead>
-                <TableHead className="min-w-[120px] text-right">Original Balance</TableHead>
-                <TableHead className="min-w-[120px] text-right">Balance After</TableHead>
-                <TableHead className="min-w-[120px] text-right">Regular Payment</TableHead>
-                <TableHead className="min-w-[100px]">Recording Number</TableHead>
-                <TableHead className="min-w-[100px]">Last Verified</TableHead>
-                <TableHead className="w-10">Action</TableHead>
+                <TableHead className="w-[40px]">
+                  <Checkbox checked={isAllSelected} onCheckedChange={() => toggleAll()} aria-label="Select all" />
+                </TableHead>
+                <SortableTableHead columnId="property" label="Related Property" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
+                <SortableTableHead columnId="holder" label="Lien Holder" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
+                <SortableTableHead columnId="loanType" label="Loan Type" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
+                <SortableTableHead columnId="lienPriorityNow" label="Lien Priority Now" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[80px]" />
+                <SortableTableHead columnId="lienPriorityAfter" label="Lien Priority After" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[80px]" />
+                <SortableTableHead columnId="interestRate" label="Interest Rate" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
+                <SortableTableHead columnId="originalBalance" label="Original Balance" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px] text-right" />
+                <SortableTableHead columnId="balanceAfter" label="Balance After" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px] text-right" />
+                <SortableTableHead columnId="regularPayment" label="Regular Payment" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px] text-right" />
+                <SortableTableHead columnId="recordingNumber" label="Recording Number" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
+                <SortableTableHead columnId="lastVerified" label="Last Verified" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {liens.length === 0 ? (
+              {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
                     No liens added. Click "Add Lien" to create one.
                   </TableCell>
                 </TableRow>
               ) : (
-                liens.map((lien) => (
-                  <TableRow
-                    key={lien.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => onRowClick(lien)}
-                  >
-                    <TableCell className="font-medium">
-                      {lien.property || 'Unassigned'}
+                filteredData.map((lien) => (
+                  <TableRow key={lien.id} className="cursor-pointer hover:bg-muted/50" onClick={() => onRowClick(lien)}>
+                    <TableCell onClick={(e) => e.stopPropagation()} className="w-[40px]">
+                      <Checkbox checked={selectedIds.has(lien.id)} onCheckedChange={() => toggleOne(lien.id)} aria-label={`Select lien`} />
                     </TableCell>
+                    <TableCell className="font-medium">{lien.property || 'Unassigned'}</TableCell>
                     <TableCell>{lien.holder || '-'}</TableCell>
                     <TableCell>{lien.loanType || '-'}</TableCell>
                     <TableCell>{lien.lienPriorityNow || '-'}</TableCell>
                     <TableCell>{lien.lienPriorityAfter || '-'}</TableCell>
                     <TableCell>{lien.interestRate ? `${lien.interestRate}%` : '-'}</TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(lien.originalBalance) || '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(lien.balanceAfter) || '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {formatCurrency(lien.regularPayment) || '-'}
-                    </TableCell>
+                    <TableCell className="text-right">{formatCurrency(lien.originalBalance) || '-'}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(lien.balanceAfter) || '-'}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(lien.regularPayment) || '-'}</TableCell>
                     <TableCell>{lien.recordingNumber || '-'}</TableCell>
                     <TableCell>{lien.lastVerified || '-'}</TableCell>
-                    <TableCell className="w-10">
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditLien(lien);
-                          }}
-                          disabled={disabled}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {onDeleteLien && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteTarget(lien);
-                            }}
-                            disabled={disabled}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -197,18 +211,21 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
           </Table>
         </div>
       </div>
-      {/* Delete Confirmation Dialog */}
+
       <DeleteConfirmationDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
-        onConfirm={() => {
-          if (deleteTarget && onDeleteLien) {
-            onDeleteLien(deleteTarget);
-          }
-          setDeleteTarget(null);
-        }}
-        title="Delete Lien"
-        description="Are you sure you want to delete this lien? This action cannot be undone."
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        onConfirm={handleBulkDelete}
+        title="Delete Selected Liens"
+        description={`Are you sure you want to delete ${selectedCount} selected lien(s)? This action cannot be undone.`}
+      />
+
+      <GridExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        columns={EXPORT_COLUMNS}
+        data={filteredData}
+        fileName="liens_export"
       />
     </div>
   );

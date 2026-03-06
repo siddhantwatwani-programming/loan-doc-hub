@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { GridToolbar } from './GridToolbar';
+import { GridExportDialog, ExportColumn } from './GridExportDialog';
+import { SortableTableHead } from './SortableTableHead';
+import { useGridSortFilter } from '@/hooks/useGridSortFilter';
+import { useGridSelection } from '@/hooks/useGridSelection';
 
 export interface BrokerData {
   id: string;
@@ -37,6 +38,8 @@ interface BrokersTableViewProps {
   onEditBroker: (broker: BrokerData) => void;
   onRowClick: (broker: BrokerData) => void;
   onDeleteBroker?: (broker: BrokerData) => void;
+  onBulkDelete?: (brokers: BrokerData[]) => void;
+  onRefresh?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
   currentPage?: number;
@@ -55,12 +58,16 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'phoneCell', label: 'Cell Phone', visible: true },
 ];
 
+const SEARCHABLE_FIELDS = ['brokerId', 'license', 'company', 'firstName', 'lastName', 'email', 'street', 'city', 'state', 'phoneWork', 'phoneCell'];
+
 export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
   brokers,
   onAddBroker,
   onEditBroker,
   onRowClick,
   onDeleteBroker,
+  onBulkDelete,
+  onRefresh,
   disabled = false,
   isLoading = false,
   currentPage = 1,
@@ -68,8 +75,19 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
   onPageChange,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig('brokers', DEFAULT_COLUMNS);
-  const [deleteTarget, setDeleteTarget] = useState<BrokerData | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const visibleColumns = columns.filter((col) => col.visible);
+
+  const {
+    searchQuery, setSearchQuery, sortState, toggleSort,
+    activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
+  } = useGridSortFilter(brokers, SEARCHABLE_FIELDS);
+
+  const {
+    selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
+    isAllSelected, isSomeSelected, selectedCount,
+  } = useGridSelection(filteredData);
 
   const getFullName = (broker: BrokerData): string => {
     const parts = [broker.firstName, broker.middleName, broker.lastName].filter(Boolean);
@@ -83,63 +101,78 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
 
   const renderCellValue = (broker: BrokerData, columnId: string) => {
     switch (columnId) {
-      case 'brokerId':
-        return <span className="font-medium">{broker.brokerId || '-'}</span>;
-      case 'license':
-        return broker.license || '-';
-      case 'company':
-        return broker.company || '-';
-      case 'name':
-        return getFullName(broker);
-      case 'email':
-        return broker.email || '-';
-      case 'address':
-        return <span className="max-w-[200px] truncate block">{getAddress(broker)}</span>;
-      case 'phoneWork':
-        return broker.phoneWork || '-';
-      case 'phoneCell':
-        return broker.phoneCell || '-';
-      default:
-        return '-';
+      case 'brokerId': return <span className="font-medium">{broker.brokerId || '-'}</span>;
+      case 'license': return broker.license || '-';
+      case 'company': return broker.company || '-';
+      case 'name': return getFullName(broker);
+      case 'email': return broker.email || '-';
+      case 'address': return <span className="max-w-[200px] truncate block">{getAddress(broker)}</span>;
+      case 'phoneWork': return broker.phoneWork || '-';
+      case 'phoneCell': return broker.phoneCell || '-';
+      default: return '-';
     }
+  };
+
+  const exportColumns: ExportColumn[] = DEFAULT_COLUMNS.map((c) => ({ id: c.id, label: c.label }));
+
+  const handleBulkDelete = () => {
+    if (onBulkDelete) {
+      onBulkDelete(selectedItems);
+    } else if (onDeleteBroker) {
+      selectedItems.forEach((b) => onDeleteBroker(b));
+    }
+    clearSelection();
+    setBulkDeleteOpen(false);
   };
 
   return (
     <div className="p-6 space-y-4">
-      {/* Header with title and actions */}
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-lg text-foreground">Brokers</h3>
         <div className="flex items-center gap-2">
-          <ColumnConfigPopover
-            columns={columns}
-            onColumnsChange={setColumns}
-            onResetColumns={resetColumns}
-            disabled={disabled}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onAddBroker}
-            disabled={disabled}
-            className="gap-1"
-          >
+          <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} disabled={disabled} />
+          <Button variant="outline" size="sm" onClick={onAddBroker} disabled={disabled} className="gap-1">
             <Plus className="h-4 w-4" />
             Add Broker
           </Button>
         </div>
       </div>
 
-      {/* Brokers Table */}
+      <GridToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onRefresh={onRefresh}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        activeFilterCount={activeFilterCount}
+        disabled={disabled}
+        selectedCount={selectedCount}
+        onBulkDelete={() => setBulkDeleteOpen(true)}
+        onExport={() => setExportOpen(true)}
+      />
+
       <div className="border border-border rounded-lg overflow-x-auto">
         <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={isAllSelected}
+                  onCheckedChange={() => toggleAll()}
+                  aria-label="Select all"
+                />
+              </TableHead>
               {visibleColumns.map((col) => (
-                <TableHead key={col.id}>
-                  {col.label.toUpperCase()}
-                </TableHead>
+                <SortableTableHead
+                  key={col.id}
+                  columnId={col.id}
+                  label={col.label}
+                  sortColumnId={sortState.columnId}
+                  sortDirection={sortState.direction}
+                  onSort={toggleSort}
+                />
               ))}
-              <TableHead className="w-[80px]">ACTIONS</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -153,48 +186,31 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
                   ))}
                 </TableRow>
               ))
-            ) : brokers.length === 0 ? (
+            ) : filteredData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
                   No brokers added. Click "Add Broker" to add one.
                 </TableCell>
               </TableRow>
             ) : (
-              brokers.map((broker) => (
+              filteredData.map((broker) => (
                 <TableRow
                   key={broker.id}
                   className="cursor-pointer hover:bg-muted/30"
                   onClick={() => onRowClick(broker)}
                 >
+                  <TableCell onClick={(e) => e.stopPropagation()} className="w-[40px]">
+                    <Checkbox
+                      checked={selectedIds.has(broker.id)}
+                      onCheckedChange={() => toggleOne(broker.id)}
+                      aria-label={`Select broker ${broker.brokerId}`}
+                    />
+                  </TableCell>
                   {visibleColumns.map((col) => (
                     <TableCell key={col.id}>
                       {renderCellValue(broker, col.id)}
                     </TableCell>
                   ))}
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEditBroker(broker)}
-                        disabled={disabled}
-                        className="h-8 w-8"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      {onDeleteBroker && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteTarget(broker)}
-                          disabled={disabled}
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -202,54 +218,36 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
         </Table>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages}
-          </div>
+          <div className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange?.(currentPage - 1)}
-              disabled={currentPage <= 1 || disabled}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange?.(currentPage + 1)}
-              disabled={currentPage >= totalPages || disabled}
-            >
-              Next
-            </Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage - 1)} disabled={currentPage <= 1 || disabled}>Previous</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage + 1)} disabled={currentPage >= totalPages || disabled}>Next</Button>
           </div>
         </div>
       )}
 
-      {/* Footer with totals */}
       {brokers.length > 0 && (
         <div className="flex justify-end">
-          <div className="text-sm text-muted-foreground">
-            Total Brokers: {brokers.length}
-          </div>
+          <div className="text-sm text-muted-foreground">Total Brokers: {brokers.length}</div>
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
       <DeleteConfirmationDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
-        onConfirm={() => {
-          if (deleteTarget && onDeleteBroker) {
-            onDeleteBroker(deleteTarget);
-          }
-          setDeleteTarget(null);
-        }}
-        title="Delete Broker"
-        description="Are you sure you want to delete this broker? This action cannot be undone."
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        onConfirm={handleBulkDelete}
+        title="Delete Selected Brokers"
+        description={`Are you sure you want to delete ${selectedCount} selected broker(s)? This action cannot be undone.`}
+      />
+
+      <GridExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        columns={exportColumns}
+        data={filteredData}
+        fileName="brokers_export"
       />
     </div>
   );
