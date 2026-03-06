@@ -578,9 +578,13 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
     const results = runCalculations(calculatedFieldsList, values);
     setCalculationResults(results);
     
-    // Merge computed values
+    // Merge computed values — only update state if values actually changed
     const newValues = mergeCalculatedValues(values, results);
-    setValues(newValues);
+    const hasChanges = Object.keys(newValues).length !== Object.keys(values).length ||
+      Object.keys(newValues).some(k => newValues[k] !== values[k]);
+    if (hasChanges) {
+      setValues(newValues);
+    }
     
     return newValues;
   }, [resolvedFields, calculatedFieldsList, values]);
