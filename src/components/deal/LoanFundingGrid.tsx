@@ -250,8 +250,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                 filteredData.map((record) => (
                   <TableRow
                     key={record.id}
-                    className={cn('cursor-pointer hover:bg-muted/30', selectedRecord?.id === record.id && 'bg-primary/10')}
-                    onClick={() => handleRowClick(record)}
+                    className={cn(!disabled && 'cursor-pointer hover:bg-muted/30', selectedRecord?.id === record.id && 'bg-primary/10')}
+                    onClick={() => !disabled && handleRowClick(record)}
                   >
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selectedIds.has(record.id)} onCheckedChange={() => toggleOne(record.id)} />
