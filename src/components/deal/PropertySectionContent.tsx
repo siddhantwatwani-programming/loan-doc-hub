@@ -321,6 +321,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             onRowClick={handleRowClick}
             onPrimaryChange={handlePrimaryChange}
             onDeleteProperty={handleDeleteProperty}
+            onRefresh={onRefresh}
             disabled={disabled}
           />
         );

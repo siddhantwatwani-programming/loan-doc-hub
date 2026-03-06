@@ -270,6 +270,7 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
             onRowClick={handleRowClick}
             onPrimaryChange={handlePrimaryChange}
             onDeleteLender={handleDeleteLender}
+            onRefresh={onRefresh}
             disabled={disabled}
             isLoading={isLoading}
           />

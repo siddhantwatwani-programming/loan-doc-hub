@@ -125,6 +125,7 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
         onRowClick={handleRowClick}
         onDeleteNote={handleDeleteNote}
         onExport={handleExport}
+        onRefresh={onRefresh}
         disabled={disabled}
         asOfFilter={asOfFilter}
         onAsOfFilterChange={setAsOfFilter}

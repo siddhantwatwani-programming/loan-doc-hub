@@ -222,6 +222,7 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
             onEditBroker={handleEditBroker}
             onRowClick={handleRowClick}
             onDeleteBroker={handleDeleteBroker}
+            onRefresh={onRefresh}
             disabled={disabled}
             isLoading={isLoading}
           />

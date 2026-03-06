@@ -234,6 +234,7 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
             onEditCharge={handleEditCharge}
             onRowClick={handleRowClick}
             onDeleteCharge={handleDeleteCharge}
+            onRefresh={onRefresh}
             disabled={disabled}
             isLoading={isLoading}
           />
