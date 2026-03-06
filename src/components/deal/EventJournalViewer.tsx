@@ -94,6 +94,19 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
     queryClient.invalidateQueries({ queryKey: ['event-journal', dealId] });
   };
 
+  const handleBulkDelete = async () => {
+    const ids = selectedItems.map((e) => e.id);
+    const { error } = await supabase.from('event_journal').delete().in('id', ids);
+    if (error) {
+      toast.error('Failed to delete events');
+    } else {
+      toast.success(`Deleted ${ids.length} event(s)`);
+      queryClient.invalidateQueries({ queryKey: ['event-journal', dealId] });
+    }
+    clearSelection();
+    setBulkDeleteOpen(false);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
