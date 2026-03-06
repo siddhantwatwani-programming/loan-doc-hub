@@ -905,7 +905,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
       }
       return false;
     } finally {
-      setSaving(false);
+      if (!silent) setSaving(false);
     }
   }, [dealId, values, fieldDataTypes, fieldIdMap, resolvedFields, computeCalculatedFields, deletedPrefixes, toast]);
 
