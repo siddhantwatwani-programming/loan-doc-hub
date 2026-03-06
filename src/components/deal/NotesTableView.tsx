@@ -189,6 +189,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
         selectedCount={selectedCount}
         onBulkDelete={() => setBulkDeleteOpen(true)}
         onExport={() => setExportOpen(true)}
+        searchPlaceholder="Search conversations..."
       />
 
       {/* Table */}
