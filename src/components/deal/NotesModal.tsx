@@ -71,17 +71,20 @@ export const NotesModal: React.FC<NotesModalProps> = ({
 
   const asOfDateObj = formData.asOfDate ? (() => {
     try {
-      const d = new Date(formData.asOfDate + 'T00:00:00');
+      const d = new Date(formData.asOfDate);
       return isNaN(d.getTime()) ? undefined : d;
     } catch { return undefined; }
   })() : undefined;
 
   const handleAsOfDateSelect = (date: Date | undefined) => {
     if (date) {
-      const mm = String(date.getMonth() + 1).padStart(2, '0');
-      const dd = String(date.getDate()).padStart(2, '0');
-      const yyyy = date.getFullYear();
-      setFormData(prev => ({ ...prev, asOfDate: `${yyyy}-${mm}-${dd}` }));
+      // Preserve existing time portion if present, otherwise use current time
+      const existing = formData.asOfDate ? new Date(formData.asOfDate) : new Date();
+      const hasValidTime = !isNaN(existing.getTime());
+      date.setHours(hasValidTime ? existing.getHours() : new Date().getHours());
+      date.setMinutes(hasValidTime ? existing.getMinutes() : new Date().getMinutes());
+      date.setSeconds(hasValidTime ? existing.getSeconds() : new Date().getSeconds());
+      setFormData(prev => ({ ...prev, asOfDate: date.toISOString() }));
     } else {
       setFormData(prev => ({ ...prev, asOfDate: '' }));
     }
@@ -90,9 +93,9 @@ export const NotesModal: React.FC<NotesModalProps> = ({
   const formatAsOfDisplay = (isoDate: string) => {
     if (!isoDate) return '';
     try {
-      const d = new Date(isoDate + 'T00:00:00');
+      const d = new Date(isoDate);
       if (isNaN(d.getTime())) return isoDate;
-      return format(d, 'MM/dd/yyyy');
+      return formatDateTimeDisplay(isoDate);
     } catch { return isoDate; }
   };
 
