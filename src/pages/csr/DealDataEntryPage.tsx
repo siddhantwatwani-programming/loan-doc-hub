@@ -866,7 +866,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
 
               {/* Origination Fees - Custom UI Tab (always visible for internal users) */}
               {isInternalUser && (
-                <TabsTrigger value="origination_fees" className="gap-2 data-[state=active]:bg-background relative">
+                <TabsTrigger value="origination_fees" className={cn("gap-2 data-[state=active]:bg-background relative", Array.from(dirtyFieldKeys).some(k => k.match(/^origination\./)) && "bg-warning/10 ring-1 ring-warning/30")}>
                   {SECTION_LABELS["origination_fees"]}
                 </TabsTrigger>
               )}
