@@ -70,7 +70,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'created_at', label: 'Timestamp' },
 ];
 
-export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId }) => {
+export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, disabled = false }) => {
   const { data: entries, isLoading } = useEventJournalEntries(dealId);
   const [selectedEntry, setSelectedEntry] = useState<EventJournalEntry | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
