@@ -1023,7 +1023,8 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
     setIsDirty(false);
     setDirtyFieldKeys(new Set());
     setRequiredFieldChanged(false);
-  }, []);
+    clearSessionCache(dealId);
+  }, [dealId]);
 
   return {
     fields: resolvedFields?.fields || [],
