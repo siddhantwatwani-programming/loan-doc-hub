@@ -833,6 +833,15 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                     notes: ['note'],
                   };
                   const prefixes = SECTION_PREFIX_MAP[section] || [];
+
+                  // For virtual tabs (funding, escrow) that share loan_terms fields
+                  const SECTION_FIELD_FALLBACK: Record<string, FieldSection> = {
+                    funding: 'loan_terms' as FieldSection,
+                    escrow: 'loan_terms' as FieldSection,
+                  };
+                  const fallbackSection = SECTION_FIELD_FALLBACK[section];
+                  const fallbackFields = fallbackSection ? (isExternalUser ? visibleFieldsBySection[fallbackSection] || [] : fieldsBySection[fallbackSection] || []) : [];
+                  const fallbackHasDirty = fallbackFields.some((f) => dirtyFieldKeys.has(f.field_key));
                   const sectionHasPrefixedDirty = prefixes.length > 0 && Array.from(dirtyFieldKeys).some(key => 
                     prefixes.some(p => key.match(new RegExp(`^${p}\\d+\\.`)))
                   );
