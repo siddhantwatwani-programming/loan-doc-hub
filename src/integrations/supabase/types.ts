@@ -698,6 +698,56 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          attachments: Json | null
+          body: string
+          created_at: string
+          deal_id: string | null
+          error_message: string | null
+          id: string
+          message_type: string
+          recipients: Json
+          sender_id: string
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          body: string
+          created_at?: string
+          deal_id?: string | null
+          error_message?: string | null
+          id?: string
+          message_type?: string
+          recipients?: Json
+          sender_id: string
+          status?: string
+          subject?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          body?: string
+          created_at?: string
+          deal_id?: string | null
+          error_message?: string | null
+          id?: string
+          message_type?: string
+          recipients?: Json
+          sender_id?: string
+          status?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       packet_templates: {
         Row: {
           created_at: string
