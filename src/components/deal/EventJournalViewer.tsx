@@ -16,6 +16,9 @@ import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { toast } from 'sonner';
 
 interface EventJournalViewerProps {
   dealId: string;
@@ -81,14 +84,27 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
     activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
   } = useGridSortFilter(entries || [], SEARCH_FIELDS);
 
-  // Event journal is read-only, selection is for export reference only
   const {
-    selectedIds, toggleOne, toggleAll,
-    isAllSelected, isSomeSelected,
+    selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
+    isAllSelected, isSomeSelected, selectedCount,
   } = useGridSelection(filteredData);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['event-journal', dealId] });
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = selectedItems.map((e) => e.id);
+    const { error } = await supabase.from('event_journal').delete().in('id', ids);
+    if (error) {
+      toast.error('Failed to delete events');
+    } else {
+      toast.success(`Deleted ${ids.length} event(s)`);
+      queryClient.invalidateQueries({ queryKey: ['event-journal', dealId] });
+    }
+    clearSelection();
+    setBulkDeleteOpen(false);
   };
 
   if (isLoading) {
@@ -124,6 +140,8 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
         disabled={disabled}
+        selectedCount={selectedCount}
+        onBulkDelete={() => setBulkDeleteOpen(true)}
         onExport={() => setExportOpen(true)}
       />
 
@@ -206,6 +224,14 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
           {selectedEntry && formatDetailsFull(selectedEntry.details)}
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmationDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selectedCount} Event(s)`}
+        description={`Are you sure you want to delete ${selectedCount} selected event journal entries? This action cannot be undone.`}
+      />
 
       <GridExportDialog
         open={exportOpen}
