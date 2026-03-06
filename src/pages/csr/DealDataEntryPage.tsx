@@ -135,9 +135,11 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
     }
   }, [isActive, hasEverBeenActive]);
 
-  // Fetch deal info - deferred until tab is active
+  // Fetch deal info - deferred until tab is first active, then never refetched
+  const hasFetchedDealRef = useRef(false);
   useEffect(() => {
-    if (id && (isActive || hasEverBeenActive)) {
+    if (id && (isActive || hasEverBeenActive) && !hasFetchedDealRef.current) {
+      hasFetchedDealRef.current = true;
       fetchDeal();
     }
   }, [id, isActive, hasEverBeenActive]);
