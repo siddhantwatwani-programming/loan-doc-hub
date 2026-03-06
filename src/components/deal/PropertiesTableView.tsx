@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -166,13 +166,9 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   const renderCellValue = (property: PropertyData, columnId: string) => {
     switch (columnId) {
       case 'isPrimary':
-        return (
-          <Checkbox
-            checked={property.isPrimary}
-            onCheckedChange={(checked) => onPrimaryChange(property.id, !!checked)}
-            disabled={disabled}
-          />
-        );
+        return property.isPrimary ? (
+          <Check className="h-4 w-4 text-primary" />
+        ) : null;
       case 'appraisedValue':
         return formatCurrency(property.appraisedValue);
       case 'ltv':

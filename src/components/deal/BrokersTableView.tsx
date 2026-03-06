@@ -7,6 +7,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
+import { FilterOption } from './GridToolbar';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { GridToolbar } from './GridToolbar';
@@ -59,6 +60,27 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
 ];
 
 const SEARCHABLE_FIELDS = ['brokerId', 'license', 'company', 'firstName', 'lastName', 'email', 'street', 'city', 'state', 'phoneWork', 'phoneCell'];
+
+const FILTER_OPTIONS: FilterOption[] = [
+  {
+    id: 'state',
+    label: 'State',
+    options: [
+      { value: 'CA', label: 'California' },
+      { value: 'TX', label: 'Texas' },
+      { value: 'FL', label: 'Florida' },
+      { value: 'NY', label: 'New York' },
+      { value: 'WA', label: 'Washington' },
+    ],
+  },
+  {
+    id: 'company',
+    label: 'Company',
+    options: [
+      { value: 'all', label: 'All' },
+    ],
+  },
+];
 
 export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
   brokers,
@@ -142,6 +164,7 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onRefresh={onRefresh}
+        filterOptions={FILTER_OPTIONS}
         activeFilters={activeFilters}
         onFilterChange={setFilter}
         onClearFilters={clearFilters}
