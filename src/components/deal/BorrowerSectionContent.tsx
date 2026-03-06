@@ -830,6 +830,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
         onRowClick={(entry) => { setEditingTrustLedgerEntry(entry); setTrustLedgerModalOpen(true); }}
         onDeleteEntry={handleDeleteTrustLedgerEntry}
         disabled={disabled}
+        onRefresh={onRefresh}
       />
       <TrustLedgerModal
         open={trustLedgerModalOpen}
