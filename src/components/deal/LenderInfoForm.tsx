@@ -257,7 +257,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>)}
 
-            <div className="flex items-center gap-3">
+            {wrapField('type', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Lender Type</Label>
               <Select
                 value={getValue('type')}
@@ -275,9 +275,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div>)}
 
-            <div className="flex items-center gap-3">
+            {wrapField('capacity', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Capacity</Label>
               <Select
                 value={getValue('capacity')}
@@ -295,9 +295,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div>)}
 
-            <div className="flex items-start gap-3">
+            {wrapField('fullName', <div className="flex items-start gap-3">
               <div className="min-w-[140px] shrink-0 pt-1">
                 <Label className="text-sm text-muted-foreground text-left">Full Name:</Label>
                 <p className="text-[10px] text-muted-foreground/70 leading-tight">If Entity, Use Entity</p>
@@ -308,9 +308,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
             
-            <div className="flex items-start gap-3">
+            {wrapField('firstName', <div className="flex items-start gap-3">
               <div className="min-w-[140px] shrink-0 pt-1">
                 <Label className="text-sm text-muted-foreground text-left">First:</Label>
                 <p className="text-[10px] text-muted-foreground/70 leading-tight">If Entity, Use Signer</p>
@@ -321,9 +321,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
             
-            <div className="flex items-center gap-3">
+            {wrapField('middleName', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Middle</Label>
               <Input
                 value={getValue('middleName')}
@@ -331,9 +331,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
             
-            <div className="flex items-center gap-3">
+            {wrapField('lastName', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Last</Label>
               <Input
                 value={getValue('lastName')}
@@ -341,9 +341,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
             
-            <div className="flex items-center gap-3">
+            {wrapField('email', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Email</Label>
               <Input
                 type="email"
@@ -352,10 +352,10 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
                 className="h-8"
               />
-            </div>
+            </div>)}
 
             {/* DOB */}
-            <div className="flex items-center gap-3">
+            {wrapField('dob', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">DOB</Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -381,11 +381,11 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   />
                 </PopoverContent>
               </Popover>
-            </div>
+            </div>)}
 
             {/* Tax ID Section */}
             <div className="space-y-3 mt-2">
-              <div className="flex items-center gap-3">
+              {wrapField('taxIdType', <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Tax ID Type</Label>
                 <Select
                   value={getValue('taxIdType')}
@@ -403,8 +403,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="flex items-center gap-3">
+              </div>)}
+              {wrapField('taxId', <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">TIN</Label>
                 <Input
                   value={getValue('taxId')}
@@ -412,15 +412,15 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   disabled={disabled}
                   className="h-8"
                 />
-              </div>
-              <div className="flex items-center gap-2">
+              </div>)}
+              {wrapField('tinVerified', <div className="flex items-center gap-2">
                 <Checkbox
                   checked={getBoolValue('tinVerified')}
                   onCheckedChange={(checked) => handleChange('tinVerified', !!checked)}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground font-semibold">TIN Verified</Label>
-              </div>
+              </div>)}
             </div>
           </div>
         </div>
