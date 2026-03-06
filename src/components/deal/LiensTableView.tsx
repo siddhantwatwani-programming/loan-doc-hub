@@ -164,9 +164,9 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <SortableTableHead columnId="__select" label="" sortColumnId={null} sortDirection={null} onSort={() => toggleAll()} className="w-[40px]">
-                  <Checkbox checked={isAllSelected} ref={(el) => { if (el) (el as any).indeterminate = isSomeSelected; }} onCheckedChange={() => toggleAll()} aria-label="Select all" />
-                </SortableTableHead>
+                <TableHead className="w-[40px]">
+                  <Checkbox checked={isAllSelected} onCheckedChange={() => toggleAll()} aria-label="Select all" />
+                </TableHead>
                 <SortableTableHead columnId="property" label="Related Property" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
                 <SortableTableHead columnId="holder" label="Lien Holder" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
                 <SortableTableHead columnId="loanType" label="Loan Type" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />

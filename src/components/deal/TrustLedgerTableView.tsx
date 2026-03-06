@@ -277,9 +277,9 @@ export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
         <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <SortableTableHead columnId="__select" label="" sortColumnId={null} sortDirection={null} onSort={() => toggleAll()} className="w-[40px]">
-                <Checkbox checked={isAllSelected} ref={(el) => { if (el) (el as any).indeterminate = isSomeSelected; }} onCheckedChange={() => toggleAll()} aria-label="Select all" />
-              </SortableTableHead>
+              <TableHead className="w-[40px]">
+                <Checkbox checked={isAllSelected} onCheckedChange={() => toggleAll()} aria-label="Select all" />
+              </TableHead>
               {visibleColumns.map((col) => (
                 <SortableTableHead
                   key={col.id}
