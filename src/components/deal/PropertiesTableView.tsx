@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,6 +13,9 @@ import {
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { GridToolbar, FilterOption } from './GridToolbar';
+import { SortableTableHead } from './SortableTableHead';
+import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 
 export interface PropertyData {
   id: string;
@@ -35,7 +38,6 @@ export interface PropertyData {
   zoning?: string;
   performedBy?: string;
   copyBorrowerAddress?: boolean;
-  // Origination property fields
   purchasePrice?: string;
   downPayment?: string;
   delinquentTaxes?: string;
@@ -66,6 +68,7 @@ interface PropertiesTableViewProps {
   onRowClick: (property: PropertyData) => void;
   onPrimaryChange: (propertyId: string, isPrimary: boolean) => void;
   onDeleteProperty?: (property: PropertyData) => void;
+  onRefresh?: () => void;
   disabled?: boolean;
 }
 
@@ -84,6 +87,44 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'loanPriority', label: 'Priority', visible: true },
 ];
 
+const SEARCH_FIELDS = ['street', 'city', 'state', 'zipCode', 'county', 'propertyType', 'description', 'apn'];
+
+const FILTER_OPTIONS: FilterOption[] = [
+  {
+    id: 'propertyType',
+    label: 'Property Type',
+    options: [
+      { value: 'single_family', label: 'Single Family' },
+      { value: 'multi_family', label: 'Multi Family' },
+      { value: 'commercial', label: 'Commercial' },
+      { value: 'land', label: 'Land' },
+      { value: 'condo', label: 'Condo' },
+      { value: 'townhouse', label: 'Townhouse' },
+    ],
+  },
+  {
+    id: 'occupancy',
+    label: 'Occupancy',
+    options: [
+      { value: 'owner_occupied', label: 'Owner Occupied' },
+      { value: 'investment', label: 'Investment' },
+      { value: 'second_home', label: 'Second Home' },
+      { value: 'vacant', label: 'Vacant' },
+    ],
+  },
+  {
+    id: 'state',
+    label: 'State',
+    options: [
+      { value: 'CA', label: 'California' },
+      { value: 'TX', label: 'Texas' },
+      { value: 'FL', label: 'Florida' },
+      { value: 'NY', label: 'New York' },
+      { value: 'WA', label: 'Washington' },
+    ],
+  },
+];
+
 export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   properties,
   onAddProperty,
@@ -91,11 +132,17 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   onRowClick,
   onPrimaryChange,
   onDeleteProperty,
+  onRefresh,
   disabled = false,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig('properties', DEFAULT_COLUMNS);
   const [deleteTarget, setDeleteTarget] = useState<PropertyData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
+
+  const {
+    searchQuery, setSearchQuery, sortState, toggleSort,
+    activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
+  } = useGridSortFilter(properties, SEARCH_FIELDS);
 
   const formatCurrency = (value: string) => {
     if (!value) return '$0.00';
@@ -157,28 +204,52 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         </div>
       </div>
 
+      {/* Grid Toolbar */}
+      <GridToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onRefresh={onRefresh}
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        activeFilterCount={activeFilterCount}
+        disabled={disabled}
+      />
+
       {/* Properties Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
         <Table className="min-w-[1400px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               {visibleColumns.map((col) => (
-                <TableHead key={col.id} className={col.id === 'isPrimary' ? 'w-[80px]' : undefined}>
-                  {col.label.toUpperCase()}
-                </TableHead>
+                col.id === 'isPrimary' ? (
+                  <TableHead key={col.id} className="w-[80px]">{col.label.toUpperCase()}</TableHead>
+                ) : (
+                  <SortableTableHead
+                    key={col.id}
+                    columnId={col.id}
+                    label={col.label.toUpperCase()}
+                    sortColumnId={sortState.columnId}
+                    sortDirection={sortState.direction}
+                    onSort={toggleSort}
+                  />
+                )
               ))}
               <TableHead className="w-[80px]">ACTIONS</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {properties.length === 0 ? (
+            {filteredData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
-                  No properties added. Click "Add Property" to add one.
+                  {properties.length === 0
+                    ? 'No properties added. Click "Add Property" to add one.'
+                    : 'No properties match your search or filters.'}
                 </TableCell>
               </TableRow>
             ) : (
-              properties.map((property) => (
+              filteredData.map((property) => (
                 <TableRow
                   key={property.id}
                   className="cursor-pointer hover:bg-muted/30"
@@ -227,6 +298,7 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
       {properties.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
+            {filteredData.length !== properties.length && `Showing ${filteredData.length} of `}
             Total Properties: {properties.length} | 
             Total Appraised Value: {formatCurrency(
               properties.reduce((sum, p) => sum + (parseFloat(p.appraisedValue) || 0), 0).toString()

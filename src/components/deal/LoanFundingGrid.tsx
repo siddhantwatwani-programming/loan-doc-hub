@@ -23,6 +23,9 @@ import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { FundingHistoryDialog } from './FundingHistoryDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+import { GridToolbar, FilterOption } from './GridToolbar';
+import { SortableTableHead } from './SortableTableHead';
+import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'lenderAccount', label: 'Lender Account', visible: true },
@@ -56,6 +59,7 @@ interface LoanFundingGridProps {
   onAddFunding: (data: any) => void;
   onDeleteRecord?: (record: FundingRecord) => void;
   onUpdateRecord: (id: string, data: Partial<FundingRecord>) => void;
+  onRefresh?: () => void;
   isLoading?: boolean;
   currentPage: number;
   totalPages: number;
@@ -63,6 +67,8 @@ interface LoanFundingGridProps {
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
 }
+
+const SEARCH_FIELDS = ['lenderAccount', 'lenderName'];
 
 export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   dealId,
@@ -73,6 +79,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   onAddFunding,
   onDeleteRecord,
   onUpdateRecord,
+  onRefresh,
   isLoading = false,
   currentPage,
   totalPages,
@@ -87,6 +94,11 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const [editFundingData, setEditFundingData] = useState<FundingFormData | null>(null);
   const [columns, setColumns, resetColumns] = useTableColumnConfig('funding', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
+
+  const {
+    searchQuery, setSearchQuery, sortState, toggleSort,
+    activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
+  } = useGridSortFilter(fundingRecords, SEARCH_FIELDS);
 
   // Calculate totals
   const totalOwnership = fundingRecords.reduce((sum, r) => sum + r.pctOwned, 0);
@@ -189,6 +201,18 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         </div>
       </div>
 
+      {/* Grid Toolbar */}
+      <GridToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onRefresh={onRefresh}
+        filterOptions={[]}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        activeFilterCount={activeFilterCount}
+      />
+
       {/* Grid */}
       <div className="border border-border rounded-lg overflow-x-auto">
         {isLoading ? (
@@ -200,22 +224,33 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
             <TableHeader>
               <TableRow className="bg-muted/50">
                 {visibleColumns.map((col) => (
-                  <TableHead key={col.id}>
-                    {col.label.toUpperCase()}
-                  </TableHead>
+                  col.id === 'roundingError' ? (
+                    <TableHead key={col.id}>{col.label.toUpperCase()}</TableHead>
+                  ) : (
+                    <SortableTableHead
+                      key={col.id}
+                      columnId={col.id}
+                      label={col.label.toUpperCase()}
+                      sortColumnId={sortState.columnId}
+                      sortDirection={sortState.direction}
+                      onSort={toggleSort}
+                    />
+                  )
                 ))}
                 <TableHead className="w-[80px]">ACTIONS</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {fundingRecords.length === 0 ? (
+              {filteredData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={visibleColumns.length + 1} className="text-center text-muted-foreground py-8">
-                    No funding records found. Click "Add Funding" to add a new funding record.
+                    {fundingRecords.length === 0
+                      ? 'No funding records found. Click "Add Funding" to add a new funding record.'
+                      : 'No funding records match your search.'}
                   </TableCell>
                 </TableRow>
               ) : (
-                fundingRecords.map((record) => (
+                filteredData.map((record) => (
                   <TableRow
                     key={record.id}
                     className={cn(
@@ -287,7 +322,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                     if (col.id === 'regularPayment') {
                       return <TableCell key={col.id} className="text-right">{formatCurrency(totalPayment)}</TableCell>;
                     }
-                    // First two visible columns show "Totals:" label
                     if (idx === 0) {
                       return <TableCell key={col.id} className="text-right font-semibold">Totals:</TableCell>;
                     }
@@ -366,10 +400,11 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         </p>
       )}
 
-      {/* Footer with totals - Property style */}
+      {/* Footer with totals */}
       {fundingRecords.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
+            {filteredData.length !== fundingRecords.length && `Showing ${filteredData.length} of `}
             Total Funding Records: {fundingRecords.length} | 
             Total Funding Amount: {formatCurrency(totalFundingAmount)}
           </div>
@@ -390,7 +425,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         borrowerName={borrowerName}
         onSubmit={(data) => {
           if (selectedRecord) {
-            // Editing existing record
             onUpdateRecord(selectedRecord.id, {
               lenderAccount: data.lenderId,
               lenderName: data.lenderFullName,

@@ -8,6 +8,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { GridToolbar, FilterOption } from './GridToolbar';
+import { SortableTableHead } from './SortableTableHead';
+import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 
 export interface NoteData {
   id: string;
@@ -29,6 +32,7 @@ interface NotesTableViewProps {
   onRowClick: (note: NoteData) => void;
   onDeleteNote?: (note: NoteData) => void;
   onExport?: () => void;
+  onRefresh?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
   asOfFilter?: string;
@@ -45,6 +49,29 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'reference', label: 'Reference', visible: true },
 ];
 
+const SEARCH_FIELDS = ['name', 'account', 'reference', 'type', 'content', 'date'];
+
+const FILTER_OPTIONS: FilterOption[] = [
+  {
+    id: 'type',
+    label: 'Type',
+    options: [
+      { value: 'note', label: 'Note' },
+      { value: 'call', label: 'Call' },
+      { value: 'email', label: 'Email' },
+      { value: 'meeting', label: 'Meeting' },
+    ],
+  },
+  {
+    id: 'highPriority',
+    label: 'Priority',
+    options: [
+      { value: 'true', label: 'High Priority' },
+      { value: 'false', label: 'Normal' },
+    ],
+  },
+];
+
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '-';
   try {
@@ -58,12 +85,17 @@ const formatDate = (dateStr: string) => {
 };
 
 export const NotesTableView: React.FC<NotesTableViewProps> = ({
-  notes, onAddNote, onEditNote, onRowClick, onDeleteNote, onExport, disabled = false, isLoading = false,
+  notes, onAddNote, onEditNote, onRowClick, onDeleteNote, onExport, onRefresh, disabled = false, isLoading = false,
   asOfFilter, onAsOfFilterChange,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig('notes_v3', DEFAULT_COLUMNS);
   const [deleteTarget, setDeleteTarget] = useState<NoteData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
+
+  const {
+    searchQuery, setSearchQuery, sortState, toggleSort,
+    activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
+  } = useGridSortFilter(notes, SEARCH_FIELDS);
 
   const formatDateTime = (dateStr: string) => {
     if (!dateStr) return '-';
@@ -125,13 +157,33 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
         </div>
       </div>
 
+      {/* Grid Toolbar */}
+      <GridToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onRefresh={onRefresh}
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        activeFilterCount={activeFilterCount}
+        disabled={disabled}
+      />
+
       {/* Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
         <Table className="min-w-[600px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               {visibleColumns.map((col) => (
-                <TableHead key={col.id}>{col.label.toUpperCase()}</TableHead>
+                <SortableTableHead
+                  key={col.id}
+                  columnId={col.id}
+                  label={col.label.toUpperCase()}
+                  sortColumnId={sortState.columnId}
+                  sortDirection={sortState.direction}
+                  onSort={toggleSort}
+                />
               ))}
               <TableHead className="w-[80px]">ACTIONS</TableHead>
             </TableRow>
@@ -145,14 +197,16 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
                   ))}
                 </TableRow>
               ))
-            ) : notes.length === 0 ? (
+            ) : filteredData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
-                  No conversation logs added. Click "Add Conversation Logs" to add one.
+                  {notes.length === 0
+                    ? 'No conversation logs added. Click "Add Conversation Logs" to add one.'
+                    : 'No conversation logs match your search or filters.'}
                 </TableCell>
               </TableRow>
             ) : (
-              notes.map((note) => (
+              filteredData.map((note) => (
                 <TableRow key={note.id} className="cursor-pointer hover:bg-muted/30" onClick={() => onRowClick(note)}>
                   {visibleColumns.map((col) => (
                     <TableCell key={col.id}>{renderCellValue(note, col.id)}</TableCell>
@@ -179,7 +233,10 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
       {/* Footer */}
       {notes.length > 0 && (
         <div className="flex justify-end">
-          <div className="text-sm text-muted-foreground">Total Conversation Logs: {notes.length}</div>
+          <div className="text-sm text-muted-foreground">
+            {filteredData.length !== notes.length && `Showing ${filteredData.length} of `}
+            Total Conversation Logs: {notes.length}
+          </div>
         </div>
       )}
       {/* Delete Confirmation Dialog */}

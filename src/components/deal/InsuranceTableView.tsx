@@ -11,6 +11,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { GridToolbar, FilterOption } from './GridToolbar';
+import { SortableTableHead } from './SortableTableHead';
+import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 
 export interface InsuranceData {
   id: string;
@@ -47,8 +50,22 @@ interface InsuranceTableViewProps {
   onRowClick: (insurance: InsuranceData) => void;
   onDeleteInsurance?: (insurance: InsuranceData) => void;
   onBack?: () => void;
+  onRefresh?: () => void;
   disabled?: boolean;
 }
+
+const SEARCH_FIELDS = ['description', 'companyName', 'policyNumber', 'agentName', 'insuredName'];
+
+const FILTER_OPTIONS: FilterOption[] = [
+  {
+    id: 'active',
+    label: 'Status',
+    options: [
+      { value: 'true', label: 'Active' },
+      { value: 'false', label: 'Inactive' },
+    ],
+  },
+];
 
 export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
   insurances,
@@ -57,9 +74,15 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
   onRowClick,
   onDeleteInsurance,
   onBack,
+  onRefresh,
   disabled = false,
 }) => {
   const [deleteTarget, setDeleteTarget] = useState<InsuranceData | null>(null);
+
+  const {
+    searchQuery, setSearchQuery, sortState, toggleSort,
+    activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
+  } = useGridSortFilter(insurances, SEARCH_FIELDS);
 
   const formatCurrency = (value: string) => {
     if (!value) return '';
@@ -73,8 +96,8 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
   };
 
   return (
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
+    <div className="p-4 space-y-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {onBack && (
             <Button
@@ -100,30 +123,45 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
         </Button>
       </div>
 
+      {/* Grid Toolbar */}
+      <GridToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onRefresh={onRefresh}
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        activeFilterCount={activeFilterCount}
+        disabled={disabled}
+      />
+
       <div className="border border-border rounded-lg overflow-hidden">
         <div className="overflow-x-auto" style={{ minWidth: '100%' }}>
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="min-w-[120px]">Description</TableHead>
-                <TableHead className="min-w-[150px]">Company</TableHead>
-                <TableHead className="min-w-[120px]">Policy #</TableHead>
-                <TableHead className="min-w-[100px]">Expiration</TableHead>
-                <TableHead className="min-w-[120px] text-right">Coverage</TableHead>
-                <TableHead className="min-w-[80px]">Status</TableHead>
-                <TableHead className="min-w-[150px]">Agent</TableHead>
+                <SortableTableHead columnId="description" label="Description" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
+                <SortableTableHead columnId="companyName" label="Company" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[150px]" />
+                <SortableTableHead columnId="policyNumber" label="Policy #" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
+                <SortableTableHead columnId="expiration" label="Expiration" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
+                <SortableTableHead columnId="coverage" label="Coverage" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px] text-right" />
+                <SortableTableHead columnId="active" label="Status" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[80px]" />
+                <SortableTableHead columnId="agentName" label="Agent" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[150px]" />
                 <TableHead className="min-w-[80px] text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {insurances.length === 0 ? (
+              {filteredData.length === 0 ? (
                 <TableRow>
                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    No insurance records added. Click "Add Insurance" to create one.
+                    {insurances.length === 0
+                      ? 'No insurance records added. Click "Add Insurance" to create one.'
+                      : 'No insurance records match your search or filters.'}
                   </TableCell>
                 </TableRow>
               ) : (
-                insurances.map((insurance) => (
+                filteredData.map((insurance) => (
                   <TableRow
                     key={insurance.id}
                     className="cursor-pointer hover:bg-muted/50"
@@ -181,6 +219,17 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
           </Table>
         </div>
       </div>
+
+      {/* Footer */}
+      {insurances.length > 0 && (
+        <div className="flex justify-end">
+          <div className="text-sm text-muted-foreground">
+            {filteredData.length !== insurances.length && `Showing ${filteredData.length} of `}
+            Total Insurance Records: {insurances.length}
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Dialog */}
       <DeleteConfirmationDialog
         open={!!deleteTarget}

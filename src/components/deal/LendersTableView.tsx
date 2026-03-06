@@ -14,6 +14,9 @@ import {
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { GridToolbar, FilterOption } from './GridToolbar';
+import { SortableTableHead } from './SortableTableHead';
+import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 
 export interface LenderData {
   id: string;
@@ -39,6 +42,7 @@ interface LendersTableViewProps {
   onRowClick: (lender: LenderData) => void;
   onPrimaryChange: (lenderId: string, isPrimary: boolean) => void;
   onDeleteLender?: (lender: LenderData) => void;
+  onRefresh?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
   currentPage?: number;
@@ -58,6 +62,32 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'zip', label: 'ZIP', visible: true },
 ];
 
+const SEARCH_FIELDS = ['fullName', 'email', 'phone', 'street', 'city', 'state', 'zip', 'type'];
+
+const FILTER_OPTIONS: FilterOption[] = [
+  {
+    id: 'type',
+    label: 'Type',
+    options: [
+      { value: 'individual', label: 'Individual' },
+      { value: 'entity', label: 'Entity' },
+      { value: 'trust', label: 'Trust' },
+      { value: 'ira', label: 'IRA' },
+    ],
+  },
+  {
+    id: 'state',
+    label: 'State',
+    options: [
+      { value: 'CA', label: 'California' },
+      { value: 'TX', label: 'Texas' },
+      { value: 'FL', label: 'Florida' },
+      { value: 'NY', label: 'New York' },
+      { value: 'WA', label: 'Washington' },
+    ],
+  },
+];
+
 export const LendersTableView: React.FC<LendersTableViewProps> = ({
   lenders,
   onAddLender,
@@ -65,6 +95,7 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
   onRowClick,
   onPrimaryChange,
   onDeleteLender,
+  onRefresh,
   disabled = false,
   isLoading = false,
   currentPage = 1,
@@ -74,6 +105,11 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
   const [columns, setColumns, resetColumns] = useTableColumnConfig('lenders_v2', DEFAULT_COLUMNS);
   const [deleteTarget, setDeleteTarget] = useState<LenderData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
+
+  const {
+    searchQuery, setSearchQuery, sortState, toggleSort,
+    activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
+  } = useGridSortFilter(lenders, SEARCH_FIELDS);
 
   const renderCellValue = (lender: LenderData, columnId: string) => {
     switch (columnId) {
@@ -130,15 +166,37 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
         </div>
       </div>
 
+      {/* Grid Toolbar */}
+      <GridToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onRefresh={onRefresh}
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        activeFilterCount={activeFilterCount}
+        disabled={disabled}
+      />
+
       {/* Lenders Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
         <Table className="min-w-[1000px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               {visibleColumns.map((col) => (
-                <TableHead key={col.id} className={col.id === 'isPrimary' ? 'w-[80px]' : undefined}>
-                  {col.label.toUpperCase()}
-                </TableHead>
+                col.id === 'isPrimary' ? (
+                  <TableHead key={col.id} className="w-[80px]">{col.label.toUpperCase()}</TableHead>
+                ) : (
+                  <SortableTableHead
+                    key={col.id}
+                    columnId={col.id}
+                    label={col.label.toUpperCase()}
+                    sortColumnId={sortState.columnId}
+                    sortDirection={sortState.direction}
+                    onSort={toggleSort}
+                  />
+                )
               ))}
               <TableHead className="w-[80px]">ACTIONS</TableHead>
             </TableRow>
@@ -146,14 +204,16 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
           <TableBody>
             {isLoading ? (
               renderLoadingSkeleton()
-            ) : lenders.length === 0 ? (
+            ) : filteredData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
-                  No lenders added. Click "Add Lender" to add one.
+                  {lenders.length === 0
+                    ? 'No lenders added. Click "Add Lender" to add one.'
+                    : 'No lenders match your search or filters.'}
                 </TableCell>
               </TableRow>
             ) : (
-              lenders.map((lender) => (
+              filteredData.map((lender) => (
                 <TableRow
                   key={lender.id}
                   className="cursor-pointer hover:bg-muted/30"
@@ -227,6 +287,7 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
       {lenders.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
+            {filteredData.length !== lenders.length && `Showing ${filteredData.length} of `}
             Total Lenders: {lenders.length}
           </div>
         </div>
