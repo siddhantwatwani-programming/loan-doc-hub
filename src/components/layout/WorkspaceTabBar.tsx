@@ -26,6 +26,8 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
   };
 
   const handleFileClick = (fileId: string) => {
+    // If already viewing this file, do nothing — no refresh
+    if (activeFileId === fileId && location.pathname === `/deals/${fileId}/edit`) return;
     switchToFile(fileId);
     navigate(`/deals/${fileId}/edit`);
   };
