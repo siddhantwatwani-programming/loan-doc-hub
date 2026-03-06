@@ -1,26 +1,20 @@
 import React, { useState } from 'react';
 import { useEventJournalEntries, type EventJournalEntry, type FieldChange } from '@/hooks/useEventJournal';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { BookOpen } from 'lucide-react';
 import { GridToolbar, FilterOption } from './GridToolbar';
+import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
+import { useGridSelection } from '@/hooks/useGridSelection';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface EventJournalViewerProps {
@@ -68,15 +62,29 @@ const FILTER_OPTIONS: FilterOption[] = [
   },
 ];
 
+const EXPORT_COLUMNS: ExportColumn[] = [
+  { id: 'event_number', label: 'Event #' },
+  { id: 'actor_name', label: 'User' },
+  { id: 'section', label: 'Section' },
+  { id: 'created_at', label: 'Timestamp' },
+];
+
 export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId }) => {
   const { data: entries, isLoading } = useEventJournalEntries(dealId);
   const [selectedEntry, setSelectedEntry] = useState<EventJournalEntry | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const {
     searchQuery, setSearchQuery, sortState, toggleSort,
     activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
   } = useGridSortFilter(entries || [], SEARCH_FIELDS);
+
+  // Event journal is read-only, selection is for export reference only
+  const {
+    selectedIds, toggleOne, toggleAll,
+    isAllSelected, isSomeSelected,
+  } = useGridSelection(filteredData);
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['event-journal', dealId] });
@@ -114,11 +122,20 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId }
         onFilterChange={setFilter}
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
+        onExport={() => setExportOpen(true)}
       />
 
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[40px]">
+              <Checkbox
+                checked={isAllSelected}
+                ref={(el) => { if (el) (el as any).indeterminate = isSomeSelected; }}
+                onCheckedChange={toggleAll}
+                disabled={filteredData.length === 0}
+              />
+            </TableHead>
             <SortableTableHead columnId="event_number" label="Event #" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[80px]" />
             <SortableTableHead columnId="actor_name" label="User" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[150px]" />
             <SortableTableHead columnId="section" label="Section" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[120px]" />
@@ -129,13 +146,16 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId }
         <TableBody>
           {filteredData.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                 No events match your search or filters.
               </TableCell>
             </TableRow>
           ) : (
             filteredData.map((entry) => (
               <TableRow key={entry.id}>
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <Checkbox checked={selectedIds.has(entry.id)} onCheckedChange={() => toggleOne(entry.id)} />
+                </TableCell>
                 <TableCell className="font-mono">{entry.event_number}</TableCell>
                 <TableCell>{entry.actor_name}</TableCell>
                 <TableCell className="capitalize">{entry.section.replace(/_/g, ' ')}</TableCell>
@@ -145,12 +165,7 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId }
                       {formatDetailsPreview(entry.details)}
                     </span>
                     {entry.details.length > 0 && (
-                      <Button
-                        variant="link"
-                        size="sm"
-                        className="shrink-0 px-1 h-auto"
-                        onClick={() => setSelectedEntry(entry)}
-                      >
+                      <Button variant="link" size="sm" className="shrink-0 px-1 h-auto" onClick={() => setSelectedEntry(entry)}>
                         Show More
                       </Button>
                     )}
@@ -189,6 +204,14 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId }
           {selectedEntry && formatDetailsFull(selectedEntry.details)}
         </DialogContent>
       </Dialog>
+
+      <GridExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        columns={EXPORT_COLUMNS}
+        data={entries || []}
+        fileName="event_journal"
+      />
     </div>
   );
 };

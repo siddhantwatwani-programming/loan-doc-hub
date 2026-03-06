@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { GridToolbar, FilterOption } from './GridToolbar';
+import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
+import { useGridSelection } from '@/hooks/useGridSelection';
 
 export interface ChargeData {
   id: string;
@@ -51,6 +49,7 @@ interface ChargesTableViewProps {
   onEditCharge: (charge: ChargeData) => void;
   onRowClick: (charge: ChargeData) => void;
   onDeleteCharge?: (charge: ChargeData) => void;
+  onBulkDelete?: (charges: ChargeData[]) => void;
   onRefresh?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
@@ -103,6 +102,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   onEditCharge,
   onRowClick,
   onDeleteCharge,
+  onBulkDelete,
   onRefresh,
   disabled = false,
   isLoading = false,
@@ -111,13 +111,19 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   onPageChange,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig('charges_v6', DEFAULT_COLUMNS);
-  const [deleteTarget, setDeleteTarget] = useState<ChargeData | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const {
     searchQuery, setSearchQuery, sortState, toggleSort,
     activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
   } = useGridSortFilter(charges, SEARCH_FIELDS);
+
+  const {
+    selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
+    isAllSelected, isSomeSelected, selectedCount,
+  } = useGridSelection(filteredData);
 
   const parseCurrency = (value: string): number => {
     if (!value) return 0;
@@ -154,25 +160,26 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
     }
   };
 
+  const handleBulkDelete = () => {
+    if (onBulkDelete) {
+      onBulkDelete(selectedItems);
+    } else if (onDeleteCharge) {
+      selectedItems.forEach((item) => onDeleteCharge(item));
+    }
+    clearSelection();
+    setBulkDeleteOpen(false);
+  };
+
+  const exportColumns: ExportColumn[] = DEFAULT_COLUMNS.map(c => ({ id: c.id, label: c.label }));
+
   return (
     <div className="p-6 space-y-4">
-      {/* Header with title and actions */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-lg text-foreground">Charges</h3>
         <div className="flex items-center gap-2">
-          <ColumnConfigPopover
-            columns={columns}
-            onColumnsChange={setColumns}
-            onResetColumns={resetColumns}
-            disabled={disabled}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onAddCharge}
-            disabled={disabled}
-            className="gap-1"
-          >
+          <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} disabled={disabled} />
+          <Button variant="outline" size="sm" onClick={onAddCharge} disabled={disabled} className="gap-1">
             <Plus className="h-4 w-4" />
             Add Charge
           </Button>
@@ -190,13 +197,24 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
         disabled={disabled}
+        selectedCount={selectedCount}
+        onBulkDelete={() => setBulkDeleteOpen(true)}
+        onExport={() => setExportOpen(true)}
       />
 
-      {/* Charges Table */}
+      {/* Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
         <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={isAllSelected}
+                  ref={(el) => { if (el) (el as any).indeterminate = isSomeSelected; }}
+                  onCheckedChange={toggleAll}
+                  disabled={disabled || filteredData.length === 0}
+                />
+              </TableHead>
               {visibleColumns.map((col) => (
                 <SortableTableHead
                   key={col.id}
@@ -207,81 +225,46 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
                   onSort={toggleSort}
                 />
               ))}
-              <TableHead className="w-[80px]">ACTIONS</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               Array.from({ length: 3 }).map((_, index) => (
                 <TableRow key={`skeleton-${index}`}>
-                  {Array.from({ length: visibleColumns.length + 1 }).map((_, cellIndex) => (
-                    <TableCell key={`skeleton-cell-${cellIndex}`}>
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
+                  <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                  {Array.from({ length: visibleColumns.length }).map((_, cellIndex) => (
+                    <TableCell key={`skeleton-cell-${cellIndex}`}><Skeleton className="h-4 w-full" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : filteredData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
-                  {charges.length === 0
-                    ? 'No charges added. Click "Add Charge" to add one.'
-                    : 'No charges match your search or filters.'}
+                  {charges.length === 0 ? 'No charges added. Click "Add Charge" to add one.' : 'No charges match your search or filters.'}
                 </TableCell>
               </TableRow>
             ) : (
               filteredData.map((charge) => (
-                <TableRow
-                  key={charge.id}
-                  className="cursor-pointer hover:bg-muted/30"
-                  onClick={() => onRowClick(charge)}
-                >
-                  {visibleColumns.map((col) => (
-                    <TableCell key={col.id}>
-                      {renderCellValue(charge, col.id)}
-                    </TableCell>
-                  ))}
+                <TableRow key={charge.id} className="cursor-pointer hover:bg-muted/30" onClick={() => onRowClick(charge)}>
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEditCharge(charge)}
-                        disabled={disabled}
-                        className="h-8 w-8"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      {onDeleteCharge && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteTarget(charge)}
-                          disabled={disabled}
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
+                    <Checkbox checked={selectedIds.has(charge.id)} onCheckedChange={() => toggleOne(charge.id)} disabled={disabled} />
                   </TableCell>
+                  {visibleColumns.map((col) => (
+                    <TableCell key={col.id}>{renderCellValue(charge, col.id)}</TableCell>
+                  ))}
                 </TableRow>
               ))
             )}
             {charges.length > 0 && (
               <TableRow className="bg-muted/50 font-semibold border-t-2 border-border">
+                <TableCell />
                 {visibleColumns.map((col) => {
                   const totalKey = col.id as keyof typeof totals;
                   if (totalKey in totals) {
-                    return (
-                      <TableCell key={col.id}>
-                        {formatCurrency(totals[totalKey])}
-                      </TableCell>
-                    );
+                    return <TableCell key={col.id}>{formatCurrency(totals[totalKey])}</TableCell>;
                   }
                   return <TableCell key={col.id}>{col.id === visibleColumns[0]?.id ? 'TOTALS' : ''}</TableCell>;
                 })}
-                <TableCell />
               </TableRow>
             )}
           </TableBody>
@@ -291,31 +274,15 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages}
-          </div>
+          <div className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange?.(currentPage - 1)}
-              disabled={currentPage <= 1 || disabled}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange?.(currentPage + 1)}
-              disabled={currentPage >= totalPages || disabled}
-            >
-              Next
-            </Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage - 1)} disabled={currentPage <= 1 || disabled}>Previous</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage + 1)} disabled={currentPage >= totalPages || disabled}>Next</Button>
           </div>
         </div>
       )}
 
-      {/* Footer with totals */}
+      {/* Footer */}
       {charges.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
@@ -324,18 +291,21 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
           </div>
         </div>
       )}
-      {/* Delete Confirmation Dialog */}
+
       <DeleteConfirmationDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
-        onConfirm={() => {
-          if (deleteTarget && onDeleteCharge) {
-            onDeleteCharge(deleteTarget);
-          }
-          setDeleteTarget(null);
-        }}
-        title="Delete Charge"
-        description="Are you sure you want to delete this charge? This action cannot be undone."
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selectedCount} Charges`}
+        description={`Are you sure you want to delete ${selectedCount} selected charges? This action cannot be undone.`}
+      />
+
+      <GridExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        columns={exportColumns}
+        data={charges}
+        fileName="charges"
       />
     </div>
   );
