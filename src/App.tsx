@@ -32,7 +32,13 @@ import MagicLinkAccessPage from "./pages/MagicLinkAccessPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import GlobalEventJournalPage from "./pages/csr/GlobalEventJournalPage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
