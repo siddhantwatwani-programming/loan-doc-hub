@@ -7,6 +7,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
+import { FilterOption } from './GridToolbar';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { GridToolbar } from './GridToolbar';
