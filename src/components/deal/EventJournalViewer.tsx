@@ -16,6 +16,9 @@ import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { toast } from 'sonner';
 
 interface EventJournalViewerProps {
   dealId: string;
