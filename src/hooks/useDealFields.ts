@@ -1090,5 +1090,6 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
     calculatedFields: calculatedFieldsList,
     hasRequiredFieldChanged,
     resetDirty,
+    refetchData,
   };
 }
