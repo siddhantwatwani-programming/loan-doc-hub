@@ -63,6 +63,7 @@ export interface UseDealFieldsReturn extends DealFieldsData {
   calculatedFields: CalculatedField[];
   hasRequiredFieldChanged: () => boolean;
   resetDirty: () => void;
+  refetchData: () => Promise<void>;
 }
 
 // JSONB field value structure
@@ -1058,6 +1059,13 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
     clearSessionCache(dealId);
   }, [dealId]);
 
+  const refetchData = useCallback(async () => {
+    hasLoadedRef.current = false;
+    isFetchingRef.current = false;
+    setDeletedPrefixes([]);
+    await fetchData();
+  }, [dealId, packetId]);
+
   return {
     fields: resolvedFields?.fields || [],
     fieldsBySection: resolvedFields?.fieldsBySection || ({} as Record<FieldSection, ResolvedField[]>),
@@ -1082,5 +1090,6 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
     calculatedFields: calculatedFieldsList,
     hasRequiredFieldChanged,
     resetDirty,
+    refetchData,
   };
 }
