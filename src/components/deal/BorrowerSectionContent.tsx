@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { BorrowerSubNavigation, type BorrowerSubSection } from './BorrowerSubNavigation';
+import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
+import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import { type BorrowerData } from './BorrowersTableView';
 import { type CoBorrowerData } from './CoBorrowersTableView';
 import { BorrowerModal } from './BorrowerModal';
