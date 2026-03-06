@@ -31,6 +31,7 @@ interface BorrowerSectionContentProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  onRefresh?: () => void;
 }
 
 const ITEMS_PER_PAGE = 10;
@@ -301,6 +302,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   showValidation = false,
   disabled = false,
   calculationResults = {},
+  onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
   const { dirtyFieldKeys } = useDirtyFields();
@@ -828,6 +830,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
         onRowClick={(entry) => { setEditingTrustLedgerEntry(entry); setTrustLedgerModalOpen(true); }}
         onDeleteEntry={handleDeleteTrustLedgerEntry}
         disabled={disabled}
+        onRefresh={onRefresh}
       />
       <TrustLedgerModal
         open={trustLedgerModalOpen}

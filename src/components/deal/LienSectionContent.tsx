@@ -16,6 +16,7 @@ interface LienSectionContentProps {
   disabled?: boolean;
   propertyOptions?: { id: string; label: string }[];
   onBack?: () => void;
+  onRefresh?: () => void;
 }
 
 const DEFAULT_LIEN: LienData = {
@@ -151,6 +152,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   disabled = false,
   propertyOptions = [],
   onBack,
+  onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
   const activeSubSection = (nav?.getSubSection('lien') ?? 'liens') as LienSubSection;
@@ -223,7 +225,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
     switch (activeSubSection) {
       case 'liens':
         return (
-          <LiensTableView liens={liens} onAddLien={handleAddLien} onEditLien={handleEditLien} onRowClick={handleRowClick} onDeleteLien={handleDeleteLien} onBack={onBack} disabled={disabled} />
+          <LiensTableView liens={liens} onAddLien={handleAddLien} onEditLien={handleEditLien} onRowClick={handleRowClick} onDeleteLien={handleDeleteLien} onBack={onBack} disabled={disabled} onRefresh={onRefresh} />
         );
       case 'lien_details':
         return (

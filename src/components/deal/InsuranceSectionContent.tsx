@@ -16,6 +16,7 @@ interface InsuranceSectionContentProps {
   disabled?: boolean;
   propertyOptions?: { id: string; label: string }[];
   onBack?: () => void;
+  onRefresh?: () => void;
 }
 
 // Helper to extract insurances from values based on insurance prefix pattern
@@ -105,6 +106,7 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
   disabled = false,
   propertyOptions = [],
   onBack,
+  onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
   const activeSubSection = (nav?.getSubSection('insurance') ?? 'insurances') as InsuranceSubSection;
@@ -297,6 +299,7 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
             onRowClick={handleRowClick}
             onDeleteInsurance={handleDeleteInsurance}
             onBack={onBack}
+            onRefresh={onRefresh}
             disabled={disabled}
           />
         );
