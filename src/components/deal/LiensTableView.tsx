@@ -9,7 +9,7 @@ import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
 import {
-  Table, TableBody, TableCell, TableHeader, TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 
 export interface LienData {

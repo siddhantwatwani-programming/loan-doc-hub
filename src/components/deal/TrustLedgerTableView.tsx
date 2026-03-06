@@ -4,7 +4,7 @@ import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Table, TableBody, TableCell, TableHeader, TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
