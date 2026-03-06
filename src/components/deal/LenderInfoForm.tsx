@@ -429,27 +429,27 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-foreground border-b pb-2">Primary Address</h3>
           <div className="space-y-3">
-            <div className="flex items-center gap-3">
+            {wrapField('primaryStreet', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Street</Label>
               <Input value={getValue('primaryStreet')} onChange={(e) => handleChange('primaryStreet', e.target.value)} disabled={disabled} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('primaryCity', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">City</Label>
               <Input value={getValue('primaryCity')} onChange={(e) => handleChange('primaryCity', e.target.value)} disabled={disabled} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('primaryState', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">State</Label>
               <Input value={getValue('primaryState')} onChange={(e) => handleChange('primaryState', e.target.value)} disabled={disabled} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('primaryZip', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">ZIP</Label>
               <Input value={getValue('primaryZip')} onChange={(e) => handleChange('primaryZip', e.target.value)} disabled={disabled} className="h-8" />
-            </div>
+            </div>)}
           </div>
 
           {/* Mailing Address */}
           <h3 className="text-sm font-semibold text-foreground border-b pb-2 mt-4">Mailing Address</h3>
-          <div className="flex items-center gap-2 mb-2">
+          {wrapField('mailingSameAsPrimary', <div className="flex items-center gap-2 mb-2">
             <Checkbox
               checked={getBoolValue('mailingSameAsPrimary')}
               onCheckedChange={(checked) => {
@@ -464,24 +464,24 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               disabled={disabled}
             />
             <Label className="text-xs text-muted-foreground">Same as Primary Address</Label>
-          </div>
+          </div>)}
           <div className="space-y-3">
-            <div className="flex items-center gap-3">
+            {wrapField('mailingStreet', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">Street</Label>
               <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('mailingCity', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">City</Label>
               <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('mailingState', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">State</Label>
               <Input value={getValue('mailingState')} onChange={(e) => handleChange('mailingState', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
-            <div className="flex items-center gap-3">
+            </div>)}
+            {wrapField('mailingZip', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">ZIP</Label>
               <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
-            </div>
+            </div>)}
           </div>
 
           {/* Extra fields */}
