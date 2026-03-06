@@ -31,6 +31,7 @@ interface BorrowerSectionContentProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  onRefresh?: () => void;
 }
 
 const ITEMS_PER_PAGE = 10;
