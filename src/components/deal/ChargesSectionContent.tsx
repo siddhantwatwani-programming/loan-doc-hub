@@ -19,6 +19,7 @@ interface ChargesSectionContentProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  onRefresh?: () => void;
 }
 
 // Helper to extract charges from values based on charge prefix pattern

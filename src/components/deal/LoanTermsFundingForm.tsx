@@ -33,6 +33,7 @@ interface LoanTermsFundingFormProps {
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
   dealId: string;
+  onRefresh?: () => void;
 }
 
 export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({

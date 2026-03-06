@@ -20,6 +20,7 @@ interface BrokerSectionContentProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  onRefresh?: () => void;
 }
 
 // Helper to extract brokers from values based on broker prefix pattern

@@ -23,6 +23,7 @@ interface LenderSectionContentProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  onRefresh?: () => void;
 }
 
 // Helper to extract lenders from values based on lender prefix pattern

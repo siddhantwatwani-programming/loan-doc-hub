@@ -24,6 +24,7 @@ interface PropertySectionContentProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  onRefresh?: () => void;
 }
 
 // Helper to extract properties from values based on property prefix pattern

@@ -14,6 +14,7 @@ interface NotesSectionContentProps {
   calculationResults?: Record<string, CalculationResult>;
   dealNumber?: string;
   userName?: string;
+  onRefresh?: () => void;
 }
 
 const extractNotesFromValues = (values: Record<string, string>): NoteData[] => {
