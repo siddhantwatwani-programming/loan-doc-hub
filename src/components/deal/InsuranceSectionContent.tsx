@@ -113,6 +113,18 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
   const setSelectedInsurancePrefix = (prefix: string) => nav?.setSelectedPrefix('insurance', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingInsurance, setEditingInsurance] = useState<InsuranceData | null>(null);
+  const { dirtyFieldKeys } = useDirtyFields();
+
+  // Remap dirty field keys: insuranceN.xxx → insurance1.xxx for selected prefix
+  const remappedDirtyKeys = useMemo(() => {
+    const remapped = new Set<string>();
+    dirtyFieldKeys.forEach(key => {
+      if (key.startsWith(`${selectedInsurancePrefix}.`)) {
+        remapped.add(key.replace(`${selectedInsurancePrefix}.`, 'insurance1.'));
+      }
+    });
+    return remapped;
+  }, [dirtyFieldKeys, selectedInsurancePrefix]);
   
   // Check if we're in detail view
   const isDetailView = activeSubSection === 'insurance_details';
