@@ -135,10 +135,12 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
               { key: 'lateNotice' as const, label: 'Late Notice' },
               { key: 'lenderStatement' as const, label: 'Lender Statement' },
             ].map(({ key, label }) => (
-              <div key={key} className="flex items-center space-x-2">
-                <Checkbox id={key} checked={getBoolValue(key)} onCheckedChange={(checked) => handleChange(key, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
-                <Label htmlFor={key} className="text-xs font-normal cursor-pointer">{label}</Label>
-              </div>
+              <DirtyFieldWrapper key={key} fieldKey={FIELD_KEYS[key]}>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id={key} checked={getBoolValue(key)} onCheckedChange={(checked) => handleChange(key, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+                  <Label htmlFor={key} className="text-xs font-normal cursor-pointer">{label}</Label>
+                </div>
+              </DirtyFieldWrapper>
             ))}
           </div>
         </div>
