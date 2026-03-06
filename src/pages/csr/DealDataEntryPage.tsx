@@ -1088,6 +1088,14 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
         onConfirm={handleSaveConfirmed}
         onCancel={() => setShowSaveConfirm(false)}
       />
+
+      {/* Refresh Confirmation Dialog */}
+      <RefreshConfirmationDialog
+        open={showRefreshConfirm}
+        onSave={handleRefreshSave}
+        onDiscard={handleRefreshDiscard}
+        onCancel={handleRefreshCancel}
+      />
     </div>
   );
 };
