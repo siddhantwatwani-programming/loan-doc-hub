@@ -162,16 +162,15 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               <Label className="w-[100px] shrink-0 text-xs text-foreground">As Of</Label>
               <Popover modal={true}>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "h-7 text-xs flex-1 justify-start text-left font-normal",
-                      !formData.asOfDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-1 h-3 w-3" />
-                    {formData.asOfDate ? formatAsOfDisplay(formData.asOfDate) : <span>Select date...</span>}
-                  </Button>
+                  <div className="relative flex-1 cursor-pointer">
+                    <Input
+                      value={formData.asOfDate ? formatAsOfDisplay(formData.asOfDate) : ''}
+                      readOnly
+                      placeholder="Select date..."
+                      className="h-7 text-xs flex-1 pr-7 cursor-pointer"
+                    />
+                    <CalendarIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                  </div>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 pointer-events-auto z-[9999]" align="start">
                   <Calendar
