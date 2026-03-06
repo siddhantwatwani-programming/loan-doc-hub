@@ -11,6 +11,8 @@ import { PropertiesTableView, type PropertyData } from './PropertiesTableView';
 import { PropertyModal } from './PropertyModal';
 import { LienSectionContent } from './LienSectionContent';
 import { InsuranceSectionContent } from './InsuranceSectionContent';
+import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
+import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
