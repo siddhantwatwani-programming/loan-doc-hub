@@ -10,6 +10,8 @@ import { LenderBankingForm } from './LenderBankingForm';
 import { LenderTaxInfoForm } from './LenderTaxInfoForm';
 import { LendersTableView, type LenderData } from './LendersTableView';
 import { LenderModal } from './LenderModal';
+import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
+import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
