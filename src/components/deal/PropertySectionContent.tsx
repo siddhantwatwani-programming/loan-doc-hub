@@ -381,14 +381,16 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
 
             {/* Liens content */}
             <div className="flex-1 min-w-0 overflow-auto">
-              <LienSectionContent
-                values={values}
-                onValueChange={onValueChange}
-                onRemoveValuesByPrefix={onRemoveValuesByPrefix}
-                disabled={disabled}
-                propertyOptions={propertyOptions}
-                onBack={handleBackToTable}
-              />
+              <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+                <LienSectionContent
+                  values={values}
+                  onValueChange={onValueChange}
+                  onRemoveValuesByPrefix={onRemoveValuesByPrefix}
+                  disabled={disabled}
+                  propertyOptions={propertyOptions}
+                  onBack={handleBackToTable}
+                />
+              </DirtyFieldsProvider>
             </div>
           </div>
         </div>
