@@ -152,6 +152,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   disabled = false,
   propertyOptions = [],
   onBack,
+  onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
   const activeSubSection = (nav?.getSubSection('lien') ?? 'liens') as LienSubSection;
