@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { BorrowerSubNavigation, type BorrowerSubSection } from './BorrowerSubNavigation';
+import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
+import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import { type BorrowerData } from './BorrowersTableView';
 import { type CoBorrowerData } from './CoBorrowersTableView';
 import { BorrowerModal } from './BorrowerModal';
@@ -301,6 +303,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   calculationResults = {},
 }) => {
   const nav = useDealNavigationOptional();
+  const { dirtyFieldKeys } = useDirtyFields();
   const activeSubSection = (nav?.getSubSection('borrower') ?? 'primary') as BorrowerSubSection;
   const setActiveSubSection = (sub: BorrowerSubSection) => nav?.setSubSection('borrower', sub);
   const selectedBorrowerPrefix = nav?.getSelectedPrefix('borrower') ?? 'borrower1';
@@ -738,7 +741,25 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   };
   const detailViewName = getDetailViewName();
 
-  // Trust Ledger helpers
+  // Remap dirty field keys for borrower forms (borrower1.x → borrower.x)
+  const remappedDirtyKeys = useMemo(() => {
+    const remapped = new Set<string>();
+    dirtyFieldKeys.forEach(key => {
+      if (key.startsWith(`${selectedBorrowerPrefix}.`)) {
+        remapped.add(key.replace(`${selectedBorrowerPrefix}.`, 'borrower.'));
+      }
+      if (key.startsWith(`${selectedCoBorrowerPrefix}.`)) {
+        remapped.add(key.replace(`${selectedCoBorrowerPrefix}.`, 'coborrower.'));
+      }
+      // Also remap inline co-borrower keys (borrowerN.coborrower.x → coborrower.x)
+      const inlinePrefix = `${selectedBorrowerPrefix}.coborrower.`;
+      if (key.startsWith(inlinePrefix)) {
+        remapped.add(key.replace(inlinePrefix, 'coborrower.'));
+      }
+    });
+    return remapped;
+  }, [dirtyFieldKeys, selectedBorrowerPrefix, selectedCoBorrowerPrefix]);
+
   const extractTrustLedgerEntries = useMemo((): TrustLedgerEntry[] => {
     const entries: TrustLedgerEntry[] = [];
     const prefixes = new Set<string>();
@@ -968,9 +989,11 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
             isDetailView={isDetailView}
           />
 
-          {/* Sub-section content on the right */}
+          {/* Sub-section content on the right, with remapped dirty keys */}
           <div className="flex-1 min-w-0 overflow-auto">
-            {renderSubSectionContent()}
+            <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+              {renderSubSectionContent()}
+            </DirtyFieldsProvider>
           </div>
         </div>
       </div>
