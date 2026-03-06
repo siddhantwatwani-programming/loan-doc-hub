@@ -37,6 +37,7 @@ interface GridToolbarProps {
   onBulkDelete?: () => void;
   // Export
   onExport?: () => void;
+  searchPlaceholder?: string;
 }
 
 export const GridToolbar: React.FC<GridToolbarProps> = ({
