@@ -1,46 +1,110 @@
 
 
-## Plan: Highlight Unsaved Changes in Lender Section (Remove Stars, Add Highlights)
+## Event Journal (Change Log System) Implementation Plan
 
-### Problem
-1. The current `DirtyFieldWrapper` shows a star (★) indicator — user wants it removed, replaced with highlight-only
-2. The Lender section top tab shows a star — user wants highlight instead
-3. The Lender left sub-navigation tabs don't indicate which sub-tab has dirty fields
-4. **Critical bug**: Dirty field keys are stored as `lender1.type` but Lender sub-forms use `lender.type` in `DirtyFieldWrapper`, so field-level highlighting never matches. The `LenderSectionContent` needs to remap dirty keys for the selected lender prefix.
+### Overview
+Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
 
-### Changes
+### 1. Database: New Migration
+Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
 
-#### 1. `DirtyFieldWrapper.tsx` — Remove star, keep highlight only
-- Remove the `<span>★</span>` element
-- Keep the `bg-warning/10 ring-1 ring-warning/30` highlight styling on the wrapper div
+```sql
+CREATE TABLE public.event_journal (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
+  event_number integer NOT NULL,
+  actor_user_id uuid NOT NULL,
+  section text NOT NULL,
+  details jsonb NOT NULL DEFAULT '[]',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-#### 2. `DealDataEntryPage.tsx` — Replace star with highlight on section tab
-- Line 834-836: Remove the star `<span>` for `sectionHasDirtyFields`
-- Instead, add a highlight class to the `TabsTrigger` (e.g., `bg-warning/10 ring-1 ring-warning/30`) when `sectionHasDirtyFields` is true
+CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
+ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
 
-#### 3. `LenderSectionContent.tsx` — Pass remapped dirty keys to sub-forms
-- Accept `dirtyFieldKeys` from context (via `useDirtyFields`)
-- Compute a remapped `Set<string>` that translates `lender1.xxx` → `lender.xxx` for the selected prefix
-- Wrap each sub-form render in a local `DirtyFieldsProvider` with the remapped keys so `DirtyFieldWrapper` inside forms can match
+-- RLS: CSR and Admin can view/insert
+CREATE POLICY "CSRs can view event journal" ON public.event_journal
+  FOR SELECT TO authenticated
+  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
 
-#### 4. `LenderSubNavigation.tsx` — Highlight sub-tabs with dirty fields
-- Accept a `dirtySubSections` prop (a `Set<LenderSubSection>`) from `LenderSectionContent`
-- Apply highlight styling (`bg-warning/10`) to sub-nav buttons that have dirty fields
+CREATE POLICY "CSRs can insert event journal" ON public.event_journal
+  FOR INSERT TO authenticated
+  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
 
-#### 5. `LenderSectionContent.tsx` — Compute which sub-sections have dirty fields
-- Map each Lender form's FIELD_KEYS prefixes to sub-sections:
-  - `lender.` fields → mapped per sub-section (lender info keys, authorized party keys, banking keys, tax info keys)
-- A simpler approach: check if any dirty key starting with the selected prefix matches field patterns for each sub-section
-- Pass the resulting `dirtySubSections` set to `LenderSubNavigation`
+-- Auto-increment event_number per deal
+CREATE OR REPLACE FUNCTION public.set_event_journal_number()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
+BEGIN
+  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
+  FROM public.event_journal WHERE deal_id = NEW.deal_id;
+  RETURN NEW;
+END;
+$$;
 
-### No Backend Changes Required
-- Dirty field tracking already works via `useDealFields` hook's `dirtyFieldKeys` state
-- No new tables or schema modifications needed
-- Uses existing save/update flow (dirty state clears on save/discard)
+CREATE TRIGGER trg_event_journal_number
+  BEFORE INSERT ON public.event_journal
+  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
+```
 
-### Files Modified
-1. `src/components/deal/DirtyFieldWrapper.tsx` — remove star
-2. `src/pages/csr/DealDataEntryPage.tsx` — replace star with highlight on tab
-3. `src/components/deal/LenderSectionContent.tsx` — remap dirty keys, compute dirty sub-sections
-4. `src/components/deal/LenderSubNavigation.tsx` — accept and render dirty sub-section highlights
+The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
+
+### 2. Hook: `useEventJournal.ts` (New File)
+- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
+- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
+- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
+
+### 3. Capture Old→New Values in `useDealFields.ts`
+- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
+- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
+- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
+- After successful save, update the snapshot
+
+### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
+Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
+- Table with columns: Event #, User, Section, Details, Timestamp
+- Details column shows truncated preview (first 80 chars)
+- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
+- Sorted by event_number descending (newest first)
+
+### 5. `EventJournalViewer` Component (New File)
+`src/components/deal/EventJournalViewer.tsx`:
+- Fetches from `event_journal` table filtered by `deal_id`
+- Joins actor names from `profiles`
+- Table layout using existing shadcn Table components
+- "Show More" modal using existing Dialog component
+- Detail entries formatted as `Field Label: oldValue → newValue`
+
+### 6. Global Event Journal Page (New File)
+`src/pages/csr/GlobalEventJournalPage.tsx`:
+- Deal selector dropdown (search by deal number) at the top
+- Once a deal is selected, renders `EventJournalViewer` for that deal
+- Same table structure as the per-deal view
+
+### 7. Sidebar Navigation Update
+In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
+```tsx
+<PromotedNavSection
+  label="Event Journal"
+  icon={BookOpen}
+  items={[]}
+  directPath="/event-journal"
+  isCollapsed={isCollapsed}
+  searchQuery={searchQuery}
+/>
+```
+
+### 8. Route Registration
+In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
+
+### Files Changed
+| File | Change |
+|------|--------|
+| New migration | Create `event_journal` table with trigger |
+| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
+| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
+| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
+| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
+| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
+| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
+| `src/App.tsx` | Add `/event-journal` route |
 

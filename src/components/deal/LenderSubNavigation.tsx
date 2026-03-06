@@ -7,6 +7,7 @@ interface LenderSubNavigationProps {
   activeSubSection: LenderSubSection;
   onSubSectionChange: (subSection: LenderSubSection) => void;
   isDetailView?: boolean;
+  dirtySubSections?: Set<LenderSubSection>;
 }
 
 const LENDER_DETAIL_SECTIONS: { key: LenderSubSection; label: string }[] = [
@@ -20,6 +21,7 @@ export const LenderSubNavigation: React.FC<LenderSubNavigationProps> = ({
   activeSubSection,
   onSubSectionChange,
   isDetailView = false,
+  dirtySubSections = new Set(),
 }) => {
   // Only show navigation when in detail view
   if (!isDetailView) {
@@ -36,7 +38,8 @@ export const LenderSubNavigation: React.FC<LenderSubNavigationProps> = ({
             'px-4 py-3 text-sm font-medium transition-colors text-left border-l-2',
             activeSubSection === section.key
               ? 'border-primary text-foreground bg-muted/30'
-              : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/20'
+              : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/20',
+            dirtySubSections.has(section.key) && 'bg-warning/10 ring-1 ring-warning/30'
           )}
         >
           {section.label}
