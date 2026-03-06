@@ -79,15 +79,32 @@ const modeLabels: Record<string, string> = {
 };
 
 const PAGE_SIZE = 10;
+const DEALS_CACHE_KEY = 'deals_page_cache';
+
+interface DealsPageCache {
+  deals: Deal[];
+  totalCount: number;
+  currentPage: number;
+}
+
+function loadDealsPageCache(): DealsPageCache | null {
+  try {
+    const raw = sessionStorage.getItem(DEALS_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as DealsPageCache) : null;
+  } catch {
+    return null;
+  }
+}
 
 export const DealsPage: React.FC = () => {
+  const cachedState = loadDealsPageCache();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const refreshKey = searchParams.get('_r');
   const { toast } = useToast();
   const workspace = useWorkspaceOptional();
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [deals, setDeals] = useState<Deal[]>(cachedState?.deals || []);
+  const [loading, setLoading] = useState(!cachedState);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterState, setFilterState] = useState<string>('');
