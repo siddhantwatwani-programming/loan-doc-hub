@@ -741,7 +741,25 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   };
   const detailViewName = getDetailViewName();
 
-  // Trust Ledger helpers
+  // Remap dirty field keys for borrower forms (borrower1.x → borrower.x)
+  const remappedDirtyKeys = useMemo(() => {
+    const remapped = new Set<string>();
+    dirtyFieldKeys.forEach(key => {
+      if (key.startsWith(`${selectedBorrowerPrefix}.`)) {
+        remapped.add(key.replace(`${selectedBorrowerPrefix}.`, 'borrower.'));
+      }
+      if (key.startsWith(`${selectedCoBorrowerPrefix}.`)) {
+        remapped.add(key.replace(`${selectedCoBorrowerPrefix}.`, 'coborrower.'));
+      }
+      // Also remap inline co-borrower keys (borrowerN.coborrower.x → coborrower.x)
+      const inlinePrefix = `${selectedBorrowerPrefix}.coborrower.`;
+      if (key.startsWith(inlinePrefix)) {
+        remapped.add(key.replace(inlinePrefix, 'coborrower.'));
+      }
+    });
+    return remapped;
+  }, [dirtyFieldKeys, selectedBorrowerPrefix, selectedCoBorrowerPrefix]);
+
   const extractTrustLedgerEntries = useMemo((): TrustLedgerEntry[] => {
     const entries: TrustLedgerEntry[] = [];
     const prefixes = new Set<string>();
