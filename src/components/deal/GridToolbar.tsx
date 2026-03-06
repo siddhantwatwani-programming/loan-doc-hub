@@ -53,6 +53,7 @@ export const GridToolbar: React.FC<GridToolbarProps> = ({
   selectedCount = 0,
   onBulkDelete,
   onExport,
+  searchPlaceholder = 'Search...',
 }) => {
   const [filterOpen, setFilterOpen] = useState(false);
 
