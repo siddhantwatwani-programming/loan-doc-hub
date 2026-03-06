@@ -205,6 +205,49 @@ function extractTypedValueFromJsonb(fieldData: JsonbFieldValue, dataType: FieldD
   }
 }
 
+// --- sessionStorage helpers for unsaved values cache ---
+const SESSION_CACHE_PREFIX = 'deal-values-';
+
+function getSessionCacheKey(dealId: string): string {
+  return `${SESSION_CACHE_PREFIX}${dealId}`;
+}
+
+interface SessionCache {
+  unsavedValues: Record<string, string>;
+  dirtyKeys: string[];
+}
+
+function readSessionCache(dealId: string): SessionCache | null {
+  try {
+    const raw = sessionStorage.getItem(getSessionCacheKey(dealId));
+    if (!raw) return null;
+    return JSON.parse(raw) as SessionCache;
+  } catch {
+    return null;
+  }
+}
+
+function writeSessionCache(dealId: string, unsavedValues: Record<string, string>, dirtyKeys: string[]): void {
+  try {
+    if (dirtyKeys.length === 0) {
+      sessionStorage.removeItem(getSessionCacheKey(dealId));
+      return;
+    }
+    const cache: SessionCache = { unsavedValues, dirtyKeys };
+    sessionStorage.setItem(getSessionCacheKey(dealId), JSON.stringify(cache));
+  } catch {
+    // sessionStorage full or unavailable — non-blocking
+  }
+}
+
+function clearSessionCache(dealId: string): void {
+  try {
+    sessionStorage.removeItem(getSessionCacheKey(dealId));
+  } catch {
+    // non-blocking
+  }
+}
+
 export function useDealFields(dealId: string, packetId: string | null, active: boolean = true): UseDealFieldsReturn {
   const { toast } = useToast();
   const cache = useFieldDictionaryCacheOptional();
