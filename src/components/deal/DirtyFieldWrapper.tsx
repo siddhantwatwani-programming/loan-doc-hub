@@ -22,9 +22,6 @@ export const DirtyFieldWrapper: React.FC<DirtyFieldWrapperProps> = ({
       isDirty && 'bg-warning/10 ring-1 ring-warning/30',
       className
     )}>
-      {isDirty && (
-        <span className="absolute -left-0.5 -top-0.5 text-warning text-[10px] leading-none z-10" title="Unsaved change">★</span>
-      )}
       {children}
     </div>
   );
