@@ -92,6 +92,7 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
   showValidation = false,
   disabled = false,
   calculationResults = {},
+  onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
   const activeSubSection = (nav?.getSubSection('broker') ?? 'brokers') as BrokerSubSection;

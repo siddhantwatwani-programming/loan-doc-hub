@@ -123,6 +123,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   showValidation = false,
   disabled = false,
   calculationResults = {},
+  onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
   const activeSubSection = (nav?.getSubSection('property') ?? 'properties') as PropertySubSection;

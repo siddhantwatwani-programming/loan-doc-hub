@@ -62,7 +62,7 @@ const getNextNotePrefix = (values: Record<string, string>): string => {
 };
 
 export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
-  values, onValueChange, onRemoveValuesByPrefix, disabled = false, dealNumber = '', userName = '',
+  values, onValueChange, onRemoveValuesByPrefix, disabled = false, dealNumber = '', userName = '', onRefresh,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<NoteData | null>(null);

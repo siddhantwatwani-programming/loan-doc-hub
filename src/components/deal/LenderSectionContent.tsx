@@ -95,6 +95,7 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
   showValidation = false,
   disabled = false,
   calculationResults = {},
+  onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
   const activeSubSection = (nav?.getSubSection('lender') ?? 'lenders') as LenderSubSection;

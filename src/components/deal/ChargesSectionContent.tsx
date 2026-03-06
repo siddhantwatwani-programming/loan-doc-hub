@@ -99,6 +99,7 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
   showValidation = false,
   disabled = false,
   calculationResults = {},
+  onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
   const activeSubSection = (nav?.getSubSection('charges') ?? 'charges') as ChargesSubSection;

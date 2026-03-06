@@ -45,6 +45,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   disabled = false,
   calculationResults = {},
   dealId,
+  onRefresh,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
