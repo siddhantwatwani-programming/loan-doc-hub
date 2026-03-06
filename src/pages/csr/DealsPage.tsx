@@ -120,8 +120,9 @@ export const DealsPage: React.FC = () => {
   const toastRef = React.useRef(toast);
   toastRef.current = toast;
 
-  const fetchDeals = useCallback(async (page: number = 1) => {
-    setLoading(true);
+  const fetchDeals = useCallback(async (page: number = 1, options?: { silent?: boolean }) => {
+    const silent = options?.silent === true;
+    if (!silent) setLoading(true);
     try {
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -134,14 +135,23 @@ export const DealsPage: React.FC = () => {
 
       if (error) throw error;
 
-      setDeals(
-        (data || []).map((d: any) => ({
-          ...d,
-          packet: d.packets,
-        }))
-      );
+      const mappedDeals = (data || []).map((d: any) => ({
+        ...d,
+        packet: d.packets,
+      }));
+
+      setDeals(mappedDeals);
       setTotalCount(count || 0);
       setCurrentPage(page);
+
+      try {
+        sessionStorage.setItem(
+          DEALS_CACHE_KEY,
+          JSON.stringify({ deals: mappedDeals, totalCount: count || 0, currentPage: page })
+        );
+      } catch {
+        // ignore cache write errors
+      }
     } catch (error) {
       console.error('Error fetching deals:', error);
       toastRef.current({
@@ -150,7 +160,7 @@ export const DealsPage: React.FC = () => {
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
