@@ -41,6 +41,7 @@ import {
   Lock,
   User,
   Eye,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getRoleDisplayName } from "@/lib/accessControl";
@@ -664,6 +665,18 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Refresh button - refreshes grid data without full page reload */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              onClick={handleGridRefresh}
+              disabled={saving}
+              title="Refresh data"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+
             {/* Save button - always visible unless completed */}
             {(!isExternalUser || !hasCompleted) && (
               <Button
@@ -933,7 +946,6 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       showValidation={showValidation}
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
-                      onRefresh={handleGridRefresh}
                     />
                   ) : section === "property" ? (
                     <PropertySectionContent
@@ -944,7 +956,6 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       showValidation={showValidation}
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
-                      onRefresh={handleGridRefresh}
                     />
                   ) : section === "loan_terms" ? (
                     <LoanTermsSectionContent
@@ -965,7 +976,6 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       showValidation={showValidation}
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
-                      onRefresh={handleGridRefresh}
                     />
                   ) : section === "broker" ? (
                     <BrokerSectionContent
@@ -976,7 +986,6 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       showValidation={showValidation}
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
-                      onRefresh={handleGridRefresh}
                     />
                   ) : section === "charges" ? (
                     <ChargesSectionContent
@@ -987,7 +996,6 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       showValidation={showValidation}
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
-                      onRefresh={handleGridRefresh}
                     />
                   ) : section === "notes" ? (
                     <NotesSectionContent
@@ -999,7 +1007,6 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
                       dealNumber={deal.deal_number}
-                      onRefresh={handleGridRefresh}
                     />
                   ) : section === "other" ? (
                     <DealSectionTab
@@ -1057,7 +1064,6 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                 disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm("funding")}
                 calculationResults={calculationResults}
                 dealId={id || ""}
-                onRefresh={handleGridRefresh}
               />
             </TabsContent>
 
