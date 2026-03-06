@@ -278,7 +278,9 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
             isDetailView={isDetailView}
           />
           <div className="flex-1 min-w-0 overflow-auto">
-            {renderSubSectionContent()}
+            <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+              {renderSubSectionContent()}
+            </DirtyFieldsProvider>
           </div>
         </div>
       </div>
