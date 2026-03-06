@@ -253,6 +253,13 @@ export const GlobalMessageDialog: React.FC<GlobalMessageDialogProps> = ({
         });
         resetForm();
         onOpenChange(false);
+      } else if (data?.status === 'pending') {
+        toast({
+          title: 'Message queued',
+          description: data?.error || 'Message saved but delivery is pending — SMS is not yet configured.',
+        });
+        resetForm();
+        onOpenChange(false);
       } else {
         toast({
           title: 'Send failed',
