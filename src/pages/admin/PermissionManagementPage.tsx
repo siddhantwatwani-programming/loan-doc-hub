@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useFormPermissionsAdmin } from '@/hooks/useFormPermissions';
+import CsrUserPermissionsTable from '@/components/admin/CsrUserPermissionsTable';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Eye, Lock, Loader2, ShieldCheck } from 'lucide-react';
