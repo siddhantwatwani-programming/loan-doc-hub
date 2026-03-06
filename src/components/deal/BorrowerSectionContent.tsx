@@ -302,6 +302,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   showValidation = false,
   disabled = false,
   calculationResults = {},
+  onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
   const { dirtyFieldKeys } = useDirtyFields();
