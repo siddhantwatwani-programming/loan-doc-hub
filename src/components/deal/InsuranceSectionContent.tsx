@@ -6,6 +6,8 @@ import { InsuranceSubNavigation, type InsuranceSubSection } from './InsuranceSub
 import { InsuranceTableView, type InsuranceData } from './InsuranceTableView';
 import { InsuranceModal } from './InsuranceModal';
 import { InsuranceDetailForm } from './InsuranceDetailForm';
+import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
+import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 
 interface InsuranceSectionContentProps {
   values: Record<string, string>;
