@@ -303,6 +303,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   calculationResults = {},
 }) => {
   const nav = useDealNavigationOptional();
+  const { dirtyFieldKeys } = useDirtyFields();
   const activeSubSection = (nav?.getSubSection('borrower') ?? 'primary') as BorrowerSubSection;
   const setActiveSubSection = (sub: BorrowerSubSection) => nav?.setSubSection('borrower', sub);
   const selectedBorrowerPrefix = nav?.getSelectedPrefix('borrower') ?? 'borrower1';
