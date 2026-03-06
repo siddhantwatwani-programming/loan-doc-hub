@@ -205,6 +205,49 @@ function extractTypedValueFromJsonb(fieldData: JsonbFieldValue, dataType: FieldD
   }
 }
 
+// --- sessionStorage helpers for unsaved values cache ---
+const SESSION_CACHE_PREFIX = 'deal-values-';
+
+function getSessionCacheKey(dealId: string): string {
+  return `${SESSION_CACHE_PREFIX}${dealId}`;
+}
+
+interface SessionCache {
+  unsavedValues: Record<string, string>;
+  dirtyKeys: string[];
+}
+
+function readSessionCache(dealId: string): SessionCache | null {
+  try {
+    const raw = sessionStorage.getItem(getSessionCacheKey(dealId));
+    if (!raw) return null;
+    return JSON.parse(raw) as SessionCache;
+  } catch {
+    return null;
+  }
+}
+
+function writeSessionCache(dealId: string, unsavedValues: Record<string, string>, dirtyKeys: string[]): void {
+  try {
+    if (dirtyKeys.length === 0) {
+      sessionStorage.removeItem(getSessionCacheKey(dealId));
+      return;
+    }
+    const cache: SessionCache = { unsavedValues, dirtyKeys };
+    sessionStorage.setItem(getSessionCacheKey(dealId), JSON.stringify(cache));
+  } catch {
+    // sessionStorage full or unavailable — non-blocking
+  }
+}
+
+function clearSessionCache(dealId: string): void {
+  try {
+    sessionStorage.removeItem(getSessionCacheKey(dealId));
+  } catch {
+    // non-blocking
+  }
+}
+
 export function useDealFields(dealId: string, packetId: string | null, active: boolean = true): UseDealFieldsReturn {
   const { toast } = useToast();
   const cache = useFieldDictionaryCacheOptional();
@@ -439,8 +482,25 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
           }
         });
 
-        setValues(valuesMap);
-        savedValuesSnapshotRef.current = { ...valuesMap };
+        // Restore any unsaved values from sessionStorage cache
+        const cached = readSessionCache(dealId);
+        if (cached && cached.dirtyKeys.length > 0) {
+          // Merge cached unsaved values on top of DB values
+          const mergedValues = { ...valuesMap };
+          for (const key of cached.dirtyKeys) {
+            if (key in cached.unsavedValues) {
+              mergedValues[key] = cached.unsavedValues[key];
+            }
+          }
+          setValues(mergedValues);
+          savedValuesSnapshotRef.current = { ...valuesMap }; // snapshot is DB state
+          // Restore dirty state
+          setDirtyFieldKeys(new Set(cached.dirtyKeys));
+          setIsDirty(true);
+        } else {
+          setValues(valuesMap);
+          savedValuesSnapshotRef.current = { ...valuesMap };
+        }
       }
     } catch (err: any) {
       console.error('Error fetching deal fields:', err);
@@ -457,35 +517,41 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
   };
 
   const updateValue = useCallback((fieldKey: string, value: string, isRequiredField?: boolean) => {
-    setValues(prev => ({
-      ...prev,
-      [fieldKey]: value
-    }));
+    setValues(prev => {
+      const next = { ...prev, [fieldKey]: value };
 
-    // Only mark as dirty if the value actually differs from the saved snapshot
-    const savedValue = savedValuesSnapshotRef.current[fieldKey] ?? '';
-    if (value !== savedValue) {
-      setIsDirty(true);
-      setDirtyFieldKeys(prev => {
-        const next = new Set(prev);
-        next.add(fieldKey);
-        return next;
+      // Update sessionStorage cache with current unsaved state
+      const savedValue = savedValuesSnapshotRef.current[fieldKey] ?? '';
+      const newIsDirty = value !== savedValue;
+
+      setDirtyFieldKeys(prevDirty => {
+        const nextDirty = new Set(prevDirty);
+        if (newIsDirty) {
+          nextDirty.add(fieldKey);
+        } else {
+          nextDirty.delete(fieldKey);
+        }
+
+        // Build unsaved values object (only dirty keys)
+        const unsavedValues: Record<string, string> = {};
+        nextDirty.forEach(k => {
+          unsavedValues[k] = k === fieldKey ? value : (next[k] ?? '');
+        });
+        writeSessionCache(dealId, unsavedValues, [...nextDirty]);
+
+        if (nextDirty.size === 0) setIsDirty(false);
+        else setIsDirty(true);
+        return nextDirty;
       });
-    } else {
-      // Value reverted to saved — remove from dirty set
-      setDirtyFieldKeys(prev => {
-        const next = new Set(prev);
-        next.delete(fieldKey);
-        if (next.size === 0) setIsDirty(false);
-        return next;
-      });
-    }
+
+      return next;
+    });
     
     // Track if a required field was changed
     if (isRequiredField || resolvedFields?.requiredFieldKeys.includes(fieldKey)) {
       setRequiredFieldChanged(true);
     }
-  }, [resolvedFields]);
+  }, [resolvedFields, dealId]);
 
   // Remove all values with a given prefix (e.g., "borrower2") from state and persist deletion to backend
   const removeValuesByPrefix = useCallback(async (prefix: string) => {
@@ -500,6 +566,26 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
     });
     setDeletedPrefixes(prev => [...prev, prefix]);
     setIsDirty(true);
+
+    // Update sessionStorage cache: remove keys with this prefix
+    setDirtyFieldKeys(prev => {
+      const next = new Set(prev);
+      for (const key of prev) {
+        if (key.startsWith(`${prefix}.`)) {
+          next.delete(key);
+        }
+      }
+      // Rebuild unsaved cache without the deleted prefix keys
+      const cachedData = readSessionCache(dealId);
+      if (cachedData) {
+        const unsaved = { ...cachedData.unsavedValues };
+        Object.keys(unsaved).forEach(k => {
+          if (k.startsWith(`${prefix}.`)) delete unsaved[k];
+        });
+        writeSessionCache(dealId, unsaved, [...next]);
+      }
+      return next;
+    });
 
     // Immediately persist the deletion to backend by cleaning JSONB storage
     try {
@@ -839,8 +925,11 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
         }
       }
 
-      // Clear deleted prefixes after successful save
+      // Clear deleted prefixes and sessionStorage cache after successful save
       setDeletedPrefixes([]);
+      clearSessionCache(dealId);
+      setDirtyFieldKeys(new Set());
+      setIsDirty(false);
 
       // --- Event Journal: compute diff and log changes ---
       try {
@@ -934,7 +1023,8 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
     setIsDirty(false);
     setDirtyFieldKeys(new Set());
     setRequiredFieldChanged(false);
-  }, []);
+    clearSessionCache(dealId);
+  }, [dealId]);
 
   return {
     fields: resolvedFields?.fields || [],
