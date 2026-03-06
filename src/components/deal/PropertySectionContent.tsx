@@ -413,14 +413,16 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
 
             {/* Insurance content */}
             <div className="flex-1 min-w-0 overflow-auto">
-              <InsuranceSectionContent
-                values={values}
-                onValueChange={onValueChange}
-                onRemoveValuesByPrefix={onRemoveValuesByPrefix}
-                disabled={disabled}
-                propertyOptions={propertyOptions}
-                onBack={handleBackToTable}
-              />
+              <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+                <InsuranceSectionContent
+                  values={values}
+                  onValueChange={onValueChange}
+                  onRemoveValuesByPrefix={onRemoveValuesByPrefix}
+                  disabled={disabled}
+                  propertyOptions={propertyOptions}
+                  onBack={handleBackToTable}
+                />
+              </DirtyFieldsProvider>
             </div>
           </div>
         </div>
