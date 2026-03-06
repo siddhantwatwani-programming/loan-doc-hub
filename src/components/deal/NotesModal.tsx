@@ -41,18 +41,24 @@ const formatDateTimeDisplay = (isoStr: string): string => {
   } catch { return isoStr; }
 };
 
-const getEmptyNote = (defaultAccount: string, defaultName: string): NoteData => ({
-  id: `notes_entry_${Date.now()}`,
-  highPriority: false,
-  date: new Date().toISOString(),
-  asOfDate: '',
-  account: defaultAccount,
-  name: defaultName,
-  reference: '',
-  content: '',
-  type: '',
-  attachments: [],
-});
+const getEmptyNote = (defaultAccount: string, defaultName: string): NoteData => {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  return {
+    id: `notes_entry_${Date.now()}`,
+    highPriority: false,
+    date: now.toISOString(),
+    asOfDate: `${yyyy}-${mm}-${dd}`,
+    account: defaultAccount,
+    name: defaultName,
+    reference: '',
+    content: '',
+    type: '',
+    attachments: [],
+  };
+};
 
 const NOTE_TYPES = ['Conversation Log', 'Attorney / Client', 'Internal'];
 
