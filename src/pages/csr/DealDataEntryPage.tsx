@@ -820,7 +820,31 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                   const hasRequiredFields = sectionFields.some((f) => f.is_required);
 
                   // Check if any field in this section has been modified (dirty)
+                  // For dictionary fields: exact key match
                   const sectionHasDirtyFields = sectionFields.some((f) => dirtyFieldKeys.has(f.field_key));
+                  
+                  // For multi-entity sections: check prefixed dirty keys (e.g., borrower1.xxx, property2.xxx)
+                  const SECTION_PREFIX_MAP: Record<string, string[]> = {
+                    borrower: ['borrower', 'coborrower', 'trust_ledger'],
+                    property: ['property', 'lien', 'insurance'],
+                    charges: ['charge'],
+                    lender: ['lender'],
+                    broker: ['broker'],
+                    notes: ['note'],
+                  };
+                  const prefixes = SECTION_PREFIX_MAP[section] || [];
+
+                  // For virtual tabs (funding, escrow) that share loan_terms fields
+                  const SECTION_FIELD_FALLBACK: Record<string, FieldSection> = {
+                    funding: 'loan_terms' as FieldSection,
+                    escrow: 'loan_terms' as FieldSection,
+                  };
+                  const fallbackSection = SECTION_FIELD_FALLBACK[section];
+                  const fallbackFields = fallbackSection ? (isExternalUser ? visibleFieldsBySection[fallbackSection] || [] : fieldsBySection[fallbackSection] || []) : [];
+                  const fallbackHasDirty = fallbackFields.some((f) => dirtyFieldKeys.has(f.field_key));
+                  const sectionHasPrefixedDirty = prefixes.length > 0 && Array.from(dirtyFieldKeys).some(key => 
+                    prefixes.some(p => key.match(new RegExp(`^${p}\\d+\\.`)))
+                  );
 
                   return (
                     <TabsTrigger
@@ -829,7 +853,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       className={cn(
                         "gap-2 data-[state=active]:bg-background relative",
                         !isComplete && hasRequiredFields && showValidation && "text-warning",
-                        sectionHasDirtyFields && "bg-warning/10 ring-1 ring-warning/30",
+                        (sectionHasDirtyFields || sectionHasPrefixedDirty || fallbackHasDirty) && "bg-warning/10 ring-1 ring-warning/30",
                       )}
                     >
                       {isSectionDisabledByFormPerm(section) && (
@@ -851,7 +875,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
 
               {/* Origination Fees - Custom UI Tab (always visible for internal users) */}
               {isInternalUser && (
-                <TabsTrigger value="origination_fees" className="gap-2 data-[state=active]:bg-background relative">
+                <TabsTrigger value="origination_fees" className={cn("gap-2 data-[state=active]:bg-background relative", Array.from(dirtyFieldKeys).some(k => k.match(/^origination\./)) && "bg-warning/10 ring-1 ring-warning/30")}>
                   {SECTION_LABELS["origination_fees"]}
                 </TabsTrigger>
               )}
