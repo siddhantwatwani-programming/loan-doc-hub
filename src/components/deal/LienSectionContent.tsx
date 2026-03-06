@@ -6,6 +6,8 @@ import { LienSubNavigation, type LienSubSection } from './LienSubNavigation';
 import { LiensTableView, type LienData } from './LiensTableView';
 import { LienModal } from './LienModal';
 import { LienDetailForm } from './LienDetailForm';
+import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
+import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 
 interface LienSectionContentProps {
   values: Record<string, string>;
