@@ -444,7 +444,32 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
     await performSave();
   };
 
-  const handleMarkReady = async () => {
+  // Centralized refresh handler that checks for unsaved changes
+  const handleGridRefresh = useCallback(() => {
+    if (isDirty) {
+      setShowRefreshConfirm(true);
+    } else {
+      // No unsaved changes, just reload data
+      window.location.reload();
+    }
+  }, [isDirty]);
+
+  const handleRefreshSave = async () => {
+    setShowRefreshConfirm(false);
+    await performSave();
+    window.location.reload();
+  };
+
+  const handleRefreshDiscard = () => {
+    setShowRefreshConfirm(false);
+    resetDirty();
+    window.location.reload();
+  };
+
+  const handleRefreshCancel = () => {
+    setShowRefreshConfirm(false);
+  };
+
     if (!isPacketComplete()) {
       toast({
         title: "Cannot mark ready",
