@@ -106,6 +106,7 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
   disabled = false,
   propertyOptions = [],
   onBack,
+  onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
   const activeSubSection = (nav?.getSubSection('insurance') ?? 'insurances') as InsuranceSubSection;

@@ -225,7 +225,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
     switch (activeSubSection) {
       case 'liens':
         return (
-          <LiensTableView liens={liens} onAddLien={handleAddLien} onEditLien={handleEditLien} onRowClick={handleRowClick} onDeleteLien={handleDeleteLien} onBack={onBack} disabled={disabled} />
+          <LiensTableView liens={liens} onAddLien={handleAddLien} onEditLien={handleEditLien} onRowClick={handleRowClick} onDeleteLien={handleDeleteLien} onBack={onBack} disabled={disabled} onRefresh={onRefresh} />
         );
       case 'lien_details':
         return (
