@@ -974,6 +974,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       showValidation={showValidation}
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
+                      onRefresh={handleGridRefresh}
                     />
                   ) : section === "charges" ? (
                     <ChargesSectionContent
