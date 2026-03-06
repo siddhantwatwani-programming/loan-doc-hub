@@ -164,6 +164,7 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onRefresh={onRefresh}
+        filterOptions={FILTER_OPTIONS}
         activeFilters={activeFilters}
         onFilterChange={setFilter}
         onClearFilters={clearFilters}
