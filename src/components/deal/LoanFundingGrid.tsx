@@ -199,6 +199,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         onFilterChange={setFilter}
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
+        disabled={disabled}
         selectedCount={selectedCount}
         onBulkDelete={() => setBulkDeleteOpen(true)}
         onExport={() => setExportOpen(true)}
