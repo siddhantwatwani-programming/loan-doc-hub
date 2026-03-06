@@ -41,6 +41,7 @@ import {
   Lock,
   User,
   Eye,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getRoleDisplayName } from "@/lib/accessControl";
