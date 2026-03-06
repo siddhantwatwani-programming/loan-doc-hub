@@ -135,25 +135,27 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
             </div>
             <div className="grid grid-cols-[140px_1fr_1fr_1fr] border-b border-border items-center">
               <div className="px-3 py-2 text-sm font-medium text-foreground">Advanced By</div>
-              <div className="px-2 py-1.5"><Input value={values[FIELD_KEYS.advancedByAccount] || ''} onChange={(e) => onValueChange(FIELD_KEYS.advancedByAccount, e.target.value)} disabled={disabled} className="h-7 text-sm" /></div>
-              <div className="px-2 py-1.5"><Input value={values[FIELD_KEYS.advancedByLenderName] || ''} onChange={(e) => onValueChange(FIELD_KEYS.advancedByLenderName, e.target.value)} disabled={disabled} className="h-7 text-sm" /></div>
-              <div className="px-2 py-1.5"><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span><Input type="number" step="0.01" value={values[FIELD_KEYS.advancedByAmount] || ''} onChange={(e) => onValueChange(FIELD_KEYS.advancedByAmount, e.target.value)} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" /></div></div>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.advancedByAccount}><div className="px-2 py-1.5"><Input value={values[FIELD_KEYS.advancedByAccount] || ''} onChange={(e) => onValueChange(FIELD_KEYS.advancedByAccount, e.target.value)} disabled={disabled} className="h-7 text-sm" /></div></DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.advancedByLenderName}><div className="px-2 py-1.5"><Input value={values[FIELD_KEYS.advancedByLenderName] || ''} onChange={(e) => onValueChange(FIELD_KEYS.advancedByLenderName, e.target.value)} disabled={disabled} className="h-7 text-sm" /></div></DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.advancedByAmount}><div className="px-2 py-1.5"><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span><Input type="number" step="0.01" value={values[FIELD_KEYS.advancedByAmount] || ''} onChange={(e) => onValueChange(FIELD_KEYS.advancedByAmount, e.target.value)} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" /></div></div></DirtyFieldWrapper>
             </div>
             <div className="grid grid-cols-[140px_1fr_1fr_1fr] border-b border-border items-center">
               <div className="px-3 py-2 text-sm font-medium text-foreground">On Behalf Of</div>
-              <div className="px-2 py-1.5"><Input value={values[FIELD_KEYS.onBehalfOfAccount] || ''} onChange={(e) => onValueChange(FIELD_KEYS.onBehalfOfAccount, e.target.value)} disabled={disabled} className="h-7 text-sm" /></div>
-              <div className="px-2 py-1.5"><Input value={values[FIELD_KEYS.onBehalfOfLenderName] || ''} onChange={(e) => onValueChange(FIELD_KEYS.onBehalfOfLenderName, e.target.value)} disabled={disabled} className="h-7 text-sm" /></div>
-              <div className="px-2 py-1.5"><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span><Input type="number" step="0.01" value={values[FIELD_KEYS.onBehalfOfAmount] || ''} onChange={(e) => onValueChange(FIELD_KEYS.onBehalfOfAmount, e.target.value)} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" /></div></div>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.onBehalfOfAccount}><div className="px-2 py-1.5"><Input value={values[FIELD_KEYS.onBehalfOfAccount] || ''} onChange={(e) => onValueChange(FIELD_KEYS.onBehalfOfAccount, e.target.value)} disabled={disabled} className="h-7 text-sm" /></div></DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.onBehalfOfLenderName}><div className="px-2 py-1.5"><Input value={values[FIELD_KEYS.onBehalfOfLenderName] || ''} onChange={(e) => onValueChange(FIELD_KEYS.onBehalfOfLenderName, e.target.value)} disabled={disabled} className="h-7 text-sm" /></div></DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.onBehalfOfAmount}><div className="px-2 py-1.5"><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span><Input type="number" step="0.01" value={values[FIELD_KEYS.onBehalfOfAmount] || ''} onChange={(e) => onValueChange(FIELD_KEYS.onBehalfOfAmount, e.target.value)} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" /></div></div></DirtyFieldWrapper>
             </div>
             <div className="grid grid-cols-[140px_1fr_1fr_1fr] items-center">
-              <div className="px-3 py-2 flex items-center gap-2">
-                <button type="button" disabled={disabled} onClick={() => onValueChange(FIELD_KEYS.distributeBetweenAllLenders, values[FIELD_KEYS.distributeBetweenAllLenders] === 'true' ? 'false' : 'true')} className="aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center">
-                  {values[FIELD_KEYS.distributeBetweenAllLenders] === 'true' && <span className="h-2.5 w-2.5 rounded-full bg-current block" />}
-                </button>
-                <Label className="text-sm font-medium text-foreground cursor-pointer whitespace-nowrap" onClick={() => !disabled && onValueChange(FIELD_KEYS.distributeBetweenAllLenders, values[FIELD_KEYS.distributeBetweenAllLenders] === 'true' ? 'false' : 'true')}>Distribute Between All Lenders</Label>
-              </div>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.distributeBetweenAllLenders}>
+                <div className="px-3 py-2 flex items-center gap-2">
+                  <button type="button" disabled={disabled} onClick={() => onValueChange(FIELD_KEYS.distributeBetweenAllLenders, values[FIELD_KEYS.distributeBetweenAllLenders] === 'true' ? 'false' : 'true')} className="aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center">
+                    {values[FIELD_KEYS.distributeBetweenAllLenders] === 'true' && <span className="h-2.5 w-2.5 rounded-full bg-current block" />}
+                  </button>
+                  <Label className="text-sm font-medium text-foreground cursor-pointer whitespace-nowrap" onClick={() => !disabled && onValueChange(FIELD_KEYS.distributeBetweenAllLenders, values[FIELD_KEYS.distributeBetweenAllLenders] === 'true' ? 'false' : 'true')}>Distribute Between All Lenders</Label>
+                </div>
+              </DirtyFieldWrapper>
               <div className="px-3 py-2 text-sm font-medium text-foreground col-span-2 text-right pr-4">Amount Advanced:</div>
-              <div className="px-2 py-1.5"><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span><Input type="number" step="0.01" value={values[FIELD_KEYS.amountOwedByBorrower] || ''} onChange={(e) => onValueChange(FIELD_KEYS.amountOwedByBorrower, e.target.value)} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" /></div></div>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.amountOwedByBorrower}><div className="px-2 py-1.5"><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span><Input type="number" step="0.01" value={values[FIELD_KEYS.amountOwedByBorrower] || ''} onChange={(e) => onValueChange(FIELD_KEYS.amountOwedByBorrower, e.target.value)} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" /></div></div></DirtyFieldWrapper>
             </div>
           </div>
         </div>
