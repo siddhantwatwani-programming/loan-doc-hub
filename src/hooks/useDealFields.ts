@@ -63,6 +63,7 @@ export interface UseDealFieldsReturn extends DealFieldsData {
   calculatedFields: CalculatedField[];
   hasRequiredFieldChanged: () => boolean;
   resetDirty: () => void;
+  refetchData: () => Promise<void>;
 }
 
 // JSONB field value structure
