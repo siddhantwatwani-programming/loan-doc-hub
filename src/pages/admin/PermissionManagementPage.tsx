@@ -232,6 +232,13 @@ const PermissionManagementPage: React.FC = () => {
           </TableBody>
         </Table>
       </div>
+
+      {/* CSR Users Table */}
+      {selectedRole === 'csr' && (
+        <div className="mt-6">
+          <CsrUserPermissionsTable />
+        </div>
+      )}
     </div>
   );
 };
