@@ -89,29 +89,35 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
           {renderInlineField(FIELD_KEYS.chargeType, 'Charge Type', values, onValueChange, disabled, { placeholder: 'Enter type' })}
           {renderCurrencyField(FIELD_KEYS.originalAmount, 'Original Amount', values, onValueChange, disabled)}
           {renderInlineField(FIELD_KEYS.description, 'Description', values, onValueChange, disabled, { placeholder: 'Enter description' })}
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Interest Rate</Label>
-            <div className="relative flex-1">
-              <Input type="number" step="0.01" value={values[FIELD_KEYS.interestRate] || ''} onChange={(e) => onValueChange(FIELD_KEYS.interestRate, e.target.value)} disabled={disabled} className="h-7 text-sm pr-6" placeholder="0.00" />
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.interestRate}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Interest Rate</Label>
+              <div className="relative flex-1">
+                <Input type="number" step="0.01" value={values[FIELD_KEYS.interestRate] || ''} onChange={(e) => onValueChange(FIELD_KEYS.interestRate, e.target.value)} disabled={disabled} className="h-7 text-sm pr-6" placeholder="0.00" />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
+              </div>
             </div>
-          </div>
+          </DirtyFieldWrapper>
           {renderCurrencyField(FIELD_KEYS.unpaidBalance, 'Unpaid Balance', values, onValueChange, disabled)}
-          <div className="flex items-start gap-3">
-            <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0 pt-2">Notes</Label>
-            <Textarea value={values[FIELD_KEYS.notes] || ''} onChange={(e) => onValueChange(FIELD_KEYS.notes, e.target.value)} disabled={disabled} className="text-sm min-h-[50px] flex-1" placeholder="Enter notes" />
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.notes}>
+            <div className="flex items-start gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0 pt-2">Notes</Label>
+              <Textarea value={values[FIELD_KEYS.notes] || ''} onChange={(e) => onValueChange(FIELD_KEYS.notes, e.target.value)} disabled={disabled} className="text-sm min-h-[50px] flex-1" placeholder="Enter notes" />
+            </div>
+          </DirtyFieldWrapper>
+        </div>
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.deferred}>
+          <div className="flex items-center gap-2 px-1 pt-2">
+            <Checkbox
+              id="deferred-cb"
+              checked={values[FIELD_KEYS.deferred] === 'true'}
+              onCheckedChange={(checked) => onValueChange(FIELD_KEYS.deferred, checked ? 'true' : 'false')}
+              disabled={disabled}
+              className="h-3.5 w-3.5"
+            />
+            <Label htmlFor="deferred-cb" className="text-sm text-foreground cursor-pointer">Deferred</Label>
           </div>
-        </div>
-        <div className="flex items-center gap-2 px-1 pt-2">
-          <Checkbox
-            id="deferred-cb"
-            checked={values[FIELD_KEYS.deferred] === 'true'}
-            onCheckedChange={(checked) => onValueChange(FIELD_KEYS.deferred, checked ? 'true' : 'false')}
-            disabled={disabled}
-            className="h-3.5 w-3.5"
-          />
-          <Label htmlFor="deferred-cb" className="text-sm text-foreground cursor-pointer">Deferred</Label>
-        </div>
+        </DirtyFieldWrapper>
       </div>
 
       {/* Distribution Section - keep existing table structure */}
