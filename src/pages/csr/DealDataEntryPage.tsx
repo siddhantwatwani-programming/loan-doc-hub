@@ -205,6 +205,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
     resetDirty,
     computeCalculatedFields,
     calculationResults,
+    refetchData,
   } = useDealFields(id || "", deal?.packet_id || null, isActive || hasEverBeenActive);
 
   // Field permissions for filtering visible fields/sections
