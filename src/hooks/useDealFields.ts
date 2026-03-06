@@ -925,8 +925,11 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
         }
       }
 
-      // Clear deleted prefixes after successful save
+      // Clear deleted prefixes and sessionStorage cache after successful save
       setDeletedPrefixes([]);
+      clearSessionCache(dealId);
+      setDirtyFieldKeys(new Set());
+      setIsDirty(false);
 
       // --- Event Journal: compute diff and log changes ---
       try {
