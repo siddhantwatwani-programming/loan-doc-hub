@@ -16,6 +16,7 @@ import { DealNavigationProvider, useDealNavigation } from "@/contexts/DealNaviga
 import { useWorkspaceOptional } from "@/contexts/WorkspaceContext";
 import { DirtyFieldsProvider } from "@/contexts/DirtyFieldsContext";
 import { SaveConfirmationDialog } from "@/components/workspace/SaveConfirmationDialog";
+import { RefreshConfirmationDialog } from "@/components/deal/RefreshConfirmationDialog";
 import { DealSectionTab } from "@/components/deal/DealSectionTab";
 import { BorrowerSectionContent } from "@/components/deal/BorrowerSectionContent";
 import { LenderSectionContent } from "@/components/deal/LenderSectionContent";
@@ -125,6 +126,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
   const [markingReady, setMarkingReady] = useState(false);
   const [completingSection, setCompletingSection] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [showRefreshConfirm, setShowRefreshConfirm] = useState(false);
 
   const [hasEverBeenActive, setHasEverBeenActive] = useState(isActive);
 
@@ -440,6 +442,32 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
   const handleSaveConfirmed = async () => {
     setShowSaveConfirm(false);
     await performSave();
+  };
+
+  // Centralized refresh handler that checks for unsaved changes
+  const handleGridRefresh = useCallback(() => {
+    if (isDirty) {
+      setShowRefreshConfirm(true);
+    } else {
+      // No unsaved changes, just reload data
+      window.location.reload();
+    }
+  }, [isDirty]);
+
+  const handleRefreshSave = async () => {
+    setShowRefreshConfirm(false);
+    await performSave();
+    window.location.reload();
+  };
+
+  const handleRefreshDiscard = () => {
+    setShowRefreshConfirm(false);
+    resetDirty();
+    window.location.reload();
+  };
+
+  const handleRefreshCancel = () => {
+    setShowRefreshConfirm(false);
   };
 
   const handleMarkReady = async () => {
@@ -914,6 +942,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       showValidation={showValidation}
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
+                      onRefresh={handleGridRefresh}
                     />
                   ) : section === "loan_terms" ? (
                     <LoanTermsSectionContent
@@ -934,6 +963,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       showValidation={showValidation}
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
+                      onRefresh={handleGridRefresh}
                     />
                   ) : section === "broker" ? (
                     <BrokerSectionContent
@@ -944,6 +974,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       showValidation={showValidation}
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
+                      onRefresh={handleGridRefresh}
                     />
                   ) : section === "charges" ? (
                     <ChargesSectionContent
@@ -954,6 +985,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       showValidation={showValidation}
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
+                      onRefresh={handleGridRefresh}
                     />
                   ) : section === "notes" ? (
                     <NotesSectionContent
@@ -965,6 +997,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
                       dealNumber={deal.deal_number}
+                      onRefresh={handleGridRefresh}
                     />
                   ) : section === "other" ? (
                     <DealSectionTab
@@ -1022,6 +1055,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                 disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm("funding")}
                 calculationResults={calculationResults}
                 dealId={id || ""}
+                onRefresh={handleGridRefresh}
               />
             </TabsContent>
 
@@ -1053,6 +1087,14 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
         open={showSaveConfirm}
         onConfirm={handleSaveConfirmed}
         onCancel={() => setShowSaveConfirm(false)}
+      />
+
+      {/* Refresh Confirmation Dialog */}
+      <RefreshConfirmationDialog
+        open={showRefreshConfirm}
+        onSave={handleRefreshSave}
+        onDiscard={handleRefreshDiscard}
+        onCancel={handleRefreshCancel}
       />
     </div>
   );

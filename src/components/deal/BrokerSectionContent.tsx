@@ -20,6 +20,7 @@ interface BrokerSectionContentProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  onRefresh?: () => void;
 }
 
 // Helper to extract brokers from values based on broker prefix pattern
@@ -91,6 +92,7 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
   showValidation = false,
   disabled = false,
   calculationResults = {},
+  onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
   const activeSubSection = (nav?.getSubSection('broker') ?? 'brokers') as BrokerSubSection;
@@ -220,6 +222,7 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
             onEditBroker={handleEditBroker}
             onRowClick={handleRowClick}
             onDeleteBroker={handleDeleteBroker}
+            onRefresh={onRefresh}
             disabled={disabled}
             isLoading={isLoading}
           />

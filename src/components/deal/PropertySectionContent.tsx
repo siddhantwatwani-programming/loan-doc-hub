@@ -24,6 +24,7 @@ interface PropertySectionContentProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  onRefresh?: () => void;
 }
 
 // Helper to extract properties from values based on property prefix pattern
@@ -122,6 +123,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   showValidation = false,
   disabled = false,
   calculationResults = {},
+  onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
   const activeSubSection = (nav?.getSubSection('property') ?? 'properties') as PropertySubSection;
@@ -319,6 +321,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             onRowClick={handleRowClick}
             onPrimaryChange={handlePrimaryChange}
             onDeleteProperty={handleDeleteProperty}
+            onRefresh={onRefresh}
             disabled={disabled}
           />
         );

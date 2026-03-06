@@ -19,6 +19,7 @@ interface ChargesSectionContentProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  onRefresh?: () => void;
 }
 
 // Helper to extract charges from values based on charge prefix pattern
@@ -98,6 +99,7 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
   showValidation = false,
   disabled = false,
   calculationResults = {},
+  onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
   const activeSubSection = (nav?.getSubSection('charges') ?? 'charges') as ChargesSubSection;
@@ -232,6 +234,7 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
             onEditCharge={handleEditCharge}
             onRowClick={handleRowClick}
             onDeleteCharge={handleDeleteCharge}
+            onRefresh={onRefresh}
             disabled={disabled}
             isLoading={isLoading}
           />

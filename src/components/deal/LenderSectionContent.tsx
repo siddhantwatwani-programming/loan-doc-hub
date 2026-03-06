@@ -23,6 +23,7 @@ interface LenderSectionContentProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  onRefresh?: () => void;
 }
 
 // Helper to extract lenders from values based on lender prefix pattern
@@ -94,6 +95,7 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
   showValidation = false,
   disabled = false,
   calculationResults = {},
+  onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
   const activeSubSection = (nav?.getSubSection('lender') ?? 'lenders') as LenderSubSection;
@@ -268,6 +270,7 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
             onRowClick={handleRowClick}
             onPrimaryChange={handlePrimaryChange}
             onDeleteLender={handleDeleteLender}
+            onRefresh={onRefresh}
             disabled={disabled}
             isLoading={isLoading}
           />

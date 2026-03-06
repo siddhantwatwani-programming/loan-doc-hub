@@ -33,6 +33,7 @@ interface LoanTermsFundingFormProps {
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
   dealId: string;
+  onRefresh?: () => void;
 }
 
 export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
@@ -44,6 +45,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   disabled = false,
   calculationResults = {},
   dealId,
+  onRefresh,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -220,6 +222,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       onAddFunding={handleAddFunding}
       onDeleteRecord={handleDeleteRecord}
       onUpdateRecord={handleUpdateRecord}
+      onRefresh={onRefresh}
       isLoading={isLoading}
       disabled={disabled}
       currentPage={currentPage}
