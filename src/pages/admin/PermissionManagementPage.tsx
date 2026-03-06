@@ -56,7 +56,7 @@ const PERMISSION_LEVEL_LABELS: Record<string, string> = {
 
 const PERMISSION_LEVELS = ['full', 'limited', 'view_only'];
 
-const ROLES = ['admin', 'csr', 'borrower', 'broker', 'lender'];
+const ROLES = ['admin', 'csr'];
 
 const PermissionManagementPage: React.FC = () => {
   const { allPermissions, loading, updatePermission, ensureLevelPermissions } = useFormPermissionsAdmin();
