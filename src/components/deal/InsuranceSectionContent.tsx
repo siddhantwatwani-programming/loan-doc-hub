@@ -16,6 +16,7 @@ interface InsuranceSectionContentProps {
   disabled?: boolean;
   propertyOptions?: { id: string; label: string }[];
   onBack?: () => void;
+  onRefresh?: () => void;
 }
 
 // Helper to extract insurances from values based on insurance prefix pattern
