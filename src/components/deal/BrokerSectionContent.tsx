@@ -7,6 +7,8 @@ import { BrokerInfoForm } from './BrokerInfoForm';
 import { BrokerBankingForm } from './BrokerBankingForm';
 import { BrokersTableView, type BrokerData } from './BrokersTableView';
 import { BrokerModal } from './BrokerModal';
+import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
+import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
