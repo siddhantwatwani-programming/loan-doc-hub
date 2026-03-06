@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isExternalUser = role !== null && EXTERNAL_ROLES.includes(role);
   const isInternalUser = role !== null && INTERNAL_ROLES.includes(role);
 
-  const fetchUserRole = async (userId: string) => {
+  const fetchUserRole = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('user_roles')
@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error fetching role:', error);
       return null;
     }
-  };
+  }, []);
 
   const applySessionState = useCallback(async (nextSession: Session | null) => {
     setSession(nextSession);
