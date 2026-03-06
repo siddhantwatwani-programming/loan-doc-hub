@@ -461,12 +461,25 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
       ...prev,
       [fieldKey]: value
     }));
-    setIsDirty(true);
-    setDirtyFieldKeys(prev => {
-      const next = new Set(prev);
-      next.add(fieldKey);
-      return next;
-    });
+
+    // Only mark as dirty if the value actually differs from the saved snapshot
+    const savedValue = savedValuesSnapshotRef.current[fieldKey] ?? '';
+    if (value !== savedValue) {
+      setIsDirty(true);
+      setDirtyFieldKeys(prev => {
+        const next = new Set(prev);
+        next.add(fieldKey);
+        return next;
+      });
+    } else {
+      // Value reverted to saved — remove from dirty set
+      setDirtyFieldKeys(prev => {
+        const next = new Set(prev);
+        next.delete(fieldKey);
+        if (next.size === 0) setIsDirty(false);
+        return next;
+      });
+    }
     
     // Track if a required field was changed
     if (isRequiredField || resolvedFields?.requiredFieldKeys.includes(fieldKey)) {
