@@ -65,6 +65,30 @@ interface LoanFundingGridProps {
 
 const SEARCH_FIELDS = ['lenderAccount', 'lenderName'];
 
+const buildFundingFilterOptions = (records: FundingRecord[]): FilterOption[] => {
+  const uniqueAccounts = [...new Set(records.map(r => r.lenderAccount).filter(Boolean))];
+  const uniqueNames = [...new Set(records.map(r => r.lenderName).filter(Boolean))];
+  const uniqueRates = [...new Set(records.map(r => r.lenderRate))].sort((a, b) => a - b);
+
+  return [
+    {
+      id: 'lenderAccount',
+      label: 'Lender Account',
+      options: uniqueAccounts.map(a => ({ value: a, label: a })),
+    },
+    {
+      id: 'lenderName',
+      label: 'Lender Name',
+      options: uniqueNames.map(n => ({ value: n, label: n })),
+    },
+    {
+      id: 'lenderRate',
+      label: 'Lender Rate',
+      options: uniqueRates.map(r => ({ value: String(r), label: `${r.toFixed(3)}%` })),
+    },
+  ];
+};
+
 export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   dealId,
   loanNumber,
