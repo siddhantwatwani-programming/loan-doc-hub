@@ -152,30 +152,41 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
 
   const handleSaveCharge = useCallback((chargeData: ChargeData) => {
     const prefix = editingCharge ? editingCharge.id : getNextChargePrefix(values);
+    const isEdit = !!editingCharge;
     
-    onValueChange(`${prefix}.description`, chargeData.description);
-    onValueChange(`${prefix}.unpaid_balance`, chargeData.unpaidBalance);
-    onValueChange(`${prefix}.owed_to`, chargeData.owedTo);
-    onValueChange(`${prefix}.owed_from`, chargeData.owedFrom);
-    onValueChange(`${prefix}.total_due`, chargeData.totalDue);
-    onValueChange(`${prefix}.interest_from`, chargeData.interestFrom);
-    onValueChange(`${prefix}.date_of_charge`, chargeData.dateOfCharge);
-    onValueChange(`${prefix}.interest_rate`, chargeData.interestRate);
-    onValueChange(`${prefix}.notes`, chargeData.notes);
-    onValueChange(`${prefix}.reference`, chargeData.reference);
-    onValueChange(`${prefix}.charge_type`, chargeData.chargeType);
-    onValueChange(`${prefix}.deferred`, chargeData.deferred);
-    onValueChange(`${prefix}.original_amount`, chargeData.originalAmount);
-    onValueChange(`${prefix}.account`, chargeData.account);
-    onValueChange(`${prefix}.borrower_full_name`, chargeData.borrowerFullName);
-    onValueChange(`${prefix}.advanced_by_account`, chargeData.advancedByAccount);
-    onValueChange(`${prefix}.advanced_by_lender_name`, chargeData.advancedByLenderName);
-    onValueChange(`${prefix}.advanced_by_amount`, chargeData.advancedByAmount);
-    onValueChange(`${prefix}.on_behalf_of_account`, chargeData.onBehalfOfAccount);
-    onValueChange(`${prefix}.on_behalf_of_lender_name`, chargeData.onBehalfOfLenderName);
-    onValueChange(`${prefix}.on_behalf_of_amount`, chargeData.onBehalfOfAmount);
-    onValueChange(`${prefix}.amount_owed_by_borrower`, chargeData.amountOwedByBorrower);
-    onValueChange(`${prefix}.accrued_interest`, chargeData.accruedInterest);
+    const fieldEntries: { key: keyof ChargeData; dbField: string }[] = [
+      { key: 'description', dbField: 'description' },
+      { key: 'unpaidBalance', dbField: 'unpaid_balance' },
+      { key: 'owedTo', dbField: 'owed_to' },
+      { key: 'owedFrom', dbField: 'owed_from' },
+      { key: 'totalDue', dbField: 'total_due' },
+      { key: 'interestFrom', dbField: 'interest_from' },
+      { key: 'dateOfCharge', dbField: 'date_of_charge' },
+      { key: 'interestRate', dbField: 'interest_rate' },
+      { key: 'notes', dbField: 'notes' },
+      { key: 'reference', dbField: 'reference' },
+      { key: 'chargeType', dbField: 'charge_type' },
+      { key: 'deferred', dbField: 'deferred' },
+      { key: 'originalAmount', dbField: 'original_amount' },
+      { key: 'account', dbField: 'account' },
+      { key: 'borrowerFullName', dbField: 'borrower_full_name' },
+      { key: 'advancedByAccount', dbField: 'advanced_by_account' },
+      { key: 'advancedByLenderName', dbField: 'advanced_by_lender_name' },
+      { key: 'advancedByAmount', dbField: 'advanced_by_amount' },
+      { key: 'onBehalfOfAccount', dbField: 'on_behalf_of_account' },
+      { key: 'onBehalfOfLenderName', dbField: 'on_behalf_of_lender_name' },
+      { key: 'onBehalfOfAmount', dbField: 'on_behalf_of_amount' },
+      { key: 'amountOwedByBorrower', dbField: 'amount_owed_by_borrower' },
+      { key: 'accruedInterest', dbField: 'accrued_interest' },
+    ];
+
+    fieldEntries.forEach(({ key, dbField }) => {
+      const val = chargeData[key] || '';
+      // Only write fields with actual data to avoid false dirty flags on new entries
+      if (val !== '' || isEdit) {
+        onValueChange(`${prefix}.${dbField}`, val);
+      }
+    });
     
     setModalOpen(false);
   }, [editingCharge, values, onValueChange]);
