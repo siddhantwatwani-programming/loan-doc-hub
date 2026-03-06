@@ -142,11 +142,16 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const isInsuranceSection = activeSubSection === 'insurance';
 
   // Remap dirty field keys: propertyN.xxx → property1.xxx for selected prefix
+  // Also pass through lien/insurance keys for sub-sections
   const remappedDirtyKeys = useMemo(() => {
     const remapped = new Set<string>();
     dirtyFieldKeys.forEach(key => {
       if (key.startsWith(`${selectedPropertyPrefix}.`)) {
         remapped.add(key.replace(`${selectedPropertyPrefix}.`, 'property1.'));
+      }
+      // Pass through lien and insurance keys unchanged (they handle their own remapping)
+      if (key.match(/^(lien\d+|insurance\d+)\./)) {
+        remapped.add(key);
       }
     });
     return remapped;

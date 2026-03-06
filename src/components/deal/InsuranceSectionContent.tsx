@@ -334,7 +334,9 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
 
           {/* Sub-section content on the right */}
           <div className="flex-1 min-w-0 overflow-auto">
-            {renderSubSectionContent()}
+            <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+              {renderSubSectionContent()}
+            </DirtyFieldsProvider>
           </div>
         </div>
       </div>
