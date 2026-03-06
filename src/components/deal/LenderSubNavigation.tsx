@@ -21,6 +21,7 @@ export const LenderSubNavigation: React.FC<LenderSubNavigationProps> = ({
   activeSubSection,
   onSubSectionChange,
   isDetailView = false,
+  dirtySubSections = new Set(),
 }) => {
   // Only show navigation when in detail view
   if (!isDetailView) {
