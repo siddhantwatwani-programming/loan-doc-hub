@@ -222,6 +222,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       onAddFunding={handleAddFunding}
       onDeleteRecord={handleDeleteRecord}
       onUpdateRecord={handleUpdateRecord}
+      onRefresh={onRefresh}
       isLoading={isLoading}
       disabled={disabled}
       currentPage={currentPage}
