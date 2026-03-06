@@ -288,9 +288,9 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
 
   const persistDraftOnBackground = useCallback(async () => {
     if (!id || !shouldHandleBackgroundPersist) return;
-    if (!isActiveRef.current || !isDirtyRef.current || savingRef.current) return;
+    if (!isDirtyRef.current || savingRef.current) return;
 
-    computeCalculatedFields();
+    // saveDraft already calls computeCalculatedFields internally — no need to call it here
     const success = await saveDraft({ silent: true });
 
     if (success) {
@@ -299,7 +299,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
         workspaceRef.current.setFileDirty(id, false);
       }
     }
-  }, [id, shouldHandleBackgroundPersist, computeCalculatedFields, saveDraft, resetDirty]);
+  }, [id, shouldHandleBackgroundPersist, saveDraft, resetDirty]);
 
   useEffect(() => {
     if (!id || !shouldHandleBackgroundPersist) return;
