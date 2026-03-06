@@ -61,6 +61,27 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
 
 const SEARCHABLE_FIELDS = ['brokerId', 'license', 'company', 'firstName', 'lastName', 'email', 'street', 'city', 'state', 'phoneWork', 'phoneCell'];
 
+const FILTER_OPTIONS: FilterOption[] = [
+  {
+    id: 'state',
+    label: 'State',
+    options: [
+      { value: 'CA', label: 'California' },
+      { value: 'TX', label: 'Texas' },
+      { value: 'FL', label: 'Florida' },
+      { value: 'NY', label: 'New York' },
+      { value: 'WA', label: 'Washington' },
+    ],
+  },
+  {
+    id: 'company',
+    label: 'Company',
+    options: [
+      { value: 'all', label: 'All' },
+    ],
+  },
+];
+
 export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
   brokers,
   onAddBroker,
