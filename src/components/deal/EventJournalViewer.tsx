@@ -84,11 +84,11 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
     activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
   } = useGridSortFilter(entries || [], SEARCH_FIELDS);
 
-  // Event journal is read-only, selection is for export reference only
   const {
-    selectedIds, toggleOne, toggleAll,
-    isAllSelected, isSomeSelected,
+    selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
+    isAllSelected, isSomeSelected, selectedCount,
   } = useGridSelection(filteredData);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['event-journal', dealId] });
