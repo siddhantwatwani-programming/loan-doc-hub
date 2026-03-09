@@ -307,14 +307,15 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
         'charges',
         'dates',
         'escrow',
+        'origination_fees',
+        'insurance',
         'participants',
         'notes',
         'seller',
         'title',
-        'other'
       ];
 
-      // Sections whose fields should be merged into 'other' tab instead of showing as separate tabs
+      // Sections whose fields should be merged into nearest appropriate tab
       const MERGE_INTO_OTHER: FieldSection[] = ['participants', 'title'];
 
       let mergedResolved = resolved;
