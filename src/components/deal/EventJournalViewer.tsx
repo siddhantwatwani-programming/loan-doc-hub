@@ -4,7 +4,6 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
@@ -14,11 +13,7 @@ import { GridToolbar, FilterOption } from './GridToolbar';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
-import { useGridSelection } from '@/hooks/useGridSelection';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
-import { toast } from 'sonner';
 
 interface EventJournalViewerProps {
   dealId: string;
@@ -84,27 +79,8 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
     activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
   } = useGridSortFilter(entries || [], SEARCH_FIELDS);
 
-  const {
-    selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
-    isAllSelected, isSomeSelected, selectedCount,
-  } = useGridSelection(filteredData);
-  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
-
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['event-journal', dealId] });
-  };
-
-  const handleBulkDelete = async () => {
-    const ids = selectedItems.map((e) => e.id);
-    const { error } = await supabase.from('event_journal').delete().in('id', ids);
-    if (error) {
-      toast.error('Failed to delete events');
-    } else {
-      toast.success(`Deleted ${ids.length} event(s)`);
-      queryClient.invalidateQueries({ queryKey: ['event-journal', dealId] });
-    }
-    clearSelection();
-    setBulkDeleteOpen(false);
   };
 
   if (isLoading) {
@@ -129,7 +105,6 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
 
   return (
     <div className="space-y-4">
-      {/* Grid Toolbar */}
       <GridToolbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -140,22 +115,12 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
         disabled={disabled}
-        selectedCount={selectedCount}
-        onBulkDelete={() => setBulkDeleteOpen(true)}
         onExport={() => setExportOpen(true)}
       />
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[40px]">
-              <Checkbox
-                checked={isAllSelected}
-                ref={(el) => { if (el) (el as any).indeterminate = isSomeSelected; }}
-                onCheckedChange={toggleAll}
-                disabled={filteredData.length === 0}
-              />
-            </TableHead>
             <SortableTableHead columnId="event_number" label="Event #" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[80px]" />
             <SortableTableHead columnId="actor_name" label="User" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[150px]" />
             <SortableTableHead columnId="section" label="Section" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[120px]" />
@@ -166,16 +131,13 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
         <TableBody>
           {filteredData.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                 No events match your search or filters.
               </TableCell>
             </TableRow>
           ) : (
             filteredData.map((entry) => (
               <TableRow key={entry.id}>
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <Checkbox checked={selectedIds.has(entry.id)} onCheckedChange={() => toggleOne(entry.id)} />
-                </TableCell>
                 <TableCell className="font-mono">{entry.event_number}</TableCell>
                 <TableCell>{entry.actor_name}</TableCell>
                 <TableCell className="capitalize">{entry.section.replace(/_/g, ' ')}</TableCell>
@@ -200,7 +162,6 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
         </TableBody>
       </Table>
 
-      {/* Footer */}
       {entries.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
@@ -224,14 +185,6 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
           {selectedEntry && formatDetailsFull(selectedEntry.details)}
         </DialogContent>
       </Dialog>
-
-      <DeleteConfirmationDialog
-        open={bulkDeleteOpen}
-        onOpenChange={setBulkDeleteOpen}
-        onConfirm={handleBulkDelete}
-        title={`Delete ${selectedCount} Event(s)`}
-        description={`Are you sure you want to delete ${selectedCount} selected event journal entries? This action cannot be undone.`}
-      />
 
       <GridExportDialog
         open={exportOpen}
