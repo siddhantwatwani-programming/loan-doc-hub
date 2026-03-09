@@ -356,7 +356,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
             )}
           >
             {field.label}
-            {field.is_required && (
+            {(field.is_required || field.is_mandatory) && (
               <span className="text-destructive" title="Required field">
                 <Asterisk className="h-2.5 w-2.5" />
               </span>
