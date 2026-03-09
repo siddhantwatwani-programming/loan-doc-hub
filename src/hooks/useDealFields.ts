@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEventJournalLogger, type FieldChange } from '@/hooks/useEventJournal';
 import { useToast } from '@/hooks/use-toast';
 import { useFieldDictionaryCacheOptional } from '@/hooks/useFieldDictionaryCache';
+import { resolveLegacyKey, resolveDbKeyToLegacy, DB_KEY_TO_LEGACY } from '@/lib/legacyKeyMap';
 import { 
   resolvePacketFields,
   resolveAllFields,
@@ -411,11 +412,20 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
       setResolvedFields(mergedResolved);
 
       // Build data type and ID lookup maps
+      // Maps both DB keys (br_p_firstName) AND legacy keys (borrower.first_name) to dictionary IDs
       const dataTypeMap: Record<string, FieldDataType> = {};
       const idMap: Record<string, string> = {};
       mergedResolved.fields.forEach(f => {
+        // Primary mapping: DB field_key -> dictionary ID
         dataTypeMap[f.field_key] = f.data_type;
         idMap[f.field_key] = f.field_dictionary_id;
+        
+        // Also map the legacy dot-notation key (if one exists) so UI lookups work
+        const legacyKey = resolveDbKeyToLegacy(f.field_key);
+        if (legacyKey !== f.field_key) {
+          dataTypeMap[legacyKey] = f.data_type;
+          idMap[legacyKey] = f.field_dictionary_id;
+        }
       });
       setFieldDataTypes(dataTypeMap);
       setFieldIdMap(idMap);
@@ -454,23 +464,43 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
                 let keyToUse = (fieldData as JsonbFieldValue).indexed_key;
                 if (!keyToUse && prefix) {
                   // Reconstruct indexed key from prefix and canonical field key
+                  // First, resolve the DB field_key to legacy dot-notation if possible
+                  const legacyFieldKey = resolveDbKeyToLegacy(fieldMeta.field_key);
+                  
                   // For charge fields, we need to reverse-map dictionary keys to UI format
-                  // e.g., prefix="charge1", field_key="charge_date" -> "charge1.date_of_charge"
                   if (isChargeSection && prefix.startsWith('charge')) {
                     const uiCanonicalKey = mapChargeFieldKey(fieldMeta.field_key, false);
                     if (uiCanonicalKey.startsWith('charge.')) {
                       const fieldSuffix = uiCanonicalKey.replace(/^charge\./, '');
                       keyToUse = `${prefix}.${fieldSuffix}`;
+                    } else if (legacyFieldKey.startsWith('charge.')) {
+                      const fieldSuffix = legacyFieldKey.replace(/^charge\./, '');
+                      keyToUse = `${prefix}.${fieldSuffix}`;
                     } else {
                       keyToUse = `${prefix}.${fieldMeta.field_key}`;
                     }
+                  } else if (legacyFieldKey !== fieldMeta.field_key) {
+                    // DB key has a legacy equivalent - use the legacy format for UI compatibility
+                    // e.g., DB key "br_p_firstName" -> legacy "borrower.first_name"
+                    // Extract the suffix after the entity prefix (borrower., lender., etc.)
+                    const entityPrefixMatch = legacyFieldKey.match(/^(borrower|coborrower|co_borrower|lender|property\d*|broker|lien|insurance|notes_entry)\.(.*)/);
+                    if (entityPrefixMatch) {
+                      keyToUse = `${prefix}.${entityPrefixMatch[2]}`;
+                    } else {
+                      // Non-entity legacy key (e.g., ach.bank_name, loan_terms.loan_amount)
+                      keyToUse = legacyFieldKey;
+                    }
                   } else {
-                    // For other entities (borrower, lender, etc.)
+                    // No legacy mapping - use DB field_key with prefix
                     const canonicalField = fieldMeta.field_key.replace(/^(borrower|coborrower|co_borrower|lender|property\d*|broker|lien|insurance|notes_entry)\./, '');
                     keyToUse = `${prefix}.${canonicalField}`;
                   }
                 }
-                keyToUse = keyToUse || fieldMeta.field_key;
+                // For non-indexed keys, also translate DB key to legacy if possible
+                if (!keyToUse) {
+                  const legacyFieldKey = resolveDbKeyToLegacy(fieldMeta.field_key);
+                  keyToUse = legacyFieldKey; // Will be the same as field_key if no mapping exists
+                }
                 valuesMap[keyToUse] = value;
               }
             }
@@ -735,6 +765,9 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
           const canonical = getCanonicalKey(fieldKey);
           candidateKeys.add(fieldKey);
           candidateKeys.add(canonical);
+          // Also add the DB-convention key via legacy translation
+          const dbKey = resolveLegacyKey(canonical);
+          if (dbKey !== canonical) candidateKeys.add(dbKey);
           // For charge fields, also add the dictionary-format key
           if (canonical.startsWith('charge.')) {
             candidateKeys.add(mapChargeFieldKey(canonical, true));
@@ -759,6 +792,15 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
                 section: r.section,
                 data_type: r.data_type,
               });
+              // Also map back to legacy key for easier lookup
+              const legacyKey = resolveDbKeyToLegacy(r.field_key);
+              if (legacyKey !== r.field_key) {
+                fallbackMetaByKey.set(legacyKey, {
+                  id: r.id,
+                  section: r.section,
+                  data_type: r.data_type,
+                });
+              }
             }
           });
         }
@@ -770,6 +812,9 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
           // Get canonical key for dictionary lookup (lender1.first_name -> lender.first_name)
           const canonicalKey = getCanonicalKey(fieldKey);
           
+          // Translate legacy canonical key to DB key (borrower.first_name -> br_p_firstName)
+          const dbMappedKey = resolveLegacyKey(canonicalKey);
+          
           // For charge fields, also try the dictionary-format key (charge.date_of_charge -> charge_date)
           const dictMappedKey = canonicalKey.startsWith('charge.') 
             ? mapChargeFieldKey(canonicalKey, true) 
@@ -777,16 +822,18 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
 
           const fallbackMeta = fallbackMetaByKey.get(canonicalKey) 
             || fallbackMetaByKey.get(fieldKey) 
+            || (dbMappedKey !== canonicalKey ? fallbackMetaByKey.get(dbMappedKey) : null)
             || (dictMappedKey ? fallbackMetaByKey.get(dictMappedKey) : null);
           const fieldDictId = fieldIdMap[canonicalKey] 
             || fieldIdMap[fieldKey] 
+            || (dbMappedKey !== canonicalKey ? fieldIdMap[dbMappedKey] : null)
             || (dictMappedKey ? fieldIdMap[dictMappedKey] : null)
             || fallbackMeta?.id;
           if (!fieldDictId) continue;
 
           // Prefer resolvedFields for section/type; fall back to dictionary lookup when not present
           const field = resolvedFields?.fields.find(
-            f => f.field_key === canonicalKey || f.field_key === fieldKey || (dictMappedKey && f.field_key === dictMappedKey)
+            f => f.field_key === canonicalKey || f.field_key === fieldKey || f.field_key === dbMappedKey || (dictMappedKey && f.field_key === dictMappedKey)
           );
 
           const section = field?.section || fallbackMeta?.section;
