@@ -28,19 +28,10 @@ import {
   Search, 
   Key, 
   Loader2, 
-  MoreHorizontal,
-  Pencil,
-  Trash2,
   Download,
   Asterisk,
   X
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 interface FieldDictionary {
