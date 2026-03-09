@@ -3,6 +3,11 @@
  * 
  * Handles extracting raw values from deal field values,
  * case-insensitive field lookups, and merge tag mapping resolution.
+ * 
+ * Supports backward compatibility between:
+ * - Old keys (e.g., "borrower.first_name", "LoanTerms.Amount")
+ * - New keys (e.g., "br_p_firstname", "lt_d_amount")
+ * - canonical_key lookups for migrated fields
  */
 
 import type { 
@@ -15,8 +20,80 @@ import type {
 // In-memory cache for merge tag aliases with TTL
 let cachedMergeTagMap: Record<string, string> | null = null;
 let cachedLabelMap: Record<string, LabelMapping> | null = null;
+let cachedFieldKeyMigrations: Map<string, string> | null = null;
+let cachedCanonicalKeyMap: Map<string, string> | null = null;
 let cacheTimestamp = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Fetch field key migrations and canonical_key mappings for backward compatibility
+ */
+export async function fetchFieldKeyMappings(supabase: any): Promise<{
+  migrationsMap: Map<string, string>;
+  canonicalKeyMap: Map<string, string>;
+}> {
+  const now = Date.now();
+  
+  // Return cached values if still valid
+  if (cachedFieldKeyMigrations && cachedCanonicalKeyMap && (now - cacheTimestamp) < CACHE_TTL_MS) {
+    console.log("[field-resolver] Using cached field key mappings");
+    return { 
+      migrationsMap: cachedFieldKeyMigrations, 
+      canonicalKeyMap: cachedCanonicalKeyMap 
+    };
+  }
+  
+  console.log("[field-resolver] Fetching field key mappings for backward compatibility");
+  
+  // Fetch completed migrations (old_key -> new_key)
+  const { data: migrations, error: migError } = await supabase
+    .from("field_key_migrations")
+    .select("old_key, new_key")
+    .eq("status", "migrated");
+  
+  // Fetch field_dictionary for canonical_key mappings
+  const { data: fields, error: fieldError } = await supabase
+    .from("field_dictionary")
+    .select("field_key, canonical_key")
+    .not("canonical_key", "is", null);
+  
+  const migrationsMap = new Map<string, string>();
+  const canonicalKeyMap = new Map<string, string>();
+  
+  // Build migrations map: old_key -> new_key
+  if (!migError && migrations) {
+    for (const m of migrations) {
+      migrationsMap.set(m.old_key.toLowerCase(), m.new_key);
+      // Also map new_key -> new_key for direct lookups
+      migrationsMap.set(m.new_key.toLowerCase(), m.new_key);
+    }
+    console.log(`[field-resolver] Loaded ${migrations.length} field key migrations`);
+  } else if (migError) {
+    console.log("[field-resolver] Field key migrations unavailable:", migError.message);
+  }
+  
+  // Build canonical_key map: canonical_key -> field_key (current key)
+  if (!fieldError && fields) {
+    for (const f of fields) {
+      if (f.canonical_key) {
+        // Map old canonical_key -> current field_key
+        canonicalKeyMap.set(f.canonical_key.toLowerCase(), f.field_key);
+        // Also map current field_key -> itself
+        canonicalKeyMap.set(f.field_key.toLowerCase(), f.field_key);
+      }
+    }
+    console.log(`[field-resolver] Loaded ${fields.length} canonical_key mappings`);
+  } else if (fieldError) {
+    console.log("[field-resolver] Field dictionary lookup failed:", fieldError.message);
+  }
+  
+  // Update cache
+  cachedFieldKeyMigrations = migrationsMap;
+  cachedCanonicalKeyMap = canonicalKeyMap;
+  cacheTimestamp = now;
+  
+  return { migrationsMap, canonicalKeyMap };
+}
 
 /**
  * Fetch merge tag aliases from database and build lookup maps
@@ -72,33 +149,58 @@ export async function fetchMergeTagMappings(supabase: any): Promise<MergeTagMapp
 }
 
 /**
- * Resolve a tag name to its canonical field key using the mapping
- * Priority: 1. Explicit alias 2. Direct field_key match 3. Case-insensitive fallback
+ * Resolve a field key to its current form using all available mappings
+ * Supports: new keys, old keys, canonical_key, and migration mappings
+ * 
+ * Resolution priority:
+ * 1. Direct match in validFieldKeys
+ * 2. Migration mapping (old_key -> new_key)
+ * 3. Canonical key mapping (canonical_key -> current field_key)
+ * 4. Merge tag alias mapping
+ * 5. Case-insensitive fallback
  */
-export function resolveFieldKeyWithMap(
-  tagName: string, 
+export function resolveFieldKeyWithBackwardCompat(
+  tagName: string,
   mergeTagMap: Record<string, string>,
+  migrationsMap: Map<string, string>,
+  canonicalKeyMap: Map<string, string>,
   validFieldKeys?: Set<string>
 ): string {
   const cleanedTag = tagName.replace(/_+$/, "").trim();
+  const lowerTag = cleanedTag.toLowerCase();
   
-  // Priority 1: Explicit alias mapping
+  // Priority 1: Direct match in current field keys
+  if (validFieldKeys) {
+    if (validFieldKeys.has(cleanedTag)) return cleanedTag;
+    if (validFieldKeys.has(tagName)) return tagName;
+  }
+  
+  // Priority 2: Migration mapping (handles old_key -> new_key)
+  const migratedKey = migrationsMap.get(lowerTag);
+  if (migratedKey) {
+    console.log(`[field-resolver] Resolved via migration: ${tagName} -> ${migratedKey}`);
+    return migratedKey;
+  }
+  
+  // Priority 3: Canonical key mapping (handles canonical_key -> current field_key)
+  const canonicalResolved = canonicalKeyMap.get(lowerTag);
+  if (canonicalResolved) {
+    console.log(`[field-resolver] Resolved via canonical_key: ${tagName} -> ${canonicalResolved}`);
+    return canonicalResolved;
+  }
+  
+  // Priority 4: Explicit merge tag alias mapping
   if (mergeTagMap[tagName]) return mergeTagMap[tagName];
   if (mergeTagMap[cleanedTag]) return mergeTagMap[cleanedTag];
   
-  // Priority 2: Direct field_key match (if validFieldKeys provided)
+  // Priority 5: Case-insensitive lookup against valid field keys
   if (validFieldKeys) {
-    if (validFieldKeys.has(tagName)) return tagName;
-    if (validFieldKeys.has(cleanedTag)) return cleanedTag;
-    
-    // Case-insensitive check against field dictionary
-    const lowerTag = tagName.toLowerCase();
     for (const key of validFieldKeys) {
       if (key.toLowerCase() === lowerTag) return key;
     }
     
-    // Also try with underscores converted to dots
-    const dotVersion = tagName.replace(/_/g, ".");
+    // Try with underscores converted to dots (legacy format)
+    const dotVersion = cleanedTag.replace(/_/g, ".");
     if (validFieldKeys.has(dotVersion)) return dotVersion;
     for (const key of validFieldKeys) {
       if (key.toLowerCase() === dotVersion.toLowerCase()) return key;
@@ -110,19 +212,68 @@ export function resolveFieldKeyWithMap(
 }
 
 /**
- * Case-insensitive field value lookup
+ * Legacy resolver - maintained for backward compatibility
+ * Delegates to new resolver with empty migration maps
+ */
+export function resolveFieldKeyWithMap(
+  tagName: string, 
+  mergeTagMap: Record<string, string>,
+  validFieldKeys?: Set<string>
+): string {
+  return resolveFieldKeyWithBackwardCompat(
+    tagName,
+    mergeTagMap,
+    cachedFieldKeyMigrations || new Map(),
+    cachedCanonicalKeyMap || new Map(),
+    validFieldKeys
+  );
+}
+
+/**
+ * Case-insensitive field value lookup with backward compatibility
+ * Tries: exact match, lowercase match, canonical_key resolution, migration resolution
  */
 export function getFieldData(
   canonicalKey: string, 
   fieldValues: Map<string, FieldValueData>
 ): { key: string; data: FieldValueData } | null {
+  // Try exact match first
   const exact = fieldValues.get(canonicalKey);
   if (exact) return { key: canonicalKey, data: exact };
 
   const target = canonicalKey.toLowerCase();
+  
+  // Try case-insensitive match
   for (const [k, v] of fieldValues.entries()) {
     if (k.toLowerCase() === target) return { key: k, data: v };
   }
+  
+  // Try migration resolution (old_key -> new_key)
+  if (cachedFieldKeyMigrations) {
+    const migratedKey = cachedFieldKeyMigrations.get(target);
+    if (migratedKey) {
+      const migrated = fieldValues.get(migratedKey);
+      if (migrated) return { key: migratedKey, data: migrated };
+      // Also try case-insensitive on migrated key
+      for (const [k, v] of fieldValues.entries()) {
+        if (k.toLowerCase() === migratedKey.toLowerCase()) return { key: k, data: v };
+      }
+    }
+  }
+  
+  // Try canonical_key resolution
+  if (cachedCanonicalKeyMap) {
+    const resolved = cachedCanonicalKeyMap.get(target);
+    if (resolved) {
+      const resolvedData = fieldValues.get(resolved);
+      if (resolvedData) return { key: resolved, data: resolvedData };
+      // Also try case-insensitive on resolved key
+      for (const [k, v] of fieldValues.entries()) {
+        if (k.toLowerCase() === resolved.toLowerCase()) return { key: k, data: v };
+      }
+    }
+  }
+  
   return null;
 }
 
@@ -134,21 +285,28 @@ export function extractRawValueFromJsonb(data: any, dataType: string): string | 
     case "currency":
     case "number":
     case "percentage":
+    case "decimal":
+    case "integer":
       return data.value_number;
     case "date":
+    case "datetime":
       return data.value_date;
     case "text":
     case "boolean":
+    case "phone":
+    case "dropdown":
     default:
       return data.value_text;
   }
 }
 
 /**
- * Clear the merge tag cache (useful for testing or forced refresh)
+ * Clear all caches (useful for testing or forced refresh)
  */
 export function clearMergeTagCache(): void {
   cachedMergeTagMap = null;
   cachedLabelMap = null;
+  cachedFieldKeyMigrations = null;
+  cachedCanonicalKeyMap = null;
   cacheTimestamp = 0;
 }
