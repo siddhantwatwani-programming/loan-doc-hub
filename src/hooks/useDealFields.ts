@@ -363,9 +363,9 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
           // Merge fields
           const mergedFields = [...resolved.fields, ...appendedFields];
 
-          // Rebuild groups, remapping MERGE_INTO_OTHER sections into 'other'
+          // Rebuild groups, remapping MERGE_INTO_OTHER sections into 'notes'
           const mergedFieldsBySection = mergedFields.reduce((acc, field) => {
-            const displaySection = MERGE_INTO_OTHER.includes(field.section) ? 'other' as FieldSection : field.section;
+            const displaySection = MERGE_INTO_OTHER.includes(field.section) ? 'notes' as FieldSection : field.section;
             (acc[displaySection] ||= []).push(field);
             return acc;
           }, {} as Record<FieldSection, ResolvedField[]>);
