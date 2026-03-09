@@ -1,0 +1,814 @@
+/**
+ * Central Field Key Map
+ * 
+ * Single source of truth for all field key mappings used across form components.
+ * Each form section exports its FIELD_KEYS as a readonly const object.
+ * 
+ * The key naming follows the convention: {section_abbr}_{form_abbr}_{identifier}
+ * but currently maps to the legacy dot-notation keys stored in field_dictionary.
+ * As field keys are migrated in the database, only this file needs to be updated.
+ * 
+ * Usage in form components:
+ *   import { BORROWER_PRIMARY_KEYS } from '@/lib/fieldKeyMap';
+ *   // Then reference: BORROWER_PRIMARY_KEYS.firstName
+ */
+
+// ──────────────────────────────────────────────────
+// BORROWER SECTION
+// ──────────────────────────────────────────────────
+
+export const BORROWER_PRIMARY_KEYS = {
+  borrowerType: 'borrower.borrower_type',
+  borrowerId: 'borrower.borrower_id',
+  fullName: 'borrower.full_name',
+  firstName: 'borrower.first_name',
+  middleName: 'borrower.middle_initial',
+  lastName: 'borrower.last_name',
+  capacity: 'borrower.capacity',
+  email: 'borrower.email',
+  creditScore: 'borrower.credit_score',
+  issue1098: 'borrower.issue_1098',
+  alternateReporting: 'borrower.alternate_reporting',
+  taxIdType: 'borrower.tax_id_type',
+  tin: 'borrower.tin',
+  tinVerified: 'borrower.tin_verified',
+  primaryStreet: 'borrower.address.street',
+  primaryCity: 'borrower.address.city',
+  primaryState: 'borrower.state',
+  primaryZip: 'borrower.address.zip',
+  mailingSameAsPrimary: 'borrower.mailing_same_as_primary',
+  mailingStreet: 'borrower.mailing.street',
+  mailingCity: 'borrower.mailing.city',
+  mailingState: 'borrower.mailing.state',
+  mailingZip: 'borrower.mailing.zip',
+  phoneHome: 'borrower.phone.home',
+  phoneWork: 'borrower.phone.work',
+  phoneCell: 'borrower.phone.mobile',
+  phoneFax: 'borrower.phone.fax',
+  preferredHome: 'borrower.preferred.home',
+  preferredWork: 'borrower.preferred.work',
+  preferredCell: 'borrower.preferred.cell',
+  preferredFax: 'borrower.preferred.fax',
+  deliveryPrint: 'borrower.delivery_print',
+  deliveryEmail: 'borrower.delivery_email',
+  deliverySms: 'borrower.delivery_sms',
+  sendPaymentNotification: 'borrower.send_payment_notification',
+  sendLateNotice: 'borrower.send_late_notice',
+  sendBorrowerStatement: 'borrower.send_borrower_statement',
+  sendMaturityNotice: 'borrower.send_maturity_notice',
+  deliveryOnline: 'borrower.delivery_online',
+  deliveryMail: 'borrower.delivery_mail',
+  vesting: 'borrower.vesting',
+  ford1: 'borrower.ford.1',
+  ford2: 'borrower.ford.2',
+  ford3: 'borrower.ford.3',
+  ford4: 'borrower.ford.4',
+  ford5: 'borrower.ford.5',
+  ford6: 'borrower.ford.6',
+  ford7: 'borrower.ford.7',
+  ford8: 'borrower.ford.8',
+} as const;
+
+export const BORROWER_AUTHORIZED_PARTY_KEYS = {
+  firstName: 'borrower.authorized_party.first_name',
+  middleName: 'borrower.authorized_party.middle_name',
+  lastName: 'borrower.authorized_party.last_name',
+  capacity: 'borrower.authorized_party.capacity',
+  email: 'borrower.authorized_party.email',
+  street: 'borrower.authorized_party.address.street',
+  city: 'borrower.authorized_party.address.city',
+  state: 'borrower.authorized_party.address.state',
+  zip: 'borrower.authorized_party.address.zip',
+  phoneHome: 'borrower.authorized_party.phone.home',
+  phoneWork: 'borrower.authorized_party.phone.work',
+  phoneCell: 'borrower.authorized_party.phone.cell',
+  phoneFax: 'borrower.authorized_party.phone.fax',
+  sendPaymentNotification: 'borrower.authorized_party.send_pref.payment_notification',
+  sendLateNotice: 'borrower.authorized_party.send_pref.late_notice',
+  sendBorrowerStatement: 'borrower.authorized_party.send_pref.borrower_statement',
+  sendMaturityNotice: 'borrower.authorized_party.send_pref.maturity_notice',
+  deliveryEmail: 'borrower.authorized_party.delivery.email',
+  deliveryMail: 'borrower.authorized_party.delivery.mail',
+  deliverySms: 'borrower.authorized_party.delivery.sms',
+  details: 'borrower.authorized_party.details',
+} as const;
+
+export const BORROWER_BANKING_KEYS = {
+  bankName: 'ach.bank_name',
+  bankAddress: 'ach.bank_address',
+  routingNumber: 'ach.routing_number',
+  accountNumber: 'ach.account_number',
+  individualId: 'ach.individual_id',
+  individualName: 'ach.individual_name',
+  accountType: 'ach.account_type',
+  serviceStatus: 'ach.service_status',
+  applyDebitAs: 'ach.apply_debit_as',
+  debitFrequency: 'ach.debit_frequency',
+  debitDueDay: 'ach.debit_due_day',
+  nextDebitDate: 'ach.next_debit_date',
+  stopDate: 'ach.stop_date',
+  debitAmount: 'ach.debit_amount',
+  sendConfirm: 'ach.send_confirm',
+  disableOnlinePayment: 'ach.disable_online_payment',
+} as const;
+
+export const BORROWER_TAX_DETAIL_KEYS = {
+  designatedRecipient: 'borrower.1098.designated_recipient',
+  name: 'borrower.1098.name',
+  address: 'borrower.1098.address',
+  accountNumber: 'borrower.1098.account_number',
+  city: 'borrower.1098.city',
+  tinType: 'borrower.1098.tin_type',
+  tin: 'borrower.1098.tin',
+  state: 'borrower.1098.state',
+  zip: 'borrower.1098.zip',
+  send1098: 'borrower.1098.send_1098',
+} as const;
+
+export const BORROWER_GUARANTOR_KEYS = {
+  borrowerType: 'borrower.guarantor.borrower_type',
+  borrowerId: 'borrower.guarantor.borrower_id',
+  fullName: 'borrower.guarantor.full_name',
+  firstName: 'borrower.guarantor.first_name',
+  middleName: 'borrower.guarantor.middle_initial',
+  lastName: 'borrower.guarantor.last_name',
+  capacity: 'borrower.guarantor.capacity',
+  email: 'borrower.guarantor.email',
+  creditScore: 'borrower.guarantor.credit_score',
+  issue1098: 'borrower.guarantor.issue_1098',
+  alternateReporting: 'borrower.guarantor.alternate_reporting',
+  taxIdType: 'borrower.guarantor.tax_id_type',
+  tin: 'borrower.guarantor.tin',
+  tinVerified: 'borrower.guarantor.tin_verified',
+  primaryStreet: 'borrower.guarantor.address.street',
+  primaryCity: 'borrower.guarantor.address.city',
+  primaryState: 'borrower.guarantor.state',
+  primaryZip: 'borrower.guarantor.address.zip',
+  mailingSameAsPrimary: 'borrower.guarantor.mailing_same_as_primary',
+  mailingStreet: 'borrower.guarantor.mailing.street',
+  mailingCity: 'borrower.guarantor.mailing.city',
+  mailingState: 'borrower.guarantor.mailing.state',
+  mailingZip: 'borrower.guarantor.mailing.zip',
+  phoneHome: 'borrower.guarantor.phone.home',
+  phoneWork: 'borrower.guarantor.phone.work',
+  phoneCell: 'borrower.guarantor.phone.mobile',
+  phoneFax: 'borrower.guarantor.phone.fax',
+  preferredHome: 'borrower.guarantor.preferred.home',
+  preferredWork: 'borrower.guarantor.preferred.work',
+  preferredCell: 'borrower.guarantor.preferred.cell',
+  preferredFax: 'borrower.guarantor.preferred.fax',
+  deliveryPrint: 'borrower.guarantor.delivery_print',
+  deliveryEmail: 'borrower.guarantor.delivery_email',
+  deliverySms: 'borrower.guarantor.delivery_sms',
+  sendPaymentNotification: 'borrower.guarantor.send_payment_notification',
+  sendLateNotice: 'borrower.guarantor.send_late_notice',
+  sendBorrowerStatement: 'borrower.guarantor.send_borrower_statement',
+  sendMaturityNotice: 'borrower.guarantor.send_maturity_notice',
+  deliveryOnline: 'borrower.guarantor.delivery_online',
+  deliveryMail: 'borrower.guarantor.delivery_mail',
+  vesting: 'borrower.guarantor.vesting',
+  vestingOverridden: 'borrower.guarantor.vesting_overridden',
+  ford1: 'borrower.guarantor.ford.1',
+  ford2: 'borrower.guarantor.ford.2',
+  ford3: 'borrower.guarantor.ford.3',
+  ford4: 'borrower.guarantor.ford.4',
+  ford5: 'borrower.guarantor.ford.5',
+  ford6: 'borrower.guarantor.ford.6',
+  ford7: 'borrower.guarantor.ford.7',
+  ford8: 'borrower.guarantor.ford.8',
+} as const;
+
+export const BORROWER_NOTE_KEYS = {
+  note: 'borrower.note',
+} as const;
+
+// ──────────────────────────────────────────────────
+// LENDER SECTION
+// ──────────────────────────────────────────────────
+
+export const LENDER_INFO_KEYS = {
+  type: 'lender.type',
+  id: 'lender.id',
+  lenderId: 'lender.lender_id',
+  fullName: 'lender.full_name',
+  firstName: 'lender.first_name',
+  middleName: 'lender.middle_name',
+  lastName: 'lender.last_name',
+  capacity: 'lender.capacity',
+  email: 'lender.email',
+  taxIdType: 'lender.tax_id_type',
+  taxId: 'lender.tax_id',
+  issue1099: 'lender.issue_1099',
+  prepareCa881: 'lender.prepare_ca_881',
+  taxedAs: 'lender.taxed_as',
+  lpLllpLlcTaxedAsCorp: 'lender.lp_lllp_llc_taxed_as_corp',
+  tinVerified: 'lender.tin_verified',
+  alternateReporting: 'lender.alternate_reporting',
+  primaryStreet: 'lender.primary_address.street',
+  primaryCity: 'lender.primary_address.city',
+  primaryState: 'lender.primary_address.state',
+  primaryZip: 'lender.primary_address.zip',
+  phoneHome: 'lender.phone.home',
+  phoneWork: 'lender.phone.work',
+  phoneCell: 'lender.phone.cell',
+  phoneFax: 'lender.phone.fax',
+  sendPaymentNotification: 'lender.send_pref.payment_notification',
+  sendLateNotice: 'lender.send_pref.late_notice',
+  sendBorrowerStatement: 'lender.send_pref.borrower_statement',
+  sendMaturityNotice: 'lender.send_pref.maturity_notice',
+  preferredHome: 'lender.preferred.home',
+  preferredWork: 'lender.preferred.work',
+  preferredCell: 'lender.preferred.cell',
+  preferredFax: 'lender.preferred.fax',
+  isPrimary: 'lender.isPrimary',
+  oldMailingStreet: 'lender.street',
+  oldMailingCity: 'lender.city',
+  oldMailingState: 'lender.state',
+  oldMailingZip: 'lender.zip',
+  careOfStreet: 'lender.care_of.street',
+  careOfCity: 'lender.care_of.city',
+  careOfState: 'lender.care_of.state',
+  careOfZip: 'lender.care_of.zip',
+  vesting: 'lender.vesting',
+  ford1: 'lender.ford.1',
+  ford2: 'lender.ford.2',
+  ford3: 'lender.ford.3',
+  ford4: 'lender.ford.4',
+  ford5: 'lender.ford.5',
+  ford6: 'lender.ford.6',
+  ford7: 'lender.ford.7',
+  ford8: 'lender.ford.8',
+  loanId: 'lender.loan_id',
+  loanType: 'lender.loan_type',
+  deliveryPrint: 'lender.delivery.print',
+  deliveryEmail: 'lender.delivery.email',
+  deliverySms: 'lender.delivery.sms',
+  entitySignBorrower: 'lender.entity_sign.borrower',
+  entitySignBy: 'lender.entity_sign.by',
+  entitySignIts: 'lender.entity_sign.its',
+  entitySignEntityName: 'lender.entity_sign.entity_name',
+  entitySignFirstLast: 'lender.entity_sign.first_last',
+  entitySignCapacity: 'lender.entity_sign.capacity',
+  dob: 'lender.dob',
+  mailingStreet: 'lender.mailing.street',
+  mailingCity: 'lender.mailing.city',
+  mailingState: 'lender.mailing.state',
+  mailingZip: 'lender.mailing.zip',
+  mailingSameAsPrimary: 'lender.mailing_same_as_primary',
+  servicingAgreementOnFile: 'lender.servicing_agreement_on_file',
+  freezeOutgoingDisbursements: 'lender.freeze_outgoing_disbursements',
+  investorQuestionnaireDue: 'lender.investor_questionnaire_due',
+  investorQuestionnaireDueDate: 'lender.investor_questionnaire_due_date',
+} as const;
+
+export const LENDER_AUTHORIZED_PARTY_KEYS = {
+  firstName: 'lender.authorized_party.first_name',
+  middleName: 'lender.authorized_party.middle_name',
+  lastName: 'lender.authorized_party.last_name',
+  capacity: 'lender.authorized_party.capacity',
+  email: 'lender.authorized_party.email',
+  sendPaymentNotification: 'lender.authorized_party.send_pref.payment_notification',
+  sendLateNotice: 'lender.authorized_party.send_pref.late_notice',
+  sendMaturityNotice: 'lender.authorized_party.send_pref.maturity_notice',
+  sendBorrowerStatement: 'lender.authorized_party.send_pref.borrower_statement',
+  street: 'lender.authorized_party.address.street',
+  city: 'lender.authorized_party.address.city',
+  state: 'lender.authorized_party.address.state',
+  zip: 'lender.authorized_party.address.zip',
+  details: 'lender.authorized_party.address.details',
+  phoneHome: 'lender.authorized_party.phone.home',
+  phoneWork: 'lender.authorized_party.phone.work',
+  phoneCell: 'lender.authorized_party.phone.cell',
+  phoneFax: 'lender.authorized_party.phone.fax',
+  deliveryEmail: 'lender.authorized_party.delivery.email',
+  deliveryMail: 'lender.authorized_party.delivery.mail',
+  deliverySms: 'lender.authorized_party.delivery.sms',
+} as const;
+
+export const LENDER_BANKING_KEYS = {
+  achStatus: 'lender.banking.ach_status',
+  bank: 'lender.banking.bank',
+  routingNumber: 'lender.banking.routing_number',
+  accountNumber: 'lender.banking.account_number',
+  accountType: 'lender.banking.account_type',
+  accountName: 'lender.banking.account_name',
+  accountId: 'lender.banking.account_id',
+  furtherCreditTo: 'lender.banking.further_credit_to',
+  byCheck: 'lender.banking.by_check',
+  checkSameAsMailing: 'lender.banking.check_same_as_mailing',
+  checkAddress: 'lender.banking.address',
+  checkCity: 'lender.banking.city',
+  checkZip: 'lender.banking.zip_code',
+  achEmail: 'lender.banking.ach_email',
+  achEmail2: 'lender.banking.ach_email_2',
+  ccName: 'lender.banking.cc_name',
+  ccNumber: 'lender.banking.cc_number',
+  ccSecurityCode: 'lender.banking.cc_security_code',
+  ccExpiration: 'lender.banking.cc_expiration',
+  ccZip: 'lender.banking.cc_zip',
+} as const;
+
+export const LENDER_TAX_INFO_KEYS = {
+  designatedRecipient: 'lender.tax_payer.designated_recipient',
+  name: 'lender.tax_payer.name',
+  address: 'lender.tax_payer.street_address',
+  accountNumber: 'lender.tax_payer.account_number',
+  city: 'lender.tax_payer.city',
+  tinType: 'lender.tax_payer.recipient_type',
+  tin: 'lender.tax_payer.ssn',
+  state: 'lender.tax_payer.state',
+  zip: 'lender.tax_payer.zip_code',
+  send1099: 'lender.tax_payer.auto_synchronize',
+} as const;
+
+// ──────────────────────────────────────────────────
+// LOAN TERMS SECTION
+// ──────────────────────────────────────────────────
+
+export const LOAN_TERMS_BALANCES_KEYS = {
+  loanAmount: 'loan_terms.loan_amount',
+  originalAmount: 'loan.original_amount',
+  noteRate: 'loan_terms.note_rate',
+  soldRate: 'loan_terms.sold_rate',
+  soldRateEnabled: 'loan_terms.sold_rate_enabled',
+  interestSplit: 'loan_terms.interest_split',
+  interestSplitEnabled: 'loan_terms.interest_split_enabled',
+  unearnedDiscountBalance: 'loan_terms.unearned_discount_balance',
+  accrualMethod: 'loan_terms.accrual_method',
+  prepaidPayments: 'loan_terms.prepaid_payments',
+  prepaidPaymentsEnabled: 'loan_terms.prepaid_payments_enabled',
+  prepaidPaymentsMonths: 'loan_terms.prepaid_payments_months',
+  impoundedPayments: 'loan_terms.impounded_payments',
+  impoundedPaymentsEnabled: 'loan_terms.impounded_payments_enabled',
+  impoundedPaymentsMonths: 'loan_terms.impounded_payments_months',
+  fundingHoldback: 'loan_terms.funding_holdback',
+  fundingHoldbackEnabled: 'loan_terms.funding_holdback_enabled',
+  fundingHoldbackHeldBy: 'loan_terms.funding_holdback_held_by',
+  numberOfPayments: 'loan_terms.number_of_payments',
+  paymentFrequency: 'loan_terms.payment_frequency',
+  dayDue: 'loan_terms.day_due',
+  firstPayment: 'loan_terms.first_payment',
+  lastPaymentReceived: 'loan_terms.last_payment_received',
+  paidTo: 'loan_terms.paid_to',
+  nextPayment: 'loan_terms.next_payment',
+  regularPayment: 'loan_terms.regular_payment',
+  additionalPrincipal: 'loan_terms.additional_principal',
+  servicingFees: 'loan_terms.servicing_fees',
+  salesTaxEnabled: 'loan_terms.sales_tax_enabled',
+  otherScheduledPayments: 'loan_terms.other_scheduled_payments',
+  toEscrowImpounds: 'loan_terms.to_escrow_impounds',
+  defaultInterest: 'loan_terms.default_interest',
+  totalPayment: 'loan_terms.total_payment',
+  principal: 'loan_terms.principal',
+  unpaidLateCharges: 'loan_terms.unpaid_late_charges',
+  accruedLateCharges: 'loan_terms.accrued_late_charges',
+  unpaidInterest: 'loan_terms.unpaid_interest',
+  accruedInterest: 'loan_terms.accrued_interest',
+  interestGuarantee: 'loan_terms.interest_guarantee',
+  unpaidDefaultInterest: 'loan_terms.unpaid_default_interest',
+  accruedDefaultInterest: 'loan_terms.accrued_default_interest',
+  chargesOwed: 'loan_terms.charges_owed',
+  chargesInterest: 'loan_terms.charges_interest',
+  amountToReinstate: 'loan_terms.amount_to_reinstate',
+  reserveBalance: 'loan_terms.reserve_balance',
+  escrowBalance: 'loan_terms.escrow_balance',
+  totalBalanceDue: 'loan_terms.total_balance_due',
+  estimatedBalloonPayment: 'loan_terms.estimated_balloon_payment',
+  acceptShortPaymentsEnabled: 'loan_terms.accept_short_payments_enabled',
+  acceptShortPaymentsAmount: 'loan_terms.accept_short_payments_amount',
+  acceptShortPaymentsOrPercent: 'loan_terms.accept_short_payments_or_percent',
+  acceptShortPaymentsPercent: 'loan_terms.accept_short_payments_percent',
+  acceptPostMaturity: 'loan_terms.accept_post_maturity',
+  autoPostEnabled: 'loan_terms.auto_post_enabled',
+  overrideFundsHeld: 'loan_terms.override_funds_held',
+  holdDays: 'loan_terms.hold_days',
+} as const;
+
+export const LOAN_TERMS_DETAILS_KEYS = {
+  company: 'loan_terms.details_company',
+  loanNumber: 'Terms.LoanNumber',
+  assignedCsr: 'loan_terms.assigned_csr',
+  originatingVendor: 'loan_terms.details_originating_vendor',
+  origination: 'loan_terms.origination',
+  boarding: 'loan_terms.boarding',
+  maturity: 'loan_terms.maturity',
+  maturityDate: 'loan_terms.maturity_date',
+  lienPosition: 'loan_terms.lien_position',
+  loanPurpose: 'loan_terms.loan_purpose',
+  rateStructure: 'loan_terms.rate_structure',
+  amortization: 'loan_terms.amortization',
+  interestCalculation: 'loan_terms.interest_calculation',
+  shortPaymentsAppliedTo: 'loan_terms.short_payments_applied_to',
+  processingUnpaidInterest: 'loan_terms.processing_unpaid_interest',
+  calculationPeriod: 'loan_terms.calculation_period',
+  sellerCarry: 'loan_terms.seller_carry',
+  aitdWrap: 'loan_terms.aitd_wrap',
+  rehabConstruction: 'loan_terms.rehab_construction',
+  variableArm: 'loan_terms.variable_arm',
+  respa: 'loan_terms.respa',
+  unsecured: 'loan_terms.unsecured',
+  crossCollateral: 'loan_terms.cross_collateral',
+  limitedNoDoc: 'loan_terms.limited_no_doc',
+  balloonPayment: 'loan_terms.balloon_payment',
+  parentAccount: 'loan_terms.parent_account',
+  parentAccountValue: 'loan_terms.parent_account_value',
+  childAccount: 'loan_terms.child_account',
+  childAccountValue: 'loan_terms.child_account_value',
+} as const;
+
+export const LOAN_TERMS_FUNDING_KEYS = {
+  fundingRecords: 'loan_terms.funding_records',
+  fundingHistory: 'loan_terms.funding_history',
+} as const;
+
+// ──────────────────────────────────────────────────
+// PROPERTY SECTION
+// ──────────────────────────────────────────────────
+
+export const PROPERTY_DETAILS_KEYS = {
+  description: 'property1.description',
+  address: 'property1.address',
+  street: 'property1.street',
+  city: 'property1.city',
+  state: 'property1.state',
+  zip: 'property1.zip',
+  county: 'property1.county',
+  copyBorrowerAddress: 'property1.copy_borrower_address',
+  primaryProperty: 'property1.primary_property',
+  performedBy: 'property1.appraisal_performed_by',
+  propertyType: 'property1.appraisal_property_type',
+  occupancy: 'property1.appraisal_occupancy',
+  ltv: 'property1.ltv',
+  zoning: 'property1.zoning',
+  appraisedValue: 'property1.appraised_value',
+  pledgedEquity: 'property1.pledged_equity',
+  appraisedDate: 'property1.appraised_date',
+  priority: 'property1.priority',
+  floodZone: 'property1.flood_zone',
+  apn: 'property1.apn',
+  thomasMap: 'property1.thomas_map',
+  purchasePrice: 'property1.purchase_price',
+  downPayment: 'property1.down_payment',
+  delinquentTaxes: 'property1.delinquent_taxes',
+  appraiserStreet: 'property1.appraiser_street',
+  appraiserCity: 'property1.appraiser_city',
+  appraiserState: 'property1.appraiser_state',
+  appraiserZip: 'property1.appraiser_zip',
+  appraiserPhone: 'property1.appraiser_phone',
+  appraiserEmail: 'property1.appraiser_email',
+  yearBuilt: 'property1.year_built',
+  squareFeet: 'property1.square_feet',
+  constructionType: 'property1.construction_type',
+  monthlyIncome: 'property1.monthly_income',
+  lienProtectiveEquity: 'property1.lien_protective_equity',
+  sourceLienInfo: 'property1.source_lien_info',
+  delinquencies60day: 'property1.delinquencies_60day',
+  delinquenciesHowMany: 'property1.delinquencies_how_many',
+  currentlyDelinquent: 'property1.currently_delinquent',
+  paidByLoan: 'property1.paid_by_loan',
+  sourceOfPayment: 'property1.source_of_payment',
+  recordingNumber: 'property1.recording_number',
+} as const;
+
+export const PROPERTY_LEGAL_KEYS = {
+  apn: 'property1.apn',
+  legalDescription: 'property1.legal_description',
+  lot: 'property1.lot',
+  block: 'property1.block',
+  tract: 'property1.tract',
+  unit: 'property1.unit',
+} as const;
+
+export const PROPERTY_INSURANCE_KEYS = {
+  description: 'property1.insurance_description',
+  insuredName: 'property1.insured_s_name',
+  companyName: 'property1.insurance_company_name',
+  policyNumber: 'property1.insurance_policy_number',
+  expiration: 'property1.insurance_expiration',
+  coverage: 'property1.insurance_coverage',
+  active: 'property1.insurance_active',
+  agentName: 'property1.agent_s_name',
+  businessAddress: 'property1.insurance_business_address',
+  phoneNumber: 'property1.insurance_phone_number',
+  faxNumber: 'property1.insurance_fax_number',
+  email: 'property1.insurance_e_mail',
+} as const;
+
+export const PROPERTY_LIENS_KEYS = {
+  property: 'property1.lien_property',
+  priority: 'property1.lien_priority',
+  holder: 'property1.lien_holder',
+  account: 'property1.lien_account',
+  contact: 'property1.lien_contact',
+  phone: 'property1.lien_phone',
+  originalBalance: 'property1.lien_original_balance',
+  currentBalance: 'property1.lien_current_balance',
+  regularPayment: 'property1.lien_regular_payment',
+  lastChecked: 'property1.lien_last_checked',
+} as const;
+
+export const PROPERTY_TAX_KEYS = {
+  payee: 'property1.tax.payee',
+  payeeAddress: 'property1.tax.payee_address',
+  nextDueDate: 'property1.tax.next_due_date',
+  frequency: 'property1.tax.frequency',
+  hold: 'property1.tax.hold',
+  ref: 'property1.tax.ref',
+  memo: 'property1.tax.memo',
+  type: 'property1.tax.type',
+  authority: 'property1.tax.authority',
+  taxTracking: 'property1.tax.tax_tracking',
+  lastVerified: 'property1.tax.last_verified',
+  trackingStatus: 'property1.tax.tracking_status',
+} as const;
+
+// ──────────────────────────────────────────────────
+// BROKER SECTION
+// ──────────────────────────────────────────────────
+
+export const BROKER_INFO_KEYS = {
+  brokerId: 'broker.id',
+  license: 'broker.License',
+  company: 'broker.company',
+  firstName: 'broker.first_name',
+  middleName: 'broker.middle_name',
+  lastName: 'broker.last_name',
+  email: 'broker.email',
+  street: 'broker.address.street',
+  city: 'broker.address.city',
+  state: 'broker.address.state',
+  zip: 'broker.address.zip',
+  taxIdType: 'broker.tax_id_type',
+  taxId: 'broker.tax_id',
+  issue1099: 'broker.issue_1099',
+  phoneHome: 'broker.phone.home',
+  phoneWork: 'broker.phone.work',
+  phoneCell: 'broker.phone.cell',
+  phoneFax: 'broker.phone.fax',
+  preferredHome: 'broker.preferred.home',
+  preferredWork: 'broker.preferred.work',
+  preferredCell: 'broker.preferred.cell',
+  preferredFax: 'broker.preferred.fax',
+  paymentNotification: 'broker.send_pref.payment_notification',
+  lateNotice: 'broker.send_pref.late_notice',
+  lenderStatement: 'broker.send_pref.lender_statement',
+  borrowerStatement: 'broker.send_pref.borrower_statement',
+  maturityNotice: 'broker.send_pref.maturity_notice',
+} as const;
+
+export const BROKER_BANKING_KEYS = {
+  achStatus: 'broker.banking.ach_status',
+  bank: 'broker.banking.bank',
+  routingNumber: 'broker.banking.routing_number',
+  accountNumber: 'broker.banking.account_number',
+  accountType: 'broker.banking.account_type',
+  accountName: 'broker.banking.account_name',
+  accountId: 'broker.banking.account_id',
+  furtherCreditTo: 'broker.banking.further_credit_to',
+  byCheck: 'broker.banking.by_check',
+  checkSameAsMailing: 'broker.banking.check_same_as_mailing',
+  checkAddress: 'broker.banking.check_address',
+  checkCity: 'broker.banking.check_city',
+  checkZip: 'broker.banking.check_zip',
+  achEmail: 'broker.banking.ach_email',
+  ccName: 'broker.banking.cc_name',
+  ccNumber: 'broker.banking.cc_number',
+  ccSecurityCode: 'broker.banking.cc_security_code',
+  ccExpiration: 'broker.banking.cc_expiration',
+  ccZip: 'broker.banking.cc_zip',
+} as const;
+
+// ──────────────────────────────────────────────────
+// CHARGES SECTION
+// ──────────────────────────────────────────────────
+
+export const CHARGES_DETAIL_KEYS = {
+  description: 'charges.description',
+  unpaidBalance: 'charges.unpaid_balance',
+  owedTo: 'charges.owed_to',
+  owedFrom: 'charges.owed_from',
+  totalDue: 'charges.total_due',
+  interestFrom: 'charges.interest_from',
+  dateOfCharge: 'charges.date_of_charge',
+  interestRate: 'charges.interest_rate',
+  notes: 'charges.notes',
+  reference: 'charges.reference',
+  chargeType: 'charges.charge_type',
+  deferred: 'charges.deferred',
+  originalAmount: 'charges.original_amount',
+  account: 'charges.account',
+  borrowerFullName: 'charges.borrower_full_name',
+  advancedByAccount: 'charges.advanced_by_account',
+  advancedByLenderName: 'charges.advanced_by_lender_name',
+  advancedByAmount: 'charges.advanced_by_amount',
+  onBehalfOfAccount: 'charges.on_behalf_of_account',
+  onBehalfOfLenderName: 'charges.on_behalf_of_lender_name',
+  onBehalfOfAmount: 'charges.on_behalf_of_amount',
+  amountOwedByBorrower: 'charges.amount_owed_by_borrower',
+  accruedInterest: 'charges.accrued_interest',
+  distributeBetweenAllLenders: 'charges.distribute_between_all_lenders',
+} as const;
+
+// ──────────────────────────────────────────────────
+// ORIGINATION FEES SECTION (HUD-1)
+// ──────────────────────────────────────────────────
+
+/** Helper to generate 800-series fee field keys */
+function feeKeys(prefix: string) {
+  return {
+    payable_to: `${prefix}_payable_to`,
+    d: `${prefix}_d`,
+    charge: `${prefix}_charge`,
+    broker: `${prefix}_broker`,
+    others: `${prefix}_others`,
+    apr: `${prefix}_apr`,
+    paid_to_company: `${prefix}_paid_to_company`,
+    oral_disclosure: `${prefix}_oral_disclosure`,
+  } as const;
+}
+
+/** Helper for 1000-series reserve fields */
+function reserveKeys(prefix: string) {
+  return {
+    months: `${prefix}_months`,
+    perMonth: `${prefix}_per_month`,
+    total: `${prefix}_total`,
+    charge: `${prefix}_charge`,
+    broker: `${prefix}_broker`,
+    others: `${prefix}_others`,
+    apr: `${prefix}_apr`,
+    paid_to_company: `${prefix}_paid_to_company`,
+    oral_disclosure: `${prefix}_oral_disclosure`,
+  } as const;
+}
+
+export const ORIGINATION_FEES_KEYS = {
+  // 800 series
+  lendersLoanOriginationFee: feeKeys('origination_fees.801_lenders_loan_origination_fee'),
+  lendersLoanDiscountFee: feeKeys('origination_fees.802_lenders_loan_discount_fee'),
+  appraisalFee: feeKeys('origination_fees.803_appraisal_fee'),
+  creditReport: feeKeys('origination_fees.804_credit_report'),
+  lendersInspectionFee: feeKeys('origination_fees.805_lenders_inspection_fee'),
+  mortgageBrokerFee: feeKeys('origination_fees.808_mortgage_broker_fee'),
+  taxServiceFee: feeKeys('origination_fees.809_tax_service_fee'),
+  processingFee: feeKeys('origination_fees.810_processing_fee'),
+  underwritingFee: feeKeys('origination_fees.811_underwriting_fee'),
+  wireTransferFee: feeKeys('origination_fees.812_wire_transfer_fee'),
+  customItem800: { label: 'origination_fees.800_custom_item_label', ...feeKeys('origination_fees.800_custom_item') },
+  // 900 series
+  interestForDays: feeKeys('origination_fees.901_interest_for_days'),
+  mortgageInsurancePremiums: feeKeys('origination_fees.902_mortgage_insurance_premiums'),
+  hazardInsurancePremiums: feeKeys('origination_fees.903_hazard_insurance_premiums'),
+  countyPropertyTaxes: feeKeys('origination_fees.904_county_property_taxes'),
+  vaFundingFee: feeKeys('origination_fees.905_va_funding_fee'),
+  customItem900: { label: 'origination_fees.900_custom_item_label', ...feeKeys('origination_fees.900_custom_item') },
+  // 1000 Reserves
+  hazardInsurance: reserveKeys('origination_fees.1001_hazard_insurance'),
+  mortgageInsurance: reserveKeys('origination_fees.1002_mortgage_insurance'),
+  coPropertyTaxes: reserveKeys('origination_fees.1004_co_property_taxes'),
+  customItem1000: { label: 'origination_fees.1000_custom_item_label', ...feeKeys('origination_fees.1000_custom_item') },
+  // 1100 Title Charges
+  settlementClosingFee: feeKeys('origination_fees.1101_settlement_closing_fee'),
+  docPreparationFee: feeKeys('origination_fees.1105_doc_preparation_fee'),
+  notaryFee: feeKeys('origination_fees.1106_notary_fee'),
+  titleInsurance: feeKeys('origination_fees.1108_title_insurance'),
+  customItem1100: { label: 'origination_fees.1100_custom_item_label', ...feeKeys('origination_fees.1100_custom_item') },
+  // 1200 Government Recording
+  recordingFees: feeKeys('origination_fees.1201_recording_fees'),
+  addThisLine: { label: 'origination_fees.1301_add_this_line_label', ...feeKeys('origination_fees.1301_add_this_line') },
+  cityCountyTaxStamps: feeKeys('origination_fees.1202_city_county_tax_stamps'),
+  customItem1200: { label: 'origination_fees.1200_custom_item_label', ...feeKeys('origination_fees.1200_custom_item') },
+  // 1300 Additional Settlement
+  pestInspection: feeKeys('origination_fees.1302_pest_inspection'),
+  // Subtotals
+  subtotal_j: 'origination_fees.subtotal_j',
+  subtotal_others: 'origination_fees.subtotal_others',
+  total_j: 'origination_fees.total_j',
+  // Compensation
+  commissionFees_d: 'origination_fees.commission_fees_d',
+  additionalCompensation_d: 'origination_fees.additional_compensation_d',
+  // Other Obligations
+  creditLifeDisabilityInsurance_label: 'origination_fees.credit_life_disability_insurance_label',
+  loanDocumentationFee_d: 'origination_fees.loan_documentation_fee_d',
+  customOtherObligation_label: 'origination_fees.custom_other_obligation_label',
+  customOtherObligation_d: 'origination_fees.custom_other_obligation_d',
+  // Existing Liens
+  existingLien1_label: 'origination_fees.existing_lien_1_label',
+  existingLien1_d: 'origination_fees.existing_lien_1_d',
+  existingLien2_label: 'origination_fees.existing_lien_2_label',
+  existingLien2_d: 'origination_fees.existing_lien_2_d',
+  existingLien3_label: 'origination_fees.existing_lien_3_label',
+  existingLien3_d: 'origination_fees.existing_lien_3_d',
+} as const;
+
+/** Generate custom 1300 item keys for a given index (1-8) */
+export function getCustom1300Keys(index: number) {
+  const prefix = `origination_fees.1300_custom_item_${index}`;
+  return {
+    label: `${prefix}_label`,
+    ...feeKeys(prefix),
+  } as const;
+}
+
+// ──────────────────────────────────────────────────
+// ORIGINATION APPLICATION SECTION
+// ──────────────────────────────────────────────────
+
+export const ORIGINATION_APP_KEYS = {
+  dob: 'origination_app.borrower.dob',
+  occupation: 'origination_app.borrower.occupation',
+  employer: 'origination_app.borrower.employer',
+  employed_since: 'origination_app.borrower.employed_since',
+  contact: 'origination_app.borrower.contact',
+  phone: 'origination_app.borrower.phone',
+  email: 'origination_app.borrower.email',
+  filed_bankruptcy: 'origination_app.borrower.filed_bankruptcy',
+  discharged: 'origination_app.borrower.discharged',
+  credit_score: 'origination_app.borrower.credit_score',
+  extra_label_1: 'origination_app.borrower.extra_label_1',
+  extra_value_1: 'origination_app.borrower.extra_value_1',
+  extra_label_2: 'origination_app.borrower.extra_label_2',
+  extra_value_2: 'origination_app.borrower.extra_value_2',
+  // Gross Monthly Income
+  income_salary: 'origination_app.income.salary',
+  income_interest: 'origination_app.income.interest',
+  income_dividend: 'origination_app.income.dividend',
+  income_rental: 'origination_app.income.rental',
+  income_other: 'origination_app.income.other',
+  // Gross Monthly Expenses
+  expense_credit_card: 'origination_app.expense.credit_card',
+  expense_mortgage: 'origination_app.expense.mortgage',
+  expense_spousal_child_support: 'origination_app.expense.spousal_child_support',
+  expense_insurance: 'origination_app.expense.insurance',
+  expense_automobile: 'origination_app.expense.automobile',
+  expense_other: 'origination_app.expense.other',
+  // Document Request
+  doc_balance_sheet: 'origination_app.doc.balance_sheet_received',
+  doc_balance_sheet_2: 'origination_app.doc.balance_sheet_reviewed',
+  doc_income_statement: 'origination_app.doc.income_statement_received',
+  doc_income_statement_2: 'origination_app.doc.income_statement_reviewed',
+  doc_audited_financials: 'origination_app.doc.audited_financials',
+  doc_audited_financials_2: 'origination_app.doc.audited_financials_reviewed',
+  doc_periods_reviewed: 'origination_app.doc.periods_reviewed',
+  doc_additional_info: 'origination_app.doc.additional_info_attached',
+} as const;
+
+/** Generate origination app additional document row keys */
+export function getOriginationDocRow(index: number) {
+  return {
+    text: `origination_app.doc.additional_row_${index}_text`,
+    check1: `origination_app.doc.additional_row_${index}_check1`,
+    check2: `origination_app.doc.additional_row_${index}_check2`,
+  } as const;
+}
+
+// ──────────────────────────────────────────────────
+// COMBINED EXPORT for convenience
+// ──────────────────────────────────────────────────
+
+export const FIELD_KEY_MAP = {
+  borrower: {
+    primary: BORROWER_PRIMARY_KEYS,
+    authorizedParty: BORROWER_AUTHORIZED_PARTY_KEYS,
+    banking: BORROWER_BANKING_KEYS,
+    taxDetail: BORROWER_TAX_DETAIL_KEYS,
+    guarantor: BORROWER_GUARANTOR_KEYS,
+    note: BORROWER_NOTE_KEYS,
+  },
+  lender: {
+    info: LENDER_INFO_KEYS,
+    authorizedParty: LENDER_AUTHORIZED_PARTY_KEYS,
+    banking: LENDER_BANKING_KEYS,
+    taxInfo: LENDER_TAX_INFO_KEYS,
+  },
+  loanTerms: {
+    balances: LOAN_TERMS_BALANCES_KEYS,
+    details: LOAN_TERMS_DETAILS_KEYS,
+    funding: LOAN_TERMS_FUNDING_KEYS,
+  },
+  property: {
+    details: PROPERTY_DETAILS_KEYS,
+    legal: PROPERTY_LEGAL_KEYS,
+    insurance: PROPERTY_INSURANCE_KEYS,
+    liens: PROPERTY_LIENS_KEYS,
+    tax: PROPERTY_TAX_KEYS,
+  },
+  broker: {
+    info: BROKER_INFO_KEYS,
+    banking: BROKER_BANKING_KEYS,
+  },
+  charges: {
+    detail: CHARGES_DETAIL_KEYS,
+  },
+  originationFees: ORIGINATION_FEES_KEYS,
+  originationApp: ORIGINATION_APP_KEYS,
+} as const;
+
+// Type exports for consumers
+export type BorrowerPrimaryKeys = typeof BORROWER_PRIMARY_KEYS;
+export type LenderInfoKeys = typeof LENDER_INFO_KEYS;
+export type LoanTermsBalancesKeys = typeof LOAN_TERMS_BALANCES_KEYS;
+export type LoanTermsDetailsKeys = typeof LOAN_TERMS_DETAILS_KEYS;
+export type PropertyDetailsKeys = typeof PROPERTY_DETAILS_KEYS;
+export type BrokerInfoKeys = typeof BROKER_INFO_KEYS;
+export type ChargesDetailKeys = typeof CHARGES_DETAIL_KEYS;
