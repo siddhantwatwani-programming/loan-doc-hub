@@ -834,7 +834,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
               {(() => {
                 // Get base sections, filter out 'dates' (merged into other) and apply custom order
                 const baseSections = (isExternalUser ? visibleSections : sections).filter(
-                  (s) => SECTION_LABELS[s] && s !== "dates",
+                  (s) => SECTION_LABELS[s] && s !== "dates" && s !== "origination_fees",
                 );
 
                 // Add virtual tabs for internal users
