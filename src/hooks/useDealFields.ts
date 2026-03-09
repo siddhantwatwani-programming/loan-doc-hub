@@ -812,6 +812,9 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
           // Get canonical key for dictionary lookup (lender1.first_name -> lender.first_name)
           const canonicalKey = getCanonicalKey(fieldKey);
           
+          // Translate legacy canonical key to DB key (borrower.first_name -> br_p_firstName)
+          const dbMappedKey = resolveLegacyKey(canonicalKey);
+          
           // For charge fields, also try the dictionary-format key (charge.date_of_charge -> charge_date)
           const dictMappedKey = canonicalKey.startsWith('charge.') 
             ? mapChargeFieldKey(canonicalKey, true) 
@@ -819,9 +822,11 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
 
           const fallbackMeta = fallbackMetaByKey.get(canonicalKey) 
             || fallbackMetaByKey.get(fieldKey) 
+            || (dbMappedKey !== canonicalKey ? fallbackMetaByKey.get(dbMappedKey) : null)
             || (dictMappedKey ? fallbackMetaByKey.get(dictMappedKey) : null);
           const fieldDictId = fieldIdMap[canonicalKey] 
             || fieldIdMap[fieldKey] 
+            || (dbMappedKey !== canonicalKey ? fieldIdMap[dbMappedKey] : null)
             || (dictMappedKey ? fieldIdMap[dictMappedKey] : null)
             || fallbackMeta?.id;
           if (!fieldDictId) continue;
