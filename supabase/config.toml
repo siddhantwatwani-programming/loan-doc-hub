@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.send-message]
 verify_jwt = false
+
+[functions.migrate-field-keys]
+verify_jwt = false
