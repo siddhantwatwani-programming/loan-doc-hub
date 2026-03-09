@@ -1,110 +1,80 @@
 
 
-## Event Journal (Change Log System) Implementation Plan
+## Problem Summary
 
-### Overview
-Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
+There are four critical issues with the Field Dictionary module:
 
-### 1. Database: New Migration
-Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
+1. **Insurance section: 0 fields in DB** — `InsuranceDetailForm` uses ~25 field keys but the `field_dictionary` table has zero entries for `section = 'insurance'`
+2. **form_type misclassification** — Borrower authorized party (~24 fields), guarantor (~50+ fields), and banking (~15 fields) are all tagged as `form_type = 'primary'` instead of `authorized_party`, `guarantor`, and `banking` respectively. Same issue with several loan_terms fields that should be `servicing`, `funding`, or `balances`. Lender banking fields (only 2 of ~21 are tagged `banking`), and lender tax fields are under `primary`.
+3. **Legacy key mismatch in DB field_key prefix** — The DB keys use `br_p_` prefix for authorized party, guarantor, and banking fields (e.g., `br_p_authPartyFirstName`) when they should use `br_ap_`, `br_g_`, and `br_b_` respectively to match the section/form convention
+4. **Missing insurance field_dictionary entries** — No DB rows exist, so InsuranceDetailForm cannot persist any data
 
+## Plan
+
+### Task 1: Fix form_type categorization via UPDATE queries
+
+Update `form_type` on existing `field_dictionary` rows to reflect the actual sub-form they belong to. This is purely data updates — no schema changes.
+
+**Borrower section:**
+- All `br_p_authParty*` fields → `form_type = 'authorized_party'`
+- All `br_p_guaranto*` fields → `form_type = 'guarantor'`  
+- All `br_p_bank*`, `br_p_routin*`, `br_p_individ*`, `br_p_account*` (ACH-related), `br_p_serviceStatus`, `br_p_applyDebitAs`, `br_p_debit*`, `br_p_nextDebit*`, `br_p_stopDate`, `br_p_sendConfir`, `br_p_disableOnlinePaymen` → `form_type = 'banking'`
+- `br_p_send1098` → `form_type = 'tax'` (alongside existing `br_t_*` fields)
+- `br_p_note` → `form_type = 'notes'`
+
+**Co-Borrower section:**
+- Banking, tax, and notes fields within `co_borrower` similarly re-tagged
+
+**Lender section:**
+- `ld_p_bank*`, `ld_p_routing*`, `ld_p_account*`, `ld_p_furtherCredit*`, `ld_p_byCheck*`, `ld_p_checkSame*`, `ld_p_checkAddres*`, `ld_p_checkCity*`, `ld_p_checkZip*`, `ld_p_achEmail*`, `ld_p_achStatus`, `ld_p_creditCard*`, `ld_p_cardNumber`, `ld_p_securityCode`, `ld_p_expirati` → `form_type = 'banking'`
+- `ld_p_taxPayer*`, `ld_p_designatRecipi` → `form_type = 'tax'`
+
+**Loan Terms section:**
+- Fields matching servicing (escrow impound, disbursement) → `form_type = 'servicing'`
+- Additional balances fields currently under `primary` → `form_type = 'balances'`
+
+**Broker section:**
+- Banking fields under `primary` → `form_type = 'banking'`
+
+Approximately 6-8 UPDATE statements using pattern matching on `field_key`.
+
+### Task 2: Insert Insurance section fields into field_dictionary
+
+Insert ~25 rows for section `insurance` covering all fields from `InsuranceDetailForm`:
+- property, description, insuredName, companyName, policyNumber, expiration, coverage, active
+- agentName, businessAddress, businessAddressCity, businessAddressState, businessAddressZip
+- phoneNumber, faxNumber, email, note
+- paymentMailingStreet, paymentMailingCity, paymentMailingState, paymentMailingZip
+- insuranceTracking, lastVerified, trackingStatus
+
+Each entry gets: `section = 'insurance'`, `form_type = 'detail'`, appropriate `data_type`, `field_key` in `in_d_*` convention.
+
+### Task 3: Add Insurance key mappings to legacyKeyMap.ts
+
+Add entries mapping InsuranceDetailForm's `insurance1.*` legacy keys to the new `in_d_*` DB keys created in Task 2.
+
+### Task 4: Update legacyKeyMap.ts DB key references for reclassified fields
+
+Where the DB `field_key` prefix changes (e.g., if we rename `br_p_authPartyFirstName` to `br_ap_firstName`), update the legacy map accordingly. However, renaming DB field_keys is high-risk (breaks existing stored data). **Instead, we will only update `form_type` without changing the actual `field_key` values.** The prefix mismatch (`br_p_` for authorized party fields) is cosmetic — what matters for persistence is the exact `field_key` match, which already works via `legacyKeyMap.ts`.
+
+### Task 5: Add Insurance section enum value
+
+The `field_section` enum currently doesn't include `insurance`. We need a migration to add it:
 ```sql
-CREATE TABLE public.event_journal (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
-  event_number integer NOT NULL,
-  actor_user_id uuid NOT NULL,
-  section text NOT NULL,
-  details jsonb NOT NULL DEFAULT '[]',
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
-ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
-
--- RLS: CSR and Admin can view/insert
-CREATE POLICY "CSRs can view event journal" ON public.event_journal
-  FOR SELECT TO authenticated
-  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
-
-CREATE POLICY "CSRs can insert event journal" ON public.event_journal
-  FOR INSERT TO authenticated
-  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
-
--- Auto-increment event_number per deal
-CREATE OR REPLACE FUNCTION public.set_event_journal_number()
-RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
-BEGIN
-  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
-  FROM public.event_journal WHERE deal_id = NEW.deal_id;
-  RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER trg_event_journal_number
-  BEFORE INSERT ON public.event_journal
-  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
+ALTER TYPE field_section ADD VALUE IF NOT EXISTS 'insurance';
 ```
-
-The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
-
-### 2. Hook: `useEventJournal.ts` (New File)
-- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
-- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
-- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
-
-### 3. Capture Old→New Values in `useDealFields.ts`
-- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
-- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
-- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
-- After successful save, update the snapshot
-
-### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
-Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
-- Table with columns: Event #, User, Section, Details, Timestamp
-- Details column shows truncated preview (first 80 chars)
-- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
-- Sorted by event_number descending (newest first)
-
-### 5. `EventJournalViewer` Component (New File)
-`src/components/deal/EventJournalViewer.tsx`:
-- Fetches from `event_journal` table filtered by `deal_id`
-- Joins actor names from `profiles`
-- Table layout using existing shadcn Table components
-- "Show More" modal using existing Dialog component
-- Detail entries formatted as `Field Label: oldValue → newValue`
-
-### 6. Global Event Journal Page (New File)
-`src/pages/csr/GlobalEventJournalPage.tsx`:
-- Deal selector dropdown (search by deal number) at the top
-- Once a deal is selected, renders `EventJournalViewer` for that deal
-- Same table structure as the per-deal view
-
-### 7. Sidebar Navigation Update
-In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
-```tsx
-<PromotedNavSection
-  label="Event Journal"
-  icon={BookOpen}
-  items={[]}
-  directPath="/event-journal"
-  isCollapsed={isCollapsed}
-  searchQuery={searchQuery}
-/>
-```
-
-### 8. Route Registration
-In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
 
 ### Files Changed
+
 | File | Change |
 |------|--------|
-| New migration | Create `event_journal` table with trigger |
-| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
-| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
-| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
-| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
-| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
-| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
-| `src/App.tsx` | Add `/event-journal` route |
+| DB migration | Add `insurance` to `field_section` enum |
+| DB data (insert tool) | INSERT 25 insurance fields |
+| DB data (insert tool) | UPDATE ~150 rows to fix `form_type` across borrower, co_borrower, lender, loan_terms, broker |
+| `src/lib/legacyKeyMap.ts` | Add insurance section key mappings (~25 entries) |
+
+### What We Are NOT Changing
+- **field_key values in DB** — Renaming `br_p_authPartyFirstName` to `br_ap_firstName` would break any existing stored deal data. The form_type column is sufficient for correct categorization/filtering.
+- **fieldKeyMap.ts** — Legacy dot-notation keys remain as-is; the translation layer in legacyKeyMap.ts handles the bridge.
+- **Schema/table structure** — Only data updates and one enum addition.
 
