@@ -32,7 +32,8 @@ import {
   Pencil,
   Trash2,
   Download,
-  Asterisk
+  Asterisk,
+  X
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -88,6 +89,7 @@ const SECTIONS = [
 const FORM_TYPES = [
   { value: 'primary', label: 'Primary' },
   { value: 'additional', label: 'Additional' },
+  { value: 'authorized_party', label: 'Authorized Party' },
   { value: 'guarantor', label: 'Guarantor' },
   { value: 'banking', label: 'Banking' },
   { value: 'tax', label: 'Tax' },
@@ -99,6 +101,7 @@ const FORM_TYPES = [
   { value: 'detail', label: 'Detail' },
   { value: 'servicing', label: 'Servicing' },
   { value: 'funding', label: 'Funding' },
+  { value: 'fees', label: 'Fees' },
   { value: 'balances', label: 'Balances' },
   { value: 'penalties', label: 'Penalties' },
   { value: 'general', label: 'General' },
@@ -115,6 +118,21 @@ const DATA_TYPES = [
   { value: 'dropdown', label: 'Dropdown' },
   { value: 'integer', label: 'Integer' },
   { value: 'decimal', label: 'Decimal' },
+  { value: 'action', label: 'Action' },
+  { value: 'navigation', label: 'Navigation' },
+  { value: 'section', label: 'Section' },
+  { value: 'label', label: 'Label' },
+  { value: 'template', label: 'Template' },
+  { value: 'datetime', label: 'Date & Time' },
+  { value: 'date_range', label: 'Date Range' },
+  { value: 'file', label: 'File' },
+  { value: 'document', label: 'Document' },
+  { value: 'list', label: 'List' },
+  { value: 'reference', label: 'Reference' },
+  { value: 'object_reference', label: 'Object Reference' },
+  { value: 'entity_reference', label: 'Entity Reference' },
+  { value: 'search_input', label: 'Search Input' },
+  { value: 'sort_control', label: 'Sort Control' },
 ];
 
 // Section abbreviation map for field key generation
@@ -138,6 +156,7 @@ const SECTION_ABBR: Record<string, string> = {
 const FORM_ABBR: Record<string, string> = {
   primary: 'p',
   additional: 'a',
+  authorized_party: 'ap',
   guarantor: 'g',
   banking: 'b',
   tax: 't',
@@ -149,6 +168,7 @@ const FORM_ABBR: Record<string, string> = {
   detail: 'd',
   servicing: 'sv',
   funding: 'fd',
+  fees: 'f',
   balances: 'bl',
   penalties: 'pn',
   general: 'g',
@@ -170,11 +190,20 @@ function generateFieldKeyFromConvention(label: string, section: string, formType
   return `${sectionAbbr}_${formAbbr}_${identifier}`;
 }
 
+// Section label helper for display
+const SECTION_LABEL_MAP: Record<string, string> = {};
+SECTIONS.forEach(s => { SECTION_LABEL_MAP[s.value] = s.label; });
+const FORM_TYPE_LABEL_MAP: Record<string, string> = {};
+FORM_TYPES.forEach(f => { FORM_TYPE_LABEL_MAP[f.value] = f.label; });
+
 export const FieldDictionaryPage: React.FC = () => {
   const [fields, setFields] = useState<FieldDictionary[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSection, setFilterSection] = useState<string>('');
+  const [filterFormType, setFilterFormType] = useState<string>('');
+  const [filterDataType, setFilterDataType] = useState<string>('');
+  const [filterMandatory, setFilterMandatory] = useState<string>('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingField, setEditingField] = useState<FieldDictionary | null>(null);
   const [saving, setSaving] = useState(false);
@@ -424,8 +453,8 @@ export const FieldDictionaryPage: React.FC = () => {
   // CSV export
   const handleExportCSV = () => {
     const rows = filteredFields.map(f => ({
-      Section: f.section,
-      'Form Type': f.form_type,
+      Section: SECTION_LABEL_MAP[f.section] || f.section,
+      'Form Type': FORM_TYPE_LABEL_MAP[f.form_type] || f.form_type,
       'Field Label': f.label,
       'Field Key': f.field_key,
       'Field Type': f.data_type,
@@ -449,17 +478,38 @@ export const FieldDictionaryPage: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const hasActiveFilters = filterSection || filterFormType || filterDataType || filterMandatory;
+
+  const clearAllFilters = () => {
+    setFilterSection('');
+    setFilterFormType('');
+    setFilterDataType('');
+    setFilterMandatory('');
+    setSearchQuery('');
+  };
+
   const filteredFields = useMemo(() => {
     return fields
       .filter(f => f.section !== 'other') // Exclude 'other' section from display
       .filter((f) => {
-        const matchesSearch =
-          f.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          f.field_key.toLowerCase().includes(searchQuery.toLowerCase());
+        // Search across label, field_key, section label, and form_type label
+        const q = searchQuery.toLowerCase();
+        const matchesSearch = !q ||
+          f.label.toLowerCase().includes(q) ||
+          f.field_key.toLowerCase().includes(q) ||
+          (SECTION_LABEL_MAP[f.section] || f.section).toLowerCase().includes(q) ||
+          f.section.toLowerCase().includes(q) ||
+          (FORM_TYPE_LABEL_MAP[f.form_type] || f.form_type).toLowerCase().includes(q) ||
+          f.form_type.toLowerCase().includes(q) ||
+          f.data_type.toLowerCase().includes(q);
         const matchesSection = !filterSection || f.section === filterSection;
-        return matchesSearch && matchesSection;
+        const matchesFormType = !filterFormType || f.form_type === filterFormType;
+        const matchesDataType = !filterDataType || f.data_type === filterDataType;
+        const matchesMandatory = !filterMandatory || 
+          (filterMandatory === 'yes' ? f.is_mandatory : !f.is_mandatory);
+        return matchesSearch && matchesSection && matchesFormType && matchesDataType && matchesMandatory;
       });
-  }, [fields, searchQuery, filterSection]);
+  }, [fields, searchQuery, filterSection, filterFormType, filterDataType, filterMandatory]);
 
   // Group by section
   const groupedFields = useMemo(() => {
@@ -683,28 +733,75 @@ export const FieldDictionaryPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Search and Filters */}
       <div className="section-card mb-6">
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col gap-3">
+          {/* Search bar */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by label or field key..."
+              placeholder="Search by label, field key, section, form, or type..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
           </div>
-          <Select value={filterSection || "all"} onValueChange={(v) => setFilterSection(v === "all" ? "" : v)}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="All Sections" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Sections</SelectItem>
-              {SECTIONS.map((s) => (
-                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Filter row */}
+          <div className="flex flex-wrap gap-3 items-center">
+            <Select value={filterSection || "all"} onValueChange={(v) => setFilterSection(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Sections" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sections</SelectItem>
+                {SECTIONS.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterFormType || "all"} onValueChange={(v) => setFilterFormType(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Forms" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Forms</SelectItem>
+                {FORM_TYPES.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterDataType || "all"} onValueChange={(v) => setFilterDataType(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {DATA_TYPES.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterMandatory || "all"} onValueChange={(v) => setFilterMandatory(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Mandatory" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="yes">Mandatory</SelectItem>
+                <SelectItem value="no">Optional</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground" onClick={clearAllFilters}>
+                <X className="h-3.5 w-3.5" />
+                Clear filters
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -712,14 +809,18 @@ export const FieldDictionaryPage: React.FC = () => {
         <div className="section-card text-center py-12">
           <Key className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">No fields found</h3>
-          <p className="text-muted-foreground">Add your first field to the dictionary</p>
+          <p className="text-muted-foreground">
+            {hasActiveFilters || searchQuery 
+              ? 'Try adjusting your search or filters' 
+              : 'Add your first field to the dictionary'}
+          </p>
         </div>
       ) : (
         <div className="space-y-6">
           {Object.entries(groupedFields).map(([section, sectionFields]) => (
             <div key={section} className="section-card">
-              <h3 className="text-lg font-semibold text-foreground mb-4 capitalize">
-                {section.replace(/_/g, ' ')}
+              <h3 className="text-lg font-semibold text-foreground mb-4">
+                {SECTION_LABEL_MAP[section] || section.replace(/_/g, ' ')}
                 <span className="text-sm font-normal text-muted-foreground ml-2">
                   ({sectionFields.length} fields)
                 </span>
@@ -744,7 +845,7 @@ export const FieldDictionaryPage: React.FC = () => {
                         <td className="py-2.5 px-3 font-mono text-xs text-muted-foreground">{field.field_key}</td>
                         <td className="py-2.5 px-3">
                           <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-accent/50 text-accent-foreground capitalize">
-                            {field.form_type || 'primary'}
+                            {FORM_TYPE_LABEL_MAP[field.form_type] || field.form_type || 'primary'}
                           </span>
                         </td>
                         <td className="py-2.5 px-3">
