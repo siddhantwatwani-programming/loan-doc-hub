@@ -652,6 +652,434 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'charge_on_behalf_of_lender_name': 'ch_p_onBehalfOfLender',
   'charge_on_behalf_of_amount': 'ch_p_onBehalfOfAmount',
   'charge_amount_owed_by_borrower': 'ch_p_amountOwedByBorrow',
+
+  // ──────────────────────────────────────────────────
+  // ORIGINATION FEES (HUD-1 Form)
+  // ──────────────────────────────────────────────────
+
+  // 800 Custom Item (9 fields)
+  'origination_fees.800_custom_item_label': 'of_fe_800CustomItemLabel',
+  'origination_fees.800_custom_item_payable_to': 'of_fe_800CustomItemPayabl',
+  'origination_fees.800_custom_item_d': 'of_fe_800CustomItemD',
+  'origination_fees.800_custom_item_charge': 'of_fe_800CustomItemCharge',
+  'origination_fees.800_custom_item_broker': 'of_fe_800CustomItemBroker',
+  'origination_fees.800_custom_item_others': 'of_fe_800CustomItemOthers',
+  'origination_fees.800_custom_item_apr': 'of_fe_800CustomItemApr',
+  'origination_fees.800_custom_item_paid_to_company': 'of_fe_800CustomItemPaid',
+  'origination_fees.800_custom_item_oral_disclosure': 'of_fe_800CustomItemOral',
+
+  // 801 Lenders Loan Origination Fee (8 fields)
+  'origination_fees.801_lenders_loan_origination_fee_payable_to': 'of_fe_801LenderLoanOrigin5',
+  'origination_fees.801_lenders_loan_origination_fee_d': 'of_fe_lendersLoanOriginFee',
+  'origination_fees.801_lenders_loan_origination_fee_charge': 'of_fe_801LenderLoanOrigin2',
+  'origination_fees.801_lenders_loan_origination_fee_broker': 'of_fe_lendersLoanOriginFee2',
+  'origination_fees.801_lenders_loan_origination_fee_others': 'of_fe_lendersLoanOriginFee3',
+  'origination_fees.801_lenders_loan_origination_fee_apr': 'of_fe_801LenderLoanOrigin',
+  'origination_fees.801_lenders_loan_origination_fee_paid_to_company': 'of_fe_801LenderLoanOrigin4',
+  'origination_fees.801_lenders_loan_origination_fee_oral_disclosure': 'of_fe_801LenderLoanOrigin3',
+
+  // 802 Lenders Loan Discount Fee (8 fields)
+  'origination_fees.802_lenders_loan_discount_fee_payable_to': 'of_fe_802LenderLoanDiscou5',
+  'origination_fees.802_lenders_loan_discount_fee_d': 'of_fe_lendersLoanDiscouFee',
+  'origination_fees.802_lenders_loan_discount_fee_charge': 'of_fe_802LenderLoanDiscou2',
+  'origination_fees.802_lenders_loan_discount_fee_broker': 'of_fe_lendersLoanDiscouFee2',
+  'origination_fees.802_lenders_loan_discount_fee_others': 'of_fe_lendersLoanDiscouFee3',
+  'origination_fees.802_lenders_loan_discount_fee_apr': 'of_fe_802LenderLoanDiscou',
+  'origination_fees.802_lenders_loan_discount_fee_paid_to_company': 'of_fe_802LenderLoanDiscou4',
+  'origination_fees.802_lenders_loan_discount_fee_oral_disclosure': 'of_fe_802LenderLoanDiscou3',
+
+  // 803 Appraisal Fee (8 fields)
+  'origination_fees.803_appraisal_fee_payable_to': 'of_fe_803AppraiFeePayabl',
+  'origination_fees.803_appraisal_fee_d': 'of_fe_appraisaFeeD',
+  'origination_fees.803_appraisal_fee_charge': 'of_fe_803AppraiFeeCharge',
+  'origination_fees.803_appraisal_fee_broker': 'of_fe_appraisaFeeBroker',
+  'origination_fees.803_appraisal_fee_others': 'of_fe_appraisaFeeOthers',
+  'origination_fees.803_appraisal_fee_apr': 'of_fe_803AppraiFeeApr',
+  'origination_fees.803_appraisal_fee_paid_to_company': 'of_fe_803AppraiFeePaid',
+  'origination_fees.803_appraisal_fee_oral_disclosure': 'of_fe_803AppraiFeeOral',
+
+  // 804 Credit Report (8 fields)
+  'origination_fees.804_credit_report_payable_to': 'of_fe_804CreditReportPayabl',
+  'origination_fees.804_credit_report_d': 'of_fe_creditReportD',
+  'origination_fees.804_credit_report_charge': 'of_fe_804CreditReportCharge',
+  'origination_fees.804_credit_report_broker': 'of_fe_creditReportBroker',
+  'origination_fees.804_credit_report_others': 'of_fe_creditReportOthers',
+  'origination_fees.804_credit_report_apr': 'of_fe_804CreditReportApr',
+  'origination_fees.804_credit_report_paid_to_company': 'of_fe_804CreditReportPaid',
+  'origination_fees.804_credit_report_oral_disclosure': 'of_fe_804CreditReportOral',
+
+  // 805 Lenders Inspection Fee (8 fields)
+  'origination_fees.805_lenders_inspection_fee_payable_to': 'of_fe_805LenderInspecFee5',
+  'origination_fees.805_lenders_inspection_fee_d': 'of_fe_lendersInspecFeeD',
+  'origination_fees.805_lenders_inspection_fee_charge': 'of_fe_805LenderInspecFee2',
+  'origination_fees.805_lenders_inspection_fee_broker': 'of_fe_lendersInspecFeeBroker',
+  'origination_fees.805_lenders_inspection_fee_others': 'of_fe_lendersInspecFeeOthers',
+  'origination_fees.805_lenders_inspection_fee_apr': 'of_fe_805LenderInspecFee',
+  'origination_fees.805_lenders_inspection_fee_paid_to_company': 'of_fe_805LenderInspecFee4',
+  'origination_fees.805_lenders_inspection_fee_oral_disclosure': 'of_fe_805LenderInspecFee3',
+
+  // 808 Mortgage Broker Fee (8 fields)
+  'origination_fees.808_mortgage_broker_fee_payable_to': 'of_fe_808MortgaBrokerFee5',
+  'origination_fees.808_mortgage_broker_fee_d': 'of_fe_mortgageBrokerFeeD',
+  'origination_fees.808_mortgage_broker_fee_charge': 'of_fe_808MortgaBrokerFee2',
+  'origination_fees.808_mortgage_broker_fee_broker': 'of_fe_mortgageBrokerFeeBroker',
+  'origination_fees.808_mortgage_broker_fee_others': 'of_fe_mortgageBrokerFeeOthers',
+  'origination_fees.808_mortgage_broker_fee_apr': 'of_fe_808MortgaBrokerFee',
+  'origination_fees.808_mortgage_broker_fee_paid_to_company': 'of_fe_808MortgaBrokerFee4',
+  'origination_fees.808_mortgage_broker_fee_oral_disclosure': 'of_fe_808MortgaBrokerFee3',
+
+  // 809 Tax Service Fee (8 fields)
+  'origination_fees.809_tax_service_fee_payable_to': 'of_fe_809TaxServicFee5',
+  'origination_fees.809_tax_service_fee_d': 'of_fe_taxServicFeeD',
+  'origination_fees.809_tax_service_fee_charge': 'of_fe_809TaxServicFee2',
+  'origination_fees.809_tax_service_fee_broker': 'of_fe_taxServicFeeBroker',
+  'origination_fees.809_tax_service_fee_others': 'of_fe_taxServicFeeOthers',
+  'origination_fees.809_tax_service_fee_apr': 'of_fe_809TaxServicFee',
+  'origination_fees.809_tax_service_fee_paid_to_company': 'of_fe_809TaxServicFee4',
+  'origination_fees.809_tax_service_fee_oral_disclosure': 'of_fe_809TaxServicFee3',
+
+  // 810 Processing Fee (8 fields)
+  'origination_fees.810_processing_fee_payable_to': 'of_fe_810ProcesFeePayabl',
+  'origination_fees.810_processing_fee_d': 'of_fe_processiFeeD',
+  'origination_fees.810_processing_fee_charge': 'of_fe_810ProcesFeeCharge',
+  'origination_fees.810_processing_fee_broker': 'of_fe_processiFeeBroker',
+  'origination_fees.810_processing_fee_others': 'of_fe_processiFeeOthers',
+  'origination_fees.810_processing_fee_apr': 'of_fe_810ProcesFeeApr',
+  'origination_fees.810_processing_fee_paid_to_company': 'of_fe_810ProcesFeePaid',
+  'origination_fees.810_processing_fee_oral_disclosure': 'of_fe_810ProcesFeeOral',
+
+  // 811 Underwriting Fee (8 fields)
+  'origination_fees.811_underwriting_fee_payable_to': 'of_fe_811UnderwFeePayabl',
+  'origination_fees.811_underwriting_fee_d': 'of_fe_underwriFeeD',
+  'origination_fees.811_underwriting_fee_charge': 'of_fe_811UnderwFeeCharge',
+  'origination_fees.811_underwriting_fee_broker': 'of_fe_underwriFeeBroker',
+  'origination_fees.811_underwriting_fee_others': 'of_fe_underwriFeeOthers',
+  'origination_fees.811_underwriting_fee_apr': 'of_fe_811UnderwFeeApr',
+  'origination_fees.811_underwriting_fee_paid_to_company': 'of_fe_811UnderwFeePaid',
+  'origination_fees.811_underwriting_fee_oral_disclosure': 'of_fe_811UnderwFeeOral',
+
+  // 812 Wire Transfer Fee (8 fields)
+  'origination_fees.812_wire_transfer_fee_payable_to': 'of_fe_812WireTransfFee5',
+  'origination_fees.812_wire_transfer_fee_d': 'of_fe_wireTransfFeeD',
+  'origination_fees.812_wire_transfer_fee_charge': 'of_fe_812WireTransfFee2',
+  'origination_fees.812_wire_transfer_fee_broker': 'of_fe_wireTransfFeeBroker',
+  'origination_fees.812_wire_transfer_fee_others': 'of_fe_wireTransfFeeOthers',
+  'origination_fees.812_wire_transfer_fee_apr': 'of_fe_812WireTransfFee',
+  'origination_fees.812_wire_transfer_fee_paid_to_company': 'of_fe_812WireTransfFee4',
+  'origination_fees.812_wire_transfer_fee_oral_disclosure': 'of_fe_812WireTransfFee3',
+
+  // 900 Custom Item (9 fields)
+  'origination_fees.900_custom_item_label': 'of_fe_900CustomItemLabel',
+  'origination_fees.900_custom_item_payable_to': 'of_fe_900CustomItemPayabl',
+  'origination_fees.900_custom_item_d': 'of_fe_900CustomItemD',
+  'origination_fees.900_custom_item_charge': 'of_fe_900CustomItemCharge',
+  'origination_fees.900_custom_item_broker': 'of_fe_900CustomItemBroker',
+  'origination_fees.900_custom_item_others': 'of_fe_900CustomItemOthers',
+  'origination_fees.900_custom_item_apr': 'of_fe_900CustomItemApr',
+  'origination_fees.900_custom_item_paid_to_company': 'of_fe_900CustomItemPaid',
+  'origination_fees.900_custom_item_oral_disclosure': 'of_fe_900CustomItemOral',
+
+  // 901 Interest For Days (8 fields)
+  'origination_fees.901_interest_for_days_payable_to': 'of_fe_901IntereForDays5',
+  'origination_fees.901_interest_for_days_d': 'of_fe_interestForDaysD',
+  'origination_fees.901_interest_for_days_charge': 'of_fe_901IntereForDays2',
+  'origination_fees.901_interest_for_days_broker': 'of_fe_interestForDaysBroker',
+  'origination_fees.901_interest_for_days_others': 'of_fe_interestForDaysOthers',
+  'origination_fees.901_interest_for_days_apr': 'of_fe_901IntereForDays',
+  'origination_fees.901_interest_for_days_paid_to_company': 'of_fe_901IntereForDays4',
+  'origination_fees.901_interest_for_days_oral_disclosure': 'of_fe_901IntereForDays3',
+
+  // 902 Mortgage Insurance Premiums (8 fields)
+  'origination_fees.902_mortgage_insurance_premiums_payable_to': 'of_fe_902MortgaInsuraPremiu5',
+  'origination_fees.902_mortgage_insurance_premiums_d': 'of_fe_mortgageInsuraPremiuD',
+  'origination_fees.902_mortgage_insurance_premiums_charge': 'of_fe_902MortgaInsuraPremiu2',
+  'origination_fees.902_mortgage_insurance_premiums_broker': 'of_fe_mortgageInsuraPremiuBroker',
+  'origination_fees.902_mortgage_insurance_premiums_others': 'of_fe_mortgageInsuraPremiuOthers',
+  'origination_fees.902_mortgage_insurance_premiums_apr': 'of_fe_902MortgaInsuraPremiu',
+  'origination_fees.902_mortgage_insurance_premiums_paid_to_company': 'of_fe_902MortgaInsuraPremiu4',
+  'origination_fees.902_mortgage_insurance_premiums_oral_disclosure': 'of_fe_902MortgaInsuraPremiu3',
+
+  // 903 Hazard Insurance Premiums (8 fields)
+  'origination_fees.903_hazard_insurance_premiums_payable_to': 'of_fe_903HazardInsuraPremiu5',
+  'origination_fees.903_hazard_insurance_premiums_d': 'of_fe_hazardInsuraPremiuD',
+  'origination_fees.903_hazard_insurance_premiums_charge': 'of_fe_903HazardInsuraPremiu2',
+  'origination_fees.903_hazard_insurance_premiums_broker': 'of_fe_hazardInsuraPremiuBroker',
+  'origination_fees.903_hazard_insurance_premiums_others': 'of_fe_hazardInsuraPremiuOthers',
+  'origination_fees.903_hazard_insurance_premiums_apr': 'of_fe_903HazardInsuraPremiu',
+  'origination_fees.903_hazard_insurance_premiums_paid_to_company': 'of_fe_903HazardInsuraPremiu4',
+  'origination_fees.903_hazard_insurance_premiums_oral_disclosure': 'of_fe_903HazardInsuraPremiu3',
+
+  // 904 County Property Taxes (8 fields)
+  'origination_fees.904_county_property_taxes_payable_to': 'of_fe_904CountyProperTaxes5',
+  'origination_fees.904_county_property_taxes_d': 'of_fe_countyProperTaxesD',
+  'origination_fees.904_county_property_taxes_charge': 'of_fe_904CountyProperTaxes2',
+  'origination_fees.904_county_property_taxes_broker': 'of_fe_countyProperTaxesBroker',
+  'origination_fees.904_county_property_taxes_others': 'of_fe_countyProperTaxesOthers',
+  'origination_fees.904_county_property_taxes_apr': 'of_fe_904CountyProperTaxes',
+  'origination_fees.904_county_property_taxes_paid_to_company': 'of_fe_904CountyProperTaxes4',
+  'origination_fees.904_county_property_taxes_oral_disclosure': 'of_fe_904CountyProperTaxes3',
+
+  // 905 VA Funding Fee (8 fields)
+  'origination_fees.905_va_funding_fee_payable_to': 'of_fe_905VaFundinFee5',
+  'origination_fees.905_va_funding_fee_d': 'of_fe_vaFundinFeeD',
+  'origination_fees.905_va_funding_fee_charge': 'of_fe_905VaFundinFee2',
+  'origination_fees.905_va_funding_fee_broker': 'of_fe_vaFundinFeeBroker',
+  'origination_fees.905_va_funding_fee_others': 'of_fe_vaFundinFeeOthers',
+  'origination_fees.905_va_funding_fee_apr': 'of_fe_905VaFundinFee',
+  'origination_fees.905_va_funding_fee_paid_to_company': 'of_fe_905VaFundinFee4',
+  'origination_fees.905_va_funding_fee_oral_disclosure': 'of_fe_905VaFundinFee3',
+
+  // 1000 Custom Item (9 fields)
+  'origination_fees.1000_custom_item_label': 'of_fe_1000CustomItemLabel',
+  'origination_fees.1000_custom_item_payable_to': 'of_fe_1000CustomItemPayabl',
+  'origination_fees.1000_custom_item_d': 'of_fe_1000CustomItemD',
+  'origination_fees.1000_custom_item_charge': 'of_fe_1000CustomItemCharge',
+  'origination_fees.1000_custom_item_broker': 'of_fe_1000CustomItemBroker',
+  'origination_fees.1000_custom_item_others': 'of_fe_1000CustomItemOthers',
+  'origination_fees.1000_custom_item_apr': 'of_fe_1000CustomItemApr',
+  'origination_fees.1000_custom_item_paid_to_company': 'of_fe_1000CustomItemPaid',
+  'origination_fees.1000_custom_item_oral_disclosure': 'of_fe_1000CustomItemOral',
+
+  // 1001 Hazard Insurance Reserves (months/perMonth/total + HUD fields)
+  'origination_fees.1001_hazard_insurance_months': 'of_fe_hazardInsuraMonths',
+  'origination_fees.1001_hazard_insurance_per_month': 'of_fe_hazardInsuraPerMonth',
+  'origination_fees.1001_hazard_insurance_total': 'of_fe_hazardInsuraTotal',
+  'origination_fees.1001_hazard_insurance_charge': 'of_fe_1001HazardInsuraCharge',
+  'origination_fees.1001_hazard_insurance_broker': 'of_fe_hazardInsuraBroker',
+  'origination_fees.1001_hazard_insurance_others': 'of_fe_hazardInsuraOthers',
+  'origination_fees.1001_hazard_insurance_apr': 'of_fe_1001HazardInsuraApr',
+  'origination_fees.1001_hazard_insurance_paid_to_company': 'of_fe_1001HazardInsuraPaid',
+  'origination_fees.1001_hazard_insurance_oral_disclosure': 'of_fe_1001HazardInsuraOral',
+
+  // 1002 Mortgage Insurance Reserves
+  'origination_fees.1002_mortgage_insurance_months': 'of_fe_mortgageInsuraMonths',
+  'origination_fees.1002_mortgage_insurance_per_month': 'of_fe_mortgageInsuraPerMonth',
+  'origination_fees.1002_mortgage_insurance_total': 'of_fe_mortgageInsuraTotal',
+  'origination_fees.1002_mortgage_insurance_charge': 'of_fe_1002MortgaInsuraCharge',
+  'origination_fees.1002_mortgage_insurance_broker': 'of_fe_mortgageInsuraBroker',
+  'origination_fees.1002_mortgage_insurance_others': 'of_fe_mortgageInsuraOthers',
+  'origination_fees.1002_mortgage_insurance_apr': 'of_fe_1002MortgaInsuraApr',
+  'origination_fees.1002_mortgage_insurance_paid_to_company': 'of_fe_1002MortgaInsuraPaid',
+  'origination_fees.1002_mortgage_insurance_oral_disclosure': 'of_fe_1002MortgaInsuraOral',
+
+  // 1004 Co Property Taxes Reserves
+  'origination_fees.1004_co_property_taxes_months': 'of_fe_coProperTaxesMonths',
+  'origination_fees.1004_co_property_taxes_per_month': 'of_fe_coProperTaxesPer',
+  'origination_fees.1004_co_property_taxes_total': 'of_fe_coProperTaxesTotal',
+  'origination_fees.1004_co_property_taxes_charge': 'of_fe_1004CoProperTaxes2',
+  'origination_fees.1004_co_property_taxes_broker': 'of_fe_coProperTaxesBroker',
+  'origination_fees.1004_co_property_taxes_others': 'of_fe_coProperTaxesOthers',
+  'origination_fees.1004_co_property_taxes_apr': 'of_fe_1004CoProperTaxes',
+  'origination_fees.1004_co_property_taxes_paid_to_company': 'of_fe_1004CoProperTaxes4',
+  'origination_fees.1004_co_property_taxes_oral_disclosure': 'of_fe_1004CoProperTaxes3',
+
+  // 1100 Custom Item (9 fields)
+  'origination_fees.1100_custom_item_label': 'of_fe_1100CustomItemLabel',
+  'origination_fees.1100_custom_item_payable_to': 'of_fe_1100CustomItemPayabl',
+  'origination_fees.1100_custom_item_d': 'of_fe_1100CustomItemD',
+  'origination_fees.1100_custom_item_charge': 'of_fe_1100CustomItemCharge',
+  'origination_fees.1100_custom_item_broker': 'of_fe_1100CustomItemBroker',
+  'origination_fees.1100_custom_item_others': 'of_fe_1100CustomItemOthers',
+  'origination_fees.1100_custom_item_apr': 'of_fe_1100CustomItemApr',
+  'origination_fees.1100_custom_item_paid_to_company': 'of_fe_1100CustomItemPaid',
+  'origination_fees.1100_custom_item_oral_disclosure': 'of_fe_1100CustomItemOral',
+
+  // 1101 Settlement Closing Fee (8 fields)
+  'origination_fees.1101_settlement_closing_fee_payable_to': 'of_fe_1101SettleClosinFee5',
+  'origination_fees.1101_settlement_closing_fee_d': 'of_fe_settlemeFeeD',
+  'origination_fees.1101_settlement_closing_fee_charge': 'of_fe_1101SettleClosinFee2',
+  'origination_fees.1101_settlement_closing_fee_broker': 'of_fe_settlemeFeeBroker',
+  'origination_fees.1101_settlement_closing_fee_others': 'of_fe_settlemeFeeOthers',
+  'origination_fees.1101_settlement_closing_fee_apr': 'of_fe_1101SettleClosinFee',
+  'origination_fees.1101_settlement_closing_fee_paid_to_company': 'of_fe_1101SettleClosinFee4',
+  'origination_fees.1101_settlement_closing_fee_oral_disclosure': 'of_fe_1101SettleClosinFee3',
+
+  // 1105 Doc Preparation Fee (8 fields)
+  'origination_fees.1105_doc_preparation_fee_payable_to': 'of_fe_1105DocPreparFee5',
+  'origination_fees.1105_doc_preparation_fee_d': 'of_fe_docPreparFeeD',
+  'origination_fees.1105_doc_preparation_fee_charge': 'of_fe_1105DocPreparFee2',
+  'origination_fees.1105_doc_preparation_fee_broker': 'of_fe_docPreparFeeBroker',
+  'origination_fees.1105_doc_preparation_fee_others': 'of_fe_docPreparFeeOthers',
+  'origination_fees.1105_doc_preparation_fee_apr': 'of_fe_1105DocPreparFee',
+  'origination_fees.1105_doc_preparation_fee_paid_to_company': 'of_fe_1105DocPreparFee4',
+  'origination_fees.1105_doc_preparation_fee_oral_disclosure': 'of_fe_1105DocPreparFee3',
+
+  // 1106 Notary Fee (8 fields)
+  'origination_fees.1106_notary_fee_payable_to': 'of_fe_1106NotaryFeePayabl',
+  'origination_fees.1106_notary_fee_d': 'of_fe_notaryFeeD',
+  'origination_fees.1106_notary_fee_charge': 'of_fe_1106NotaryFeeCharge',
+  'origination_fees.1106_notary_fee_broker': 'of_fe_notaryFeeBroker',
+  'origination_fees.1106_notary_fee_others': 'of_fe_notaryFeeOthers',
+  'origination_fees.1106_notary_fee_apr': 'of_fe_1106NotaryFeeApr',
+  'origination_fees.1106_notary_fee_paid_to_company': 'of_fe_1106NotaryFeePaid',
+  'origination_fees.1106_notary_fee_oral_disclosure': 'of_fe_1106NotaryFeeOral',
+
+  // 1108 Title Insurance (8 fields)
+  'origination_fees.1108_title_insurance_payable_to': 'of_fe_1108TitleInsuraPayabl',
+  'origination_fees.1108_title_insurance_d': 'of_fe_titleInsuraD',
+  'origination_fees.1108_title_insurance_charge': 'of_fe_1108TitleInsuraCharge',
+  'origination_fees.1108_title_insurance_broker': 'of_fe_titleInsuraBroker',
+  'origination_fees.1108_title_insurance_others': 'of_fe_titleInsuraOthers',
+  'origination_fees.1108_title_insurance_apr': 'of_fe_1108TitleInsuraApr',
+  'origination_fees.1108_title_insurance_paid_to_company': 'of_fe_1108TitleInsuraPaid',
+  'origination_fees.1108_title_insurance_oral_disclosure': 'of_fe_1108TitleInsuraOral',
+
+  // 1200 Custom Item (9 fields)
+  'origination_fees.1200_custom_item_label': 'of_fe_1200CustomItemLabel',
+  'origination_fees.1200_custom_item_payable_to': 'of_fe_1200CustomItemPayabl',
+  'origination_fees.1200_custom_item_d': 'of_fe_1200CustomItemD',
+  'origination_fees.1200_custom_item_charge': 'of_fe_1200CustomItemCharge',
+  'origination_fees.1200_custom_item_broker': 'of_fe_1200CustomItemBroker',
+  'origination_fees.1200_custom_item_others': 'of_fe_1200CustomItemOthers',
+  'origination_fees.1200_custom_item_apr': 'of_fe_1200CustomItemApr',
+  'origination_fees.1200_custom_item_paid_to_company': 'of_fe_1200CustomItemPaid',
+  'origination_fees.1200_custom_item_oral_disclosure': 'of_fe_1200CustomItemOral',
+
+  // 1201 Recording Fees (8 fields)
+  'origination_fees.1201_recording_fees_payable_to': 'of_fe_1201RecordFeesPayabl',
+  'origination_fees.1201_recording_fees_d': 'of_fe_recordinFeesD',
+  'origination_fees.1201_recording_fees_charge': 'of_fe_1201RecordFeesCharge',
+  'origination_fees.1201_recording_fees_broker': 'of_fe_recordinFeesBroker',
+  'origination_fees.1201_recording_fees_others': 'of_fe_recordinFeesOthers',
+  'origination_fees.1201_recording_fees_apr': 'of_fe_1201RecordFeesApr',
+  'origination_fees.1201_recording_fees_paid_to_company': 'of_fe_1201RecordFeesPaid',
+  'origination_fees.1201_recording_fees_oral_disclosure': 'of_fe_1201RecordFeesOral',
+
+  // 1202 City/County Tax Stamps (8 fields)
+  'origination_fees.1202_city_county_tax_stamps_payable_to': 'of_fe_1202CityCountyTax5',
+  'origination_fees.1202_city_county_tax_stamps_d': 'of_fe_citycounTaxStampsD',
+  'origination_fees.1202_city_county_tax_stamps_charge': 'of_fe_1202CityCountyTax2',
+  'origination_fees.1202_city_county_tax_stamps_broker': 'of_fe_citycounTaxStampsBroker',
+  'origination_fees.1202_city_county_tax_stamps_others': 'of_fe_citycounTaxStampsOthers',
+  'origination_fees.1202_city_county_tax_stamps_apr': 'of_fe_1202CityCountyTax',
+  'origination_fees.1202_city_county_tax_stamps_paid_to_company': 'of_fe_1202CityCountyTax4',
+  'origination_fees.1202_city_county_tax_stamps_oral_disclosure': 'of_fe_1202CityCountyTax3',
+
+  // 1301 Add This Line (9 fields)
+  'origination_fees.1301_add_this_line_label': 'of_fe_1301AddThisLine',
+  'origination_fees.1301_add_this_line_payable_to': 'of_fe_1301PayablTo',
+  'origination_fees.1301_add_this_line_d': 'of_fe_1301Amount',
+  'origination_fees.1301_add_this_line_charge': 'of_fe_1301Charge',
+  'origination_fees.1301_add_this_line_broker': 'of_fe_1301Broker',
+  'origination_fees.1301_add_this_line_others': 'of_fe_1301Others',
+  'origination_fees.1301_add_this_line_apr': 'of_fe_1301Apr',
+  'origination_fees.1301_add_this_line_paid_to_company': 'of_fe_1301PaidToCompan',
+  'origination_fees.1301_add_this_line_oral_disclosure': 'of_fe_1301OralDisclo',
+
+  // 1302 Pest Inspection (8 fields)
+  'origination_fees.1302_pest_inspection_payable_to': 'of_fe_1302PestInspecPayabl',
+  'origination_fees.1302_pest_inspection_d': 'of_fe_pestInspecD',
+  'origination_fees.1302_pest_inspection_charge': 'of_fe_1302PestInspecCharge',
+  'origination_fees.1302_pest_inspection_broker': 'of_fe_pestInspecBroker',
+  'origination_fees.1302_pest_inspection_others': 'of_fe_pestInspecOthers',
+  'origination_fees.1302_pest_inspection_apr': 'of_fe_1302PestInspecApr',
+  'origination_fees.1302_pest_inspection_paid_to_company': 'of_fe_1302PestInspecPaid',
+  'origination_fees.1302_pest_inspection_oral_disclosure': 'of_fe_1302PestInspecOral',
+
+  // 1300 Custom Items (8 rows × 9 fields each = 72 fields)
+  // Row 1
+  'origination_fees.1300_custom_item_1_label': 'of_fe_1300CustomItem16',
+  'origination_fees.1300_custom_item_1_payable_to': 'of_fe_1300CustomItem19',
+  'origination_fees.1300_custom_item_1_d': 'of_fe_1300CustomItem12',
+  'origination_fees.1300_custom_item_1_charge': 'of_fe_1300CustomItem15',
+  'origination_fees.1300_custom_item_1_broker': 'of_fe_1300CustomItem1',
+  'origination_fees.1300_custom_item_1_others': 'of_fe_1300CustomItem13',
+  'origination_fees.1300_custom_item_1_apr': 'of_fe_1300CustomItem14',
+  'origination_fees.1300_custom_item_1_paid_to_company': 'of_fe_1300CustomItem18',
+  'origination_fees.1300_custom_item_1_oral_disclosure': 'of_fe_1300CustomItem17',
+  // Row 2
+  'origination_fees.1300_custom_item_2_label': 'of_fe_1300CustomItem26',
+  'origination_fees.1300_custom_item_2_payable_to': 'of_fe_1300CustomItem29',
+  'origination_fees.1300_custom_item_2_d': 'of_fe_1300CustomItem22',
+  'origination_fees.1300_custom_item_2_charge': 'of_fe_1300CustomItem25',
+  'origination_fees.1300_custom_item_2_broker': 'of_fe_1300CustomItem2',
+  'origination_fees.1300_custom_item_2_others': 'of_fe_1300CustomItem23',
+  'origination_fees.1300_custom_item_2_apr': 'of_fe_1300CustomItem24',
+  'origination_fees.1300_custom_item_2_paid_to_company': 'of_fe_1300CustomItem28',
+  'origination_fees.1300_custom_item_2_oral_disclosure': 'of_fe_1300CustomItem27',
+  // Row 3
+  'origination_fees.1300_custom_item_3_label': 'of_fe_1300CustomItem36',
+  'origination_fees.1300_custom_item_3_payable_to': 'of_fe_1300CustomItem39',
+  'origination_fees.1300_custom_item_3_d': 'of_fe_1300CustomItem32',
+  'origination_fees.1300_custom_item_3_charge': 'of_fe_1300CustomItem35',
+  'origination_fees.1300_custom_item_3_broker': 'of_fe_1300CustomItem3',
+  'origination_fees.1300_custom_item_3_others': 'of_fe_1300CustomItem33',
+  'origination_fees.1300_custom_item_3_apr': 'of_fe_1300CustomItem34',
+  'origination_fees.1300_custom_item_3_paid_to_company': 'of_fe_1300CustomItem38',
+  'origination_fees.1300_custom_item_3_oral_disclosure': 'of_fe_1300CustomItem37',
+  // Row 4
+  'origination_fees.1300_custom_item_4_label': 'of_fe_1300CustomItem46',
+  'origination_fees.1300_custom_item_4_payable_to': 'of_fe_1300CustomItem49',
+  'origination_fees.1300_custom_item_4_d': 'of_fe_1300CustomItem42',
+  'origination_fees.1300_custom_item_4_charge': 'of_fe_1300CustomItem45',
+  'origination_fees.1300_custom_item_4_broker': 'of_fe_1300CustomItem4',
+  'origination_fees.1300_custom_item_4_others': 'of_fe_1300CustomItem43',
+  'origination_fees.1300_custom_item_4_apr': 'of_fe_1300CustomItem44',
+  'origination_fees.1300_custom_item_4_paid_to_company': 'of_fe_1300CustomItem48',
+  'origination_fees.1300_custom_item_4_oral_disclosure': 'of_fe_1300CustomItem47',
+  // Row 5
+  'origination_fees.1300_custom_item_5_label': 'of_fe_1300CustomItem56',
+  'origination_fees.1300_custom_item_5_payable_to': 'of_fe_1300CustomItem59',
+  'origination_fees.1300_custom_item_5_d': 'of_fe_1300CustomItem52',
+  'origination_fees.1300_custom_item_5_charge': 'of_fe_1300CustomItem55',
+  'origination_fees.1300_custom_item_5_broker': 'of_fe_1300CustomItem5',
+  'origination_fees.1300_custom_item_5_others': 'of_fe_1300CustomItem53',
+  'origination_fees.1300_custom_item_5_apr': 'of_fe_1300CustomItem54',
+  'origination_fees.1300_custom_item_5_paid_to_company': 'of_fe_1300CustomItem58',
+  'origination_fees.1300_custom_item_5_oral_disclosure': 'of_fe_1300CustomItem57',
+  // Row 6
+  'origination_fees.1300_custom_item_6_label': 'of_fe_1300CustomItem66',
+  'origination_fees.1300_custom_item_6_payable_to': 'of_fe_1300CustomItem69',
+  'origination_fees.1300_custom_item_6_d': 'of_fe_1300CustomItem62',
+  'origination_fees.1300_custom_item_6_charge': 'of_fe_1300CustomItem65',
+  'origination_fees.1300_custom_item_6_broker': 'of_fe_1300CustomItem6',
+  'origination_fees.1300_custom_item_6_others': 'of_fe_1300CustomItem63',
+  'origination_fees.1300_custom_item_6_apr': 'of_fe_1300CustomItem64',
+  'origination_fees.1300_custom_item_6_paid_to_company': 'of_fe_1300CustomItem68',
+  'origination_fees.1300_custom_item_6_oral_disclosure': 'of_fe_1300CustomItem67',
+  // Row 7
+  'origination_fees.1300_custom_item_7_label': 'of_fe_1300CustomItem76',
+  'origination_fees.1300_custom_item_7_payable_to': 'of_fe_1300CustomItem79',
+  'origination_fees.1300_custom_item_7_d': 'of_fe_1300CustomItem72',
+  'origination_fees.1300_custom_item_7_charge': 'of_fe_1300CustomItem75',
+  'origination_fees.1300_custom_item_7_broker': 'of_fe_1300CustomItem7',
+  'origination_fees.1300_custom_item_7_others': 'of_fe_1300CustomItem73',
+  'origination_fees.1300_custom_item_7_apr': 'of_fe_1300CustomItem74',
+  'origination_fees.1300_custom_item_7_paid_to_company': 'of_fe_1300CustomItem78',
+  'origination_fees.1300_custom_item_7_oral_disclosure': 'of_fe_1300CustomItem77',
+  // Row 8
+  'origination_fees.1300_custom_item_8_label': 'of_fe_1300CustomItem86',
+  'origination_fees.1300_custom_item_8_payable_to': 'of_fe_1300CustomItem89',
+  'origination_fees.1300_custom_item_8_d': 'of_fe_1300CustomItem82',
+  'origination_fees.1300_custom_item_8_charge': 'of_fe_1300CustomItem85',
+  'origination_fees.1300_custom_item_8_broker': 'of_fe_1300CustomItem8',
+  'origination_fees.1300_custom_item_8_others': 'of_fe_1300CustomItem83',
+  'origination_fees.1300_custom_item_8_apr': 'of_fe_1300CustomItem84',
+  'origination_fees.1300_custom_item_8_paid_to_company': 'of_fe_1300CustomItem88',
+  'origination_fees.1300_custom_item_8_oral_disclosure': 'of_fe_1300CustomItem87',
+
+  // Subtotals and Totals
+  'origination_fees.subtotal_j': 'of_fe_subtotalJ',
+  'origination_fees.subtotal_others': 'of_fe_subtotalOthers',
+  'origination_fees.total_j': 'of_fe_totalJ',
+
+  // Compensation to Broker
+  'origination_fees.commission_fees_d': 'of_fe_commissiFeesD',
+  'origination_fees.additional_compensation_d': 'of_fe_additionCompenD',
+
+  // Payment of Other Obligations
+  'origination_fees.credit_life_disability_insurance_label': 'of_fe_creditLifediInsuraLabel',
+  'origination_fees.loan_documentation_fee_d': 'of_fe_loanDocumeFeeD',
+  'origination_fees.custom_other_obligation_label': 'of_fe_customOtherObligaLabel',
+  'origination_fees.custom_other_obligation_d': 'of_fe_customOtherObligaD',
+
+  // Payment to Existing Liens
+  'origination_fees.existing_lien_1_label': 'of_fe_existingLien1Label',
+  'origination_fees.existing_lien_1_d': 'of_fe_existingLien1D',
+  'origination_fees.existing_lien_2_label': 'of_fe_existingLien2Label',
+  'origination_fees.existing_lien_2_d': 'of_fe_existingLien2D',
+  'origination_fees.existing_lien_3_label': 'of_fe_existingLien3Label',
+  'origination_fees.existing_lien_3_d': 'of_fe_existingLien3D',
 };
 
 // Build reverse map: DB key → legacy key (for hydration)
