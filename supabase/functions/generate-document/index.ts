@@ -145,7 +145,7 @@ async function generateSingleDocument(
       const chunk = allFieldDictIds.slice(i, i + FD_BATCH_SIZE);
       const { data: batchData, error: batchError } = await supabase
         .from("field_dictionary")
-        .select("id, field_key, data_type, label")
+        .select("id, field_key, data_type, label, canonical_key")
         .in("id", chunk);
       if (batchError) {
         console.error(`[generate-document] field_dictionary batch fetch error (offset ${i}):`, batchError.message);
