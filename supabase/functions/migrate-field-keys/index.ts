@@ -136,13 +136,18 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { mode = "preview" } = await req.json().catch(() => ({}));
+    const { mode = "preview", section_filter = null } = await req.json().catch(() => ({}));
 
-    const targetSections = [
+    let targetSections = [
       "borrower", "co_borrower", "loan_terms", "property", "lender",
       "broker", "charges", "dates", "escrow", "origination_fees",
       "insurance", "notes", "seller", "title", "participants",
     ];
+    
+    // Allow filtering to one section at a time for apply mode
+    if (section_filter) {
+      targetSections = [section_filter];
+    }
 
     const fields = await fetchAllFields(supabase, targetSections);
 
