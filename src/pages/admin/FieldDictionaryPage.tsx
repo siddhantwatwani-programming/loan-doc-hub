@@ -933,8 +933,8 @@ export const FieldDictionaryPage: React.FC = () => {
                   </thead>
                   <tbody>
                     {sectionFields.map((field) => (
-                      <tr key={field.id} className="border-b border-border last:border-0 hover:bg-muted/50">
-                        <td className="py-2.5 px-3 font-medium text-foreground text-sm">{field.label}</td>
+                      <tr key={field.id} className="border-b border-border last:border-0 hover:bg-muted/50 cursor-pointer" onClick={() => handleEdit(field)}>
+                        <td className="py-2.5 px-3 font-medium text-foreground text-sm text-primary hover:underline">{field.label}</td>
                         <td className="py-2.5 px-3 font-mono text-xs text-muted-foreground">{field.field_key}</td>
                         <td className="py-2.5 px-3">
                           <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-accent/50 text-accent-foreground capitalize">
