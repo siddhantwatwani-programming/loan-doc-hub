@@ -38,7 +38,6 @@ import { PROPERTY_INSURANCE_KEYS } from '@/lib/fieldKeyMap';
 
 // Use central field key map
 const FIELD_KEYS = PROPERTY_INSURANCE_KEYS;
-} as const;
 
 export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
   fields,
