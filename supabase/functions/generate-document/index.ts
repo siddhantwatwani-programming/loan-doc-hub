@@ -187,7 +187,16 @@ async function generateSingleDocument(
       });
     });
 
-    // Loan Number is an identifier, not currency — no formatting override needed
+    // Force text dataType for identifier fields that should never be number-formatted
+    for (const [key, val] of fieldValues.entries()) {
+      const lk = key.toLowerCase();
+      if (lk.includes("loannumber") || lk.includes("loan_number") || lk.includes("accountnumber") || lk.includes("account_number")) {
+        if (val.dataType !== "text") {
+          console.log(`[generate-document] Overriding dataType for ${key}: ${val.dataType} -> text`);
+          fieldValues.set(key, { ...val, dataType: "text" });
+        }
+      }
+    }
 
     console.log(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);
 

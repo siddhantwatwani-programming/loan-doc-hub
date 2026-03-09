@@ -284,8 +284,12 @@ export function formatByDataType(value: string | number | null, dataType: string
       return formatPercentage(value, 3);
     case "date":
       return formatDateMMDDYYYY(String(value));
-    case "number":
+    case "number": {
+      // For plain integers with 5+ digits and no decimals, return as-is (likely an identifier like loan/account number)
+      const numStr = String(value);
+      if (/^\d{5,}$/.test(numStr.trim())) return numStr.trim();
       return formatNumber(value);
+    }
     case "boolean":
       return formatCheckbox(value);
     case "text":
