@@ -17,6 +17,8 @@ export interface ResolvedField {
   is_repeatable: boolean;
   validation_rule: string | null;
   is_required: boolean;
+  is_mandatory: boolean;
+  form_type: string;
   transform_rules: string[];
   calculation_formula: string | null;
   calculation_dependencies: string[];
@@ -51,9 +53,10 @@ export const SECTION_ORDER: FieldSection[] = [
   'charges',
   'dates',
   'escrow',
+  'origination_fees',
+  'insurance',
   'notes',
   'seller',
-  'other'
 ];
 
 // Custom UI-only sections (not in database enum)
@@ -86,7 +89,9 @@ export async function resolveAllFields(cachedEntries?: any[]): Promise<ResolvedF
     is_calculated: fd.is_calculated,
     is_repeatable: fd.is_repeatable,
     validation_rule: fd.validation_rule,
-    is_required: false, // No required fields without packet
+    is_required: false,
+    is_mandatory: !!fd.is_mandatory,
+    form_type: fd.form_type || 'primary',
     transform_rules: [],
     calculation_formula: fd.calculation_formula || null,
     calculation_dependencies: fd.calculation_dependencies || [],
@@ -281,6 +286,8 @@ export async function resolvePacketFields(packetId: string, cachedEntries?: any[
       is_repeatable: fd.is_repeatable,
       validation_rule: fd.validation_rule,
       is_required: requiredSet.has(fieldDictId),
+      is_mandatory: !!fd.is_mandatory,
+      form_type: fd.form_type || 'primary',
       transform_rules: transformRulesMap[fieldDictId] || [],
       calculation_formula: fd.calculation_formula || null,
       calculation_dependencies: fd.calculation_dependencies || [],
@@ -348,7 +355,7 @@ export function getMissingRequiredFields(
 ): ResolvedField[] {
   return resolvedFields.fields.filter(field => {
     if (section && field.section !== section) return false;
-    if (!field.is_required) return false;
+    if (!field.is_required && !field.is_mandatory) return false;
     const value = values[field.field_key];
     return !value || value.trim() === '';
   });

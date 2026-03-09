@@ -307,14 +307,15 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
         'charges',
         'dates',
         'escrow',
+        'origination_fees',
+        'insurance',
         'participants',
         'notes',
         'seller',
         'title',
-        'other'
       ];
 
-      // Sections whose fields should be merged into 'other' tab instead of showing as separate tabs
+      // Sections whose fields should be merged into nearest appropriate tab
       const MERGE_INTO_OTHER: FieldSection[] = ['participants', 'title'];
 
       let mergedResolved = resolved;
@@ -351,8 +352,9 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
             is_calculated: !!fd.is_calculated,
             is_repeatable: !!fd.is_repeatable,
             validation_rule: fd.validation_rule,
-            // Keep required-field logic unchanged: only TemplateFieldMap determines required.
             is_required: false,
+            is_mandatory: !!fd.is_mandatory,
+            form_type: fd.form_type || 'primary',
             transform_rules: [],
             calculation_formula: fd.calculation_formula || null,
             calculation_dependencies: fd.calculation_dependencies || [],
@@ -362,9 +364,9 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
           // Merge fields
           const mergedFields = [...resolved.fields, ...appendedFields];
 
-          // Rebuild groups, remapping MERGE_INTO_OTHER sections into 'other'
+          // Rebuild groups, remapping MERGE_INTO_OTHER sections into 'notes'
           const mergedFieldsBySection = mergedFields.reduce((acc, field) => {
-            const displaySection = MERGE_INTO_OTHER.includes(field.section) ? 'other' as FieldSection : field.section;
+            const displaySection = MERGE_INTO_OTHER.includes(field.section) ? 'notes' as FieldSection : field.section;
             (acc[displaySection] ||= []).push(field);
             return acc;
           }, {} as Record<FieldSection, ResolvedField[]>);
@@ -389,12 +391,11 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
         console.warn('Unable to load additional TMO tab sections from field_dictionary:', e);
       }
 
-      // Remap participants/title fields into 'other' for the final resolved set
-      // (handles the case where no appended fields were added but resolved already has participants/title)
+      // Remap participants/title fields into 'notes' for the final resolved set
       const finalFieldsBySection = { ...mergedResolved.fieldsBySection } as Record<FieldSection, ResolvedField[]>;
       for (const mergeSection of MERGE_INTO_OTHER) {
         if (finalFieldsBySection[mergeSection]?.length) {
-          finalFieldsBySection['other'] = [...(finalFieldsBySection['other'] || []), ...finalFieldsBySection[mergeSection]];
+          finalFieldsBySection['notes'] = [...(finalFieldsBySection['notes'] || []), ...finalFieldsBySection[mergeSection]];
           delete finalFieldsBySection[mergeSection];
         }
       }
