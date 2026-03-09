@@ -1080,6 +1080,34 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'origination_fees.existing_lien_2_d': 'of_fe_existingLien2D',
   'origination_fees.existing_lien_3_label': 'of_fe_existingLien3Label',
   'origination_fees.existing_lien_3_d': 'of_fe_existingLien3D',
+
+  // ──────────────────────────────────────────────────
+  // INSURANCE
+  // ──────────────────────────────────────────────────
+  'insurance1.property': 'in_d_property',
+  'insurance1.description': 'in_d_description',
+  'insurance1.insured_name': 'in_d_insuredName',
+  'insurance1.company_name': 'in_d_companyName',
+  'insurance1.policy_number': 'in_d_policyNumber',
+  'insurance1.expiration': 'in_d_expiration',
+  'insurance1.coverage': 'in_d_coverage',
+  'insurance1.active': 'in_d_active',
+  'insurance1.agent_name': 'in_d_agentName',
+  'insurance1.business_address': 'in_d_businessAddress',
+  'insurance1.business_address_city': 'in_d_businessAddressCity',
+  'insurance1.business_address_state': 'in_d_businessAddressState',
+  'insurance1.business_address_zip': 'in_d_businessAddressZip',
+  'insurance1.phone_number': 'in_d_phoneNumber',
+  'insurance1.fax_number': 'in_d_faxNumber',
+  'insurance1.email': 'in_d_email',
+  'insurance1.note': 'in_d_note',
+  'insurance1.payment_mailing_street': 'in_d_paymentMailingStreet',
+  'insurance1.payment_mailing_city': 'in_d_paymentMailingCity',
+  'insurance1.payment_mailing_state': 'in_d_paymentMailingState',
+  'insurance1.payment_mailing_zip': 'in_d_paymentMailingZip',
+  'insurance1.insurance_tracking': 'in_d_insuranceTracking',
+  'insurance1.last_verified': 'in_d_lastVerified',
+  'insurance1.tracking_status': 'in_d_trackingStatus',
 };
 
 // Build reverse map: DB key → legacy key (for hydration)
