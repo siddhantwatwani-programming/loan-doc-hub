@@ -276,7 +276,7 @@ export const FieldDictionaryPage: React.FC = () => {
 
     setSaving(true);
     try {
-      const payload = {
+      const payload: Record<string, any> = {
         field_key: formData.field_key,
         label: formData.label,
         section: formData.section as any,

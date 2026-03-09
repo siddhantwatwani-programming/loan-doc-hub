@@ -1210,6 +1210,8 @@ export type Database = {
         | "participants"
         | "notes"
         | "lender"
+        | "origination_fees"
+        | "insurance"
       generation_status: "queued" | "running" | "success" | "failed"
       merge_tag_type: "merge_tag" | "label" | "f_code"
       output_type: "docx_only" | "docx_and_pdf"
@@ -1443,6 +1445,8 @@ export const Constants = {
         "participants",
         "notes",
         "lender",
+        "origination_fees",
+        "insurance",
       ],
       generation_status: ["queued", "running", "success", "failed"],
       merge_tag_type: ["merge_tag", "label", "f_code"],
