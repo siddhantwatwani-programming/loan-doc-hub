@@ -333,8 +333,10 @@ export type Database = {
           default_value: string | null
           description: string | null
           field_key: string
+          form_type: string | null
           id: string
           is_calculated: boolean
+          is_mandatory: boolean | null
           is_repeatable: boolean
           label: string
           read_only_roles: string[] | null
@@ -352,8 +354,10 @@ export type Database = {
           default_value?: string | null
           description?: string | null
           field_key: string
+          form_type?: string | null
           id?: string
           is_calculated?: boolean
+          is_mandatory?: boolean | null
           is_repeatable?: boolean
           label: string
           read_only_roles?: string[] | null
@@ -371,8 +375,10 @@ export type Database = {
           default_value?: string | null
           description?: string | null
           field_key?: string
+          form_type?: string | null
           id?: string
           is_calculated?: boolean
+          is_mandatory?: boolean | null
           is_repeatable?: boolean
           label?: string
           read_only_roles?: string[] | null
