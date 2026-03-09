@@ -946,7 +946,7 @@ export const FieldDictionaryPage: React.FC = () => {
                             {field.data_type}
                           </span>
                         </td>
-                        <td className="py-2.5 px-3 text-center">
+                        <td className="py-2.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={field.is_mandatory}
                             onCheckedChange={() => handleToggleMandatory(field)}
