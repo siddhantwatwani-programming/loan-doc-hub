@@ -1,129 +1,110 @@
 
 
-## Audit: Field Key Mapping Inconsistencies
+## Event Journal (Change Log System) Implementation Plan
 
-After cross-referencing the UI forms, `legacyKeyMap.ts`, `fieldKeyMap.ts`, and the `field_dictionary` database table, here are all the issues found:
+### Overview
+Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
 
----
+### 1. Database: New Migration
+Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
 
-### Issue 1: Co-Borrower Banking — No legacy key mappings
+```sql
+CREATE TABLE public.event_journal (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
+  event_number integer NOT NULL,
+  actor_user_id uuid NOT NULL,
+  section text NOT NULL,
+  details jsonb NOT NULL DEFAULT '[]',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-**CoBorrowerBankingForm** uses keys like `coborrower.bank.name`, `coborrower.bank.routing_number`, `coborrower.bank.account_number`, `coborrower.bank.account_holder`, `coborrower.bank.account_type`, `coborrower.bank.address.street/city/state/zip`, `coborrower.bank.phone` (10 fields).
+CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
+ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
 
-The DB has matching fields (`cb_p_coborrowBankName`, `cb_p_coborrowRoutinNumber`, `cb_p_coborrowAccounNumber`, etc.) but **legacyKeyMap.ts has zero mappings** for these keys. Data cannot persist.
+-- RLS: CSR and Admin can view/insert
+CREATE POLICY "CSRs can view event journal" ON public.event_journal
+  FOR SELECT TO authenticated
+  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
 
-**Fix:** Add ~10 co-borrower banking mappings to legacyKeyMap.ts. Also update the DB `form_type` from `primary` to `banking` for these fields.
+CREATE POLICY "CSRs can insert event journal" ON public.event_journal
+  FOR INSERT TO authenticated
+  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
 
----
+-- Auto-increment event_number per deal
+CREATE OR REPLACE FUNCTION public.set_event_journal_number()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
+BEGIN
+  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
+  FROM public.event_journal WHERE deal_id = NEW.deal_id;
+  RETURN NEW;
+END;
+$$;
 
-### Issue 2: Co-Borrower Tax Detail — No legacy key mappings
+CREATE TRIGGER trg_event_journal_number
+  BEFORE INSERT ON public.event_journal
+  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
+```
 
-**CoBorrowerTaxDetailForm** uses keys: `coborrower.tax_id_type`, `coborrower.tax_id`, `coborrower.tax.filing_status`, `coborrower.tax.exempt`, `coborrower.tax.year`, `coborrower.tax.annual_income`, `coborrower.tax.bracket`, `coborrower.tax.notes` (8 fields).
+The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
 
-The DB has `cb_p_taxIdType`, `cb_p_coborrowFilingStatus`, `cb_p_coborrowTaxExempt`, `cb_p_coborrowTaxYear`, `cb_p_coborrowAnnualIncome`, `cb_p_coborrowTaxBracke`, `cb_p_coborrowTaxNotes` — but **no legacy map entries** exist for most of them (only `coborrower.tax_id_type` is mapped). Also `form_type` is `primary` instead of `tax`.
+### 2. Hook: `useEventJournal.ts` (New File)
+- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
+- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
+- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
 
-**Fix:** Add ~7 co-borrower tax mappings to legacyKeyMap.ts. Update `form_type` to `tax` for these DB fields.
+### 3. Capture Old→New Values in `useDealFields.ts`
+- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
+- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
+- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
+- After successful save, update the snapshot
 
----
+### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
+Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
+- Table with columns: Event #, User, Section, Details, Timestamp
+- Details column shows truncated preview (first 80 chars)
+- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
+- Sorted by event_number descending (newest first)
 
-### Issue 3: Co-Borrower Note — No legacy key mapping
+### 5. `EventJournalViewer` Component (New File)
+`src/components/deal/EventJournalViewer.tsx`:
+- Fetches from `event_journal` table filtered by `deal_id`
+- Joins actor names from `profiles`
+- Table layout using existing shadcn Table components
+- "Show More" modal using existing Dialog component
+- Detail entries formatted as `Field Label: oldValue → newValue`
 
-**CoBorrowerNoteForm** uses `coborrower.note`. No mapping exists in legacyKeyMap.ts and no DB field with key matching `cb_p_note` or similar was found.
+### 6. Global Event Journal Page (New File)
+`src/pages/csr/GlobalEventJournalPage.tsx`:
+- Deal selector dropdown (search by deal number) at the top
+- Once a deal is selected, renders `EventJournalViewer` for that deal
+- Same table structure as the per-deal view
 
-**Fix:** Check if a DB field exists (none found in query). Need to INSERT a `cb_p_note` field and add the legacy mapping.
+### 7. Sidebar Navigation Update
+In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
+```tsx
+<PromotedNavSection
+  label="Event Journal"
+  icon={BookOpen}
+  items={[]}
+  directPath="/event-journal"
+  isCollapsed={isCollapsed}
+  searchQuery={searchQuery}
+/>
+```
 
----
-
-### Issue 4: Borrower Tax Detail — 7 of 10 fields missing from DB
-
-**legacyKeyMap.ts** maps `borrower.1098.*` keys to `br_t_*` DB keys, but only 3 of 10 exist in the DB: `br_t_city`, `br_t_state`, `br_p_send1098`. Missing: `br_t_designatRecipi`, `br_t_name`, `br_t_address`, `br_t_accountNumber`, `br_t_tinType`, `br_t_tin`, `br_t_zip`.
-
-**Fix:** INSERT 7 missing borrower tax fields into field_dictionary with `form_type = 'tax'`.
-
----
-
-### Issue 5: Borrower Note & Description — missing from DB
-
-`br_p_note` and `br_p_borrowerDescri` are mapped in legacyKeyMap but don't exist in the DB. `br_p_borrowerDescri` exists but `br_p_note` does not.
-
-**Fix:** INSERT `br_p_note` into field_dictionary with `form_type = 'notes'`.
-
----
-
-### Issue 6: Lender Tax — `ld_p_taxPayerAutoSynchr` missing from DB
-
-The mapping `lender.tax_payer.auto_synchronize` → `ld_p_taxPayerAutoSynchr` exists in legacyKeyMap but this field is **not in the DB**.
-
-**Fix:** INSERT this field with `section = 'lender'`, `form_type = 'tax'`.
-
----
-
-### Issue 7: Co-Borrower form_type not categorized
-
-All 85 co-borrower fields are under `form_type = 'primary'`. Fields for banking (~10), tax (~8), and notes (~1) should be recategorized.
-
-**Fix:** UPDATE `form_type` for ~19 co-borrower fields.
-
----
-
-### Issue 8: Loan Terms Servicing fields — no legacy mappings
-
-**LoanTermsServicingForm** uses dynamic keys like `loan_terms.servicing.{row}.{col}` (20 rows × 6 columns = ~120 field keys). The DB has only 6 servicing fields (`ln_p_acceptShortPaymen`, `ln_p_holdDays`, etc.) which are unrelated to the grid structure. These servicing grid fields have **no DB entries and no legacy mappings**.
-
-**Fix:** This is a large gap (~120 fields). Either: (a) insert all grid fields into field_dictionary, or (b) store the servicing grid as a single JSON blob. Recommend option (b) — store as a JSON field to avoid 120 individual dictionary entries.
-
----
-
-### Issue 9: Loan Terms Penalties — many UI fields not mapped
-
-**LoanTermsPenaltiesForm** uses complex keys like `loan_terms.penalties.late_charge.*`, `loan_terms.penalties.default_interest.*`, and distribution sub-keys. The DB has only 7 penalty fields. Most penalty form fields have **no DB entries and no legacy mappings**.
-
-**Fix:** Similar to servicing — the penalty form uses ~50+ dynamic field keys. Need to either insert them all or use a JSON blob approach.
-
----
-
-### Issue 10: `fieldKeyMap.ts` missing entries
-
-Several keys in fieldKeyMap have no corresponding legacy map entry and thus can't reach the DB:
-- `lender.id` (in LENDER_INFO_KEYS but not in legacyKeyMap)
-- `lender.entity_sign.*` (6 fields — no legacy map, no DB)
-- `property1.thomas_map`, `property1.delinquencies_60day`, `property1.delinquencies_how_many`, `property1.currently_delinquent`, `property1.paid_by_loan`, `property1.source_of_payment`, `property1.recording_number`, `property1.unit` (8 property fields — no legacy map entries)
-- `loan_terms.variable_arm`, `loan_terms.limited_no_doc`, `loan_terms.rehab_construction`, `loan_terms.parent_account_value`, `loan_terms.child_account_value` — no legacy map
-
----
-
-### Implementation Plan
-
-**Task 1: Add missing legacy key mappings to legacyKeyMap.ts**
-- Co-Borrower Banking: 10 entries
-- Co-Borrower Tax: 7 entries  
-- Co-Borrower Note: 1 entry
-- Lender entity sign: skip (not implemented in DB yet)
-- Missing property fields: ~8 entries (need to verify DB fields exist first)
-- Missing loan terms details fields: ~5 entries
-
-**Task 2: INSERT missing fields into field_dictionary (DB)**
-- 7 borrower tax fields (`br_t_*`)
-- 1 borrower note field (`br_p_note`)
-- 1 lender tax field (`ld_p_taxPayerAutoSynchr`)
-- 1 co-borrower note field (`cb_p_note`)
-
-**Task 3: UPDATE form_type for co-borrower fields**
-- ~10 banking fields → `form_type = 'banking'`
-- ~8 tax fields → `form_type = 'tax'`
-- ~1 note field → `form_type = 'notes'`
-
-**Task 4: Add missing property field legacy mappings**
-- Cross-check which property UI keys have DB counterparts and add mappings
-
-**Task 5: Document the Servicing/Penalties gap**
-- These two sub-forms use 150+ dynamic keys with no DB backing. This requires a design decision: individual fields vs. JSON blob storage. Will flag for follow-up.
+### 8. Route Registration
+In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
 
 ### Files Changed
-
 | File | Change |
 |------|--------|
-| `src/lib/legacyKeyMap.ts` | Add ~30 new mapping entries |
-| DB (insert tool) | INSERT ~10 missing field_dictionary rows |
-| DB (insert tool) | UPDATE ~19 co-borrower rows to fix form_type |
+| New migration | Create `event_journal` table with trigger |
+| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
+| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
+| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
+| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
+| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
+| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
+| `src/App.tsx` | Add `/event-journal` route |
 

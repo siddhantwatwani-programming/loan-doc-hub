@@ -243,6 +243,30 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'coborrower.send_maturity_notice': 'cb_p_sendMaturiNotice',
   'coborrower.parent_borrower_prefix': 'cb_p_parentBorrowPrefix',
 
+  // CO-BORROWER BANKING
+  'coborrower.bank.name': 'cb_p_coborrowBankName',
+  'coborrower.bank.routing_number': 'cb_p_coborrowRoutinNumber',
+  'coborrower.bank.account_number': 'cb_p_coborrowAccounNumber',
+  'coborrower.bank.account_holder': 'cb_p_coborrowAccounHolder',
+  'coborrower.bank.account_type': 'cb_p_coborrowAccounType',
+  'coborrower.bank.address.street': 'cb_p_coborrowBankStreet',
+  'coborrower.bank.address.city': 'cb_p_coborrowBankCity',
+  'coborrower.bank.address.state': 'cb_p_coborrowBankState',
+  'coborrower.bank.address.zip': 'cb_p_coborrowBankZip',
+  'coborrower.bank.phone': 'cb_p_coborrowBankPhone',
+
+  // CO-BORROWER TAX DETAIL
+  'coborrower.tax_id': 'cb_p_taxId',
+  'coborrower.tax.filing_status': 'cb_p_coborrowFilingStatus',
+  'coborrower.tax.exempt': 'cb_p_coborrowTaxExempt',
+  'coborrower.tax.year': 'cb_p_coborrowTaxYear',
+  'coborrower.tax.annual_income': 'cb_p_coborrowAnnualIncome',
+  'coborrower.tax.bracket': 'cb_p_coborrowTaxBracke',
+  'coborrower.tax.notes': 'cb_p_coborrowTaxNotes',
+
+  // CO-BORROWER NOTE
+  'coborrower.note': 'cb_p_note',
+
   // ──────────────────────────────────────────────────
   // LENDER INFO
   // ──────────────────────────────────────────────────
