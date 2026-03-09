@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEventJournalLogger, type FieldChange } from '@/hooks/useEventJournal';
 import { useToast } from '@/hooks/use-toast';
 import { useFieldDictionaryCacheOptional } from '@/hooks/useFieldDictionaryCache';
+import { resolveLegacyKey, resolveDbKeyToLegacy, DB_KEY_TO_LEGACY } from '@/lib/legacyKeyMap';
 import { 
   resolvePacketFields,
   resolveAllFields,
