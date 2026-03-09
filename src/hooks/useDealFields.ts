@@ -833,7 +833,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
 
           // Prefer resolvedFields for section/type; fall back to dictionary lookup when not present
           const field = resolvedFields?.fields.find(
-            f => f.field_key === canonicalKey || f.field_key === fieldKey || (dictMappedKey && f.field_key === dictMappedKey)
+            f => f.field_key === canonicalKey || f.field_key === fieldKey || f.field_key === dbMappedKey || (dictMappedKey && f.field_key === dictMappedKey)
           );
 
           const section = field?.section || fallbackMeta?.section;
