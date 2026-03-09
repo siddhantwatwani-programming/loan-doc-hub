@@ -51,9 +51,10 @@ export const SECTION_ORDER: FieldSection[] = [
   'charges',
   'dates',
   'escrow',
+  'origination_fees',
+  'insurance',
   'notes',
   'seller',
-  'other'
 ];
 
 // Custom UI-only sections (not in database enum)
