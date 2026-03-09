@@ -502,6 +502,14 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'property1.monthly_income': 'pr_p_monthlyIncome',
   'property1.lien_protective_equity': 'pr_p_lienProtecEquity',
   'property1.source_lien_info': 'pr_p_sourceLienInfo',
+  'property1.thomas_map': 'pr_p_thomasMap',
+  'property1.unit': 'pr_p_unit',
+  'property1.delinquencies_60day': 'pr_p_delinqu60day',
+  'property1.delinquencies_how_many': 'pr_p_delinquHowMany',
+  'property1.currently_delinquent': 'pr_p_currentDelinqu',
+  'property1.paid_by_loan': 'pr_p_paidByLoan',
+  'property1.source_of_payment': 'pr_p_sourceOfPaymen',
+  'property1.recording_number': 'pr_p_recordinNumber',
 
   // PROPERTY LEGAL
   'property1.legal_description': 'pr_lg_legalDescri',
