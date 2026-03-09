@@ -365,7 +365,7 @@ export const FieldDictionaryPage: React.FC = () => {
     try {
       const { error } = await supabase
         .from('field_dictionary')
-        .update({ is_mandatory: !field.is_mandatory })
+        .update({ is_mandatory: !field.is_mandatory } as any)
         .eq('id', field.id);
 
       if (error) throw error;
