@@ -934,7 +934,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
             </TabsList>
 
             {(isExternalUser ? visibleSections : sections)
-              .filter((s) => SECTION_LABELS[s] && s !== "dates")
+              .filter((s) => SECTION_LABELS[s] && s !== "dates" && s !== "origination_fees")
               .map((section) => (
                 <TabsContent key={section} value={section} forceMount className={cn("animate-fade-in", activeTab !== section && "hidden")}>
                   {section === "borrower" ? (
