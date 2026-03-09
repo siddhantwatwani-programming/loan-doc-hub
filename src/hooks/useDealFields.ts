@@ -765,6 +765,9 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
           const canonical = getCanonicalKey(fieldKey);
           candidateKeys.add(fieldKey);
           candidateKeys.add(canonical);
+          // Also add the DB-convention key via legacy translation
+          const dbKey = resolveLegacyKey(canonical);
+          if (dbKey !== canonical) candidateKeys.add(dbKey);
           // For charge fields, also add the dictionary-format key
           if (canonical.startsWith('charge.')) {
             candidateKeys.add(mapChargeFieldKey(canonical, true));
@@ -789,6 +792,15 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
                 section: r.section,
                 data_type: r.data_type,
               });
+              // Also map back to legacy key for easier lookup
+              const legacyKey = resolveDbKeyToLegacy(r.field_key);
+              if (legacyKey !== r.field_key) {
+                fallbackMetaByKey.set(legacyKey, {
+                  id: r.id,
+                  section: r.section,
+                  data_type: r.data_type,
+                });
+              }
             }
           });
         }
