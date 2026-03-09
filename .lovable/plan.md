@@ -1,110 +1,66 @@
 
 
-## Event Journal (Change Log System) Implementation Plan
+## Fix: Loan Number Displaying as Comma-Separated Value
 
-### Overview
-Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
+### Investigation Summary
 
-### 1. Database: New Migration
-Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
+The Loan Number for Deal DL-2026-0140 is stored as `78945123` (plain text, data_type = `text`) in `deal_section_values`. The field dictionary entries (`ln_p_loanNumber`, `ln_dt_loanNumber`) are both `data_type: 'text'`.
 
-```sql
-CREATE TABLE public.event_journal (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
-  event_number integer NOT NULL,
-  actor_user_id uuid NOT NULL,
-  section text NOT NULL,
-  details jsonb NOT NULL DEFAULT '[]',
-  created_at timestamptz NOT NULL DEFAULT now()
-);
+### Potential Comma Sources
 
-CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
-ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
+There are two places where numeric-looking text values could get comma-formatted:
 
--- RLS: CSR and Admin can view/insert
-CREATE POLICY "CSRs can view event journal" ON public.event_journal
-  FOR SELECT TO authenticated
-  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
+1. **`formatByDataType` in `supabase/functions/_shared/formatting.ts`** (used by document generation): The `number` case uses `Intl.NumberFormat` which adds commas. If the field's data_type is ever misread as `number` instead of `text`, commas appear.
 
-CREATE POLICY "CSRs can insert event journal" ON public.event_journal
-  FOR INSERT TO authenticated
-  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
+2. **`formatForDisplay` in `src/lib/fieldTransforms.ts`** (used by UI): Only formats `currency` and `percentage` — `text` passes through. This is correct.
 
--- Auto-increment event_number per deal
-CREATE OR REPLACE FUNCTION public.set_event_journal_number()
-RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
-BEGIN
-  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
-  FROM public.event_journal WHERE deal_id = NEW.deal_id;
-  RETURN NEW;
-END;
-$$;
+3. **`LoanTermsDetailsForm.tsx`**: Uses `renderInlineField` which is a plain text `<Input>`. No formatting applied. This is correct.
 
-CREATE TRIGGER trg_event_journal_number
-  BEFORE INSERT ON public.event_journal
-  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
-```
+### Root Cause Hypothesis
 
-The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
+The most likely issue is in the **document generation** pipeline. When the tag-parser resolves a merge tag like `{{Loan_Number}}` or `{{Terms.LoanNumber}}`, it calls `formatByDataType(rawValue, dataType)`. If the `dataType` for the resolved field is somehow `number` (perhaps from a different field_dictionary entry or fallback), the value gets comma-formatted.
 
-### 2. Hook: `useEventJournal.ts` (New File)
-- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
-- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
-- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
+### Fix
 
-### 3. Capture Old→New Values in `useDealFields.ts`
-- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
-- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
-- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
-- After successful save, update the snapshot
+**File: `supabase/functions/_shared/formatting.ts`**
 
-### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
-Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
-- Table with columns: Event #, User, Section, Details, Timestamp
-- Details column shows truncated preview (first 80 chars)
-- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
-- Sorted by event_number descending (newest first)
+Add an explicit guard in `formatNumber` and `formatByDataType` for the `number` data type — if the value looks like a plain integer identifier (no decimals, used as an ID), skip comma formatting. More precisely, add a safety check: treat `text` fields as raw strings with no numeric formatting.
 
-### 5. `EventJournalViewer` Component (New File)
-`src/components/deal/EventJournalViewer.tsx`:
-- Fetches from `event_journal` table filtered by `deal_id`
-- Joins actor names from `profiles`
-- Table layout using existing shadcn Table components
-- "Show More" modal using existing Dialog component
-- Detail entries formatted as `Field Label: oldValue → newValue`
+Actually, the simpler and more correct fix: ensure `formatByDataType` for `text` type **never** applies number formatting, even if the value looks numeric. This is already the case. The real fix should be in `tag-parser.ts` where it falls back — if a field resolves but has no explicit data_type match, ensure `text` is the default.
 
-### 6. Global Event Journal Page (New File)
-`src/pages/csr/GlobalEventJournalPage.tsx`:
-- Deal selector dropdown (search by deal number) at the top
-- Once a deal is selected, renders `EventJournalViewer` for that deal
-- Same table structure as the per-deal view
+**Additionally**, to be safe against future regressions, update the `formatByDataType` `number` case in `formatting.ts` to NOT format values that are identifiers (no decimals, could be loan numbers). A simpler approach: just ensure the Loan Number field's data_type stays `text` and that the resolution chain preserves it.
 
-### 7. Sidebar Navigation Update
-In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
-```tsx
-<PromotedNavSection
-  label="Event Journal"
-  icon={BookOpen}
-  items={[]}
-  directPath="/event-journal"
-  isCollapsed={isCollapsed}
-  searchQuery={searchQuery}
-/>
-```
+### Concrete Change
 
-### 8. Route Registration
-In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
+**File: `supabase/functions/_shared/formatting.ts`** — In the `formatByDataType` function, ensure `text` data type returns the raw value with zero numeric formatting (already correct).
+
+**File: `supabase/functions/_shared/tag-parser.ts`** — Where field data is resolved and `formatByDataType` is called, add a safeguard: if a field key contains `loannumber` or `loan_number` (case-insensitive), force `text` data type to prevent accidental number formatting.
+
+Better approach — **make a universal fix**: In `formatting.ts`, update the `number` formatter to skip comma formatting for integer values that look like identifiers (e.g., no decimal point, length > 4). Actually this is too heuristic-heavy.
+
+**Best approach**: The field is already `text` in the dictionary. The fix is to ensure the edge function correctly reads the data_type as `text`. Let me verify the exact resolution in `tag-parser.ts`:
+
+Looking at lines 680-698 of tag-parser.ts: when resolving curly brace tags, it calls `formatByDataType(resolved.data.rawValue, resolved.data.dataType)`. The `resolved.data.dataType` comes from the `fieldValues` Map which was populated in `generate-document/index.ts` line 169 with `fieldDict.data_type`. Since `fieldDict.data_type` for `ln_p_loanNumber` is `text`, this should work correctly.
+
+**The remaining possibility**: The value might be stored as `value_number` in the JSONB (not `value_text`), and `extractRawValueFromJsonb` might return a number, which when passed to `formatByDataType('text')` calls `String(value)` — which for a number like 78945123 would return `"78945123"` without commas. So that's fine too.
+
+Given my thorough code analysis shows no path that would add commas to a `text`-typed field, the issue might be:
+- A **browser-side caching** issue showing stale formatted data
+- The value was previously stored when the field had `data_type: 'number'` 
+- The generated document was created before the data_type was fixed
+
+### Recommended Plan
+
+1. **Verify and re-generate**: The Loan Number field is correctly configured as `text` in the database. Re-generating the document should produce the value without commas.
+
+2. **Add defensive guard in `formatting.ts`**: Update `formatByDataType` for the `number` case to skip comma formatting if the field key suggests it's an identifier (loan number, account number, etc.). This is a safety net.
+
+3. **Add explicit `text` override in `generate-document/index.ts`**: After line 190 (where the comment about Loan Number already exists), add code to force `text` data type for any field key matching `*loannumber*` or `*loan_number*`.
 
 ### Files Changed
+
 | File | Change |
 |------|--------|
-| New migration | Create `event_journal` table with trigger |
-| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
-| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
-| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
-| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
-| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
-| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
-| `src/App.tsx` | Add `/event-journal` route |
+| `supabase/functions/generate-document/index.ts` | Force `text` dataType for Loan Number fields after value resolution |
+| `supabase/functions/_shared/formatting.ts` | Add safety guard in `formatByDataType` for `number` type to not comma-format identifier-like values |
 
