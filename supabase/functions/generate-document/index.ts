@@ -21,7 +21,7 @@ import type {
   JobResult,
   FieldValueData,
 } from "../_shared/types.ts";
-import { fetchMergeTagMappings, extractRawValueFromJsonb } from "../_shared/field-resolver.ts";
+import { fetchMergeTagMappings, fetchFieldKeyMappings, extractRawValueFromJsonb } from "../_shared/field-resolver.ts";
 import { processDocx } from "../_shared/docx-processor.ts";
 
 const corsHeaders = {
@@ -85,10 +85,10 @@ async function generateSingleDocument(
     // Get unique field dictionary IDs
     const fieldDictIds = [...new Set((fieldMaps || []).map((fm: any) => fm.field_dictionary_id).filter(Boolean))];
 
-    // Fetch field dictionary entries
+    // Fetch field dictionary entries (include canonical_key for backward compat)
     const { data: fieldDictEntries } = await supabase
       .from("field_dictionary")
-      .select("id, field_key, data_type, label")
+      .select("id, field_key, data_type, label, canonical_key")
       .in("id", fieldDictIds);
 
     // Create lookup map for field dictionary by ID
@@ -145,7 +145,7 @@ async function generateSingleDocument(
       const chunk = allFieldDictIds.slice(i, i + FD_BATCH_SIZE);
       const { data: batchData, error: batchError } = await supabase
         .from("field_dictionary")
-        .select("id, field_key, data_type, label")
+        .select("id, field_key, data_type, label, canonical_key")
         .in("id", chunk);
       if (batchError) {
         console.error(`[generate-document] field_dictionary batch fetch error (offset ${i}):`, batchError.message);
@@ -428,13 +428,14 @@ async function generateSingleDocument(
 
     // Build set of ALL valid field keys from the complete field_dictionary (for direct tag matching)
     // Use pagination to fetch all rows (table has 1700+ entries, default limit is 1000)
+    // Include canonical_key for backward compatibility with old merge tags
     const PAGE_SIZE = 1000;
     const completeFieldDictionary: any[] = [];
     let fdFrom = 0;
     while (true) {
       const { data: page, error: fdErr } = await supabase
         .from("field_dictionary")
-        .select("field_key")
+        .select("field_key, canonical_key")
         .range(fdFrom, fdFrom + PAGE_SIZE - 1);
       if (fdErr) { console.error("[generate-document] field_dictionary fetch error:", fdErr.message); break; }
       const rows = page || [];
@@ -444,8 +445,12 @@ async function generateSingleDocument(
     }
     
     const validFieldKeys = new Set<string>();
-    completeFieldDictionary.forEach((fd: any) => validFieldKeys.add(fd.field_key));
-    console.log(`[generate-document] Built validFieldKeys set with ${validFieldKeys.size} entries`);
+    completeFieldDictionary.forEach((fd: any) => {
+      validFieldKeys.add(fd.field_key);
+      // Also add canonical_key (old key) so old merge tags in templates resolve directly
+      if (fd.canonical_key) validFieldKeys.add(fd.canonical_key);
+    });
+    console.log(`[generate-document] Built validFieldKeys set with ${validFieldKeys.size} entries (including canonical keys)`);
 
     // 4. Download template DOCX from storage
     let fileData: Blob | null = null;
@@ -487,8 +492,12 @@ async function generateSingleDocument(
       return result;
     }
 
-    // 5. Fetch merge tag mappings and process the DOCX
-    const { mergeTagMap, labelMap } = await fetchMergeTagMappings(supabase);
+    // 5. Fetch merge tag mappings AND field key migration maps, then process the DOCX
+    // fetchFieldKeyMappings populates the in-memory cache used by resolveFieldKeyWithMap
+    const [{ mergeTagMap, labelMap }, _fieldKeyMappings] = await Promise.all([
+      fetchMergeTagMappings(supabase),
+      fetchFieldKeyMappings(supabase),
+    ]);
     const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
     const processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
 
