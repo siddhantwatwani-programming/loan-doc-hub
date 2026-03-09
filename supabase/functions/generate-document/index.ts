@@ -21,7 +21,7 @@ import type {
   JobResult,
   FieldValueData,
 } from "../_shared/types.ts";
-import { fetchMergeTagMappings, extractRawValueFromJsonb } from "../_shared/field-resolver.ts";
+import { fetchMergeTagMappings, fetchFieldKeyMappings, extractRawValueFromJsonb } from "../_shared/field-resolver.ts";
 import { processDocx } from "../_shared/docx-processor.ts";
 
 const corsHeaders = {
