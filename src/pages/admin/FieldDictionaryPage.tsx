@@ -68,44 +68,94 @@ const ROLES = [
   { value: 'lender', label: 'Lender' },
 ];
 
-// Primary UI sections — excludes 'other' and system/UI-only sections
+// The 11 deal-page top-nav sections (no Events Journal — it has no DB fields)
 const SECTIONS = [
   { value: 'borrower', label: 'Borrower' },
-  { value: 'co_borrower', label: 'Co-Borrower' },
-  { value: 'loan_terms', label: 'Loan Terms' },
+  { value: 'loan_terms', label: 'Loan' },
   { value: 'property', label: 'Property' },
-  { value: 'lender', label: 'Lender' },
+  { value: 'funding', label: 'Funding' },
   { value: 'broker', label: 'Broker' },
   { value: 'charges', label: 'Charges' },
-  { value: 'dates', label: 'Dates' },
-  { value: 'escrow', label: 'Escrow' },
-  { value: 'origination_fees', label: 'Origination Fees' },
-  { value: 'insurance', label: 'Insurance' },
-  { value: 'notes', label: 'Notes' },
-  { value: 'seller', label: 'Seller' },
-  { value: 'title', label: 'Title' },
+  { value: 'escrow', label: 'Escrow Impound' },
+  { value: 'notes', label: 'Conversation Log' },
+  { value: 'lender', label: 'Lenders' },
+  { value: 'origination_fees', label: 'Other Origination' },
 ];
 
-const FORM_TYPES = [
-  { value: 'primary', label: 'Primary' },
-  { value: 'additional', label: 'Additional' },
-  { value: 'authorized_party', label: 'Authorized Party' },
-  { value: 'guarantor', label: 'Guarantor' },
-  { value: 'banking', label: 'Banking' },
-  { value: 'tax', label: 'Tax' },
-  { value: 'notes', label: 'Notes' },
-  { value: 'attachment', label: 'Attachment' },
-  { value: 'legal', label: 'Legal' },
-  { value: 'insurance', label: 'Insurance' },
-  { value: 'liens', label: 'Liens' },
-  { value: 'detail', label: 'Detail' },
-  { value: 'servicing', label: 'Servicing' },
-  { value: 'funding', label: 'Funding' },
-  { value: 'fees', label: 'Fees' },
-  { value: 'balances', label: 'Balances' },
-  { value: 'penalties', label: 'Penalties' },
-  { value: 'general', label: 'General' },
-];
+// Map UI section → DB section(s) used for filtering
+const SECTION_TO_DB: Record<string, string[]> = {
+  borrower: ['borrower', 'co_borrower'],
+  loan_terms: ['loan_terms'],
+  property: ['property', 'insurance'],
+  funding: ['loan_terms'], // filtered further by form_type = 'funding'
+  broker: ['broker'],
+  charges: ['charges'],
+  escrow: ['escrow'],
+  notes: ['notes'],
+  lender: ['lender'],
+  origination_fees: ['origination_fees'],
+};
+
+// All valid DB sections we show (everything else is scaffolding/excluded)
+const VALID_DB_SECTIONS = new Set([
+  'borrower', 'co_borrower', 'loan_terms', 'property', 'insurance',
+  'broker', 'charges', 'escrow', 'notes', 'lender', 'origination_fees',
+]);
+
+// Forms per UI section
+const SECTION_FORMS: Record<string, { value: string; label: string; dbSection?: string }[]> = {
+  borrower: [
+    { value: 'primary', label: 'Primary Borrower' },
+    { value: 'co_borrower', label: 'Co-Borrower', dbSection: 'co_borrower' },
+    { value: 'authorized_party', label: 'Authorized Party' },
+    { value: 'guarantor', label: 'Guarantor' },
+    { value: 'banking', label: 'Banking' },
+    { value: 'tax', label: '1098' },
+    { value: 'notes', label: 'Notes' },
+    { value: 'attachment', label: 'Attachment' },
+    { value: 'trust_ledger', label: 'Trust Ledger' },
+  ],
+  loan_terms: [
+    { value: 'primary', label: 'Terms & Balances' },
+    { value: 'balances', label: 'Details' },
+    { value: 'penalties', label: 'Penalties' },
+    { value: 'servicing', label: 'Servicing' },
+  ],
+  property: [
+    { value: 'primary', label: 'Details' },
+    { value: 'legal', label: 'Legal Description' },
+    { value: 'insurance', label: 'Insurance', dbSection: 'insurance' },
+    { value: 'liens', label: 'Liens' },
+    { value: 'tax', label: 'Tax' },
+    { value: 'notes', label: 'Notes' },
+  ],
+  funding: [
+    { value: 'funding', label: 'Funding' },
+  ],
+  broker: [
+    { value: 'primary', label: 'Broker Info' },
+    { value: 'banking', label: 'Banking' },
+  ],
+  charges: [
+    { value: 'detail', label: 'Detail' },
+  ],
+  escrow: [
+    { value: 'primary', label: 'Primary' },
+  ],
+  notes: [
+    { value: 'primary', label: 'Primary' },
+  ],
+  lender: [
+    { value: 'primary', label: 'Lender Info' },
+    { value: 'authorized_party', label: 'Authorized Party' },
+    { value: 'banking', label: 'Banking' },
+    { value: 'tax', label: '1099' },
+    { value: 'funding', label: 'Funding' },
+  ],
+  origination_fees: [
+    { value: 'fees', label: 'Fees' },
+  ],
+};
 
 const DATA_TYPES = [
   { value: 'text', label: 'Text' },
@@ -144,13 +194,10 @@ const SECTION_ABBR: Record<string, string> = {
   lender: 'ld',
   broker: 'bk',
   charges: 'ch',
-  dates: 'dt',
   escrow: 'es',
   origination_fees: 'of',
   insurance: 'in',
   notes: 'nt',
-  seller: 'sl',
-  title: 'tt',
 };
 
 const FORM_ABBR: Record<string, string> = {
@@ -172,12 +219,22 @@ const FORM_ABBR: Record<string, string> = {
   balances: 'bl',
   penalties: 'pn',
   general: 'g',
+  trust_ledger: 'tl',
+  co_borrower: 'cb',
 };
+
+// All form types for the create/edit dialog (union)
+const ALL_FORM_TYPES = Array.from(
+  new Map(
+    Object.values(SECTION_FORMS)
+      .flat()
+      .map(f => [f.value, f])
+  ).values()
+);
 
 function generateFieldKeyFromConvention(label: string, section: string, formType: string): string {
   const sectionAbbr = SECTION_ABBR[section] || section.substring(0, 2);
   const formAbbr = FORM_ABBR[formType] || formType.substring(0, 1);
-  // Create a camelCase-ish identifier from the label
   const identifier = label
     .replace(/[^a-zA-Z0-9\s]/g, '')
     .split(/\s+/)
@@ -190,11 +247,15 @@ function generateFieldKeyFromConvention(label: string, section: string, formType
   return `${sectionAbbr}_${formAbbr}_${identifier}`;
 }
 
-// Section label helper for display
+// Build label maps
 const SECTION_LABEL_MAP: Record<string, string> = {};
 SECTIONS.forEach(s => { SECTION_LABEL_MAP[s.value] = s.label; });
+// Also map DB sections that don't appear as UI sections
+SECTION_LABEL_MAP['co_borrower'] = 'Borrower';
+SECTION_LABEL_MAP['insurance'] = 'Property';
+
 const FORM_TYPE_LABEL_MAP: Record<string, string> = {};
-FORM_TYPES.forEach(f => { FORM_TYPE_LABEL_MAP[f.value] = f.label; });
+ALL_FORM_TYPES.forEach(f => { FORM_TYPE_LABEL_MAP[f.value] = f.label; });
 
 export const FieldDictionaryPage: React.FC = () => {
   const [fields, setFields] = useState<FieldDictionary[]>([]);
@@ -202,8 +263,6 @@ export const FieldDictionaryPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSection, setFilterSection] = useState<string>('');
   const [filterFormType, setFilterFormType] = useState<string>('');
-  const [filterDataType, setFilterDataType] = useState<string>('');
-  const [filterMandatory, setFilterMandatory] = useState<string>('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingField, setEditingField] = useState<FieldDictionary | null>(null);
   const [saving, setSaving] = useState(false);
@@ -256,28 +315,49 @@ export const FieldDictionaryPage: React.FC = () => {
     }
   };
 
+  // Resolve the actual DB section for a form selection under a UI section
+  const resolveDbSection = (uiSection: string, formType: string): string => {
+    const forms = SECTION_FORMS[uiSection] || [];
+    const formDef = forms.find(f => f.value === formType);
+    if (formDef?.dbSection) return formDef.dbSection;
+    // For "funding" UI section, the DB section is loan_terms
+    if (uiSection === 'funding') return 'loan_terms';
+    return uiSection;
+  };
+
   const handleLabelChange = (label: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      label,
-      field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(label, prev.section, prev.form_type),
-    }));
+    setFormData((prev) => {
+      const dbSection = resolveDbSection(prev.section, prev.form_type);
+      return {
+        ...prev,
+        label,
+        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(label, dbSection, prev.form_type),
+      };
+    });
   };
 
   const handleSectionChange = (section: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      section,
-      field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, section, prev.form_type),
-    }));
+    const firstForm = SECTION_FORMS[section]?.[0]?.value || 'primary';
+    setFormData((prev) => {
+      const dbSection = resolveDbSection(section, firstForm);
+      return {
+        ...prev,
+        section,
+        form_type: firstForm,
+        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, dbSection, firstForm),
+      };
+    });
   };
 
   const handleFormTypeChange = (formType: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      form_type: formType,
-      field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, prev.section, formType),
-    }));
+    setFormData((prev) => {
+      const dbSection = resolveDbSection(prev.section, formType);
+      return {
+        ...prev,
+        form_type: formType,
+        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, dbSection, formType),
+      };
+    });
   };
 
   const handleSubmit = async () => {
@@ -290,7 +370,6 @@ export const FieldDictionaryPage: React.FC = () => {
       return;
     }
 
-    // Duplicate field_key check
     const duplicateExists = fields.some(
       (f) => f.field_key === formData.field_key && f.id !== editingField?.id
     );
@@ -305,10 +384,13 @@ export const FieldDictionaryPage: React.FC = () => {
 
     setSaving(true);
     try {
+      // Resolve to actual DB section
+      const dbSection = resolveDbSection(formData.section, formData.form_type);
+
       const payload: Record<string, any> = {
         field_key: formData.field_key,
         label: formData.label,
-        section: formData.section as any,
+        section: dbSection as any,
         form_type: formData.form_type,
         data_type: formData.data_type as any,
         is_calculated: formData.is_calculated,
@@ -349,12 +431,22 @@ export const FieldDictionaryPage: React.FC = () => {
     }
   };
 
+  // Reverse-map a DB section to a UI section for editing
+  const dbSectionToUiSection = (dbSection: string): string => {
+    if (dbSection === 'co_borrower') return 'borrower';
+    if (dbSection === 'insurance') return 'property';
+    // Check direct match
+    if (SECTIONS.some(s => s.value === dbSection)) return dbSection;
+    return 'borrower'; // fallback
+  };
+
   const handleEdit = (field: FieldDictionary) => {
     setEditingField(field);
+    const uiSection = dbSectionToUiSection(field.section);
     setFormData({
       field_key: field.field_key,
       label: field.label,
-      section: field.section,
+      section: uiSection,
       form_type: field.form_type || 'primary',
       data_type: field.data_type,
       is_calculated: field.is_calculated,
@@ -478,47 +570,79 @@ export const FieldDictionaryPage: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const hasActiveFilters = filterSection || filterFormType || filterDataType || filterMandatory;
+  const hasActiveFilters = filterSection || filterFormType;
 
   const clearAllFilters = () => {
     setFilterSection('');
     setFilterFormType('');
-    setFilterDataType('');
-    setFilterMandatory('');
     setSearchQuery('');
   };
 
+  // When section filter changes, reset form filter
+  const handleFilterSectionChange = (v: string) => {
+    setFilterSection(v === 'all' ? '' : v);
+    setFilterFormType('');
+  };
+
+  // Available forms for the current filter section
+  const availableFilterForms = useMemo(() => {
+    if (!filterSection) return [];
+    return SECTION_FORMS[filterSection] || [];
+  }, [filterSection]);
+
   const filteredFields = useMemo(() => {
     return fields
-      .filter(f => f.section !== 'other') // Exclude 'other' section from display
+      // Only show fields from valid DB sections
+      .filter(f => VALID_DB_SECTIONS.has(f.section))
       .filter((f) => {
-        // Search across label, field_key, section label, and form_type label
+        // Search across label, field_key
         const q = searchQuery.toLowerCase();
         const matchesSearch = !q ||
           f.label.toLowerCase().includes(q) ||
           f.field_key.toLowerCase().includes(q) ||
-          (SECTION_LABEL_MAP[f.section] || f.section).toLowerCase().includes(q) ||
-          f.section.toLowerCase().includes(q) ||
-          (FORM_TYPE_LABEL_MAP[f.form_type] || f.form_type).toLowerCase().includes(q) ||
-          f.form_type.toLowerCase().includes(q) ||
           f.data_type.toLowerCase().includes(q);
-        const matchesSection = !filterSection || f.section === filterSection;
-        const matchesFormType = !filterFormType || f.form_type === filterFormType;
-        const matchesDataType = !filterDataType || f.data_type === filterDataType;
-        const matchesMandatory = !filterMandatory || 
-          (filterMandatory === 'yes' ? f.is_mandatory : !f.is_mandatory);
-        return matchesSearch && matchesSection && matchesFormType && matchesDataType && matchesMandatory;
-      });
-  }, [fields, searchQuery, filterSection, filterFormType, filterDataType, filterMandatory]);
 
-  // Group by section
+        // Section filter
+        let matchesSection = true;
+        if (filterSection) {
+          const dbSections = SECTION_TO_DB[filterSection] || [filterSection];
+          matchesSection = dbSections.includes(f.section);
+          // Special case: "funding" also needs form_type = 'funding'
+          if (filterSection === 'funding') {
+            matchesSection = f.section === 'loan_terms' && f.form_type === 'funding';
+          }
+        }
+
+        // Form filter
+        let matchesForm = true;
+        if (filterFormType && filterSection) {
+          const formDef = (SECTION_FORMS[filterSection] || []).find(fd => fd.value === filterFormType);
+          if (formDef?.dbSection) {
+            // Special form that maps to a different DB section (e.g., co_borrower, insurance)
+            matchesForm = f.section === formDef.dbSection;
+          } else {
+            matchesForm = f.form_type === filterFormType;
+          }
+        }
+
+        return matchesSearch && matchesSection && matchesForm;
+      });
+  }, [fields, searchQuery, filterSection, filterFormType]);
+
+  // Group by UI section label for display
   const groupedFields = useMemo(() => {
     return filteredFields.reduce((acc, field) => {
-      if (!acc[field.section]) acc[field.section] = [];
-      acc[field.section].push(field);
+      const groupKey = SECTION_LABEL_MAP[field.section] || field.section;
+      if (!acc[groupKey]) acc[groupKey] = [];
+      acc[groupKey].push(field);
       return acc;
     }, {} as Record<string, FieldDictionary[]>);
   }, [filteredFields]);
+
+  // Available forms in the create/edit dialog based on selected section
+  const dialogForms = useMemo(() => {
+    return SECTION_FORMS[formData.section] || [];
+  }, [formData.section]);
 
   if (loading) {
     return (
@@ -534,7 +658,7 @@ export const FieldDictionaryPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Field Dictionary</h1>
           <p className="text-muted-foreground mt-1">
-            Manage data fields — {filteredFields.length} of {fields.filter(f => f.section !== 'other').length} fields shown
+            Manage data fields — {filteredFields.length} of {fields.filter(f => VALID_DB_SECTIONS.has(f.section)).length} fields shown
           </p>
         </div>
         <div className="flex gap-2">
@@ -582,13 +706,13 @@ export const FieldDictionaryPage: React.FC = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Form Type *</Label>
+                    <Label>Form *</Label>
                     <Select value={formData.form_type} onValueChange={handleFormTypeChange}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {FORM_TYPES.map((t) => (
+                        {dialogForms.map((t) => (
                           <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                         ))}
                       </SelectContent>
@@ -740,7 +864,7 @@ export const FieldDictionaryPage: React.FC = () => {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by label, field key, section, form, or type..."
+              placeholder="Search by label, field key, or type..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -748,8 +872,8 @@ export const FieldDictionaryPage: React.FC = () => {
           </div>
           {/* Filter row */}
           <div className="flex flex-wrap gap-3 items-center">
-            <Select value={filterSection || "all"} onValueChange={(v) => setFilterSection(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-[180px]">
+            <Select value={filterSection || "all"} onValueChange={handleFilterSectionChange}>
+              <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="All Sections" />
               </SelectTrigger>
               <SelectContent>
@@ -760,40 +884,19 @@ export const FieldDictionaryPage: React.FC = () => {
               </SelectContent>
             </Select>
 
-            <Select value={filterFormType || "all"} onValueChange={(v) => setFilterFormType(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Forms" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Forms</SelectItem>
-                {FORM_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filterDataType || "all"} onValueChange={(v) => setFilterDataType(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {DATA_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filterMandatory || "all"} onValueChange={(v) => setFilterMandatory(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Mandatory" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="yes">Mandatory</SelectItem>
-                <SelectItem value="no">Optional</SelectItem>
-              </SelectContent>
-            </Select>
+            {filterSection && availableFilterForms.length > 0 && (
+              <Select value={filterFormType || "all"} onValueChange={(v) => setFilterFormType(v === "all" ? "" : v)}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="All Forms" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Forms</SelectItem>
+                  {availableFilterForms.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground" onClick={clearAllFilters}>
@@ -817,10 +920,10 @@ export const FieldDictionaryPage: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          {Object.entries(groupedFields).map(([section, sectionFields]) => (
-            <div key={section} className="section-card">
+          {Object.entries(groupedFields).map(([sectionLabel, sectionFields]) => (
+            <div key={sectionLabel} className="section-card">
               <h3 className="text-lg font-semibold text-foreground mb-4">
-                {SECTION_LABEL_MAP[section] || section.replace(/_/g, ' ')}
+                {sectionLabel}
                 <span className="text-sm font-normal text-muted-foreground ml-2">
                   ({sectionFields.length} fields)
                 </span>
