@@ -923,13 +923,12 @@ export const FieldDictionaryPage: React.FC = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Label</th>
+                      <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Field Label</th>
                       <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Field Key</th>
                       <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Form</th>
                       <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Type</th>
                       <th className="text-center py-2 px-3 text-sm font-medium text-muted-foreground">Mandatory</th>
                       <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Flags</th>
-                      <th className="text-right py-2 px-3 text-sm font-medium text-muted-foreground">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
