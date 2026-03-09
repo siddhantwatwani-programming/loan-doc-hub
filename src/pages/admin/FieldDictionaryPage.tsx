@@ -295,13 +295,13 @@ export const FieldDictionaryPage: React.FC = () => {
       if (editingField) {
         const { error } = await supabase
           .from('field_dictionary')
-          .update(payload)
+          .update(payload as any)
           .eq('id', editingField.id);
 
         if (error) throw error;
         toast({ title: 'Field updated successfully' });
       } else {
-        const { error } = await supabase.from('field_dictionary').insert(payload);
+        const { error } = await supabase.from('field_dictionary').insert(payload as any);
         if (error) throw error;
         toast({ title: 'Field created successfully' });
       }
