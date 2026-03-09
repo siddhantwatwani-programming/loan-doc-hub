@@ -390,12 +390,11 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
         console.warn('Unable to load additional TMO tab sections from field_dictionary:', e);
       }
 
-      // Remap participants/title fields into 'other' for the final resolved set
-      // (handles the case where no appended fields were added but resolved already has participants/title)
+      // Remap participants/title fields into 'notes' for the final resolved set
       const finalFieldsBySection = { ...mergedResolved.fieldsBySection } as Record<FieldSection, ResolvedField[]>;
       for (const mergeSection of MERGE_INTO_OTHER) {
         if (finalFieldsBySection[mergeSection]?.length) {
-          finalFieldsBySection['other'] = [...(finalFieldsBySection['other'] || []), ...finalFieldsBySection[mergeSection]];
+          finalFieldsBySection['notes'] = [...(finalFieldsBySection['notes'] || []), ...finalFieldsBySection[mergeSection]];
           delete finalFieldsBySection[mergeSection];
         }
       }
