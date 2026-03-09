@@ -4,27 +4,10 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
-const FIELD_KEYS = {
-  achStatus: 'broker.banking.ach_status',
-  bank: 'broker.banking.bank',
-  routingNumber: 'broker.banking.routing_number',
-  accountNumber: 'broker.banking.account_number',
-  accountType: 'broker.banking.account_type',
-  accountName: 'broker.banking.account_name',
-  accountId: 'broker.banking.account_id',
-  furtherCreditTo: 'broker.banking.further_credit_to',
-  byCheck: 'broker.banking.by_check',
-  checkSameAsMailing: 'broker.banking.check_same_as_mailing',
-  checkAddress: 'broker.banking.check_address',
-  checkCity: 'broker.banking.check_city',
-  checkZip: 'broker.banking.check_zip',
-  achEmail: 'broker.banking.ach_email',
-  ccName: 'broker.banking.cc_name',
-  ccNumber: 'broker.banking.cc_number',
-  ccSecurityCode: 'broker.banking.cc_security_code',
-  ccExpiration: 'broker.banking.cc_expiration',
-  ccZip: 'broker.banking.cc_zip',
-} as const;
+import { BROKER_BANKING_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = BROKER_BANKING_KEYS;
 
 interface BrokerBankingFormProps {
   disabled?: boolean;

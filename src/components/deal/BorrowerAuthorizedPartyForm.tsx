@@ -17,35 +17,10 @@ const CAPACITY_OPTIONS = [
   'Other',
 ];
 
-const FIELD_KEYS = {
-  // Name & Contact
-  firstName: 'borrower.authorized_party.first_name',
-  middleName: 'borrower.authorized_party.middle_name',
-  lastName: 'borrower.authorized_party.last_name',
-  capacity: 'borrower.authorized_party.capacity',
-  email: 'borrower.authorized_party.email',
-  // Address
-  street: 'borrower.authorized_party.address.street',
-  city: 'borrower.authorized_party.address.city',
-  state: 'borrower.authorized_party.address.state',
-  zip: 'borrower.authorized_party.address.zip',
-  // Phone
-  phoneHome: 'borrower.authorized_party.phone.home',
-  phoneWork: 'borrower.authorized_party.phone.work',
-  phoneCell: 'borrower.authorized_party.phone.cell',
-  phoneFax: 'borrower.authorized_party.phone.fax',
-  // Send Preferences
-  sendPaymentNotification: 'borrower.authorized_party.send_pref.payment_notification',
-  sendLateNotice: 'borrower.authorized_party.send_pref.late_notice',
-  sendBorrowerStatement: 'borrower.authorized_party.send_pref.borrower_statement',
-  sendMaturityNotice: 'borrower.authorized_party.send_pref.maturity_notice',
-  // Delivery
-  deliveryEmail: 'borrower.authorized_party.delivery.email',
-  deliveryMail: 'borrower.authorized_party.delivery.mail',
-  deliverySms: 'borrower.authorized_party.delivery.sms',
-  // Details
-  details: 'borrower.authorized_party.details',
-} as const;
+import { BORROWER_AUTHORIZED_PARTY_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = BORROWER_AUTHORIZED_PARTY_KEYS;
 
 interface BorrowerAuthorizedPartyFormProps {
   fields: FieldDefinition[];

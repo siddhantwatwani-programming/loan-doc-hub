@@ -70,67 +70,10 @@ const STATE_OPTIONS = [
   'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC',
 ];
 
-// Field key mapping for primary borrower fields
-const FIELD_KEYS = {
-  // Borrower Details
-  borrowerType: 'borrower.borrower_type',
-  borrowerId: 'borrower.borrower_id',
-  fullName: 'borrower.full_name',
-  firstName: 'borrower.first_name',
-  middleName: 'borrower.middle_initial',
-  lastName: 'borrower.last_name',
-  capacity: 'borrower.capacity',
-  email: 'borrower.email',
-  creditScore: 'borrower.credit_score',
-  issue1098: 'borrower.issue_1098',
-  alternateReporting: 'borrower.alternate_reporting',
-  // Tax Identification
-  taxIdType: 'borrower.tax_id_type',
-  tin: 'borrower.tin',
-  tinVerified: 'borrower.tin_verified',
-  // Primary Address
-  primaryStreet: 'borrower.address.street',
-  primaryCity: 'borrower.address.city',
-  primaryState: 'borrower.state',
-  primaryZip: 'borrower.address.zip',
-  // Mailing Address
-  mailingSameAsPrimary: 'borrower.mailing_same_as_primary',
-  mailingStreet: 'borrower.mailing.street',
-  mailingCity: 'borrower.mailing.city',
-  mailingState: 'borrower.mailing.state',
-  mailingZip: 'borrower.mailing.zip',
-  // Phone
-  phoneHome: 'borrower.phone.home',
-  phoneWork: 'borrower.phone.work',
-  phoneCell: 'borrower.phone.mobile',
-  phoneFax: 'borrower.phone.fax',
-  preferredHome: 'borrower.preferred.home',
-  preferredWork: 'borrower.preferred.work',
-  preferredCell: 'borrower.preferred.cell',
-  preferredFax: 'borrower.preferred.fax',
-  // Delivery Options
-  deliveryPrint: 'borrower.delivery_print',
-  deliveryEmail: 'borrower.delivery_email',
-  deliverySms: 'borrower.delivery_sms',
-  // Send
-  sendPaymentNotification: 'borrower.send_payment_notification',
-  sendLateNotice: 'borrower.send_late_notice',
-  sendBorrowerStatement: 'borrower.send_borrower_statement',
-  sendMaturityNotice: 'borrower.send_maturity_notice',
-  // Delivery (legacy)
-  deliveryOnline: 'borrower.delivery_online',
-  deliveryMail: 'borrower.delivery_mail',
-  // Vesting & FORD
-  vesting: 'borrower.vesting',
-  ford1: 'borrower.ford.1',
-  ford2: 'borrower.ford.2',
-  ford3: 'borrower.ford.3',
-  ford4: 'borrower.ford.4',
-  ford5: 'borrower.ford.5',
-  ford6: 'borrower.ford.6',
-  ford7: 'borrower.ford.7',
-  ford8: 'borrower.ford.8',
-} as const;
+import { BORROWER_PRIMARY_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = BORROWER_PRIMARY_KEYS;
 
 interface BorrowerPrimaryFormProps {
   fields: FieldDefinition[];

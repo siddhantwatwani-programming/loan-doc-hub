@@ -14,29 +14,10 @@ import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
-const FIELD_KEYS = {
-  firstName: 'lender.authorized_party.first_name',
-  middleName: 'lender.authorized_party.middle_name',
-  lastName: 'lender.authorized_party.last_name',
-  capacity: 'lender.authorized_party.capacity',
-  email: 'lender.authorized_party.email',
-  sendPaymentNotification: 'lender.authorized_party.send_pref.payment_notification',
-  sendLateNotice: 'lender.authorized_party.send_pref.late_notice',
-  sendMaturityNotice: 'lender.authorized_party.send_pref.maturity_notice',
-  sendBorrowerStatement: 'lender.authorized_party.send_pref.borrower_statement',
-  street: 'lender.authorized_party.address.street',
-  city: 'lender.authorized_party.address.city',
-  state: 'lender.authorized_party.address.state',
-  zip: 'lender.authorized_party.address.zip',
-  details: 'lender.authorized_party.address.details',
-  phoneHome: 'lender.authorized_party.phone.home',
-  phoneWork: 'lender.authorized_party.phone.work',
-  phoneCell: 'lender.authorized_party.phone.cell',
-  phoneFax: 'lender.authorized_party.phone.fax',
-  deliveryEmail: 'lender.authorized_party.delivery.email',
-  deliveryMail: 'lender.authorized_party.delivery.mail',
-  deliverySms: 'lender.authorized_party.delivery.sms',
-} as const;
+import { LENDER_AUTHORIZED_PARTY_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = LENDER_AUTHORIZED_PARTY_KEYS;
 
 const CAPACITY_OPTIONS = [
   { value: 'attorney', label: 'Attorney' },

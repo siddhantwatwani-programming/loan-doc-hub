@@ -14,25 +14,10 @@ import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
-// Field key mapping for banking fields
-const FIELD_KEYS = {
-  bankName: 'ach.bank_name',
-  bankAddress: 'ach.bank_address',
-  routingNumber: 'ach.routing_number',
-  accountNumber: 'ach.account_number',
-  individualId: 'ach.individual_id',
-  individualName: 'ach.individual_name',
-  accountType: 'ach.account_type',
-  serviceStatus: 'ach.service_status',
-  applyDebitAs: 'ach.apply_debit_as',
-  debitFrequency: 'ach.debit_frequency',
-  debitDueDay: 'ach.debit_due_day',
-  nextDebitDate: 'ach.next_debit_date',
-  stopDate: 'ach.stop_date',
-  debitAmount: 'ach.debit_amount',
-  sendConfirm: 'ach.send_confirm',
-  disableOnlinePayment: 'ach.disable_online_payment',
-} as const;
+import { BORROWER_BANKING_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = BORROWER_BANKING_KEYS;
 
 interface BorrowerBankingFormProps {
   fields: FieldDefinition[];
