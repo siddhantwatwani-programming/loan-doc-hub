@@ -352,8 +352,9 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
             is_calculated: !!fd.is_calculated,
             is_repeatable: !!fd.is_repeatable,
             validation_rule: fd.validation_rule,
-            // Keep required-field logic unchanged: only TemplateFieldMap determines required.
             is_required: false,
+            is_mandatory: !!fd.is_mandatory,
+            form_type: fd.form_type || 'primary',
             transform_rules: [],
             calculation_formula: fd.calculation_formula || null,
             calculation_dependencies: fd.calculation_dependencies || [],

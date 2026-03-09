@@ -286,9 +286,9 @@ export async function resolvePacketFields(packetId: string, cachedEntries?: any[
       is_repeatable: fd.is_repeatable,
       validation_rule: fd.validation_rule,
       is_required: requiredSet.has(fieldDictId),
+      is_mandatory: !!fd.is_mandatory,
+      form_type: fd.form_type || 'primary',
       transform_rules: transformRulesMap[fieldDictId] || [],
-      calculation_formula: fd.calculation_formula || null,
-      calculation_dependencies: fd.calculation_dependencies || [],
     };
   });
 
