@@ -28,19 +28,10 @@ import {
   Search, 
   Key, 
   Loader2, 
-  MoreHorizontal,
-  Pencil,
-  Trash2,
   Download,
   Asterisk,
   X
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 interface FieldDictionary {
@@ -932,19 +923,18 @@ export const FieldDictionaryPage: React.FC = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Label</th>
+                      <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Field Label</th>
                       <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Field Key</th>
                       <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Form</th>
                       <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Type</th>
                       <th className="text-center py-2 px-3 text-sm font-medium text-muted-foreground">Mandatory</th>
                       <th className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">Flags</th>
-                      <th className="text-right py-2 px-3 text-sm font-medium text-muted-foreground">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sectionFields.map((field) => (
-                      <tr key={field.id} className="border-b border-border last:border-0 hover:bg-muted/50">
-                        <td className="py-2.5 px-3 font-medium text-foreground text-sm">{field.label}</td>
+                      <tr key={field.id} className="border-b border-border last:border-0 hover:bg-muted/50 cursor-pointer" onClick={() => handleEdit(field)}>
+                        <td className="py-2.5 px-3 font-medium text-foreground text-sm text-primary hover:underline">{field.label}</td>
                         <td className="py-2.5 px-3 font-mono text-xs text-muted-foreground">{field.field_key}</td>
                         <td className="py-2.5 px-3">
                           <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-accent/50 text-accent-foreground capitalize">
@@ -956,7 +946,7 @@ export const FieldDictionaryPage: React.FC = () => {
                             {field.data_type}
                           </span>
                         </td>
-                        <td className="py-2.5 px-3 text-center">
+                        <td className="py-2.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={field.is_mandatory}
                             onCheckedChange={() => handleToggleMandatory(field)}
@@ -976,25 +966,6 @@ export const FieldDictionaryPage: React.FC = () => {
                               </span>
                             )}
                           </div>
-                        </td>
-                        <td className="py-2.5 px-3 text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEdit(field)}>
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDelete(field)} className="text-destructive">
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
                         </td>
                       </tr>
                     ))}

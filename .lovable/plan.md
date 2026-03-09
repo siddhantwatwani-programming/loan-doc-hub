@@ -1,40 +1,110 @@
 
 
-## Updates Plan
+## Event Journal (Change Log System) Implementation Plan
 
-### 1. Field Dictionary Table — Remove Action Column, Add Field Label Column
+### Overview
+Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
 
-**Current state:** The table has columns: Label, Field Key, Form, Type, Mandatory (checkbox), Flags, Actions (edit/delete dropdown).
+### 1. Database: New Migration
+Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
 
-**Changes to `FieldDictionaryPage.tsx`:**
-- Remove the "Actions" column (the `<th>` and the `<td>` with the DropdownMenu containing Edit/Delete)
-- The "Label" column already exists and shows `field.label` — this IS the Field Label. Rename the header from "Label" to "Field Label" for clarity.
-- The Mandatory checkbox already calls `handleToggleMandatory` which saves directly to DB — this is already working correctly.
-- Keep the Edit/Delete functionality accessible only through the Add Field dialog (edit) and remove standalone delete. Actually, since we're removing Actions, we can make rows clickable to open the edit dialog instead. Or we keep the edit via clicking the row.
+```sql
+CREATE TABLE public.event_journal (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
+  event_number integer NOT NULL,
+  actor_user_id uuid NOT NULL,
+  section text NOT NULL,
+  details jsonb NOT NULL DEFAULT '[]',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-**Decision:** Make the field label clickable to open the edit dialog. Remove the Action column entirely (no more DropdownMenu with Edit/Delete per row). The "Add Field" button still allows creation. Editing happens by clicking a row.
+CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
+ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
 
-### 2. Event Journal — Remove Selection & Delete
+-- RLS: CSR and Admin can view/insert
+CREATE POLICY "CSRs can view event journal" ON public.event_journal
+  FOR SELECT TO authenticated
+  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
 
-**Changes to `EventJournalViewer.tsx`:**
-- Remove the `useGridSelection` hook usage entirely
-- Remove the checkbox column (header and row checkboxes)
-- Remove the `bulkDeleteOpen` state and `handleBulkDelete` function
-- Remove the `DeleteConfirmationDialog` component
-- Remove `selectedCount` and `onBulkDelete` props from `GridToolbar`
-- Update `colSpan` from 6 to 5 in the empty state row
-- Remove unused imports (`Checkbox`, `useGridSelection`, `DeleteConfirmationDialog`, `supabase`, `toast`)
+CREATE POLICY "CSRs can insert event journal" ON public.event_journal
+  FOR INSERT TO authenticated
+  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
 
-**Changes to `GlobalEventJournalPage.tsx`:** No changes needed — it just renders `EventJournalViewer`.
+-- Auto-increment event_number per deal
+CREATE OR REPLACE FUNCTION public.set_event_journal_number()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
+BEGIN
+  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
+  FROM public.event_journal WHERE deal_id = NEW.deal_id;
+  RETURN NEW;
+END;
+$$;
 
-### 3. Field Key in Document Templates
+CREATE TRIGGER trg_event_journal_number
+  BEFORE INSERT ON public.event_journal
+  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
+```
 
-The document generation engine (`generate-document` edge function) resolves field keys via `field-resolver.ts` which looks up `field_dictionary` by `field_key` and joins with `deal_section_values` JSONB. The merge tag `{{field_key}}` is resolved by matching the tag name to either a `template_field_maps` entry or a `merge_tag_aliases` entry, both of which reference `field_dictionary_id`. This chain is already correct — no code changes needed. The field key in the dictionary IS what gets used for template resolution.
+The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
+
+### 2. Hook: `useEventJournal.ts` (New File)
+- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
+- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
+- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
+
+### 3. Capture Old→New Values in `useDealFields.ts`
+- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
+- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
+- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
+- After successful save, update the snapshot
+
+### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
+Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
+- Table with columns: Event #, User, Section, Details, Timestamp
+- Details column shows truncated preview (first 80 chars)
+- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
+- Sorted by event_number descending (newest first)
+
+### 5. `EventJournalViewer` Component (New File)
+`src/components/deal/EventJournalViewer.tsx`:
+- Fetches from `event_journal` table filtered by `deal_id`
+- Joins actor names from `profiles`
+- Table layout using existing shadcn Table components
+- "Show More" modal using existing Dialog component
+- Detail entries formatted as `Field Label: oldValue → newValue`
+
+### 6. Global Event Journal Page (New File)
+`src/pages/csr/GlobalEventJournalPage.tsx`:
+- Deal selector dropdown (search by deal number) at the top
+- Once a deal is selected, renders `EventJournalViewer` for that deal
+- Same table structure as the per-deal view
+
+### 7. Sidebar Navigation Update
+In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
+```tsx
+<PromotedNavSection
+  label="Event Journal"
+  icon={BookOpen}
+  items={[]}
+  directPath="/event-journal"
+  isCollapsed={isCollapsed}
+  searchQuery={searchQuery}
+/>
+```
+
+### 8. Route Registration
+In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
 
 ### Files Changed
-
 | File | Change |
 |------|--------|
-| `src/pages/admin/FieldDictionaryPage.tsx` | Remove Action column, rename "Label" → "Field Label", make rows clickable for editing |
-| `src/components/deal/EventJournalViewer.tsx` | Remove checkbox column, selection logic, delete functionality |
+| New migration | Create `event_journal` table with trigger |
+| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
+| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
+| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
+| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
+| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
+| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
+| `src/App.tsx` | Add `/event-journal` route |
 
