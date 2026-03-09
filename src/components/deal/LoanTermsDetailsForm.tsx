@@ -16,37 +16,10 @@ interface LoanTermsDetailsFormProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
-const FIELD_KEYS = {
-  company: 'loan_terms.details_company',
-  loanNumber: 'Terms.LoanNumber',
-  assignedCsr: 'loan_terms.assigned_csr',
-  originatingVendor: 'loan_terms.details_originating_vendor',
-  origination: 'loan_terms.origination',
-  boarding: 'loan_terms.boarding',
-  maturity: 'loan_terms.maturity',
-  maturityDate: 'loan_terms.maturity_date',
-  lienPosition: 'loan_terms.lien_position',
-  loanPurpose: 'loan_terms.loan_purpose',
-  rateStructure: 'loan_terms.rate_structure',
-  amortization: 'loan_terms.amortization',
-  interestCalculation: 'loan_terms.interest_calculation',
-  shortPaymentsAppliedTo: 'loan_terms.short_payments_applied_to',
-  processingUnpaidInterest: 'loan_terms.processing_unpaid_interest',
-  calculationPeriod: 'loan_terms.calculation_period',
-  sellerCarry: 'loan_terms.seller_carry',
-  aitdWrap: 'loan_terms.aitd_wrap',
-  rehabConstruction: 'loan_terms.rehab_construction',
-  variableArm: 'loan_terms.variable_arm',
-  respa: 'loan_terms.respa',
-  unsecured: 'loan_terms.unsecured',
-  crossCollateral: 'loan_terms.cross_collateral',
-  limitedNoDoc: 'loan_terms.limited_no_doc',
-  balloonPayment: 'loan_terms.balloon_payment',
-  parentAccount: 'loan_terms.parent_account',
-  parentAccountValue: 'loan_terms.parent_account_value',
-  childAccount: 'loan_terms.child_account',
-  childAccountValue: 'loan_terms.child_account_value',
-};
+import { LOAN_TERMS_DETAILS_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = LOAN_TERMS_DETAILS_KEYS;
 
 const LIEN_POSITION_OPTIONS = [
   { value: '1st', label: '1st' }, { value: '2nd', label: '2nd' },

@@ -44,51 +44,10 @@ const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
 const CONSTRUCTION_TYPES = ['Wood/Stucco', 'Stick', 'Concrete Block'];
 const LIEN_SOURCES = ['Broker', 'Borrower', 'Other'];
 
-const FIELD_KEYS = {
-  description: 'property1.description',
-  address: 'property1.address',
-  street: 'property1.street',
-  city: 'property1.city',
-  state: 'property1.state',
-  zip: 'property1.zip',
-  county: 'property1.county',
-  copyBorrowerAddress: 'property1.copy_borrower_address',
-  primaryProperty: 'property1.primary_property',
-  performedBy: 'property1.appraisal_performed_by',
-  propertyType: 'property1.appraisal_property_type',
-  occupancy: 'property1.appraisal_occupancy',
-  ltv: 'property1.ltv',
-  zoning: 'property1.zoning',
-  appraisedValue: 'property1.appraised_value',
-  pledgedEquity: 'property1.pledged_equity',
-  appraisedDate: 'property1.appraised_date',
-  priority: 'property1.priority',
-  floodZone: 'property1.flood_zone',
-  apn: 'property1.apn',
-  thomasMap: 'property1.thomas_map',
-  // Origination property fields
-  purchasePrice: 'property1.purchase_price',
-  downPayment: 'property1.down_payment',
-  delinquentTaxes: 'property1.delinquent_taxes',
-  appraiserStreet: 'property1.appraiser_street',
-  appraiserCity: 'property1.appraiser_city',
-  appraiserState: 'property1.appraiser_state',
-  appraiserZip: 'property1.appraiser_zip',
-  appraiserPhone: 'property1.appraiser_phone',
-  appraiserEmail: 'property1.appraiser_email',
-  yearBuilt: 'property1.year_built',
-  squareFeet: 'property1.square_feet',
-  constructionType: 'property1.construction_type',
-  monthlyIncome: 'property1.monthly_income',
-  lienProtectiveEquity: 'property1.lien_protective_equity',
-  sourceLienInfo: 'property1.source_lien_info',
-  delinquencies60day: 'property1.delinquencies_60day',
-  delinquenciesHowMany: 'property1.delinquencies_how_many',
-  currentlyDelinquent: 'property1.currently_delinquent',
-  paidByLoan: 'property1.paid_by_loan',
-  sourceOfPayment: 'property1.source_of_payment',
-  recordingNumber: 'property1.recording_number',
-} as const;
+import { PROPERTY_DETAILS_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = PROPERTY_DETAILS_KEYS;
 
 export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   fields,
