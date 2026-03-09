@@ -355,7 +355,7 @@ export function getMissingRequiredFields(
 ): ResolvedField[] {
   return resolvedFields.fields.filter(field => {
     if (section && field.section !== section) return false;
-    if (!field.is_required) return false;
+    if (!field.is_required && !field.is_mandatory) return false;
     const value = values[field.field_key];
     return !value || value.trim() === '';
   });
