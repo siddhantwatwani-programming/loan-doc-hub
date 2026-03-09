@@ -93,42 +93,39 @@ const VALID_DB_SECTIONS = new Set([
   'broker', 'charges', 'escrow', 'notes', 'lender', 'origination_fees',
 ]);
 
-// Forms per UI section
+// Forms per UI section — must match the actual sub-navigation in the deal UI
 const SECTION_FORMS: Record<string, { value: string; label: string; dbSection?: string }[]> = {
   borrower: [
     { value: 'primary', label: 'Primary Borrower' },
     { value: 'co_borrower', label: 'Co-Borrower', dbSection: 'co_borrower' },
+    { value: 'additional_guarantor', label: 'Additional Guarantor' },
     { value: 'authorized_party', label: 'Authorized Party' },
-    { value: 'guarantor', label: 'Guarantor' },
+    { value: 'trust_ledger', label: 'Trust Ledger' },
     { value: 'banking', label: 'Banking' },
     { value: 'tax', label: '1098' },
-    { value: 'notes', label: 'Notes' },
-    { value: 'attachment', label: 'Attachment' },
-    { value: 'trust_ledger', label: 'Trust Ledger' },
   ],
   loan_terms: [
-    { value: 'primary', label: 'Terms & Balances' },
-    { value: 'balances', label: 'Details' },
+    { value: 'balances_loan_details', label: 'Terms & Balances' },
+    { value: 'details', label: 'Details' },
     { value: 'penalties', label: 'Penalties' },
     { value: 'servicing', label: 'Servicing' },
   ],
   property: [
-    { value: 'primary', label: 'Details' },
-    { value: 'legal', label: 'Legal Description' },
-    { value: 'insurance', label: 'Insurance', dbSection: 'insurance' },
+    { value: 'property_details', label: 'Property Details' },
+    { value: 'legal_description', label: 'Legal Description' },
     { value: 'liens', label: 'Liens' },
-    { value: 'tax', label: 'Tax' },
-    { value: 'notes', label: 'Notes' },
+    { value: 'insurance', label: 'Insurance', dbSection: 'insurance' },
+    { value: 'property_tax', label: 'Property Tax' },
   ],
   funding: [
     { value: 'funding', label: 'Funding' },
   ],
   broker: [
-    { value: 'primary', label: 'Broker Info' },
+    { value: 'broker', label: 'Broker Info' },
     { value: 'banking', label: 'Banking' },
   ],
   charges: [
-    { value: 'detail', label: 'Detail' },
+    { value: 'detail', label: 'Charge Details' },
   ],
   escrow: [
     { value: 'primary', label: 'Primary' },
@@ -137,14 +134,18 @@ const SECTION_FORMS: Record<string, { value: string; label: string; dbSection?: 
     { value: 'primary', label: 'Primary' },
   ],
   lender: [
-    { value: 'primary', label: 'Lender Info' },
+    { value: 'lender', label: 'Lender Info' },
     { value: 'authorized_party', label: 'Authorized Party' },
     { value: 'banking', label: 'Banking' },
-    { value: 'tax', label: '1099' },
-    { value: 'funding', label: 'Funding' },
+    { value: 'tax_info', label: '1099' },
   ],
   origination_fees: [
-    { value: 'fees', label: 'Fees' },
+    { value: 'application', label: 'Application' },
+    { value: 'escrow_title', label: 'Escrow & Title' },
+    { value: 'document_provisions', label: 'Document Provisions' },
+    { value: 'insurance_conditions', label: 'Insurance Conditions' },
+    { value: 'servicing', label: 'Servicing' },
+    { value: 'origination_fees', label: 'Origination Fees' },
   ],
 };
 
