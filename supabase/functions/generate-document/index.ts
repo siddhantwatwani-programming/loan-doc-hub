@@ -85,10 +85,10 @@ async function generateSingleDocument(
     // Get unique field dictionary IDs
     const fieldDictIds = [...new Set((fieldMaps || []).map((fm: any) => fm.field_dictionary_id).filter(Boolean))];
 
-    // Fetch field dictionary entries
+    // Fetch field dictionary entries (include canonical_key for backward compat)
     const { data: fieldDictEntries } = await supabase
       .from("field_dictionary")
-      .select("id, field_key, data_type, label")
+      .select("id, field_key, data_type, label, canonical_key")
       .in("id", fieldDictIds);
 
     // Create lookup map for field dictionary by ID
