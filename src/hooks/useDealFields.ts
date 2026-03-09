@@ -464,23 +464,43 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
                 let keyToUse = (fieldData as JsonbFieldValue).indexed_key;
                 if (!keyToUse && prefix) {
                   // Reconstruct indexed key from prefix and canonical field key
+                  // First, resolve the DB field_key to legacy dot-notation if possible
+                  const legacyFieldKey = resolveDbKeyToLegacy(fieldMeta.field_key);
+                  
                   // For charge fields, we need to reverse-map dictionary keys to UI format
-                  // e.g., prefix="charge1", field_key="charge_date" -> "charge1.date_of_charge"
                   if (isChargeSection && prefix.startsWith('charge')) {
                     const uiCanonicalKey = mapChargeFieldKey(fieldMeta.field_key, false);
                     if (uiCanonicalKey.startsWith('charge.')) {
                       const fieldSuffix = uiCanonicalKey.replace(/^charge\./, '');
                       keyToUse = `${prefix}.${fieldSuffix}`;
+                    } else if (legacyFieldKey.startsWith('charge.')) {
+                      const fieldSuffix = legacyFieldKey.replace(/^charge\./, '');
+                      keyToUse = `${prefix}.${fieldSuffix}`;
                     } else {
                       keyToUse = `${prefix}.${fieldMeta.field_key}`;
                     }
+                  } else if (legacyFieldKey !== fieldMeta.field_key) {
+                    // DB key has a legacy equivalent - use the legacy format for UI compatibility
+                    // e.g., DB key "br_p_firstName" -> legacy "borrower.first_name"
+                    // Extract the suffix after the entity prefix (borrower., lender., etc.)
+                    const entityPrefixMatch = legacyFieldKey.match(/^(borrower|coborrower|co_borrower|lender|property\d*|broker|lien|insurance|notes_entry)\.(.*)/);
+                    if (entityPrefixMatch) {
+                      keyToUse = `${prefix}.${entityPrefixMatch[2]}`;
+                    } else {
+                      // Non-entity legacy key (e.g., ach.bank_name, loan_terms.loan_amount)
+                      keyToUse = legacyFieldKey;
+                    }
                   } else {
-                    // For other entities (borrower, lender, etc.)
+                    // No legacy mapping - use DB field_key with prefix
                     const canonicalField = fieldMeta.field_key.replace(/^(borrower|coborrower|co_borrower|lender|property\d*|broker|lien|insurance|notes_entry)\./, '');
                     keyToUse = `${prefix}.${canonicalField}`;
                   }
                 }
-                keyToUse = keyToUse || fieldMeta.field_key;
+                // For non-indexed keys, also translate DB key to legacy if possible
+                if (!keyToUse) {
+                  const legacyFieldKey = resolveDbKeyToLegacy(fieldMeta.field_key);
+                  keyToUse = legacyFieldKey; // Will be the same as field_key if no mapping exists
+                }
                 valuesMap[keyToUse] = value;
               }
             }
