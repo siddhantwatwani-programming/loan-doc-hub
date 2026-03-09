@@ -17,6 +17,8 @@ export interface ResolvedField {
   is_repeatable: boolean;
   validation_rule: string | null;
   is_required: boolean;
+  is_mandatory: boolean;
+  form_type: string;
   transform_rules: string[];
   calculation_formula: string | null;
   calculation_dependencies: string[];
