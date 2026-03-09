@@ -1,110 +1,248 @@
 
 
-## Event Journal (Change Log System) Implementation Plan
+## Field Dictionary & Field Key Refactoring Plan
 
-### Overview
-Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
+### Scope Overview
 
-### 1. Database: New Migration
-Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
+This is a **phased refactoring** that will modernize the field key system, remove the "Other" section, introduce a new naming convention (`br_p_fn` format), and add `is_mandatory` validation logic. The work spans:
+
+- **Database**: New `field_dictionary` schema, new section enum, data migrations
+- **Admin UI**: Refactored Field Dictionary page with new columns, filters, CSV export
+- **Form components**: 23+ forms using hardcoded `FIELD_KEYS` objects
+- **Document generation**: Edge functions that resolve field keys → values
+- **Deal data**: 36 existing deals with saved JSONB field values
+
+---
+
+## Phase 1: Database Schema Refactoring (Week 1)
+
+### 1.1 Update `field_section` Enum
+Add `origination_fees` and `insurance` sections; remove reliance on `other`:
 
 ```sql
-CREATE TABLE public.event_journal (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
-  event_number integer NOT NULL,
-  actor_user_id uuid NOT NULL,
-  section text NOT NULL,
-  details jsonb NOT NULL DEFAULT '[]',
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
-ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
-
--- RLS: CSR and Admin can view/insert
-CREATE POLICY "CSRs can view event journal" ON public.event_journal
-  FOR SELECT TO authenticated
-  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
-
-CREATE POLICY "CSRs can insert event journal" ON public.event_journal
-  FOR INSERT TO authenticated
-  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
-
--- Auto-increment event_number per deal
-CREATE OR REPLACE FUNCTION public.set_event_journal_number()
-RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
-BEGIN
-  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
-  FROM public.event_journal WHERE deal_id = NEW.deal_id;
-  RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER trg_event_journal_number
-  BEFORE INSERT ON public.event_journal
-  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
+ALTER TYPE field_section ADD VALUE 'origination_fees';
+ALTER TYPE field_section ADD VALUE 'insurance';
+-- 'other' enum value remains for backward compatibility but won't be used
 ```
 
-The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
+### 1.2 Alter `field_dictionary` Table
+Add new columns to support the new architecture:
 
-### 2. Hook: `useEventJournal.ts` (New File)
-- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
-- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
-- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
+| New Column | Type | Purpose |
+|------------|------|---------|
+| `form_type` | `text` | Primary, Additional, Guarantor, Banking, etc. |
+| `is_mandatory` | `boolean DEFAULT false` | Red star validation |
 
-### 3. Capture Old→New Values in `useDealFields.ts`
-- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
-- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
-- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
-- After successful save, update the snapshot
-
-### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
-Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
-- Table with columns: Event #, User, Section, Details, Timestamp
-- Details column shows truncated preview (first 80 chars)
-- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
-- Sorted by event_number descending (newest first)
-
-### 5. `EventJournalViewer` Component (New File)
-`src/components/deal/EventJournalViewer.tsx`:
-- Fetches from `event_journal` table filtered by `deal_id`
-- Joins actor names from `profiles`
-- Table layout using existing shadcn Table components
-- "Show More" modal using existing Dialog component
-- Detail entries formatted as `Field Label: oldValue → newValue`
-
-### 6. Global Event Journal Page (New File)
-`src/pages/csr/GlobalEventJournalPage.tsx`:
-- Deal selector dropdown (search by deal number) at the top
-- Once a deal is selected, renders `EventJournalViewer` for that deal
-- Same table structure as the per-deal view
-
-### 7. Sidebar Navigation Update
-In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
-```tsx
-<PromotedNavSection
-  label="Event Journal"
-  icon={BookOpen}
-  items={[]}
-  directPath="/event-journal"
-  isCollapsed={isCollapsed}
-  searchQuery={searchQuery}
-/>
+Migration:
+```sql
+ALTER TABLE field_dictionary ADD COLUMN form_type text DEFAULT 'primary';
+ALTER TABLE field_dictionary ADD COLUMN is_mandatory boolean DEFAULT false;
 ```
 
-### 8. Route Registration
-In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
+### 1.3 Create Field Key Migration Tracking
+Leverage existing `field_key_migrations` table to track old→new mappings:
+- Record all field_key changes for deal data migration
+- Status: `pending` → `migrated`
 
-### Files Changed
+---
+
+## Phase 2: Field Dictionary Admin UI (Week 1-2)
+
+### 2.1 New Field Dictionary Page Columns
+| Column | Source |
+|--------|--------|
+| Section | `section` enum |
+| Form Type | New `form_type` column |
+| Field Label | `label` |
+| Field Key | `field_key` (editable) |
+| Field Type | `data_type` enum |
+| Mandatory | `is_mandatory` toggle |
+
+### 2.2 Features
+- **Section dropdown filter**: Filter by borrower, loan_terms, property, etc.
+- **Search by label**: Text search across `label` column
+- **CSV Export**: Download filtered results
+- **Duplicate check**: Prevent duplicate `field_key` on save
+- **Bulk edit**: Toggle mandatory for multiple fields
+
+### 2.3 Remove "Other" from Section Dropdown
+The admin dropdown will exclude `other` from available options for new fields.
+
+---
+
+## Phase 3: New Field Key Convention Generator (Week 2)
+
+### 3.1 Naming Convention
+```
+{section_abbr}_{form_abbr}_{fieldIdentifier}
+```
+
+| Section | Abbr | Example |
+|---------|------|---------|
+| Borrower | `br` | `br_p_fn` (Primary, First Name) |
+| Co-Borrower | `cb` | `cb_p_ln` |
+| Loan Terms | `ln` | `ln_g_lnAmt` (General, Loan Amount) |
+| Property | `pr` | `pr_a_pptAdd` (Address) |
+| Lender | `ld` | `ld_p_email` |
+| Broker | `bk` | `bk_i_cmpName` |
+| Charges | `ch` | `ch_d_chrDate` |
+| Origination Fees | `of` | `of_800_orgFee` |
+
+### 3.2 Auto-Generation Helper
+```typescript
+function generateFieldKey(section: string, formType: string, label: string): string {
+  const sectionMap = { borrower: 'br', co_borrower: 'cb', loan_terms: 'ln', ... };
+  const formMap = { primary: 'p', additional: 'a', guarantor: 'g', banking: 'b', ... };
+  const identifier = label.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8);
+  return `${sectionMap[section]}_${formMap[formType]}_${identifier}`;
+}
+```
+
+---
+
+## Phase 4: Migrate Existing Field Dictionary (Week 2-3)
+
+### 4.1 Categorize 778 "Other" Fields
+| Category | Action |
+|----------|--------|
+| Origination fees (`origination_fees.*`) | Move to `origination_fees` section |
+| Notary/recording fields | Move to `escrow` section |
+| Legacy UI descriptions | Archive (mark inactive) |
+| Unused fields | Delete after dependency check |
+
+### 4.2 Migration Script
+```sql
+-- Move origination fees to new section
+UPDATE field_dictionary 
+SET section = 'origination_fees'
+WHERE field_key LIKE 'origination_fees.%' AND section = 'other';
+
+-- Track key migrations
+INSERT INTO field_key_migrations (old_key, new_key, status)
+SELECT field_key, 'of_800_' || SUBSTRING(field_key FROM 17), 'pending'
+FROM field_dictionary WHERE section = 'origination_fees';
+```
+
+### 4.3 Update Field Keys in Batches
+Run migration scripts section-by-section with old→new tracking.
+
+---
+
+## Phase 5: Update Form Components (Week 3-4)
+
+### 5.1 Affected Components (23+)
+Each form has a hardcoded `FIELD_KEYS` object that must be updated:
+
+| Form | Location | Fields |
+|------|----------|--------|
+| BorrowerPrimaryForm | `src/components/deal/` | 50+ keys |
+| LenderInfoForm | `src/components/deal/` | 60+ keys |
+| PropertyDetailsForm | `src/components/deal/` | 40+ keys |
+| LoanTermsDetailsForm | `src/components/deal/` | 30+ keys |
+| ... | ... | ... |
+
+### 5.2 Migration Strategy
+1. Create a central `FIELD_KEY_MAP` module
+2. Import into all forms (replaces inline `FIELD_KEYS`)
+3. Add TypeScript strict typing for new keys
+
+### 5.3 Mandatory Field Validation (Red Star)
+```typescript
+// In DealFieldInput.tsx
+{field.is_mandatory && (
+  <span className="absolute top-0 right-0 text-red-500">*</span>
+)}
+
+// In useDealFields.ts saveDraft()
+const missingMandatory = fields.filter(f => f.is_mandatory && !values[f.field_key]);
+if (missingMandatory.length > 0) {
+  toast({ title: 'Missing required fields', variant: 'destructive' });
+  return false;
+}
+```
+
+---
+
+## Phase 6: Migrate Deal Data (Week 4)
+
+### 6.1 JSONB Key Migration
+For each deal's `deal_section_values`:
+1. Read existing `field_values` JSONB
+2. For each key, look up `field_key_migrations` table
+3. Replace old key with new key
+4. Write back updated JSONB
+
+```typescript
+async function migrateDealFieldKeys(dealId: string) {
+  const { data: migrations } = await supabase
+    .from('field_key_migrations')
+    .select('old_key, new_key')
+    .eq('status', 'pending');
+    
+  const migrationMap = new Map(migrations.map(m => [m.old_key, m.new_key]));
+  
+  // Update each section's field_values
+  for (const section of sections) {
+    const newFieldValues = {};
+    Object.entries(section.field_values).forEach(([key, value]) => {
+      const newKey = migrationMap.get(extractFieldKey(key)) || key;
+      newFieldValues[newKey] = value;
+    });
+    // Save back
+  }
+}
+```
+
+---
+
+## Phase 7: Update Document Generation (Week 4-5)
+
+### 7.1 Edge Function Updates
+The `generate-document` function already uses `field_dictionary` lookups. Key changes:
+
+1. Update `field-resolver.ts` to handle new naming convention
+2. Update `resolveFieldKeyWithMap` for new key format
+3. Test with existing templates
+
+### 7.2 Template Field Maps
+- Existing mappings remain valid (they reference `field_dictionary_id`)
+- New templates will use new field keys
+
+---
+
+## Phase 8: Remove "Other" Section from UI (Week 5)
+
+### 8.1 Code Changes
 | File | Change |
 |------|--------|
-| New migration | Create `event_journal` table with trigger |
-| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
-| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
-| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
-| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
-| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
-| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
-| `src/App.tsx` | Add `/event-journal` route |
+| `FieldDictionaryPage.tsx` | Remove `other` from SECTIONS array |
+| `useDealFields.ts` | Remove `MERGE_INTO_OTHER` logic |
+| `requiredFieldsResolver.ts` | Update `SECTION_ORDER` |
+
+### 8.2 CSR Enter Data Tabs
+After migration, CSR sees only:
+- Borrower, Co-Borrower, Loan Terms, Property, Lender, Broker, Charges, Escrow, Origination Fees, Notes
+
+---
+
+## Technical Risks & Mitigations
+
+| Risk | Mitigation |
+|------|------------|
+| Breaking document generation | Run parallel validation: old keys still resolve via migration table |
+| Losing deal data | Full backup before migration + rollback script |
+| Form render failures | Gradual rollout: one section at a time |
+| Template mapping breaks | FK to `field_dictionary.id` unchanged; only `field_key` column changes |
+
+---
+
+## Deliverables Summary
+
+1. **Database**: Updated `field_dictionary` schema with `form_type`, `is_mandatory`
+2. **Admin UI**: Refactored Field Dictionary page with filters, CSV export, mandatory toggle
+3. **Field Keys**: New `br_p_fn` naming convention applied to all 2000+ fields
+4. **Forms**: 23+ form components updated with centralized field key mapping
+5. **Deal Data**: All 36 deals migrated to new field keys
+6. **Doc Gen**: Edge functions updated for new key resolution
+7. **"Other" Removed**: Section eliminated from UI and new field creation
 
