@@ -54,58 +54,10 @@ const STATE_OPTIONS = [
   'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC',
 ];
 
-const FIELD_KEYS = {
-  borrowerType: 'borrower.guarantor.borrower_type',
-  borrowerId: 'borrower.guarantor.borrower_id',
-  fullName: 'borrower.guarantor.full_name',
-  firstName: 'borrower.guarantor.first_name',
-  middleName: 'borrower.guarantor.middle_initial',
-  lastName: 'borrower.guarantor.last_name',
-  capacity: 'borrower.guarantor.capacity',
-  email: 'borrower.guarantor.email',
-  creditScore: 'borrower.guarantor.credit_score',
-  issue1098: 'borrower.guarantor.issue_1098',
-  alternateReporting: 'borrower.guarantor.alternate_reporting',
-  taxIdType: 'borrower.guarantor.tax_id_type',
-  tin: 'borrower.guarantor.tin',
-  tinVerified: 'borrower.guarantor.tin_verified',
-  primaryStreet: 'borrower.guarantor.address.street',
-  primaryCity: 'borrower.guarantor.address.city',
-  primaryState: 'borrower.guarantor.state',
-  primaryZip: 'borrower.guarantor.address.zip',
-  mailingSameAsPrimary: 'borrower.guarantor.mailing_same_as_primary',
-  mailingStreet: 'borrower.guarantor.mailing.street',
-  mailingCity: 'borrower.guarantor.mailing.city',
-  mailingState: 'borrower.guarantor.mailing.state',
-  mailingZip: 'borrower.guarantor.mailing.zip',
-  phoneHome: 'borrower.guarantor.phone.home',
-  phoneWork: 'borrower.guarantor.phone.work',
-  phoneCell: 'borrower.guarantor.phone.mobile',
-  phoneFax: 'borrower.guarantor.phone.fax',
-  preferredHome: 'borrower.guarantor.preferred.home',
-  preferredWork: 'borrower.guarantor.preferred.work',
-  preferredCell: 'borrower.guarantor.preferred.cell',
-  preferredFax: 'borrower.guarantor.preferred.fax',
-  deliveryPrint: 'borrower.guarantor.delivery_print',
-  deliveryEmail: 'borrower.guarantor.delivery_email',
-  deliverySms: 'borrower.guarantor.delivery_sms',
-  sendPaymentNotification: 'borrower.guarantor.send_payment_notification',
-  sendLateNotice: 'borrower.guarantor.send_late_notice',
-  sendBorrowerStatement: 'borrower.guarantor.send_borrower_statement',
-  sendMaturityNotice: 'borrower.guarantor.send_maturity_notice',
-  deliveryOnline: 'borrower.guarantor.delivery_online',
-  deliveryMail: 'borrower.guarantor.delivery_mail',
-  vesting: 'borrower.guarantor.vesting',
-  vestingOverridden: 'borrower.guarantor.vesting_overridden',
-  ford1: 'borrower.guarantor.ford.1',
-  ford2: 'borrower.guarantor.ford.2',
-  ford3: 'borrower.guarantor.ford.3',
-  ford4: 'borrower.guarantor.ford.4',
-  ford5: 'borrower.guarantor.ford.5',
-  ford6: 'borrower.guarantor.ford.6',
-  ford7: 'borrower.guarantor.ford.7',
-  ford8: 'borrower.guarantor.ford.8',
-} as const;
+import { BORROWER_GUARANTOR_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = BORROWER_GUARANTOR_KEYS;
 
 interface BorrowerAdditionalGuarantorFormProps {
   fields: FieldDefinition[];

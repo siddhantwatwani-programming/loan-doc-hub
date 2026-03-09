@@ -11,32 +11,10 @@ interface ChargesDetailFormProps {
   disabled?: boolean;
 }
 
-const FIELD_KEYS = {
-  description: 'charges.description',
-  unpaidBalance: 'charges.unpaid_balance',
-  owedTo: 'charges.owed_to',
-  owedFrom: 'charges.owed_from',
-  totalDue: 'charges.total_due',
-  interestFrom: 'charges.interest_from',
-  dateOfCharge: 'charges.date_of_charge',
-  interestRate: 'charges.interest_rate',
-  notes: 'charges.notes',
-  reference: 'charges.reference',
-  chargeType: 'charges.charge_type',
-  deferred: 'charges.deferred',
-  originalAmount: 'charges.original_amount',
-  account: 'charges.account',
-  borrowerFullName: 'charges.borrower_full_name',
-  advancedByAccount: 'charges.advanced_by_account',
-  advancedByLenderName: 'charges.advanced_by_lender_name',
-  advancedByAmount: 'charges.advanced_by_amount',
-  onBehalfOfAccount: 'charges.on_behalf_of_account',
-  onBehalfOfLenderName: 'charges.on_behalf_of_lender_name',
-  onBehalfOfAmount: 'charges.on_behalf_of_amount',
-  amountOwedByBorrower: 'charges.amount_owed_by_borrower',
-  accruedInterest: 'charges.accrued_interest',
-  distributeBetweenAllLenders: 'charges.distribute_between_all_lenders',
-};
+import { CHARGES_DETAIL_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = CHARGES_DETAIL_KEYS;
 
 const renderInlineField = (key: string, label: string, values: Record<string, string>, onValueChange: (k: string, v: string) => void, disabled: boolean, props: Record<string, any> = {}) => (
   <DirtyFieldWrapper fieldKey={key}>

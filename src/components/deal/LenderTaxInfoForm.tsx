@@ -34,18 +34,10 @@ const TIN_TYPE_OPTIONS = [
   { value: '2', label: '2 – SSN' },
 ];
 
-const FIELD_KEYS = {
-  designatedRecipient: 'lender.tax_payer.designated_recipient',
-  name: 'lender.tax_payer.name',
-  address: 'lender.tax_payer.street_address',
-  accountNumber: 'lender.tax_payer.account_number',
-  city: 'lender.tax_payer.city',
-  tinType: 'lender.tax_payer.recipient_type',
-  tin: 'lender.tax_payer.ssn',
-  state: 'lender.tax_payer.state',
-  zip: 'lender.tax_payer.zip_code',
-  send1099: 'lender.tax_payer.auto_synchronize',
-} as const;
+import { LENDER_TAX_INFO_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = LENDER_TAX_INFO_KEYS;
 
 export const LenderTaxInfoForm: React.FC<LenderTaxInfoFormProps> = ({
   values,

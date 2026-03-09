@@ -5,10 +5,10 @@ import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
-// Field key mapping for borrower note
-const FIELD_KEYS = {
-  note: 'borrower.note',
-} as const;
+import { BORROWER_NOTE_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = BORROWER_NOTE_KEYS;
 
 interface BorrowerNoteFormProps {
   fields: FieldDefinition[];

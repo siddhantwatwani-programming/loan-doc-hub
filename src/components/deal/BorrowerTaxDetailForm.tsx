@@ -13,18 +13,10 @@ import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
-const FIELD_KEYS = {
-  designatedRecipient: 'borrower.1098.designated_recipient',
-  name: 'borrower.1098.name',
-  address: 'borrower.1098.address',
-  accountNumber: 'borrower.1098.account_number',
-  city: 'borrower.1098.city',
-  tinType: 'borrower.1098.tin_type',
-  tin: 'borrower.1098.tin',
-  state: 'borrower.1098.state',
-  zip: 'borrower.1098.zip',
-  send1098: 'borrower.1098.send_1098',
-} as const;
+import { BORROWER_TAX_DETAIL_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = BORROWER_TAX_DETAIL_KEYS;
 
 const DESIGNATED_RECIPIENT_OPTIONS = [
   { value: 'lender', label: 'Lender' },

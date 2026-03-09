@@ -16,14 +16,10 @@ interface PropertyLegalDescriptionFormProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
-const FIELD_KEYS = {
-  apn: 'property1.apn',
-  legalDescription: 'property1.legal_description',
-  lot: 'property1.lot',
-  block: 'property1.block',
-  tract: 'property1.tract',
-  unit: 'property1.unit',
-} as const;
+import { PROPERTY_LEGAL_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = PROPERTY_LEGAL_KEYS;
 
 export const PropertyLegalDescriptionForm: React.FC<PropertyLegalDescriptionFormProps> = ({
   fields,

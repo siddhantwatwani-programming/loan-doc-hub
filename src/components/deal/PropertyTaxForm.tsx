@@ -23,20 +23,10 @@ interface PropertyTaxFormProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
-const FIELD_KEYS = {
-  payee: 'property1.tax.payee',
-  payeeAddress: 'property1.tax.payee_address',
-  nextDueDate: 'property1.tax.next_due_date',
-  frequency: 'property1.tax.frequency',
-  hold: 'property1.tax.hold',
-  ref: 'property1.tax.ref',
-  memo: 'property1.tax.memo',
-  type: 'property1.tax.type',
-  authority: 'property1.tax.authority',
-  taxTracking: 'property1.tax.tax_tracking',
-  lastVerified: 'property1.tax.last_verified',
-  trackingStatus: 'property1.tax.tracking_status',
-} as const;
+import { PROPERTY_TAX_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = PROPERTY_TAX_KEYS;
 
 const FREQUENCY_OPTIONS = [
   'Once Only',

@@ -13,33 +13,10 @@ import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
-// Field key mapping for lender banking fields
-const FIELD_KEYS = {
-  // Bank / ACH
-  achStatus: 'lender.banking.ach_status',
-  bank: 'lender.banking.bank',
-  routingNumber: 'lender.banking.routing_number',
-  accountNumber: 'lender.banking.account_number',
-  accountType: 'lender.banking.account_type',
-  accountName: 'lender.banking.account_name',
-  accountId: 'lender.banking.account_id',
-  furtherCreditTo: 'lender.banking.further_credit_to',
-  // Check / Mailing
-  byCheck: 'lender.banking.by_check',
-  checkSameAsMailing: 'lender.banking.check_same_as_mailing',
-  checkAddress: 'lender.banking.address',
-  checkCity: 'lender.banking.city',
-  checkZip: 'lender.banking.zip_code',
-  // ACH Notification
-  achEmail: 'lender.banking.ach_email',
-  achEmail2: 'lender.banking.ach_email_2',
-  // Credit Card
-  ccName: 'lender.banking.cc_name',
-  ccNumber: 'lender.banking.cc_number',
-  ccSecurityCode: 'lender.banking.cc_security_code',
-  ccExpiration: 'lender.banking.cc_expiration',
-  ccZip: 'lender.banking.cc_zip',
-} as const;
+import { LENDER_BANKING_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = LENDER_BANKING_KEYS;
 
 interface LenderBankingFormProps {
   fields: FieldDefinition[];

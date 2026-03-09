@@ -34,21 +34,10 @@ const INSURANCE_DESCRIPTION_OPTIONS = [
   'Wind'
 ];
 
-// Field key mapping as specified
-const FIELD_KEYS = {
-  description: 'property1.insurance_description',
-  insuredName: 'property1.insured_s_name',
-  companyName: 'property1.insurance_company_name',
-  policyNumber: 'property1.insurance_policy_number',
-  expiration: 'property1.insurance_expiration',
-  coverage: 'property1.insurance_coverage',
-  active: 'property1.insurance_active',
-  agentName: 'property1.agent_s_name',
-  businessAddress: 'property1.insurance_business_address',
-  phoneNumber: 'property1.insurance_phone_number',
-  faxNumber: 'property1.insurance_fax_number',
-  email: 'property1.insurance_e_mail',
-} as const;
+import { PROPERTY_INSURANCE_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = PROPERTY_INSURANCE_KEYS;
 
 export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
   fields,

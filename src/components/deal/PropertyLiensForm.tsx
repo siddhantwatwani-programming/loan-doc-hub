@@ -24,19 +24,10 @@ interface PropertyLiensFormProps {
 
 const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
 
-// Field key mapping as specified
-const FIELD_KEYS = {
-  property: 'property1.lien_property',
-  priority: 'property1.lien_priority',
-  holder: 'property1.lien_holder',
-  account: 'property1.lien_account',
-  contact: 'property1.lien_contact',
-  phone: 'property1.lien_phone',
-  originalBalance: 'property1.lien_original_balance',
-  currentBalance: 'property1.lien_current_balance',
-  regularPayment: 'property1.lien_regular_payment',
-  lastChecked: 'property1.lien_last_checked',
-} as const;
+import { PROPERTY_LIENS_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = PROPERTY_LIENS_KEYS;
 
 export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
   fields,

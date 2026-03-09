@@ -5,35 +5,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AlertCircle } from 'lucide-react';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
-const FIELD_KEYS = {
-  brokerId: 'broker.id',
-  license: 'broker.License',
-  company: 'broker.company',
-  firstName: 'broker.first_name',
-  middleName: 'broker.middle_name',
-  lastName: 'broker.last_name',
-  email: 'broker.email',
-  street: 'broker.address.street',
-  city: 'broker.address.city',
-  state: 'broker.address.state',
-  zip: 'broker.address.zip',
-  taxIdType: 'broker.tax_id_type',
-  taxId: 'broker.tax_id',
-  issue1099: 'broker.issue_1099',
-  phoneHome: 'broker.phone.home',
-  phoneWork: 'broker.phone.work',
-  phoneCell: 'broker.phone.cell',
-  phoneFax: 'broker.phone.fax',
-  preferredHome: 'broker.preferred.home',
-  preferredWork: 'broker.preferred.work',
-  preferredCell: 'broker.preferred.cell',
-  preferredFax: 'broker.preferred.fax',
-  paymentNotification: 'broker.send_pref.payment_notification',
-  lateNotice: 'broker.send_pref.late_notice',
-  lenderStatement: 'broker.send_pref.lender_statement',
-  borrowerStatement: 'broker.send_pref.borrower_statement',
-  maturityNotice: 'broker.send_pref.maturity_notice',
-} as const;
+import { BROKER_INFO_KEYS } from '@/lib/fieldKeyMap';
+
+// Use central field key map
+const FIELD_KEYS = BROKER_INFO_KEYS;
 
 interface BrokerInfoFormProps {
   disabled?: boolean;
