@@ -89,7 +89,9 @@ export async function resolveAllFields(cachedEntries?: any[]): Promise<ResolvedF
     is_calculated: fd.is_calculated,
     is_repeatable: fd.is_repeatable,
     validation_rule: fd.validation_rule,
-    is_required: false, // No required fields without packet
+    is_required: false,
+    is_mandatory: !!fd.is_mandatory,
+    form_type: fd.form_type || 'primary',
     transform_rules: [],
     calculation_formula: fd.calculation_formula || null,
     calculation_dependencies: fd.calculation_dependencies || [],
