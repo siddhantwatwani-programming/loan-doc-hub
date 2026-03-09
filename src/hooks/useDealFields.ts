@@ -412,11 +412,20 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
       setResolvedFields(mergedResolved);
 
       // Build data type and ID lookup maps
+      // Maps both DB keys (br_p_firstName) AND legacy keys (borrower.first_name) to dictionary IDs
       const dataTypeMap: Record<string, FieldDataType> = {};
       const idMap: Record<string, string> = {};
       mergedResolved.fields.forEach(f => {
+        // Primary mapping: DB field_key -> dictionary ID
         dataTypeMap[f.field_key] = f.data_type;
         idMap[f.field_key] = f.field_dictionary_id;
+        
+        // Also map the legacy dot-notation key (if one exists) so UI lookups work
+        const legacyKey = resolveDbKeyToLegacy(f.field_key);
+        if (legacyKey !== f.field_key) {
+          dataTypeMap[legacyKey] = f.data_type;
+          idMap[legacyKey] = f.field_dictionary_id;
+        }
       });
       setFieldDataTypes(dataTypeMap);
       setFieldIdMap(idMap);
