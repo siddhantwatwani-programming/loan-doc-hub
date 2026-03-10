@@ -51,11 +51,28 @@ export async function fetchFieldKeyMappings(supabase: any): Promise<{
     .select("old_key, new_key")
     .eq("status", "migrated");
   
-  // Fetch field_dictionary for canonical_key mappings
-  const { data: fields, error: fieldError } = await supabase
-    .from("field_dictionary")
-    .select("field_key, canonical_key")
-    .not("canonical_key", "is", null);
+  // Fetch field_dictionary for canonical_key mappings (paginated to avoid 1000-row limit)
+  const PAGE_SIZE = 1000;
+  const allFields: any[] = [];
+  let fdFrom = 0;
+  while (true) {
+    const fdTo = fdFrom + PAGE_SIZE - 1;
+    const { data: fdPage, error: fdPageError } = await supabase
+      .from("field_dictionary")
+      .select("field_key, canonical_key")
+      .not("canonical_key", "is", null)
+      .range(fdFrom, fdTo);
+    if (fdPageError) {
+      console.log("[field-resolver] Field dictionary page fetch error:", fdPageError.message);
+      break;
+    }
+    const rows = fdPage || [];
+    allFields.push(...rows);
+    if (rows.length < PAGE_SIZE) break;
+    fdFrom += PAGE_SIZE;
+  }
+  const fields = allFields;
+  const fieldError = null;
   
   const migrationsMap = new Map<string, string>();
   const canonicalKeyMap = new Map<string, string>();

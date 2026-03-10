@@ -187,6 +187,19 @@ async function generateSingleDocument(
       });
     });
 
+    // Bridge indexed entity keys (e.g., borrower1.full_name) to non-indexed aliases
+    // (e.g., borrower.full_name) so legacy merge tag aliases can resolve
+    const indexedPattern = /^([a-zA-Z_]+?)(\d+)\.(.+)$/;
+    for (const [key, val] of [...fieldValues.entries()]) {
+      const m = key.match(indexedPattern);
+      if (m && m[2] === "1") {
+        const nonIndexedKey = `${m[1]}.${m[3]}`;
+        if (!fieldValues.has(nonIndexedKey)) {
+          fieldValues.set(nonIndexedKey, val);
+        }
+      }
+    }
+
     // Force text dataType for identifier fields that should never be number-formatted
     for (const [key, val] of fieldValues.entries()) {
       const lk = key.toLowerCase();
