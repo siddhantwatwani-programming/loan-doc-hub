@@ -461,10 +461,13 @@ export function parseWordMergeFields(content: string): ParsedMergeTag[] {
   }
   
   // Pattern 3: Word MERGEFIELD in instrText
-  const mergeFieldPattern = /MERGEFIELD\s+"?([A-Za-z0-9_.]+)"?/gi;
+  // Handle both quoted names (with spaces) and unquoted names
+  const mergeFieldPattern = /MERGEFIELD\s+"([^"]+)"|MERGEFIELD\s+([A-Za-z0-9_.]+)/gi;
   while ((match = mergeFieldPattern.exec(content)) !== null) {
-    const fieldName = match[1].trim();
-    const syntheticTag = `«${fieldName}»`;
+    let fieldName = (match[1] || match[2]).trim();
+    // Remove trailing format switches like \* MERGEFORMAT
+    fieldName = fieldName.replace(/\s*\\.*$/, '');
+    const syntheticTag = `\u00AB${fieldName}\u00BB`;
     if (!seenTags.has(syntheticTag)) {
       seenTags.add(syntheticTag);
       tags.push({
