@@ -236,7 +236,9 @@ export function replaceLabelBasedFields(
   fieldValues: Map<string, FieldValueData>,
   fieldTransforms: Map<string, string>,
   labelMap: Record<string, LabelMapping>,
-  replacedFieldKeys?: Set<string>
+  replacedFieldKeys?: Set<string>,
+  mergeTagMap?: Record<string, string>,
+  validFieldKeys?: Set<string>
 ): { content: string; replacementCount: number } {
   let result = content;
   let replacementCount = 0;
