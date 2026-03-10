@@ -77,22 +77,39 @@ export function normalizeWordXml(xmlContent: string): string {
   });
 
   // Handle fragmented curly brace patterns {{...}}
-  // Word splits tags like {{field_key}} into {{</w:t></w:r><w:r>field_key</w:t></w:r>}}
-  const curlyFragmentedPattern = /\{\{((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
-  result = result.replace(curlyFragmentedPattern, (match, pre, fieldName, post) => {
-    if (pre.includes("<") || post.includes("<")) {
-      console.log(`[tag-parser] Found fragmented curly tag, consolidating: {{${fieldName}}}`);
-    }
-    return `{{${fieldName}}}`;
-  });
+  // Word may split field names across multiple XML runs, so we allow XML tags
+  // interspersed within the content between {{ and }}, then strip XML to get the field name.
+  const curlyFragmentedPattern = /\{\{((?:[A-Za-z0-9_.| ]|<[^>]*>|\s)*?)\}\}/g;
+  result = result.replace(curlyFragmentedPattern, (match, innerContent) => {
+    // Strip XML tags and whitespace to extract the clean text
+    const cleanText = innerContent.replace(/<[^>]*>/g, '').replace(/\s+/g, '').trim();
+    if (!cleanText) return match; // Skip empty
 
-  // Handle curly tags with inline transforms after consolidation: {{field|transform}}
-  const curlyTransformFragmented = /\{\{((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\|((?:<[^>]*>|\s)*?)([A-Za-z0-9_]+)((?:<[^>]*>|\s)*?)\}\}/g;
-  result = result.replace(curlyTransformFragmented, (match, pre1, fieldName, mid1, mid2, transform, post) => {
-    if (pre1.includes("<") || mid1.includes("<") || mid2.includes("<") || post.includes("<")) {
-      console.log(`[tag-parser] Found fragmented curly tag with transform, consolidating: {{${fieldName}|${transform}}}`);
+    // Skip conditional/block tags — they have their own handlers below
+    if (/^[#/]/.test(cleanText) || cleanText === 'else') return match;
+
+    // Check for transform pipe: {{field|transform}}
+    const pipeIdx = cleanText.indexOf('|');
+    if (pipeIdx > 0) {
+      const fieldName = cleanText.substring(0, pipeIdx);
+      const transform = cleanText.substring(pipeIdx + 1);
+      if (/^[A-Za-z0-9_.]+$/.test(fieldName) && /^[A-Za-z0-9_]+$/.test(transform)) {
+        if (innerContent.includes('<')) {
+          console.log(`[tag-parser] Found fragmented curly tag with transform, consolidating: {{${fieldName}|${transform}}}`);
+        }
+        return `{{${fieldName}|${transform}}}`;
+      }
     }
-    return `{{${fieldName}|${transform}}}`;
+
+    // Simple field reference
+    if (/^[A-Za-z0-9_.]+$/.test(cleanText)) {
+      if (innerContent.includes('<')) {
+        console.log(`[tag-parser] Found fragmented curly tag, consolidating: {{${cleanText}}}`);
+      }
+      return `{{${cleanText}}}`;
+    }
+
+    return match; // Don't modify unrecognized patterns
   });
 
   // Handle fragmented conditional block tags: {{#if ...}} and {{/if}}
