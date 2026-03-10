@@ -10,145 +10,6 @@ import { applyTransform, formatByDataType } from "./formatting.ts";
 import { resolveFieldKeyWithMap, getFieldData } from "./field-resolver.ts";
 
 /**
- * Flatten Word MERGEFIELD code blocks so existing tag detection works.
- * 
- * Word MERGEFIELD codes have this XML structure:
- *   <w:r><w:fldChar w:fldCharType="begin"/></w:r>
- *   <w:r><w:instrText> MERGEFIELD fieldName \* MERGEFORMAT </w:instrText></w:r>
- *   <w:r><w:fldChar w:fldCharType="separate"/></w:r>
- *   <w:r><w:t>displayText</w:t></w:r>
- *   <w:r><w:fldChar w:fldCharType="end"/></w:r>
- * 
- * This function finds each MERGEFIELD block, extracts the field name from
- * <w:instrText>, and sets the display text between "separate" and "end"
- * to «fieldName». The existing chevron-based parsing then detects the tags.
- */
-function flattenMergeFieldCodes(xml: string): string {
-  let result = xml;
-  let searchFrom = 0;
-  let count = 0;
-  const loggedNames: string[] = [];
-
-  while (searchFrom < result.length) {
-    // Find next fldChar "begin"
-    const beginStr = 'w:fldCharType="begin"';
-    const beginIdx = result.indexOf(beginStr, searchFrom);
-    if (beginIdx === -1) break;
-
-    // Find the matching "separate"
-    const separateStr = 'w:fldCharType="separate"';
-    const separateIdx = result.indexOf(separateStr, beginIdx + beginStr.length);
-    if (separateIdx === -1) {
-      searchFrom = beginIdx + beginStr.length;
-      continue;
-    }
-
-    // Check for nested field codes between begin and separate (skip if found)
-    const regionBetween = result.substring(beginIdx + beginStr.length, separateIdx);
-    if (regionBetween.includes('w:fldCharType="begin"')) {
-      searchFrom = beginIdx + beginStr.length;
-      continue;
-    }
-
-    // Extract instrText content between begin and separate
-    const instrRegion = result.substring(beginIdx, separateIdx);
-    // Handle both quoted and unquoted MERGEFIELD names
-    const mfMatch =
-      instrRegion.match(/MERGEFIELD\s+"([^"]+)"/i) ||
-      instrRegion.match(/MERGEFIELD\s+([^\s\\<]+)/i);
-
-    if (!mfMatch) {
-      searchFrom = separateIdx + separateStr.length;
-      continue;
-    }
-
-    let fieldName = mfMatch[1].trim();
-    // Remove trailing format switches like \* MERGEFORMAT
-    fieldName = fieldName.replace(/\s*\\.*$/, '');
-
-    // Find the matching "end"
-    const endStr = 'w:fldCharType="end"';
-    const endIdx = result.indexOf(endStr, separateIdx + separateStr.length);
-    if (endIdx === -1) {
-      searchFrom = separateIdx + separateStr.length;
-      continue;
-    }
-
-    // Check for nested separates between our separate and end (skip if found)
-    const regionAfterSep = result.substring(separateIdx + separateStr.length, endIdx);
-    if (regionAfterSep.includes('w:fldCharType="separate"')) {
-      searchFrom = separateIdx + separateStr.length;
-      continue;
-    }
-
-    // Find </w:r> after the separate fldChar (end of the separate run)
-    const separateRunEnd = result.indexOf('</w:r>', separateIdx);
-    if (separateRunEnd === -1) {
-      searchFrom = separateIdx + separateStr.length;
-      continue;
-    }
-
-    // Find the <w:r that contains the end fldChar
-    const endFldCharRunStart = result.lastIndexOf('<w:r', endIdx);
-    if (endFldCharRunStart === -1 || endFldCharRunStart < separateRunEnd) {
-      searchFrom = endIdx + endStr.length;
-      continue;
-    }
-
-    // The display region is between end of separate run and start of end fldChar run
-    const displayStart = separateRunEnd + '</w:r>'.length;
-    const displayEnd = endFldCharRunStart;
-    const displayRegion = result.substring(displayStart, displayEnd);
-
-    // Replace <w:t> content in the display region with «fieldName»
-    let replaced = false;
-    let isFirst = true;
-    const newDisplay = displayRegion.replace(/<w:t([^>]*)>[^<]*<\/w:t>/g, (match, attrs) => {
-      replaced = true;
-      if (isFirst) {
-        isFirst = false;
-        return `<w:t xml:space="preserve">\u00AB${fieldName}\u00BB</w:t>`;
-      }
-      return `<w:t${attrs || ''}></w:t>`;
-    });
-
-    if (replaced) {
-      result = result.substring(0, displayStart) + newDisplay + result.substring(displayEnd);
-      count++;
-      loggedNames.push(fieldName);
-      searchFrom = displayStart + newDisplay.length;
-    } else if (!displayRegion.includes('<w:t')) {
-      // No text runs in display region — insert one
-      const newRun = `<w:r><w:t xml:space="preserve">\u00AB${fieldName}\u00BB</w:t></w:r>`;
-      result = result.substring(0, displayStart) + newRun + displayRegion + result.substring(displayEnd);
-      count++;
-      loggedNames.push(fieldName);
-      searchFrom = displayStart + newRun.length + displayRegion.length;
-    } else {
-      searchFrom = endIdx + endStr.length;
-    }
-  }
-
-  if (count > 0) {
-    console.log(`[tag-parser] Flattened ${count} MERGEFIELD display texts: ${loggedNames.join(', ')}`);
-  }
-
-  // Diagnostic: log all instrText content for debugging
-  const allInstrTexts: string[] = [];
-  const instrScan = /<w:instrText[^>]*>([\s\S]*?)<\/w:instrText>/g;
-  let instrMatch;
-  while ((instrMatch = instrScan.exec(result)) !== null) {
-    const content = instrMatch[1].trim();
-    if (content) allInstrTexts.push(content);
-  }
-  if (allInstrTexts.length > 0) {
-    console.log(`[tag-parser] instrText elements found (${allInstrTexts.length}): ${allInstrTexts.slice(0, 15).join(' | ')}`);
-  }
-
-  return result;
-}
-
-/**
  * Normalize Word XML by consolidating fragmented text runs.
  * Word often splits text across multiple <w:t> elements.
  */
@@ -213,10 +74,6 @@ export function normalizeWordXml(xmlContent: string): string {
     prevInstr = result;
     result = result.replace(instrTextConsolidate, '$1$2$4$3');
   } while (result !== prevInstr);
-
-  // Flatten Word MERGEFIELD code blocks: ensure display text between
-  // fldChar "separate" and "end" is set to «fieldName» so existing tag detection works
-  result = flattenMergeFieldCodes(result);
 
   // Handle dots fragmented across runs: field</w:t></w:r><w:r><w:t>.name -> field.name
   const fragmentedDot = /([A-Za-z0-9_]+)((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\.([A-Za-z0-9_]+)/g;
@@ -461,13 +318,10 @@ export function parseWordMergeFields(content: string): ParsedMergeTag[] {
   }
   
   // Pattern 3: Word MERGEFIELD in instrText
-  // Handle both quoted names (with spaces) and unquoted names
-  const mergeFieldPattern = /MERGEFIELD\s+"([^"]+)"|MERGEFIELD\s+([A-Za-z0-9_.]+)/gi;
+  const mergeFieldPattern = /MERGEFIELD\s+"?([A-Za-z0-9_.]+)"?/gi;
   while ((match = mergeFieldPattern.exec(content)) !== null) {
-    let fieldName = (match[1] || match[2]).trim();
-    // Remove trailing format switches like \* MERGEFORMAT
-    fieldName = fieldName.replace(/\s*\\.*$/, '');
-    const syntheticTag = `\u00AB${fieldName}\u00BB`;
+    const fieldName = match[1].trim();
+    const syntheticTag = `«${fieldName}»`;
     if (!seenTags.has(syntheticTag)) {
       seenTags.add(syntheticTag);
       tags.push({
