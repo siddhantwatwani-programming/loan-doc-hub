@@ -251,14 +251,14 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
     const tagPattern = /\{\{[A-Za-z0-9_.| ]+\}\}|\u00AB[A-Za-z0-9_.]+\u00BB/g;
     const joinedTags = joined.match(tagPattern) || [];
 
-    if (joinedTags.length === 0) return para; // No tags found even in joined text
+    if (joinedTags.length === 0) { parasSkippedNoTags++; return para; }
 
     // Check if every found tag already exists completely within a single <w:t> element
     const allTagsComplete = joinedTags.every(tag =>
       tTexts.some(t => t.includes(tag))
     );
 
-    if (allTagsComplete) return para; // All tags are already intact — no action needed
+    if (allTagsComplete) { parasSkippedComplete++; return para; }
 
     // Some tags are fragmented across <w:t> elements — consolidate all text
     // into the first <w:t> and empty the rest. This preserves the first run's
