@@ -813,7 +813,7 @@ export function replaceMergeTags(
   
   // Always run label-based replacement after merge tag replacement
   console.log(`[tag-parser] Running label-based replacement (${tags.length} merge tags were processed, ${replacedFieldKeys.size} fields already resolved)`);
-  const labelResult = replaceLabelBasedFields(result, fieldValues, fieldTransforms, labelMap, replacedFieldKeys);
+  const labelResult = replaceLabelBasedFields(result, fieldValues, fieldTransforms, labelMap, replacedFieldKeys, mergeTagMap, validFieldKeys);
   result = labelResult.content;
   console.log(`[tag-parser] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
   
