@@ -188,7 +188,7 @@ export function normalizeWordXml(xmlContent: string): string {
 
   // Final pass: consolidate any remaining fragmented content within «» chevrons
   // Similar to curlyFragmentedPattern but for chevron-delimited merge fields
-  const chevronFragmented = /«((?:[^»]|<[^>]*>)*)»/g;
+  const chevronFragmented = /«((?:[^»<]|<(?!\/w:p>|w:p[\s>\/])[^>]*>)*)»/g;
   result = result.replace(chevronFragmented, (match, inner) => {
     const cleanText = inner.replace(/<[^>]*>/g, '').replace(/\s+/g, '').trim();
     if (/^[A-Za-z0-9_.]+$/.test(cleanText)) {
