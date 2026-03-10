@@ -1140,6 +1140,19 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'insurance1.insurance_tracking': 'in_d_insuranceTracking',
   'insurance1.last_verified': 'in_d_lastVerified',
   'insurance1.tracking_status': 'in_d_trackingStatus',
+
+  // ──────────────────────────────────────────────────
+  // NOTES / CONVERSATION LOG
+  // ──────────────────────────────────────────────────
+  'notes_entry.high_priority': 'nt_p_highPriori',
+  'notes_entry.date': 'nt_p_date',
+  'notes_entry.as_of_date': 'nt_p_asOf',
+  'notes_entry.account': 'nt_p_account',
+  'notes_entry.name': 'nt_p_name',
+  'notes_entry.reference': 'nt_p_referenc',
+  'notes_entry.content': 'nt_p_content',
+  'notes_entry.type': 'nt_p_type',
+  'notes_entry.attachments': 'nt_p_attachments',
 };
 
 // Build reverse map: DB key → legacy key (for hydration)
