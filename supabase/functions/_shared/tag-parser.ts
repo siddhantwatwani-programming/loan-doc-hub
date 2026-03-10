@@ -212,7 +212,7 @@ export function parseWordMergeFields(content: string): ParsedMergeTag[] {
   const seenTags = new Set<string>();
   
   // Pattern 1: Unicode chevrons «field_name»
-  const unicodePattern = /«([^»]+)»/g;
+  const unicodePattern = /«([^»<]+)»/g;
   let match;
   while ((match = unicodePattern.exec(content)) !== null) {
     const tagName = match[1].trim();
