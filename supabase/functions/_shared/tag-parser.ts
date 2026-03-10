@@ -93,7 +93,7 @@ export function normalizeWordXml(xmlContent: string): string {
   // Handle fragmented curly brace patterns {{...}}
   // Word may split field names across multiple XML runs, so we allow XML tags
   // interspersed within the content between {{ and }}, then strip XML to get the field name.
-  const curlyFragmentedPattern = /\{\{((?:[A-Za-z0-9_.| ]|<(?!\/w:p>|w:p[\s>\/])[^>]*>|[ \t])*?)\}\}/g;
+  const curlyFragmentedPattern = /\{\{((?:[A-Za-z0-9_.| ]|<(?!\/w:p>|w:p[\s>\/])[^>]*>|\s)*?)\}\}/g;
   result = result.replace(curlyFragmentedPattern, (match, innerContent) => {
     // Strip XML tags and whitespace to extract the clean text
     const cleanText = innerContent.replace(/<[^>]*>/g, '').replace(/\s+/g, '').trim();
