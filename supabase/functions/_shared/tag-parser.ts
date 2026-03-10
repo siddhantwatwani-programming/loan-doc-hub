@@ -30,9 +30,6 @@ export function normalizeWordXml(xmlContent: string): string {
   result = result.replace(/<w:lastRenderedPageBreak\/>/g, '');
   result = result.replace(/<w:bookmarkStart[^/]*\/>/g, '');
   result = result.replace(/<w:bookmarkEnd[^/]*\/>/g, '');
-  result = result.replace(/<w:noBreakHyphen\/>/g, '');
-  result = result.replace(/<w:softHyphen\/>/g, '');
-  result = result.replace(/<w:tab\/>/g, '');
   
   
   // Handle fragmented merge fields
