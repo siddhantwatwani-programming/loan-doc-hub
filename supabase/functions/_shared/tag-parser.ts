@@ -209,7 +209,7 @@ export function parseWordMergeFields(content: string): ParsedMergeTag[] {
   }
   
   // Pattern 3: Word MERGEFIELD in instrText
-  const mergeFieldPattern = /MERGEFIELD\s+([A-Za-z0-9_]+)/gi;
+  const mergeFieldPattern = /MERGEFIELD\s+"?([A-Za-z0-9_.]+)"?/gi;
   while ((match = mergeFieldPattern.exec(content)) !== null) {
     const fieldName = match[1].trim();
     const syntheticTag = `«${fieldName}»`;
