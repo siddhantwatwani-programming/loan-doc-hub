@@ -200,6 +200,11 @@ export function normalizeWordXml(xmlContent: string): string {
     return match;
   });
 
+  // Diagnostic: count tags BEFORE paragraph-level consolidation
+  const preConsolidationCurly = (result.match(/\{\{[A-Za-z0-9_.| ]+\}\}/g) || []).length;
+  const preConsolidationChevron = (result.match(/\u00AB[A-Za-z0-9_.]+\u00BB/g) || []).length;
+  console.log(`[tag-parser] Before paragraph consolidation: ${preConsolidationCurly} curly tags, ${preConsolidationChevron} chevron tags`);
+
   // Safety-net: paragraph-level consolidation for tags that span multiple <w:t> runs.
   // If regex-based normalization above missed any fragmented tags, this catches them
   // by examining concatenated text from all <w:t> elements in each paragraph.
