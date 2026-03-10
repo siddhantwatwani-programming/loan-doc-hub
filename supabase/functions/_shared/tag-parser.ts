@@ -33,7 +33,7 @@ export function normalizeWordXml(xmlContent: string): string {
   
   
   // Handle fragmented merge fields
-  const fragmentedPattern = /«((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)»/g;
+  const fragmentedPattern = /«((?:<(?!\/w:p>|w:p[\s>\/])[^>]*>|[ \t])*?)([A-Za-z0-9_.]+)((?:<(?!\/w:p>|w:p[\s>\/])[^>]*>|[ \t])*?)»/g;
   result = result.replace(fragmentedPattern, (match, pre, fieldName, post) => {
     if (pre.includes("<") || post.includes("<")) {
       console.log(`[tag-parser] Found fragmented merge field: ${fieldName}`);
@@ -93,7 +93,7 @@ export function normalizeWordXml(xmlContent: string): string {
   // Handle fragmented curly brace patterns {{...}}
   // Word may split field names across multiple XML runs, so we allow XML tags
   // interspersed within the content between {{ and }}, then strip XML to get the field name.
-  const curlyFragmentedPattern = /\{\{((?:[A-Za-z0-9_.| ]|<[^>]*>|\s)*?)\}\}/g;
+  const curlyFragmentedPattern = /\{\{((?:[A-Za-z0-9_.| ]|<(?!\/w:p>|w:p[\s>\/])[^>]*>|[ \t])*?)\}\}/g;
   result = result.replace(curlyFragmentedPattern, (match, innerContent) => {
     // Strip XML tags and whitespace to extract the clean text
     const cleanText = innerContent.replace(/<[^>]*>/g, '').replace(/\s+/g, '').trim();
@@ -188,7 +188,7 @@ export function normalizeWordXml(xmlContent: string): string {
 
   // Final pass: consolidate any remaining fragmented content within «» chevrons
   // Similar to curlyFragmentedPattern but for chevron-delimited merge fields
-  const chevronFragmented = /«((?:[^»]|<[^>]*>)*)»/g;
+  const chevronFragmented = /«((?:[^»<]|<(?!\/w:p>|w:p[\s>\/])[^>]*>)*)»/g;
   result = result.replace(chevronFragmented, (match, inner) => {
     const cleanText = inner.replace(/<[^>]*>/g, '').replace(/\s+/g, '').trim();
     if (/^[A-Za-z0-9_.]+$/.test(cleanText)) {
