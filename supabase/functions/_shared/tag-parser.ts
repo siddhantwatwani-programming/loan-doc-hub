@@ -227,7 +227,7 @@ export function parseWordMergeFields(content: string): ParsedMergeTag[] {
   }
   
   // Pattern 2: Double curly braces {{field_name}} or {{field_name|transform}}
-  const curlyPattern = /\{\{([^}|]+)(?:\s*\|\s*([^}]+))?\}\}/g;
+  const curlyPattern = /\{\{([^}<|]+)(?:\s*\|\s*([^}<]+))?\}\}/g;
   while ((match = curlyPattern.exec(content)) !== null) {
     if (!seenTags.has(match[0])) {
       seenTags.add(match[0]);
