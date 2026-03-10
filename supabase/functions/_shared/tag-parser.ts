@@ -276,6 +276,9 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
       return `<w:t${attrs || ''}></w:t>`;
     });
   });
+
+  console.log(`[tag-parser] Paragraph consolidation stats: ${parasWithBraces} paragraphs with braces, ${parasConsolidated} consolidated, ${parasSkippedComplete} already complete, ${parasSkippedNoTags} no tags in joined text`);
+  return result;
 }
 
 /**
