@@ -212,7 +212,7 @@ export function parseWordMergeFields(content: string): ParsedMergeTag[] {
   const seenTags = new Set<string>();
   
   // Pattern 1: Unicode chevrons «field_name»
-  const unicodePattern = /«([^»]+)»/g;
+  const unicodePattern = /«([^»<]+)»/g;
   let match;
   while ((match = unicodePattern.exec(content)) !== null) {
     const tagName = match[1].trim();
@@ -227,7 +227,7 @@ export function parseWordMergeFields(content: string): ParsedMergeTag[] {
   }
   
   // Pattern 2: Double curly braces {{field_name}} or {{field_name|transform}}
-  const curlyPattern = /\{\{([^}|]+)(?:\s*\|\s*([^}]+))?\}\}/g;
+  const curlyPattern = /\{\{([^}<|]+)(?:\s*\|\s*([^}<]+))?\}\}/g;
   while ((match = curlyPattern.exec(content)) !== null) {
     if (!seenTags.has(match[0])) {
       seenTags.add(match[0]);
