@@ -185,7 +185,21 @@ export function normalizeWordXml(xmlContent: string): string {
     }
     return `{{/each}}`;
   });
-  
+
+  // Final pass: consolidate any remaining fragmented content within «» chevrons
+  // Similar to curlyFragmentedPattern but for chevron-delimited merge fields
+  const chevronFragmented = /«((?:[^»]|<[^>]*>)*)»/g;
+  result = result.replace(chevronFragmented, (match, inner) => {
+    const cleanText = inner.replace(/<[^>]*>/g, '').replace(/\s+/g, '').trim();
+    if (/^[A-Za-z0-9_.]+$/.test(cleanText)) {
+      if (inner.includes('<')) {
+        console.log(`[tag-parser] Consolidated fragmented chevron tag: «${cleanText}»`);
+      }
+      return `«${cleanText}»`;
+    }
+    return match;
+  });
+
   return result;
 }
 
