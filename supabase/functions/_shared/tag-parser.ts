@@ -226,9 +226,15 @@ export function normalizeWordXml(xmlContent: string): string {
  * formatting, or Word-specific XML structures).
  */
 function consolidateFragmentedTagsInParagraphs(xml: string): string {
-  return xml.replace(/<w:p[\s>\/][\s\S]*?<\/w:p>/g, (para) => {
+  let parasWithBraces = 0;
+  let parasConsolidated = 0;
+  let parasSkippedComplete = 0;
+  let parasSkippedNoTags = 0;
+
+  const result = xml.replace(/<w:p[\s>\/][\s\S]*?<\/w:p>/g, (para) => {
     // Quick check: skip paragraphs without potential merge tags
     if (!para.includes('{') && !para.includes('\u00AB')) return para;
+    parasWithBraces++;
 
     // Extract text content from each <w:t> element
     const tTexts: string[] = [];
