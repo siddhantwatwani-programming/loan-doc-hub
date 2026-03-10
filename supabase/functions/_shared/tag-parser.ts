@@ -53,7 +53,7 @@ export function normalizeWordXml(xmlContent: string): string {
   result = result.replace(fragmentedUnderscore, "$1_$4");
   
   // Handle split opening braces: {</w:t></w:r><w:r><w:t>{ -> {{
-  const splitOpenBraces = /\{((?:<\/w:t><\/w:r><w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\{/g;
+  const splitOpenBraces = /\{((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\{/g;
   result = result.replace(splitOpenBraces, (match) => {
     console.log(`[tag-parser] Consolidated fragmented opening braces {{`);
     return '{{';
