@@ -42,10 +42,10 @@ export function normalizeWordXml(xmlContent: string): string {
   });
   
   // Handle XML-fragmented chevron patterns
-  const leftChevronFragmented = /«((?:<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)+)/g;
+  const leftChevronFragmented = /«((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>\s*<w:t(?:[^>]*)>)+)/g;
   result = result.replace(leftChevronFragmented, () => "«");
   
-  const rightChevronFragmented = /((?:<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)+)»/g;
+  const rightChevronFragmented = /((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>\s*<w:t(?:[^>]*)>)+)»/g;
   result = result.replace(rightChevronFragmented, () => "»");
   
   // Handle underscores that get their own text runs
