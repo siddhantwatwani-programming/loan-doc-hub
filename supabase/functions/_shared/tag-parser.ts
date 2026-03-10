@@ -33,7 +33,7 @@ export function normalizeWordXml(xmlContent: string): string {
   
   
   // Handle fragmented merge fields
-  const fragmentedPattern = /«((?:<[^>]*>|\s)*?)([A-Za-z0-9_]+)((?:<[^>]*>|\s)*?)»/g;
+  const fragmentedPattern = /«((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)»/g;
   result = result.replace(fragmentedPattern, (match, pre, fieldName, post) => {
     if (pre.includes("<") || post.includes("<")) {
       console.log(`[tag-parser] Found fragmented merge field: ${fieldName}`);
