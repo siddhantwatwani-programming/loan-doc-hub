@@ -867,6 +867,13 @@ export function replaceMergeTags(
   // Process native Word SDT checkboxes before text-based merge tags
   result = processSdtCheckboxes(result, fieldValues, mergeTagMap, validFieldKeys);
   
+  // Diagnostics: count brace pairs after normalization to verify consolidation
+  const openBraceCount = (result.match(/\{\{/g) || []).length;
+  const closeBraceCount = (result.match(/\}\}/g) || []).length;
+  if (openBraceCount > 0 || closeBraceCount > 0) {
+    console.log(`[tag-parser] After normalization: ${openBraceCount} opening {{ and ${closeBraceCount} closing }} detected`);
+  }
+
   // Parse and replace merge tags
   const tags = parseWordMergeFields(result);
   
