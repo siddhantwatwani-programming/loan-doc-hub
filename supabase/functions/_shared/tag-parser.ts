@@ -263,6 +263,7 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
     // Some tags are fragmented across <w:t> elements — consolidate all text
     // into the first <w:t> and empty the rest. This preserves the first run's
     // formatting (font, size, bold, etc.) for the replacement value.
+    parasConsolidated++;
     console.log(`[tag-parser] Paragraph-level consolidation: "${joined.substring(0, 120)}${joined.length > 120 ? '...' : ''}"`);
 
     let isFirst = true;
