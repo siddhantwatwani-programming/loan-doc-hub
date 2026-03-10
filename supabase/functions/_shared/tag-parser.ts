@@ -33,7 +33,7 @@ export function normalizeWordXml(xmlContent: string): string {
   
   
   // Handle fragmented merge fields
-  const fragmentedPattern = /«((?:<(?!\/w:p>|w:p[\s>\/])[^>]*>|[ \t])*?)([A-Za-z0-9_.]+)((?:<(?!\/w:p>|w:p[\s>\/])[^>]*>|[ \t])*?)»/g;
+  const fragmentedPattern = /«((?:<(?!\/w:p>|w:p[\s>\/])[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<(?!\/w:p>|w:p[\s>\/])[^>]*>|\s)*?)»/g;
   result = result.replace(fragmentedPattern, (match, pre, fieldName, post) => {
     if (pre.includes("<") || post.includes("<")) {
       console.log(`[tag-parser] Found fragmented merge field: ${fieldName}`);
@@ -42,25 +42,25 @@ export function normalizeWordXml(xmlContent: string): string {
   });
   
   // Handle XML-fragmented chevron patterns
-  const leftChevronFragmented = /«((?:<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)+)/g;
+  const leftChevronFragmented = /«((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>\s*<w:t(?:[^>]*)>)+)/g;
   result = result.replace(leftChevronFragmented, () => "«");
   
-  const rightChevronFragmented = /((?:<\/w:t><\/w:r><w:r(?:[^>]*)><w:t(?:[^>]*)>)+)»/g;
+  const rightChevronFragmented = /((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>\s*<w:t(?:[^>]*)>)+)»/g;
   result = result.replace(rightChevronFragmented, () => "»");
   
   // Handle underscores that get their own text runs
-  const fragmentedUnderscore = /([A-Za-z0-9]+)(<\/w:t><\/w:r><w:r(?:[^>]*)>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:[^>]*)>)_(<\/w:t><\/w:r><w:r(?:[^>]*)>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:[^>]*)>)?([A-Za-z0-9]+)/g;
+  const fragmentedUnderscore = /([A-Za-z0-9]+)(\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:[^>]*)>)_(\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:[^>]*)>)?([A-Za-z0-9]+)/g;
   result = result.replace(fragmentedUnderscore, "$1_$4");
   
   // Handle split opening braces: {</w:t></w:r><w:r><w:t>{ -> {{
-  const splitOpenBraces = /\{((?:<\/w:t><\/w:r><w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\{/g;
+  const splitOpenBraces = /\{((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\{/g;
   result = result.replace(splitOpenBraces, (match) => {
     console.log(`[tag-parser] Consolidated fragmented opening braces {{`);
     return '{{';
   });
   
   // Handle split closing braces: }</w:t></w:r><w:r><w:t>} -> }}
-  const splitCloseBraces = /\}((?:<\/w:t><\/w:r><w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\}/g;
+  const splitCloseBraces = /\}((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\}/g;
   result = result.replace(splitCloseBraces, (match) => {
     console.log(`[tag-parser] Consolidated fragmented closing braces }}`);
     return '}}';
@@ -76,7 +76,7 @@ export function normalizeWordXml(xmlContent: string): string {
   } while (result !== prevInstr);
 
   // Handle dots fragmented across runs: field</w:t></w:r><w:r><w:t>.name -> field.name
-  const fragmentedDot = /([A-Za-z0-9_]+)((?:<\/w:t><\/w:r><w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\.([A-Za-z0-9_]+)/g;
+  const fragmentedDot = /([A-Za-z0-9_]+)((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\.([A-Za-z0-9_]+)/g;
   result = result.replace(fragmentedDot, (match, before, xmlTags, after) => {
     console.log(`[tag-parser] Consolidated fragmented dot: ${before}.${after}`);
     return `${before}.${after}`;
@@ -84,7 +84,7 @@ export function normalizeWordXml(xmlContent: string): string {
 
   // Also handle dots where the dot character is inside its own XML run
   // e.g., Terms</w:t></w:r><w:r><w:t>.</w:t></w:r><w:r><w:t>LoanNumber
-  const fragmentedDotInRun = /([A-Za-z0-9_]+)<\/w:t><\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>\.<\/w:t><\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>([A-Za-z0-9_]+)/g;
+  const fragmentedDotInRun = /([A-Za-z0-9_]+)\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>\.\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>([A-Za-z0-9_]+)/g;
   result = result.replace(fragmentedDotInRun, (match, before, after) => {
     console.log(`[tag-parser] Consolidated dot-in-run: ${before}.${after}`);
     return `${before}.${after}`;
@@ -93,7 +93,7 @@ export function normalizeWordXml(xmlContent: string): string {
   // Handle fragmented curly brace patterns {{...}}
   // Word may split field names across multiple XML runs, so we allow XML tags
   // interspersed within the content between {{ and }}, then strip XML to get the field name.
-  const curlyFragmentedPattern = /\{\{((?:[A-Za-z0-9_.| ]|<(?!\/w:p>|w:p[\s>\/])[^>]*>|[ \t])*?)\}\}/g;
+  const curlyFragmentedPattern = /\{\{((?:[A-Za-z0-9_.| ]|<(?!\/w:p>|w:p[\s>\/])[^>]*>|\s)*?)\}\}/g;
   result = result.replace(curlyFragmentedPattern, (match, innerContent) => {
     // Strip XML tags and whitespace to extract the clean text
     const cleanText = innerContent.replace(/<[^>]*>/g, '').replace(/\s+/g, '').trim();
