@@ -76,7 +76,7 @@ export function normalizeWordXml(xmlContent: string): string {
   } while (result !== prevInstr);
 
   // Handle dots fragmented across runs: field</w:t></w:r><w:r><w:t>.name -> field.name
-  const fragmentedDot = /([A-Za-z0-9_]+)((?:<\/w:t><\/w:r><w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\.([A-Za-z0-9_]+)/g;
+  const fragmentedDot = /([A-Za-z0-9_]+)((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\.([A-Za-z0-9_]+)/g;
   result = result.replace(fragmentedDot, (match, before, xmlTags, after) => {
     console.log(`[tag-parser] Consolidated fragmented dot: ${before}.${after}`);
     return `${before}.${after}`;
