@@ -1,46 +1,110 @@
 
 
-## Analysis: Edge Function Not Deployed + Missing Diagnostics
+## Event Journal (Change Log System) Implementation Plan
 
-### Root Cause
+### Overview
+Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
 
-The **edge function has NOT been redeployed** with the latest fixes. Evidence:
-- Logs from 2026-03-10T18:29:22Z show `Found 0 merge tags` 
-- **No** "After normalization" diagnostic message (added in latest code, line 871-875)
-- **No** "Paragraph-level consolidation" messages (added in latest code)
-- **No** "Consolidated fragmented" messages from any normalization regex
+### 1. Database: New Migration
+Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
 
-The code changes (whitespace-tolerant regexes, paragraph-level consolidation safety net, `<` exclusion in curly/chevron patterns) exist in the repository but are NOT running in production.
+```sql
+CREATE TABLE public.event_journal (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
+  event_number integer NOT NULL,
+  actor_user_id uuid NOT NULL,
+  section text NOT NULL,
+  details jsonb NOT NULL DEFAULT '[]',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-### Two Issues
+CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
+ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
 
-**Issue 1: Deployment** — The `generate-document` edge function needs to be force-redeployed so the normalization and consolidation fixes take effect.
+-- RLS: CSR and Admin can view/insert
+CREATE POLICY "CSRs can view event journal" ON public.event_journal
+  FOR SELECT TO authenticated
+  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
 
-**Issue 2: Diagnostics** — Even after deployment, we need better logging to confirm normalization is working and to diagnose any remaining gaps. Currently, if consolidation silently fails (e.g., no paragraphs match the tag pattern), there's no log output to explain why.
+CREATE POLICY "CSRs can insert event journal" ON public.event_journal
+  FOR INSERT TO authenticated
+  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
 
-### Plan
+-- Auto-increment event_number per deal
+CREATE OR REPLACE FUNCTION public.set_event_journal_number()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
+BEGIN
+  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
+  FROM public.event_journal WHERE deal_id = NEW.deal_id;
+  RETURN NEW;
+END;
+$$;
 
-**File: `supabase/functions/_shared/tag-parser.ts`** — Add diagnostic logging (no logic changes):
-
-1. **In `consolidateFragmentedTagsInParagraphs`** (line 223-267): Add a log at the start showing how many paragraphs contain `{` or `«`, and log when consolidation is skipped (e.g., "all tags already complete" or "no tags found in joined text"). This will reveal whether the function runs and what it finds.
-
-2. **In `normalizeWordXml`** (after line 206): Add a log showing the count of `{{` pairs BEFORE the consolidation safety net runs (currently only checked after). This tells us if the regex-based normalization alone is sufficient.
-
-3. **Force redeploy** the `generate-document` edge function.
-
-### Technical Details
-
-The diagnostic additions are minimal `console.log` statements — no changes to replacement logic, formatting, XML handling, or any other functionality.
-
-```text
-normalizeWordXml flow:
-  1. Strip proofErr, bookmarks, pageBreaks  ← existing
-  2. Regex-based fragmentation fixes        ← existing (with whitespace fixes)
-  3. NEW LOG: count {{ before consolidation
-  4. consolidateFragmentedTagsInParagraphs  ← existing
-     - NEW LOG: paragraph stats (how many have '{', how many consolidated)
-  5. Existing LOG: count {{ after consolidation
+CREATE TRIGGER trg_event_journal_number
+  BEFORE INSERT ON public.event_journal
+  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
 ```
 
-After deployment, regenerating the document will produce logs that reveal exactly where the pipeline fails, enabling a targeted fix if needed.
+The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
+
+### 2. Hook: `useEventJournal.ts` (New File)
+- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
+- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
+- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
+
+### 3. Capture Old→New Values in `useDealFields.ts`
+- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
+- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
+- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
+- After successful save, update the snapshot
+
+### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
+Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
+- Table with columns: Event #, User, Section, Details, Timestamp
+- Details column shows truncated preview (first 80 chars)
+- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
+- Sorted by event_number descending (newest first)
+
+### 5. `EventJournalViewer` Component (New File)
+`src/components/deal/EventJournalViewer.tsx`:
+- Fetches from `event_journal` table filtered by `deal_id`
+- Joins actor names from `profiles`
+- Table layout using existing shadcn Table components
+- "Show More" modal using existing Dialog component
+- Detail entries formatted as `Field Label: oldValue → newValue`
+
+### 6. Global Event Journal Page (New File)
+`src/pages/csr/GlobalEventJournalPage.tsx`:
+- Deal selector dropdown (search by deal number) at the top
+- Once a deal is selected, renders `EventJournalViewer` for that deal
+- Same table structure as the per-deal view
+
+### 7. Sidebar Navigation Update
+In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
+```tsx
+<PromotedNavSection
+  label="Event Journal"
+  icon={BookOpen}
+  items={[]}
+  directPath="/event-journal"
+  isCollapsed={isCollapsed}
+  searchQuery={searchQuery}
+/>
+```
+
+### 8. Route Registration
+In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
+
+### Files Changed
+| File | Change |
+|------|--------|
+| New migration | Create `event_journal` table with trigger |
+| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
+| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
+| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
+| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
+| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
+| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
+| `src/App.tsx` | Add `/event-journal` route |
 

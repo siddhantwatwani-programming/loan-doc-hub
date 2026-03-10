@@ -200,6 +200,11 @@ export function normalizeWordXml(xmlContent: string): string {
     return match;
   });
 
+  // Diagnostic: count tags BEFORE paragraph-level consolidation
+  const preConsolidationCurly = (result.match(/\{\{[A-Za-z0-9_.| ]+\}\}/g) || []).length;
+  const preConsolidationChevron = (result.match(/\u00AB[A-Za-z0-9_.]+\u00BB/g) || []).length;
+  console.log(`[tag-parser] Before paragraph consolidation: ${preConsolidationCurly} curly tags, ${preConsolidationChevron} chevron tags`);
+
   // Safety-net: paragraph-level consolidation for tags that span multiple <w:t> runs.
   // If regex-based normalization above missed any fragmented tags, this catches them
   // by examining concatenated text from all <w:t> elements in each paragraph.
@@ -221,9 +226,15 @@ export function normalizeWordXml(xmlContent: string): string {
  * formatting, or Word-specific XML structures).
  */
 function consolidateFragmentedTagsInParagraphs(xml: string): string {
-  return xml.replace(/<w:p[\s>\/][\s\S]*?<\/w:p>/g, (para) => {
+  let parasWithBraces = 0;
+  let parasConsolidated = 0;
+  let parasSkippedComplete = 0;
+  let parasSkippedNoTags = 0;
+
+  const result = xml.replace(/<w:p[\s>\/][\s\S]*?<\/w:p>/g, (para) => {
     // Quick check: skip paragraphs without potential merge tags
     if (!para.includes('{') && !para.includes('\u00AB')) return para;
+    parasWithBraces++;
 
     // Extract text content from each <w:t> element
     const tTexts: string[] = [];
@@ -240,18 +251,19 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
     const tagPattern = /\{\{[A-Za-z0-9_.| ]+\}\}|\u00AB[A-Za-z0-9_.]+\u00BB/g;
     const joinedTags = joined.match(tagPattern) || [];
 
-    if (joinedTags.length === 0) return para; // No tags found even in joined text
+    if (joinedTags.length === 0) { parasSkippedNoTags++; return para; }
 
     // Check if every found tag already exists completely within a single <w:t> element
     const allTagsComplete = joinedTags.every(tag =>
       tTexts.some(t => t.includes(tag))
     );
 
-    if (allTagsComplete) return para; // All tags are already intact — no action needed
+    if (allTagsComplete) { parasSkippedComplete++; return para; }
 
     // Some tags are fragmented across <w:t> elements — consolidate all text
     // into the first <w:t> and empty the rest. This preserves the first run's
     // formatting (font, size, bold, etc.) for the replacement value.
+    parasConsolidated++;
     console.log(`[tag-parser] Paragraph-level consolidation: "${joined.substring(0, 120)}${joined.length > 120 ? '...' : ''}"`);
 
     let isFirst = true;
@@ -264,6 +276,9 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
       return `<w:t${attrs || ''}></w:t>`;
     });
   });
+
+  console.log(`[tag-parser] Paragraph consolidation stats: ${parasWithBraces} paragraphs with braces, ${parasConsolidated} consolidated, ${parasSkippedComplete} already complete, ${parasSkippedNoTags} no tags in joined text`);
+  return result;
 }
 
 /**
