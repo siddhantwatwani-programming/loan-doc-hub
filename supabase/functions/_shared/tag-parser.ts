@@ -209,7 +209,7 @@ export function parseWordMergeFields(content: string): ParsedMergeTag[] {
   }
   
   // Pattern 3: Word MERGEFIELD in instrText
-  const mergeFieldPattern = /MERGEFIELD\s+([A-Za-z0-9_]+)/gi;
+  const mergeFieldPattern = /MERGEFIELD\s+"?([A-Za-z0-9_.]+)"?/gi;
   while ((match = mergeFieldPattern.exec(content)) !== null) {
     const fieldName = match[1].trim();
     const syntheticTag = `«${fieldName}»`;
@@ -236,7 +236,9 @@ export function replaceLabelBasedFields(
   fieldValues: Map<string, FieldValueData>,
   fieldTransforms: Map<string, string>,
   labelMap: Record<string, LabelMapping>,
-  replacedFieldKeys?: Set<string>
+  replacedFieldKeys?: Set<string>,
+  mergeTagMap?: Record<string, string>,
+  validFieldKeys?: Set<string>
 ): { content: string; replacementCount: number } {
   let result = content;
   let replacementCount = 0;
@@ -250,7 +252,11 @@ export function replaceLabelBasedFields(
       continue;
     }
     
-    const fieldData = fieldValues.get(mapping.fieldKey);
+    const resolvedKey = mergeTagMap && validFieldKeys
+      ? resolveFieldKeyWithMap(mapping.fieldKey, mergeTagMap, validFieldKeys)
+      : mapping.fieldKey;
+    const resolved = getFieldData(resolvedKey, fieldValues);
+    const fieldData = resolved?.data || null;
     if (!fieldData || fieldData.rawValue === null) {
       // If mapped field is empty, leave the document field blank
       if (mapping.replaceNext) {
@@ -807,7 +813,7 @@ export function replaceMergeTags(
   
   // Always run label-based replacement after merge tag replacement
   console.log(`[tag-parser] Running label-based replacement (${tags.length} merge tags were processed, ${replacedFieldKeys.size} fields already resolved)`);
-  const labelResult = replaceLabelBasedFields(result, fieldValues, fieldTransforms, labelMap, replacedFieldKeys);
+  const labelResult = replaceLabelBasedFields(result, fieldValues, fieldTransforms, labelMap, replacedFieldKeys, mergeTagMap, validFieldKeys);
   result = labelResult.content;
   console.log(`[tag-parser] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
   
