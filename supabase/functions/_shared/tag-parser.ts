@@ -60,7 +60,7 @@ export function normalizeWordXml(xmlContent: string): string {
   });
   
   // Handle split closing braces: }</w:t></w:r><w:r><w:t>} -> }}
-  const splitCloseBraces = /\}((?:<\/w:t><\/w:r><w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\}/g;
+  const splitCloseBraces = /\}((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\}/g;
   result = result.replace(splitCloseBraces, (match) => {
     console.log(`[tag-parser] Consolidated fragmented closing braces }}`);
     return '}}';
