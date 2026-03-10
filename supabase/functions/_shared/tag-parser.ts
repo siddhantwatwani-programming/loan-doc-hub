@@ -66,10 +66,27 @@ export function normalizeWordXml(xmlContent: string): string {
     return '}}';
   });
 
+  // Consolidate adjacent <w:instrText> elements so MERGEFIELD instructions aren't split
+  // Word may produce: <w:instrText> MERGE</w:instrText></w:r><w:r><w:instrText>FIELD ...
+  const instrTextConsolidate = /(<w:instrText[^>]*>)([\s\S]*?)(<\/w:instrText>)\s*<\/w:r>\s*<w:r[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:instrText[^>]*>([\s\S]*?)(<\/w:instrText>)/g;
+  let prevInstr = result;
+  do {
+    prevInstr = result;
+    result = result.replace(instrTextConsolidate, '$1$2$4$3');
+  } while (result !== prevInstr);
+
   // Handle dots fragmented across runs: field</w:t></w:r><w:r><w:t>.name -> field.name
   const fragmentedDot = /([A-Za-z0-9_]+)((?:<\/w:t><\/w:r><w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\.([A-Za-z0-9_]+)/g;
   result = result.replace(fragmentedDot, (match, before, xmlTags, after) => {
     console.log(`[tag-parser] Consolidated fragmented dot: ${before}.${after}`);
+    return `${before}.${after}`;
+  });
+
+  // Also handle dots where the dot character is inside its own XML run
+  // e.g., Terms</w:t></w:r><w:r><w:t>.</w:t></w:r><w:r><w:t>LoanNumber
+  const fragmentedDotInRun = /([A-Za-z0-9_]+)<\/w:t><\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>\.<\/w:t><\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>([A-Za-z0-9_]+)/g;
+  result = result.replace(fragmentedDotInRun, (match, before, after) => {
+    console.log(`[tag-parser] Consolidated dot-in-run: ${before}.${after}`);
     return `${before}.${after}`;
   });
 
