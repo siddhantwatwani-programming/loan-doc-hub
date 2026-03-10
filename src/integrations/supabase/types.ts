@@ -1004,6 +1004,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_form_permissions: {
+        Row: {
+          access_mode: string
+          created_at: string
+          form_key: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_mode?: string
+          created_at?: string
+          form_key: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_mode?: string
+          created_at?: string
+          form_key?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_permission_levels: {
         Row: {
           created_at: string
