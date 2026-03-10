@@ -1,110 +1,69 @@
 
 
-## Event Journal (Change Log System) Implementation Plan
+## Plan: Per-User Form Permissions for CSR Users
 
 ### Overview
-Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
 
-### 1. Database: New Migration
-Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
+Replace the current role-based permission model with a per-user permission model. Admin selects a specific CSR user from a dropdown, then configures Editable/Read Only for each Deal form. Default is Read Only when no permission record exists.
+
+### Database Changes
+
+**New table: `user_form_permissions`**
 
 ```sql
-CREATE TABLE public.event_journal (
+CREATE TABLE public.user_form_permissions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
-  event_number integer NOT NULL,
-  actor_user_id uuid NOT NULL,
-  section text NOT NULL,
-  details jsonb NOT NULL DEFAULT '[]',
-  created_at timestamptz NOT NULL DEFAULT now()
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  form_key text NOT NULL,
+  access_mode text NOT NULL DEFAULT 'view_only',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, form_key)
 );
 
-CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
-ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_form_permissions ENABLE ROW LEVEL SECURITY;
 
--- RLS: CSR and Admin can view/insert
-CREATE POLICY "CSRs can view event journal" ON public.event_journal
+-- Admins can fully manage
+CREATE POLICY "Admins can manage user form permissions" ON public.user_form_permissions
+  FOR ALL TO authenticated
+  USING (has_role(auth.uid(), 'admin'))
+  WITH CHECK (has_role(auth.uid(), 'admin'));
+
+-- Users can read their own permissions
+CREATE POLICY "Users can view own form permissions" ON public.user_form_permissions
   FOR SELECT TO authenticated
-  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
-
-CREATE POLICY "CSRs can insert event journal" ON public.event_journal
-  FOR INSERT TO authenticated
-  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
-
--- Auto-increment event_number per deal
-CREATE OR REPLACE FUNCTION public.set_event_journal_number()
-RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
-BEGIN
-  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
-  FROM public.event_journal WHERE deal_id = NEW.deal_id;
-  RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER trg_event_journal_number
-  BEFORE INSERT ON public.event_journal
-  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
+  USING (auth.uid() = user_id);
 ```
 
-The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
+The existing `form_permissions`, `user_permission_levels` tables and `CsrUserPermissionsTable` component remain untouched (no deletions).
 
-### 2. Hook: `useEventJournal.ts` (New File)
-- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
-- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
-- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
+### Code Changes
 
-### 3. Capture Old→New Values in `useDealFields.ts`
-- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
-- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
-- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
-- After successful save, update the snapshot
-
-### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
-Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
-- Table with columns: Event #, User, Section, Details, Timestamp
-- Details column shows truncated preview (first 80 chars)
-- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
-- Sorted by event_number descending (newest first)
-
-### 5. `EventJournalViewer` Component (New File)
-`src/components/deal/EventJournalViewer.tsx`:
-- Fetches from `event_journal` table filtered by `deal_id`
-- Joins actor names from `profiles`
-- Table layout using existing shadcn Table components
-- "Show More" modal using existing Dialog component
-- Detail entries formatted as `Field Label: oldValue → newValue`
-
-### 6. Global Event Journal Page (New File)
-`src/pages/csr/GlobalEventJournalPage.tsx`:
-- Deal selector dropdown (search by deal number) at the top
-- Once a deal is selected, renders `EventJournalViewer` for that deal
-- Same table structure as the per-deal view
-
-### 7. Sidebar Navigation Update
-In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
-```tsx
-<PromotedNavSection
-  label="Event Journal"
-  icon={BookOpen}
-  items={[]}
-  directPath="/event-journal"
-  isCollapsed={isCollapsed}
-  searchQuery={searchQuery}
-/>
-```
-
-### 8. Route Registration
-In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
-
-### Files Changed
 | File | Change |
 |------|--------|
-| New migration | Create `event_journal` table with trigger |
-| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
-| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
-| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
-| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
-| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
-| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
-| `src/App.tsx` | Add `/event-journal` route |
+| `src/hooks/useFormPermissions.ts` | **`useFormPermissions`**: For CSR users, query `user_form_permissions` by `user_id` instead of `form_permissions` by role/level. Default to `view_only` when no record exists. **`useFormPermissionsAdmin`**: Add functions to fetch/upsert `user_form_permissions` for a selected user. |
+| `src/pages/admin/PermissionManagementPage.tsx` | Replace the Role + Permission Level selectors with a **CSR User dropdown**. When a user is selected, show the form permission grid for that user (from `user_form_permissions`). Auto-seed all form keys as `view_only` when a user is selected for the first time. Keep the toggle switch for Editable/View-Only. Remove the `CsrUserPermissionsTable` section. |
+| `src/components/admin/CsrUserPermissionsTable.tsx` | No changes (kept as-is, just no longer rendered on the page). |
+
+### Permission Check Flow (CSR users)
+
+1. CSR logs in → `useFormPermissions` queries `user_form_permissions WHERE user_id = currentUserId`
+2. If no record found for a form → default is **Read Only** (changed from current default of Editable)
+3. `isFormViewOnly(formKey)` returns `true` if record is `view_only` OR if no record exists
+4. `isFormEditable(formKey)` returns `true` only if record exists with `access_mode = 'editable'`
+
+### Admin UI Flow
+
+1. Admin opens Permission Management
+2. Selects a CSR user from dropdown (fetched from `user_roles` + `profiles`)
+3. Sees all 12 form keys with their current permission (Read Only / Editable toggle)
+4. First time selecting a user with no records → auto-seeds all forms as `view_only`
+5. Toggle updates `user_form_permissions` via upsert
+6. Changes take effect on CSR's next page load
+
+### Security
+
+- RLS ensures only admins can insert/update/delete `user_form_permissions`
+- CSR users can only SELECT their own rows
+- No client-side permission bypass possible
 
