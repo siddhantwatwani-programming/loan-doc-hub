@@ -252,7 +252,11 @@ export function replaceLabelBasedFields(
       continue;
     }
     
-    const fieldData = fieldValues.get(mapping.fieldKey);
+    const resolvedKey = mergeTagMap && validFieldKeys
+      ? resolveFieldKeyWithMap(mapping.fieldKey, mergeTagMap, validFieldKeys)
+      : mapping.fieldKey;
+    const resolved = getFieldData(resolvedKey, fieldValues);
+    const fieldData = resolved?.data || null;
     if (!fieldData || fieldData.rawValue === null) {
       // If mapped field is empty, leave the document field blank
       if (mapping.replaceNext) {
