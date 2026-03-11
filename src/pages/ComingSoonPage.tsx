@@ -14,6 +14,17 @@ const sectionMap: Record<string, string> = {
   '/c-level': 'C Level Module',
   '/my-work': 'My Work',
   '/contacts': 'Contacts',
+  '/contacts/lenders': 'Contacts → Lenders',
+  '/contacts/borrowers': 'Contacts → Borrowers',
+  '/contacts/brokers': 'Contacts → Brokers',
+  '/contacts/others/vendors': 'Contacts → Vendors',
+  '/contacts/others/tax-authority': 'Contacts → Tax Authority',
+  '/contacts/others/insurance-company': 'Contacts → Insurance Company',
+  '/contacts/others/title-company': 'Contacts → Title Company',
+  '/contacts/others/notary': 'Contacts → Notary',
+  '/contacts/others/guarantor': 'Contacts → Guarantor',
+  '/contacts/others/authorized-party': 'Contacts → Authorized Party',
+  '/contacts/others/attorneys': 'Contacts → Attorneys',
 };
 
 function getSectionTitle(pathname: string): string | null {

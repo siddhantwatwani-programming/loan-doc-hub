@@ -440,13 +440,11 @@ export const AppSidebar: React.FC = () => {
 
             {/* Contacts - CSR only */}
             {role === 'csr' && (
-              <PromotedNavSection
-                label="Contacts"
-                icon={Users}
-                items={[]}
-                directPath="/contacts"
+              <ContactsNav
                 isCollapsed={isCollapsed}
                 searchQuery={searchQuery}
+                isOpen={activeSection === 'contacts'}
+                onOpenChange={handleSectionToggle('contacts')}
               />
             )}
 
