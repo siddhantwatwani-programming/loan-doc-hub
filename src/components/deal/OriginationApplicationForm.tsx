@@ -88,7 +88,7 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
     <DirtyFieldWrapper fieldKey={key}>
       <div className="flex items-center gap-2">
         <Label className="w-[140px] text-sm shrink-0">{label}</Label>
-        <Popover>
+        <Popover open={datePickerStates[key] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [key]: open }))}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
@@ -103,7 +103,7 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
             <Calendar
               mode="single"
               selected={parseDate(getValue(key))}
-              onSelect={(date) => date && setValue(key, format(date, 'yyyy-MM-dd'))}
+              onSelect={(date) => { if (date) setValue(key, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
               initialFocus
               className={cn('p-3 pointer-events-auto')}
             />

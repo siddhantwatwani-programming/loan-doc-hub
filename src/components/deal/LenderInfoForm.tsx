@@ -294,7 +294,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             {/* DOB */}
             {wrapField('dob', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">DOB</Label>
-              <Popover>
+              <Popover open={dobOpen} onOpenChange={setDobOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -312,7 +312,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   <Calendar
                     mode="single"
                     selected={getValue('dob') ? parse(getValue('dob'), 'yyyy-MM-dd', new Date()) : undefined}
-                    onSelect={(date) => handleChange('dob', date ? format(date, 'yyyy-MM-dd') : '')}
+                    onSelect={(date) => { handleChange('dob', date ? format(date, 'yyyy-MM-dd') : ''); setDobOpen(false); }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
                   />

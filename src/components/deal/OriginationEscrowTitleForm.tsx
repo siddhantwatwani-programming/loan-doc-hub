@@ -114,7 +114,7 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
     <DirtyFieldWrapper fieldKey={key}>
       <div className="flex items-center gap-2">
         <Label className="w-[120px] text-sm shrink-0">{label}</Label>
-        <Popover>
+        <Popover open={datePickerStates[key] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [key]: open }))}>
           <PopoverTrigger asChild>
             <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-sm', !v(key) && 'text-muted-foreground')} disabled={disabled}>
               {v(key) ? format(parseDate(v(key))!, 'MM/dd/yyyy') : 'Date'}
@@ -123,7 +123,7 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar mode="single" selected={parseDate(v(key))}
-              onSelect={(date) => date && sv(key, format(date, 'yyyy-MM-dd'))}
+              onSelect={(date) => { if (date) sv(key, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
               initialFocus className="p-3 pointer-events-auto" />
           </PopoverContent>
         </Popover>
