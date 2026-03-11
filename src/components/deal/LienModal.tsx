@@ -51,6 +51,28 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
   const handleSave = () => { onSave(formData); onOpenChange(false); };
 
   const isThisLoan = formData.thisLoan === 'true';
+  const isAnticipated = formData.anticipated === 'true';
+  const isPayoff = formData.existingPayoff === 'true';
+  const isPaydown = formData.existingPaydown === 'true';
+
+  const handleLienTypeSelect = useCallback((type: 'anticipated' | 'existingRemain' | 'existingPaydown' | 'existingPayoff', checked: boolean) => {
+    // Only one can be active — clear all first, then set the selected one
+    setFormData(prev => {
+      const next = {
+        ...prev,
+        anticipated: 'false',
+        existingRemain: 'false',
+        existingPaydown: 'false',
+        existingPayoff: 'false',
+      };
+      if (checked) {
+        next[type] = 'true';
+        if (type === 'existingPayoff') next.balanceAfter = '0.00';
+        if (type === 'anticipated') { next.originalBalance = ''; next.currentBalance = ''; }
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (!open || !isThisLoan) return;
