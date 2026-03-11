@@ -45,6 +45,8 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
     setInterestFromDate(date);
     setInterestFromOpen(false);
     onChange({ ...data, interestFrom: date ? format(date, 'yyyy-MM-dd') : '' });
+  }, [data, onChange]);
+
   // Compute Regular Payment = Total Payment * (Percent Owned / 100)
   React.useEffect(() => {
     const tp = parseFloat(totalPayment) || 0;
