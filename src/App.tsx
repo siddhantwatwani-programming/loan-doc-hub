@@ -32,6 +32,7 @@ import MagicLinkAccessPage from "./pages/MagicLinkAccessPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import GlobalEventJournalPage from "./pages/csr/GlobalEventJournalPage";
 import ContactLendersPage from "./pages/contacts/ContactLendersPage";
+import ContactBorrowersPage from "./pages/contacts/ContactBorrowersPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,7 +72,7 @@ const App = () => (
                   {/* Contacts */}
                   <Route path="/contacts" element={<ComingSoonPage />} />
                   <Route path="/contacts/lenders" element={<ContactLendersPage />} />
-                  <Route path="/contacts/borrowers" element={<ComingSoonPage />} />
+                  <Route path="/contacts/borrowers" element={<ContactBorrowersPage />} />
                   <Route path="/contacts/brokers" element={<ComingSoonPage />} />
                   <Route path="/contacts/others/vendors" element={<ComingSoonPage />} />
                   <Route path="/contacts/others/tax-authority" element={<ComingSoonPage />} />
