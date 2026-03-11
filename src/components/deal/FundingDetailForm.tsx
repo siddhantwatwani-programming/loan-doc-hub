@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,8 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
   data,
   onChange,
 }) => {
+  const [fundingDateOpen, setFundingDateOpen] = useState(false);
+  const [interestFromOpen, setInterestFromOpen] = useState(false);
   const [fundingDate, setFundingDate] = useState<Date | undefined>(
     data.fundingDate ? new Date(data.fundingDate) : undefined
   );
@@ -33,11 +35,13 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
 
   const handleFundingDateChange = useCallback((date: Date | undefined) => {
     setFundingDate(date);
+    setFundingDateOpen(false);
     onChange({ ...data, fundingDate: date ? format(date, 'yyyy-MM-dd') : '' });
   }, [data, onChange]);
 
   const handleInterestFromDateChange = useCallback((date: Date | undefined) => {
     setInterestFromDate(date);
+    setInterestFromOpen(false);
     onChange({ ...data, interestFrom: date ? format(date, 'yyyy-MM-dd') : '' });
   }, [data, onChange]);
 
@@ -46,11 +50,11 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Loan</Label>
-          <Input value={data.loan} onChange={(e) => handleChange('loan', e.target.value)} className="h-7 text-sm" />
+          <Input value={data.loan} disabled className="h-7 text-sm opacity-50 bg-muted" />
         </div>
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Borrower</Label>
-          <Input value={data.borrower} onChange={(e) => handleChange('borrower', e.target.value)} className="h-7 text-sm" />
+          <Input value={data.borrower} disabled className="h-7 text-sm opacity-50 bg-muted" />
         </div>
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender ID</Label>
@@ -79,7 +83,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
         </div>
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Funding Date</Label>
-          <Popover>
+          <Popover open={fundingDateOpen} onOpenChange={setFundingDateOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn('h-7 text-sm w-full justify-start text-left font-normal flex-1', !fundingDate && 'text-muted-foreground')}>
                 {fundingDate ? format(fundingDate, 'MM/dd/yyyy') : 'Select date'}
@@ -87,27 +91,32 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={fundingDate} onSelect={handleFundingDateChange} initialFocus />
+              <Calendar mode="single" selected={fundingDate} onSelect={handleFundingDateChange} initialFocus className="p-3 pointer-events-auto" />
             </PopoverContent>
           </Popover>
         </div>
+
+        {/* Percent Owned */}
         <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender Rate*</Label>
+          <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Percent Owned</Label>
           <div className="relative flex-1">
-            <Input
-              type="text"
-              inputMode="decimal"
-              value={data.lenderRate}
-              onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('lenderRate', v); }}
-              placeholder="0.000"
-              className="h-7 text-sm pr-6"
-            />
+            <Input type="text" inputMode="decimal" value={data.percentOwned || ''} onChange={(e) => handleChange('percentOwned', e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0.000" className="h-7 text-sm pr-6" />
             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
           </div>
         </div>
+
+        {/* Regular Payment */}
+        <div className="flex items-center gap-3">
+          <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Regular Payment</Label>
+          <div className="relative flex-1">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
+            <Input type="text" value={data.regularPayment || ''} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
+          </div>
+        </div>
+
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Interest From</Label>
-          <Popover>
+          <Popover open={interestFromOpen} onOpenChange={setInterestFromOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn('h-7 text-sm w-full justify-start text-left font-normal flex-1', !interestFromDate && 'text-muted-foreground')}>
                 {interestFromDate ? format(interestFromDate, 'MM/dd/yyyy') : 'Select date'}
@@ -115,26 +124,57 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={interestFromDate} onSelect={handleInterestFromDateChange} initialFocus />
+              <Calendar mode="single" selected={interestFromDate} onSelect={handleInterestFromDateChange} initialFocus className="p-3 pointer-events-auto" />
             </PopoverContent>
           </Popover>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">* Interest Differential, Not Sold Rate</p>
 
-      <div className="flex items-start gap-3">
-        <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0 pt-2">Notes</Label>
-        <Textarea value={data.notes} onChange={(e) => handleChange('notes', e.target.value)} rows={2} className="resize-none text-sm" />
+      {/* Rate Selection */}
+      <div className="space-y-2 mt-2">
+        <div className="border-b border-border pb-1">
+          <span className="font-semibold text-sm text-primary">Rate Selection</span>
+        </div>
+        <RadioGroup value={data.rateSelection || 'note_rate'} onValueChange={(val) => handleChange('rateSelection', val)} className="space-y-2">
+          <div className="flex items-center gap-3">
+            <RadioGroupItem value="note_rate" id="detail-rate-note" />
+            <Label htmlFor="detail-rate-note" className="text-sm min-w-[100px]">Note Rate</Label>
+            <div className="relative w-32">
+              <Input type="text" inputMode="decimal" value={data.rateNoteValue || ''} onChange={(e) => handleChange('rateNoteValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", data.rateSelection !== 'note_rate' && 'opacity-50 bg-muted')} disabled={data.rateSelection !== 'note_rate'} placeholder="0.000" />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <RadioGroupItem value="sold_rate" id="detail-rate-sold" />
+            <Label htmlFor="detail-rate-sold" className="text-sm min-w-[100px]">Sold Rate</Label>
+            <div className="relative w-32">
+              <Input type="text" inputMode="decimal" value={data.rateSoldValue || ''} onChange={(e) => handleChange('rateSoldValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", data.rateSelection !== 'sold_rate' && 'opacity-50 bg-muted')} disabled={data.rateSelection !== 'sold_rate'} placeholder="0.000" />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <RadioGroupItem value="lender_rate" id="detail-rate-lender" />
+            <Label htmlFor="detail-rate-lender" className="text-sm min-w-[100px]">Lender Rate</Label>
+            <div className="relative w-32">
+              <Input type="text" inputMode="decimal" value={data.rateLenderValue || ''} onChange={(e) => handleChange('rateLenderValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", data.rateSelection !== 'lender_rate' && 'opacity-50 bg-muted')} disabled={data.rateSelection !== 'lender_rate'} placeholder="0.000" />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+            </div>
+          </div>
+        </RadioGroup>
       </div>
 
-      <div className="space-y-1">
-        <p className="text-sm font-semibold text-primary">NOTE:</p>
-        <p className="text-xs text-muted-foreground">If Multi-lender loan, docs should reflect "See Attached Lender Schedule"</p>
+      {/* Lender Rate (auto-populated) */}
+      <div className="flex items-center gap-3">
+        <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender Rate</Label>
+        <div className="relative w-32">
+          <Input type="text" value={data.lenderRate} disabled className="h-7 text-sm pr-6 opacity-50 bg-muted" placeholder="0.000" />
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
         <Checkbox id="detail-brokerParticipates" checked={data.brokerParticipates} onCheckedChange={(checked) => handleChange('brokerParticipates', !!checked)} />
-        <Label htmlFor="detail-brokerParticipates" className="text-sm font-medium leading-tight cursor-pointer">Broker or family will participate in funding</Label>
+        <Label htmlFor="detail-brokerParticipates" className="text-sm font-medium leading-tight cursor-pointer">Lender is: The Broker, Employee or Family of Broker</Label>
       </div>
     </div>
   );

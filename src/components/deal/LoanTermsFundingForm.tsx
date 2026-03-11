@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { LoanFundingGrid } from './LoanFundingGrid';
+import type { FundingRecord } from './LoanFundingGrid';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { FieldDefinition } from '@/hooks/useDealFields';
@@ -11,18 +12,6 @@ const FIELD_KEYS = {
   fundingRecords: 'loan_terms.funding_records',
   fundingHistory: 'loan_terms.funding_history',
 } as const;
-
-interface FundingRecord {
-  id: string;
-  lenderAccount: string;
-  lenderName: string;
-  pctOwned: number;
-  lenderRate: number;
-  principalBalance: number;
-  originalAmount: number;
-  regularPayment: number;
-  roundingError: boolean;
-}
 
 interface LoanTermsFundingFormProps {
   fields: FieldDefinition[];
@@ -51,9 +40,20 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   const [pageSize, setPageSize] = useState(25);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Get loan number and borrower name from values
-  const loanNumber = values['loan_terms.loan_number'] || values['Terms.LoanNumber'] || '';
-  const borrowerName = values['borrower.full_name'] || values['borrower.name'] || '';
+  // Get loan number and borrower name from values - auto-populate
+  const loanNumber = values['Terms.LoanNumber'] || values['loan_terms.loan_number'] || '';
+  const borrowerName = useMemo(() => {
+    // Try indexed borrower keys first, then fallback
+    const first = values['borrower1.first_name'] || values['borrower.first_name'] || '';
+    const last = values['borrower1.last_name'] || values['borrower.last_name'] || '';
+    if (first || last) return `${first} ${last}`.trim();
+    return values['borrower1.full_name'] || values['borrower.full_name'] || values['borrower.name'] || '';
+  }, [values]);
+
+  // Get loan rates for Rate Selection
+  const noteRate = values['loan_terms.note_rate'] || '';
+  const soldRate = values['loan_terms.sold_rate'] || '';
+  const totalPayment = values['loan_terms.total_payment'] || values['loan_terms.regular_payment'] || '';
 
   // Parse funding records from stored JSON value
   const fundingRecords: FundingRecord[] = useMemo(() => {
@@ -95,11 +95,11 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       id: `funding-${Date.now()}`,
       lenderAccount: data.lenderId || '',
       lenderName: data.lenderFullName || '',
-      pctOwned: 0,
+      pctOwned: parseFloat(data.percentOwned) || 0,
       lenderRate: parseFloat(data.lenderRate) || 0,
       principalBalance: parseFloat(data.fundingAmount) || 0,
       originalAmount: parseFloat(data.fundingAmount) || 0,
-      regularPayment: 0,
+      regularPayment: parseFloat(data.regularPayment) || 0,
       roundingError: false,
     };
 
@@ -230,6 +230,9 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       pageSize={pageSize}
       onPageChange={handlePageChange}
       onPageSizeChange={handlePageSizeChange}
+      noteRate={noteRate}
+      soldRate={soldRate}
+      totalPayment={totalPayment}
     />
   );
 };
