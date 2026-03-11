@@ -118,7 +118,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
     onValueChange(FIELD_KEYS[key], String(value));
   };
 
-  const wrapField = (key: keyof typeof FIELD_KEYS, children: React.ReactNode) => (
+  const [dobOpen, setDobOpen] = useState(false);
     <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>{children}</DirtyFieldWrapper>
   );
 
