@@ -26,6 +26,14 @@ const FK = {
   viii_rate_increase_months: 'origination_fees.re885_viii_rate_increase_months',
   ix_payment_end_months: 'origination_fees.re885_ix_payment_end_months',
   ix_payment_end_pct: 'origination_fees.re885_ix_payment_end_pct',
+  xi_neg_amort_balance: 'origination_fees.re885_xi_neg_amort_balance',
+  impound_county_taxes: 'origination_fees.re885_impound_county_taxes',
+  impound_hazard_ins: 'origination_fees.re885_impound_hazard_ins',
+  impound_mortgage_ins: 'origination_fees.re885_impound_mortgage_ins',
+  impound_flood_ins: 'origination_fees.re885_impound_flood_ins',
+  impound_other: 'origination_fees.re885_impound_other',
+  impound_other_desc: 'origination_fees.re885_impound_other_desc',
+  impound_approx_amount: 'origination_fees.re885_impound_approx_amount',
 };
 
 interface RE885Props {
@@ -444,6 +452,100 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">%</span>
             </div>
             <span className="text-xs text-foreground italic">of Original Balance, whichever comes first</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── XI. Negative Amortization ─── */}
+      <div className="space-y-0">
+        <div className="bg-muted/30 px-3 py-1.5 border-b border-foreground/20">
+          <span className="text-xs font-bold text-foreground">XI. Negative Amortization</span>
+        </div>
+        <div className={ROW}>
+          <div className="flex items-center gap-1 flex-1 flex-wrap">
+            <span className="text-xs text-foreground">If your loan contains negative amortization, at the time no additional negative amortization will accrue, your loan balance will be</span>
+            <div className="w-[130px] flex-shrink-0">
+              <CurrencyInput
+                value={getValue(FK.xi_neg_amort_balance)}
+                onChange={(v) => setValue(FK.xi_neg_amort_balance, v)}
+                disabled={disabled}
+              />
+            </div>
+            <span className="text-xs text-foreground">assuming minimum payments are made.</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Impound (Escrow) Account ─── */}
+      <div className="space-y-0">
+        <div className="bg-muted/30 px-3 py-1.5 border-b border-foreground/20">
+          <span className="text-xs font-bold text-foreground">Impound (Escrow) Account</span>
+        </div>
+        <div className="px-3 py-3 space-y-3 border-b border-border/30">
+          <div className="flex items-start gap-1 flex-wrap">
+            <span className="text-xs text-foreground">If there is no impound (escrow) account you will have to plan for the payment of:</span>
+          </div>
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <Checkbox
+                checked={getBoolValue(FK.impound_county_taxes)}
+                onCheckedChange={(c) => setBoolValue(FK.impound_county_taxes, !!c)}
+                disabled={disabled}
+              />
+              <Label className="text-xs cursor-pointer">County Property Taxes</Label>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Checkbox
+                checked={getBoolValue(FK.impound_hazard_ins)}
+                onCheckedChange={(c) => setBoolValue(FK.impound_hazard_ins, !!c)}
+                disabled={disabled}
+              />
+              <Label className="text-xs cursor-pointer">Hazard Insurance</Label>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Checkbox
+                checked={getBoolValue(FK.impound_mortgage_ins)}
+                onCheckedChange={(c) => setBoolValue(FK.impound_mortgage_ins, !!c)}
+                disabled={disabled}
+              />
+              <Label className="text-xs cursor-pointer">Mortgage Insurance</Label>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Checkbox
+                checked={getBoolValue(FK.impound_flood_ins)}
+                onCheckedChange={(c) => setBoolValue(FK.impound_flood_ins, !!c)}
+                disabled={disabled}
+              />
+              <Label className="text-xs cursor-pointer">Flood Insurance</Label>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Checkbox
+                checked={getBoolValue(FK.impound_other)}
+                onCheckedChange={(c) => setBoolValue(FK.impound_other, !!c)}
+                disabled={disabled}
+              />
+              <Label className="text-xs cursor-pointer">Other</Label>
+              {getBoolValue(FK.impound_other) && (
+                <Input
+                  value={getValue(FK.impound_other_desc)}
+                  onChange={(e) => setValue(FK.impound_other_desc, e.target.value)}
+                  disabled={disabled}
+                  placeholder="Specify..."
+                  className="h-7 text-xs w-28"
+                />
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-1 flex-wrap">
+            <span className="text-xs text-foreground">of approximately</span>
+            <div className="w-[130px]">
+              <CurrencyInput
+                value={getValue(FK.impound_approx_amount)}
+                onChange={(v) => setValue(FK.impound_approx_amount, v)}
+                disabled={disabled}
+              />
+            </div>
+            <span className="text-xs text-foreground">per year.</span>
           </div>
         </div>
       </div>
