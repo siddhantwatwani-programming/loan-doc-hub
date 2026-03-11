@@ -123,6 +123,18 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
       return;
     }
 
+    // Debug: log available coborrower keys and source map lookups
+    if (designatedRecipient === 'co-borrower') {
+      const coborrowerKeys = Object.keys(currentValues).filter(k => k.startsWith('coborrower.'));
+      console.log('[1098 Debug] Co-borrower keys in values:', coborrowerKeys);
+      console.log('[1098 Debug] Source map:', sourceMap);
+      console.log('[1098 Debug] Resolved values:', {
+        name: currentValues[sourceMap.name],
+        address: currentValues[sourceMap.address],
+        tin: currentValues[sourceMap.tin],
+      });
+    }
+
     fireChange('name', currentValues[sourceMap.name] || '');
     fireChange('address', currentValues[sourceMap.address] || '');
     fireChange('city', currentValues[sourceMap.city] || '');
