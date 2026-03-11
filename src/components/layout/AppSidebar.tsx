@@ -51,6 +51,7 @@ import { AccountingNav } from '@/components/layout/AccountingNav';
 import { SystemAdminNav } from '@/components/layout/SystemAdminNav';
 import { CLevelModuleNav } from '@/components/layout/CLevelModuleNav';
 import { PromotedNavSection } from '@/components/layout/PromotedNavSection';
+import { ContactsNav } from '@/components/layout/ContactsNav';
 import {
   Tooltip,
   TooltipContent,
