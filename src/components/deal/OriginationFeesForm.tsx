@@ -390,6 +390,10 @@ const FIELD_KEYS = {
   customItem1300_8_paid_to_company: 'origination_fees.1300_custom_item_8_paid_to_company',
   customItem1300_8_oral_disclosure: 'origination_fees.1300_custom_item_8_oral_disclosure',
 
+  // 901 dynamic description fields
+  interestForDays_days: 'origination_fees.901_interest_for_days_days',
+  interestForDays_perDay: 'origination_fees.901_interest_for_days_per_day',
+
   // Subtotal and Total
   subtotal_j: 'origination_fees.subtotal_j',
   subtotal_others: 'origination_fees.subtotal_others',
@@ -416,7 +420,7 @@ const FIELD_KEYS = {
 
 const GRID_STYLE: React.CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'minmax(200px, 1.5fr) 70px 90px 40px 40px 40px 40px 100px 110px',
+  gridTemplateColumns: '55px minmax(200px, 1fr) 110px 110px 70px 70px',
   gap: '4px',
   alignItems: 'center',
 };
@@ -455,70 +459,79 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
     if (m * p > 0) setValue(FIELD_KEYS.coPropertyTaxes_total, (m * p).toFixed(2));
   }, [values[FIELD_KEYS.coPropertyTaxes_months], values[FIELD_KEYS.coPropertyTaxes_perMonth]]);
 
-  // Standard fee row: Label | Payable to | Amount | Charge | Broker | Others | APR | Paid to Company | Oral Disclosure
+  // Standard fee row: HUD# | Description | Paid to Others | Paid to Broker | Include in APR | Paid to Company
   const renderFeeRow = (
-    label: string,
+    hudNumber: string,
+    description: string,
     keys: {
-      payableTo: string;
-      d: string;
-      charge: string;
-      broker: string;
       others: string;
+      broker: string;
       apr: string;
       paidToCompany: string;
-      oralDisclosure: string;
     },
-    labelKey?: string
+    labelKey?: string,
+    descriptionNode?: React.ReactNode
   ) => (
-    <DirtyFieldWrapper fieldKey={keys.d}>
+    <DirtyFieldWrapper fieldKey={keys.others}>
       <div style={GRID_STYLE} className="py-1 border-b border-border/50">
+        <div className="text-xs font-medium text-foreground">{hudNumber}</div>
         {labelKey ? (
           <Input value={getValue(labelKey)} onChange={(e) => setValue(labelKey, e.target.value)} disabled={disabled} placeholder="Enter description" className="h-7 text-xs" />
+        ) : descriptionNode ? (
+          <div className="text-xs text-foreground">{descriptionNode}</div>
         ) : (
-          <div className="text-xs text-foreground">{label}</div>
+          <div className="text-xs text-foreground">{description}</div>
         )}
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-muted-foreground whitespace-nowrap">Payable to</span>
+        <div className="relative">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
+          <Input inputMode="decimal" value={getValue(keys.others)} onChange={(e) => setValue(keys.others, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
         </div>
-        <Input value={getValue(keys.d)} onChange={(e) => setValue(keys.d, e.target.value)} disabled={disabled} placeholder="" className="h-7 text-xs text-right" inputMode="decimal" />
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.charge)} onCheckedChange={(c) => setBoolValue(keys.charge, !!c)} disabled={disabled} /></div>
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.broker)} onCheckedChange={(c) => setBoolValue(keys.broker, !!c)} disabled={disabled} /></div>
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.others)} onCheckedChange={(c) => setBoolValue(keys.others, !!c)} disabled={disabled} /></div>
+        <div className="relative">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
+          <Input inputMode="decimal" value={getValue(keys.broker)} onChange={(e) => setValue(keys.broker, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+        </div>
         <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
-        <Input value={getValue(keys.paidToCompany)} onChange={(e) => setValue(keys.paidToCompany, e.target.value)} disabled={disabled} className="h-7 text-xs" />
-        <Input value={getValue(keys.oralDisclosure)} onChange={(e) => setValue(keys.oralDisclosure, e.target.value)} disabled={disabled} className="h-7 text-xs" />
+        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.paidToCompany)} onCheckedChange={(c) => setBoolValue(keys.paidToCompany, !!c)} disabled={disabled} /></div>
       </div>
     </DirtyFieldWrapper>
   );
 
-  // Insurance row for 1000 section: Label | months | "months at" | per month | Total | Charge | Broker | Others | APR
+  // Insurance row for 1000 section with dynamic description
   const renderInsuranceRow = (
-    label: string,
+    hudNumber: string,
+    baseName: string,
     monthsKey: string,
     perMonthKey: string,
     totalKey: string,
-    keys: { charge: string; broker: string; others: string; apr: string; paidToCompany: string; oralDisclosure: string }
-  ) => (
-    <DirtyFieldWrapper fieldKey={monthsKey}>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(160px, 1fr) 50px 60px 70px 40px 40px 40px 40px 100px 110px',
-        gap: '4px',
-        alignItems: 'center',
-      }} className="py-1 border-b border-border/50">
-        <div className="text-xs text-foreground">{label}</div>
-        <Input type="number" inputMode="numeric" value={getValue(monthsKey)} onChange={(e) => setValue(monthsKey, e.target.value)} disabled={disabled} placeholder="0" className="h-7 text-xs text-right" />
-        <span className="text-xs text-muted-foreground text-center">months at</span>
-        <Input inputMode="decimal" value={getValue(perMonthKey)} onChange={(e) => setValue(perMonthKey, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right" />
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.charge)} onCheckedChange={(c) => setBoolValue(keys.charge, !!c)} disabled={disabled} /></div>
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.broker)} onCheckedChange={(c) => setBoolValue(keys.broker, !!c)} disabled={disabled} /></div>
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.others)} onCheckedChange={(c) => setBoolValue(keys.others, !!c)} disabled={disabled} /></div>
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
-        <Input value={getValue(keys.paidToCompany)} onChange={(e) => setValue(keys.paidToCompany, e.target.value)} disabled={disabled} className="h-7 text-xs" />
-        <Input value={getValue(keys.oralDisclosure)} onChange={(e) => setValue(keys.oralDisclosure, e.target.value)} disabled={disabled} className="h-7 text-xs" />
-      </div>
-    </DirtyFieldWrapper>
-  );
+    keys: { others: string; broker: string; apr: string; paidToCompany: string }
+  ) => {
+    const totalVal = getValue(totalKey);
+    return (
+      <DirtyFieldWrapper fieldKey={monthsKey}>
+        <div style={GRID_STYLE} className="py-1 border-b border-border/50">
+          <div className="text-xs font-medium text-foreground">{hudNumber}</div>
+          <div className="flex items-center gap-1 text-xs text-foreground flex-wrap">
+            <span>{baseName}:</span>
+            <Input type="number" inputMode="numeric" value={getValue(monthsKey)} onChange={(e) => setValue(monthsKey, e.target.value)} disabled={disabled} placeholder="0" className="h-6 text-xs text-right w-12 inline-flex" />
+            <span>months at $</span>
+            <Input inputMode="decimal" value={getValue(perMonthKey)} onChange={(e) => setValue(perMonthKey, e.target.value)} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-16 inline-flex" />
+            <span>/mo</span>
+            {totalVal && <span className="text-muted-foreground ml-1">= ${totalVal}</span>}
+          </div>
+          <div className="relative">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
+            <Input inputMode="decimal" value={getValue(keys.others)} onChange={(e) => setValue(keys.others, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+          </div>
+          <div className="relative">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
+            <Input inputMode="decimal" value={getValue(keys.broker)} onChange={(e) => setValue(keys.broker, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+          </div>
+          <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
+          <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.paidToCompany)} onCheckedChange={(c) => setBoolValue(keys.paidToCompany, !!c)} disabled={disabled} /></div>
+        </div>
+      </DirtyFieldWrapper>
+    );
+  };
 
   // Simple row for bottom sections (label + amount only)
   const renderSimpleRow = (label: string, dKey: string, labelKey?: string) => (
@@ -529,256 +542,99 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
         ) : (
           <div className="text-xs text-foreground flex-1">{label}</div>
         )}
-        <Input inputMode="decimal" value={getValue(dKey)} onChange={(e) => setValue(dKey, e.target.value)} disabled={disabled} placeholder="" className="h-7 text-xs text-right w-24" />
+        <div className="relative w-28">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
+          <Input inputMode="decimal" value={getValue(dKey)} onChange={(e) => setValue(dKey, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+        </div>
       </div>
     </DirtyFieldWrapper>
   );
 
-  const makeKeys = (prefix: string) => ({
-    payableTo: prefix + '_payable_to',
-    d: prefix + '_d',
-    charge: prefix + '_charge',
-    broker: prefix + '_broker',
-    others: prefix + '_others',
-    apr: prefix + '_apr',
-    paidToCompany: prefix + '_paid_to_company',
-    oralDisclosure: prefix + '_oral_disclosure',
-  });
+  // Dynamic description for 901
+  const render901Description = () => (
+    <div className="flex items-center gap-1 text-xs text-foreground flex-wrap">
+      <span>Interest for</span>
+      <Input type="number" inputMode="numeric" value={getValue(FIELD_KEYS.interestForDays_days)} onChange={(e) => setValue(FIELD_KEYS.interestForDays_days, e.target.value)} disabled={disabled} placeholder="0" className="h-6 text-xs text-right w-12 inline-flex" />
+      <span>days at $</span>
+      <Input inputMode="decimal" value={getValue(FIELD_KEYS.interestForDays_perDay)} onChange={(e) => setValue(FIELD_KEYS.interestForDays_perDay, e.target.value)} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-16 inline-flex" />
+      <span>per day</span>
+    </div>
+  );
 
   return (
     <div className="p-4 space-y-6 overflow-x-auto">
       {/* Column headers */}
       <div style={GRID_STYLE} className="py-2 border-b-2 border-foreground text-xs font-semibold text-foreground">
-        <div>HUD-1 Item Paid to Others Paid to Broker</div>
-        <div></div>
-        <div></div>
-        <div className="text-center">Charge</div>
-        <div className="text-center">Broker</div>
-        <div className="text-center">Others</div>
-        <div className="text-center">APR</div>
+        <div>HUD-1 #</div>
+        <div>Item Description</div>
+        <div className="text-center">Paid to Others</div>
+        <div className="text-center">Paid to Broker</div>
+        <div className="text-center">Include in APR</div>
         <div className="text-center">Paid to Company</div>
-        <div className="text-center">Add to Oral Disclosure</div>
       </div>
 
       {/* 800 Items Payable in Connection with Loan */}
       <div className="space-y-0">
-        <h3 className="font-semibold text-sm text-foreground underline mb-1">800 Items Payable in Connection with Loan</h3>
-        {renderFeeRow("801 Lender's Loan Origination Fee", {
-          payableTo: FIELD_KEYS.lendersLoanOriginationFee_payable_to, d: FIELD_KEYS.lendersLoanOriginationFee_d,
-          charge: FIELD_KEYS.lendersLoanOriginationFee_charge, broker: FIELD_KEYS.lendersLoanOriginationFee_broker,
-          others: FIELD_KEYS.lendersLoanOriginationFee_others, apr: FIELD_KEYS.lendersLoanOriginationFee_apr,
-          paidToCompany: FIELD_KEYS.lendersLoanOriginationFee_paid_to_company, oralDisclosure: FIELD_KEYS.lendersLoanOriginationFee_oral_disclosure,
-        })}
-        {renderFeeRow("802 Lender's Loan Discount Fee", {
-          payableTo: FIELD_KEYS.lendersLoanDiscountFee_payable_to, d: FIELD_KEYS.lendersLoanDiscountFee_d,
-          charge: FIELD_KEYS.lendersLoanDiscountFee_charge, broker: FIELD_KEYS.lendersLoanDiscountFee_broker,
-          others: FIELD_KEYS.lendersLoanDiscountFee_others, apr: FIELD_KEYS.lendersLoanDiscountFee_apr,
-          paidToCompany: FIELD_KEYS.lendersLoanDiscountFee_paid_to_company, oralDisclosure: FIELD_KEYS.lendersLoanDiscountFee_oral_disclosure,
-        })}
-        {renderFeeRow('803 Appraisal Fee', {
-          payableTo: FIELD_KEYS.appraisalFee_payable_to, d: FIELD_KEYS.appraisalFee_d,
-          charge: FIELD_KEYS.appraisalFee_charge, broker: FIELD_KEYS.appraisalFee_broker,
-          others: FIELD_KEYS.appraisalFee_others, apr: FIELD_KEYS.appraisalFee_apr,
-          paidToCompany: FIELD_KEYS.appraisalFee_paid_to_company, oralDisclosure: FIELD_KEYS.appraisalFee_oral_disclosure,
-        })}
-        {renderFeeRow('804 Credit Report', {
-          payableTo: FIELD_KEYS.creditReport_payable_to, d: FIELD_KEYS.creditReport_d,
-          charge: FIELD_KEYS.creditReport_charge, broker: FIELD_KEYS.creditReport_broker,
-          others: FIELD_KEYS.creditReport_others, apr: FIELD_KEYS.creditReport_apr,
-          paidToCompany: FIELD_KEYS.creditReport_paid_to_company, oralDisclosure: FIELD_KEYS.creditReport_oral_disclosure,
-        })}
-        {renderFeeRow("805 Lender's Inspection Fee", {
-          payableTo: FIELD_KEYS.lendersInspectionFee_payable_to, d: FIELD_KEYS.lendersInspectionFee_d,
-          charge: FIELD_KEYS.lendersInspectionFee_charge, broker: FIELD_KEYS.lendersInspectionFee_broker,
-          others: FIELD_KEYS.lendersInspectionFee_others, apr: FIELD_KEYS.lendersInspectionFee_apr,
-          paidToCompany: FIELD_KEYS.lendersInspectionFee_paid_to_company, oralDisclosure: FIELD_KEYS.lendersInspectionFee_oral_disclosure,
-        })}
-        {renderFeeRow('808 Mortgage Broker Commission/Fee', {
-          payableTo: FIELD_KEYS.mortgageBrokerFee_payable_to, d: FIELD_KEYS.mortgageBrokerFee_d,
-          charge: FIELD_KEYS.mortgageBrokerFee_charge, broker: FIELD_KEYS.mortgageBrokerFee_broker,
-          others: FIELD_KEYS.mortgageBrokerFee_others, apr: FIELD_KEYS.mortgageBrokerFee_apr,
-          paidToCompany: FIELD_KEYS.mortgageBrokerFee_paid_to_company, oralDisclosure: FIELD_KEYS.mortgageBrokerFee_oral_disclosure,
-        })}
-        {renderFeeRow('809 Tax Service Fee', {
-          payableTo: FIELD_KEYS.taxServiceFee_payable_to, d: FIELD_KEYS.taxServiceFee_d,
-          charge: FIELD_KEYS.taxServiceFee_charge, broker: FIELD_KEYS.taxServiceFee_broker,
-          others: FIELD_KEYS.taxServiceFee_others, apr: FIELD_KEYS.taxServiceFee_apr,
-          paidToCompany: FIELD_KEYS.taxServiceFee_paid_to_company, oralDisclosure: FIELD_KEYS.taxServiceFee_oral_disclosure,
-        })}
-        {renderFeeRow('810 Processing Fee', {
-          payableTo: FIELD_KEYS.processingFee_payable_to, d: FIELD_KEYS.processingFee_d,
-          charge: FIELD_KEYS.processingFee_charge, broker: FIELD_KEYS.processingFee_broker,
-          others: FIELD_KEYS.processingFee_others, apr: FIELD_KEYS.processingFee_apr,
-          paidToCompany: FIELD_KEYS.processingFee_paid_to_company, oralDisclosure: FIELD_KEYS.processingFee_oral_disclosure,
-        })}
-        {renderFeeRow('811 Underwriting Fee', {
-          payableTo: FIELD_KEYS.underwritingFee_payable_to, d: FIELD_KEYS.underwritingFee_d,
-          charge: FIELD_KEYS.underwritingFee_charge, broker: FIELD_KEYS.underwritingFee_broker,
-          others: FIELD_KEYS.underwritingFee_others, apr: FIELD_KEYS.underwritingFee_apr,
-          paidToCompany: FIELD_KEYS.underwritingFee_paid_to_company, oralDisclosure: FIELD_KEYS.underwritingFee_oral_disclosure,
-        })}
-        {renderFeeRow('812 Wire Transfer Fee', {
-          payableTo: FIELD_KEYS.wireTransferFee_payable_to, d: FIELD_KEYS.wireTransferFee_d,
-          charge: FIELD_KEYS.wireTransferFee_charge, broker: FIELD_KEYS.wireTransferFee_broker,
-          others: FIELD_KEYS.wireTransferFee_others, apr: FIELD_KEYS.wireTransferFee_apr,
-          paidToCompany: FIELD_KEYS.wireTransferFee_paid_to_company, oralDisclosure: FIELD_KEYS.wireTransferFee_oral_disclosure,
-        })}
-        {renderFeeRow('', {
-          payableTo: FIELD_KEYS.customItem800_payable_to, d: FIELD_KEYS.customItem800_d,
-          charge: FIELD_KEYS.customItem800_charge, broker: FIELD_KEYS.customItem800_broker,
-          others: FIELD_KEYS.customItem800_others, apr: FIELD_KEYS.customItem800_apr,
-          paidToCompany: FIELD_KEYS.customItem800_paid_to_company, oralDisclosure: FIELD_KEYS.customItem800_oral_disclosure,
-        }, FIELD_KEYS.customItem800_label)}
+        <h3 className="font-semibold text-sm text-foreground underline mb-1">800 – Items Payable in Connection with Loan</h3>
+        {renderFeeRow('801', "Lender's Loan Origination Fee", { others: FIELD_KEYS.lendersLoanOriginationFee_others, broker: FIELD_KEYS.lendersLoanOriginationFee_broker, apr: FIELD_KEYS.lendersLoanOriginationFee_apr, paidToCompany: FIELD_KEYS.lendersLoanOriginationFee_paid_to_company })}
+        {renderFeeRow('802', "Lender's Loan Discount Fee", { others: FIELD_KEYS.lendersLoanDiscountFee_others, broker: FIELD_KEYS.lendersLoanDiscountFee_broker, apr: FIELD_KEYS.lendersLoanDiscountFee_apr, paidToCompany: FIELD_KEYS.lendersLoanDiscountFee_paid_to_company })}
+        {renderFeeRow('803', 'Appraisal Fee', { others: FIELD_KEYS.appraisalFee_others, broker: FIELD_KEYS.appraisalFee_broker, apr: FIELD_KEYS.appraisalFee_apr, paidToCompany: FIELD_KEYS.appraisalFee_paid_to_company })}
+        {renderFeeRow('804', 'Credit Report', { others: FIELD_KEYS.creditReport_others, broker: FIELD_KEYS.creditReport_broker, apr: FIELD_KEYS.creditReport_apr, paidToCompany: FIELD_KEYS.creditReport_paid_to_company })}
+        {renderFeeRow('805', "Lender's Inspection Fee", { others: FIELD_KEYS.lendersInspectionFee_others, broker: FIELD_KEYS.lendersInspectionFee_broker, apr: FIELD_KEYS.lendersInspectionFee_apr, paidToCompany: FIELD_KEYS.lendersInspectionFee_paid_to_company })}
+        {renderFeeRow('806', 'Mortgage Broker Commission/Fee', { others: FIELD_KEYS.mortgageBrokerFee_others, broker: FIELD_KEYS.mortgageBrokerFee_broker, apr: FIELD_KEYS.mortgageBrokerFee_apr, paidToCompany: FIELD_KEYS.mortgageBrokerFee_paid_to_company })}
+        {renderFeeRow('809', 'Tax Service Fee', { others: FIELD_KEYS.taxServiceFee_others, broker: FIELD_KEYS.taxServiceFee_broker, apr: FIELD_KEYS.taxServiceFee_apr, paidToCompany: FIELD_KEYS.taxServiceFee_paid_to_company })}
+        {renderFeeRow('810', 'Processing Fee', { others: FIELD_KEYS.processingFee_others, broker: FIELD_KEYS.processingFee_broker, apr: FIELD_KEYS.processingFee_apr, paidToCompany: FIELD_KEYS.processingFee_paid_to_company })}
+        {renderFeeRow('811', 'Underwriting Fee', { others: FIELD_KEYS.underwritingFee_others, broker: FIELD_KEYS.underwritingFee_broker, apr: FIELD_KEYS.underwritingFee_apr, paidToCompany: FIELD_KEYS.underwritingFee_paid_to_company })}
+        {renderFeeRow('812', 'Wire Transfer Fee', { others: FIELD_KEYS.wireTransferFee_others, broker: FIELD_KEYS.wireTransferFee_broker, apr: FIELD_KEYS.wireTransferFee_apr, paidToCompany: FIELD_KEYS.wireTransferFee_paid_to_company })}
+        {renderFeeRow('', '', { others: FIELD_KEYS.customItem800_others, broker: FIELD_KEYS.customItem800_broker, apr: FIELD_KEYS.customItem800_apr, paidToCompany: FIELD_KEYS.customItem800_paid_to_company }, FIELD_KEYS.customItem800_label)}
       </div>
 
       {/* 900 Items Required by Lender to be Paid in Advance */}
       <div className="space-y-0">
-        <h3 className="font-semibold text-sm text-foreground underline mb-1">900 Items Required by Lender to be Paid in Advance</h3>
-        {renderFeeRow('901 Interest for days at $ per day', {
-          payableTo: FIELD_KEYS.interestForDays_payable_to, d: FIELD_KEYS.interestForDays_d,
-          charge: FIELD_KEYS.interestForDays_charge, broker: FIELD_KEYS.interestForDays_broker,
-          others: FIELD_KEYS.interestForDays_others, apr: FIELD_KEYS.interestForDays_apr,
-          paidToCompany: FIELD_KEYS.interestForDays_paid_to_company, oralDisclosure: FIELD_KEYS.interestForDays_oral_disclosure,
-        })}
-        {renderFeeRow('902 Mortgage Insurance Premiums', {
-          payableTo: FIELD_KEYS.mortgageInsurancePremiums_payable_to, d: FIELD_KEYS.mortgageInsurancePremiums_d,
-          charge: FIELD_KEYS.mortgageInsurancePremiums_charge, broker: FIELD_KEYS.mortgageInsurancePremiums_broker,
-          others: FIELD_KEYS.mortgageInsurancePremiums_others, apr: FIELD_KEYS.mortgageInsurancePremiums_apr,
-          paidToCompany: FIELD_KEYS.mortgageInsurancePremiums_paid_to_company, oralDisclosure: FIELD_KEYS.mortgageInsurancePremiums_oral_disclosure,
-        })}
-        {renderFeeRow('903 Hazard Insurance Premiums', {
-          payableTo: FIELD_KEYS.hazardInsurancePremiums_payable_to, d: FIELD_KEYS.hazardInsurancePremiums_d,
-          charge: FIELD_KEYS.hazardInsurancePremiums_charge, broker: FIELD_KEYS.hazardInsurancePremiums_broker,
-          others: FIELD_KEYS.hazardInsurancePremiums_others, apr: FIELD_KEYS.hazardInsurancePremiums_apr,
-          paidToCompany: FIELD_KEYS.hazardInsurancePremiums_paid_to_company, oralDisclosure: FIELD_KEYS.hazardInsurancePremiums_oral_disclosure,
-        })}
-        {renderFeeRow('904 County Property Taxes', {
-          payableTo: FIELD_KEYS.countyPropertyTaxes_payable_to, d: FIELD_KEYS.countyPropertyTaxes_d,
-          charge: FIELD_KEYS.countyPropertyTaxes_charge, broker: FIELD_KEYS.countyPropertyTaxes_broker,
-          others: FIELD_KEYS.countyPropertyTaxes_others, apr: FIELD_KEYS.countyPropertyTaxes_apr,
-          paidToCompany: FIELD_KEYS.countyPropertyTaxes_paid_to_company, oralDisclosure: FIELD_KEYS.countyPropertyTaxes_oral_disclosure,
-        })}
-        {renderFeeRow('905 VA Funding Fee', {
-          payableTo: FIELD_KEYS.vaFundingFee_payable_to, d: FIELD_KEYS.vaFundingFee_d,
-          charge: FIELD_KEYS.vaFundingFee_charge, broker: FIELD_KEYS.vaFundingFee_broker,
-          others: FIELD_KEYS.vaFundingFee_others, apr: FIELD_KEYS.vaFundingFee_apr,
-          paidToCompany: FIELD_KEYS.vaFundingFee_paid_to_company, oralDisclosure: FIELD_KEYS.vaFundingFee_oral_disclosure,
-        })}
-        {renderFeeRow('', {
-          payableTo: FIELD_KEYS.customItem900_payable_to, d: FIELD_KEYS.customItem900_d,
-          charge: FIELD_KEYS.customItem900_charge, broker: FIELD_KEYS.customItem900_broker,
-          others: FIELD_KEYS.customItem900_others, apr: FIELD_KEYS.customItem900_apr,
-          paidToCompany: FIELD_KEYS.customItem900_paid_to_company, oralDisclosure: FIELD_KEYS.customItem900_oral_disclosure,
-        }, FIELD_KEYS.customItem900_label)}
+        <h3 className="font-semibold text-sm text-foreground underline mb-1">900 – Items Required by Lender to be Paid in Advance</h3>
+        {renderFeeRow('901', '', { others: FIELD_KEYS.interestForDays_others, broker: FIELD_KEYS.interestForDays_broker, apr: FIELD_KEYS.interestForDays_apr, paidToCompany: FIELD_KEYS.interestForDays_paid_to_company }, undefined, render901Description())}
+        {renderFeeRow('902', 'Mortgage Insurance Premiums', { others: FIELD_KEYS.mortgageInsurancePremiums_others, broker: FIELD_KEYS.mortgageInsurancePremiums_broker, apr: FIELD_KEYS.mortgageInsurancePremiums_apr, paidToCompany: FIELD_KEYS.mortgageInsurancePremiums_paid_to_company })}
+        {renderFeeRow('903', 'Hazard Insurance Premiums', { others: FIELD_KEYS.hazardInsurancePremiums_others, broker: FIELD_KEYS.hazardInsurancePremiums_broker, apr: FIELD_KEYS.hazardInsurancePremiums_apr, paidToCompany: FIELD_KEYS.hazardInsurancePremiums_paid_to_company })}
+        {renderFeeRow('904', 'County Property Taxes', { others: FIELD_KEYS.countyPropertyTaxes_others, broker: FIELD_KEYS.countyPropertyTaxes_broker, apr: FIELD_KEYS.countyPropertyTaxes_apr, paidToCompany: FIELD_KEYS.countyPropertyTaxes_paid_to_company })}
+        {renderFeeRow('905', 'VA Funding Fee', { others: FIELD_KEYS.vaFundingFee_others, broker: FIELD_KEYS.vaFundingFee_broker, apr: FIELD_KEYS.vaFundingFee_apr, paidToCompany: FIELD_KEYS.vaFundingFee_paid_to_company })}
+        {renderFeeRow('', '', { others: FIELD_KEYS.customItem900_others, broker: FIELD_KEYS.customItem900_broker, apr: FIELD_KEYS.customItem900_apr, paidToCompany: FIELD_KEYS.customItem900_paid_to_company }, FIELD_KEYS.customItem900_label)}
       </div>
 
       {/* 1000 Reserves Deposited with Lender or Other */}
       <div className="space-y-0">
-        <h3 className="font-semibold text-sm text-foreground underline mb-1">1000 Reserves Deposited with Lender or Other</h3>
-        {renderInsuranceRow('1001 Hazard Insurance', FIELD_KEYS.hazardInsurance_months, FIELD_KEYS.hazardInsurance_perMonth, FIELD_KEYS.hazardInsurance_total, {
-          charge: FIELD_KEYS.hazardInsurance_charge, broker: FIELD_KEYS.hazardInsurance_broker,
-          others: FIELD_KEYS.hazardInsurance_others, apr: FIELD_KEYS.hazardInsurance_apr,
-          paidToCompany: FIELD_KEYS.hazardInsurance_paid_to_company, oralDisclosure: FIELD_KEYS.hazardInsurance_oral_disclosure,
-        })}
-        {renderInsuranceRow('1002 Mortgage Insurance', FIELD_KEYS.mortgageInsurance_months, FIELD_KEYS.mortgageInsurance_perMonth, FIELD_KEYS.mortgageInsurance_total, {
-          charge: FIELD_KEYS.mortgageInsurance_charge, broker: FIELD_KEYS.mortgageInsurance_broker,
-          others: FIELD_KEYS.mortgageInsurance_others, apr: FIELD_KEYS.mortgageInsurance_apr,
-          paidToCompany: FIELD_KEYS.mortgageInsurance_paid_to_company, oralDisclosure: FIELD_KEYS.mortgageInsurance_oral_disclosure,
-        })}
-        {renderInsuranceRow('1004 Co. Property Taxes', FIELD_KEYS.coPropertyTaxes_months, FIELD_KEYS.coPropertyTaxes_perMonth, FIELD_KEYS.coPropertyTaxes_total, {
-          charge: FIELD_KEYS.coPropertyTaxes_charge, broker: FIELD_KEYS.coPropertyTaxes_broker,
-          others: FIELD_KEYS.coPropertyTaxes_others, apr: FIELD_KEYS.coPropertyTaxes_apr,
-          paidToCompany: FIELD_KEYS.coPropertyTaxes_paid_to_company, oralDisclosure: FIELD_KEYS.coPropertyTaxes_oral_disclosure,
-        })}
-        {renderFeeRow('', {
-          payableTo: FIELD_KEYS.customItem1000_payable_to, d: FIELD_KEYS.customItem1000_d,
-          charge: FIELD_KEYS.customItem1000_charge, broker: FIELD_KEYS.customItem1000_broker,
-          others: FIELD_KEYS.customItem1000_others, apr: FIELD_KEYS.customItem1000_apr,
-          paidToCompany: FIELD_KEYS.customItem1000_paid_to_company, oralDisclosure: FIELD_KEYS.customItem1000_oral_disclosure,
-        }, FIELD_KEYS.customItem1000_label)}
+        <h3 className="font-semibold text-sm text-foreground underline mb-1">1000 – Reserves Deposited with Lender</h3>
+        {renderInsuranceRow('1001', 'Hazard Insurance', FIELD_KEYS.hazardInsurance_months, FIELD_KEYS.hazardInsurance_perMonth, FIELD_KEYS.hazardInsurance_total, { others: FIELD_KEYS.hazardInsurance_others, broker: FIELD_KEYS.hazardInsurance_broker, apr: FIELD_KEYS.hazardInsurance_apr, paidToCompany: FIELD_KEYS.hazardInsurance_paid_to_company })}
+        {renderInsuranceRow('1002', 'Mortgage Insurance', FIELD_KEYS.mortgageInsurance_months, FIELD_KEYS.mortgageInsurance_perMonth, FIELD_KEYS.mortgageInsurance_total, { others: FIELD_KEYS.mortgageInsurance_others, broker: FIELD_KEYS.mortgageInsurance_broker, apr: FIELD_KEYS.mortgageInsurance_apr, paidToCompany: FIELD_KEYS.mortgageInsurance_paid_to_company })}
+        {renderInsuranceRow('1004', 'Co. Property Taxes', FIELD_KEYS.coPropertyTaxes_months, FIELD_KEYS.coPropertyTaxes_perMonth, FIELD_KEYS.coPropertyTaxes_total, { others: FIELD_KEYS.coPropertyTaxes_others, broker: FIELD_KEYS.coPropertyTaxes_broker, apr: FIELD_KEYS.coPropertyTaxes_apr, paidToCompany: FIELD_KEYS.coPropertyTaxes_paid_to_company })}
+        {renderFeeRow('', '', { others: FIELD_KEYS.customItem1000_others, broker: FIELD_KEYS.customItem1000_broker, apr: FIELD_KEYS.customItem1000_apr, paidToCompany: FIELD_KEYS.customItem1000_paid_to_company }, FIELD_KEYS.customItem1000_label)}
       </div>
 
       {/* 1100 Title Charges */}
       <div className="space-y-0">
-        <h3 className="font-semibold text-sm text-foreground underline mb-1">1100 Title Charges</h3>
-        {renderFeeRow('1101 Settlement or Closing/Escrow Fee', {
-          payableTo: FIELD_KEYS.settlementClosingFee_payable_to, d: FIELD_KEYS.settlementClosingFee_d,
-          charge: FIELD_KEYS.settlementClosingFee_charge, broker: FIELD_KEYS.settlementClosingFee_broker,
-          others: FIELD_KEYS.settlementClosingFee_others, apr: FIELD_KEYS.settlementClosingFee_apr,
-          paidToCompany: FIELD_KEYS.settlementClosingFee_paid_to_company, oralDisclosure: FIELD_KEYS.settlementClosingFee_oral_disclosure,
-        })}
-        {renderFeeRow('1105 Document Preparation Fee Paid to', {
-          payableTo: FIELD_KEYS.docPreparationFee_payable_to, d: FIELD_KEYS.docPreparationFee_d,
-          charge: FIELD_KEYS.docPreparationFee_charge, broker: FIELD_KEYS.docPreparationFee_broker,
-          others: FIELD_KEYS.docPreparationFee_others, apr: FIELD_KEYS.docPreparationFee_apr,
-          paidToCompany: FIELD_KEYS.docPreparationFee_paid_to_company, oralDisclosure: FIELD_KEYS.docPreparationFee_oral_disclosure,
-        })}
-        {renderFeeRow('1106 Notary Fee Paid to', {
-          payableTo: FIELD_KEYS.notaryFee_payable_to, d: FIELD_KEYS.notaryFee_d,
-          charge: FIELD_KEYS.notaryFee_charge, broker: FIELD_KEYS.notaryFee_broker,
-          others: FIELD_KEYS.notaryFee_others, apr: FIELD_KEYS.notaryFee_apr,
-          paidToCompany: FIELD_KEYS.notaryFee_paid_to_company, oralDisclosure: FIELD_KEYS.notaryFee_oral_disclosure,
-        })}
-        {renderFeeRow('1108 Title Insurance Paid to', {
-          payableTo: FIELD_KEYS.titleInsurance_payable_to, d: FIELD_KEYS.titleInsurance_d,
-          charge: FIELD_KEYS.titleInsurance_charge, broker: FIELD_KEYS.titleInsurance_broker,
-          others: FIELD_KEYS.titleInsurance_others, apr: FIELD_KEYS.titleInsurance_apr,
-          paidToCompany: FIELD_KEYS.titleInsurance_paid_to_company, oralDisclosure: FIELD_KEYS.titleInsurance_oral_disclosure,
-        })}
-        {renderFeeRow('', {
-          payableTo: FIELD_KEYS.customItem1100_payable_to, d: FIELD_KEYS.customItem1100_d,
-          charge: FIELD_KEYS.customItem1100_charge, broker: FIELD_KEYS.customItem1100_broker,
-          others: FIELD_KEYS.customItem1100_others, apr: FIELD_KEYS.customItem1100_apr,
-          paidToCompany: FIELD_KEYS.customItem1100_paid_to_company, oralDisclosure: FIELD_KEYS.customItem1100_oral_disclosure,
-        }, FIELD_KEYS.customItem1100_label)}
+        <h3 className="font-semibold text-sm text-foreground underline mb-1">1100 – Title Charges</h3>
+        {renderFeeRow('1101', 'Settlement or Closing/Escrow Fee', { others: FIELD_KEYS.settlementClosingFee_others, broker: FIELD_KEYS.settlementClosingFee_broker, apr: FIELD_KEYS.settlementClosingFee_apr, paidToCompany: FIELD_KEYS.settlementClosingFee_paid_to_company })}
+        {renderFeeRow('1105', 'Document Preparation Fee', { others: FIELD_KEYS.docPreparationFee_others, broker: FIELD_KEYS.docPreparationFee_broker, apr: FIELD_KEYS.docPreparationFee_apr, paidToCompany: FIELD_KEYS.docPreparationFee_paid_to_company })}
+        {renderFeeRow('1106', 'Notary Fee', { others: FIELD_KEYS.notaryFee_others, broker: FIELD_KEYS.notaryFee_broker, apr: FIELD_KEYS.notaryFee_apr, paidToCompany: FIELD_KEYS.notaryFee_paid_to_company })}
+        {renderFeeRow('1108', 'Title Insurance', { others: FIELD_KEYS.titleInsurance_others, broker: FIELD_KEYS.titleInsurance_broker, apr: FIELD_KEYS.titleInsurance_apr, paidToCompany: FIELD_KEYS.titleInsurance_paid_to_company })}
+        {renderFeeRow('', '', { others: FIELD_KEYS.customItem1100_others, broker: FIELD_KEYS.customItem1100_broker, apr: FIELD_KEYS.customItem1100_apr, paidToCompany: FIELD_KEYS.customItem1100_paid_to_company }, FIELD_KEYS.customItem1100_label)}
       </div>
 
       {/* 1200 Government Recording and Transfer Charges */}
       <div className="space-y-0">
-        <h3 className="font-semibold text-sm text-foreground underline mb-1">1200 Government Recording and Transfer Charges</h3>
-        {renderFeeRow('1201 Recording Fees', {
-          payableTo: FIELD_KEYS.recordingFees_payable_to, d: FIELD_KEYS.recordingFees_d,
-          charge: FIELD_KEYS.recordingFees_charge, broker: FIELD_KEYS.recordingFees_broker,
-          others: FIELD_KEYS.recordingFees_others, apr: FIELD_KEYS.recordingFees_apr,
-          paidToCompany: FIELD_KEYS.recordingFees_paid_to_company, oralDisclosure: FIELD_KEYS.recordingFees_oral_disclosure,
-        })}
-        {renderFeeRow('', {
-          payableTo: FIELD_KEYS.addThisLine_payable_to, d: FIELD_KEYS.addThisLine_d,
-          charge: FIELD_KEYS.addThisLine_charge, broker: FIELD_KEYS.addThisLine_broker,
-          others: FIELD_KEYS.addThisLine_others, apr: FIELD_KEYS.addThisLine_apr,
-          paidToCompany: FIELD_KEYS.addThisLine_paid_to_company, oralDisclosure: FIELD_KEYS.addThisLine_oral_disclosure,
-        }, FIELD_KEYS.addThisLine_label)}
-        {renderFeeRow('1202 City/County Tax/Stamps', {
-          payableTo: FIELD_KEYS.cityCountyTaxStamps_payable_to, d: FIELD_KEYS.cityCountyTaxStamps_d,
-          charge: FIELD_KEYS.cityCountyTaxStamps_charge, broker: FIELD_KEYS.cityCountyTaxStamps_broker,
-          others: FIELD_KEYS.cityCountyTaxStamps_others, apr: FIELD_KEYS.cityCountyTaxStamps_apr,
-          paidToCompany: FIELD_KEYS.cityCountyTaxStamps_paid_to_company, oralDisclosure: FIELD_KEYS.cityCountyTaxStamps_oral_disclosure,
-        })}
-        {renderFeeRow('', {
-          payableTo: FIELD_KEYS.customItem1200_payable_to, d: FIELD_KEYS.customItem1200_d,
-          charge: FIELD_KEYS.customItem1200_charge, broker: FIELD_KEYS.customItem1200_broker,
-          others: FIELD_KEYS.customItem1200_others, apr: FIELD_KEYS.customItem1200_apr,
-          paidToCompany: FIELD_KEYS.customItem1200_paid_to_company, oralDisclosure: FIELD_KEYS.customItem1200_oral_disclosure,
-        }, FIELD_KEYS.customItem1200_label)}
+        <h3 className="font-semibold text-sm text-foreground underline mb-1">1200 – Government Recording and Transfer Charges</h3>
+        {renderFeeRow('1201', 'Recording Fees', { others: FIELD_KEYS.recordingFees_others, broker: FIELD_KEYS.recordingFees_broker, apr: FIELD_KEYS.recordingFees_apr, paidToCompany: FIELD_KEYS.recordingFees_paid_to_company })}
+        {renderFeeRow('1301', '', { others: FIELD_KEYS.addThisLine_others, broker: FIELD_KEYS.addThisLine_broker, apr: FIELD_KEYS.addThisLine_apr, paidToCompany: FIELD_KEYS.addThisLine_paid_to_company }, FIELD_KEYS.addThisLine_label)}
+        {renderFeeRow('1202', 'City/County Tax/Stamps', { others: FIELD_KEYS.cityCountyTaxStamps_others, broker: FIELD_KEYS.cityCountyTaxStamps_broker, apr: FIELD_KEYS.cityCountyTaxStamps_apr, paidToCompany: FIELD_KEYS.cityCountyTaxStamps_paid_to_company })}
+        {renderFeeRow('', '', { others: FIELD_KEYS.customItem1200_others, broker: FIELD_KEYS.customItem1200_broker, apr: FIELD_KEYS.customItem1200_apr, paidToCompany: FIELD_KEYS.customItem1200_paid_to_company }, FIELD_KEYS.customItem1200_label)}
       </div>
 
       {/* 1300 Additional Settlement Charges */}
       <div className="space-y-0">
-        <h3 className="font-semibold text-sm text-foreground underline mb-1">1300 Additional Settlement Charges</h3>
-        {renderFeeRow('1302 Pest Inspection', {
-          payableTo: FIELD_KEYS.pestInspection_payable_to, d: FIELD_KEYS.pestInspection_d,
-          charge: FIELD_KEYS.pestInspection_charge, broker: FIELD_KEYS.pestInspection_broker,
-          others: FIELD_KEYS.pestInspection_others, apr: FIELD_KEYS.pestInspection_apr,
-          paidToCompany: FIELD_KEYS.pestInspection_paid_to_company, oralDisclosure: FIELD_KEYS.pestInspection_oral_disclosure,
-        })}
+        <h3 className="font-semibold text-sm text-foreground underline mb-1">1300 – Additional Settlement Charges</h3>
+        {renderFeeRow('1302', 'Pest Inspection', { others: FIELD_KEYS.pestInspection_others, broker: FIELD_KEYS.pestInspection_broker, apr: FIELD_KEYS.pestInspection_apr, paidToCompany: FIELD_KEYS.pestInspection_paid_to_company })}
         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => {
           const prefix = `origination_fees.1300_custom_item_${i}`;
-          return renderFeeRow('', {
-            payableTo: `${prefix}_payable_to`, d: `${prefix}_d`,
-            charge: `${prefix}_charge`, broker: `${prefix}_broker`,
-            others: `${prefix}_others`, apr: `${prefix}_apr`,
-            paidToCompany: `${prefix}_paid_to_company`, oralDisclosure: `${prefix}_oral_disclosure`,
-          }, `${prefix}_label`);
+          return renderFeeRow('', '', { others: `${prefix}_others`, broker: `${prefix}_broker`, apr: `${prefix}_apr`, paidToCompany: `${prefix}_paid_to_company` }, `${prefix}_label`);
         })}
       </div>
 
