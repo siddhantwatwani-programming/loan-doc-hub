@@ -21,6 +21,7 @@ import { DealSectionTab } from "@/components/deal/DealSectionTab";
 import { BorrowerSectionContent } from "@/components/deal/BorrowerSectionContent";
 import { LenderSectionContent } from "@/components/deal/LenderSectionContent";
 import { PropertySectionContent } from "@/components/deal/PropertySectionContent";
+import { LienSectionContent } from "@/components/deal/LienSectionContent";
 import { BrokerSectionContent } from "@/components/deal/BrokerSectionContent";
 import { LoanTermsSectionContent } from "@/components/deal/LoanTermsSectionContent";
 import { LoanTermsFundingForm } from "@/components/deal/LoanTermsFundingForm";
