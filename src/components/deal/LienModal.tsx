@@ -148,11 +148,11 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
             {renderInlineField('account', 'Account Number', 'text', isThisLoan)}
             {renderInlineField('maturityDate', 'Maturity Date', 'date', isThisLoan)}
             {renderInlineField('phone', 'Phone', 'text', isThisLoan)}
-            {renderCurrencyField('originalBalance', 'Original Balance', isThisLoan)}
+            {renderCurrencyField('originalBalance', 'Original Balance', isThisLoan || isAnticipated)}
             {renderInlineField('fax', 'Fax', 'text', isThisLoan)}
-            {renderCurrencyField('currentBalance', 'Current Balance', isThisLoan)}
+            {renderCurrencyField('currentBalance', 'Current Balance', isThisLoan || isAnticipated)}
             {renderInlineField('email', 'Email', 'text', isThisLoan)}
-            {renderCurrencyField('balanceAfter', 'Balance After', isThisLoan)}
+            {renderCurrencyField('balanceAfter', 'Balance After', isThisLoan || isPayoff)}
             {renderInlineField('email', 'Email', 'text', isThisLoan)}
             {renderCurrencyField('regularPayment', 'Regular Payment', isThisLoan)}
             <div className="flex items-center gap-2">
