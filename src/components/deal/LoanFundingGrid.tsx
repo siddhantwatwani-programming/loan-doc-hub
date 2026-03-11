@@ -322,10 +322,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                         className="h-4 w-4"
                       />
                     </TableCell>
-                    {visibleColumns.map((col) => (
-                      <TableCell key={col.id} className={cn(
-                        ['pctOwned', 'lenderRate', 'principalBalance', 'originalAmount', 'regularPayment'].includes(col.id) && 'text-right'
-                      )}>{renderCellValue(record, col.id)}</TableCell>
+                     {visibleColumns.map((col) => (
+                      <TableCell key={col.id} className="text-left">{renderCellValue(record, col.id)}</TableCell>
                     ))}
                   </TableRow>
                 ))
