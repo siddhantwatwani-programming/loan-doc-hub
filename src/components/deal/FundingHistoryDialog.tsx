@@ -21,7 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { GridExportDialog, ExportColumn } from './GridExportDialog';
 
 interface FundingHistoryRecord {
   id: string;
@@ -40,6 +42,15 @@ interface FundingHistoryDialogProps {
   historyRecords?: FundingHistoryRecord[];
 }
 
+const HISTORY_EXPORT_COLUMNS: ExportColumn[] = [
+  { id: 'fundingDate', label: 'Funding Date' },
+  { id: 'reference', label: 'Reference' },
+  { id: 'lenderAccount', label: 'Lender Account' },
+  { id: 'lenderName', label: 'Lender Name' },
+  { id: 'amountFunded', label: 'Amount Funded' },
+  { id: 'notes', label: 'Notes' },
+];
+
 export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
   open,
   onOpenChange,
@@ -49,6 +60,7 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [selectedRecord, setSelectedRecord] = useState<FundingHistoryRecord | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(historyRecords.length / pageSize));
 
@@ -77,9 +89,15 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[80vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span className="text-primary">💾</span>
-            Funding History
+          <DialogTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-primary">💾</span>
+              Funding History
+            </div>
+            <Button variant="outline" size="sm" className="gap-1" onClick={() => setExportOpen(true)}>
+              <Download className="h-3.5 w-3.5" />
+              Export
+            </Button>
           </DialogTitle>
         </DialogHeader>
 
@@ -93,7 +111,7 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
                   <TableHead className="font-semibold">REFERENCE</TableHead>
                   <TableHead className="font-semibold">LENDER ACCOUNT</TableHead>
                   <TableHead className="font-semibold">LENDER NAME</TableHead>
-                  <TableHead className="font-semibold text-right">AMOUNT FUNDED</TableHead>
+                  <TableHead className="font-semibold text-left">AMOUNT FUNDED</TableHead>
                   <TableHead className="font-semibold">NOTES</TableHead>
                 </TableRow>
               </TableHeader>
@@ -120,7 +138,7 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
                         {record.lenderAccount}
                       </TableCell>
                       <TableCell>{record.lenderName}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-left">
                         {formatCurrency(record.amountFunded)}
                       </TableCell>
                       <TableCell className="max-w-[200px] truncate" title={record.notes}>
@@ -192,6 +210,14 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
             </div>
           </div>
         </div>
+
+        <GridExportDialog
+          open={exportOpen}
+          onOpenChange={setExportOpen}
+          columns={HISTORY_EXPORT_COLUMNS}
+          data={historyRecords}
+          fileName="funding_history"
+        />
       </DialogContent>
     </Dialog>
   );
