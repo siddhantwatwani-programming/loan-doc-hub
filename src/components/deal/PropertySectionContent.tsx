@@ -133,11 +133,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const [editingProperty, setEditingProperty] = useState<PropertyData | null>(null);
   const { dirtyFieldKeys } = useDirtyFields();
   
-  // Check if we're in detail view (liens and insurance sections are handled separately)
+  // Check if we're in detail view
   const isDetailView = ['property_details', 'legal_description', 'property_tax'].includes(activeSubSection);
-  
-  // Check if liens section is active (rendered separately)
-  const isLiensSection = activeSubSection === 'liens';
   
   // Check if insurance section is active (rendered separately)
   const isInsuranceSection = activeSubSection === 'insurance';
