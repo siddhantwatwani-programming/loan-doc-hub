@@ -924,6 +924,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
             calculationResults={calculationResults}
           />
         );
+      }
       case 'note':
         return (
           <BorrowerNoteForm
