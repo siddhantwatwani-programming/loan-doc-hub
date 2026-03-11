@@ -402,8 +402,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   <Checkbox id="overrideDefaultFees" checked={formData.overrideDefaultFees} onCheckedChange={(c) => handleChange('overrideDefaultFees', !!c)} />
                   <Label htmlFor="overrideDefaultFees" className="text-sm font-semibold text-foreground">Override Default Fees Fees</Label>
                 </div>
-                {formData.overrideDefaultFees && (
-                  <div className="space-y-1.5 pl-2">
+                <div className="space-y-1.5 pl-2">
                     {/* Column headers */}
                     <div className="flex items-center gap-2">
                       <div className="min-w-[120px]" />
@@ -418,8 +417,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                     {renderDefaultFeeRow('Interest Guarantee', 'interestGuaranteeLender', 'interestGuaranteeCompany', 'interestGuaranteeBroker', 'interestGuaranteeTotal')}
                     {renderDefaultFeeRow('Prepayment', 'prepaymentLender', 'prepaymentCompany', 'prepaymentBroker', 'prepaymentTotal')}
                     {renderDefaultFeeRow('Maturity', 'maturityLender', 'maturityCompany', 'maturityBroker', 'maturityTotal')}
-                  </div>
-                )}
+                </div>
               </div>
             </div>
         </div>
