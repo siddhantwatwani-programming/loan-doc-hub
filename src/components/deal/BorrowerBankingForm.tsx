@@ -206,6 +206,21 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
               </Select>
             </div>
           </DirtyFieldWrapper>
+
+          {/* Notes */}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.notes}>
+            <div className="flex items-start gap-4">
+              <Label className="w-32 text-sm text-foreground flex-shrink-0 pt-2">Notes</Label>
+              <Textarea
+                value={getValue('notes')}
+                onChange={(e) => handleChange('notes', e.target.value)}
+                disabled={disabled}
+                className="text-sm flex-1 min-h-[80px]"
+                rows={3}
+                placeholder="Enter notes..."
+              />
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
         {/* Right Column */}
