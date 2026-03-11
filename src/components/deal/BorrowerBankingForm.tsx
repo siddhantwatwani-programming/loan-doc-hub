@@ -315,7 +315,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.nextDebitDate}>
             <div className="flex items-center gap-4">
               <Label className="w-32 text-sm text-foreground flex-shrink-0">Next Debit Date</Label>
-              <Popover>
+              <Popover open={nextDebitOpen} onOpenChange={setNextDebitOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -335,7 +335,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                   <Calendar
                     mode="single"
                     selected={parseDate(getValue('nextDebitDate'))}
-                    onSelect={(date) => handleChange('nextDebitDate', date ? format(date, 'yyyy-MM-dd') : '')}
+                    onSelect={(date) => { handleChange('nextDebitDate', date ? format(date, 'yyyy-MM-dd') : ''); setNextDebitOpen(false); }}
                     initialFocus
                     className="p-3 pointer-events-auto"
                   />
