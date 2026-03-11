@@ -297,15 +297,6 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             </Select>
           </InlineField>
 
-          <InlineField label="Capacity" fieldKey={fk('capacity')}>
-            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>
-                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-              </SelectContent>
-            </Select>
-          </InlineField>
-
           <DirtyFieldWrapper fieldKey={fk('full_name')}>
             <div className="flex items-center gap-3">
               <div className="min-w-[140px] text-left shrink-0">
