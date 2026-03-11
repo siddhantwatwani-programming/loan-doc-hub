@@ -100,6 +100,23 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (!isThisLoan) return;
+
+    const { account, balanceAfter, regularPayment } = getThisLoanAutofillValues(loanValues);
+
+    if (lien.account !== account) onChange('account', account);
+    if (lien.balanceAfter !== balanceAfter) onChange('balanceAfter', balanceAfter);
+    if (lien.regularPayment !== regularPayment) onChange('regularPayment', regularPayment);
+  }, [
+    isThisLoan,
+    loanValues,
+    lien.account,
+    lien.balanceAfter,
+    lien.regularPayment,
+    onChange,
+  ]);
+
   // Handle loan type radio change — clear all, set selected
   const handleLoanTypeChange = (value: string) => {
     onChange('anticipated', value === 'anticipated' ? 'true' : 'false');

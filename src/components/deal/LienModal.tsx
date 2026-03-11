@@ -138,7 +138,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
             {renderInlineField('lienPriorityNow', 'Lien Priority Now')}
 
             <div className="flex items-center gap-2">
-              <Checkbox id="modal-thisLoan" checked={isThisLoan} onCheckedChange={(c) => handleChange('thisLoan', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+              <Checkbox id="modal-thisLoan" checked={isThisLoan} onCheckedChange={(c) => handleThisLoanToggle(!!c)} className="h-3.5 w-3.5" />
               <Label htmlFor="modal-thisLoan" className="text-xs text-foreground">This Loan</Label>
             </div>
             {renderInlineField('lienPriorityAfter', 'Lien Priority After')}
