@@ -32,6 +32,7 @@ import MagicLinkAccessPage from "./pages/MagicLinkAccessPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import GlobalEventJournalPage from "./pages/csr/GlobalEventJournalPage";
 import ContactLendersPage from "./pages/contacts/ContactLendersPage";
+import ContactBorrowersPage from "./pages/contacts/ContactBorrowersPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
