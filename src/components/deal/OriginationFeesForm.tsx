@@ -390,6 +390,10 @@ const FIELD_KEYS = {
   customItem1300_8_paid_to_company: 'origination_fees.1300_custom_item_8_paid_to_company',
   customItem1300_8_oral_disclosure: 'origination_fees.1300_custom_item_8_oral_disclosure',
 
+  // 901 dynamic description fields
+  interestForDays_days: 'origination_fees.901_interest_for_days_days',
+  interestForDays_perDay: 'origination_fees.901_interest_for_days_per_day',
+
   // Subtotal and Total
   subtotal_j: 'origination_fees.subtotal_j',
   subtotal_others: 'origination_fees.subtotal_others',
