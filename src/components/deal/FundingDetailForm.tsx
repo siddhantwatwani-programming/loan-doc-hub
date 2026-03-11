@@ -14,6 +14,7 @@ import type { FundingFormData } from './AddFundingModal';
 interface FundingDetailFormProps {
   data: FundingFormData;
   onChange: (data: FundingFormData) => void;
+  totalPayment?: string;
 }
 
 export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
