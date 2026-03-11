@@ -135,27 +135,27 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
         <div className="border-b border-border pb-1">
           <span className="font-semibold text-sm text-primary">Rate Selection</span>
         </div>
-        <RadioGroup value={data.rateSelection || 'note_rate'} onValueChange={(val) => handleChange('rateSelection', val)} className="space-y-2">
-          <div className="flex items-center gap-3">
+        <RadioGroup value={data.rateSelection || 'note_rate'} onValueChange={(val) => handleChange('rateSelection', val)} className="flex items-center gap-6 flex-wrap">
+          <div className="flex items-center gap-2">
             <RadioGroupItem value="note_rate" id="detail-rate-note" />
-            <Label htmlFor="detail-rate-note" className="text-sm min-w-[100px]">Note Rate</Label>
-            <div className="relative w-32">
+            <Label htmlFor="detail-rate-note" className="text-sm">Note Rate</Label>
+            <div className="relative w-28">
               <Input type="text" inputMode="decimal" value={data.rateNoteValue || ''} onChange={(e) => handleChange('rateNoteValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", data.rateSelection !== 'note_rate' && 'opacity-50 bg-muted')} disabled={data.rateSelection !== 'note_rate'} placeholder="0.000" />
               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <RadioGroupItem value="sold_rate" id="detail-rate-sold" />
-            <Label htmlFor="detail-rate-sold" className="text-sm min-w-[100px]">Sold Rate</Label>
-            <div className="relative w-32">
+            <Label htmlFor="detail-rate-sold" className="text-sm">Sold Rate</Label>
+            <div className="relative w-28">
               <Input type="text" inputMode="decimal" value={data.rateSoldValue || ''} onChange={(e) => handleChange('rateSoldValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", data.rateSelection !== 'sold_rate' && 'opacity-50 bg-muted')} disabled={data.rateSelection !== 'sold_rate'} placeholder="0.000" />
               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <RadioGroupItem value="lender_rate" id="detail-rate-lender" />
-            <Label htmlFor="detail-rate-lender" className="text-sm min-w-[100px]">Lender Rate</Label>
-            <div className="relative w-32">
+            <Label htmlFor="detail-rate-lender" className="text-sm">Lender Rate</Label>
+            <div className="relative w-28">
               <Input type="text" inputMode="decimal" value={data.rateLenderValue || ''} onChange={(e) => handleChange('rateLenderValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", data.rateSelection !== 'lender_rate' && 'opacity-50 bg-muted')} disabled={data.rateSelection !== 'lender_rate'} placeholder="0.000" />
               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
             </div>

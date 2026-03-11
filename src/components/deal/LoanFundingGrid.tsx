@@ -195,15 +195,15 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       case 'lenderName':
         return record.lenderName || '-';
       case 'pctOwned':
-        return <span className="text-right block">{formatPercentage(record.pctOwned)}</span>;
+        return <span>{formatPercentage(record.pctOwned)}</span>;
       case 'lenderRate':
-        return <span className="text-right block">{formatPercentage(record.lenderRate)}</span>;
+        return <span>{formatPercentage(record.lenderRate)}</span>;
       case 'principalBalance':
-        return <span className="text-right block">{formatCurrency(record.principalBalance)}</span>;
+        return <span>{formatCurrency(record.principalBalance)}</span>;
       case 'originalAmount':
-        return <span className="text-right block">{formatCurrency(record.originalAmount)}</span>;
+        return <span>{formatCurrency(record.originalAmount)}</span>;
       case 'regularPayment':
-        return <span className="text-right block">{formatCurrency(record.regularPayment)}</span>;
+        return <span>{formatCurrency(record.regularPayment)}</span>;
       case 'roundingError':
         return (
           <div className="text-center" onClick={(e) => e.stopPropagation()}>
@@ -322,10 +322,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                         className="h-4 w-4"
                       />
                     </TableCell>
-                    {visibleColumns.map((col) => (
-                      <TableCell key={col.id} className={cn(
-                        ['pctOwned', 'lenderRate', 'principalBalance', 'originalAmount', 'regularPayment'].includes(col.id) && 'text-right'
-                      )}>{renderCellValue(record, col.id)}</TableCell>
+                     {visibleColumns.map((col) => (
+                      <TableCell key={col.id} className="text-left">{renderCellValue(record, col.id)}</TableCell>
                     ))}
                   </TableRow>
                 ))
@@ -334,10 +332,10 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                 <TableRow className="bg-muted/30 font-semibold border-t-2">
                   <TableCell />
                   {visibleColumns.map((col, idx) => {
-                    if (col.id === 'pctOwned') return <TableCell key={col.id} className="text-right"><span className={cn(totalOwnership !== 100 && 'text-destructive')}>{formatPercentage(totalOwnership)}</span></TableCell>;
-                    if (col.id === 'principalBalance') return <TableCell key={col.id} className="text-right">{formatCurrency(totalPrincipalBalance)}</TableCell>;
-                    if (col.id === 'regularPayment') return <TableCell key={col.id} className="text-right">{formatCurrency(totalPaymentSum)}</TableCell>;
-                    if (col.id === 'originalAmount') return <TableCell key={col.id} className="text-right">{formatCurrency(totalFundingAmount)}</TableCell>;
+                    if (col.id === 'pctOwned') return <TableCell key={col.id} className="text-left"><span className="text-foreground">{formatPercentage(totalOwnership)}</span></TableCell>;
+                    if (col.id === 'principalBalance') return <TableCell key={col.id} className="text-left">{formatCurrency(totalPrincipalBalance)}</TableCell>;
+                    if (col.id === 'regularPayment') return <TableCell key={col.id} className="text-left">{formatCurrency(totalPaymentSum)}</TableCell>;
+                    if (col.id === 'originalAmount') return <TableCell key={col.id} className="text-left">{formatCurrency(totalFundingAmount)}</TableCell>;
                     if (idx === 0) return <TableCell key={col.id} className="font-semibold">Totals:</TableCell>;
                     return <TableCell key={col.id}></TableCell>;
                   })}
@@ -373,7 +371,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       </div>
 
       {totalOwnership !== 100 && fundingRecords.length > 0 && (
-        <p className="text-sm text-destructive">Total ownership must equal 100% (currently {formatPercentage(totalOwnership)})</p>
+        <p className="text-sm text-foreground">Total ownership must equal 100% (currently {formatPercentage(totalOwnership)})</p>
       )}
 
       {fundingRecords.length > 0 && (
