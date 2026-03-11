@@ -1,60 +1,110 @@
 
 
-## Fix: Cross-Paragraph Tag Consumption Bug in Document Generation
+## Event Journal (Change Log System) Implementation Plan
 
-### Problem
+### Overview
+Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
 
-The generated document shows `Account Number: {{R Ekambaram for the benefit of the Broker, Lender...` — a dangling `{{` from the unresolved `{{ln_p_loanNumber}}` tag consumed the entire next paragraph. This causes:
-- Missing Account Number field
-- Lost certification paragraph structure  
-- Page content shifts (section 4 bleeds onto page 1)
-- Layout mismatches across all 6 pages
+### 1. Database: New Migration
+Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
 
-### Root Cause
+```sql
+CREATE TABLE public.event_journal (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
+  event_number integer NOT NULL,
+  actor_user_id uuid NOT NULL,
+  section text NOT NULL,
+  details jsonb NOT NULL DEFAULT '[]',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-The `{{ln_p_loanNumber}}` tag is fragmented across multiple XML runs in the DOCX template. The normalization regexes reconstruct the `{{` but fail to join the field name + `}}` back together (likely due to complex run properties or alternate content structures). The consolidation safety net (already coded) should catch this, but **the edge function hasn't been successfully redeployed** — production logs show zero diagnostic messages from the new tag-parser code.
+CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
+ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
 
-Even with consolidation working correctly, there's no safety net to prevent dangling `{{` from corrupting the output when a tag can't be resolved.
+-- RLS: CSR and Admin can view/insert
+CREATE POLICY "CSRs can view event journal" ON public.event_journal
+  FOR SELECT TO authenticated
+  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
 
-### Fix (2 changes)
+CREATE POLICY "CSRs can insert event journal" ON public.event_journal
+  FOR INSERT TO authenticated
+  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
 
-**1. Add dangling-brace cleanup in `replaceMergeTags`** (`supabase/functions/_shared/tag-parser.ts`)
+-- Auto-increment event_number per deal
+CREATE OR REPLACE FUNCTION public.set_event_journal_number()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
+BEGIN
+  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
+  FROM public.event_journal WHERE deal_id = NEW.deal_id;
+  RETURN NEW;
+END;
+$$;
 
-After all tag replacement and label-based replacement are complete, add a final pass that removes any remaining `{{...}}` patterns from the output. These are unresolved tags that should display as blank, not as raw template syntax:
-
-```typescript
-// After label-based replacement (end of replaceMergeTags):
-
-// Final safety net: remove any remaining unresolved {{...}} merge tags
-// to prevent dangling braces from corrupting document layout
-const unresolvedTagPattern = /\{\{[A-Za-z0-9_.| ]+\}\}/g;
-const unresolvedTags = result.match(unresolvedTagPattern);
-if (unresolvedTags && unresolvedTags.length > 0) {
-  console.log(`[tag-parser] Cleaning ${unresolvedTags.length} unresolved tags: ${unresolvedTags.join(', ')}`);
-  result = result.replace(unresolvedTagPattern, '');
-}
-
-// Also clean dangling {{ without matching }} (cross-paragraph fragmentation artifact)
-// A {{ followed by 200+ chars before the next }} is almost certainly a broken tag
-result = result.replace(/\{\{(?=[^}]{200,})/g, '');
+CREATE TRIGGER trg_event_journal_number
+  BEFORE INSERT ON public.event_journal
+  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
 ```
 
-This ensures that even if normalization/consolidation fails for a specific tag, the output document is clean.
+The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
 
-**2. Force redeploy the `generate-document` edge function**
+### 2. Hook: `useEventJournal.ts` (New File)
+- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
+- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
+- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
 
-The consolidation safety net and diagnostic logging already in the codebase need to be deployed to production. The code change above will trigger a redeploy automatically.
+### 3. Capture Old→New Values in `useDealFields.ts`
+- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
+- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
+- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
+- After successful save, update the snapshot
+
+### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
+Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
+- Table with columns: Event #, User, Section, Details, Timestamp
+- Details column shows truncated preview (first 80 chars)
+- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
+- Sorted by event_number descending (newest first)
+
+### 5. `EventJournalViewer` Component (New File)
+`src/components/deal/EventJournalViewer.tsx`:
+- Fetches from `event_journal` table filtered by `deal_id`
+- Joins actor names from `profiles`
+- Table layout using existing shadcn Table components
+- "Show More" modal using existing Dialog component
+- Detail entries formatted as `Field Label: oldValue → newValue`
+
+### 6. Global Event Journal Page (New File)
+`src/pages/csr/GlobalEventJournalPage.tsx`:
+- Deal selector dropdown (search by deal number) at the top
+- Once a deal is selected, renders `EventJournalViewer` for that deal
+- Same table structure as the per-deal view
+
+### 7. Sidebar Navigation Update
+In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
+```tsx
+<PromotedNavSection
+  label="Event Journal"
+  icon={BookOpen}
+  items={[]}
+  directPath="/event-journal"
+  isCollapsed={isCollapsed}
+  searchQuery={searchQuery}
+/>
+```
+
+### 8. Route Registration
+In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
 
 ### Files Changed
-
 | File | Change |
 |------|--------|
-| `supabase/functions/_shared/tag-parser.ts` | Add ~10 lines of cleanup logic at end of `replaceMergeTags` |
-
-### What This Does NOT Change
-- No UI changes
-- No database changes
-- No changes to normalization regexes or consolidation logic
-- No changes to field resolution, formatting, or any other document generation logic
-- All existing templates continue to work identically
+| New migration | Create `event_journal` table with trigger |
+| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
+| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
+| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
+| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
+| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
+| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
+| `src/App.tsx` | Add `/event-journal` route |
 
