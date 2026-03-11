@@ -50,10 +50,12 @@ const BORROWER_TYPE_OPTIONS = [
 
 const CAPACITY_OPTIONS = [
   'Borrower',
-  'Co-Borrower',
+  'Co-borrower',
+  'Trustee',
+  'Co-Trustee',
+  'Managing Member',
+  'Authorized Signer',
   'Additional Guarantor',
-  'Authorized Party',
-  'Broker',
 ];
 
 const TAX_ID_TYPE_OPTIONS = [
