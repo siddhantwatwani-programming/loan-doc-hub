@@ -79,6 +79,8 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
   
   const debitFrequency = getValue('debitFrequency') || 'Once Only';
   const isOnceOnly = debitFrequency === 'Once Only';
+  const [nextDebitOpen, setNextDebitOpen] = useState(false);
+  const [stopDateOpen, setStopDateOpen] = useState(false);
 
   const parseDate = (dateStr: string): Date | undefined => {
     if (!dateStr) return undefined;
