@@ -160,15 +160,6 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             </Select>
           </InlineField>
 
-          <InlineField label="Capacity" fieldKey={FIELD_KEYS.capacity}>
-            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>
-                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-              </SelectContent>
-            </Select>
-          </InlineField>
-
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.fullName}>
             <div className="flex items-start gap-3">
               <div className="min-w-[140px] text-left shrink-0">
