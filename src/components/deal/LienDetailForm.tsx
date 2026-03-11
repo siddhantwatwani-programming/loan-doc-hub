@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -23,6 +23,12 @@ interface LienDetailFormProps {
 }
 
 const STATUS_OPTIONS = ['Current', 'Unable to Verify', '30-90', '90+', 'Foreclosure', 'Modification', 'Paid'];
+
+const getThisLoanAutofillValues = (loanValues: Record<string, string>) => ({
+  account: loanValues['Terms.LoanNumber'] || loanValues['loan_terms.loan_number'] || '',
+  balanceAfter: loanValues['loan_terms.loan_amount'] || '',
+  regularPayment: loanValues['loan_terms.regular_payment'] || '',
+});
 
 // Map from LienData keys to db field keys used in dirty tracking
 const DIRTY_KEY_MAP: Record<string, string> = {
@@ -87,15 +93,29 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
   const handleThisLoanChange = (checked: boolean) => {
     onChange('thisLoan', checked ? 'true' : 'false');
     if (checked) {
-      // Auto-populate from loan values using correct field keys from fieldKeyMap
-      const loanAccount = loanValues['Terms.LoanNumber'] || loanValues['loan_terms.details_company'] || '';
-      const loanAmount = loanValues['loan_terms.loan_amount'] || '';
-      const loanPayment = loanValues['loan_terms.regular_payment'] || '';
-      onChange('account', loanAccount);
-      onChange('balanceAfter', loanAmount);
-      onChange('regularPayment', loanPayment);
+      const { account, balanceAfter, regularPayment } = getThisLoanAutofillValues(loanValues);
+      onChange('account', account);
+      onChange('balanceAfter', balanceAfter);
+      onChange('regularPayment', regularPayment);
     }
   };
+
+  useEffect(() => {
+    if (!isThisLoan) return;
+
+    const { account, balanceAfter, regularPayment } = getThisLoanAutofillValues(loanValues);
+
+    if (lien.account !== account) onChange('account', account);
+    if (lien.balanceAfter !== balanceAfter) onChange('balanceAfter', balanceAfter);
+    if (lien.regularPayment !== regularPayment) onChange('regularPayment', regularPayment);
+  }, [
+    isThisLoan,
+    loanValues,
+    lien.account,
+    lien.balanceAfter,
+    lien.regularPayment,
+    onChange,
+  ]);
 
   // Handle loan type radio change — clear all, set selected
   const handleLoanTypeChange = (value: string) => {
