@@ -47,15 +47,17 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
     onChange({ ...data, interestFrom: date ? format(date, 'yyyy-MM-dd') : '' });
   }, [data, onChange]);
 
-  // Compute Regular Payment = Total Payment * (Percent Owned / 100)
+  // Compute Regular Payment = Total Payment * (Percent Owned / 100), or just percentOwned if no totalPayment
   React.useEffect(() => {
-    const tp = parseFloat(totalPayment) || 0;
     const pct = parseFloat(data.percentOwned) || 0;
-    if (tp > 0 && pct > 0) {
-      const rp = (tp * pct / 100).toFixed(2);
+    if (pct > 0) {
+      const tp = parseFloat(totalPayment) || 0;
+      const rp = tp > 0 ? (tp * pct / 100).toFixed(2) : data.percentOwned;
       if (rp !== data.regularPayment) {
         onChange({ ...data, regularPayment: rp });
       }
+    } else if (data.regularPayment !== '' && data.regularPayment !== undefined) {
+      onChange({ ...data, regularPayment: '' });
     }
   }, [data.percentOwned, totalPayment]);
 
@@ -110,24 +112,6 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
           </Popover>
         </div>
 
-        {/* Percent Owned */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Percent Owned</Label>
-          <div className="relative flex-1">
-            <Input type="text" inputMode="decimal" value={data.percentOwned || ''} onChange={(e) => handleChange('percentOwned', e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0.000" className="h-7 text-sm pr-6" />
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
-          </div>
-        </div>
-
-        {/* Regular Payment */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Regular Payment</Label>
-          <div className="relative flex-1">
-            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-            <Input type="text" value={data.regularPayment || ''} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
-          </div>
-        </div>
-
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Interest From</Label>
           <Popover open={interestFromOpen} onOpenChange={setInterestFromOpen}>
@@ -175,6 +159,24 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
             </div>
           </div>
         </RadioGroup>
+      </div>
+
+      {/* Percent Owned & Regular Payment - aligned with Note Rate input */}
+      <div className="flex items-start gap-6 flex-wrap mt-1">
+        <div className="flex items-center gap-2">
+          <Label className="text-sm text-muted-foreground shrink-0">Percent Owned</Label>
+          <div className="relative w-28">
+            <Input type="text" inputMode="decimal" value={data.percentOwned || ''} onChange={(e) => handleChange('percentOwned', e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0.000" className="h-7 text-sm pr-6" />
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Label className="text-sm text-muted-foreground shrink-0">Regular Payment</Label>
+          <div className="relative w-28">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
+            <Input type="text" value={data.regularPayment || ''} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
+          </div>
+        </div>
       </div>
 
       {/* Lender Rate (auto-populated) */}
