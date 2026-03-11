@@ -444,6 +444,7 @@ export const AppSidebar: React.FC = () => {
                 label="Contacts"
                 icon={Users}
                 items={[]}
+                directPath="/contacts"
                 isCollapsed={isCollapsed}
                 searchQuery={searchQuery}
               />

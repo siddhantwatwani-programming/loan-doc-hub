@@ -67,6 +67,9 @@ const App = () => (
                   <Route path="/my-work/action-items" element={<ComingSoonPage />} />
                   <Route path="/my-work/alerts" element={<ComingSoonPage />} />
 
+                  {/* Contacts */}
+                  <Route path="/contacts" element={<ComingSoonPage />} />
+
                   {/* Broker Services */}
                   <Route path="/broker-services/department-alerts" element={<ComingSoonPage />} />
                   <Route path="/broker-services/origination/dashboard" element={<ComingSoonPage />} />

@@ -13,6 +13,7 @@ const sectionMap: Record<string, string> = {
   '/system-admin': 'System Administration',
   '/c-level': 'C Level Module',
   '/my-work': 'My Work',
+  '/contacts': 'Contacts',
 };
 
 function getSectionTitle(pathname: string): string | null {
