@@ -116,6 +116,8 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
             {renderInlineField('phone', 'Phone', 'text', isThisLoan)}
             {renderCurrencyField('originalBalance', 'Original Balance', isThisLoan)}
             {renderInlineField('fax', 'Fax', 'text', isThisLoan)}
+            {renderCurrencyField('currentBalance', 'Current Balance', isThisLoan)}
+            {renderInlineField('email', 'Email', 'text', isThisLoan)}
             {renderCurrencyField('balanceAfter', 'Balance After', isThisLoan)}
             {renderInlineField('email', 'Email', 'text', isThisLoan)}
             {renderCurrencyField('regularPayment', 'Regular Payment', isThisLoan)}
