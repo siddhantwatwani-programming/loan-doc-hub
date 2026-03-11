@@ -905,7 +905,7 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
         return (
           <BorrowerTaxDetailForm
             fields={fields}
-            values={getBorrowerSpecificValues()}
+            values={{ ...getBorrowerSpecificValues(), ...getCoBorrowerSpecificValues() }}
             onValueChange={handleBorrowerValueChange}
             showValidation={showValidation}
             disabled={disabled}
