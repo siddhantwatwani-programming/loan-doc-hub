@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { RE885ProposedLoanTerms } from './RE885ProposedLoanTerms';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationFeesFormProps {
