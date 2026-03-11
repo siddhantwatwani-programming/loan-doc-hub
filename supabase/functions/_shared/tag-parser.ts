@@ -10,6 +10,61 @@ import { applyTransform, formatByDataType } from "./formatting.ts";
 import { resolveFieldKeyWithMap, getFieldData } from "./field-resolver.ts";
 
 /**
+ * Flatten Word MERGEFIELD structures into plain «fieldName» text runs.
+ * 
+ * Word templates using Mail Merge store fields as complex XML structures:
+ *   Pattern A (complex fields): <w:fldChar begin/> + <w:instrText> + <w:fldChar separate/> + display run + <w:fldChar end/>
+ *   Pattern B (simple fields): <w:fldSimple w:instr="MERGEFIELD ...">inner runs</w:fldSimple>
+ * 
+ * This function converts both patterns into a single <w:r> with «fieldName» text,
+ * preserving the display run's formatting (<w:rPr>).
+ */
+function flattenMergeFieldStructures(xml: string): string {
+  let result = xml;
+  let complexCount = 0;
+  let simpleCount = 0;
+
+  // Pattern A: Complex MERGEFIELD structures spanning multiple <w:r> elements.
+  // Match: <w:r>...<w:fldChar begin/>...</w:r> ... <w:instrText>MERGEFIELD name</w:instrText> ...
+  //        <w:r>...<w:fldChar separate/>...</w:r> ... display run(s) ... <w:r>...<w:fldChar end/>...</w:r>
+  // We capture the field name from instrText and the rPr from the display run (if any).
+  const complexFieldPattern = /<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+w:fldCharType="begin"[^/]*\/>\s*<\/w:r>([\s\S]*?)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+w:fldCharType="separate"[^/]*\/>\s*<\/w:r>([\s\S]*?)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+w:fldCharType="end"[^/]*\/>\s*<\/w:r>/g;
+
+  result = result.replace(complexFieldPattern, (fullMatch, instrSection, displaySection) => {
+    // Extract field name from instrText
+    const instrMatch = instrSection.match(/MERGEFIELD\s+"?([A-Za-z0-9_.]+)"?/i);
+    if (!instrMatch) return fullMatch; // Not a MERGEFIELD, leave unchanged
+
+    const fieldName = instrMatch[1];
+
+    // Extract rPr from the first display run (to preserve formatting)
+    const rPrMatch = displaySection.match(/<w:rPr>([\s\S]*?)<\/w:rPr>/);
+    const rPr = rPrMatch ? `<w:rPr>${rPrMatch[1]}</w:rPr>` : '';
+
+    complexCount++;
+    return `<w:r>${rPr}<w:t>\u00AB${fieldName}\u00BB</w:t></w:r>`;
+  });
+
+  // Pattern B: Simple field wrappers: <w:fldSimple w:instr="MERGEFIELD name ...">inner</w:fldSimple>
+  const simpleFieldPattern = /<w:fldSimple\s+[^>]*w:instr="[^"]*MERGEFIELD\s+"?([A-Za-z0-9_.]+)"?[^"]*"[^>]*>([\s\S]*?)<\/w:fldSimple>/g;
+
+  result = result.replace(simpleFieldPattern, (fullMatch, fieldName, innerContent) => {
+    // Extract rPr from inner run if present
+    const rPrMatch = innerContent.match(/<w:rPr>([\s\S]*?)<\/w:rPr>/);
+    const rPr = rPrMatch ? `<w:rPr>${rPrMatch[1]}</w:rPr>` : '';
+
+    simpleCount++;
+    return `<w:r>${rPr}<w:t>\u00AB${fieldName}\u00BB</w:t></w:r>`;
+  });
+
+  if (complexCount > 0 || simpleCount > 0) {
+    console.log(`[tag-parser] Flattened MERGEFIELD structures: ${complexCount} complex, ${simpleCount} simple`);
+  }
+
+  return result;
+}
+
+/**
  * Normalize Word XML by consolidating fragmented text runs.
  * Word often splits text across multiple <w:t> elements.
  */
