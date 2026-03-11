@@ -371,7 +371,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       </div>
 
       {totalOwnership !== 100 && fundingRecords.length > 0 && (
-        <p className="text-sm text-destructive">Total ownership must equal 100% (currently {formatPercentage(totalOwnership)})</p>
+        <p className="text-sm text-foreground">Total ownership must equal 100% (currently {formatPercentage(totalOwnership)})</p>
       )}
 
       {fundingRecords.length > 0 && (
