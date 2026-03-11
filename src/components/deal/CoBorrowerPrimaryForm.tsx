@@ -198,7 +198,7 @@ const BORROWER_TYPE_OPTIONS = [
 ];
 
 const CAPACITY_OPTIONS = [
-  'Borrower', 'Co-Borrower', 'Additional Guarantor', 'Authorized Party', 'Broker',
+  'Borrower', 'Co-borrower', 'Trustee', 'Co-Trustee', 'Managing Member', 'Authorized Signer', 'Additional Guarantor',
 ];
 
 const TAX_ID_TYPE_OPTIONS = ['0 – Unknown', '1 – EIN', '2 – SSN'];
@@ -297,15 +297,6 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             </Select>
           </InlineField>
 
-          <InlineField label="Capacity" fieldKey={fk('capacity')}>
-            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>
-                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-              </SelectContent>
-            </Select>
-          </InlineField>
-
           <DirtyFieldWrapper fieldKey={fk('full_name')}>
             <div className="flex items-center gap-3">
               <div className="min-w-[140px] text-left shrink-0">
@@ -336,6 +327,15 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
 
           <InlineField label="Last" fieldKey={fk('last_name')}>
             <Input value={getValue('last_name')} onChange={(e) => handleChange('last_name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+          </InlineField>
+
+          <InlineField label="Capacity" fieldKey={fk('capacity')}>
+            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>
+                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+              </SelectContent>
+            </Select>
           </InlineField>
 
           <InlineField label="Email" fieldKey={fk('email')}>

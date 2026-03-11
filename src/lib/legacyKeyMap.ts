@@ -107,6 +107,7 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'ach.debit_amount': 'br_p_debitAmount',
   'ach.send_confirm': 'br_p_sendConfir',
   'ach.disable_online_payment': 'br_p_disableOnlinePaymen',
+  'ach.notes': 'br_b_notes',
 
   // BORROWER TAX DETAIL (1098)
   'borrower.1098.designated_recipient': 'br_t_designatRecipi',

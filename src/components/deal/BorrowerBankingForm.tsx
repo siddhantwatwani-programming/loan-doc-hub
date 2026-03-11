@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -79,6 +79,8 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
   
   const debitFrequency = getValue('debitFrequency') || 'Once Only';
   const isOnceOnly = debitFrequency === 'Once Only';
+  const [nextDebitOpen, setNextDebitOpen] = useState(false);
+  const [stopDateOpen, setStopDateOpen] = useState(false);
 
   const parseDate = (dateStr: string): Date | undefined => {
     if (!dateStr) return undefined;
@@ -206,6 +208,21 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
               </Select>
             </div>
           </DirtyFieldWrapper>
+
+          {/* Notes */}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.notes}>
+            <div className="flex items-start gap-4">
+              <Label className="w-32 text-sm text-foreground flex-shrink-0 pt-2">Notes</Label>
+              <Textarea
+                value={getValue('notes')}
+                onChange={(e) => handleChange('notes', e.target.value)}
+                disabled={disabled}
+                className="text-sm flex-1 min-h-[80px]"
+                rows={3}
+                placeholder="Enter notes..."
+              />
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
         {/* Right Column */}
@@ -298,7 +315,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.nextDebitDate}>
             <div className="flex items-center gap-4">
               <Label className="w-32 text-sm text-foreground flex-shrink-0">Next Debit Date</Label>
-              <Popover>
+              <Popover open={nextDebitOpen} onOpenChange={setNextDebitOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -318,7 +335,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                   <Calendar
                     mode="single"
                     selected={parseDate(getValue('nextDebitDate'))}
-                    onSelect={(date) => handleChange('nextDebitDate', date ? format(date, 'yyyy-MM-dd') : '')}
+                    onSelect={(date) => { handleChange('nextDebitDate', date ? format(date, 'yyyy-MM-dd') : ''); setNextDebitOpen(false); }}
                     initialFocus
                     className="p-3 pointer-events-auto"
                   />
@@ -331,7 +348,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.stopDate}>
             <div className="flex items-center gap-4">
               <Label className="w-32 text-sm text-foreground flex-shrink-0">Stop Date</Label>
-              <Popover>
+              <Popover open={stopDateOpen} onOpenChange={setStopDateOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -351,7 +368,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                   <Calendar
                     mode="single"
                     selected={parseDate(getValue('stopDate'))}
-                    onSelect={(date) => handleChange('stopDate', date ? format(date, 'yyyy-MM-dd') : '')}
+                    onSelect={(date) => { handleChange('stopDate', date ? format(date, 'yyyy-MM-dd') : ''); setStopDateOpen(false); }}
                     initialFocus
                     className="p-3 pointer-events-auto"
                   />

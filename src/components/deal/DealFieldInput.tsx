@@ -42,6 +42,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
   
   const [isFocused, setIsFocused] = useState(false);
   const [currencyValidationError, setCurrencyValidationError] = useState<string | null>(null);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const rawValue = e.target.value;
@@ -106,6 +107,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     } else {
       onChange('');
     }
+    setDatePickerOpen(false);
   };
 
   const getDisplayValue = (): string => {
@@ -138,7 +140,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     const isValidDate = selectedDate && isValid(selectedDate);
 
     return (
-      <Popover>
+      <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
         <PopoverTrigger asChild>
           <Button
             id={field.field_key}

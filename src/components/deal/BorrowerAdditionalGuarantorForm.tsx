@@ -41,7 +41,7 @@ const BORROWER_TYPE_OPTIONS = [
 ];
 
 const CAPACITY_OPTIONS = [
-  'Borrower', 'Co-Borrower', 'Additional Guarantor', 'Authorized Party', 'Broker',
+  'Borrower', 'Co-borrower', 'Trustee', 'Co-Trustee', 'Managing Member', 'Authorized Signer', 'Additional Guarantor',
 ];
 
 const TAX_ID_TYPE_OPTIONS = ['0 – Unknown', '1 – EIN', '2 – SSN'];
@@ -160,15 +160,6 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             </Select>
           </InlineField>
 
-          <InlineField label="Capacity" fieldKey={FIELD_KEYS.capacity}>
-            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>
-                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-              </SelectContent>
-            </Select>
-          </InlineField>
-
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.fullName}>
             <div className="flex items-start gap-3">
               <div className="min-w-[140px] text-left shrink-0">
@@ -195,6 +186,15 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
 
           <InlineField label="Last" fieldKey={FIELD_KEYS.lastName}>
             <Input value={getValue('lastName')} onChange={(e) => handleChange('lastName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+          </InlineField>
+
+          <InlineField label="Capacity" fieldKey={FIELD_KEYS.capacity}>
+            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>
+                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+              </SelectContent>
+            </Select>
           </InlineField>
 
           <InlineField label="Email" fieldKey={FIELD_KEYS.email}>

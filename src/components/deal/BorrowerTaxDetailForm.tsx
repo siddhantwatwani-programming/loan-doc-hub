@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,15 +13,16 @@ import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
-import { BORROWER_TAX_DETAIL_KEYS } from '@/lib/fieldKeyMap';
+import { BORROWER_TAX_DETAIL_KEYS, BORROWER_PRIMARY_KEYS, BORROWER_GUARANTOR_KEYS } from '@/lib/fieldKeyMap';
 
 // Use central field key map
 const FIELD_KEYS = BORROWER_TAX_DETAIL_KEYS;
 
 const DESIGNATED_RECIPIENT_OPTIONS = [
-  { value: 'lender', label: 'Lender' },
-  { value: 'servicer', label: 'Servicer' },
-  { value: 'broker', label: 'Broker' },
+  { value: 'primary', label: 'Primary' },
+  { value: 'co-borrower', label: 'Co-borrower' },
+  { value: 'additional_guarantor', label: 'Additional Guarantor' },
+  { value: 'other', label: 'Other' },
 ];
 
 const TIN_TYPE_OPTIONS = [
@@ -29,6 +30,37 @@ const TIN_TYPE_OPTIONS = [
   { value: '1', label: '1 – EIN' },
   { value: '2', label: '2 – SSN' },
 ];
+
+// Maps for auto-populating from entity data
+const PRIMARY_SOURCE_MAP = {
+  name: BORROWER_PRIMARY_KEYS.fullName,
+  address: BORROWER_PRIMARY_KEYS.primaryStreet,
+  city: BORROWER_PRIMARY_KEYS.primaryCity,
+  state: BORROWER_PRIMARY_KEYS.primaryState,
+  zip: BORROWER_PRIMARY_KEYS.primaryZip,
+  tin: BORROWER_PRIMARY_KEYS.tin,
+  tinType: BORROWER_PRIMARY_KEYS.taxIdType,
+} as const;
+
+const COBORROWER_SOURCE_MAP = {
+  name: 'coborrower.full_name',
+  address: 'coborrower.primary_address.street',
+  city: 'coborrower.primary_address.city',
+  state: 'coborrower.primary_address.state',
+  zip: 'coborrower.primary_address.zip',
+  tin: 'coborrower.tin',
+  tinType: 'coborrower.tax_id_type',
+} as const;
+
+const GUARANTOR_SOURCE_MAP = {
+  name: BORROWER_GUARANTOR_KEYS.fullName,
+  address: BORROWER_GUARANTOR_KEYS.primaryStreet,
+  city: BORROWER_GUARANTOR_KEYS.primaryCity,
+  state: BORROWER_GUARANTOR_KEYS.primaryState,
+  zip: BORROWER_GUARANTOR_KEYS.primaryZip,
+  tin: BORROWER_GUARANTOR_KEYS.tin,
+  tinType: BORROWER_GUARANTOR_KEYS.taxIdType,
+} as const;
 
 interface BorrowerTaxDetailFormProps {
   fields: FieldDefinition[];
@@ -51,6 +83,44 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
   const handleChange = (key: keyof typeof FIELD_KEYS, value: string) => {
     onValueChange(FIELD_KEYS[key], value);
   };
+
+  const designatedRecipient = getValue('designatedRecipient');
+
+  // Auto-populate when designated recipient changes
+  useEffect(() => {
+    if (!designatedRecipient || designatedRecipient === 'other') {
+      if (designatedRecipient === 'other') {
+        // Clear fields when "Other" is selected
+        handleChange('name', '');
+        handleChange('address', '');
+        handleChange('city', '');
+        handleChange('state', '');
+        handleChange('zip', '');
+        handleChange('tin', '');
+        handleChange('tinType', '');
+      }
+      return;
+    }
+
+    let sourceMap: Record<string, string>;
+    if (designatedRecipient === 'primary') {
+      sourceMap = PRIMARY_SOURCE_MAP;
+    } else if (designatedRecipient === 'co-borrower') {
+      sourceMap = COBORROWER_SOURCE_MAP;
+    } else if (designatedRecipient === 'additional_guarantor') {
+      sourceMap = GUARANTOR_SOURCE_MAP;
+    } else {
+      return;
+    }
+
+    handleChange('name', values[sourceMap.name] || '');
+    handleChange('address', values[sourceMap.address] || '');
+    handleChange('city', values[sourceMap.city] || '');
+    handleChange('state', values[sourceMap.state] || '');
+    handleChange('zip', values[sourceMap.zip] || '');
+    handleChange('tin', values[sourceMap.tin] || '');
+    handleChange('tinType', values[sourceMap.tinType] || '');
+  }, [designatedRecipient]);
 
   return (
     <div className="p-6">

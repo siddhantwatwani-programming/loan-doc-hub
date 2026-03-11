@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { format, parse } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -118,6 +118,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
     onValueChange(FIELD_KEYS[key], String(value));
   };
 
+  const [dobOpen, setDobOpen] = useState(false);
+
   const wrapField = (key: keyof typeof FIELD_KEYS, children: React.ReactNode) => (
     <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>{children}</DirtyFieldWrapper>
   );
@@ -212,26 +214,6 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               </Select>
             </div>)}
 
-            {wrapField('capacity', <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Capacity</Label>
-              <Select
-                value={getValue('capacity')}
-                onValueChange={(value) => handleChange('capacity', value)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LENDER_CAPACITY_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>)}
-
             {wrapField('fullName', <div className="flex items-start gap-3">
               <div className="min-w-[140px] shrink-0 pt-1">
                 <Label className="text-sm text-muted-foreground text-left">Full Name:</Label>
@@ -277,6 +259,26 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 className="h-8"
               />
             </div>)}
+
+            {wrapField('capacity', <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Capacity</Label>
+              <Select
+                value={getValue('capacity')}
+                onValueChange={(value) => handleChange('capacity', value)}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LENDER_CAPACITY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>)}
             
             {wrapField('email', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Email</Label>
@@ -292,7 +294,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             {/* DOB */}
             {wrapField('dob', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">DOB</Label>
-              <Popover>
+              <Popover open={dobOpen} onOpenChange={setDobOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -310,7 +312,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   <Calendar
                     mode="single"
                     selected={getValue('dob') ? parse(getValue('dob'), 'yyyy-MM-dd', new Date()) : undefined}
-                    onSelect={(date) => handleChange('dob', date ? format(date, 'yyyy-MM-dd') : '')}
+                    onSelect={(date) => { handleChange('dob', date ? format(date, 'yyyy-MM-dd') : ''); setDobOpen(false); }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
                   />
