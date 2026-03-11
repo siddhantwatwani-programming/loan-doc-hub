@@ -332,10 +332,10 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                 <TableRow className="bg-muted/30 font-semibold border-t-2">
                   <TableCell />
                   {visibleColumns.map((col, idx) => {
-                    if (col.id === 'pctOwned') return <TableCell key={col.id} className="text-right"><span className={cn(totalOwnership !== 100 && 'text-destructive')}>{formatPercentage(totalOwnership)}</span></TableCell>;
-                    if (col.id === 'principalBalance') return <TableCell key={col.id} className="text-right">{formatCurrency(totalPrincipalBalance)}</TableCell>;
-                    if (col.id === 'regularPayment') return <TableCell key={col.id} className="text-right">{formatCurrency(totalPaymentSum)}</TableCell>;
-                    if (col.id === 'originalAmount') return <TableCell key={col.id} className="text-right">{formatCurrency(totalFundingAmount)}</TableCell>;
+                    if (col.id === 'pctOwned') return <TableCell key={col.id} className="text-left"><span className="text-foreground">{formatPercentage(totalOwnership)}</span></TableCell>;
+                    if (col.id === 'principalBalance') return <TableCell key={col.id} className="text-left">{formatCurrency(totalPrincipalBalance)}</TableCell>;
+                    if (col.id === 'regularPayment') return <TableCell key={col.id} className="text-left">{formatCurrency(totalPaymentSum)}</TableCell>;
+                    if (col.id === 'originalAmount') return <TableCell key={col.id} className="text-left">{formatCurrency(totalFundingAmount)}</TableCell>;
                     if (idx === 0) return <TableCell key={col.id} className="font-semibold">Totals:</TableCell>;
                     return <TableCell key={col.id}></TableCell>;
                   })}
