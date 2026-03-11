@@ -56,6 +56,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   };
 
   const [formData, setFormData] = useState<FundingFormData>(getInitialFormData());
+  const [fundingDateOpen, setFundingDateOpen] = useState(false);
+  const [interestFromOpen, setInterestFromOpen] = useState(false);
 
   const [fundingDate, setFundingDate] = useState<Date | undefined>(editData?.fundingDate ? new Date(editData.fundingDate) : undefined);
   const [interestFromDate, setInterestFromDate] = useState<Date | undefined>(editData?.interestFrom ? new Date(editData.interestFrom) : undefined);
