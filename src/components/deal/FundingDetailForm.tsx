@@ -20,6 +20,7 @@ interface FundingDetailFormProps {
 export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
   data,
   onChange,
+  totalPayment = '',
 }) => {
   const [fundingDateOpen, setFundingDateOpen] = useState(false);
   const [interestFromOpen, setInterestFromOpen] = useState(false);
