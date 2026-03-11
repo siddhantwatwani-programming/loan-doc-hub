@@ -86,6 +86,7 @@ const SECTION_ORDER: string[] = [
   "borrower",
   "loan_terms",
   "property",
+  "liens",
   "funding",
   "broker",
   "charges",
