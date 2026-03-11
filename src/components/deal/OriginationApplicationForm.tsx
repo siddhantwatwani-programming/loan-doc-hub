@@ -78,7 +78,7 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
   const setValue = (key: string, value: string) => onValueChange(key, value);
   const getBoolValue = (key: string) => values[key] === 'true';
   const setBoolValue = (key: string, value: boolean) => onValueChange(key, String(value));
-
+  const [datePickerStates, setDatePickerStates] = React.useState<Record<string, boolean>>({});
   const parseDate = (val: string): Date | undefined => {
     if (!val) return undefined;
     try { return parse(val, 'yyyy-MM-dd', new Date()); } catch { return undefined; }
