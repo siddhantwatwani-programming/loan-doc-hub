@@ -901,17 +901,30 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
         );
       case 'trust_ledger':
         return renderTrustLedger();
-      case 'tax_detail':
+      case 'tax_detail': {
+        // Build values that include co-borrower data mapped to coborrower.* keys
+        // so the 1098 auto-populate can read from coborrower.full_name, etc.
+        const taxDetailValues = getBorrowerSpecificValues();
+        const firstCoBorrower = filteredCoBorrowers[0];
+        if (firstCoBorrower) {
+          const cbPrefix = `${firstCoBorrower.id}.`;
+          Object.entries(values).forEach(([key, value]) => {
+            if (key.startsWith(cbPrefix)) {
+              taxDetailValues[key.replace(cbPrefix, 'coborrower.')] = value;
+            }
+          });
+        }
         return (
           <BorrowerTaxDetailForm
             fields={fields}
-            values={{ ...getBorrowerSpecificValues(), ...getCoBorrowerSpecificValues() }}
+            values={taxDetailValues}
             onValueChange={handleBorrowerValueChange}
             showValidation={showValidation}
             disabled={disabled}
             calculationResults={calculationResults}
           />
         );
+      }
       case 'note':
         return (
           <BorrowerNoteForm
