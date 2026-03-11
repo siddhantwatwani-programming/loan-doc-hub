@@ -33,6 +33,7 @@ import ComingSoonPage from "./pages/ComingSoonPage";
 import GlobalEventJournalPage from "./pages/csr/GlobalEventJournalPage";
 import ContactLendersPage from "./pages/contacts/ContactLendersPage";
 import ContactBorrowersPage from "./pages/contacts/ContactBorrowersPage";
+import ContactBrokersPage from "./pages/contacts/ContactBrokersPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
