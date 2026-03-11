@@ -178,7 +178,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
       {/* Lender Rate (auto-populated) */}
       <div className="flex items-center gap-3">
         <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender Rate</Label>
-        <div className="relative w-32">
+        <div className="relative w-28">
           <Input type="text" value={data.lenderRate} disabled className="h-7 text-sm pr-6 opacity-50 bg-muted" placeholder="0.000" />
           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
         </div>
