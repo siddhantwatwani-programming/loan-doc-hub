@@ -142,6 +142,7 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
               </div>
               {renderInlineField('middleName', 'Middle')}
               {renderInlineField('lastName', 'Last')}
+              {renderInlineSelect('capacity', 'Capacity', CAPACITY_OPTIONS, 'Select')}
               {renderInlineField('email', 'Email', { type: 'email' })}
               <div className="h-1" />
               {renderInlineField('creditScore', 'Credit Score')}
