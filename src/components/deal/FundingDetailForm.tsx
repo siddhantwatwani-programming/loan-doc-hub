@@ -14,11 +14,13 @@ import type { FundingFormData } from './AddFundingModal';
 interface FundingDetailFormProps {
   data: FundingFormData;
   onChange: (data: FundingFormData) => void;
+  totalPayment?: string;
 }
 
 export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
   data,
   onChange,
+  totalPayment = '',
 }) => {
   const [fundingDateOpen, setFundingDateOpen] = useState(false);
   const [interestFromOpen, setInterestFromOpen] = useState(false);
@@ -44,6 +46,18 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
     setInterestFromOpen(false);
     onChange({ ...data, interestFrom: date ? format(date, 'yyyy-MM-dd') : '' });
   }, [data, onChange]);
+
+  // Compute Regular Payment = Total Payment * (Percent Owned / 100)
+  React.useEffect(() => {
+    const tp = parseFloat(totalPayment) || 0;
+    const pct = parseFloat(data.percentOwned) || 0;
+    if (tp > 0 && pct > 0) {
+      const rp = (tp * pct / 100).toFixed(2);
+      if (rp !== data.regularPayment) {
+        onChange({ ...data, regularPayment: rp });
+      }
+    }
+  }, [data.percentOwned, totalPayment]);
 
   return (
     <div className="p-4 space-y-3">
@@ -166,7 +180,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
       {/* Lender Rate (auto-populated) */}
       <div className="flex items-center gap-3">
         <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender Rate</Label>
-        <div className="relative w-32">
+        <div className="relative w-28">
           <Input type="text" value={data.lenderRate} disabled className="h-7 text-sm pr-6 opacity-50 bg-muted" placeholder="0.000" />
           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
         </div>
