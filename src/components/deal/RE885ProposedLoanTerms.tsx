@@ -26,6 +26,14 @@ const FK = {
   viii_rate_increase_months: 'origination_fees.re885_viii_rate_increase_months',
   ix_payment_end_months: 'origination_fees.re885_ix_payment_end_months',
   ix_payment_end_pct: 'origination_fees.re885_ix_payment_end_pct',
+  xi_neg_amort_balance: 'origination_fees.re885_xi_neg_amort_balance',
+  impound_county_taxes: 'origination_fees.re885_impound_county_taxes',
+  impound_hazard_ins: 'origination_fees.re885_impound_hazard_ins',
+  impound_mortgage_ins: 'origination_fees.re885_impound_mortgage_ins',
+  impound_flood_ins: 'origination_fees.re885_impound_flood_ins',
+  impound_other: 'origination_fees.re885_impound_other',
+  impound_other_desc: 'origination_fees.re885_impound_other_desc',
+  impound_approx_amount: 'origination_fees.re885_impound_approx_amount',
 };
 
 interface RE885Props {
