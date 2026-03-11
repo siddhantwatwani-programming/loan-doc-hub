@@ -126,7 +126,6 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
               <div className="font-semibold text-xs text-foreground pb-1 mb-1.5">Name</div>
               {renderInlineField('borrowerId', 'Borrower ID')}
               {renderInlineSelect('borrowerType', 'Borrower Type', BORROWER_TYPE_OPTIONS, 'Select')}
-              {renderInlineSelect('capacity', 'Capacity', CAPACITY_OPTIONS, 'Select')}
               <div className="flex items-center gap-2">
                 <div className="w-[140px] shrink-0">
                   <Label className="text-xs">Full Name</Label>
