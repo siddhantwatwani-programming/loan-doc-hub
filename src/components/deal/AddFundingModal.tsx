@@ -345,6 +345,24 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               </RadioGroup>
             </div>
 
+            {/* Percent Owned & Regular Payment - aligned with Note Rate input */}
+            <div className="flex items-start gap-6 flex-wrap mt-1">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground shrink-0">Percent Owned</Label>
+                <div className="relative w-28">
+                  <Input type="text" inputMode="decimal" value={formData.percentOwned} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('percentOwned', v); }} placeholder="0.000" className="h-7 text-sm pr-6" />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground shrink-0">Regular Payment</Label>
+                <div className="relative w-28">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
+                  <Input type="text" value={formData.regularPayment} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
+                </div>
+              </div>
+            </div>
+
             {/* Lender Rate (auto-populated from rate selection) */}
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender Rate</Label>
