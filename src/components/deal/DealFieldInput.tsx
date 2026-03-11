@@ -107,6 +107,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     } else {
       onChange('');
     }
+    setDatePickerOpen(false);
   };
 
   const getDisplayValue = (): string => {
