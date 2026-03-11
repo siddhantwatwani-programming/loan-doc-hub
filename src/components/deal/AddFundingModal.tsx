@@ -389,7 +389,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                     {renderServicingRow('Monthly Servicing Fee', 'companyServicingFee', 'companyServicingFeePct')}
                     {renderServicingRow('Maximum', 'companyMaxFee', 'companyMaxFeePct')}
                     {renderServicingRow('Minimum', 'companyMinFee', 'companyMinFeePct')}
-                    <div className="text-xs font-semibold text-center text-muted-foreground mt-2 mb-1">To Broker</div>
+                    <div className="text-xs font-semibold text-muted-foreground mt-2 mb-1 ml-[140px]">To Broker</div>
                     {renderServicingRow('Monthly Servicing Fee', 'brokerServicingFee', 'brokerServicingFeePct')}
                     {renderServicingRow('Maximum', 'brokerMaxFee', 'brokerMaxFeePct')}
                     {renderServicingRow('Minimum', 'brokerMinFee', 'brokerMinFeePct')}
