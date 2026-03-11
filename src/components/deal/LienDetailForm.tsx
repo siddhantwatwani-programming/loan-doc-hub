@@ -87,8 +87,8 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
   const handleThisLoanChange = (checked: boolean) => {
     onChange('thisLoan', checked ? 'true' : 'false');
     if (checked) {
-      // Auto-populate from loan values
-      const loanAccount = loanValues['loan_terms.loan_number'] || loanValues['loan_terms.account_number'] || '';
+      // Auto-populate from loan values using correct field keys from fieldKeyMap
+      const loanAccount = loanValues['Terms.LoanNumber'] || loanValues['loan_terms.details_company'] || '';
       const loanAmount = loanValues['loan_terms.loan_amount'] || '';
       const loanPayment = loanValues['loan_terms.regular_payment'] || '';
       onChange('account', loanAccount);
