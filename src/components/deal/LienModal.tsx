@@ -251,24 +251,23 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
               <Label htmlFor="modal-seniorLien" className="text-xs text-foreground">Senior Lien Tracking</Label>
             </div>
             <div /> {/* spacer */}
-
-            {formData.seniorLienTracking === 'true' ? (
-              <div className="space-y-1.5">
-                {renderInlineField('lastVerified', 'Last Verified', 'date')}
-                <div className="flex items-center gap-2">
-                  <Label className="w-[110px] shrink-0 text-xs text-foreground">Status</Label>
-                  <Select value={formData.status} onValueChange={(val) => handleChange('status', val)}>
-                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select status" /></SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50">
-                      {STATUS_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            ) : (
-              <div>{renderInlineField('lastVerified', 'Last Verified', 'date')}</div>
-            )}
           </div>
+
+          {/* Senior Lien Tracking fields — only visible when checkbox is checked */}
+          {formData.seniorLienTracking === 'true' && (
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 mt-2">
+              {renderInlineField('lastVerified', 'Last Verified', 'date')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[110px] shrink-0 text-xs text-foreground">Status</Label>
+                <Select value={formData.status} onValueChange={(val) => handleChange('status', val)}>
+                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select status" /></SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-50">
+                    {STATUS_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-2 pt-3 border-t border-border shrink-0">
