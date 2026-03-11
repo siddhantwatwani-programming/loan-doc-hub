@@ -880,7 +880,8 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                   // For multi-entity sections: check prefixed dirty keys (e.g., borrower1.xxx, property2.xxx)
                   const SECTION_PREFIX_MAP: Record<string, string[]> = {
                     borrower: ['borrower', 'coborrower', 'trust_ledger'],
-                    property: ['property', 'lien', 'insurance'],
+                    property: ['property', 'insurance'],
+                    liens: ['lien'],
                     charges: ['charge'],
                     lender: ['lender'],
                     broker: ['broker'],
