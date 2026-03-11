@@ -1,7 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { RE885ProposedLoanTerms } from './RE885ProposedLoanTerms';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationFeesFormProps {
@@ -416,6 +418,30 @@ const FIELD_KEYS = {
   existingLien2_d: 'origination_fees.existing_lien_2_d',
   existingLien3_label: 'origination_fees.existing_lien_3_label',
   existingLien3_d: 'origination_fees.existing_lien_3_d',
+
+  // RE 885 Proposed Loan Terms (Sections I–IX)
+  re885_proposed_loan_amount: 'origination_fees.re885_proposed_loan_amount',
+  re885_initial_fees_page1: 'origination_fees.re885_initial_fees_page1',
+  re885_other_obligations: 'origination_fees.re885_other_obligations',
+  re885_credit_life_insurance: 'origination_fees.re885_credit_life_insurance',
+  re885_additional_obligation_1: 'origination_fees.re885_additional_obligation_1',
+  re885_additional_obligation_2: 'origination_fees.re885_additional_obligation_2',
+  re885_subtotal_deductions: 'origination_fees.re885_subtotal_deductions',
+  re885_cash_at_closing_option: 'origination_fees.re885_cash_at_closing_option',
+  re885_cash_at_closing_amount: 'origination_fees.re885_cash_at_closing_amount',
+  re885_loan_term_value: 'origination_fees.re885_loan_term_value',
+  re885_loan_term_unit: 'origination_fees.re885_loan_term_unit',
+  re885_interest_rate: 'origination_fees.re885_interest_rate',
+  re885_rate_type_fixed: 'origination_fees.re885_rate_type_fixed',
+  re885_rate_type_adjustable: 'origination_fees.re885_rate_type_adjustable',
+  re885_iv_adj_rate_months: 'origination_fees.re885_iv_adj_rate_months',
+  re885_v_fully_indexed_rate: 'origination_fees.re885_v_fully_indexed_rate',
+  re885_vi_max_interest_rate: 'origination_fees.re885_vi_max_interest_rate',
+  re885_vii_payment_amount: 'origination_fees.re885_vii_payment_amount',
+  re885_viii_rate_increase_pct: 'origination_fees.re885_viii_rate_increase_pct',
+  re885_viii_rate_increase_months: 'origination_fees.re885_viii_rate_increase_months',
+  re885_ix_payment_end_months: 'origination_fees.re885_ix_payment_end_months',
+  re885_ix_payment_end_pct: 'origination_fees.re885_ix_payment_end_pct',
 };
 
 const GRID_STYLE: React.CSSProperties = {
@@ -681,6 +707,18 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
         {renderSimpleRow('', FIELD_KEYS.existingLien2_d, FIELD_KEYS.existingLien2_label)}
         {renderSimpleRow('', FIELD_KEYS.existingLien3_d, FIELD_KEYS.existingLien3_label)}
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* RE 885 – Proposed Loan Terms (Sections I–IX)              */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+      <RE885ProposedLoanTerms
+        getValue={getValue}
+        setValue={setValue}
+        getBoolValue={getBoolValue}
+        setBoolValue={setBoolValue}
+        parseNumber={parseNumber}
+        disabled={disabled}
+      />
     </div>
   );
 };
