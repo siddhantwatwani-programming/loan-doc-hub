@@ -86,18 +86,28 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
 
   const designatedRecipient = getValue('designatedRecipient');
 
+  // Use refs to avoid stale closures in useEffect
+  const valuesRef = useRef(values);
+  valuesRef.current = values;
+  const onValueChangeRef = useRef(onValueChange);
+  onValueChangeRef.current = onValueChange;
+
   // Auto-populate when designated recipient changes
   useEffect(() => {
+    const currentValues = valuesRef.current;
+    const fireChange = (key: keyof typeof FIELD_KEYS, value: string) => {
+      onValueChangeRef.current(FIELD_KEYS[key], value);
+    };
+
     if (!designatedRecipient || designatedRecipient === 'other') {
       if (designatedRecipient === 'other') {
-        // Clear fields when "Other" is selected
-        handleChange('name', '');
-        handleChange('address', '');
-        handleChange('city', '');
-        handleChange('state', '');
-        handleChange('zip', '');
-        handleChange('tin', '');
-        handleChange('tinType', '');
+        fireChange('name', '');
+        fireChange('address', '');
+        fireChange('city', '');
+        fireChange('state', '');
+        fireChange('zip', '');
+        fireChange('tin', '');
+        fireChange('tinType', '');
       }
       return;
     }
@@ -113,13 +123,13 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
       return;
     }
 
-    handleChange('name', values[sourceMap.name] || '');
-    handleChange('address', values[sourceMap.address] || '');
-    handleChange('city', values[sourceMap.city] || '');
-    handleChange('state', values[sourceMap.state] || '');
-    handleChange('zip', values[sourceMap.zip] || '');
-    handleChange('tin', values[sourceMap.tin] || '');
-    handleChange('tinType', values[sourceMap.tinType] || '');
+    fireChange('name', currentValues[sourceMap.name] || '');
+    fireChange('address', currentValues[sourceMap.address] || '');
+    fireChange('city', currentValues[sourceMap.city] || '');
+    fireChange('state', currentValues[sourceMap.state] || '');
+    fireChange('zip', currentValues[sourceMap.zip] || '');
+    fireChange('tin', currentValues[sourceMap.tin] || '');
+    fireChange('tinType', currentValues[sourceMap.tinType] || '');
   }, [designatedRecipient]);
 
   return (
