@@ -31,6 +31,7 @@ import PermissionManagementPage from "./pages/admin/PermissionManagementPage";
 import MagicLinkAccessPage from "./pages/MagicLinkAccessPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import GlobalEventJournalPage from "./pages/csr/GlobalEventJournalPage";
+import ContactLendersPage from "./pages/contacts/ContactLendersPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
