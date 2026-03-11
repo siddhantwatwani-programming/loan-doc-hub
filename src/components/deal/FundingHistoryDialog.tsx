@@ -89,16 +89,16 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[80vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-primary">💾</span>
-              Funding History
-            </div>
+          <DialogTitle className="flex items-center gap-2">
+            <span className="text-primary">💾</span>
+            Funding History
+          </DialogTitle>
+          <div className="flex justify-end -mt-6 mr-6">
             <Button variant="outline" size="sm" className="gap-1" onClick={() => setExportOpen(true)}>
               <Download className="h-3.5 w-3.5" />
               Export
             </Button>
-          </DialogTitle>
+          </div>
         </DialogHeader>
 
         <div className="space-y-4">
