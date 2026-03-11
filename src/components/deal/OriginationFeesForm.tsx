@@ -706,6 +706,18 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
         {renderSimpleRow('', FIELD_KEYS.existingLien2_d, FIELD_KEYS.existingLien2_label)}
         {renderSimpleRow('', FIELD_KEYS.existingLien3_d, FIELD_KEYS.existingLien3_label)}
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* RE 885 – Proposed Loan Terms (Sections I–IX)              */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+      <RE885ProposedLoanTerms
+        getValue={getValue}
+        setValue={setValue}
+        getBoolValue={getBoolValue}
+        setBoolValue={setBoolValue}
+        parseNumber={parseNumber}
+        disabled={disabled}
+      />
     </div>
   );
 };
