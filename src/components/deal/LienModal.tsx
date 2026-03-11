@@ -88,7 +88,19 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
           </div>
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
-            {renderInlineField('property', 'Related Property')}
+            {/* Related Property — dropdown */}
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Related Property</Label>
+              <Select value={formData.property} onValueChange={(val) => handleChange('property', val)}>
+                <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select property" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {propertyOptions.map(opt => (
+                    <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             {renderInlineField('lienPriorityNow', 'Lien Priority Now')}
 
             <div className="flex items-center gap-2">

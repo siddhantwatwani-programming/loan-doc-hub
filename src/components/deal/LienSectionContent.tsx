@@ -2,7 +2,6 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LienSubNavigation, type LienSubSection } from './LienSubNavigation';
 import { LiensTableView, type LienData } from './LiensTableView';
 import { LienModal } from './LienModal';
 import { LienDetailForm } from './LienDetailForm';
@@ -92,10 +91,6 @@ const LIEN_FIELD_MAP: Record<string, string> = {
   status: 'status',
 };
 
-// Reverse map: db field -> LienData key
-const DB_TO_LIEN: Record<string, keyof LienData> = {};
-Object.entries(LIEN_FIELD_MAP).forEach(([k, v]) => { DB_TO_LIEN[v] = k as keyof LienData; });
-
 const extractLiensFromValues = (values: Record<string, string>): LienData[] => {
   const liens: LienData[] = [];
   const lienPrefixes = new Set<string>();
@@ -114,7 +109,6 @@ const extractLiensFromValues = (values: Record<string, string>): LienData[] => {
         (lien as any)[lienKey] = val;
       }
     });
-    // Only add if the lien has meaningful data (not an empty shell after deletion)
     const hasData = Object.entries(LIEN_FIELD_MAP).some(([lienKey, dbField]) => {
       if (lienKey === 'id') return false;
       const val = values[`${prefix}.${dbField}`];
@@ -145,6 +139,8 @@ const getNextLienPrefix = (values: Record<string, string>): string => {
   return `lien${nextNum}`;
 };
 
+type LienView = 'table' | 'detail';
+
 export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   values,
   onValueChange,
@@ -155,18 +151,18 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
-  const activeSubSection = (nav?.getSubSection('lien') ?? 'liens') as LienSubSection;
-  const setActiveSubSection = (sub: LienSubSection) => nav?.setSubSection('lien', sub);
   const selectedLienPrefix = nav?.getSelectedPrefix('lien') ?? 'lien1';
   const setSelectedLienPrefix = (prefix: string) => nav?.setSelectedPrefix('lien', prefix);
+  
+  // Use local state for view since we removed sub-navigation
+  const [currentView, setCurrentView] = useState<LienView>('table');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLien, setEditingLien] = useState<LienData | null>(null);
   const { dirtyFieldKeys } = useDirtyFields();
 
-  const isDetailView = activeSubSection === 'lien_details';
   const liens = extractLiensFromValues(values);
 
-  // Remap dirty field keys: lienN.xxx → lien1.xxx for selected prefix
+  // Remap dirty field keys for the selected lien
   const remappedDirtyKeys = useMemo(() => {
     const remapped = new Set<string>();
     dirtyFieldKeys.forEach(key => {
@@ -187,8 +183,8 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
 
   const handleAddLien = useCallback(() => { setEditingLien(null); setModalOpen(true); }, []);
   const handleEditLien = useCallback((lien: LienData) => { setEditingLien(lien); setModalOpen(true); }, []);
-  const handleRowClick = useCallback((lien: LienData) => { setSelectedLienPrefix(lien.id); setActiveSubSection('lien_details'); }, []);
-  const handleBackToTable = useCallback(() => { setActiveSubSection('liens'); }, []);
+  const handleRowClick = useCallback((lien: LienData) => { setSelectedLienPrefix(lien.id); setCurrentView('detail'); }, []);
+  const handleBackToTable = useCallback(() => { setCurrentView('table'); }, []);
 
   const handleSaveLien = useCallback((lienData: LienData) => {
     const prefix = editingLien ? editingLien.id : getNextLienPrefix(values);
@@ -196,7 +192,6 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
       if (lienKey === 'id') return;
       const val = (lienData as any)[lienKey] || '';
       const defaultVal = (DEFAULT_LIEN as any)[lienKey] || '';
-      // Only write fields that differ from defaults to avoid false dirty flags
       if (val !== defaultVal || editingLien) {
         onValueChange(`${prefix}.${dbField}`, val);
       }
@@ -221,25 +216,10 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
     }
   }, [selectedLienPrefix, onValueChange]);
 
-  const renderSubSectionContent = () => {
-    switch (activeSubSection) {
-      case 'liens':
-        return (
-          <LiensTableView liens={liens} onAddLien={handleAddLien} onEditLien={handleEditLien} onRowClick={handleRowClick} onDeleteLien={handleDeleteLien} onBack={onBack} disabled={disabled} onRefresh={onRefresh} />
-        );
-      case 'lien_details':
-        return (
-          <LienDetailForm lien={selectedLien} onChange={handleLienFieldChange} disabled={disabled} propertyOptions={propertyOptions} />
-        );
-      default:
-        return null;
-    }
-  };
-
   return (
     <>
       <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
-        {isDetailView && (
+        {currentView === 'detail' && (
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/20">
             <Button variant="ghost" size="sm" onClick={handleBackToTable} className="gap-1 h-8">
               <ArrowLeft className="h-4 w-4" />
@@ -248,13 +228,29 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
             <span className="text-sm font-medium text-foreground">{selectedLienName}</span>
           </div>
         )}
-        <div className="flex flex-1">
-          <LienSubNavigation activeSubSection={activeSubSection} onSubSectionChange={setActiveSubSection} isDetailView={isDetailView} />
-          <div className="flex-1 min-w-0 overflow-auto">
-            <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
-              {renderSubSectionContent()}
-            </DirtyFieldsProvider>
-          </div>
+        <div className="flex-1 min-w-0 overflow-auto">
+          <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+            {currentView === 'table' ? (
+              <LiensTableView
+                liens={liens}
+                onAddLien={handleAddLien}
+                onEditLien={handleEditLien}
+                onRowClick={handleRowClick}
+                onDeleteLien={handleDeleteLien}
+                onBack={onBack}
+                disabled={disabled}
+                onRefresh={onRefresh}
+              />
+            ) : (
+              <LienDetailForm
+                lien={selectedLien}
+                onChange={handleLienFieldChange}
+                disabled={disabled}
+                propertyOptions={propertyOptions}
+                loanValues={values}
+              />
+            )}
+          </DirtyFieldsProvider>
         </div>
       </div>
       <LienModal open={modalOpen} onOpenChange={setModalOpen} lien={editingLien} onSave={handleSaveLien} isEdit={!!editingLien} propertyOptions={propertyOptions} />

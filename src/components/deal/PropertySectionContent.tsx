@@ -9,7 +9,6 @@ import { PropertyTaxForm } from './PropertyTaxForm';
 
 import { PropertiesTableView, type PropertyData } from './PropertiesTableView';
 import { PropertyModal } from './PropertyModal';
-import { LienSectionContent } from './LienSectionContent';
 import { InsuranceSectionContent } from './InsuranceSectionContent';
 import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
 import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
@@ -134,11 +133,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const [editingProperty, setEditingProperty] = useState<PropertyData | null>(null);
   const { dirtyFieldKeys } = useDirtyFields();
   
-  // Check if we're in detail view (liens and insurance sections are handled separately)
+  // Check if we're in detail view
   const isDetailView = ['property_details', 'legal_description', 'property_tax'].includes(activeSubSection);
-  
-  // Check if liens section is active (rendered separately)
-  const isLiensSection = activeSubSection === 'liens';
   
   // Check if insurance section is active (rendered separately)
   const isInsuranceSection = activeSubSection === 'insurance';
@@ -347,9 +343,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             calculationResults={calculationResults}
           />
         );
-      case 'liens':
-        // Liens section is handled separately below
-        return null;
       case 'insurance':
         // Insurance section is handled separately below
         return null;
@@ -368,38 +361,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         return null;
     }
   };
-
-  // Render Liens section separately (has its own table/detail view pattern)
-  if (isLiensSection) {
-    return (
-      <>
-        <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
-          <div className="flex flex-1">
-            {/* Sub-navigation tabs on the left */}
-            <PropertySubNavigation
-              activeSubSection={activeSubSection}
-              onSubSectionChange={setActiveSubSection}
-              isDetailView={false}
-            />
-
-            {/* Liens content */}
-            <div className="flex-1 min-w-0 overflow-auto">
-              <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
-                <LienSectionContent
-                  values={values}
-                  onValueChange={onValueChange}
-                  onRemoveValuesByPrefix={onRemoveValuesByPrefix}
-                  disabled={disabled}
-                  propertyOptions={propertyOptions}
-                  onBack={handleBackToTable}
-                />
-              </DirtyFieldsProvider>
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  }
 
   // Render Insurance section separately (has its own table/detail view pattern)
   if (isInsuranceSection) {
