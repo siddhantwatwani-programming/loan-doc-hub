@@ -343,9 +343,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             calculationResults={calculationResults}
           />
         );
-      case 'liens':
-        // Liens section is handled separately below
-        return null;
       case 'insurance':
         // Insurance section is handled separately below
         return null;
@@ -364,38 +361,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         return null;
     }
   };
-
-  // Render Liens section separately (has its own table/detail view pattern)
-  if (isLiensSection) {
-    return (
-      <>
-        <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
-          <div className="flex flex-1">
-            {/* Sub-navigation tabs on the left */}
-            <PropertySubNavigation
-              activeSubSection={activeSubSection}
-              onSubSectionChange={setActiveSubSection}
-              isDetailView={false}
-            />
-
-            {/* Liens content */}
-            <div className="flex-1 min-w-0 overflow-auto">
-              <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
-                <LienSectionContent
-                  values={values}
-                  onValueChange={onValueChange}
-                  onRemoveValuesByPrefix={onRemoveValuesByPrefix}
-                  disabled={disabled}
-                  propertyOptions={propertyOptions}
-                  onBack={handleBackToTable}
-                />
-              </DirtyFieldsProvider>
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  }
 
   // Render Insurance section separately (has its own table/detail view pattern)
   if (isInsuranceSection) {
