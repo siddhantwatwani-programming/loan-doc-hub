@@ -43,6 +43,17 @@ const FK = {
   title_contact: 'origination_esc.title_contact',
   title_telephone: 'origination_esc.title_telephone',
   title_email: 'origination_esc.title_email',
+  // Trustee
+  trustee_type: 'origination_esc.trustee_type',
+  trustee_name: 'origination_esc.trustee_name',
+  trustee_company: 'origination_esc.trustee_company',
+  trustee_street: 'origination_esc.trustee_street',
+  trustee_city: 'origination_esc.trustee_city',
+  trustee_state: 'origination_esc.trustee_state',
+  trustee_zip: 'origination_esc.trustee_zip',
+  trustee_officer: 'origination_esc.trustee_officer',
+  trustee_contact: 'origination_esc.trustee_contact',
+  trustee_telephone: 'origination_esc.trustee_telephone',
   // Details
   date_for_documents: 'origination_esc.date_for_documents',
   estimated_closing: 'origination_esc.estimated_closing',
@@ -54,20 +65,26 @@ const FK = {
   send_original_documents: 'origination_esc.send_original_documents',
   // Other addresses
   tp_other_name: 'origination_esc.title_policy_other.name',
+  tp_other_company: 'origination_esc.title_policy_other.company',
   tp_other_street: 'origination_esc.title_policy_other.street',
   tp_other_city: 'origination_esc.title_policy_other.city',
   tp_other_state: 'origination_esc.title_policy_other.state',
   tp_other_zip: 'origination_esc.title_policy_other.zip',
+  tp_other_phone: 'origination_esc.title_policy_other.phone',
   rd_other_name: 'origination_esc.recorded_deed_other.name',
+  rd_other_company: 'origination_esc.recorded_deed_other.company',
   rd_other_street: 'origination_esc.recorded_deed_other.street',
   rd_other_city: 'origination_esc.recorded_deed_other.city',
   rd_other_state: 'origination_esc.recorded_deed_other.state',
   rd_other_zip: 'origination_esc.recorded_deed_other.zip',
+  rd_other_phone: 'origination_esc.recorded_deed_other.phone',
   od_other_name: 'origination_esc.original_docs_other.name',
+  od_other_company: 'origination_esc.original_docs_other.company',
   od_other_street: 'origination_esc.original_docs_other.street',
   od_other_city: 'origination_esc.original_docs_other.city',
   od_other_state: 'origination_esc.original_docs_other.state',
   od_other_zip: 'origination_esc.original_docs_other.zip',
+  od_other_phone: 'origination_esc.original_docs_other.phone',
   // Endorsements
   e_alta6: 'origination_esc.endorse.alta6_variable_rate',
   e_alta7: 'origination_esc.endorse.alta7_manufactured',
@@ -140,7 +157,7 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
     </DirtyFieldWrapper>
   );
 
-  const renderDeliveryDropdown = (label: string, dropdownKey: string, otherKeys: { name: string; street: string; city: string; state: string; zip: string }) => {
+  const renderDeliveryDropdown = (label: string, dropdownKey: string, otherKeys: { name: string; company: string; street: string; city: string; state: string; zip: string; phone: string }) => {
     const isOther = v(dropdownKey) === 'Other';
     return (
       <DirtyFieldWrapper fieldKey={dropdownKey}>
@@ -161,24 +178,32 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
           {isOther && (
             <div className="ml-[160px] space-y-1 pl-2 border-l-2 border-border">
               <div className="flex items-center gap-2">
-                <Label className="w-[60px] text-sm shrink-0">Name</Label>
-                <Input value={v(otherKeys.name)} onChange={(e) => sv(otherKeys.name, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+                <Label className="w-[80px] text-sm shrink-0">Recipient Name <span className="text-destructive">*</span></Label>
+                <Input value={v(otherKeys.name)} onChange={(e) => sv(otherKeys.name, e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Required" />
               </div>
               <div className="flex items-center gap-2">
-                <Label className="w-[60px] text-sm shrink-0">Street</Label>
+                <Label className="w-[80px] text-sm shrink-0">Company</Label>
+                <Input value={v(otherKeys.company)} onChange={(e) => sv(otherKeys.company, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[80px] text-sm shrink-0">Street</Label>
                 <Input value={v(otherKeys.street)} onChange={(e) => sv(otherKeys.street, e.target.value)} disabled={disabled} className="h-7 text-sm" />
               </div>
               <div className="flex items-center gap-2">
-                <Label className="w-[60px] text-sm shrink-0">City</Label>
+                <Label className="w-[80px] text-sm shrink-0">City</Label>
                 <Input value={v(otherKeys.city)} onChange={(e) => sv(otherKeys.city, e.target.value)} disabled={disabled} className="h-7 text-sm" />
               </div>
               <div className="flex items-center gap-2">
-                <Label className="w-[60px] text-sm shrink-0">State</Label>
+                <Label className="w-[80px] text-sm shrink-0">State</Label>
                 <Input value={v(otherKeys.state)} onChange={(e) => sv(otherKeys.state, e.target.value)} disabled={disabled} className="h-7 text-sm" />
               </div>
               <div className="flex items-center gap-2">
-                <Label className="w-[60px] text-sm shrink-0">ZIP</Label>
+                <Label className="w-[80px] text-sm shrink-0">ZIP</Label>
                 <Input value={v(otherKeys.zip)} onChange={(e) => sv(otherKeys.zip, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[80px] text-sm shrink-0">Phone</Label>
+                <Input value={v(otherKeys.phone)} onChange={(e) => sv(otherKeys.phone, e.target.value)} disabled={disabled} className="h-7 text-sm" />
               </div>
             </div>
           )}
@@ -187,9 +212,12 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
     );
   };
 
+  const trusteeType = v(FK.trustee_type);
+  const isTrusteeOther = trusteeType === 'Other';
+
   return (
     <div className="p-4 space-y-6">
-      {/* Escrow / Title / Details row */}
+      {/* Escrow / Title / Trustee row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-6">
         {/* Escrow */}
         <div className="space-y-3">
@@ -225,7 +253,47 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
           </div>
         </div>
 
-        {/* Details */}
+        {/* Trustee */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Trustee</h3>
+          <div className="space-y-2">
+            <DirtyFieldWrapper fieldKey={FK.trustee_type}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] text-sm shrink-0">Trustee</Label>
+                <Select value={trusteeType} onValueChange={(val) => sv(FK.trustee_type, val)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="Company">Company</SelectItem>
+                    <SelectItem value="Title Company">Title Company</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </DirtyFieldWrapper>
+            {isTrusteeOther && (
+              <DirtyFieldWrapper fieldKey={FK.trustee_name}>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[120px] text-sm shrink-0">Trustee Name <span className="text-destructive">*</span></Label>
+                  <Input value={v(FK.trustee_name)} onChange={(e) => sv(FK.trustee_name, e.target.value)} disabled={disabled} className="h-7 text-sm" placeholder="Required" />
+                </div>
+              </DirtyFieldWrapper>
+            )}
+            {renderTextField('Company', FK.trustee_company)}
+            {renderTextField('Street', FK.trustee_street)}
+            {renderTextField('City', FK.trustee_city)}
+            {renderTextField('State', FK.trustee_state)}
+            {renderTextField('ZIP', FK.trustee_zip)}
+            {renderTextField('Escrow Officer Name', FK.trustee_officer)}
+            {renderTextField('Escrow Contact', FK.trustee_contact)}
+            {renderTextField('Telephone', FK.trustee_telephone)}
+          </div>
+        </div>
+      </div>
+
+      {/* Details & Document Delivery */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Details</h3>
           <div className="space-y-2">
@@ -234,15 +302,17 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             {renderTextField('Coverage %', FK.coverage_percent)}
             {renderCheckboxField('Loan will be net-funded', FK.net_funded)}
           </div>
+        </div>
 
-          <div className="pt-3 space-y-3">
-            <h4 className="text-xs font-semibold text-foreground border-b border-border pb-1">Document Delivery</h4>
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Document Delivery</h3>
+          <div className="space-y-3">
             {renderDeliveryDropdown('Send Title Policy', FK.send_title_policy,
-              { name: FK.tp_other_name, street: FK.tp_other_street, city: FK.tp_other_city, state: FK.tp_other_state, zip: FK.tp_other_zip })}
+              { name: FK.tp_other_name, company: FK.tp_other_company, street: FK.tp_other_street, city: FK.tp_other_city, state: FK.tp_other_state, zip: FK.tp_other_zip, phone: FK.tp_other_phone })}
             {renderDeliveryDropdown('Send Recorded Deed', FK.send_recorded_deed,
-              { name: FK.rd_other_name, street: FK.rd_other_street, city: FK.rd_other_city, state: FK.rd_other_state, zip: FK.rd_other_zip })}
+              { name: FK.rd_other_name, company: FK.rd_other_company, street: FK.rd_other_street, city: FK.rd_other_city, state: FK.rd_other_state, zip: FK.rd_other_zip, phone: FK.rd_other_phone })}
             {renderDeliveryDropdown('Send Original Docs', FK.send_original_documents,
-              { name: FK.od_other_name, street: FK.od_other_street, city: FK.od_other_city, state: FK.od_other_state, zip: FK.od_other_zip })}
+              { name: FK.od_other_name, company: FK.od_other_company, street: FK.od_other_street, city: FK.od_other_city, state: FK.od_other_state, zip: FK.od_other_zip, phone: FK.od_other_phone })}
           </div>
         </div>
       </div>
