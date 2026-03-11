@@ -420,7 +420,7 @@ const FIELD_KEYS = {
 
 const GRID_STYLE: React.CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'minmax(200px, 1.5fr) 70px 90px 40px 40px 40px 40px 100px 110px',
+  gridTemplateColumns: '55px minmax(200px, 1fr) 110px 110px 70px 70px',
   gap: '4px',
   alignItems: 'center',
 };
@@ -459,70 +459,79 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
     if (m * p > 0) setValue(FIELD_KEYS.coPropertyTaxes_total, (m * p).toFixed(2));
   }, [values[FIELD_KEYS.coPropertyTaxes_months], values[FIELD_KEYS.coPropertyTaxes_perMonth]]);
 
-  // Standard fee row: Label | Payable to | Amount | Charge | Broker | Others | APR | Paid to Company | Oral Disclosure
+  // Standard fee row: HUD# | Description | Paid to Others | Paid to Broker | Include in APR | Paid to Company
   const renderFeeRow = (
-    label: string,
+    hudNumber: string,
+    description: string,
     keys: {
-      payableTo: string;
-      d: string;
-      charge: string;
-      broker: string;
       others: string;
+      broker: string;
       apr: string;
       paidToCompany: string;
-      oralDisclosure: string;
     },
-    labelKey?: string
+    labelKey?: string,
+    descriptionNode?: React.ReactNode
   ) => (
-    <DirtyFieldWrapper fieldKey={keys.d}>
+    <DirtyFieldWrapper fieldKey={keys.others}>
       <div style={GRID_STYLE} className="py-1 border-b border-border/50">
+        <div className="text-xs font-medium text-foreground">{hudNumber}</div>
         {labelKey ? (
           <Input value={getValue(labelKey)} onChange={(e) => setValue(labelKey, e.target.value)} disabled={disabled} placeholder="Enter description" className="h-7 text-xs" />
+        ) : descriptionNode ? (
+          <div className="text-xs text-foreground">{descriptionNode}</div>
         ) : (
-          <div className="text-xs text-foreground">{label}</div>
+          <div className="text-xs text-foreground">{description}</div>
         )}
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-muted-foreground whitespace-nowrap">Payable to</span>
+        <div className="relative">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
+          <Input inputMode="decimal" value={getValue(keys.others)} onChange={(e) => setValue(keys.others, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
         </div>
-        <Input value={getValue(keys.d)} onChange={(e) => setValue(keys.d, e.target.value)} disabled={disabled} placeholder="" className="h-7 text-xs text-right" inputMode="decimal" />
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.charge)} onCheckedChange={(c) => setBoolValue(keys.charge, !!c)} disabled={disabled} /></div>
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.broker)} onCheckedChange={(c) => setBoolValue(keys.broker, !!c)} disabled={disabled} /></div>
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.others)} onCheckedChange={(c) => setBoolValue(keys.others, !!c)} disabled={disabled} /></div>
+        <div className="relative">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
+          <Input inputMode="decimal" value={getValue(keys.broker)} onChange={(e) => setValue(keys.broker, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+        </div>
         <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
-        <Input value={getValue(keys.paidToCompany)} onChange={(e) => setValue(keys.paidToCompany, e.target.value)} disabled={disabled} className="h-7 text-xs" />
-        <Input value={getValue(keys.oralDisclosure)} onChange={(e) => setValue(keys.oralDisclosure, e.target.value)} disabled={disabled} className="h-7 text-xs" />
+        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.paidToCompany)} onCheckedChange={(c) => setBoolValue(keys.paidToCompany, !!c)} disabled={disabled} /></div>
       </div>
     </DirtyFieldWrapper>
   );
 
-  // Insurance row for 1000 section: Label | months | "months at" | per month | Total | Charge | Broker | Others | APR
+  // Insurance row for 1000 section with dynamic description
   const renderInsuranceRow = (
-    label: string,
+    hudNumber: string,
+    baseName: string,
     monthsKey: string,
     perMonthKey: string,
     totalKey: string,
-    keys: { charge: string; broker: string; others: string; apr: string; paidToCompany: string; oralDisclosure: string }
-  ) => (
-    <DirtyFieldWrapper fieldKey={monthsKey}>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(160px, 1fr) 50px 60px 70px 40px 40px 40px 40px 100px 110px',
-        gap: '4px',
-        alignItems: 'center',
-      }} className="py-1 border-b border-border/50">
-        <div className="text-xs text-foreground">{label}</div>
-        <Input type="number" inputMode="numeric" value={getValue(monthsKey)} onChange={(e) => setValue(monthsKey, e.target.value)} disabled={disabled} placeholder="0" className="h-7 text-xs text-right" />
-        <span className="text-xs text-muted-foreground text-center">months at</span>
-        <Input inputMode="decimal" value={getValue(perMonthKey)} onChange={(e) => setValue(perMonthKey, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right" />
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.charge)} onCheckedChange={(c) => setBoolValue(keys.charge, !!c)} disabled={disabled} /></div>
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.broker)} onCheckedChange={(c) => setBoolValue(keys.broker, !!c)} disabled={disabled} /></div>
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.others)} onCheckedChange={(c) => setBoolValue(keys.others, !!c)} disabled={disabled} /></div>
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
-        <Input value={getValue(keys.paidToCompany)} onChange={(e) => setValue(keys.paidToCompany, e.target.value)} disabled={disabled} className="h-7 text-xs" />
-        <Input value={getValue(keys.oralDisclosure)} onChange={(e) => setValue(keys.oralDisclosure, e.target.value)} disabled={disabled} className="h-7 text-xs" />
-      </div>
-    </DirtyFieldWrapper>
-  );
+    keys: { others: string; broker: string; apr: string; paidToCompany: string }
+  ) => {
+    const totalVal = getValue(totalKey);
+    return (
+      <DirtyFieldWrapper fieldKey={monthsKey}>
+        <div style={GRID_STYLE} className="py-1 border-b border-border/50">
+          <div className="text-xs font-medium text-foreground">{hudNumber}</div>
+          <div className="flex items-center gap-1 text-xs text-foreground flex-wrap">
+            <span>{baseName}:</span>
+            <Input type="number" inputMode="numeric" value={getValue(monthsKey)} onChange={(e) => setValue(monthsKey, e.target.value)} disabled={disabled} placeholder="0" className="h-6 text-xs text-right w-12 inline-flex" />
+            <span>months at $</span>
+            <Input inputMode="decimal" value={getValue(perMonthKey)} onChange={(e) => setValue(perMonthKey, e.target.value)} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-16 inline-flex" />
+            <span>/mo</span>
+            {totalVal && <span className="text-muted-foreground ml-1">= ${totalVal}</span>}
+          </div>
+          <div className="relative">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
+            <Input inputMode="decimal" value={getValue(keys.others)} onChange={(e) => setValue(keys.others, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+          </div>
+          <div className="relative">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
+            <Input inputMode="decimal" value={getValue(keys.broker)} onChange={(e) => setValue(keys.broker, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+          </div>
+          <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
+          <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.paidToCompany)} onCheckedChange={(c) => setBoolValue(keys.paidToCompany, !!c)} disabled={disabled} /></div>
+        </div>
+      </DirtyFieldWrapper>
+    );
+  };
 
   // Simple row for bottom sections (label + amount only)
   const renderSimpleRow = (label: string, dKey: string, labelKey?: string) => (
@@ -533,35 +542,35 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
         ) : (
           <div className="text-xs text-foreground flex-1">{label}</div>
         )}
-        <Input inputMode="decimal" value={getValue(dKey)} onChange={(e) => setValue(dKey, e.target.value)} disabled={disabled} placeholder="" className="h-7 text-xs text-right w-24" />
+        <div className="relative w-28">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
+          <Input inputMode="decimal" value={getValue(dKey)} onChange={(e) => setValue(dKey, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+        </div>
       </div>
     </DirtyFieldWrapper>
   );
 
-  const makeKeys = (prefix: string) => ({
-    payableTo: prefix + '_payable_to',
-    d: prefix + '_d',
-    charge: prefix + '_charge',
-    broker: prefix + '_broker',
-    others: prefix + '_others',
-    apr: prefix + '_apr',
-    paidToCompany: prefix + '_paid_to_company',
-    oralDisclosure: prefix + '_oral_disclosure',
-  });
+  // Dynamic description for 901
+  const render901Description = () => (
+    <div className="flex items-center gap-1 text-xs text-foreground flex-wrap">
+      <span>Interest for</span>
+      <Input type="number" inputMode="numeric" value={getValue(FIELD_KEYS.interestForDays_days)} onChange={(e) => setValue(FIELD_KEYS.interestForDays_days, e.target.value)} disabled={disabled} placeholder="0" className="h-6 text-xs text-right w-12 inline-flex" />
+      <span>days at $</span>
+      <Input inputMode="decimal" value={getValue(FIELD_KEYS.interestForDays_perDay)} onChange={(e) => setValue(FIELD_KEYS.interestForDays_perDay, e.target.value)} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-16 inline-flex" />
+      <span>per day</span>
+    </div>
+  );
 
   return (
     <div className="p-4 space-y-6 overflow-x-auto">
       {/* Column headers */}
       <div style={GRID_STYLE} className="py-2 border-b-2 border-foreground text-xs font-semibold text-foreground">
-        <div>HUD-1 Item Paid to Others Paid to Broker</div>
-        <div></div>
-        <div></div>
-        <div className="text-center">Charge</div>
-        <div className="text-center">Broker</div>
-        <div className="text-center">Others</div>
-        <div className="text-center">APR</div>
+        <div>HUD-1 #</div>
+        <div>Item Description</div>
+        <div className="text-center">Paid to Others</div>
+        <div className="text-center">Paid to Broker</div>
+        <div className="text-center">Include in APR</div>
         <div className="text-center">Paid to Company</div>
-        <div className="text-center">Add to Oral Disclosure</div>
       </div>
 
       {/* 800 Items Payable in Connection with Loan */}
