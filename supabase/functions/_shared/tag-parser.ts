@@ -14,7 +14,8 @@ import { resolveFieldKeyWithMap, getFieldData } from "./field-resolver.ts";
  * Word often splits text across multiple <w:t> elements.
  */
 export function normalizeWordXml(xmlContent: string): string {
-  let result = xmlContent;
+  // First: flatten Word MERGEFIELD structures into plain «fieldName» text runs
+  let result = flattenMergeFieldStructures(xmlContent);
   
   // Strip Word spell-check markers (proofErr) that fragment merge tags
   // These self-closing elements have no content value and break tag detection

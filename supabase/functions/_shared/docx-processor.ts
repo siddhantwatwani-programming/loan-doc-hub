@@ -26,6 +26,7 @@ export async function processDocx(
 
   for (const [filename, content] of Object.entries(decompressed)) {
     if (filename.endsWith(".xml") || filename.endsWith(".rels")) {
+      console.log(`[docx-processor] Processing XML file: ${filename} (${content.length} bytes)`);
       const decoder = new TextDecoder("utf-8");
       let xmlContent = decoder.decode(content);
       xmlContent = replaceMergeTags(xmlContent, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
