@@ -69,6 +69,17 @@ const App = () => (
 
                   {/* Contacts */}
                   <Route path="/contacts" element={<ComingSoonPage />} />
+                  <Route path="/contacts/lenders" element={<ComingSoonPage />} />
+                  <Route path="/contacts/borrowers" element={<ComingSoonPage />} />
+                  <Route path="/contacts/brokers" element={<ComingSoonPage />} />
+                  <Route path="/contacts/others/vendors" element={<ComingSoonPage />} />
+                  <Route path="/contacts/others/tax-authority" element={<ComingSoonPage />} />
+                  <Route path="/contacts/others/insurance-company" element={<ComingSoonPage />} />
+                  <Route path="/contacts/others/title-company" element={<ComingSoonPage />} />
+                  <Route path="/contacts/others/notary" element={<ComingSoonPage />} />
+                  <Route path="/contacts/others/guarantor" element={<ComingSoonPage />} />
+                  <Route path="/contacts/others/authorized-party" element={<ComingSoonPage />} />
+                  <Route path="/contacts/others/attorneys" element={<ComingSoonPage />} />
 
                   {/* Broker Services */}
                   <Route path="/broker-services/department-alerts" element={<ComingSoonPage />} />

@@ -51,6 +51,7 @@ import { AccountingNav } from '@/components/layout/AccountingNav';
 import { SystemAdminNav } from '@/components/layout/SystemAdminNav';
 import { CLevelModuleNav } from '@/components/layout/CLevelModuleNav';
 import { PromotedNavSection } from '@/components/layout/PromotedNavSection';
+import { ContactsNav } from '@/components/layout/ContactsNav';
 import {
   Tooltip,
   TooltipContent,
@@ -440,13 +441,11 @@ export const AppSidebar: React.FC = () => {
 
             {/* Contacts - CSR only */}
             {role === 'csr' && (
-              <PromotedNavSection
-                label="Contacts"
-                icon={Users}
-                items={[]}
-                directPath="/contacts"
+              <ContactsNav
                 isCollapsed={isCollapsed}
                 searchQuery={searchQuery}
+                isOpen={activeSection === 'contacts'}
+                onOpenChange={handleSectionToggle('contacts')}
               />
             )}
 
