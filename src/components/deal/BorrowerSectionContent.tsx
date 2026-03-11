@@ -905,6 +905,8 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
         // Build values that include co-borrower data mapped to coborrower.* keys
         // so the 1098 auto-populate can read from coborrower.full_name, etc.
         const taxDetailValues = getBorrowerSpecificValues();
+
+        // Source 1: standalone co-borrower (coborrower1.* → coborrower.*)
         const firstCoBorrower = filteredCoBorrowers[0];
         if (firstCoBorrower) {
           const cbPrefix = `${firstCoBorrower.id}.`;
@@ -914,6 +916,33 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
             }
           });
         }
+
+        // Source 2: if no standalone co-borrower found, try ALL coborrowerN prefixes
+        if (!firstCoBorrower) {
+          // Try any coborrowerN that exists in allCoBorrowers
+          const anyCoBorrower = allCoBorrowers[0];
+          if (anyCoBorrower) {
+            const cbPrefix = `${anyCoBorrower.id}.`;
+            Object.entries(values).forEach(([key, value]) => {
+              if (key.startsWith(cbPrefix)) {
+                taxDetailValues[key.replace(cbPrefix, 'coborrower.')] = value;
+              }
+            });
+          }
+        }
+
+        // Source 3: inline co-borrower data (borrower1.coborrower.* → coborrower.*)
+        const inlinePrefix = `${selectedBorrowerPrefix}.coborrower.`;
+        Object.entries(values).forEach(([key, value]) => {
+          if (key.startsWith(inlinePrefix)) {
+            const mappedKey = key.replace(inlinePrefix, 'coborrower.');
+            // Only set if not already populated from standalone source
+            if (!taxDetailValues[mappedKey]) {
+              taxDetailValues[mappedKey] = value;
+            }
+          }
+        });
+
         return (
           <BorrowerTaxDetailForm
             fields={fields}
