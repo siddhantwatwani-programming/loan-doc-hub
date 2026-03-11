@@ -76,6 +76,8 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     } catch { return undefined; }
   })() : undefined;
 
+  const [asOfDateOpen, setAsOfDateOpen] = useState(false);
+
   const handleAsOfDateSelect = (date: Date | undefined) => {
     if (date) {
       // Preserve existing time portion if present, otherwise use current time
@@ -88,6 +90,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     } else {
       setFormData(prev => ({ ...prev, asOfDate: '' }));
     }
+    setAsOfDateOpen(false);
   };
 
   const formatAsOfDisplay = (isoDate: string) => {
