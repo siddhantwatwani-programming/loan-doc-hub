@@ -140,7 +140,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     const isValidDate = selectedDate && isValid(selectedDate);
 
     return (
-      <Popover>
+      <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
         <PopoverTrigger asChild>
           <Button
             id={field.field_key}

@@ -348,7 +348,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.stopDate}>
             <div className="flex items-center gap-4">
               <Label className="w-32 text-sm text-foreground flex-shrink-0">Stop Date</Label>
-              <Popover>
+              <Popover open={stopDateOpen} onOpenChange={setStopDateOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -368,7 +368,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                   <Calendar
                     mode="single"
                     selected={parseDate(getValue('stopDate'))}
-                    onSelect={(date) => handleChange('stopDate', date ? format(date, 'yyyy-MM-dd') : '')}
+                    onSelect={(date) => { handleChange('stopDate', date ? format(date, 'yyyy-MM-dd') : ''); setStopDateOpen(false); }}
                     initialFocus
                     className="p-3 pointer-events-auto"
                   />

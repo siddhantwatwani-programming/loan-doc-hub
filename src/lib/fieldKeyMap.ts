@@ -101,6 +101,7 @@ export const BORROWER_BANKING_KEYS = {
   individualId: 'ach.individual_id',
   individualName: 'ach.individual_name',
   accountType: 'ach.account_type',
+  notes: 'ach.notes',
   serviceStatus: 'ach.service_status',
   applyDebitAs: 'ach.apply_debit_as',
   debitFrequency: 'ach.debit_frequency',
