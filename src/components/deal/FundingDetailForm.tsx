@@ -112,24 +112,6 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
           </Popover>
         </div>
 
-        {/* Percent Owned */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Percent Owned</Label>
-          <div className="relative flex-1">
-            <Input type="text" inputMode="decimal" value={data.percentOwned || ''} onChange={(e) => handleChange('percentOwned', e.target.value.replace(/[^0-9.]/g, ''))} placeholder="0.000" className="h-7 text-sm pr-6" />
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
-          </div>
-        </div>
-
-        {/* Regular Payment */}
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Regular Payment</Label>
-          <div className="relative flex-1">
-            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-            <Input type="text" value={data.regularPayment || ''} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
-          </div>
-        </div>
-
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Interest From</Label>
           <Popover open={interestFromOpen} onOpenChange={setInterestFromOpen}>
