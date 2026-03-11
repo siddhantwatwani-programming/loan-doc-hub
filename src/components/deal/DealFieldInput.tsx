@@ -42,6 +42,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
   
   const [isFocused, setIsFocused] = useState(false);
   const [currencyValidationError, setCurrencyValidationError] = useState<string | null>(null);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const rawValue = e.target.value;
