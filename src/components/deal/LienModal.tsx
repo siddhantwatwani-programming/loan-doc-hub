@@ -19,10 +19,17 @@ interface LienModalProps {
   onSave: (lien: LienData) => void;
   isEdit: boolean;
   propertyOptions?: { id: string; label: string }[];
+  loanValues?: Record<string, string>;
 }
 
 const LOAN_TYPE_OPTIONS = ['Conventional', 'Private Lender', 'Judgement', 'Other'];
 const STATUS_OPTIONS = ['Current', 'Unable to Verify', '30-90', '90+', 'Foreclosure', 'Modification', 'Paid'];
+
+const getThisLoanAutofillValues = (loanValues: Record<string, string>) => ({
+  account: loanValues['Terms.LoanNumber'] || loanValues['loan_terms.loan_number'] || '',
+  balanceAfter: loanValues['loan_terms.loan_amount'] || '',
+  regularPayment: loanValues['loan_terms.regular_payment'] || '',
+});
 
 const getDefaultLien = (): LienData => ({
   id: '', property: '', priority: '1st', holder: '', account: '', contact: '', phone: '', fax: '', email: '',
@@ -33,7 +40,7 @@ const getDefaultLien = (): LienData => ({
   lastVerified: '', lastChecked: '', note: '', thisLoan: 'false', estimate: 'false', status: '',
 });
 
-export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, onSave, isEdit, propertyOptions = [] }) => {
+export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, onSave, isEdit, propertyOptions = [], loanValues = {} }) => {
   const [formData, setFormData] = useState<LienData>(getDefaultLien());
 
   useEffect(() => {
@@ -44,6 +51,33 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
   const handleSave = () => { onSave(formData); onOpenChange(false); };
 
   const isThisLoan = formData.thisLoan === 'true';
+
+  useEffect(() => {
+    if (!open || !isThisLoan) return;
+    const { account, balanceAfter, regularPayment } = getThisLoanAutofillValues(loanValues);
+    setFormData(prev => {
+      if (prev.account === account && prev.balanceAfter === balanceAfter && prev.regularPayment === regularPayment) {
+        return prev;
+      }
+      return { ...prev, account, balanceAfter, regularPayment };
+    });
+  }, [open, isThisLoan, loanValues]);
+
+  const handleThisLoanToggle = (checked: boolean) => {
+    if (checked) {
+      const { account, balanceAfter, regularPayment } = getThisLoanAutofillValues(loanValues);
+      setFormData(prev => ({
+        ...prev,
+        thisLoan: 'true',
+        account,
+        balanceAfter,
+        regularPayment,
+      }));
+      return;
+    }
+
+    setFormData(prev => ({ ...prev, thisLoan: 'false' }));
+  };
 
   const renderInlineField = (field: keyof LienData, label: string, type = 'text', forceDisabled = false) => (
     <div className="flex items-center gap-2">
