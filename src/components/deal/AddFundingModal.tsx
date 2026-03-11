@@ -9,8 +9,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Search } from 'lucide-react';
@@ -24,6 +24,9 @@ interface AddFundingModalProps {
   borrowerName?: string;
   onSubmit: (data: FundingFormData) => void;
   editData?: FundingFormData | null;
+  noteRate?: string;
+  soldRate?: string;
+  totalPayment?: string;
 }
 
 export interface FundingFormData {
@@ -37,7 +40,71 @@ export interface FundingFormData {
   interestFrom: string;
   notes: string;
   brokerParticipates: boolean;
+  percentOwned: string;
+  regularPayment: string;
+  rateSelection: 'note_rate' | 'sold_rate' | 'lender_rate';
+  rateNoteValue: string;
+  rateSoldValue: string;
+  rateLenderValue: string;
+  // Servicing fees section
+  overrideServicingFees: boolean;
+  companyServicingFee: string;
+  companyServicingFeePct: string;
+  companyMaxFee: string;
+  companyMaxFeePct: string;
+  companyMinFee: string;
+  companyMinFeePct: string;
+  brokerServicingFee: string;
+  brokerServicingFeePct: string;
+  brokerMaxFee: string;
+  brokerMaxFeePct: string;
+  brokerMinFee: string;
+  brokerMinFeePct: string;
+  // Default fees section
+  overrideDefaultFees: boolean;
+  lateFee1Lender: string;
+  lateFee1Company: string;
+  lateFee1Broker: string;
+  lateFee1Total: string;
+  lateFee2Lender: string;
+  lateFee2Company: string;
+  lateFee2Broker: string;
+  lateFee2Total: string;
+  defaultInterestLender: string;
+  defaultInterestCompany: string;
+  defaultInterestBroker: string;
+  defaultInterestTotal: string;
+  interestGuaranteeLender: string;
+  interestGuaranteeCompany: string;
+  interestGuaranteeBroker: string;
+  interestGuaranteeTotal: string;
+  prepaymentLender: string;
+  prepaymentCompany: string;
+  prepaymentBroker: string;
+  prepaymentTotal: string;
+  maturityLender: string;
+  maturityCompany: string;
+  maturityBroker: string;
+  maturityTotal: string;
 }
+
+const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: string, soldRate: string): FundingFormData => ({
+  loan: loanNumber, borrower: borrowerName, lenderId: '', lenderFullName: '',
+  lenderRate: '', fundingAmount: '', fundingDate: '', interestFrom: '', notes: '', brokerParticipates: false,
+  percentOwned: '', regularPayment: '',
+  rateSelection: 'note_rate', rateNoteValue: noteRate, rateSoldValue: soldRate, rateLenderValue: '',
+  overrideServicingFees: false,
+  companyServicingFee: '', companyServicingFeePct: '', companyMaxFee: '', companyMaxFeePct: '',
+  companyMinFee: '', companyMinFeePct: '', brokerServicingFee: '', brokerServicingFeePct: '',
+  brokerMaxFee: '', brokerMaxFeePct: '', brokerMinFee: '', brokerMinFeePct: '',
+  overrideDefaultFees: false,
+  lateFee1Lender: '', lateFee1Company: '', lateFee1Broker: '', lateFee1Total: '',
+  lateFee2Lender: '', lateFee2Company: '', lateFee2Broker: '', lateFee2Total: '',
+  defaultInterestLender: '', defaultInterestCompany: '', defaultInterestBroker: '', defaultInterestTotal: '',
+  interestGuaranteeLender: '', interestGuaranteeCompany: '', interestGuaranteeBroker: '', interestGuaranteeTotal: '',
+  prepaymentLender: '', prepaymentCompany: '', prepaymentBroker: '', prepaymentTotal: '',
+  maturityLender: '', maturityCompany: '', maturityBroker: '', maturityTotal: '',
+});
 
 export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   open,
@@ -46,13 +113,13 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   borrowerName = '',
   onSubmit,
   editData,
+  noteRate = '',
+  soldRate = '',
+  totalPayment = '',
 }) => {
   const getInitialFormData = (): FundingFormData => {
-    if (editData) return { ...editData };
-    return {
-      loan: loanNumber, borrower: borrowerName, lenderId: '', lenderFullName: '',
-      lenderRate: '', fundingAmount: '', fundingDate: '', interestFrom: '', notes: '', brokerParticipates: false,
-    };
+    if (editData) return { ...editData, loan: loanNumber || editData.loan, borrower: borrowerName || editData.borrower };
+    return getDefaultFormData(loanNumber, borrowerName, noteRate, soldRate);
   };
 
   const [formData, setFormData] = useState<FundingFormData>(getInitialFormData());
@@ -62,7 +129,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const [fundingDate, setFundingDate] = useState<Date | undefined>(editData?.fundingDate ? new Date(editData.fundingDate) : undefined);
   const [interestFromDate, setInterestFromDate] = useState<Date | undefined>(editData?.interestFrom ? new Date(editData.interestFrom) : undefined);
 
-  // Reset form when modal opens with new data
   React.useEffect(() => {
     if (open) {
       const data = getInitialFormData();
@@ -71,6 +137,29 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
       setInterestFromDate(data.interestFrom ? new Date(data.interestFrom) : undefined);
     }
   }, [open, editData]);
+
+  // Compute lenderRate from rate selection
+  React.useEffect(() => {
+    let rate = '';
+    if (formData.rateSelection === 'note_rate') rate = formData.rateNoteValue;
+    else if (formData.rateSelection === 'sold_rate') rate = formData.rateSoldValue;
+    else if (formData.rateSelection === 'lender_rate') rate = formData.rateLenderValue;
+    if (rate !== formData.lenderRate) {
+      setFormData(prev => ({ ...prev, lenderRate: rate }));
+    }
+  }, [formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
+
+  // Compute Regular Payment = Total Payment * (Percent Owned / 100)
+  React.useEffect(() => {
+    const tp = parseFloat(totalPayment) || 0;
+    const pct = parseFloat(formData.percentOwned) || 0;
+    if (tp > 0 && pct > 0) {
+      const rp = (tp * pct / 100).toFixed(2);
+      if (rp !== formData.regularPayment) {
+        setFormData(prev => ({ ...prev, regularPayment: rp }));
+      }
+    }
+  }, [formData.percentOwned, totalPayment]);
 
   const handleChange = (field: keyof FundingFormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -84,7 +173,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
       fundingDate: fundingDate ? format(fundingDate, 'yyyy-MM-dd') : '',
       interestFrom: interestFromDate ? format(interestFromDate, 'yyyy-MM-dd') : '',
     });
-    setFormData({ loan: loanNumber, borrower: borrowerName, lenderId: '', lenderFullName: '', lenderRate: '', fundingAmount: '', fundingDate: '', interestFrom: '', notes: '', brokerParticipates: false });
+    setFormData(getDefaultFormData(loanNumber, borrowerName, noteRate, soldRate));
     setFundingDate(undefined);
     setInterestFromDate(undefined);
     onOpenChange(false);
@@ -92,22 +181,89 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
   const handleCancel = () => { onOpenChange(false); };
 
+  // Helper: compute default fee total
+  const computeTotal = (lender: string, company: string, broker: string): string => {
+    const l = parseFloat(lender) || 0;
+    const c = parseFloat(company) || 0;
+    const b = parseFloat(broker) || 0;
+    const total = l + c + b;
+    return total > 0 ? total.toFixed(3) : '';
+  };
+
+  // Auto-compute total columns for default fees
+  React.useEffect(() => {
+    const updates: Partial<FundingFormData> = {};
+    updates.lateFee1Total = computeTotal(formData.lateFee1Lender, formData.lateFee1Company, formData.lateFee1Broker);
+    updates.lateFee2Total = computeTotal(formData.lateFee2Lender, formData.lateFee2Company, formData.lateFee2Broker);
+    updates.defaultInterestTotal = computeTotal(formData.defaultInterestLender, formData.defaultInterestCompany, formData.defaultInterestBroker);
+    updates.interestGuaranteeTotal = computeTotal(formData.interestGuaranteeLender, formData.interestGuaranteeCompany, formData.interestGuaranteeBroker);
+    updates.prepaymentTotal = computeTotal(formData.prepaymentLender, formData.prepaymentCompany, formData.prepaymentBroker);
+    updates.maturityTotal = computeTotal(formData.maturityLender, formData.maturityCompany, formData.maturityBroker);
+    setFormData(prev => ({ ...prev, ...updates }));
+  }, [
+    formData.lateFee1Lender, formData.lateFee1Company, formData.lateFee1Broker,
+    formData.lateFee2Lender, formData.lateFee2Company, formData.lateFee2Broker,
+    formData.defaultInterestLender, formData.defaultInterestCompany, formData.defaultInterestBroker,
+    formData.interestGuaranteeLender, formData.interestGuaranteeCompany, formData.interestGuaranteeBroker,
+    formData.prepaymentLender, formData.prepaymentCompany, formData.prepaymentBroker,
+    formData.maturityLender, formData.maturityCompany, formData.maturityBroker,
+  ]);
+
+  const renderServicingRow = (label: string, feeField: keyof FundingFormData, pctField: keyof FundingFormData) => (
+    <div className="flex items-center gap-2">
+      <Label className="text-xs text-foreground font-medium min-w-[140px] shrink-0">{label}</Label>
+      <div className="relative w-24">
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+        <Input value={formData[feeField] as string} onChange={(e) => handleChange(feeField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs pl-5" inputMode="decimal" placeholder="-" />
+      </div>
+      <span className="text-xs text-muted-foreground">Plus</span>
+      <div className="relative w-20">
+        <Input value={formData[pctField] as string} onChange={(e) => handleChange(pctField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs pr-5" inputMode="decimal" placeholder="0%" />
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+      </div>
+    </div>
+  );
+
+  const renderDefaultFeeRow = (label: string, lenderField: keyof FundingFormData, companyField: keyof FundingFormData, brokerField: keyof FundingFormData, totalField: keyof FundingFormData) => (
+    <div className="flex items-center gap-2">
+      <Label className="text-xs text-foreground font-medium min-w-[120px] shrink-0">{label}</Label>
+      <div className="relative w-16">
+        <Input value={formData[lenderField] as string} onChange={(e) => handleChange(lenderField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs pr-4 text-right" inputMode="decimal" placeholder="0%" />
+        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+      </div>
+      <div className="relative w-16">
+        <Input value={formData[companyField] as string} onChange={(e) => handleChange(companyField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs pr-4 text-right" inputMode="decimal" placeholder="0%" />
+        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+      </div>
+      <div className="relative w-16">
+        <Input value={formData[brokerField] as string} onChange={(e) => handleChange(brokerField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs pr-4 text-right" inputMode="decimal" placeholder="0%" />
+        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+      </div>
+      <div className="relative w-16">
+        <Input value={formData[totalField] as string} disabled className="h-7 text-xs pr-4 text-right opacity-50 bg-muted" placeholder="0%" />
+        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+      </div>
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editData ? 'Edit Funding' : 'Add Funding'}</DialogTitle>
+          <DialogTitle>{editData ? 'Percent Owned' : 'Add Funding'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3 py-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
+              {/* Loan - auto-populated, read-only */}
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Loan</Label>
-                <Input value={formData.loan} onChange={(e) => handleChange('loan', e.target.value)} className="h-7 text-sm" />
+                <Input value={loanNumber || formData.loan} disabled className="h-7 text-sm opacity-50 bg-muted" />
               </div>
+              {/* Borrower - auto-populated, read-only */}
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Borrower</Label>
-                <Input value={formData.borrower} onChange={(e) => handleChange('borrower', e.target.value)} className="h-7 text-sm" />
+                <Input value={borrowerName || formData.borrower} disabled className="h-7 text-sm opacity-50 bg-muted" />
               </div>
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender ID</Label>
@@ -139,13 +295,25 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={fundingDate} onSelect={(d) => { setFundingDate(d); setFundingDateOpen(false); }} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
                 </Popover>
               </div>
+
+              {/* Percent Owned */}
               <div className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender Rate*</Label>
+                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Percent Owned</Label>
                 <div className="relative flex-1">
-                  <Input type="text" inputMode="decimal" value={formData.lenderRate} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('lenderRate', v); }} placeholder="0.000" className="h-7 text-sm pr-6" />
+                  <Input type="text" inputMode="decimal" value={formData.percentOwned} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('percentOwned', v); }} placeholder="0.000" className="h-7 text-sm pr-6" />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
                 </div>
               </div>
+
+              {/* Regular Payment (calculated) */}
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Regular Payment</Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
+                  <Input type="text" value={formData.regularPayment} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
+                </div>
+              </div>
+
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Interest From</Label>
                 <Popover open={interestFromOpen} onOpenChange={setInterestFromOpen}>
@@ -159,21 +327,102 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 </Popover>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">* Interest Differential, Not Sold Rate</p>
 
-            <div className="flex items-start gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0 pt-2">Notes</Label>
-              <Textarea value={formData.notes} onChange={(e) => handleChange('notes', e.target.value)} rows={2} className="resize-none text-sm" />
+            {/* Rate Selection */}
+            <div className="space-y-2 mt-2">
+              <div className="border-b border-border pb-1">
+                <span className="font-semibold text-sm text-primary">Rate Selection</span>
+              </div>
+              <RadioGroup value={formData.rateSelection} onValueChange={(val) => handleChange('rateSelection', val)} className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <RadioGroupItem value="note_rate" id="rate-note" />
+                  <Label htmlFor="rate-note" className="text-sm min-w-[100px]">Note Rate</Label>
+                  <div className="relative w-32">
+                    <Input type="text" inputMode="decimal" value={formData.rateNoteValue} onChange={(e) => handleChange('rateNoteValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", formData.rateSelection !== 'note_rate' && 'opacity-50 bg-muted')} disabled={formData.rateSelection !== 'note_rate'} placeholder="0.000" />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <RadioGroupItem value="sold_rate" id="rate-sold" />
+                  <Label htmlFor="rate-sold" className="text-sm min-w-[100px]">Sold Rate</Label>
+                  <div className="relative w-32">
+                    <Input type="text" inputMode="decimal" value={formData.rateSoldValue} onChange={(e) => handleChange('rateSoldValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", formData.rateSelection !== 'sold_rate' && 'opacity-50 bg-muted')} disabled={formData.rateSelection !== 'sold_rate'} placeholder="0.000" />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <RadioGroupItem value="lender_rate" id="rate-lender" />
+                  <Label htmlFor="rate-lender" className="text-sm min-w-[100px]">Lender Rate</Label>
+                  <div className="relative w-32">
+                    <Input type="text" inputMode="decimal" value={formData.rateLenderValue} onChange={(e) => handleChange('rateLenderValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", formData.rateSelection !== 'lender_rate' && 'opacity-50 bg-muted')} disabled={formData.rateSelection !== 'lender_rate'} placeholder="0.000" />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+                  </div>
+                </div>
+              </RadioGroup>
             </div>
 
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-primary">NOTE:</p>
-              <p className="text-xs text-muted-foreground">If Multi-lender loan, docs should reflect "See Attached Lender Schedule"</p>
+            {/* Lender Rate (auto-populated from rate selection) */}
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender Rate</Label>
+              <div className="relative w-32">
+                <Input type="text" value={formData.lenderRate} disabled className="h-7 text-sm pr-6 opacity-50 bg-muted" placeholder="0.000" />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+              </div>
             </div>
 
+            {/* Broker checkbox */}
             <div className="flex items-center gap-2">
               <Checkbox id="brokerParticipates" checked={formData.brokerParticipates} onCheckedChange={(checked) => handleChange('brokerParticipates', !!checked)} />
-              <Label htmlFor="brokerParticipates" className="text-sm font-medium leading-tight cursor-pointer">Broker or family will participate in funding</Label>
+              <Label htmlFor="brokerParticipates" className="text-sm font-medium leading-tight cursor-pointer">Lender is: The Broker, Employee or Family of Broker</Label>
+            </div>
+
+            {/* Servicing Fees & Default Fees Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4 mt-4">
+              {/* Left: Override Standard Servicing Fees */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox id="overrideServicingFees" checked={formData.overrideServicingFees} onCheckedChange={(c) => handleChange('overrideServicingFees', !!c)} />
+                  <Label htmlFor="overrideServicingFees" className="text-sm font-semibold text-foreground">Override Standard Servicing Fees</Label>
+                </div>
+                {formData.overrideServicingFees && (
+                  <div className="space-y-2 pl-2">
+                    <div className="text-xs font-semibold text-center text-muted-foreground mb-1">To Company</div>
+                    {renderServicingRow('Monthly Servicing Fee', 'companyServicingFee', 'companyServicingFeePct')}
+                    {renderServicingRow('Maximum', 'companyMaxFee', 'companyMaxFeePct')}
+                    {renderServicingRow('Minimum', 'companyMinFee', 'companyMinFeePct')}
+                    <div className="text-xs font-semibold text-center text-muted-foreground mt-2 mb-1">To Broker</div>
+                    {renderServicingRow('Monthly Servicing Fee', 'brokerServicingFee', 'brokerServicingFeePct')}
+                    {renderServicingRow('Maximum', 'brokerMaxFee', 'brokerMaxFeePct')}
+                    {renderServicingRow('Minimum', 'brokerMinFee', 'brokerMinFeePct')}
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Override Default Fees */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox id="overrideDefaultFees" checked={formData.overrideDefaultFees} onCheckedChange={(c) => handleChange('overrideDefaultFees', !!c)} />
+                  <Label htmlFor="overrideDefaultFees" className="text-sm font-semibold text-foreground">Override Default Fees Fees</Label>
+                </div>
+                {formData.overrideDefaultFees && (
+                  <div className="space-y-1.5 pl-2">
+                    {/* Column headers */}
+                    <div className="flex items-center gap-2">
+                      <div className="min-w-[120px]" />
+                      <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Lender</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Company</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Broker</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Total</span>
+                    </div>
+                    {renderDefaultFeeRow('Late Fee 1', 'lateFee1Lender', 'lateFee1Company', 'lateFee1Broker', 'lateFee1Total')}
+                    {renderDefaultFeeRow('Late Fee 2', 'lateFee2Lender', 'lateFee2Company', 'lateFee2Broker', 'lateFee2Total')}
+                    {renderDefaultFeeRow('Default Interest', 'defaultInterestLender', 'defaultInterestCompany', 'defaultInterestBroker', 'defaultInterestTotal')}
+                    {renderDefaultFeeRow('Interest Guarantee', 'interestGuaranteeLender', 'interestGuaranteeCompany', 'interestGuaranteeBroker', 'interestGuaranteeTotal')}
+                    {renderDefaultFeeRow('Prepayment', 'prepaymentLender', 'prepaymentCompany', 'prepaymentBroker', 'prepaymentTotal')}
+                    {renderDefaultFeeRow('Maturity', 'maturityLender', 'maturityCompany', 'maturityBroker', 'maturityTotal')}
+                  </div>
+                )}
+              </div>
             </div>
         </div>
 
