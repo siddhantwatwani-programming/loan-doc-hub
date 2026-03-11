@@ -95,7 +95,7 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
   const sv = (key: string, val: string) => onValueChange(key, val);
   const bv = (key: string) => values[key] === 'true';
   const sbv = (key: string, val: boolean) => onValueChange(key, String(val));
-
+  const [datePickerStates, setDatePickerStates] = React.useState<Record<string, boolean>>({});
   const parseDate = (val: string): Date | undefined => {
     if (!val) return undefined;
     try { return parse(val, 'yyyy-MM-dd', new Date()); } catch { return undefined; }
