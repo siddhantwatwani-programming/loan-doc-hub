@@ -384,8 +384,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   <Checkbox id="overrideServicingFees" checked={formData.overrideServicingFees} onCheckedChange={(c) => handleChange('overrideServicingFees', !!c)} />
                   <Label htmlFor="overrideServicingFees" className="text-sm font-semibold text-foreground">Override Standard Servicing Fees</Label>
                 </div>
-                {formData.overrideServicingFees && (
-                  <div className="space-y-2 pl-2">
+                <div className="space-y-2 pl-2">
                     <div className="text-xs font-semibold text-center text-muted-foreground mb-1">To Company</div>
                     {renderServicingRow('Monthly Servicing Fee', 'companyServicingFee', 'companyServicingFeePct')}
                     {renderServicingRow('Maximum', 'companyMaxFee', 'companyMaxFeePct')}
@@ -394,8 +393,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                     {renderServicingRow('Monthly Servicing Fee', 'brokerServicingFee', 'brokerServicingFeePct')}
                     {renderServicingRow('Maximum', 'brokerMaxFee', 'brokerMaxFeePct')}
                     {renderServicingRow('Minimum', 'brokerMinFee', 'brokerMinFeePct')}
-                  </div>
-                )}
+                </div>
               </div>
 
               {/* Right: Override Default Fees */}
@@ -404,8 +402,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   <Checkbox id="overrideDefaultFees" checked={formData.overrideDefaultFees} onCheckedChange={(c) => handleChange('overrideDefaultFees', !!c)} />
                   <Label htmlFor="overrideDefaultFees" className="text-sm font-semibold text-foreground">Override Default Fees Fees</Label>
                 </div>
-                {formData.overrideDefaultFees && (
-                  <div className="space-y-1.5 pl-2">
+                <div className="space-y-1.5 pl-2">
                     {/* Column headers */}
                     <div className="flex items-center gap-2">
                       <div className="min-w-[120px]" />
@@ -420,8 +417,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                     {renderDefaultFeeRow('Interest Guarantee', 'interestGuaranteeLender', 'interestGuaranteeCompany', 'interestGuaranteeBroker', 'interestGuaranteeTotal')}
                     {renderDefaultFeeRow('Prepayment', 'prepaymentLender', 'prepaymentCompany', 'prepaymentBroker', 'prepaymentTotal')}
                     {renderDefaultFeeRow('Maturity', 'maturityLender', 'maturityCompany', 'maturityBroker', 'maturityTotal')}
-                  </div>
-                )}
+                </div>
               </div>
             </div>
         </div>
