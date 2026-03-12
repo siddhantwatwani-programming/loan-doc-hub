@@ -1,11 +1,22 @@
 import React, { useState, useCallback } from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ContactBrokerSubNav, type ContactBrokerSubSection } from './ContactBrokerSubNav';
+import BrokerDetailSidebar, { type BrokerSection } from './BrokerDetailSidebar';
 import { BrokerInfoForm } from '@/components/deal/BrokerInfoForm';
 import { BrokerBankingForm } from '@/components/deal/BrokerBankingForm';
+import BrokerDashboard from './BrokerDashboard';
+import BrokerPortfolio from './BrokerPortfolio';
+import BrokerHistory from './BrokerHistory';
+import BrokerCharges from './BrokerCharges';
+import BrokerTrustLedger from './BrokerTrustLedger';
+import BrokerConversationLog from './BrokerConversationLog';
+import Broker1099 from './Broker1099';
+import BrokerAuthorizedParty from './BrokerAuthorizedParty';
+import BrokerAttachments from './BrokerAttachments';
+import BrokerEventsJournal from './BrokerEventsJournal';
 import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { ContactRecord } from '@/hooks/useContactsCrud';
+import type { ContactBroker } from '@/pages/contacts/ContactBrokersPage';
 
 interface ContactBrokerDetailLayoutProps {
   contact: ContactRecord;
@@ -18,7 +29,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
   onBack,
   onSave,
 }) => {
-  const [activeSection, setActiveSection] = useState<ContactBrokerSubSection>('broker_info');
+  const [activeSection, setActiveSection] = useState<BrokerSection>('dashboard');
   const [values, setValues] = useState<Record<string, string>>(() => {
     const result: Record<string, string> = {};
     Object.entries(contact.contact_data || {}).forEach(([key, value]) => {
@@ -40,18 +51,75 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
     await onSave(contact.id, contactData);
   }, [values, contact.id, onSave]);
 
+  // Build a ContactBroker object from contact_data for components that need it
+  const brokerObj: ContactBroker = {
+    id: contact.id,
+    brokerId: contact.contact_id || '',
+    hold: (contact.contact_data as any)?.hold === 'true',
+    type: (contact.contact_data as any)?.type || '',
+    ach: (contact.contact_data as any)?.ach === 'true',
+    email: contact.email || '',
+    agreement: (contact.contact_data as any)?.agreement_on_file === 'true',
+    fullName: contact.full_name || '',
+    firstName: contact.first_name || '',
+    lastName: contact.last_name || '',
+    city: contact.city || '',
+    state: contact.state || '',
+    cellPhone: (contact.contact_data as any)?.['phone.cell'] || '',
+    homePhone: (contact.contact_data as any)?.['phone.home'] || '',
+    workPhone: (contact.contact_data as any)?.['phone.work'] || '',
+    fax: (contact.contact_data as any)?.['phone.fax'] || '',
+    preferredPhone: (contact.contact_data as any)?.preferred_phone || '',
+    verified: (contact.contact_data as any)?.tin_verified === 'true',
+    send1099: (contact.contact_data as any)?.send_1099 === 'true',
+    tin: (contact.contact_data as any)?.tin || '',
+    street: (contact.contact_data as any)?.['primary_address.street'] || '',
+    zip: (contact.contact_data as any)?.['primary_address.zip'] || '',
+    mailingStreet: (contact.contact_data as any)?.['mailing_address.street'] || '',
+    mailingCity: (contact.contact_data as any)?.['mailing_address.city'] || '',
+    mailingState: (contact.contact_data as any)?.['mailing_address.state'] || '',
+    mailingZip: (contact.contact_data as any)?.['mailing_address.zip'] || '',
+    sameAsPrimary: (contact.contact_data as any)?.mailing_same_as_primary === 'true',
+  };
+
   const emptyDirty = new Set<string>();
 
   const renderContent = () => {
     switch (activeSection) {
-      case 'broker_info':
+      case 'dashboard':
         return (
           <div className="p-6">
-            <BrokerInfoForm
-              disabled={false}
-              values={values}
-              onValueChange={handleValueChange}
-            />
+            <BrokerDashboard broker={brokerObj} onUpdate={() => {}} />
+          </div>
+        );
+      case 'portfolio':
+        return (
+          <div className="p-6">
+            <BrokerPortfolio brokerId={contact.contact_id} />
+          </div>
+        );
+      case 'history':
+        return (
+          <div className="p-6">
+            <BrokerHistory brokerId={contact.contact_id} />
+          </div>
+        );
+      case 'charges':
+        return (
+          <div className="p-6">
+            <BrokerCharges brokerId={contact.contact_id} />
+          </div>
+        );
+      case 'trust-ledger':
+        return (
+          <div className="p-6">
+            <BrokerTrustLedger brokerId={contact.contact_id} />
+          </div>
+        );
+      case 'conversation-log':
+        return (
+          <div className="p-6">
+            <BrokerConversationLog brokerId={contact.contact_id} />
           </div>
         );
       case 'banking':
@@ -62,6 +130,30 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
               values={values}
               onValueChange={handleValueChange}
             />
+          </div>
+        );
+      case '1099':
+        return (
+          <div className="p-6">
+            <Broker1099 broker={brokerObj} onUpdate={() => {}} />
+          </div>
+        );
+      case 'authorized-party':
+        return (
+          <div className="p-6">
+            <BrokerAuthorizedParty brokerId={contact.contact_id} />
+          </div>
+        );
+      case 'attachments':
+        return (
+          <div className="p-6">
+            <BrokerAttachments brokerId={contact.contact_id} />
+          </div>
+        );
+      case 'events-journal':
+        return (
+          <div className="p-6">
+            <BrokerEventsJournal brokerId={contact.contact_id} />
           </div>
         );
       default:
@@ -85,7 +177,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
         </Button>
       </div>
       <div className="flex flex-1 overflow-hidden">
-        <ContactBrokerSubNav activeSubSection={activeSection} onSubSectionChange={setActiveSection} />
+        <BrokerDetailSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
         <div className="flex-1 overflow-auto">
           <DirtyFieldsProvider dirtyFieldKeys={emptyDirty}>
             {renderContent()}

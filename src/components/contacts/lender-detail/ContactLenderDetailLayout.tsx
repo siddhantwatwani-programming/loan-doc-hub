@@ -1,11 +1,19 @@
 import React, { useState, useCallback } from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ContactLenderSubNav, type ContactLenderSubSection } from './ContactLenderSubNav';
+import LenderDetailSidebar, { type LenderSection } from './LenderDetailSidebar';
 import { LenderInfoForm } from '@/components/deal/LenderInfoForm';
 import { LenderAuthorizedPartyForm } from '@/components/deal/LenderAuthorizedPartyForm';
 import { LenderBankingForm } from '@/components/deal/LenderBankingForm';
 import { LenderTaxInfoForm } from '@/components/deal/LenderTaxInfoForm';
+import LenderDashboard from './LenderDashboard';
+import LenderPortfolio from './LenderPortfolio';
+import LenderHistory from './LenderHistory';
+import LenderCharges from './LenderCharges';
+import LenderTrustLedger from './LenderTrustLedger';
+import LenderConversationLog from './LenderConversationLog';
+import LenderAttachments from './LenderAttachments';
+import LenderEventsJournal from './LenderEventsJournal';
 import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { ContactRecord } from '@/hooks/useContactsCrud';
 
@@ -20,12 +28,10 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
   onBack,
   onSave,
 }) => {
-  const [activeSection, setActiveSection] = useState<ContactLenderSubSection>('lender_info');
+  const [activeSection, setActiveSection] = useState<LenderSection>('dashboard');
   const [values, setValues] = useState<Record<string, string>>(() => {
-    // Map contact_data keys to lender-prefixed keys for the forms
     const result: Record<string, string> = {};
     Object.entries(contact.contact_data || {}).forEach(([key, value]) => {
-      // The deal forms expect keys like "lender.full_name" etc.
       result[`lender.${key}`] = value;
     });
     return result;
@@ -36,7 +42,6 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
   }, []);
 
   const handleSave = useCallback(async () => {
-    // Strip the "lender." prefix and save back to contact_data
     const contactData: Record<string, string> = {};
     Object.entries(values).forEach(([key, value]) => {
       const stripped = key.replace(/^lender\./, '');
@@ -50,7 +55,43 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
 
   const renderContent = () => {
     switch (activeSection) {
-      case 'lender_info':
+      case 'dashboard':
+        return (
+          <div className="p-6">
+            <LenderDashboard contact={contact} />
+          </div>
+        );
+      case 'portfolio':
+        return (
+          <div className="p-6">
+            <LenderPortfolio lenderId={contact.contact_id} />
+          </div>
+        );
+      case 'history':
+        return (
+          <div className="p-6">
+            <LenderHistory lenderId={contact.contact_id} />
+          </div>
+        );
+      case 'charges':
+        return (
+          <div className="p-6">
+            <LenderCharges lenderId={contact.contact_id} />
+          </div>
+        );
+      case 'trust-ledger':
+        return (
+          <div className="p-6">
+            <LenderTrustLedger lenderId={contact.contact_id} />
+          </div>
+        );
+      case 'conversation-log':
+        return (
+          <div className="p-6">
+            <LenderConversationLog lenderId={contact.contact_id} />
+          </div>
+        );
+      case 'lender-info':
         return (
           <LenderInfoForm
             fields={emptyFields}
@@ -59,7 +100,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             disabled={false}
           />
         );
-      case 'authorized_party':
+      case 'authorized-party':
         return (
           <LenderAuthorizedPartyForm
             fields={emptyFields}
@@ -77,7 +118,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             disabled={false}
           />
         );
-      case 'tax_info':
+      case '1099':
         return (
           <LenderTaxInfoForm
             fields={emptyFields}
@@ -85,6 +126,18 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             onValueChange={handleValueChange}
             disabled={false}
           />
+        );
+      case 'attachments':
+        return (
+          <div className="p-6">
+            <LenderAttachments lenderId={contact.contact_id} />
+          </div>
+        );
+      case 'events-journal':
+        return (
+          <div className="p-6">
+            <LenderEventsJournal lenderId={contact.contact_id} />
+          </div>
         );
       default:
         return null;
@@ -107,7 +160,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
         </Button>
       </div>
       <div className="flex flex-1 overflow-hidden">
-        <ContactLenderSubNav activeSubSection={activeSection} onSubSectionChange={setActiveSection} />
+        <LenderDetailSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
         <div className="flex-1 overflow-auto">
           <DirtyFieldsProvider dirtyFieldKeys={emptyDirty}>
             {renderContent()}
