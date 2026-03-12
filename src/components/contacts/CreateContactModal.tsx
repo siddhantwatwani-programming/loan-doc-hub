@@ -16,85 +16,166 @@ interface CreateContactModalProps {
   onSubmit: (data: Record<string, string>) => void;
 }
 
+const LENDER_TYPE_OPTIONS = [
+  'Individual', 'Joint', 'Family Trust', 'LLC', 'C Corp / S Corp',
+  'IRA / ERISA', 'Investment Fund', '401k', 'Foreign Holder W-8', 'Non-profit',
+];
+
+const LENDER_CAPACITY_OPTIONS = ['Broker', 'Primary Lender', 'Authorized Party'];
+
+const BORROWER_TYPE_OPTIONS = [
+  'Individual', 'Joint', 'Family Trust', 'LLC', 'C Corp / S Corp',
+  'IRA / ERISA', 'Investment Fund', '401K', 'Foreign Holder W-8', 'Non-profit',
+];
+
+const BORROWER_CAPACITY_OPTIONS = [
+  'Borrower', 'Co-borrower', 'Trustee', 'Co-Trustee',
+  'Managing Member', 'Authorized Signer', 'Additional Guarantor',
+];
+
+const getInitialForm = (contactType: string): Record<string, string> => {
+  if (contactType === 'lender') {
+    return {
+      type: '', full_name: '', first_name: '', middle_name: '', last_name: '',
+      capacity: '', email: '',
+      'primary_address.street': '', 'primary_address.city': '',
+      'primary_address.state': '', 'primary_address.zip': '',
+    };
+  }
+  if (contactType === 'broker') {
+    return {
+      company: '', first_name: '', middle_name: '', last_name: '',
+      email: '', License: '',
+      'address.street': '', 'address.city': '', 'address.state': '', 'address.zip': '',
+    };
+  }
+  // borrower
+  return {
+    borrower_type: '', full_name: '', first_name: '', middle_initial: '', last_name: '',
+    capacity: '', email: '',
+    'address.street': '', 'address.city': '', state: '', 'address.zip': '',
+  };
+};
+
 export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   open, onOpenChange, contactType, onSubmit,
 }) => {
-  const [form, setForm] = useState<Record<string, string>>({
-    full_name: '',
-    first_name: '',
-    last_name: '',
-    email: '',
-    type: 'Individual',
-    company: '',
-    city: '',
-    state: '',
-  });
+  const [form, setForm] = useState<Record<string, string>>(() => getInitialForm(contactType));
 
   const set = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleSubmit = () => {
-    const data = {
-      ...form,
-      full_name: form.full_name || `${form.first_name} ${form.last_name}`.trim(),
-    };
+    const data = { ...form };
+    // Derive full_name if not set
+    if (!data.full_name) {
+      const mid = data.middle_name || data.middle_initial || '';
+      data.full_name = [data.first_name, mid, data.last_name].filter(Boolean).join(' ');
+    }
     onSubmit(data);
-    setForm({ full_name: '', first_name: '', last_name: '', email: '', type: 'Individual', company: '', city: '', state: '' });
+    setForm(getInitialForm(contactType));
   };
 
   const typeLabel = contactType.charAt(0).toUpperCase() + contactType.slice(1);
 
+  const renderInline = (label: string, key: string, type = 'text') => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[100px] shrink-0 text-xs">{label}</Label>
+      <Input
+        type={type}
+        value={form[key] || ''}
+        onChange={(e) => set(key, e.target.value)}
+        className="h-7 text-xs flex-1"
+      />
+    </div>
+  );
+
+  const renderSelect = (label: string, key: string, options: string[]) => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[100px] shrink-0 text-xs">{label}</Label>
+      <Select value={form[key] || ''} onValueChange={(v) => set(key, v)}>
+        <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+        <SelectContent>
+          {options.map((opt) => (
+            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New {typeLabel}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Full Name</Label>
-              <Input value={form.full_name} onChange={(e) => set('full_name', e.target.value)} />
+
+        {contactType === 'lender' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-0">
+            <div className="space-y-1.5">
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Name</h3>
+              {renderSelect('Lender Type', 'type', LENDER_TYPE_OPTIONS)}
+              {renderInline('Full Name', 'full_name')}
+              {renderInline('First', 'first_name')}
+              {renderInline('Middle', 'middle_name')}
+              {renderInline('Last', 'last_name')}
+              {renderSelect('Capacity', 'capacity', LENDER_CAPACITY_OPTIONS)}
+              {renderInline('Email', 'email', 'email')}
             </div>
-            <div>
-              <Label>Type</Label>
-              <Select value={form.type} onValueChange={(v) => set('type', v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Individual">Individual</SelectItem>
-                  <SelectItem value="Entity">Entity</SelectItem>
-                  <SelectItem value="Trust">Trust</SelectItem>
-                  <SelectItem value="LLC">LLC</SelectItem>
-                  <SelectItem value="IRA">IRA</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>First Name</Label>
-              <Input value={form.first_name} onChange={(e) => set('first_name', e.target.value)} />
-            </div>
-            <div>
-              <Label>Last Name</Label>
-              <Input value={form.last_name} onChange={(e) => set('last_name', e.target.value)} />
-            </div>
-            <div>
-              <Label>Email</Label>
-              <Input value={form.email} onChange={(e) => set('email', e.target.value)} />
-            </div>
-            <div>
-              <Label>Company</Label>
-              <Input value={form.company} onChange={(e) => set('company', e.target.value)} />
-            </div>
-            <div>
-              <Label>City</Label>
-              <Input value={form.city} onChange={(e) => set('city', e.target.value)} />
-            </div>
-            <div>
-              <Label>State</Label>
-              <Input value={form.state} onChange={(e) => set('state', e.target.value)} />
+            <div className="space-y-1.5">
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
+              {renderInline('Street', 'primary_address.street')}
+              {renderInline('City', 'primary_address.city')}
+              {renderInline('State', 'primary_address.state')}
+              {renderInline('ZIP', 'primary_address.zip')}
             </div>
           </div>
-        </div>
+        )}
+
+        {contactType === 'broker' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-0">
+            <div className="space-y-1.5">
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Name</h3>
+              {renderInline('License', 'License')}
+              {renderInline('Company', 'company')}
+              {renderInline('First', 'first_name')}
+              {renderInline('Middle', 'middle_name')}
+              {renderInline('Last', 'last_name')}
+              {renderInline('Email', 'email', 'email')}
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
+              {renderInline('Street', 'address.street')}
+              {renderInline('City', 'address.city')}
+              {renderInline('State', 'address.state')}
+              {renderInline('ZIP', 'address.zip')}
+            </div>
+          </div>
+        )}
+
+        {contactType === 'borrower' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-0">
+            <div className="space-y-1.5">
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Name</h3>
+              {renderSelect('Borrower Type', 'borrower_type', BORROWER_TYPE_OPTIONS)}
+              {renderInline('Full Name', 'full_name')}
+              {renderInline('First', 'first_name')}
+              {renderInline('Middle', 'middle_initial')}
+              {renderInline('Last', 'last_name')}
+              {renderSelect('Capacity', 'capacity', BORROWER_CAPACITY_OPTIONS)}
+              {renderInline('Email', 'email', 'email')}
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
+              {renderInline('Street', 'address.street')}
+              {renderInline('City', 'address.city')}
+              {renderInline('State', 'state')}
+              {renderInline('ZIP', 'address.zip')}
+            </div>
+          </div>
+        )}
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSubmit}>Create</Button>

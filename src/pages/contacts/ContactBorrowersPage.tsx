@@ -38,11 +38,13 @@ export interface ContactBorrower {
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'contact_id', label: 'Borrower ID', visible: true },
   { id: 'full_name', label: 'Full Name', visible: true },
+  { id: 'first_name', label: 'First', visible: true },
+  { id: 'last_name', label: 'Last', visible: true },
   { id: 'email', label: 'Email', visible: true },
   { id: 'phone', label: 'Phone', visible: true },
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
-  { id: 'company', label: 'Company', visible: true },
+  { id: 'company', label: 'Company', visible: false },
 ];
 
 const ContactBorrowersPage: React.FC = () => {
@@ -90,7 +92,7 @@ const ContactBorrowersPage: React.FC = () => {
         onRowClick={setSelectedContact}
         onCreateNew={() => setModalOpen(true)}
         defaultColumns={DEFAULT_COLUMNS}
-        tableConfigKey="contact_borrowers_v2"
+        tableConfigKey="contact_borrowers_v3"
         addButtonLabel="Add Borrower"
         breadcrumbLabel="Borrowers"
       />
