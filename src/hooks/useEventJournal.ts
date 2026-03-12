@@ -43,6 +43,8 @@ export function useEventJournalLogger() {
   ) => {
     if (!changes.length) return;
 
+    const ipAddress = await getClientIp();
+
     const { error } = await supabase
       .from('event_journal' as any)
       .insert({
@@ -51,6 +53,7 @@ export function useEventJournalLogger() {
         details: changes,
         actor_user_id: actorUserId,
         event_number: 0, // Will be overridden by trigger
+        ip_address: ipAddress,
       } as any);
 
     if (error) {
