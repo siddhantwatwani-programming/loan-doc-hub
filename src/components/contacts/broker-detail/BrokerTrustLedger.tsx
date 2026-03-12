@@ -151,6 +151,7 @@ const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string }> = (
     setNewEntry(EMPTY_ENTRY);
     setAddDialogOpen(false);
     toast.success('Entry added');
+    logContactEvent(contactDbId, 'Trust Ledger', [{ fieldLabel: 'Entry Added', oldValue: '', newValue: entry.reference || entry.memo || 'New entry' }]);
   };
 
   const handleBulkDelete = async () => {
