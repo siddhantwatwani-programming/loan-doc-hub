@@ -1,17 +1,14 @@
 import React, { useState, useCallback } from 'react';
-import { Plus, Download, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Download, Search, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { ContactBorrowerModal } from '@/components/contacts/ContactBorrowerModal';
-import { ContactBorrowerDetail } from '@/components/contacts/ContactBorrowerDetail';
+import { ContactBorrowerDetailForm } from '@/components/contacts/ContactBorrowerDetailForm';
 import { ColumnConfigPopover, ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
-import { useContactsList, createContact, type ContactRecord } from '@/hooks/useContactsList';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
 
 export interface ContactBorrower {
   id: string;
@@ -44,68 +41,71 @@ export interface ContactBorrower {
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { id: 'contact_id', label: 'Borrower ID', visible: true },
-  { id: 'full_name', label: 'Full Name', visible: true },
+  { id: 'borrowerId', label: 'Borrower ID', visible: true },
+  { id: 'hold', label: 'Hold', visible: true },
+  { id: 'type', label: 'Type', visible: true },
+  { id: 'ach', label: 'ACH', visible: true },
   { id: 'email', label: 'Email', visible: true },
-  { id: 'phone', label: 'Phone', visible: true },
+  { id: 'agreement', label: 'Agreement', visible: true },
+  { id: 'fullName', label: 'Full Name', visible: true },
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
-  { id: 'company', label: 'Company', visible: true },
+  { id: 'cellPhone', label: 'Cell Phone', visible: true },
+  { id: 'verified', label: 'Verified', visible: true },
+  { id: 'send1099', label: '1099', visible: true },
 ];
 
+let nextId = 1;
+function generateBorrowerId() {
+  return `B-${String(nextId++).padStart(5, '0')}`;
+}
+
 const ContactBorrowersPage: React.FC = () => {
-  const { user } = useAuth();
-  const {
-    contacts, totalCount, totalPages, loading, page, setPage,
-    searchQuery, setSearchQuery, refetch, pageSize,
-  } = useContactsList('borrower');
+  const [borrowers, setBorrowers] = useState<ContactBorrower[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
-  const [columns, setColumns, resetColumns] = useTableColumnConfig('contact_borrowers_v2', DEFAULT_COLUMNS);
+  const [selectedBorrower, setSelectedBorrower] = useState<ContactBorrower | null>(null);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('contact_borrowers_v1', DEFAULT_COLUMNS);
 
   const visibleColumns = columns.filter((c) => c.visible);
 
-  const handleCreate = useCallback(async (data: Omit<ContactBorrower, 'id' | 'borrowerId'>) => {
-    if (!user) return;
-    try {
-      await createContact('borrower', {
-        full_name: data.fullName || `${data.firstName} ${data.lastName}`.trim(),
-        first_name: data.firstName,
-        last_name: data.lastName,
-        email: data.email,
-        phone: data.cellPhone || data.homePhone || data.workPhone,
-        city: data.city,
-        state: data.state,
-        contact_data: {
-          'borrower.full_name': data.fullName,
-          'borrower.first_name': data.firstName,
-          'borrower.last_name': data.lastName,
-          'borrower.email': data.email,
-          'borrower.phone.mobile': data.cellPhone,
-          'borrower.phone.home': data.homePhone,
-          'borrower.phone.work': data.workPhone,
-          'borrower.phone.fax': data.fax,
-          'borrower.address.street': data.street,
-          'borrower.address.city': data.city,
-          'borrower.state': data.state,
-          'borrower.address.zip': data.zip,
-          'borrower.tin': data.tin,
-        },
-      }, user.id);
-      setModalOpen(false);
-      refetch();
-      toast({ title: 'Created', description: 'Borrower contact created successfully.' });
-    } catch (err) {
-      console.error('Error creating contact:', err);
-      toast({ title: 'Error', description: 'Failed to create contact.', variant: 'destructive' });
-    }
-  }, [user, refetch]);
+  const filteredBorrowers = borrowers.filter((b) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      b.borrowerId.toLowerCase().includes(q) ||
+      b.fullName.toLowerCase().includes(q) ||
+      b.email.toLowerCase().includes(q) ||
+      b.city.toLowerCase().includes(q) ||
+      b.state.toLowerCase().includes(q) ||
+      b.cellPhone.toLowerCase().includes(q) ||
+      b.type.toLowerCase().includes(q)
+    );
+  });
+
+  const handleCreate = useCallback((data: Omit<ContactBorrower, 'id' | 'borrowerId'>) => {
+    const newBorrower: ContactBorrower = {
+      ...data,
+      id: crypto.randomUUID(),
+      borrowerId: generateBorrowerId(),
+    };
+    setBorrowers((prev) => [...prev, newBorrower]);
+    setModalOpen(false);
+  }, []);
+
+  const handleUpdate = useCallback((updated: ContactBorrower) => {
+    setBorrowers((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+    setSelectedBorrower(null);
+  }, []);
 
   const handleExport = useCallback(() => {
-    if (contacts.length === 0) return;
-    const headers = visibleColumns.map((c) => c.label);
-    const rows = contacts.map((c) =>
-      visibleColumns.map((col) => String((c as any)[col.id] || ''))
+    if (borrowers.length === 0) return;
+    const headers = DEFAULT_COLUMNS.map((c) => c.label);
+    const rows = borrowers.map((b) =>
+      DEFAULT_COLUMNS.map((c) => {
+        const val = b[c.id as keyof ContactBorrower];
+        return typeof val === 'boolean' ? (val ? 'Yes' : 'No') : String(val || '');
+      })
     );
     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -115,26 +115,30 @@ const ContactBorrowersPage: React.FC = () => {
     a.download = 'contact_borrowers.csv';
     a.click();
     URL.revokeObjectURL(url);
-  }, [contacts, visibleColumns]);
+  }, [borrowers]);
 
-  const renderCellValue = (contact: ContactRecord, columnId: string) => {
-    const val = (contact as any)[columnId];
-    if (columnId === 'full_name') return <span className="font-medium">{String(val || '-')}</span>;
+  const renderCellValue = (borrower: ContactBorrower, columnId: string) => {
+    const val = borrower[columnId as keyof ContactBorrower];
+    if (typeof val === 'boolean') return val ? '✓' : '';
+    if (columnId === 'fullName') return <span className="font-medium">{String(val || '-')}</span>;
     return String(val || '-');
   };
 
-  const handleContactUpdated = useCallback((updated: ContactRecord) => {
-    setSelectedContact(updated);
-    refetch();
-  }, [refetch]);
-
-  if (selectedContact) {
+  if (selectedBorrower) {
     return (
-      <div className="h-full flex flex-col">
-        <ContactBorrowerDetail
-          contact={selectedContact}
-          onBack={() => { setSelectedContact(null); refetch(); }}
-          onUpdated={handleContactUpdated}
+      <div className="p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => setSelectedBorrower(null)}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Borrowers
+          </Button>
+          <h3 className="font-semibold text-lg text-foreground">
+            {selectedBorrower.fullName || 'Borrower Detail'}
+          </h3>
+        </div>
+        <ContactBorrowerDetailForm
+          borrower={selectedBorrower}
+          onSave={handleUpdate}
+          onCancel={() => setSelectedBorrower(null)}
         />
       </div>
     );
@@ -153,7 +157,7 @@ const ContactBorrowersPage: React.FC = () => {
             <Input
               placeholder="Search..."
               value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8 h-9 w-[200px]"
             />
           </div>
@@ -165,7 +169,7 @@ const ContactBorrowersPage: React.FC = () => {
       </div>
 
       <div className="border border-border rounded-lg overflow-x-auto">
-        <Table className="min-w-[800px]">
+        <Table className="min-w-[1000px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               {visibleColumns.map((col) => (
@@ -174,27 +178,23 @@ const ContactBorrowersPage: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
+            {filteredBorrowers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : contacts.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
-                  {searchQuery ? 'No borrowers match your search.' : 'No contact borrowers yet. Click "Create New" to add one.'}
+                  {borrowers.length === 0
+                    ? 'No contact borrowers yet. Click "Create New" to add one.'
+                    : 'No borrowers match your search.'}
                 </TableCell>
               </TableRow>
             ) : (
-              contacts.map((contact) => (
+              filteredBorrowers.map((borrower) => (
                 <TableRow
-                  key={contact.id}
+                  key={borrower.id}
                   className="cursor-pointer hover:bg-muted/30"
-                  onClick={() => setSelectedContact(contact)}
+                  onClick={() => setSelectedBorrower(borrower)}
                 >
                   {visibleColumns.map((col) => (
-                    <TableCell key={col.id}>{renderCellValue(contact, col.id)}</TableCell>
+                    <TableCell key={col.id}>{renderCellValue(borrower, col.id)}</TableCell>
                   ))}
                 </TableRow>
               ))
@@ -203,19 +203,11 @@ const ContactBorrowersPage: React.FC = () => {
         </Table>
       </div>
 
-      {totalCount > 0 && (
-        <div className="flex items-center justify-between">
+      {borrowers.length > 0 && (
+        <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
-            Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalCount)} of {totalCount}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
-            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+            {filteredBorrowers.length !== borrowers.length && `Showing ${filteredBorrowers.length} of `}
+            Total: {borrowers.length}
           </div>
         </div>
       )}
