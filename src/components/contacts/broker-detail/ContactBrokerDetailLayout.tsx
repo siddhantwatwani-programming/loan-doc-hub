@@ -169,7 +169,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
             <ArrowLeft className="h-4 w-4 mr-1" /> Back to Brokers
           </Button>
           <h3 className="font-semibold text-lg text-foreground">
-            {contact.full_name || 'Broker Detail'} — {contact.contact_id}
+            Broker Details — {contact.contact_id}
           </h3>
         </div>
         <Button size="sm" onClick={handleSave} className="gap-1">
