@@ -136,7 +136,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
       case 'events-journal':
         return (
           <div className="p-6">
-            <LenderEventsJournal lenderId={contact.contact_id} />
+            <LenderEventsJournal lenderId={contact.contact_id} contactDbId={contact.id} />
           </div>
         );
       default:
