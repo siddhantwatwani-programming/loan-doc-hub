@@ -351,14 +351,34 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             {ALL_COLUMNS.map(col => (
-              <div key={col.id} className="space-y-1">
+              <div key={col.id} className={`space-y-1 ${col.id === 'total_owed_by_you' ? 'col-span-1' : ''}`}>
                 <Label className="text-xs">{col.label}</Label>
-                <Input
-                  className="h-8 text-xs"
-                  value={(newCharge as any)[col.id] || ''}
-                  onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value }))}
-                  placeholder={col.label}
-                />
+                {col.id === 'date' ? (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full h-8 text-xs justify-start font-normal">
+                        {(newCharge as any).date ? (newCharge as any).date : <span className="text-muted-foreground">Date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={(newCharge as any).date ? new Date((newCharge as any).date) : undefined}
+                        onSelect={(date) => {
+                          setNewCharge(prev => ({ ...prev, date: date ? format(date, 'MM/dd/yyyy') : '' }));
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  <Input
+                    className="h-8 text-xs"
+                    value={(newCharge as any)[col.id] || ''}
+                    onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value }))}
+                    placeholder={col.label}
+                  />
+                )}
               </div>
             ))}
           </div>
