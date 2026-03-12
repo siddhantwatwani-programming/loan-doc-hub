@@ -1,14 +1,17 @@
 import React, { useState, useCallback } from 'react';
-import { Plus, Download, Search, ArrowLeft } from 'lucide-react';
+import { Plus, Download, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { ContactBrokerModal } from '@/components/contacts/ContactBrokerModal';
-import BrokerDetailLayout from '@/components/contacts/broker-detail/BrokerDetailLayout';
+import { ContactBrokerDetail } from '@/components/contacts/ContactBrokerDetail';
 import { ColumnConfigPopover, ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+import { useContactsList, createContact, type ContactRecord } from '@/hooks/useContactsList';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 export interface ContactBroker {
   id: string;
@@ -41,71 +44,68 @@ export interface ContactBroker {
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { id: 'brokerId', label: 'Broker ID', visible: true },
-  { id: 'hold', label: 'Hold', visible: true },
-  { id: 'type', label: 'Type', visible: true },
-  { id: 'ach', label: 'ACH', visible: true },
+  { id: 'contact_id', label: 'Broker ID', visible: true },
+  { id: 'full_name', label: 'Full Name', visible: true },
   { id: 'email', label: 'Email', visible: true },
-  { id: 'agreement', label: 'Agreement', visible: true },
-  { id: 'fullName', label: 'Full Name', visible: true },
+  { id: 'phone', label: 'Phone', visible: true },
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
-  { id: 'cellPhone', label: 'Cell Phone', visible: true },
-  { id: 'verified', label: 'Verified', visible: true },
-  { id: 'send1099', label: '1099', visible: true },
+  { id: 'company', label: 'Company', visible: true },
 ];
 
-let nextId = 1;
-function generateBrokerId() {
-  return `BR-${String(nextId++).padStart(5, '0')}`;
-}
-
 const ContactBrokersPage: React.FC = () => {
-  const [brokers, setBrokers] = useState<ContactBroker[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { user } = useAuth();
+  const {
+    contacts, totalCount, totalPages, loading, page, setPage,
+    searchQuery, setSearchQuery, refetch, pageSize,
+  } = useContactsList('broker');
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedBroker, setSelectedBroker] = useState<ContactBroker | null>(null);
-  const [columns, setColumns, resetColumns] = useTableColumnConfig('contact_brokers_v1', DEFAULT_COLUMNS);
+  const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('contact_brokers_v2', DEFAULT_COLUMNS);
 
   const visibleColumns = columns.filter((c) => c.visible);
 
-  const filteredBrokers = brokers.filter((b) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      b.brokerId.toLowerCase().includes(q) ||
-      b.fullName.toLowerCase().includes(q) ||
-      b.email.toLowerCase().includes(q) ||
-      b.city.toLowerCase().includes(q) ||
-      b.state.toLowerCase().includes(q) ||
-      b.cellPhone.toLowerCase().includes(q) ||
-      b.type.toLowerCase().includes(q)
-    );
-  });
-
-  const handleCreate = useCallback((data: Omit<ContactBroker, 'id' | 'brokerId'>) => {
-    const newBroker: ContactBroker = {
-      ...data,
-      id: crypto.randomUUID(),
-      brokerId: generateBrokerId(),
-    };
-    setBrokers((prev) => [...prev, newBroker]);
-    setModalOpen(false);
-  }, []);
-
-  const handleUpdate = useCallback((updated: ContactBroker) => {
-    setBrokers((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
-    setSelectedBroker(null);
-  }, []);
+  const handleCreate = useCallback(async (data: Omit<ContactBroker, 'id' | 'brokerId'>) => {
+    if (!user) return;
+    try {
+      await createContact('broker', {
+        full_name: data.fullName || `${data.firstName} ${data.lastName}`.trim(),
+        first_name: data.firstName,
+        last_name: data.lastName,
+        email: data.email,
+        phone: data.cellPhone || data.homePhone || data.workPhone,
+        city: data.city,
+        state: data.state,
+        contact_data: {
+          'broker.first_name': data.firstName,
+          'broker.last_name': data.lastName,
+          'broker.email': data.email,
+          'broker.phone.cell': data.cellPhone,
+          'broker.phone.home': data.homePhone,
+          'broker.phone.work': data.workPhone,
+          'broker.phone.fax': data.fax,
+          'broker.address.street': data.street,
+          'broker.address.city': data.city,
+          'broker.address.state': data.state,
+          'broker.address.zip': data.zip,
+          'broker.tax_id': data.tin,
+          'broker.issue_1099': String(data.send1099),
+        },
+      }, user.id);
+      setModalOpen(false);
+      refetch();
+      toast({ title: 'Created', description: 'Broker contact created successfully.' });
+    } catch (err) {
+      console.error('Error creating contact:', err);
+      toast({ title: 'Error', description: 'Failed to create contact.', variant: 'destructive' });
+    }
+  }, [user, refetch]);
 
   const handleExport = useCallback(() => {
-    if (brokers.length === 0) return;
-    const headers = DEFAULT_COLUMNS.map((c) => c.label);
-    const rows = brokers.map((b) =>
-      DEFAULT_COLUMNS.map((c) => {
-        const val = b[c.id as keyof ContactBroker];
-        return typeof val === 'boolean' ? (val ? 'Yes' : 'No') : String(val || '');
-      })
+    if (contacts.length === 0) return;
+    const headers = visibleColumns.map((c) => c.label);
+    const rows = contacts.map((c) =>
+      visibleColumns.map((col) => String((c as any)[col.id] || ''))
     );
     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -115,22 +115,26 @@ const ContactBrokersPage: React.FC = () => {
     a.download = 'contact_brokers.csv';
     a.click();
     URL.revokeObjectURL(url);
-  }, [brokers]);
+  }, [contacts, visibleColumns]);
 
-  const renderCellValue = (broker: ContactBroker, columnId: string) => {
-    const val = broker[columnId as keyof ContactBroker];
-    if (typeof val === 'boolean') return val ? '✓' : '';
-    if (columnId === 'fullName') return <span className="font-medium">{String(val || '-')}</span>;
+  const renderCellValue = (contact: ContactRecord, columnId: string) => {
+    const val = (contact as any)[columnId];
+    if (columnId === 'full_name') return <span className="font-medium">{String(val || '-')}</span>;
     return String(val || '-');
   };
 
-  if (selectedBroker) {
+  const handleContactUpdated = useCallback((updated: ContactRecord) => {
+    setSelectedContact(updated);
+    refetch();
+  }, [refetch]);
+
+  if (selectedContact) {
     return (
       <div className="h-full flex flex-col">
-        <BrokerDetailLayout
-          broker={selectedBroker}
-          onBack={() => setSelectedBroker(null)}
-          onUpdate={handleUpdate}
+        <ContactBrokerDetail
+          contact={selectedContact}
+          onBack={() => { setSelectedContact(null); refetch(); }}
+          onUpdated={handleContactUpdated}
         />
       </div>
     );
@@ -149,7 +153,7 @@ const ContactBrokersPage: React.FC = () => {
             <Input
               placeholder="Search..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
               className="pl-8 h-9 w-[200px]"
             />
           </div>
@@ -161,7 +165,7 @@ const ContactBrokersPage: React.FC = () => {
       </div>
 
       <div className="border border-border rounded-lg overflow-x-auto">
-        <Table className="min-w-[1000px]">
+        <Table className="min-w-[800px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               {visibleColumns.map((col) => (
@@ -170,23 +174,27 @@ const ContactBrokersPage: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredBrokers.length === 0 ? (
+            {loading ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
-                  {brokers.length === 0
-                    ? 'No contact brokers yet. Click "Create New" to add one.'
-                    : 'No brokers match your search.'}
+                  Loading...
+                </TableCell>
+              </TableRow>
+            ) : contacts.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
+                  {searchQuery ? 'No brokers match your search.' : 'No contact brokers yet. Click "Create New" to add one.'}
                 </TableCell>
               </TableRow>
             ) : (
-              filteredBrokers.map((broker) => (
+              contacts.map((contact) => (
                 <TableRow
-                  key={broker.id}
+                  key={contact.id}
                   className="cursor-pointer hover:bg-muted/30"
-                  onClick={() => setSelectedBroker(broker)}
+                  onClick={() => setSelectedContact(contact)}
                 >
                   {visibleColumns.map((col) => (
-                    <TableCell key={col.id}>{renderCellValue(broker, col.id)}</TableCell>
+                    <TableCell key={col.id}>{renderCellValue(contact, col.id)}</TableCell>
                   ))}
                 </TableRow>
               ))
@@ -195,11 +203,19 @@ const ContactBrokersPage: React.FC = () => {
         </Table>
       </div>
 
-      {brokers.length > 0 && (
-        <div className="flex justify-end">
+      {totalCount > 0 && (
+        <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            {filteredBrokers.length !== brokers.length && `Showing ${filteredBrokers.length} of `}
-            Total: {brokers.length}
+            Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalCount)} of {totalCount}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       )}

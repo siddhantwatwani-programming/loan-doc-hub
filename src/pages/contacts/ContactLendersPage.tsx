@@ -1,15 +1,17 @@
 import React, { useState, useCallback } from 'react';
-import { Plus, Download, Search, Settings2, ArrowLeft } from 'lucide-react';
+import { Plus, Download, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { ContactLenderModal } from '@/components/contacts/ContactLenderModal';
-import { ContactLenderDetailForm } from '@/components/contacts/ContactLenderDetailForm';
+import { ContactLenderDetail } from '@/components/contacts/ContactLenderDetail';
 import { ColumnConfigPopover, ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+import { useContactsList, createContact, type ContactRecord } from '@/hooks/useContactsList';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 export interface ContactLender {
   id: string;
@@ -43,71 +45,70 @@ export interface ContactLender {
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { id: 'lenderId', label: 'Lender ID', visible: true },
-  { id: 'frozen', label: 'Frozen', visible: true },
-  { id: 'type', label: 'Type', visible: true },
-  { id: 'ach', label: 'ACH', visible: true },
+  { id: 'contact_id', label: 'Lender ID', visible: true },
+  { id: 'full_name', label: 'Full Name', visible: true },
   { id: 'email', label: 'Email', visible: true },
-  { id: 'agreement', label: 'Agreement', visible: true },
-  { id: 'fullName', label: 'Full Name', visible: true },
+  { id: 'phone', label: 'Phone', visible: true },
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
-  { id: 'cellPhone', label: 'Cell Phone', visible: true },
-  { id: 'verified', label: 'Verified', visible: true },
-  { id: 'send1099', label: '1099', visible: true },
+  { id: 'company', label: 'Company', visible: true },
 ];
 
-let nextId = 1;
-function generateLenderId() {
-  return `L-${String(nextId++).padStart(5, '0')}`;
-}
-
 const ContactLendersPage: React.FC = () => {
-  const [lenders, setLenders] = useState<ContactLender[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { user } = useAuth();
+  const {
+    contacts, totalCount, totalPages, loading, page, setPage,
+    searchQuery, setSearchQuery, refetch, pageSize,
+  } = useContactsList('lender');
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedLender, setSelectedLender] = useState<ContactLender | null>(null);
-  const [columns, setColumns, resetColumns] = useTableColumnConfig('contact_lenders_v1', DEFAULT_COLUMNS);
+  const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('contact_lenders_v2', DEFAULT_COLUMNS);
 
   const visibleColumns = columns.filter((c) => c.visible);
 
-  const filteredLenders = lenders.filter((l) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      l.lenderId.toLowerCase().includes(q) ||
-      l.fullName.toLowerCase().includes(q) ||
-      l.email.toLowerCase().includes(q) ||
-      l.city.toLowerCase().includes(q) ||
-      l.state.toLowerCase().includes(q) ||
-      l.cellPhone.toLowerCase().includes(q) ||
-      l.type.toLowerCase().includes(q)
-    );
-  });
-
-  const handleCreate = useCallback((data: Omit<ContactLender, 'id' | 'lenderId'>) => {
-    const newLender: ContactLender = {
-      ...data,
-      id: crypto.randomUUID(),
-      lenderId: generateLenderId(),
-    };
-    setLenders((prev) => [...prev, newLender]);
-    setModalOpen(false);
-  }, []);
-
-  const handleUpdate = useCallback((updated: ContactLender) => {
-    setLenders((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
-    setSelectedLender(null);
-  }, []);
+  const handleCreate = useCallback(async (data: Omit<ContactLender, 'id' | 'lenderId'>) => {
+    if (!user) return;
+    try {
+      await createContact('lender', {
+        full_name: data.fullName || `${data.firstName} ${data.lastName}`.trim(),
+        first_name: data.firstName,
+        last_name: data.lastName,
+        email: data.email,
+        phone: data.cellPhone || data.homePhone || data.workPhone,
+        city: data.city,
+        state: data.state,
+        contact_data: {
+          'lender.full_name': data.fullName,
+          'lender.first_name': data.firstName,
+          'lender.last_name': data.lastName,
+          'lender.email': data.email,
+          'lender.phone.cell': data.cellPhone,
+          'lender.phone.home': data.homePhone,
+          'lender.phone.work': data.workPhone,
+          'lender.phone.fax': data.fax,
+          'lender.primary_address.street': data.street,
+          'lender.primary_address.city': data.city,
+          'lender.primary_address.state': data.state,
+          'lender.primary_address.zip': data.zip,
+          'lender.tax_id': data.tin,
+          'lender.issue_1099': String(data.send1099),
+          'lender.freeze_outgoing_disbursements': String(data.frozen),
+        },
+      }, user.id);
+      setModalOpen(false);
+      refetch();
+      toast({ title: 'Created', description: 'Lender contact created successfully.' });
+    } catch (err) {
+      console.error('Error creating contact:', err);
+      toast({ title: 'Error', description: 'Failed to create contact.', variant: 'destructive' });
+    }
+  }, [user, refetch]);
 
   const handleExport = useCallback(() => {
-    if (lenders.length === 0) return;
-    const headers = DEFAULT_COLUMNS.map((c) => c.label);
-    const rows = lenders.map((l) =>
-      DEFAULT_COLUMNS.map((c) => {
-        const val = l[c.id as keyof ContactLender];
-        return typeof val === 'boolean' ? (val ? 'Yes' : 'No') : String(val || '');
-      })
+    if (contacts.length === 0) return;
+    const headers = visibleColumns.map((c) => c.label);
+    const rows = contacts.map((c) =>
+      visibleColumns.map((col) => String((c as any)[col.id] || ''))
     );
     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -117,35 +118,26 @@ const ContactLendersPage: React.FC = () => {
     a.download = 'contact_lenders.csv';
     a.click();
     URL.revokeObjectURL(url);
-  }, [lenders]);
+  }, [contacts, visibleColumns]);
 
-  const renderCellValue = (lender: ContactLender, columnId: string) => {
-    const val = lender[columnId as keyof ContactLender];
-    if (typeof val === 'boolean') {
-      return val ? '✓' : '';
-    }
-    if (columnId === 'fullName') {
-      return <span className="font-medium">{String(val || '-')}</span>;
-    }
+  const renderCellValue = (contact: ContactRecord, columnId: string) => {
+    const val = (contact as any)[columnId];
+    if (columnId === 'full_name') return <span className="font-medium">{String(val || '-')}</span>;
     return String(val || '-');
   };
 
-  // Detail view
-  if (selectedLender) {
+  const handleContactUpdated = useCallback((updated: ContactRecord) => {
+    setSelectedContact(updated);
+    refetch();
+  }, [refetch]);
+
+  if (selectedContact) {
     return (
-      <div className="p-6 space-y-4">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => setSelectedLender(null)}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Lenders
-          </Button>
-          <h3 className="font-semibold text-lg text-foreground">
-            {selectedLender.fullName || 'Lender Detail'}
-          </h3>
-        </div>
-        <ContactLenderDetailForm
-          lender={selectedLender}
-          onSave={handleUpdate}
-          onCancel={() => setSelectedLender(null)}
+      <div className="h-full flex flex-col">
+        <ContactLenderDetail
+          contact={selectedContact}
+          onBack={() => { setSelectedContact(null); refetch(); }}
+          onUpdated={handleContactUpdated}
         />
       </div>
     );
@@ -153,7 +145,6 @@ const ContactLendersPage: React.FC = () => {
 
   return (
     <div className="p-6 space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-lg text-foreground">Contact Lenders</h3>
         <div className="flex items-center gap-2">
@@ -165,7 +156,7 @@ const ContactLendersPage: React.FC = () => {
             <Input
               placeholder="Search..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
               className="pl-8 h-9 w-[200px]"
             />
           </div>
@@ -176,9 +167,8 @@ const ContactLendersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
-        <Table className="min-w-[1000px]">
+        <Table className="min-w-[800px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               {visibleColumns.map((col) => (
@@ -187,23 +177,27 @@ const ContactLendersPage: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredLenders.length === 0 ? (
+            {loading ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
-                  {lenders.length === 0
-                    ? 'No contact lenders yet. Click "Create New" to add one.'
-                    : 'No lenders match your search.'}
+                  Loading...
+                </TableCell>
+              </TableRow>
+            ) : contacts.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
+                  {searchQuery ? 'No lenders match your search.' : 'No contact lenders yet. Click "Create New" to add one.'}
                 </TableCell>
               </TableRow>
             ) : (
-              filteredLenders.map((lender) => (
+              contacts.map((contact) => (
                 <TableRow
-                  key={lender.id}
+                  key={contact.id}
                   className="cursor-pointer hover:bg-muted/30"
-                  onClick={() => setSelectedLender(lender)}
+                  onClick={() => setSelectedContact(contact)}
                 >
                   {visibleColumns.map((col) => (
-                    <TableCell key={col.id}>{renderCellValue(lender, col.id)}</TableCell>
+                    <TableCell key={col.id}>{renderCellValue(contact, col.id)}</TableCell>
                   ))}
                 </TableRow>
               ))
@@ -212,12 +206,19 @@ const ContactLendersPage: React.FC = () => {
         </Table>
       </div>
 
-      {/* Footer */}
-      {lenders.length > 0 && (
-        <div className="flex justify-end">
+      {totalCount > 0 && (
+        <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            {filteredLenders.length !== lenders.length && `Showing ${filteredLenders.length} of `}
-            Total: {lenders.length}
+            Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalCount)} of {totalCount}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       )}
