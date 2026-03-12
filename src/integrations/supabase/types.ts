@@ -346,6 +346,7 @@ export type Database = {
           details: Json
           event_number: number
           id: string
+          ip_address: string | null
           section: string
         }
         Insert: {
@@ -355,6 +356,7 @@ export type Database = {
           details?: Json
           event_number?: number
           id?: string
+          ip_address?: string | null
           section: string
         }
         Update: {
@@ -364,6 +366,7 @@ export type Database = {
           details?: Json
           event_number?: number
           id?: string
+          ip_address?: string | null
           section?: string
         }
         Relationships: [

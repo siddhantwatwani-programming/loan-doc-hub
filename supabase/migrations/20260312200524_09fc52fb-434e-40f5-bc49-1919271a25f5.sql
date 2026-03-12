@@ -1,0 +1,1 @@
+ALTER TABLE public.event_journal ADD COLUMN ip_address text DEFAULT NULL;
