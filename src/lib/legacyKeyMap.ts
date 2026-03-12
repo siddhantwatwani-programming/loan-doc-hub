@@ -408,6 +408,8 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'loan_terms.prepaid_payments': 'ln_p_prepaidPaymen',
   'loan_terms.impounded_payments': 'ln_p_impoundePaymen',
   'loan_terms.funding_holdback': 'ln_p_fundingHoldba',
+  'loan_terms.funding_records': 'ln_p_fundingRecord',
+  'loan_terms.funding_history': 'ln_p_fundingHistor',
   'loan_terms.number_of_payments': 'ln_p_numberOfPaymen',
   'loan_terms.payment_frequency': 'ln_p_paymentFreque',
   'loan_terms.day_due': 'ln_p_dayDue',
