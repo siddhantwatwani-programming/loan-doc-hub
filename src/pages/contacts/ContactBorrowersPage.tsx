@@ -95,6 +95,7 @@ const ContactBorrowersPage: React.FC = () => {
         onPageChange={crud.setCurrentPage}
         onRowClick={setSelectedContact}
         onCreateNew={() => setModalOpen(true)}
+        onDeleteSelected={handleDeleteSelected}
         defaultColumns={DEFAULT_COLUMNS}
         tableConfigKey="contact_borrowers_v3"
         addButtonLabel="Add Borrower"
