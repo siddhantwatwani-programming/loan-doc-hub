@@ -114,7 +114,11 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
         {contactType === 'lender' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-0">
             <div className="space-y-1.5">
-              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Name</h3>
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Lender Details</h3>
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Lender ID</Label>
+                <Input value="Auto-generated" disabled className="h-7 text-xs flex-1 bg-muted" />
+              </div>
               {renderSelect('Lender Type', 'type', LENDER_TYPE_OPTIONS)}
               {renderInline('Full Name', 'full_name')}
               {renderInline('First', 'first_name')}
