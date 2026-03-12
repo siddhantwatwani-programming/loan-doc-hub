@@ -67,6 +67,9 @@ export const BORROWER_PRIMARY_KEYS = {
   ford6: 'borrower.ford.6',
   ford7: 'borrower.ford.7',
   ford8: 'borrower.ford.8',
+  hold: 'borrower.hold',
+  ach: 'borrower.ach',
+  agreementOnFile: 'borrower.agreement_on_file',
 } as const;
 
 export const BORROWER_AUTHORIZED_PARTY_KEYS = {
