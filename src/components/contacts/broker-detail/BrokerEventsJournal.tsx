@@ -139,7 +139,7 @@ const BrokerEventsJournal: React.FC<{ brokerId: string; contactDbId: string }> =
           <TableBody>
             {filteredData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No events match your search or filters.
                 </TableCell>
               </TableRow>
