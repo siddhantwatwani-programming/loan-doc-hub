@@ -221,6 +221,29 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
 
           <div className="h-0.5" />
 
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.hold}>
+            <div className="flex items-center gap-2">
+              <Checkbox id="borrower-hold" checked={getBoolValue('hold')} onCheckedChange={(checked) => handleChange('hold', !!checked)} disabled={disabled} />
+              <Label htmlFor="borrower-hold" className="text-sm font-normal">Hold</Label>
+            </div>
+          </DirtyFieldWrapper>
+
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.ach}>
+            <div className="flex items-center gap-2">
+              <Checkbox id="borrower-ach" checked={getBoolValue('ach')} onCheckedChange={(checked) => handleChange('ach', !!checked)} disabled={disabled} />
+              <Label htmlFor="borrower-ach" className="text-sm font-normal">ACH</Label>
+            </div>
+          </DirtyFieldWrapper>
+
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.agreementOnFile}>
+            <div className="flex items-center gap-2">
+              <Checkbox id="borrower-agreementOnFile" checked={getBoolValue('agreementOnFile')} onCheckedChange={(checked) => handleChange('agreementOnFile', !!checked)} disabled={disabled} />
+              <Label htmlFor="borrower-agreementOnFile" className="text-sm font-normal">Agreement on File</Label>
+            </div>
+          </DirtyFieldWrapper>
+
+          <div className="h-0.5" />
+
           <InlineField label="Credit Score" fieldKey={FIELD_KEYS.creditScore}>
             <Input value={getValue('creditScore')} onChange={(e) => handleChange('creditScore', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>

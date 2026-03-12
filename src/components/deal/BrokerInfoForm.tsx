@@ -77,10 +77,44 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
           {renderInlineField('brokerId', 'Broker ID', true)}
           {renderInlineField('license', 'License')}
           {renderInlineField('company', 'Company')}
+          {renderInlineField('fullName', 'Full Name')}
           {renderInlineField('firstName', 'First')}
           {renderInlineField('middleName', 'Middle')}
           {renderInlineField('lastName', 'Last')}
           {renderInlineField('email', 'Email')}
+
+          <div className="space-y-1.5 pt-2">
+            {renderInlineField('taxIdType', 'Tax ID Type')}
+            {renderInlineField('taxId', 'TIN')}
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.tinVerified}>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="broker-tinVerified" checked={getBoolValue('tinVerified')} onCheckedChange={(checked) => handleChange('tinVerified', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+                <Label htmlFor="broker-tinVerified" className="text-xs font-normal cursor-pointer">TIN Verified</Label>
+              </div>
+            </DirtyFieldWrapper>
+          </div>
+
+          <div className="space-y-1.5 pt-2">
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.frozen}>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="broker-frozen" checked={getBoolValue('frozen')} onCheckedChange={(checked) => handleChange('frozen', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+                <Label htmlFor="broker-frozen" className="text-xs font-normal cursor-pointer">Frozen</Label>
+              </div>
+            </DirtyFieldWrapper>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.ach}>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="broker-ach" checked={getBoolValue('ach')} onCheckedChange={(checked) => handleChange('ach', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+                <Label htmlFor="broker-ach" className="text-xs font-normal cursor-pointer">ACH</Label>
+              </div>
+            </DirtyFieldWrapper>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.agreementOnFile}>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="broker-agreementOnFile" checked={getBoolValue('agreementOnFile')} onCheckedChange={(checked) => handleChange('agreementOnFile', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+                <Label htmlFor="broker-agreementOnFile" className="text-xs font-normal cursor-pointer">Agreement on File</Label>
+              </div>
+            </DirtyFieldWrapper>
+            {renderInlineField('issue1099', 'Send 1099')}
+          </div>
         </div>
 
         {/* Column 2 - Address */}
@@ -90,9 +124,18 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
           {renderInlineField('city', 'City')}
           {renderInlineField('state', 'State')}
           {renderInlineField('zip', 'ZIP')}
-          {renderInlineField('taxIdType', 'Tax ID Type')}
-          {renderInlineField('taxId', 'Tax ID')}
-          {renderInlineField('issue1099', 'Issue 1099')}
+
+          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-3 flex items-center gap-3">
+            Mailing Address
+            <div className="flex items-center gap-1.5 ml-2">
+              <Checkbox id="broker-mailingSameAsPrimary" checked={getBoolValue('mailingSameAsPrimary')} onCheckedChange={(checked) => handleChange('mailingSameAsPrimary', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+              <Label htmlFor="broker-mailingSameAsPrimary" className="text-[10px] font-normal text-muted-foreground">Same as Primary</Label>
+            </div>
+          </h3>
+          {renderInlineField('mailingStreet', 'Street')}
+          {renderInlineField('mailingCity', 'City')}
+          {renderInlineField('mailingState', 'State')}
+          {renderInlineField('mailingZip', 'ZIP')}
         </div>
 
         {/* Column 3 - Phone */}
