@@ -162,6 +162,7 @@ const LenderTrustLedger: React.FC<{ lenderId: string; contactDbId: string }> = (
     clearSelection();
     setBulkDeleteOpen(false);
     toast.success('Entries deleted');
+    logContactEvent(contactDbId, 'Trust Ledger', [{ fieldLabel: 'Entries Deleted', oldValue: `${selectedCount} entry(ies)`, newValue: '(deleted)' }]);
   };
 
   const renderCellValue = (entry: LedgerEntry, colId: string) => {
