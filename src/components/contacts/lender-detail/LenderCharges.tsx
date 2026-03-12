@@ -114,11 +114,11 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
       if (fetchErr) throw fetchErr;
 
       const existingData = (current?.contact_data as Record<string, any>) || {};
-      const merged = { ...existingData, _charges: updatedRows };
+      const merged = { ...existingData, _charges: updatedRows } as any;
 
       const { error } = await supabase
         .from('contacts')
-        .update({ contact_data: merged, updated_at: new Date().toISOString() })
+        .update({ contact_data: merged as any, updated_at: new Date().toISOString() })
         .eq('id', contactDbId);
       if (error) throw error;
     } catch (err: any) {
