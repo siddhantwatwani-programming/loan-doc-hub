@@ -428,13 +428,21 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
 
           {/* Extra fields */}
           <div className="space-y-3 mt-4 border-t pt-3">
+            {wrapField('ach', <div className="flex items-center gap-2">
+              <Checkbox
+                checked={getBoolValue('ach')}
+                onCheckedChange={(checked) => handleChange('ach', !!checked)}
+                disabled={disabled}
+              />
+              <Label className="text-sm text-muted-foreground">ACH</Label>
+            </div>)}
             {wrapField('servicingAgreementOnFile', <div className="flex items-center gap-2">
               <Checkbox
                 checked={getBoolValue('servicingAgreementOnFile')}
                 onCheckedChange={(checked) => handleChange('servicingAgreementOnFile', !!checked)}
                 disabled={disabled}
               />
-              <Label className="text-sm text-muted-foreground">Servicing Agreement on File</Label>
+              <Label className="text-sm text-muted-foreground">Agreement on File</Label>
             </div>)}
             {wrapField('freezeOutgoingDisbursements', <div className="flex items-center gap-2">
               <Checkbox
@@ -442,7 +450,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 onCheckedChange={(checked) => handleChange('freezeOutgoingDisbursements', !!checked)}
                 disabled={disabled}
               />
-              <Label className="text-sm text-muted-foreground">Freeze Outgoing Disbursements</Label>
+              <Label className="text-sm text-muted-foreground">Frozen</Label>
             </div>)}
             {wrapField('investorQuestionnaireDue', <div className="flex items-center gap-2">
               <Checkbox

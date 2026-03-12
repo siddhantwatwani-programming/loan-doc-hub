@@ -67,6 +67,9 @@ export const BORROWER_PRIMARY_KEYS = {
   ford6: 'borrower.ford.6',
   ford7: 'borrower.ford.7',
   ford8: 'borrower.ford.8',
+  hold: 'borrower.hold',
+  ach: 'borrower.ach',
+  agreementOnFile: 'borrower.agreement_on_file',
 } as const;
 
 export const BORROWER_AUTHORIZED_PARTY_KEYS = {
@@ -260,6 +263,7 @@ export const LENDER_INFO_KEYS = {
   freezeOutgoingDisbursements: 'lender.freeze_outgoing_disbursements',
   investorQuestionnaireDue: 'lender.investor_questionnaire_due',
   investorQuestionnaireDueDate: 'lender.investor_questionnaire_due_date',
+  ach: 'lender.ach',
 } as const;
 
 export const LENDER_AUTHORIZED_PARTY_KEYS = {
@@ -555,6 +559,16 @@ export const BROKER_INFO_KEYS = {
   lenderStatement: 'broker.send_pref.lender_statement',
   borrowerStatement: 'broker.send_pref.borrower_statement',
   maturityNotice: 'broker.send_pref.maturity_notice',
+  frozen: 'broker.frozen',
+  ach: 'broker.ach',
+  agreementOnFile: 'broker.agreement_on_file',
+  fullName: 'broker.full_name',
+  tinVerified: 'broker.tin_verified',
+  mailingStreet: 'broker.mailing.street',
+  mailingCity: 'broker.mailing.city',
+  mailingState: 'broker.mailing.state',
+  mailingZip: 'broker.mailing.zip',
+  mailingSameAsPrimary: 'broker.mailing_same_as_primary',
 } as const;
 
 export const BROKER_BANKING_KEYS = {
