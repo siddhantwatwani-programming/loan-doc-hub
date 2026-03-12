@@ -161,6 +161,72 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
             </div>
 
+            {/* Sold Rate sub-fields - visible only when Sold Rate is checked */}
+            {isChecked(FIELD_KEYS.soldRateEnabled) && (
+              <div className="space-y-2 pl-5">
+                <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOriginatingVendor}>
+                  <div className="flex items-center gap-3">
+                    <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">Originating Vendor</Label>
+                    <div className="relative flex-1">
+                      <Input
+                        value={getValue(FIELD_KEYS.soldRateOriginatingVendor)}
+                        onChange={(e) => setValue(FIELD_KEYS.soldRateOriginatingVendor, e.target.value)}
+                        disabled={disabled}
+                        className="h-8 text-sm pr-7"
+                        placeholder="%"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+                    </div>
+                  </div>
+                </DirtyFieldWrapper>
+                <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateCompany}>
+                  <div className="flex items-center gap-3">
+                    <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">Company</Label>
+                    <div className="relative flex-1">
+                      <Input
+                        value={getValue(FIELD_KEYS.soldRateCompany)}
+                        onChange={(e) => setValue(FIELD_KEYS.soldRateCompany, e.target.value)}
+                        disabled={disabled}
+                        className="h-8 text-sm pr-7"
+                        placeholder="%"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+                    </div>
+                  </div>
+                </DirtyFieldWrapper>
+                <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient1}>
+                  <div className="flex items-center gap-3">
+                    <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">Other - Client List</Label>
+                    <div className="relative flex-1">
+                      <Input
+                        value={getValue(FIELD_KEYS.soldRateOtherClient1)}
+                        onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient1, e.target.value)}
+                        disabled={disabled}
+                        className="h-8 text-sm pr-7"
+                        placeholder="%"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+                    </div>
+                  </div>
+                </DirtyFieldWrapper>
+                <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient2}>
+                  <div className="flex items-center gap-3">
+                    <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">Other - Client List</Label>
+                    <div className="relative flex-1">
+                      <Input
+                        value={getValue(FIELD_KEYS.soldRateOtherClient2)}
+                        onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient2, e.target.value)}
+                        disabled={disabled}
+                        className="h-8 text-sm pr-7"
+                        placeholder="%"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+                    </div>
+                  </div>
+                </DirtyFieldWrapper>
+              </div>
+            )}
+
             {/* Interest Split */}
             <div className="flex items-center gap-2 py-1">
               <Checkbox
