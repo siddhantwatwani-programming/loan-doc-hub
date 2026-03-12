@@ -6,7 +6,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { ContactBrokerModal } from '@/components/contacts/ContactBrokerModal';
-import { ContactBrokerDetailForm } from '@/components/contacts/ContactBrokerDetailForm';
+import BrokerDetailLayout from '@/components/contacts/broker-detail/BrokerDetailLayout';
 import { ColumnConfigPopover, ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 
