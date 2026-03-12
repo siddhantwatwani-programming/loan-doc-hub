@@ -4,6 +4,7 @@ import { ContactsListView } from '@/components/contacts/ContactsListView';
 import { CreateContactModal } from '@/components/contacts/CreateContactModal';
 import ContactBorrowerDetailLayout from '@/components/contacts/borrower-detail/ContactBorrowerDetailLayout';
 import type { ColumnConfig } from '@/components/deal/ColumnConfigPopover';
+import type { FilterOption } from '@/components/deal/GridToolbar';
 
 export interface ContactBorrower {
   id: string;

@@ -4,6 +4,7 @@ import { ContactsListView } from '@/components/contacts/ContactsListView';
 import { CreateContactModal } from '@/components/contacts/CreateContactModal';
 import ContactBrokerDetailLayout from '@/components/contacts/broker-detail/ContactBrokerDetailLayout';
 import type { ColumnConfig } from '@/components/deal/ColumnConfigPopover';
+import type { FilterOption } from '@/components/deal/GridToolbar';
 
 export interface ContactBroker {
   id: string;

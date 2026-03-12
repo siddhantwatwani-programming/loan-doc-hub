@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import type { FilterOption } from '@/components/deal/GridToolbar';
 
 // Re-export for backward compatibility with existing components
 export interface ContactLender {
