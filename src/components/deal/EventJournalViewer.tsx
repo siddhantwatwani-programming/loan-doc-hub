@@ -42,7 +42,7 @@ function formatDetailsFull(details: FieldChange[]): React.ReactNode {
   );
 }
 
-const SEARCH_FIELDS = ['actor_name', 'section', 'event_number'];
+const SEARCH_FIELDS = ['actor_name', 'section', 'event_number', 'ip_address'];
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
