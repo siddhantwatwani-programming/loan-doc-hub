@@ -48,6 +48,25 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'state', label: 'State', visible: true },
 ];
 
+const BROKER_FILTER_OPTIONS: FilterOption[] = [
+  {
+    id: 'state',
+    label: 'State',
+    options: [
+      { value: 'CA', label: 'California' },
+      { value: 'TX', label: 'Texas' },
+      { value: 'FL', label: 'Florida' },
+      { value: 'NY', label: 'New York' },
+      { value: 'WA', label: 'Washington' },
+    ],
+  },
+  {
+    id: 'company',
+    label: 'Company',
+    options: [],
+  },
+];
+
 const ContactBrokersPage: React.FC = () => {
   const crud = useContactsCrud({ contactType: 'broker' });
   const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
