@@ -185,6 +185,9 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
             <DialogDescription>
               By {selectedEntry?.actor_name} on{' '}
               {selectedEntry ? format(new Date(selectedEntry.created_at), 'MMM d, yyyy h:mm a') : ''}
+              {selectedEntry?.ip_address && (
+                <span className="block mt-1">IP: {selectedEntry.ip_address}</span>
+              )}
             </DialogDescription>
           </DialogHeader>
           {selectedEntry && formatDetailsFull(selectedEntry.details)}
