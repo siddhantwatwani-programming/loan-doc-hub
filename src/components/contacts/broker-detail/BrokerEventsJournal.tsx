@@ -132,6 +132,7 @@ const BrokerEventsJournal: React.FC<{ brokerId: string; contactDbId: string }> =
               <SortableTableHead columnId="user" label="User" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[150px] text-xs" />
               <SortableTableHead columnId="section" label="Section" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[120px] text-xs" />
               <TableHead className="text-xs">Details</TableHead>
+              <SortableTableHead columnId="ip_address" label="IP Address" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[130px] text-xs" />
               <SortableTableHead columnId="created_at" label="Timestamp" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[160px] text-xs" />
             </TableRow>
           </TableHeader>
