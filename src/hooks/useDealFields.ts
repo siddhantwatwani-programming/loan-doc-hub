@@ -829,7 +829,10 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
             || (dbMappedKey !== canonicalKey ? fieldIdMap[dbMappedKey] : null)
             || (dictMappedKey ? fieldIdMap[dictMappedKey] : null)
             || fallbackMeta?.id;
-          if (!fieldDictId) continue;
+          if (!fieldDictId) {
+            console.warn(`[useDealFields] Skipping field "${fieldKey}" (canonical: "${canonicalKey}") — no field_dictionary match found. Data for this key will NOT be persisted.`);
+            continue;
+          }
 
           // Prefer resolvedFields for section/type; fall back to dictionary lookup when not present
           const field = resolvedFields?.fields.find(
