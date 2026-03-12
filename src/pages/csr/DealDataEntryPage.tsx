@@ -913,7 +913,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                         (sectionHasDirtyFields || sectionHasPrefixedDirty || fallbackHasDirty) && "bg-warning/10 ring-1 ring-warning/30",
                       )}
                     >
-                      {isSectionDisabledByFormPerm(section) && (
+                      {isSectionDisabledByFormPerm(section) && String(section) !== 'event_journal' && String(section) !== 'lender' && (
                         <Lock className="h-3 w-3 text-muted-foreground" />
                       )}
                       {SECTION_LABELS[section as keyof typeof SECTION_LABELS]}
@@ -925,6 +925,9 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       )}
 
                       {isComplete && hasRequiredFields && <CheckCircle2 className="h-4 w-4 text-success" />}
+                      {section === 'lender' && (
+                        <Lock className="h-3 w-3 text-muted-foreground" />
+                      )}
                     </TabsTrigger>
                   );
                 });
