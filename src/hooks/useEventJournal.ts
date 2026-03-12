@@ -17,6 +17,21 @@ export interface EventJournalEntry {
   section: string;
   details: FieldChange[];
   created_at: string;
+  ip_address: string | null;
+}
+
+let cachedIp: string | null = null;
+
+async function getClientIp(): Promise<string> {
+  if (cachedIp) return cachedIp;
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json();
+    cachedIp = data.ip || 'unknown';
+  } catch {
+    cachedIp = 'unknown';
+  }
+  return cachedIp!;
 }
 
 export function useEventJournalLogger() {
