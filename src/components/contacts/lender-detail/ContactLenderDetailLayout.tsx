@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContactLenderSubNav, type ContactLenderSubSection } from './ContactLenderSubNav';
 import { LenderInfoForm } from '@/components/deal/LenderInfoForm';
@@ -102,7 +102,9 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             {contact.full_name || 'Lender Detail'} — {contact.contact_id}
           </h3>
         </div>
-        <Button size="sm" onClick={handleSave}>Save</Button>
+        <Button size="sm" onClick={handleSave} className="gap-1">
+          <Save className="h-4 w-4" /> Save Draft
+        </Button>
       </div>
       <div className="flex flex-1 overflow-hidden">
         <ContactLenderSubNav activeSubSection={activeSection} onSubSectionChange={setActiveSection} />

@@ -176,6 +176,20 @@ export function useContactsCrud({ contactType, pageSize = 25 }: UseContactsCrudO
     }
   }, [currentPage, searchQuery, fetchContacts]);
 
+  const deleteContacts = useCallback(async (ids: string[]) => {
+    try {
+      const { error } = await supabase.from('contacts').delete().in('id', ids);
+      if (error) throw error;
+      toast.success(`${ids.length} contact${ids.length !== 1 ? 's' : ''} deleted`);
+      fetchContacts(currentPage, searchQuery);
+      return true;
+    } catch (err: any) {
+      console.error('Error deleting contacts:', err);
+      toast.error('Failed to delete contacts');
+      return false;
+    }
+  }, [currentPage, searchQuery, fetchContacts]);
+
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return {
@@ -190,6 +204,7 @@ export function useContactsCrud({ contactType, pageSize = 25 }: UseContactsCrudO
     createContact,
     updateContact,
     deleteContact,
+    deleteContacts,
     refresh: () => fetchContacts(currentPage, searchQuery),
   };
 }

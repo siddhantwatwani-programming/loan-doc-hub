@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContactBrokerSubNav, type ContactBrokerSubSection } from './ContactBrokerSubNav';
 import { BrokerInfoForm } from '@/components/deal/BrokerInfoForm';
@@ -80,7 +80,9 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
             {contact.full_name || 'Broker Detail'} — {contact.contact_id}
           </h3>
         </div>
-        <Button size="sm" onClick={handleSave}>Save</Button>
+        <Button size="sm" onClick={handleSave} className="gap-1">
+          <Save className="h-4 w-4" /> Save Draft
+        </Button>
       </div>
       <div className="flex flex-1 overflow-hidden">
         <ContactBrokerSubNav activeSubSection={activeSection} onSubSectionChange={setActiveSection} />

@@ -65,6 +65,10 @@ const ContactBrokersPage: React.FC = () => {
     return result;
   }, [crud]);
 
+  const handleDeleteSelected = useCallback(async (ids: string[]) => {
+    await crud.deleteContacts(ids);
+  }, [crud]);
+
   if (selectedContact) {
     return (
       <div className="h-full flex flex-col">
@@ -91,6 +95,7 @@ const ContactBrokersPage: React.FC = () => {
         onPageChange={crud.setCurrentPage}
         onRowClick={setSelectedContact}
         onCreateNew={() => setModalOpen(true)}
+        onDeleteSelected={handleDeleteSelected}
         defaultColumns={DEFAULT_COLUMNS}
         tableConfigKey="contact_brokers_v3"
         addButtonLabel="Add Broker"
