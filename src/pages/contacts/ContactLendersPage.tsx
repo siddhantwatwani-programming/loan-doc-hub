@@ -48,6 +48,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
   { id: 'company', label: 'Company', visible: false },
+];
 
 const LENDER_FILTER_OPTIONS: FilterOption[] = [
   {
