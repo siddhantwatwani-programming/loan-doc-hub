@@ -6,7 +6,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { ContactBrokerModal } from '@/components/contacts/ContactBrokerModal';
-import { ContactBrokerDetailForm } from '@/components/contacts/ContactBrokerDetailForm';
+import BrokerDetailLayout from '@/components/contacts/broker-detail/BrokerDetailLayout';
 import { ColumnConfigPopover, ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 
@@ -126,19 +126,11 @@ const ContactBrokersPage: React.FC = () => {
 
   if (selectedBroker) {
     return (
-      <div className="p-6 space-y-4">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => setSelectedBroker(null)}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Brokers
-          </Button>
-          <h3 className="font-semibold text-lg text-foreground">
-            {selectedBroker.fullName || 'Broker Detail'}
-          </h3>
-        </div>
-        <ContactBrokerDetailForm
+      <div className="h-full flex flex-col">
+        <BrokerDetailLayout
           broker={selectedBroker}
-          onSave={handleUpdate}
-          onCancel={() => setSelectedBroker(null)}
+          onBack={() => setSelectedBroker(null)}
+          onUpdate={handleUpdate}
         />
       </div>
     );
