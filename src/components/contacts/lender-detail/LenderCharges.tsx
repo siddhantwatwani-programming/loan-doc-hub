@@ -1,11 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Pencil, Trash2 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, Plus, Filter, Download, Settings2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import SortableTableHead from '@/components/deal/SortableTableHead';
 import { type SortDirection } from '@/hooks/useGridSortFilter';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface ChargeRow {
   id: string;
@@ -22,7 +27,7 @@ interface ChargeRow {
   total_owed_by_you: string;
 }
 
-const COLUMNS = [
+const ALL_COLUMNS = [
   { id: 'date', label: 'Date' },
   { id: 'description', label: 'Description' },
   { id: 'interest_rate', label: 'Interest Rate' },
@@ -41,8 +46,11 @@ const LenderCharges: React.FC<{ lenderId: string }> = () => {
   const [search, setSearch] = useState('');
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
-  const [filterValue, setFilterValue] = useState('all');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
+    new Set(ALL_COLUMNS.map(c => c.id))
+  );
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const handleSort = (col: string) => {
     if (sortCol === col) {
@@ -50,6 +58,11 @@ const LenderCharges: React.FC<{ lenderId: string }> = () => {
       if (sortDir === 'desc') setSortCol(null);
     } else { setSortCol(col); setSortDir('asc'); }
   };
+
+  const activeColumns = useMemo(
+    () => ALL_COLUMNS.filter(c => visibleColumns.has(c.id)),
+    [visibleColumns]
+  );
 
   const filtered = useMemo(() => {
     let result = rows;
@@ -76,34 +89,82 @@ const LenderCharges: React.FC<{ lenderId: string }> = () => {
     }
   };
 
+  const toggleColumn = (colId: string) => {
+    setVisibleColumns(prev => {
+      const next = new Set(prev);
+      if (next.has(colId)) next.delete(colId); else next.add(colId);
+      return next;
+    });
+  };
+
+  const handleExport = () => {
+    const headers = activeColumns.map(c => c.label).join(',');
+    const csvRows = filtered.map(r =>
+      activeColumns.map(c => (r as any)[c.id] || '').join(',')
+    );
+    const csv = [headers, ...csvRows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'lender_charges.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-3">
-      <h4 className="text-lg font-semibold text-foreground">Lender Charges</h4>
+      {/* Header row */}
+      <div className="flex items-center justify-between">
+        <h4 className="text-lg font-semibold text-foreground">Charges</h4>
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant="outline" className="gap-1 h-8 text-xs">
+                <Settings2 className="h-3.5 w-3.5" /> Columns
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-3" align="end">
+              <div className="space-y-2">
+                <span className="text-sm font-medium">Toggle Columns</span>
+                {ALL_COLUMNS.map(c => (
+                  <div key={c.id} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`col-${c.id}`}
+                      checked={visibleColumns.has(c.id)}
+                      onCheckedChange={() => toggleColumn(c.id)}
+                    />
+                    <label htmlFor={`col-${c.id}`} className="text-xs cursor-pointer">{c.label}</label>
+                  </div>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button size="sm" variant="outline" className="gap-1 h-8 text-xs">
+            <Plus className="h-3.5 w-3.5" /> Add Charge
+          </Button>
+        </div>
+      </div>
 
-      {/* Toolbar */}
+      {/* Toolbar row */}
       <div className="flex items-center gap-2 flex-wrap">
-        <Button size="sm" variant="outline" className="gap-1 h-8 text-xs">
-          <Plus className="h-3.5 w-3.5" /> New
-        </Button>
-        <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" disabled={selectedRows.size !== 1}>
-          <Pencil className="h-3.5 w-3.5" /> Edit
-        </Button>
-        <Button size="sm" variant="outline" className="gap-1 h-8 text-xs text-destructive" disabled={selectedRows.size === 0}>
-          <Trash2 className="h-3.5 w-3.5" /> Delete
-        </Button>
-        <div className="h-5 w-px bg-border mx-1" />
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-7 h-8 w-[160px] text-xs" />
+          <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-7 h-8 w-[180px] text-xs" />
         </div>
-        <Select value={filterValue} onValueChange={setFilterValue}>
-          <SelectTrigger className="h-8 w-[120px] text-xs">
-            <SelectValue placeholder="Show All" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Show All</SelectItem>
-          </SelectContent>
-        </Select>
+        <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="outline" className="gap-1 h-8 text-xs">
+              <Filter className="h-3.5 w-3.5" /> Filters
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-3" align="start">
+            <p className="text-xs text-muted-foreground">No filters configured yet.</p>
+          </PopoverContent>
+        </Popover>
+        <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={handleExport}>
+          <Download className="h-3.5 w-3.5" /> Export
+        </Button>
       </div>
 
       {/* Table */}
@@ -119,7 +180,7 @@ const LenderCharges: React.FC<{ lenderId: string }> = () => {
                   className="rounded border-input"
                 />
               </TableHead>
-              {COLUMNS.map(c => (
+              {activeColumns.map(c => (
                 <SortableTableHead
                   key={c.id}
                   columnId={c.id}
@@ -135,7 +196,7 @@ const LenderCharges: React.FC<{ lenderId: string }> = () => {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={COLUMNS.length + 1} className="text-center py-8 text-muted-foreground text-sm">
+                <TableCell colSpan={activeColumns.length + 1} className="text-center py-8 text-muted-foreground text-sm">
                   No charge records found.
                 </TableCell>
               </TableRow>
@@ -149,7 +210,7 @@ const LenderCharges: React.FC<{ lenderId: string }> = () => {
                     className="rounded border-input"
                   />
                 </TableCell>
-                {COLUMNS.map(c => (
+                {activeColumns.map(c => (
                   <TableCell key={c.id} className="whitespace-nowrap text-xs">
                     {(r as any)[c.id] || '-'}
                   </TableCell>
