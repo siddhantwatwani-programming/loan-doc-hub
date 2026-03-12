@@ -91,6 +91,8 @@ const ContactBrokersPage: React.FC = () => {
         onCreateNew={() => setModalOpen(true)}
         defaultColumns={DEFAULT_COLUMNS}
         tableConfigKey="contact_brokers_v2"
+        addButtonLabel="Add Broker"
+        breadcrumbLabel="Brokers"
       />
       <CreateContactModal
         open={modalOpen}
