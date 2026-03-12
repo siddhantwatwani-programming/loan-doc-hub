@@ -92,7 +92,7 @@ const ContactBorrowersPage: React.FC = () => {
         onRowClick={setSelectedContact}
         onCreateNew={() => setModalOpen(true)}
         defaultColumns={DEFAULT_COLUMNS}
-        tableConfigKey="contact_borrowers_v2"
+        tableConfigKey="contact_borrowers_v3"
         addButtonLabel="Add Borrower"
         breadcrumbLabel="Borrowers"
       />
