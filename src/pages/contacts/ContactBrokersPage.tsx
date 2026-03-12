@@ -65,6 +65,10 @@ const ContactBrokersPage: React.FC = () => {
     return result;
   }, [crud]);
 
+  const handleDeleteSelected = useCallback(async (ids: string[]) => {
+    await crud.deleteContacts(ids);
+  }, [crud]);
+
   if (selectedContact) {
     return (
       <div className="h-full flex flex-col">
