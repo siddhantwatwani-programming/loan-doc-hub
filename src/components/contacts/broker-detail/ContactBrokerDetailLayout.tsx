@@ -119,7 +119,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
       case 'conversation-log':
         return (
           <div className="p-6">
-            <BrokerConversationLog brokerId={contact.contact_id} />
+            <BrokerConversationLog brokerId={contact.contact_id} contactDbId={contact.id} />
           </div>
         );
       case 'banking':
