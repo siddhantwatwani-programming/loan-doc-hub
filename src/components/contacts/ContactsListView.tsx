@@ -1,10 +1,19 @@
 import React, { useCallback, useState } from 'react';
-import { Plus, Download, Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Plus, Download, Search, ChevronLeft, ChevronRight, Loader2, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
+import {
+  Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage,
+} from '@/components/ui/breadcrumb';
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { ColumnConfigPopover, ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import type { ContactRecord } from '@/hooks/useContactsCrud';
@@ -23,6 +32,9 @@ interface ContactsListViewProps {
   onCreateNew: () => void;
   defaultColumns: ColumnConfig[];
   tableConfigKey: string;
+  addButtonLabel?: string;
+  breadcrumbLabel?: string;
+  filterColumns?: { id: string; label: string }[];
   renderCellValue?: (contact: ContactRecord, columnId: string) => React.ReactNode;
 }
 
