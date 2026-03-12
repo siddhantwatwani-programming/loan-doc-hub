@@ -48,6 +48,20 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'company', label: 'Company', visible: false },
 ];
 
+const BORROWER_FILTER_OPTIONS: FilterOption[] = [
+  {
+    id: 'state',
+    label: 'State',
+    options: [
+      { value: 'CA', label: 'California' },
+      { value: 'TX', label: 'Texas' },
+      { value: 'FL', label: 'Florida' },
+      { value: 'NY', label: 'New York' },
+      { value: 'WA', label: 'Washington' },
+    ],
+  },
+];
+
 const ContactBorrowersPage: React.FC = () => {
   const crud = useContactsCrud({ contactType: 'borrower' });
   const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
