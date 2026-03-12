@@ -158,6 +158,7 @@ const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId }) => {
       setRows(updatedRows);
       setSelectedRows(new Set());
       toast.success(`${selectedRows.size} charge(s) deleted`);
+      logContactEvent(contactDbId, 'Charges', [{ fieldLabel: 'Charges Deleted', oldValue: `${selectedRows.size} charge(s)`, newValue: '(deleted)' }]);
     } catch {
       // error already toasted
     }

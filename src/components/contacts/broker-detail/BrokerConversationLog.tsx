@@ -163,6 +163,7 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string }>
     setSelectedRows(new Set());
     await persistLogs(updated);
     toast.success(`Deleted ${selectedRows.size} entry(ies)`);
+    logContactEvent(contactDbId, 'Conversation Log', [{ fieldLabel: 'Logs Deleted', oldValue: `${selectedRows.size} entry(ies)`, newValue: '(deleted)' }]);
   };
 
   const handleExport = () => {
