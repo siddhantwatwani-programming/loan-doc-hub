@@ -119,7 +119,9 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
             {contact.full_name || 'Borrower Detail'} — {contact.contact_id}
           </h3>
         </div>
-        <Button size="sm" onClick={handleSave}>Save</Button>
+        <Button size="sm" onClick={handleSave} className="gap-1">
+          <Save className="h-4 w-4" /> Save Draft
+        </Button>
       </div>
       <div className="flex flex-1 overflow-hidden">
         <ContactBorrowerSubNav activeSubSection={activeSection} onSubSectionChange={setActiveSection} />
