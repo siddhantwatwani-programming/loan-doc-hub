@@ -1,7 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Plus, Download, Search, ChevronLeft, ChevronRight, Loader2, Filter, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { Plus, Download, Search, ChevronLeft, ChevronRight, Loader2, Filter, ArrowUp, ArrowDown, ArrowUpDown, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -15,6 +16,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { ColumnConfigPopover, ColumnConfig } from '@/components/deal/ColumnConfigPopover';
+import { DeleteConfirmationDialog } from '@/components/deal/DeleteConfirmationDialog';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import type { ContactRecord } from '@/hooks/useContactsCrud';
 
@@ -30,6 +32,7 @@ interface ContactsListViewProps {
   onPageChange: (page: number) => void;
   onRowClick: (contact: ContactRecord) => void;
   onCreateNew: () => void;
+  onDeleteSelected?: (ids: string[]) => Promise<void>;
   defaultColumns: ColumnConfig[];
   tableConfigKey: string;
   addButtonLabel?: string;
@@ -52,6 +55,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
   onPageChange,
   onRowClick,
   onCreateNew,
+  onDeleteSelected,
   defaultColumns,
   tableConfigKey,
   addButtonLabel,
@@ -65,6 +69,8 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
   const [filterValue, setFilterValue] = useState('');
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleSort = (colId: string) => {
     if (sortColumn === colId) {
@@ -142,6 +148,35 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
 
   const filterableCols = filterColumns || visibleColumns.map((c) => ({ id: c.id, label: c.label }));
 
+  // Checkbox selection
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === sortedContacts.length && sortedContacts.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(sortedContacts.map((c) => c.id)));
+    }
+  };
+
+  const allSelected = sortedContacts.length > 0 && selectedIds.size === sortedContacts.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < sortedContacts.length;
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (onDeleteSelected && selectedIds.size > 0) {
+      await onDeleteSelected(Array.from(selectedIds));
+      setSelectedIds(new Set());
+    }
+    setDeleteDialogOpen(false);
+  }, [onDeleteSelected, selectedIds]);
+
   const SortIcon = ({ colId }: { colId: string }) => {
     if (sortColumn !== colId) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
     if (sortDir === 'asc') return <ArrowUp className="h-3 w-3 ml-1" />;
@@ -168,6 +203,17 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-lg text-foreground">{title}</h3>
         <div className="flex items-center gap-2">
+          {selectedIds.size > 0 && onDeleteSelected && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="gap-1"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete ({selectedIds.size})
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={handleExport} className="gap-1">
             <Download className="h-4 w-4" /> Export
           </Button>
@@ -228,6 +274,17 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
         <Table className="min-w-[1000px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={allSelected}
+                  ref={(el) => {
+                    if (el) (el as any).indeterminate = someSelected;
+                  }}
+                  onCheckedChange={toggleSelectAll}
+                  aria-label="Select all"
+                  className="h-4 w-4"
+                />
+              </TableHead>
               {visibleColumns.map((col) => (
                 <TableHead
                   key={col.id}
@@ -245,7 +302,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={visibleColumns.length} className="text-center py-8">
+                <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8">
                   <div className="flex items-center justify-center gap-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Loading...
@@ -254,7 +311,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
               </TableRow>
             ) : sortedContacts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
                   {totalCount === 0
                     ? `No contacts yet. Click "${addButtonLabel || 'Create New'}" to add one.`
                     : 'No contacts match your search or filter.'}
@@ -264,11 +321,18 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
               sortedContacts.map((contact) => (
                 <TableRow
                   key={contact.id}
-                  className="cursor-pointer hover:bg-muted/30"
-                  onClick={() => onRowClick(contact)}
+                  className={`cursor-pointer hover:bg-muted/30 ${selectedIds.has(contact.id) ? 'bg-muted/40' : ''}`}
                 >
+                  <TableCell className="w-[40px]" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedIds.has(contact.id)}
+                      onCheckedChange={() => toggleSelect(contact.id)}
+                      aria-label={`Select ${contact.full_name}`}
+                      className="h-4 w-4"
+                    />
+                  </TableCell>
                   {visibleColumns.map((col) => (
-                    <TableCell key={col.id}>
+                    <TableCell key={col.id} onClick={() => onRowClick(contact)}>
                       {renderCellValue
                         ? renderCellValue(contact, col.id)
                         : defaultRenderCell(contact, col.id)}
@@ -284,7 +348,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Total: {totalCount}
+          Total: {totalCount}{selectedIds.size > 0 && ` · ${selectedIds.size} selected`}
         </div>
         {totalPages > 1 && (
           <div className="flex items-center gap-2">
@@ -312,6 +376,15 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Selected Contacts"
+        description={`Are you sure you want to delete ${selectedIds.size} selected contact${selectedIds.size !== 1 ? 's' : ''}? This action cannot be undone.`}
+      />
     </div>
   );
 };

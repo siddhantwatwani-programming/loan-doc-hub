@@ -204,6 +204,7 @@ export function useContactsCrud({ contactType, pageSize = 25 }: UseContactsCrudO
     createContact,
     updateContact,
     deleteContact,
+    deleteContacts,
     refresh: () => fetchContacts(currentPage, searchQuery),
   };
 }
