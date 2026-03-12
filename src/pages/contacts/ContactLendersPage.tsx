@@ -40,13 +40,25 @@ import type { ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'contact_id', label: 'Lender ID', visible: true },
+  { id: 'type', label: 'Lender Type', visible: true },
   { id: 'full_name', label: 'Full Name', visible: true },
   { id: 'first_name', label: 'First', visible: true },
+  { id: 'middle_name', label: 'Middle', visible: false },
   { id: 'last_name', label: 'Last', visible: true },
+  { id: 'capacity', label: 'Capacity', visible: false },
   { id: 'email', label: 'Email', visible: true },
   { id: 'phone', label: 'Phone', visible: true },
-  { id: 'city', label: 'City', visible: true },
-  { id: 'state', label: 'State', visible: true },
+  { id: 'primary_address.street', label: 'Street', visible: false },
+  { id: 'primary_address.city', label: 'City', visible: true },
+  { id: 'primary_address.state', label: 'State', visible: true },
+  { id: 'primary_address.zip', label: 'ZIP', visible: false },
+  { id: 'dob', label: 'DOB', visible: false },
+  { id: 'tax_id_type', label: 'Tax ID Type', visible: false },
+  { id: 'tax_id', label: 'TIN', visible: false },
+  { id: 'tin_verified', label: 'TIN Verified', visible: false },
+  { id: 'ach', label: 'ACH', visible: false },
+  { id: 'servicing_agreement_on_file', label: 'Agreement', visible: false },
+  { id: 'freeze_outgoing_disbursements', label: 'Frozen', visible: false },
   { id: 'company', label: 'Company', visible: false },
 ];
 
