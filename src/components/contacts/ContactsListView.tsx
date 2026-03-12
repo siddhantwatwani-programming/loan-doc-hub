@@ -52,10 +52,15 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
   onCreateNew,
   defaultColumns,
   tableConfigKey,
+  addButtonLabel,
+  breadcrumbLabel,
+  filterColumns,
   renderCellValue,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig(tableConfigKey, defaultColumns);
   const visibleColumns = columns.filter((c) => c.visible);
+  const [filterColumn, setFilterColumn] = useState('');
+  const [filterValue, setFilterValue] = useState('');
 
   const handleExport = useCallback(() => {
     if (contacts.length === 0) return;
