@@ -153,6 +153,7 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string }>
     setNewLog(getEmptyLog());
     setAddOpen(false);
     toast.success('Conversation log added');
+    logContactEvent(contactDbId, 'Conversation Log', [{ fieldLabel: 'Log Added', oldValue: '', newValue: entry.subject || 'New log' }]);
   };
 
   const handleDeleteSelected = async () => {
