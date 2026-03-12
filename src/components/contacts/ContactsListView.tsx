@@ -1,10 +1,19 @@
 import React, { useCallback, useState } from 'react';
-import { Plus, Download, Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Plus, Download, Search, ChevronLeft, ChevronRight, Loader2, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
+import {
+  Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage,
+} from '@/components/ui/breadcrumb';
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { ColumnConfigPopover, ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import type { ContactRecord } from '@/hooks/useContactsCrud';
@@ -23,6 +32,9 @@ interface ContactsListViewProps {
   onCreateNew: () => void;
   defaultColumns: ColumnConfig[];
   tableConfigKey: string;
+  addButtonLabel?: string;
+  breadcrumbLabel?: string;
+  filterColumns?: { id: string; label: string }[];
   renderCellValue?: (contact: ContactRecord, columnId: string) => React.ReactNode;
 }
 
@@ -40,10 +52,15 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
   onCreateNew,
   defaultColumns,
   tableConfigKey,
+  addButtonLabel,
+  breadcrumbLabel,
+  filterColumns,
   renderCellValue,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig(tableConfigKey, defaultColumns);
   const visibleColumns = columns.filter((c) => c.visible);
+  const [filterColumn, setFilterColumn] = useState('');
+  const [filterValue, setFilterValue] = useState('');
 
   const handleExport = useCallback(() => {
     if (contacts.length === 0) return;
@@ -82,6 +99,14 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
     return (contact.contact_data as Record<string, string>)?.[columnId] || '';
   };
 
+  // Apply client-side column filter
+  const filteredContacts = (filterColumn && filterValue)
+    ? contacts.filter((c) => {
+        const val = getCellValue(c, filterColumn).toLowerCase();
+        return val.includes(filterValue.toLowerCase());
+      })
+    : contacts;
+
   const defaultRenderCell = (contact: ContactRecord, columnId: string): React.ReactNode => {
     const val = getCellValue(contact, columnId);
     if (val === 'true') return '✓';
@@ -90,8 +115,25 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
     return val || '-';
   };
 
+  const filterableCols = filterColumns || visibleColumns.map((c) => ({ id: c.id, label: c.label }));
+
   return (
     <div className="p-6 space-y-4">
+      {/* Breadcrumb */}
+      {breadcrumbLabel && (
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink className="cursor-default">Contact</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{breadcrumbLabel}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      )}
+
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-lg text-foreground">{title}</h3>
         <div className="flex items-center gap-2">
@@ -107,9 +149,46 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
               className="pl-8 h-9 w-[200px]"
             />
           </div>
+          {/* Filter Popover */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1">
+                <Filter className="h-4 w-4" /> Filter
+                {filterColumn && filterValue && (
+                  <span className="ml-1 bg-primary text-primary-foreground rounded-full px-1.5 text-xs">1</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 space-y-3" align="end">
+              <p className="text-sm font-medium text-foreground">Filter by column</p>
+              <Select value={filterColumn} onValueChange={(v) => { setFilterColumn(v); setFilterValue(''); }}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Select column" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filterableCols.map((col) => (
+                    <SelectItem key={col.id} value={col.id}>{col.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {filterColumn && (
+                <Input
+                  placeholder="Filter value..."
+                  value={filterValue}
+                  onChange={(e) => setFilterValue(e.target.value)}
+                  className="h-9"
+                />
+              )}
+              {(filterColumn || filterValue) && (
+                <Button variant="ghost" size="sm" onClick={() => { setFilterColumn(''); setFilterValue(''); }}>
+                  Clear filter
+                </Button>
+              )}
+            </PopoverContent>
+          </Popover>
           <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
           <Button variant="outline" size="sm" onClick={onCreateNew} className="gap-1">
-            <Plus className="h-4 w-4" /> Create New
+            <Plus className="h-4 w-4" /> {addButtonLabel || 'Create New'}
           </Button>
         </div>
       </div>
@@ -133,16 +212,16 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
                   </div>
                 </TableCell>
               </TableRow>
-            ) : contacts.length === 0 ? (
+            ) : filteredContacts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
                   {totalCount === 0
-                    ? `No contacts yet. Click "Create New" to add one.`
-                    : 'No contacts match your search.'}
+                    ? `No contacts yet. Click "${addButtonLabel || 'Create New'}" to add one.`
+                    : 'No contacts match your search or filter.'}
                 </TableCell>
               </TableRow>
             ) : (
-              contacts.map((contact) => (
+              filteredContacts.map((contact) => (
                 <TableRow
                   key={contact.id}
                   className="cursor-pointer hover:bg-muted/30"

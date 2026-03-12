@@ -93,6 +93,8 @@ const ContactLendersPage: React.FC = () => {
         onCreateNew={() => setModalOpen(true)}
         defaultColumns={DEFAULT_COLUMNS}
         tableConfigKey="contact_lenders_v2"
+        addButtonLabel="Add Lender"
+        breadcrumbLabel="Lenders"
       />
       <CreateContactModal
         open={modalOpen}
