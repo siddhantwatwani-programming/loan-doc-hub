@@ -1,4 +1,36 @@
 import React, { useState, useCallback } from 'react';
+
+// Re-export for backward compatibility with existing components
+export interface ContactLender {
+  id: string;
+  lenderId: string;
+  frozen: boolean;
+  type: string;
+  ach: boolean;
+  email: string;
+  agreement: boolean;
+  fullName: string;
+  firstName: string;
+  lastName: string;
+  city: string;
+  state: string;
+  cellPhone: string;
+  homePhone: string;
+  workPhone: string;
+  fax: string;
+  preferredPhone: string;
+  verified: boolean;
+  send1099: boolean;
+  tin: string;
+  investorQuestionnaire: string;
+  street: string;
+  zip: string;
+  mailingStreet: string;
+  mailingCity: string;
+  mailingState: string;
+  mailingZip: string;
+  sameAsPrimary: boolean;
+}
 import { useContactsCrud, type ContactRecord } from '@/hooks/useContactsCrud';
 import { ContactsListView } from '@/components/contacts/ContactsListView';
 import { CreateContactModal } from '@/components/contacts/CreateContactModal';
