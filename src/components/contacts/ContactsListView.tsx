@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react';
-import { Plus, Download, Search, ChevronLeft, ChevronRight, Loader2, Filter } from 'lucide-react';
+import React, { useCallback, useMemo, useState } from 'react';
+import { Plus, Download, Search, ChevronLeft, ChevronRight, Loader2, Filter, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -38,6 +38,8 @@ interface ContactsListViewProps {
   renderCellValue?: (contact: ContactRecord, columnId: string) => React.ReactNode;
 }
 
+type SortDir = 'asc' | 'desc' | null;
+
 export const ContactsListView: React.FC<ContactsListViewProps> = ({
   title,
   contacts,
@@ -61,6 +63,19 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
   const visibleColumns = columns.filter((c) => c.visible);
   const [filterColumn, setFilterColumn] = useState('');
   const [filterValue, setFilterValue] = useState('');
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>(null);
+
+  const handleSort = (colId: string) => {
+    if (sortColumn === colId) {
+      if (sortDir === 'asc') setSortDir('desc');
+      else if (sortDir === 'desc') { setSortColumn(null); setSortDir(null); }
+      else setSortDir('asc');
+    } else {
+      setSortColumn(colId);
+      setSortDir('asc');
+    }
+  };
 
   const handleExport = useCallback(() => {
     if (contacts.length === 0) return;
@@ -82,7 +97,6 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
   }, [contacts, visibleColumns, title]);
 
   const getCellValue = (contact: ContactRecord, columnId: string): string => {
-    // Check top-level fields first
     const topLevel: Record<string, string> = {
       contact_id: contact.contact_id,
       full_name: contact.full_name,
@@ -95,7 +109,6 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
       company: contact.company,
     };
     if (columnId in topLevel) return topLevel[columnId] || '';
-    // Check contact_data
     return (contact.contact_data as Record<string, string>)?.[columnId] || '';
   };
 
@@ -107,6 +120,18 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
       })
     : contacts;
 
+  // Apply client-side sorting
+  const sortedContacts = useMemo(() => {
+    if (!sortColumn || !sortDir) return filteredContacts;
+    return [...filteredContacts].sort((a, b) => {
+      const aVal = getCellValue(a, sortColumn).toLowerCase();
+      const bVal = getCellValue(b, sortColumn).toLowerCase();
+      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredContacts, sortColumn, sortDir]);
+
   const defaultRenderCell = (contact: ContactRecord, columnId: string): React.ReactNode => {
     const val = getCellValue(contact, columnId);
     if (val === 'true') return '✓';
@@ -116,6 +141,12 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
   };
 
   const filterableCols = filterColumns || visibleColumns.map((c) => ({ id: c.id, label: c.label }));
+
+  const SortIcon = ({ colId }: { colId: string }) => {
+    if (sortColumn !== colId) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
+    if (sortDir === 'asc') return <ArrowUp className="h-3 w-3 ml-1" />;
+    return <ArrowDown className="h-3 w-3 ml-1" />;
+  };
 
   return (
     <div className="p-6 space-y-4">
@@ -198,7 +229,16 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
           <TableHeader>
             <TableRow className="bg-muted/50">
               {visibleColumns.map((col) => (
-                <TableHead key={col.id}>{col.label.toUpperCase()}</TableHead>
+                <TableHead
+                  key={col.id}
+                  className="cursor-pointer select-none hover:bg-muted/80"
+                  onClick={() => handleSort(col.id)}
+                >
+                  <div className="flex items-center">
+                    {col.label.toUpperCase()}
+                    <SortIcon colId={col.id} />
+                  </div>
+                </TableHead>
               ))}
             </TableRow>
           </TableHeader>
@@ -212,7 +252,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
                   </div>
                 </TableCell>
               </TableRow>
-            ) : filteredContacts.length === 0 ? (
+            ) : sortedContacts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
                   {totalCount === 0
@@ -221,7 +261,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
                 </TableCell>
               </TableRow>
             ) : (
-              filteredContacts.map((contact) => (
+              sortedContacts.map((contact) => (
                 <TableRow
                   key={contact.id}
                   className="cursor-pointer hover:bg-muted/30"

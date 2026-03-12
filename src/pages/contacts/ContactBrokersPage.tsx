@@ -78,7 +78,7 @@ const ContactBrokersPage: React.FC = () => {
   return (
     <>
       <ContactsListView
-        title="Contact Brokers"
+        title="Brokers"
         contacts={crud.contacts}
         totalCount={crud.totalCount}
         totalPages={crud.totalPages}
