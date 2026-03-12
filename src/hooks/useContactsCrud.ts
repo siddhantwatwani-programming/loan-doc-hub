@@ -142,7 +142,7 @@ export function useContactsCrud({ contactType, pageSize = 25 }: UseContactsCrudO
           first_name: contactData.first_name || '',
           last_name: contactData.last_name || '',
           email: contactData.email || '',
-          phone: contactData.phone || contactData['phone.cell'] || contactData['phone.mobile'] || contactData['phone.home'] || '',
+          phone: contactData.phone || contactData['phone.cell'] || contactData['phone.mobile'] || contactData['phone.home'] || contactData['phone.work'] || '',
           city: contactData.city || contactData['address.city'] || contactData['primary_address.city'] || '',
           state: contactData.state || contactData['address.state'] || contactData['primary_address.state'] || '',
           company: contactData.company || '',
