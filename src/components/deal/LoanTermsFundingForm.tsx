@@ -90,6 +90,7 @@ async function directPersistFundingField(
         ...(fieldValues[fieldDictId] || {}),
         value_text: jsonValue,
         indexed_key: fieldKey,
+        indexed_db_key: resolveLegacyKey(fieldKey),
         updated_at: new Date().toISOString(),
       };
 
