@@ -120,6 +120,7 @@ const ContactBrokersPage: React.FC = () => {
         tableConfigKey="contact_brokers_v3"
         addButtonLabel="Add Broker"
         breadcrumbLabel="Brokers"
+        filterOptions={BROKER_FILTER_OPTIONS}
       />
       <CreateContactModal
         open={modalOpen}

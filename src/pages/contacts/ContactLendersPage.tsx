@@ -116,6 +116,7 @@ const ContactLendersPage: React.FC = () => {
         tableConfigKey="contact_lenders_v3"
         addButtonLabel="Add Lender"
         breadcrumbLabel="Lenders"
+        filterOptions={LENDER_FILTER_OPTIONS}
       />
       <CreateContactModal
         open={modalOpen}
