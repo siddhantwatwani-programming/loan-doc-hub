@@ -123,7 +123,7 @@ const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string }> = (
     if (!contactDbId) return;
     const { data: current } = await supabase.from('contacts').select('contact_data').eq('id', contactDbId).single();
     const existing = (current?.contact_data || {}) as Record<string, any>;
-    await supabase.from('contacts').update({ contact_data: { ...existing, _trust_ledger: updated } }).eq('id', contactDbId);
+    await supabase.from('contacts').update({ contact_data: { ...existing, _trust_ledger: updated } as any }).eq('id', contactDbId);
   }, [contactDbId]);
 
   const preFiltered = useMemo(() => {
