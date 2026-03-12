@@ -141,7 +141,7 @@ const ContactLendersPage: React.FC = () => {
         onCreateNew={() => setModalOpen(true)}
         onDeleteSelected={handleDeleteSelected}
         defaultColumns={DEFAULT_COLUMNS}
-        tableConfigKey="contact_lenders_v4"
+        tableConfigKey="contact_lenders_v5"
         addButtonLabel="Add Lender"
         breadcrumbLabel="Lenders"
         filterOptions={LENDER_FILTER_OPTIONS}
