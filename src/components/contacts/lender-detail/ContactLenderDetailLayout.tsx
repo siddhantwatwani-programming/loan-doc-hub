@@ -88,7 +88,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
       case 'conversation-log':
         return (
           <div className="p-6">
-            <LenderConversationLog lenderId={contact.contact_id} />
+            <LenderConversationLog lenderId={contact.contact_id} contactDbId={contact.id} />
           </div>
         );
       case 'lender-info':
