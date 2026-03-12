@@ -42,7 +42,7 @@ function formatDetailsFull(details: FieldChange[]): React.ReactNode {
   );
 }
 
-const SEARCH_FIELDS = ['actor_name', 'section', 'event_number'];
+const SEARCH_FIELDS = ['actor_name', 'section', 'event_number', 'ip_address'];
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
@@ -65,6 +65,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'event_number', label: 'Event #' },
   { id: 'actor_name', label: 'User' },
   { id: 'section', label: 'Section' },
+  { id: 'ip_address', label: 'IP Address' },
   { id: 'created_at', label: 'Timestamp' },
 ];
 
@@ -125,13 +126,14 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
             <SortableTableHead columnId="actor_name" label="User" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[150px]" />
             <SortableTableHead columnId="section" label="Section" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[120px]" />
             <TableHead>Details</TableHead>
+            <SortableTableHead columnId="ip_address" label="IP Address" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[130px]" />
             <SortableTableHead columnId="created_at" label="Timestamp" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[160px]" />
           </TableRow>
         </TableHeader>
         <TableBody>
           {filteredData.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                 No events match your search or filters.
               </TableCell>
             </TableRow>
@@ -152,6 +154,9 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
                       </Button>
                     )}
                   </div>
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground font-mono">
+                  {entry.ip_address || '—'}
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
@@ -180,6 +185,9 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
             <DialogDescription>
               By {selectedEntry?.actor_name} on{' '}
               {selectedEntry ? format(new Date(selectedEntry.created_at), 'MMM d, yyyy h:mm a') : ''}
+              {selectedEntry?.ip_address && (
+                <span className="block mt-1">IP: {selectedEntry.ip_address}</span>
+              )}
             </DialogDescription>
           </DialogHeader>
           {selectedEntry && formatDetailsFull(selectedEntry.details)}

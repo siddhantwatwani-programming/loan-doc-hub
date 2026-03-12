@@ -17,6 +17,21 @@ export interface EventJournalEntry {
   section: string;
   details: FieldChange[];
   created_at: string;
+  ip_address: string | null;
+}
+
+let cachedIp: string | null = null;
+
+async function getClientIp(): Promise<string> {
+  if (cachedIp) return cachedIp;
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json();
+    cachedIp = data.ip || 'unknown';
+  } catch {
+    cachedIp = 'unknown';
+  }
+  return cachedIp!;
 }
 
 export function useEventJournalLogger() {
@@ -28,6 +43,8 @@ export function useEventJournalLogger() {
   ) => {
     if (!changes.length) return;
 
+    const ipAddress = await getClientIp();
+
     const { error } = await supabase
       .from('event_journal' as any)
       .insert({
@@ -36,6 +53,7 @@ export function useEventJournalLogger() {
         details: changes,
         actor_user_id: actorUserId,
         event_number: 0, // Will be overridden by trigger
+        ip_address: ipAddress,
       } as any);
 
     if (error) {
@@ -85,6 +103,7 @@ export function useEventJournalEntries(dealId: string | null) {
         section: e.section,
         details: (e.details || []) as FieldChange[],
         created_at: e.created_at,
+        ip_address: e.ip_address || null,
       }));
     },
   });
