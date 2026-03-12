@@ -1,0 +1,198 @@
+import React, { useCallback, useState } from 'react';
+import { Plus, Download, Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
+import { ColumnConfigPopover, ColumnConfig } from '@/components/deal/ColumnConfigPopover';
+import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+import type { ContactRecord } from '@/hooks/useContactsCrud';
+
+interface ContactsListViewProps {
+  title: string;
+  contacts: ContactRecord[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  isLoading: boolean;
+  searchQuery: string;
+  onSearchChange: (q: string) => void;
+  onPageChange: (page: number) => void;
+  onRowClick: (contact: ContactRecord) => void;
+  onCreateNew: () => void;
+  defaultColumns: ColumnConfig[];
+  tableConfigKey: string;
+  renderCellValue?: (contact: ContactRecord, columnId: string) => React.ReactNode;
+}
+
+export const ContactsListView: React.FC<ContactsListViewProps> = ({
+  title,
+  contacts,
+  totalCount,
+  totalPages,
+  currentPage,
+  isLoading,
+  searchQuery,
+  onSearchChange,
+  onPageChange,
+  onRowClick,
+  onCreateNew,
+  defaultColumns,
+  tableConfigKey,
+  renderCellValue,
+}) => {
+  const [columns, setColumns, resetColumns] = useTableColumnConfig(tableConfigKey, defaultColumns);
+  const visibleColumns = columns.filter((c) => c.visible);
+
+  const handleExport = useCallback(() => {
+    if (contacts.length === 0) return;
+    const headers = visibleColumns.map((c) => c.label);
+    const rows = contacts.map((contact) =>
+      visibleColumns.map((c) => {
+        const val = getCellValue(contact, c.id);
+        return typeof val === 'boolean' ? (val ? 'Yes' : 'No') : String(val || '');
+      })
+    );
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.toLowerCase().replace(/\s+/g, '_')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [contacts, visibleColumns, title]);
+
+  const getCellValue = (contact: ContactRecord, columnId: string): string => {
+    // Check top-level fields first
+    const topLevel: Record<string, string> = {
+      contact_id: contact.contact_id,
+      full_name: contact.full_name,
+      first_name: contact.first_name,
+      last_name: contact.last_name,
+      email: contact.email,
+      phone: contact.phone,
+      city: contact.city,
+      state: contact.state,
+      company: contact.company,
+    };
+    if (columnId in topLevel) return topLevel[columnId] || '';
+    // Check contact_data
+    return (contact.contact_data as Record<string, string>)?.[columnId] || '';
+  };
+
+  const defaultRenderCell = (contact: ContactRecord, columnId: string): React.ReactNode => {
+    const val = getCellValue(contact, columnId);
+    if (val === 'true') return '✓';
+    if (val === 'false') return '';
+    if (columnId === 'full_name') return <span className="font-medium">{val || '-'}</span>;
+    return val || '-';
+  };
+
+  return (
+    <div className="p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-lg text-foreground">{title}</h3>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleExport} className="gap-1">
+            <Download className="h-4 w-4" /> Export
+          </Button>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-8 h-9 w-[200px]"
+            />
+          </div>
+          <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
+          <Button variant="outline" size="sm" onClick={onCreateNew} className="gap-1">
+            <Plus className="h-4 w-4" /> Create New
+          </Button>
+        </div>
+      </div>
+
+      <div className="border border-border rounded-lg overflow-x-auto">
+        <Table className="min-w-[1000px]">
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              {visibleColumns.map((col) => (
+                <TableHead key={col.id}>{col.label.toUpperCase()}</TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={visibleColumns.length} className="text-center py-8">
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading...
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : contacts.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
+                  {totalCount === 0
+                    ? `No contacts yet. Click "Create New" to add one.`
+                    : 'No contacts match your search.'}
+                </TableCell>
+              </TableRow>
+            ) : (
+              contacts.map((contact) => (
+                <TableRow
+                  key={contact.id}
+                  className="cursor-pointer hover:bg-muted/30"
+                  onClick={() => onRowClick(contact)}
+                >
+                  {visibleColumns.map((col) => (
+                    <TableCell key={col.id}>
+                      {renderCellValue
+                        ? renderCellValue(contact, col.id)
+                        : defaultRenderCell(contact, col.id)}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          Total: {totalCount}
+        </div>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => onPageChange(currentPage - 1)}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => onPageChange(currentPage + 1)}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
