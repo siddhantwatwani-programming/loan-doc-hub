@@ -13,6 +13,21 @@ export interface ContactEventJournalEntry {
   user: string;
   details: ContactFieldChange[];
   created_at: string;
+  ip_address?: string;
+}
+
+let cachedContactIp: string | null = null;
+
+async function getContactClientIp(): Promise<string> {
+  if (cachedContactIp) return cachedContactIp;
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json();
+    cachedContactIp = data.ip || 'unknown';
+  } catch {
+    cachedContactIp = 'unknown';
+  }
+  return cachedContactIp!;
 }
 
 /**
@@ -42,6 +57,8 @@ export async function logContactEvent(
       }
     }
 
+    const ipAddress = await getContactClientIp();
+
     const { data: current } = await supabase
       .from('contacts')
       .select('contact_data')
@@ -58,6 +75,7 @@ export async function logContactEvent(
       user: actorName || 'Unknown',
       details: changes,
       created_at: new Date().toISOString(),
+      ip_address: ipAddress,
     };
 
     const updatedJournal = [...journal, newEntry];

@@ -37,7 +37,7 @@ function formatDetailsFull(details: ContactFieldChange[]): React.ReactNode {
   );
 }
 
-const SEARCH_FIELDS = ['user', 'section', 'eventNumber'];
+const SEARCH_FIELDS = ['user', 'section', 'eventNumber', 'ip_address'];
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
@@ -56,6 +56,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'eventNumber', label: 'Event #' },
   { id: 'user', label: 'User' },
   { id: 'section', label: 'Section' },
+  { id: 'ip_address', label: 'IP Address' },
   { id: 'created_at', label: 'Timestamp' },
 ];
 
@@ -131,13 +132,14 @@ const BrokerEventsJournal: React.FC<{ brokerId: string; contactDbId: string }> =
               <SortableTableHead columnId="user" label="User" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[150px] text-xs" />
               <SortableTableHead columnId="section" label="Section" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[120px] text-xs" />
               <TableHead className="text-xs">Details</TableHead>
+              <SortableTableHead columnId="ip_address" label="IP Address" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[130px] text-xs" />
               <SortableTableHead columnId="created_at" label="Timestamp" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[160px] text-xs" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No events match your search or filters.
                 </TableCell>
               </TableRow>
@@ -158,6 +160,7 @@ const BrokerEventsJournal: React.FC<{ brokerId: string; contactDbId: string }> =
                     )}
                   </div>
                 </TableCell>
+                <TableCell className="text-xs text-muted-foreground font-mono">{entry.ip_address || '—'}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">
                   {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
                 </TableCell>
