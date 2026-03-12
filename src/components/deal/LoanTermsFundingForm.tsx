@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import type { FundingFormData } from './AddFundingModal';
+import { resolveLegacyKey } from '@/lib/legacyKeyMap';
 
 // Field key mapping for funding data stored in loan_terms section
 const FIELD_KEYS = {
