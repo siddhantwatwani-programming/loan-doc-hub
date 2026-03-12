@@ -423,9 +423,13 @@ export const FieldDictionaryPage: React.FC = () => {
         toast({ title: 'Field created successfully' });
       }
 
+      const scrollY = window.scrollY;
       setIsDialogOpen(false);
       resetForm();
-      fetchFields();
+      await fetchFields();
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: scrollY, behavior: 'instant' });
+      });
     } catch (error: any) {
       toast({
         title: 'Error',
