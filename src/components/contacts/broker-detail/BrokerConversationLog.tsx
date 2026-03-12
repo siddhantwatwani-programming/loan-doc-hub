@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { logContactEvent } from '@/hooks/useContactEventJournal';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -152,6 +153,7 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string }>
     setNewLog(getEmptyLog());
     setAddOpen(false);
     toast.success('Conversation log added');
+    logContactEvent(contactDbId, 'Conversation Log', [{ fieldLabel: 'Log Added', oldValue: '', newValue: entry.subject || 'New log' }]);
   };
 
   const handleDeleteSelected = async () => {
@@ -161,6 +163,7 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string }>
     setSelectedRows(new Set());
     await persistLogs(updated);
     toast.success(`Deleted ${selectedRows.size} entry(ies)`);
+    logContactEvent(contactDbId, 'Conversation Log', [{ fieldLabel: 'Logs Deleted', oldValue: `${selectedRows.size} entry(ies)`, newValue: '(deleted)' }]);
   };
 
   const handleExport = () => {

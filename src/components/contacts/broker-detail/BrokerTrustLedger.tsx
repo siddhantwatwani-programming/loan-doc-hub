@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { logContactEvent } from '@/hooks/useContactEventJournal';
 import { Plus, DollarSign, FileText, ArrowRightLeft, Ban, CheckSquare, Building, RefreshCw, FileCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -150,6 +151,7 @@ const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string }> = (
     setNewEntry(EMPTY_ENTRY);
     setAddDialogOpen(false);
     toast.success('Entry added');
+    logContactEvent(contactDbId, 'Trust Ledger', [{ fieldLabel: 'Entry Added', oldValue: '', newValue: entry.reference || entry.memo || 'New entry' }]);
   };
 
   const handleBulkDelete = async () => {
@@ -159,6 +161,7 @@ const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string }> = (
     clearSelection();
     setBulkDeleteOpen(false);
     toast.success('Entries deleted');
+    logContactEvent(contactDbId, 'Trust Ledger', [{ fieldLabel: 'Entries Deleted', oldValue: `${selectedCount} entry(ies)`, newValue: '(deleted)' }]);
   };
 
   const renderCellValue = (entry: LedgerEntry, colId: string) => {

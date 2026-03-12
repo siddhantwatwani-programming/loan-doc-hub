@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { logContactEvent } from '@/hooks/useContactEventJournal';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Plus, Filter, Download, Settings2 } from 'lucide-react';
@@ -143,6 +144,7 @@ const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId }) => {
       setNewCharge(EMPTY_CHARGE);
       setAddDialogOpen(false);
       toast.success('Charge added');
+      logContactEvent(contactDbId, 'Charges', [{ fieldLabel: 'Charge Added', oldValue: '', newValue: chargeWithId.description || 'New charge' }]);
     } catch {
       // error already toasted
     }
@@ -156,6 +158,7 @@ const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId }) => {
       setRows(updatedRows);
       setSelectedRows(new Set());
       toast.success(`${selectedRows.size} charge(s) deleted`);
+      logContactEvent(contactDbId, 'Charges', [{ fieldLabel: 'Charges Deleted', oldValue: `${selectedRows.size} charge(s)`, newValue: '(deleted)' }]);
     } catch {
       // error already toasted
     }
