@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import type { FundingFormData } from './AddFundingModal';
+import { resolveLegacyKey } from '@/lib/legacyKeyMap';
 
 // Field key mapping for funding data stored in loan_terms section
 const FIELD_KEYS = {
@@ -31,16 +32,26 @@ interface LoanTermsFundingFormProps {
  */
 async function resolveFieldDictId(fieldKey: string, cache: Map<string, string>): Promise<string | null> {
   if (cache.has(fieldKey)) return cache.get(fieldKey)!;
+
+  const candidateKeys = Array.from(new Set([fieldKey, resolveLegacyKey(fieldKey)]));
+
   const { data, error } = await supabase
     .from('field_dictionary')
-    .select('id')
-    .eq('field_key', fieldKey)
+    .select('id, field_key')
+    .in('field_key', candidateKeys)
+    .limit(1)
     .maybeSingle();
+
   if (error || !data) {
     console.warn(`[LoanTermsFundingForm] Could not resolve field_dictionary id for "${fieldKey}"`, error);
     return null;
   }
+
   cache.set(fieldKey, data.id);
+  if (data.field_key !== fieldKey) {
+    cache.set(data.field_key, data.id);
+  }
+
   return data.id;
 }
 
@@ -79,6 +90,7 @@ async function directPersistFundingField(
         ...(fieldValues[fieldDictId] || {}),
         value_text: jsonValue,
         indexed_key: fieldKey,
+        indexed_db_key: resolveLegacyKey(fieldKey),
         updated_at: new Date().toISOString(),
       };
 
@@ -99,6 +111,7 @@ async function directPersistFundingField(
       fieldValues[fieldDictId] = {
         value_text: jsonValue,
         indexed_key: fieldKey,
+        indexed_db_key: resolveLegacyKey(fieldKey),
         updated_at: new Date().toISOString(),
       };
 
