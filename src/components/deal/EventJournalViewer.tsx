@@ -65,6 +65,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'event_number', label: 'Event #' },
   { id: 'actor_name', label: 'User' },
   { id: 'section', label: 'Section' },
+  { id: 'ip_address', label: 'IP Address' },
   { id: 'created_at', label: 'Timestamp' },
 ];
 
