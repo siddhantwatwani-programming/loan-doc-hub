@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Plus, Filter, Download, Settings2 } from 'lucide-react';
@@ -11,6 +11,16 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ChargeRow {
   id: string;
@@ -41,8 +51,27 @@ const ALL_COLUMNS = [
   { id: 'total_owed_by_you', label: 'Total Owed By You' },
 ];
 
-const BrokerCharges: React.FC<{ brokerId: string }> = () => {
-  const [rows] = useState<ChargeRow[]>([]);
+const EMPTY_CHARGE: Omit<ChargeRow, 'id'> = {
+  date: '',
+  description: '',
+  interest_rate: '',
+  interest_from: '',
+  deferred: '',
+  loan_account: '',
+  owed_to_account: '',
+  unpaid_balance: '',
+  accrued_interest: '',
+  total_due_to_you: '',
+  total_owed_by_you: '',
+};
+
+interface BrokerChargesProps {
+  brokerId: string;
+  contactDbId: string;
+}
+
+const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId }) => {
+  const [rows, setRows] = useState<ChargeRow[]>([]);
   const [search, setSearch] = useState('');
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
@@ -51,6 +80,84 @@ const BrokerCharges: React.FC<{ brokerId: string }> = () => {
     new Set(ALL_COLUMNS.map(c => c.id))
   );
   const [filterOpen, setFilterOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [newCharge, setNewCharge] = useState<Omit<ChargeRow, 'id'>>(EMPTY_CHARGE);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load charges from contact_data on mount
+  useEffect(() => {
+    const loadCharges = async () => {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('contact_data')
+        .eq('id', contactDbId)
+        .single();
+      if (!error && data?.contact_data) {
+        const cd = data.contact_data as Record<string, any>;
+        if (Array.isArray(cd._charges)) {
+          setRows(cd._charges);
+        }
+      }
+    };
+    if (contactDbId) loadCharges();
+  }, [contactDbId]);
+
+  const persistCharges = useCallback(async (updatedRows: ChargeRow[]) => {
+    setIsSaving(true);
+    try {
+      const { data: current, error: fetchErr } = await supabase
+        .from('contacts')
+        .select('contact_data')
+        .eq('id', contactDbId)
+        .single();
+      if (fetchErr) throw fetchErr;
+
+      const existingData = (current?.contact_data as Record<string, any>) || {};
+      const merged = { ...existingData, _charges: updatedRows };
+
+      const { error } = await supabase
+        .from('contacts')
+        .update({ contact_data: merged, updated_at: new Date().toISOString() })
+        .eq('id', contactDbId);
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Failed to save charges:', err);
+      toast.error('Failed to save charge');
+      throw err;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [contactDbId]);
+
+  const handleAddCharge = useCallback(async () => {
+    const chargeWithId: ChargeRow = {
+      ...newCharge,
+      id: crypto.randomUUID(),
+    };
+    const updatedRows = [...rows, chargeWithId];
+    try {
+      await persistCharges(updatedRows);
+      setRows(updatedRows);
+      setNewCharge(EMPTY_CHARGE);
+      setAddDialogOpen(false);
+      toast.success('Charge added');
+    } catch {
+      // error already toasted
+    }
+  }, [newCharge, rows, persistCharges]);
+
+  const handleDeleteSelected = useCallback(async () => {
+    if (selectedRows.size === 0) return;
+    const updatedRows = rows.filter(r => !selectedRows.has(r.id));
+    try {
+      await persistCharges(updatedRows);
+      setRows(updatedRows);
+      setSelectedRows(new Set());
+      toast.success(`${selectedRows.size} charge(s) deleted`);
+    } catch {
+      // error already toasted
+    }
+  }, [rows, selectedRows, persistCharges]);
 
   const handleSort = (col: string) => {
     if (sortCol === col) {
@@ -70,8 +177,15 @@ const BrokerCharges: React.FC<{ brokerId: string }> = () => {
       const q = search.toLowerCase();
       result = result.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
     }
+    if (sortCol && sortDir) {
+      result = [...result].sort((a, b) => {
+        const av = (a as any)[sortCol] || '';
+        const bv = (b as any)[sortCol] || '';
+        return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      });
+    }
     return result;
-  }, [rows, search]);
+  }, [rows, search, sortCol, sortDir]);
 
   const toggleRow = (id: string) => {
     setSelectedRows(prev => {
@@ -140,7 +254,12 @@ const BrokerCharges: React.FC<{ brokerId: string }> = () => {
               </div>
             </PopoverContent>
           </Popover>
-          <Button size="sm" variant="outline" className="gap-1 h-8 text-xs">
+          {selectedRows.size > 0 && (
+            <Button size="sm" variant="destructive" className="gap-1 h-8 text-xs" onClick={handleDeleteSelected}>
+              Delete ({selectedRows.size})
+            </Button>
+          )}
+          <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={() => setAddDialogOpen(true)}>
             <Plus className="h-3.5 w-3.5" /> Add Charge
           </Button>
         </div>
@@ -220,6 +339,34 @@ const BrokerCharges: React.FC<{ brokerId: string }> = () => {
           </TableBody>
         </Table>
       </div>
+
+      {/* Add Charge Dialog */}
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add Charge</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            {ALL_COLUMNS.map(col => (
+              <div key={col.id} className="space-y-1">
+                <Label className="text-xs">{col.label}</Label>
+                <Input
+                  className="h-8 text-xs"
+                  value={(newCharge as any)[col.id] || ''}
+                  onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value }))}
+                  placeholder={col.label}
+                />
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
+            <Button size="sm" onClick={handleAddCharge} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Add Charge'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
