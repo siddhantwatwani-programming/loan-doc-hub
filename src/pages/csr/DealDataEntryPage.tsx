@@ -918,13 +918,13 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       )}
                       {SECTION_LABELS[section as keyof typeof SECTION_LABELS]}
 
-                      {!isComplete && hasRequiredFields && (
+                      {(section as string) !== 'event_journal' && (section as string) !== 'lender' && !isComplete && hasRequiredFields && (
                         <Badge variant="destructive" className="h-5 min-w-[20px] px-1.5 text-xs font-medium">
                           {sectionMissing}
                         </Badge>
                       )}
 
-                      {isComplete && hasRequiredFields && <CheckCircle2 className="h-4 w-4 text-success" />}
+                      {(section as string) !== 'event_journal' && (section as string) !== 'lender' && isComplete && hasRequiredFields && <CheckCircle2 className="h-4 w-4 text-success" />}
                     </TabsTrigger>
                   );
                 });
