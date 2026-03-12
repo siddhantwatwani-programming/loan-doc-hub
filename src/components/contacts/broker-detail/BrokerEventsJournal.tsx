@@ -160,6 +160,7 @@ const BrokerEventsJournal: React.FC<{ brokerId: string; contactDbId: string }> =
                     )}
                   </div>
                 </TableCell>
+                <TableCell className="text-xs text-muted-foreground font-mono">{entry.ip_address || '—'}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">
                   {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
                 </TableCell>
