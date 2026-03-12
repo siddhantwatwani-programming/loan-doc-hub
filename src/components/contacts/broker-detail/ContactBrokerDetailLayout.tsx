@@ -107,7 +107,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
       case 'charges':
         return (
           <div className="p-6">
-            <BrokerCharges brokerId={contact.contact_id} />
+            <BrokerCharges brokerId={contact.contact_id} contactDbId={contact.id} />
           </div>
         );
       case 'trust-ledger':
