@@ -1,66 +1,346 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Plus, DollarSign, FileText, ArrowRightLeft, Ban, CheckSquare, Building, RefreshCw, FileCheck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import SortableTableHead from '@/components/deal/SortableTableHead';
-import { type SortDirection } from '@/hooks/useGridSortFilter';
+import { Label } from '@/components/ui/label';
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import {
+  Tabs, TabsList, TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ColumnConfigPopover, ColumnConfig } from '@/components/deal/ColumnConfigPopover';
+import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+import { GridToolbar } from '@/components/deal/GridToolbar';
+import { GridExportDialog, ExportColumn } from '@/components/deal/GridExportDialog';
+import { SortableTableHead } from '@/components/deal/SortableTableHead';
+import { useGridSortFilter } from '@/hooks/useGridSortFilter';
+import { useGridSelection } from '@/hooks/useGridSelection';
+import { DeleteConfirmationDialog } from '@/components/deal/DeleteConfirmationDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-interface LedgerRow {
-  id: string; date: string; reference: string; fromWhom: string; memo: string;
-  payment: string; clr: string; deposit: string; balance: string;
+interface LedgerEntry {
+  id: string;
+  date: string;
+  reference: string;
+  fromWhomReceivedPaid: string;
+  memo: string;
+  payment: string;
+  clr: string;
+  deposit: string;
+  balance: string;
+  category: 'all' | 'reserve' | 'impound';
 }
 
-const COLUMNS = [
-  { id: 'date', label: 'Date' }, { id: 'reference', label: 'Reference' },
-  { id: 'fromWhom', label: 'From Whom' }, { id: 'memo', label: 'Memo' },
-  { id: 'payment', label: 'Payment' }, { id: 'clr', label: 'CLR' },
-  { id: 'deposit', label: 'Deposit' }, { id: 'balance', label: 'Balance' },
+const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'date', label: 'Date', visible: true },
+  { id: 'reference', label: 'Reference', visible: true },
+  { id: 'fromWhomReceivedPaid', label: 'From Whom Received / Paid', visible: true },
+  { id: 'memo', label: 'Memo', visible: true },
+  { id: 'payment', label: 'Payment', visible: true },
+  { id: 'clr', label: 'CLR', visible: true },
+  { id: 'deposit', label: 'Deposit', visible: true },
+  { id: 'balance', label: 'Balance', visible: true },
 ];
 
-const BrokerTrustLedger: React.FC<{ brokerId: string }> = () => {
-  const [rows] = useState<LedgerRow[]>([]);
-  const [search, setSearch] = useState('');
-  const [sortCol, setSortCol] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<SortDirection>(null);
+const DATE_FILTER_OPTIONS = [
+  { value: 'all', label: 'All Dates' },
+  { value: 'quarter_to_date', label: 'Quarter To Date' },
+  { value: 'year_to_date', label: 'Year To Date' },
+  { value: 'last_3_months', label: 'Last 3 Months' },
+  { value: 'last_6_months', label: 'Last 6 Months' },
+  { value: 'last_12_months', label: 'Last 12 Months' },
+  { value: 'last_year', label: 'Last Year' },
+];
 
-  const handleSort = (col: string) => {
-    if (sortCol === col) {
-      setSortDir(sortDir === 'asc' ? 'desc' : sortDir === 'desc' ? null : 'asc');
-      if (sortDir === 'desc') setSortCol(null);
-    } else { setSortCol(col); setSortDir('asc'); }
+const EXPORT_COLUMNS: ExportColumn[] = DEFAULT_COLUMNS.map(c => ({ id: c.id, label: c.label }));
+const SEARCHABLE_FIELDS = ['reference', 'fromWhomReceivedPaid', 'memo', 'date'];
+const FILTER_OPTIONS = [
+  { id: 'category', label: 'Category', options: [{ value: 'reserve', label: 'Reserve' }, { value: 'impound', label: 'Impound' }] },
+];
+
+const formatCurrency = (val: string) => {
+  if (!val) return '';
+  const num = parseFloat(val);
+  if (isNaN(num)) return val;
+  const isNeg = num < 0;
+  const formatted = `$${Math.abs(num).toFixed(2)}`;
+  return isNeg ? `(${formatted})` : formatted;
+};
+
+const filterByDate = (entries: LedgerEntry[], filter: string): LedgerEntry[] => {
+  if (filter === 'all') return entries;
+  const now = new Date();
+  let cutoff: Date;
+  switch (filter) {
+    case 'quarter_to_date': { const q = Math.floor(now.getMonth() / 3) * 3; cutoff = new Date(now.getFullYear(), q, 1); break; }
+    case 'year_to_date': cutoff = new Date(now.getFullYear(), 0, 1); break;
+    case 'last_3_months': cutoff = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()); break;
+    case 'last_6_months': cutoff = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()); break;
+    case 'last_12_months': cutoff = new Date(now.getFullYear(), now.getMonth() - 12, now.getDate()); break;
+    case 'last_year': cutoff = new Date(now.getFullYear() - 1, 0, 1); break;
+    default: return entries;
+  }
+  return entries.filter(e => { if (!e.date) return false; return new Date(e.date) >= cutoff; });
+};
+
+const EMPTY_ENTRY = { date: '', reference: '', fromWhomReceivedPaid: '', memo: '', payment: '', clr: '', deposit: '', balance: '', category: 'all' as const };
+
+const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string }> = ({ contactDbId }) => {
+  const [entries, setEntries] = useState<LedgerEntry[]>([]);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('broker_trust_ledger', DEFAULT_COLUMNS);
+  const visibleColumns = columns.filter(c => c.visible);
+  const [activeTab, setActiveTab] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [newEntry, setNewEntry] = useState(EMPTY_ENTRY);
+
+  useEffect(() => {
+    if (!contactDbId) return;
+    (async () => {
+      const { data } = await supabase.from('contacts').select('contact_data').eq('id', contactDbId).single();
+      if (data?.contact_data && (data.contact_data as any)._trust_ledger) {
+        setEntries((data.contact_data as any)._trust_ledger);
+      }
+    })();
+  }, [contactDbId]);
+
+  const persistEntries = useCallback(async (updated: LedgerEntry[]) => {
+    if (!contactDbId) return;
+    const { data: current } = await supabase.from('contacts').select('contact_data').eq('id', contactDbId).single();
+    const existing = (current?.contact_data || {}) as Record<string, any>;
+    await supabase.from('contacts').update({ contact_data: { ...existing, _trust_ledger: updated } }).eq('id', contactDbId);
+  }, [contactDbId]);
+
+  const preFiltered = useMemo(() => {
+    let result = entries;
+    if (activeTab !== 'all') result = result.filter(e => e.category === activeTab);
+    return filterByDate(result, dateFilter);
+  }, [entries, activeTab, dateFilter]);
+
+  const {
+    searchQuery, setSearchQuery, sortState, toggleSort,
+    activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
+  } = useGridSortFilter(preFiltered, SEARCHABLE_FIELDS);
+
+  const {
+    selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
+    isAllSelected, selectedCount,
+  } = useGridSelection(filteredData);
+
+  const handleAddEntry = async () => {
+    const entry: LedgerEntry = { ...newEntry, id: crypto.randomUUID() };
+    const updated = [...entries, entry];
+    setEntries(updated);
+    await persistEntries(updated);
+    setNewEntry(EMPTY_ENTRY);
+    setAddDialogOpen(false);
+    toast.success('Entry added');
   };
 
-  const filtered = useMemo(() => {
-    if (!search) return rows;
-    const q = search.toLowerCase();
-    return rows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
-  }, [rows, search]);
+  const handleBulkDelete = async () => {
+    const updated = entries.filter(e => !selectedIds.has(e.id));
+    setEntries(updated);
+    await persistEntries(updated);
+    clearSelection();
+    setBulkDeleteOpen(false);
+    toast.success('Entries deleted');
+  };
+
+  const renderCellValue = (entry: LedgerEntry, colId: string) => {
+    switch (colId) {
+      case 'payment': return formatCurrency(entry.payment) || '-';
+      case 'deposit': return formatCurrency(entry.deposit) || '-';
+      case 'balance': return formatCurrency(entry.balance) || '-';
+      default: return (entry as any)[colId] || '-';
+    }
+  };
 
   return (
     <div className="space-y-4">
+      <h3 className="font-semibold text-lg text-foreground">Trust Ledger</h3>
+
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-1">
+          <TooltipProvider>
+            <Tooltip><TooltipTrigger asChild>
+              <Button variant="outline" size="icon" className="h-8 w-8"><Ban className="h-4 w-4" /></Button>
+            </TooltipTrigger><TooltipContent>Void Transaction</TooltipContent></Tooltip>
+
+            <DropdownMenu>
+              <Tooltip><TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-8 w-8"><DollarSign className="h-4 w-4" /></Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger><TooltipContent>Transactions</TooltipContent></Tooltip>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem><DollarSign className="h-4 w-4 mr-2" />Enter Deposit</DropdownMenuItem>
+                <DropdownMenuItem><FileText className="h-4 w-4 mr-2" />Enter Check</DropdownMenuItem>
+                <DropdownMenuItem><RefreshCw className="h-4 w-4 mr-2" />Enter Adjustment</DropdownMenuItem>
+                <DropdownMenuItem><ArrowRightLeft className="h-4 w-4 mr-2" />Transfer Funds</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem><Ban className="h-4 w-4 mr-2" />Void Transaction</DropdownMenuItem>
+                <DropdownMenuItem><CheckSquare className="h-4 w-4 mr-2" />Clear Status</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Tooltip><TooltipTrigger asChild>
+              <Button variant="outline" size="icon" className="h-8 w-8"><FileText className="h-4 w-4" /></Button>
+            </TooltipTrigger><TooltipContent>Info</TooltipContent></Tooltip>
+
+            <DropdownMenu>
+              <Tooltip><TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-8 w-8"><Building className="h-4 w-4" /></Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger><TooltipContent>Banking</TooltipContent></Tooltip>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem><Building className="h-4 w-4 mr-2" />Make Bank Deposit</DropdownMenuItem>
+                <DropdownMenuItem><RefreshCw className="h-4 w-4 mr-2" />Reconcile Bank Account</DropdownMenuItem>
+                <DropdownMenuItem><FileCheck className="h-4 w-4 mr-2" />Create Positive Pay File</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Tooltip><TooltipTrigger asChild>
+              <Button variant="outline" size="icon" className="h-8 w-8"><FileCheck className="h-4 w-4" /></Button>
+            </TooltipTrigger><TooltipContent>Select & Print Checks</TooltipContent></Tooltip>
+          </TooltipProvider>
+        </div>
+
+        <Select value={dateFilter} onValueChange={setDateFilter}>
+          <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {DATE_FILTER_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <GridToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        activeFilterCount={activeFilterCount}
+        selectedCount={selectedCount}
+        onBulkDelete={() => setBulkDeleteOpen(true)}
+        onExport={() => setExportDialogOpen(true)}
+      />
+
       <div className="flex items-center justify-between">
-        <h4 className="text-lg font-semibold text-foreground">Trust Ledger</h4>
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-8 h-9 w-[200px]" />
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="h-8">
+            <TabsTrigger value="all" className="text-xs px-3 py-1">All Transactions</TabsTrigger>
+            <TabsTrigger value="reserve" className="text-xs px-3 py-1">Reserve</TabsTrigger>
+            <TabsTrigger value="impound" className="text-xs px-3 py-1">Impound</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="flex items-center gap-2">
+          <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
+          <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(true)} className="gap-1 text-xs">
+            <Plus className="h-4 w-4" /> Add Entry
+          </Button>
         </div>
       </div>
+
       <div className="border border-border rounded-lg overflow-x-auto">
-        <Table className="min-w-[1000px]">
+        <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
-              {COLUMNS.map(c => <SortableTableHead key={c.id} columnId={c.id} label={c.label} sortColumnId={sortCol} sortDirection={sortDir} onSort={handleSort} />)}
+              <TableHead className="w-[40px]">
+                <Checkbox checked={isAllSelected} onCheckedChange={() => toggleAll()} aria-label="Select all" />
+              </TableHead>
+              {visibleColumns.map(col => (
+                <SortableTableHead key={col.id} columnId={col.id} label={col.label}
+                  sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="text-xs" />
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={COLUMNS.length} className="text-center py-8 text-muted-foreground">No trust ledger records found.</TableCell></TableRow>
-            ) : filtered.map(r => (
-              <TableRow key={r.id}>{COLUMNS.map(c => <TableCell key={c.id}>{(r as any)[c.id] || '-'}</TableCell>)}</TableRow>
+            {filteredData.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
+                  No entries found. Click "Add Entry" to add one.
+                </TableCell>
+              </TableRow>
+            ) : filteredData.map((entry, idx) => (
+              <TableRow key={entry.id} className={`hover:bg-muted/30 ${idx === 0 ? 'bg-accent/20' : ''}`}>
+                <TableCell onClick={e => e.stopPropagation()} className="w-[40px]">
+                  <Checkbox checked={selectedIds.has(entry.id)} onCheckedChange={() => toggleOne(entry.id)} />
+                </TableCell>
+                {visibleColumns.map(col => (
+                  <TableCell key={col.id} className="text-xs py-2">{renderCellValue(entry, col.id)}</TableCell>
+                ))}
+              </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
+      {filteredData.length > 0 && (
+        <div className="flex justify-end">
+          <div className="text-sm text-muted-foreground">Total Entries: {filteredData.length}</div>
+        </div>
+      )}
+
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Add Trust Ledger Entry</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { key: 'date', label: 'Date', type: 'date' },
+              { key: 'reference', label: 'Reference' },
+              { key: 'fromWhomReceivedPaid', label: 'From Whom' },
+              { key: 'memo', label: 'Memo' },
+              { key: 'payment', label: 'Payment' },
+              { key: 'deposit', label: 'Deposit' },
+              { key: 'clr', label: 'CLR' },
+              { key: 'balance', label: 'Balance' },
+            ].map(f => (
+              <div key={f.key} className="space-y-1">
+                <Label className="text-xs">{f.label}</Label>
+                <Input type={f.type || 'text'} value={(newEntry as any)[f.key]}
+                  onChange={e => setNewEntry(prev => ({ ...prev, [f.key]: e.target.value }))} className="h-8 text-xs" />
+              </div>
+            ))}
+            <div className="space-y-1">
+              <Label className="text-xs">Category</Label>
+              <Select value={newEntry.category} onValueChange={v => setNewEntry(prev => ({ ...prev, category: v as any }))}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="reserve">Reserve</SelectItem>
+                  <SelectItem value="impound">Impound</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
+            <Button size="sm" onClick={handleAddEntry}>Add Entry</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <DeleteConfirmationDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen} onConfirm={handleBulkDelete}
+        title="Delete Selected Entries" description={`Are you sure you want to delete ${selectedCount} selected entry(ies)?`} />
+      <GridExportDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}
+        columns={EXPORT_COLUMNS} data={filteredData} fileName="broker_trust_ledger_export" />
     </div>
   );
 };
