@@ -100,7 +100,13 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
       company: contact.company,
     };
     if (columnId in topLevel) return topLevel[columnId] || '';
-    return (contact.contact_data as Record<string, string>)?.[columnId] || '';
+    const cd = (contact.contact_data || {}) as Record<string, string>;
+    // Direct match in contact_data
+    if (columnId in cd) return cd[columnId] || '';
+    // Try dot-notation keys (e.g. 'primary_address.city')
+    const dotKey = columnId.replace(/\./g, '.');
+    if (dotKey in cd) return cd[dotKey] || '';
+    return '';
   };
 
   // Apply client-side active filters
