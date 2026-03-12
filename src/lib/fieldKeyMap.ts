@@ -260,6 +260,7 @@ export const LENDER_INFO_KEYS = {
   freezeOutgoingDisbursements: 'lender.freeze_outgoing_disbursements',
   investorQuestionnaireDue: 'lender.investor_questionnaire_due',
   investorQuestionnaireDueDate: 'lender.investor_questionnaire_due_date',
+  ach: 'lender.ach',
 } as const;
 
 export const LENDER_AUTHORIZED_PARTY_KEYS = {
