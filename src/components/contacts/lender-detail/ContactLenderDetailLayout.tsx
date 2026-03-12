@@ -28,7 +28,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
   onBack,
   onSave,
 }) => {
-  const [activeSection, setActiveSection] = useState<LenderSection>('dashboard');
+  const [activeSection, setActiveSection] = useState<LenderSection>('lender-info');
   const [values, setValues] = useState<Record<string, string>>(() => {
     const result: Record<string, string> = {};
     Object.entries(contact.contact_data || {}).forEach(([key, value]) => {

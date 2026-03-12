@@ -10,13 +10,13 @@ export type LenderSection =
   | 'attachments' | 'events-journal';
 
 const SECTIONS: { id: LenderSection; label: string; icon: React.ElementType }[] = [
+  { id: 'lender-info', label: 'Lender Info', icon: FileText },
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
   { id: 'history', label: 'History', icon: History },
   { id: 'charges', label: 'Charges', icon: DollarSign },
   { id: 'trust-ledger', label: 'Trust Ledger', icon: BookOpen },
   { id: 'conversation-log', label: 'Conversation Log', icon: MessageSquare },
-  { id: 'lender-info', label: 'Lender Info', icon: FileText },
   { id: 'authorized-party', label: 'Authorized Party', icon: UserCheck },
   { id: 'banking', label: 'Banking', icon: Building2 },
   { id: '1099', label: '1099', icon: FileText },
