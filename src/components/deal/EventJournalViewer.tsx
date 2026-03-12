@@ -155,6 +155,9 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
                     )}
                   </div>
                 </TableCell>
+                <TableCell className="text-sm text-muted-foreground font-mono">
+                  {entry.ip_address || '—'}
+                </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
                 </TableCell>

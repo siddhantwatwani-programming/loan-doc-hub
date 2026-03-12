@@ -103,6 +103,7 @@ export function useEventJournalEntries(dealId: string | null) {
         section: e.section,
         details: (e.details || []) as FieldChange[],
         created_at: e.created_at,
+        ip_address: e.ip_address || null,
       }));
     },
   });
