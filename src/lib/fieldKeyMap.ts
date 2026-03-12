@@ -559,6 +559,16 @@ export const BROKER_INFO_KEYS = {
   lenderStatement: 'broker.send_pref.lender_statement',
   borrowerStatement: 'broker.send_pref.borrower_statement',
   maturityNotice: 'broker.send_pref.maturity_notice',
+  frozen: 'broker.frozen',
+  ach: 'broker.ach',
+  agreementOnFile: 'broker.agreement_on_file',
+  fullName: 'broker.full_name',
+  tinVerified: 'broker.tin_verified',
+  mailingStreet: 'broker.mailing.street',
+  mailingCity: 'broker.mailing.city',
+  mailingState: 'broker.mailing.state',
+  mailingZip: 'broker.mailing.zip',
+  mailingSameAsPrimary: 'broker.mailing_same_as_primary',
 } as const;
 
 export const BROKER_BANKING_KEYS = {
