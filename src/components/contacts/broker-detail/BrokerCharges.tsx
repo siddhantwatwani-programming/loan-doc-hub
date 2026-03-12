@@ -144,6 +144,7 @@ const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId }) => {
       setNewCharge(EMPTY_CHARGE);
       setAddDialogOpen(false);
       toast.success('Charge added');
+      logContactEvent(contactDbId, 'Charges', [{ fieldLabel: 'Charge Added', oldValue: '', newValue: chargeWithId.description || 'New charge' }]);
     } catch {
       // error already toasted
     }
