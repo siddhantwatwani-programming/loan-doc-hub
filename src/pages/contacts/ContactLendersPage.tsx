@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import type { FilterOption } from '@/components/deal/GridToolbar';
 
 // Re-export for backward compatibility with existing components
 export interface ContactLender {
@@ -47,6 +48,20 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
   { id: 'company', label: 'Company', visible: false },
+];
+
+const LENDER_FILTER_OPTIONS: FilterOption[] = [
+  {
+    id: 'state',
+    label: 'State',
+    options: [
+      { value: 'CA', label: 'California' },
+      { value: 'TX', label: 'Texas' },
+      { value: 'FL', label: 'Florida' },
+      { value: 'NY', label: 'New York' },
+      { value: 'WA', label: 'Washington' },
+    ],
+  },
 ];
 
 const ContactLendersPage: React.FC = () => {
@@ -102,6 +117,7 @@ const ContactLendersPage: React.FC = () => {
         tableConfigKey="contact_lenders_v3"
         addButtonLabel="Add Lender"
         breadcrumbLabel="Lenders"
+        filterOptions={LENDER_FILTER_OPTIONS}
       />
       <CreateContactModal
         open={modalOpen}

@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Plus, Download, Search, ChevronLeft, ChevronRight, Loader2, Filter, ArrowUp, ArrowDown, ArrowUpDown, Trash2 } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -9,16 +8,16 @@ import {
 import {
   Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage,
 } from '@/components/ui/breadcrumb';
-import {
-  Popover, PopoverContent, PopoverTrigger,
-} from '@/components/ui/popover';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
 import { ColumnConfigPopover, ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 import { DeleteConfirmationDialog } from '@/components/deal/DeleteConfirmationDialog';
+import { GridToolbar, FilterOption } from '@/components/deal/GridToolbar';
+import { GridExportDialog, ExportColumn } from '@/components/deal/GridExportDialog';
+import { SortableTableHead } from '@/components/deal/SortableTableHead';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+import { useGridSelection } from '@/hooks/useGridSelection';
 import type { ContactRecord } from '@/hooks/useContactsCrud';
+
+type SortDir = 'asc' | 'desc' | null;
 
 interface ContactsListViewProps {
   title: string;
@@ -37,11 +36,9 @@ interface ContactsListViewProps {
   tableConfigKey: string;
   addButtonLabel?: string;
   breadcrumbLabel?: string;
-  filterColumns?: { id: string; label: string }[];
+  filterOptions?: FilterOption[];
   renderCellValue?: (contact: ContactRecord, columnId: string) => React.ReactNode;
 }
-
-type SortDir = 'asc' | 'desc' | null;
 
 export const ContactsListView: React.FC<ContactsListViewProps> = ({
   title,
@@ -60,16 +57,23 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
   tableConfigKey,
   addButtonLabel,
   breadcrumbLabel,
-  filterColumns,
+  filterOptions = [],
   renderCellValue,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig(tableConfigKey, defaultColumns);
   const visibleColumns = columns.filter((c) => c.visible);
-  const [filterColumn, setFilterColumn] = useState('');
-  const [filterValue, setFilterValue] = useState('');
+
+  // Client-side sorting on current page
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Client-side column filter
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+
+  // Export dialog
+  const [exportOpen, setExportOpen] = useState(false);
+
+  // Delete dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleSort = (colId: string) => {
@@ -82,25 +86,6 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
       setSortDir('asc');
     }
   };
-
-  const handleExport = useCallback(() => {
-    if (contacts.length === 0) return;
-    const headers = visibleColumns.map((c) => c.label);
-    const rows = contacts.map((contact) =>
-      visibleColumns.map((c) => {
-        const val = getCellValue(contact, c.id);
-        return typeof val === 'boolean' ? (val ? 'Yes' : 'No') : String(val || '');
-      })
-    );
-    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${title.toLowerCase().replace(/\s+/g, '_')}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [contacts, visibleColumns, title]);
 
   const getCellValue = (contact: ContactRecord, columnId: string): string => {
     const topLevel: Record<string, string> = {
@@ -118,13 +103,19 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
     return (contact.contact_data as Record<string, string>)?.[columnId] || '';
   };
 
-  // Apply client-side column filter
-  const filteredContacts = (filterColumn && filterValue)
-    ? contacts.filter((c) => {
-        const val = getCellValue(c, filterColumn).toLowerCase();
-        return val.includes(filterValue.toLowerCase());
-      })
-    : contacts;
+  // Apply client-side active filters
+  const filteredContacts = useMemo(() => {
+    let result = contacts;
+    Object.entries(activeFilters).forEach(([key, value]) => {
+      if (value && value !== 'all') {
+        result = result.filter((c) => {
+          const val = getCellValue(c, key);
+          return val.toLowerCase() === value.toLowerCase();
+        });
+      }
+    });
+    return result;
+  }, [contacts, activeFilters]);
 
   // Apply client-side sorting
   const sortedContacts = useMemo(() => {
@@ -138,6 +129,38 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
     });
   }, [filteredContacts, sortColumn, sortDir]);
 
+  // Selection via shared hook
+  const {
+    selectedIds, toggleOne, toggleAll, clearSelection,
+    isAllSelected, isSomeSelected, selectedCount,
+  } = useGridSelection(sortedContacts);
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (onDeleteSelected && selectedCount > 0) {
+      await onDeleteSelected(Array.from(selectedIds));
+      clearSelection();
+    }
+    setDeleteDialogOpen(false);
+  }, [onDeleteSelected, selectedIds, selectedCount, clearSelection]);
+
+  const setFilter = (key: string, value: string) => {
+    setActiveFilters((prev) => {
+      if (!value || value === 'all') {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      }
+      return { ...prev, [key]: value };
+    });
+  };
+
+  const clearAllFilters = () => {
+    setActiveFilters({});
+    onSearchChange('');
+  };
+
+  const activeFilterCount = Object.keys(activeFilters).length;
+
   const defaultRenderCell = (contact: ContactRecord, columnId: string): React.ReactNode => {
     const val = getCellValue(contact, columnId);
     if (val === 'true') return '✓';
@@ -146,42 +169,19 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
     return val || '-';
   };
 
-  const filterableCols = filterColumns || visibleColumns.map((c) => ({ id: c.id, label: c.label }));
+  // Export columns from visible columns
+  const exportColumns: ExportColumn[] = visibleColumns.map((c) => ({ id: c.id, label: c.label }));
 
-  // Checkbox selection
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
+  // Export data mapped to flat key-value
+  const exportData = useMemo(() => {
+    return sortedContacts.map((contact) => {
+      const row: Record<string, any> = {};
+      visibleColumns.forEach((col) => {
+        row[col.id] = getCellValue(contact, col.id);
+      });
+      return row;
     });
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.size === sortedContacts.length && sortedContacts.length > 0) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(sortedContacts.map((c) => c.id)));
-    }
-  };
-
-  const allSelected = sortedContacts.length > 0 && selectedIds.size === sortedContacts.length;
-  const someSelected = selectedIds.size > 0 && selectedIds.size < sortedContacts.length;
-
-  const handleDeleteConfirm = useCallback(async () => {
-    if (onDeleteSelected && selectedIds.size > 0) {
-      await onDeleteSelected(Array.from(selectedIds));
-      setSelectedIds(new Set());
-    }
-    setDeleteDialogOpen(false);
-  }, [onDeleteSelected, selectedIds]);
-
-  const SortIcon = ({ colId }: { colId: string }) => {
-    if (sortColumn !== colId) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
-    if (sortDir === 'asc') return <ArrowUp className="h-3 w-3 ml-1" />;
-    return <ArrowDown className="h-3 w-3 ml-1" />;
-  };
+  }, [sortedContacts, visibleColumns]);
 
   return (
     <div className="p-6 space-y-4">
@@ -203,66 +203,6 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-lg text-foreground">{title}</h3>
         <div className="flex items-center gap-2">
-          {selectedIds.size > 0 && onDeleteSelected && (
-            <Button
-              variant="destructive"
-              size="sm"
-              className="gap-1"
-              onClick={() => setDeleteDialogOpen(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete ({selectedIds.size})
-            </Button>
-          )}
-          <Button variant="outline" size="sm" onClick={handleExport} className="gap-1">
-            <Download className="h-4 w-4" /> Export
-          </Button>
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-8 h-9 w-[200px]"
-            />
-          </div>
-          {/* Filter Popover */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1">
-                <Filter className="h-4 w-4" /> Filter
-                {filterColumn && filterValue && (
-                  <span className="ml-1 bg-primary text-primary-foreground rounded-full px-1.5 text-xs">1</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-72 space-y-3" align="end">
-              <p className="text-sm font-medium text-foreground">Filter by column</p>
-              <Select value={filterColumn} onValueChange={(v) => { setFilterColumn(v); setFilterValue(''); }}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Select column" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filterableCols.map((col) => (
-                    <SelectItem key={col.id} value={col.id}>{col.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {filterColumn && (
-                <Input
-                  placeholder="Filter value..."
-                  value={filterValue}
-                  onChange={(e) => setFilterValue(e.target.value)}
-                  className="h-9"
-                />
-              )}
-              {(filterColumn || filterValue) && (
-                <Button variant="ghost" size="sm" onClick={() => { setFilterColumn(''); setFilterValue(''); }}>
-                  Clear filter
-                </Button>
-              )}
-            </PopoverContent>
-          </Popover>
           <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
           <Button variant="outline" size="sm" onClick={onCreateNew} className="gap-1">
             <Plus className="h-4 w-4" /> {addButtonLabel || 'Create New'}
@@ -270,32 +210,47 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
         </div>
       </div>
 
+      {/* GridToolbar - same pattern as deal grids */}
+      <GridToolbar
+        searchQuery={searchQuery}
+        onSearchChange={onSearchChange}
+        filterOptions={filterOptions}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearAllFilters}
+        activeFilterCount={activeFilterCount}
+        disabled={isLoading}
+        selectedCount={selectedCount}
+        onBulkDelete={onDeleteSelected ? () => setDeleteDialogOpen(true) : undefined}
+        onExport={() => setExportOpen(true)}
+        searchPlaceholder={`Search ${title.toLowerCase()}...`}
+      />
+
       <div className="border border-border rounded-lg overflow-x-auto">
         <Table className="min-w-[1000px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead className="w-[40px]">
                 <Checkbox
-                  checked={allSelected}
+                  checked={isAllSelected}
                   ref={(el) => {
-                    if (el) (el as any).indeterminate = someSelected;
+                    if (el) (el as any).indeterminate = isSomeSelected;
                   }}
-                  onCheckedChange={toggleSelectAll}
+                  onCheckedChange={toggleAll}
+                  disabled={isLoading || sortedContacts.length === 0}
                   aria-label="Select all"
                   className="h-4 w-4"
                 />
               </TableHead>
               {visibleColumns.map((col) => (
-                <TableHead
+                <SortableTableHead
                   key={col.id}
-                  className="cursor-pointer select-none hover:bg-muted/80"
-                  onClick={() => handleSort(col.id)}
-                >
-                  <div className="flex items-center">
-                    {col.label.toUpperCase()}
-                    <SortIcon colId={col.id} />
-                  </div>
-                </TableHead>
+                  columnId={col.id}
+                  label={col.label.toUpperCase()}
+                  sortColumnId={sortColumn}
+                  sortDirection={sortDir}
+                  onSort={handleSort}
+                />
               ))}
             </TableRow>
           </TableHeader>
@@ -314,7 +269,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
                 <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
                   {totalCount === 0
                     ? `No contacts yet. Click "${addButtonLabel || 'Create New'}" to add one.`
-                    : 'No contacts match your search or filter.'}
+                    : 'No contacts match your search or filters.'}
                 </TableCell>
               </TableRow>
             ) : (
@@ -326,7 +281,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
                   <TableCell className="w-[40px]" onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={selectedIds.has(contact.id)}
-                      onCheckedChange={() => toggleSelect(contact.id)}
+                      onCheckedChange={() => toggleOne(contact.id)}
                       aria-label={`Select ${contact.full_name}`}
                       className="h-4 w-4"
                     />
@@ -348,7 +303,8 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Total: {totalCount}{selectedIds.size > 0 && ` · ${selectedIds.size} selected`}
+          {filteredContacts.length !== contacts.length && `Showing ${filteredContacts.length} of `}
+          Total: {totalCount}{selectedCount > 0 && ` · ${selectedCount} selected`}
         </div>
         {totalPages > 1 && (
           <div className="flex items-center gap-2">
@@ -382,8 +338,17 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDeleteConfirm}
-        title="Delete Selected Contacts"
-        description={`Are you sure you want to delete ${selectedIds.size} selected contact${selectedIds.size !== 1 ? 's' : ''}? This action cannot be undone.`}
+        title={`Delete ${selectedCount} Contact${selectedCount !== 1 ? 's' : ''}`}
+        description={`Are you sure you want to delete ${selectedCount} selected contact${selectedCount !== 1 ? 's' : ''}? This action cannot be undone.`}
+      />
+
+      {/* Export Dialog - same as deal grids */}
+      <GridExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        columns={exportColumns}
+        data={exportData}
+        fileName={title.toLowerCase().replace(/\s+/g, '_')}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import { ContactsListView } from '@/components/contacts/ContactsListView';
 import { CreateContactModal } from '@/components/contacts/CreateContactModal';
 import ContactBorrowerDetailLayout from '@/components/contacts/borrower-detail/ContactBorrowerDetailLayout';
 import type { ColumnConfig } from '@/components/deal/ColumnConfigPopover';
+import type { FilterOption } from '@/components/deal/GridToolbar';
 
 export interface ContactBorrower {
   id: string;
@@ -45,6 +46,20 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
   { id: 'company', label: 'Company', visible: false },
+];
+
+const BORROWER_FILTER_OPTIONS: FilterOption[] = [
+  {
+    id: 'state',
+    label: 'State',
+    options: [
+      { value: 'CA', label: 'California' },
+      { value: 'TX', label: 'Texas' },
+      { value: 'FL', label: 'Florida' },
+      { value: 'NY', label: 'New York' },
+      { value: 'WA', label: 'Washington' },
+    ],
+  },
 ];
 
 const ContactBorrowersPage: React.FC = () => {
@@ -100,6 +115,7 @@ const ContactBorrowersPage: React.FC = () => {
         tableConfigKey="contact_borrowers_v3"
         addButtonLabel="Add Borrower"
         breadcrumbLabel="Borrowers"
+        filterOptions={BORROWER_FILTER_OPTIONS}
       />
       <CreateContactModal
         open={modalOpen}

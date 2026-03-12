@@ -4,6 +4,7 @@ import { ContactsListView } from '@/components/contacts/ContactsListView';
 import { CreateContactModal } from '@/components/contacts/CreateContactModal';
 import ContactBrokerDetailLayout from '@/components/contacts/broker-detail/ContactBrokerDetailLayout';
 import type { ColumnConfig } from '@/components/deal/ColumnConfigPopover';
+import type { FilterOption } from '@/components/deal/GridToolbar';
 
 export interface ContactBroker {
   id: string;
@@ -45,6 +46,25 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'company', label: 'Company', visible: true },
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
+];
+
+const BROKER_FILTER_OPTIONS: FilterOption[] = [
+  {
+    id: 'state',
+    label: 'State',
+    options: [
+      { value: 'CA', label: 'California' },
+      { value: 'TX', label: 'Texas' },
+      { value: 'FL', label: 'Florida' },
+      { value: 'NY', label: 'New York' },
+      { value: 'WA', label: 'Washington' },
+    ],
+  },
+  {
+    id: 'company',
+    label: 'Company',
+    options: [],
+  },
 ];
 
 const ContactBrokersPage: React.FC = () => {
@@ -100,6 +120,7 @@ const ContactBrokersPage: React.FC = () => {
         tableConfigKey="contact_brokers_v3"
         addButtonLabel="Add Broker"
         breadcrumbLabel="Brokers"
+        filterOptions={BROKER_FILTER_OPTIONS}
       />
       <CreateContactModal
         open={modalOpen}
