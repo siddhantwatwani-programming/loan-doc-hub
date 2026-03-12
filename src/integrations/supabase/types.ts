@@ -49,6 +49,60 @@ export type Database = {
           },
         ]
       }
+      contacts: {
+        Row: {
+          city: string | null
+          company: string | null
+          contact_data: Json | null
+          contact_id: string
+          contact_type: string
+          created_at: string | null
+          created_by: string
+          email: string | null
+          first_name: string | null
+          full_name: string | null
+          id: string
+          last_name: string | null
+          phone: string | null
+          state: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          city?: string | null
+          company?: string | null
+          contact_data?: Json | null
+          contact_id: string
+          contact_type: string
+          created_at?: string | null
+          created_by: string
+          email?: string | null
+          first_name?: string | null
+          full_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          city?: string | null
+          company?: string | null
+          contact_data?: Json | null
+          contact_id?: string
+          contact_type?: string
+          created_at?: string | null
+          created_by?: string
+          email?: string | null
+          first_name?: string | null
+          full_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       deal_assignments: {
         Row: {
           assigned_at: string
@@ -1109,6 +1163,7 @@ export type Database = {
         Args: { _field_key: string; _user_id: string }
         Returns: boolean
       }
+      generate_contact_id: { Args: { p_type: string }; Returns: string }
       generate_deal_number: { Args: never; Returns: string }
       get_user_permission_level: { Args: { _user_id: string }; Returns: string }
       get_user_role: {
