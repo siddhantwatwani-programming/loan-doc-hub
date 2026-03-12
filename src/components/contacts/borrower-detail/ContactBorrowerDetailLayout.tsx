@@ -1,0 +1,136 @@
+import React, { useState, useCallback } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ContactBorrowerSubNav, type ContactBorrowerSubSection } from './ContactBorrowerSubNav';
+import { BorrowerPrimaryForm } from '@/components/deal/BorrowerPrimaryForm';
+import { BorrowerAdditionalGuarantorForm } from '@/components/deal/BorrowerAdditionalGuarantorForm';
+import { BorrowerAuthorizedPartyForm } from '@/components/deal/BorrowerAuthorizedPartyForm';
+import { BorrowerBankingForm } from '@/components/deal/BorrowerBankingForm';
+import { BorrowerTaxDetailForm } from '@/components/deal/BorrowerTaxDetailForm';
+import { BorrowerNoteForm } from '@/components/deal/BorrowerNoteForm';
+import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
+import type { ContactRecord } from '@/hooks/useContactsCrud';
+
+interface ContactBorrowerDetailLayoutProps {
+  contact: ContactRecord;
+  onBack: () => void;
+  onSave: (id: string, contactData: Record<string, string>) => Promise<boolean>;
+}
+
+const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = ({
+  contact,
+  onBack,
+  onSave,
+}) => {
+  const [activeSection, setActiveSection] = useState<ContactBorrowerSubSection>('primary');
+  const [values, setValues] = useState<Record<string, string>>(() => {
+    const result: Record<string, string> = {};
+    Object.entries(contact.contact_data || {}).forEach(([key, value]) => {
+      result[`borrower.${key}`] = value;
+    });
+    return result;
+  });
+
+  const handleValueChange = useCallback((fieldKey: string, value: string) => {
+    setValues(prev => ({ ...prev, [fieldKey]: value }));
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    const contactData: Record<string, string> = {};
+    Object.entries(values).forEach(([key, value]) => {
+      const stripped = key.replace(/^borrower\./, '');
+      contactData[stripped] = value;
+    });
+    await onSave(contact.id, contactData);
+  }, [values, contact.id, onSave]);
+
+  const emptyFields: any[] = [];
+  const emptyDirty = new Set<string>();
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'primary':
+        return (
+          <BorrowerPrimaryForm
+            fields={emptyFields}
+            values={values}
+            onValueChange={handleValueChange}
+            disabled={false}
+          />
+        );
+      case 'additional_guarantor':
+        return (
+          <BorrowerAdditionalGuarantorForm
+            fields={emptyFields}
+            values={values}
+            onValueChange={handleValueChange}
+            disabled={false}
+          />
+        );
+      case 'authorized_party':
+        return (
+          <BorrowerAuthorizedPartyForm
+            fields={emptyFields}
+            values={values}
+            onValueChange={handleValueChange}
+            disabled={false}
+          />
+        );
+      case 'banking':
+        return (
+          <BorrowerBankingForm
+            fields={emptyFields}
+            values={values}
+            onValueChange={handleValueChange}
+            disabled={false}
+          />
+        );
+      case 'tax_detail':
+        return (
+          <BorrowerTaxDetailForm
+            fields={emptyFields}
+            values={values}
+            onValueChange={handleValueChange}
+            disabled={false}
+          />
+        );
+      case 'note':
+        return (
+          <BorrowerNoteForm
+            fields={emptyFields}
+            values={values}
+            onValueChange={handleValueChange}
+            disabled={false}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between px-6 py-3 border-b border-border">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Borrowers
+          </Button>
+          <h3 className="font-semibold text-lg text-foreground">
+            {contact.full_name || 'Borrower Detail'} — {contact.contact_id}
+          </h3>
+        </div>
+        <Button size="sm" onClick={handleSave}>Save</Button>
+      </div>
+      <div className="flex flex-1 overflow-hidden">
+        <ContactBorrowerSubNav activeSubSection={activeSection} onSubSectionChange={setActiveSection} />
+        <div className="flex-1 overflow-auto">
+          <DirtyFieldsProvider dirtyFieldKeys={emptyDirty}>
+            {renderContent()}
+          </DirtyFieldsProvider>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ContactBorrowerDetailLayout;
