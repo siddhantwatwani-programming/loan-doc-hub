@@ -98,10 +98,15 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
       data.full_name = [data.first_name, mid, data.last_name].filter(Boolean).join(' ');
     }
     if (data.mailing_same_as_primary === 'true') {
-      data['mailing.street'] = data['primary_address.street'] || '';
-      data['mailing.city'] = data['primary_address.city'] || '';
-      data['mailing.state'] = data['primary_address.state'] || '';
-      data['mailing.zip'] = data['primary_address.zip'] || '';
+      // Lender uses primary_address.*, broker uses address.*
+      const streetKey = data['primary_address.street'] !== undefined ? 'primary_address.street' : 'address.street';
+      const cityKey = data['primary_address.city'] !== undefined ? 'primary_address.city' : 'address.city';
+      const stateKey = data['primary_address.state'] !== undefined ? 'primary_address.state' : 'address.state';
+      const zipKey = data['primary_address.zip'] !== undefined ? 'primary_address.zip' : 'address.zip';
+      data['mailing.street'] = data[streetKey] || '';
+      data['mailing.city'] = data[cityKey] || '';
+      data['mailing.state'] = data[stateKey] || '';
+      data['mailing.zip'] = data[zipKey] || '';
     }
     onSubmit(data);
     setForm(getInitialForm(contactType));
