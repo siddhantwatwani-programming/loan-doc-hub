@@ -104,9 +104,18 @@ export function normalizeWordXml(xmlContent: string): string {
   const rightChevronFragmented = /((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>\s*<w:t(?:[^>]*)>)+)»/g;
   result = result.replace(rightChevronFragmented, () => "»");
   
-  // Handle underscores that get their own text runs
+  // Handle underscores that get their own text runs — only near merge tag delimiters
   const fragmentedUnderscore = /([A-Za-z0-9]+)(\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:[^>]*)>)_(\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:[^>]*)>)?([A-Za-z0-9]+)/g;
-  result = result.replace(fragmentedUnderscore, "$1_$4");
+  result = result.replace(fragmentedUnderscore, (match, before, _xml1, _xml2, after, offset) => {
+    const contextStart = Math.max(0, offset - 200);
+    const contextEnd = Math.min(result.length, offset + match.length + 200);
+    const context = result.substring(contextStart, contextEnd);
+    if (context.includes('{{') || context.includes('}}') || context.includes('\u00AB') || context.includes('\u00BB')) {
+      console.log(`[tag-parser] Consolidated fragmented underscore: ${before}_${after}`);
+      return `${before}_${after}`;
+    }
+    return match; // Not near a merge tag — leave untouched
+  });
   
   // Handle split opening braces: {</w:t></w:r><w:r><w:t>{ -> {{
   const splitOpenBraces = /\{((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\{/g;
