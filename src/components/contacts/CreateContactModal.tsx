@@ -63,9 +63,16 @@ const getInitialForm = (contactType: string): Record<string, string> => {
   }
   if (contactType === 'broker') {
     return {
-      company: '', first_name: '', middle_name: '', last_name: '',
+      company: '', first_name: '', middle_name: '', last_name: '', full_name: '',
       email: '', License: '',
       'address.street': '', 'address.city': '', 'address.state': '', 'address.zip': '',
+      'mailing.street': '', 'mailing.city': '', 'mailing.state': '', 'mailing.zip': '',
+      mailing_same_as_primary: 'false',
+      'phone.home': '', 'phone.work': '', 'phone.cell': '', 'phone.fax': '',
+      'preferred.home': 'false', 'preferred.work': 'false', 'preferred.cell': 'false', 'preferred.fax': 'false',
+      tax_id_type: '', tax_id: '', tin_verified: 'false',
+      frozen: 'false', ach: 'false', agreement_on_file: 'false',
+      issue_1099: 'false',
     };
   }
   // borrower
