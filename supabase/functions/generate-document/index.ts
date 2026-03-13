@@ -215,7 +215,7 @@ async function generateSingleDocument(
     // Force text dataType for identifier fields that should never be number-formatted
     for (const [key, val] of fieldValues.entries()) {
       const lk = key.toLowerCase();
-      if (lk.includes("loannumber") || lk.includes("loan_number") || lk.includes("accountnumber") || lk.includes("account_number")) {
+      if (lk.includes("loannumber") || lk.includes("loan_number") || lk.includes("accountnumber") || lk.includes("account_number") || lk.includes("licensenumber") || lk.includes("license_number") || lk.includes("brokerlicens") || lk.includes("brokerid")) {
         if (val.dataType !== "text") {
           console.log(`[generate-document] Overriding dataType for ${key}: ${val.dataType} -> text`);
           fieldValues.set(key, { ...val, dataType: "text" });
