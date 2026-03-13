@@ -34,6 +34,27 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
     return { filledCount, totalRequired: requiredFields.length, missingCount: requiredFields.length - filledCount };
   }, [values]);
 
+  // Reactive sync: when primary address changes while "Same as Primary" is checked
+  const primaryStreetVal = getValue('street');
+  const primaryCityVal = getValue('city');
+  const primaryStateVal = getValue('state');
+  const primaryZipVal = getValue('zip');
+  const isMailingSame = getBoolValue('mailingSameAsPrimary');
+
+  useEffect(() => {
+    if (isMailingSame && onValueChange) {
+      const mappings: [keyof typeof FIELD_KEYS, string][] = [
+        ['mailingStreet', primaryStreetVal],
+        ['mailingCity', primaryCityVal],
+        ['mailingState', primaryStateVal],
+        ['mailingZip', primaryZipVal],
+      ];
+      mappings.forEach(([dst, srcVal]) => {
+        onValueChange(FIELD_KEYS[dst], srcVal);
+      });
+    }
+  }, [isMailingSame, primaryStreetVal, primaryCityVal, primaryStateVal, primaryZipVal]);
+
   const renderInlineField = (key: keyof typeof FIELD_KEYS, label: string, required = false) => (
     <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
       <div className="flex items-center gap-2">
