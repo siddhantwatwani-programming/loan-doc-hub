@@ -269,6 +269,23 @@ async function generateSingleDocument(
       }
     }
 
+    // Auto-compute pr_p_address from pr_p_* component fields (new naming convention)
+    const existingPrPAddr = fieldValues.get("pr_p_address");
+    if (!existingPrPAddr || !existingPrPAddr.rawValue) {
+      const street = fieldValues.get("pr_p_street")?.rawValue;
+      const city = fieldValues.get("pr_p_city")?.rawValue;
+      const state = fieldValues.get("pr_p_state")?.rawValue;
+      const zip = fieldValues.get("pr_p_zip")?.rawValue;
+      const county = fieldValues.get("pr_p_county")?.rawValue;
+      const country = fieldValues.get("pr_p_country")?.rawValue;
+      const parts = [street, city, state, country, zip].filter(Boolean).map(String);
+      if (parts.length > 0) {
+        const fullAddress = parts.join(", ");
+        fieldValues.set("pr_p_address", { rawValue: fullAddress, dataType: "text" });
+        console.log(`[generate-document] Auto-computed pr_p_address = "${fullAddress}"`);
+      }
+    }
+
     // Auto-compute Broker.Name from broker1 name components if not already set
     const existingBrokerName = fieldValues.get("Broker.Name") || fieldValues.get("broker.name");
     if (!existingBrokerName || !existingBrokerName.rawValue) {
