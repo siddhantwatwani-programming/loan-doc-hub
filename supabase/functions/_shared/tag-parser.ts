@@ -104,17 +104,21 @@ export function normalizeWordXml(xmlContent: string): string {
   const rightChevronFragmented = /((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>\s*<w:t(?:[^>]*)>)+)»/g;
   result = result.replace(rightChevronFragmented, () => "»");
   
-  // Handle underscores that get their own text runs — only near merge tag delimiters
+  // Handle underscores that get their own text runs — only inside paragraphs with merge tag delimiters
   const fragmentedUnderscore = /([A-Za-z0-9]+)(\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:[^>]*)>)_(\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:[^>]*)>)?([A-Za-z0-9]+)/g;
   result = result.replace(fragmentedUnderscore, (match, before, _xml1, _xml2, after, offset) => {
-    const contextStart = Math.max(0, offset - 200);
-    const contextEnd = Math.min(result.length, offset + match.length + 200);
-    const context = result.substring(contextStart, contextEnd);
-    if (context.includes('{{') || context.includes('}}') || context.includes('\u00AB') || context.includes('\u00BB')) {
+    // Only consolidate if the CONTAINING PARAGRAPH has merge tag delimiters
+    const paraStart = result.lastIndexOf('<w:p ', offset);
+    const paraStartAlt = result.lastIndexOf('<w:p>', offset);
+    const pStart = Math.max(paraStart, paraStartAlt);
+    const paraEnd = result.indexOf('</w:p>', offset + match.length);
+    if (pStart === -1 || paraEnd === -1) return match;
+    const paragraph = result.substring(pStart, paraEnd);
+    if (paragraph.includes('\u00AB') || paragraph.includes('\u00BB') || paragraph.includes('{{') || paragraph.includes('}}') || paragraph.includes('{') && paragraph.includes('}')) {
       console.log(`[tag-parser] Consolidated fragmented underscore: ${before}_${after}`);
       return `${before}_${after}`;
     }
-    return match; // Not near a merge tag — leave untouched
+    return match; // Paragraph has no merge tag delimiters — leave untouched
   });
   
   // Handle split opening braces: {</w:t></w:r><w:r><w:t>{ -> {{
@@ -140,30 +144,37 @@ export function normalizeWordXml(xmlContent: string): string {
     result = result.replace(instrTextConsolidate, '$1$2$4$3');
   } while (result !== prevInstr);
 
-  // Handle dots fragmented across runs — only near merge tag delimiters
+  // Handle dots fragmented across runs — only inside paragraphs with merge tag delimiters
   const fragmentedDot = /([A-Za-z0-9_]+)((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\.([A-Za-z0-9_]+)/g;
   result = result.replace(fragmentedDot, (match, before, xmlTags, after, offset) => {
-    const contextStart = Math.max(0, offset - 200);
-    const contextEnd = Math.min(result.length, offset + match.length + 200);
-    const context = result.substring(contextStart, contextEnd);
-    if (context.includes('{{') || context.includes('}}') || context.includes('\u00AB') || context.includes('\u00BB')) {
+    // Only consolidate if the CONTAINING PARAGRAPH has merge tag delimiters
+    const paraStart = result.lastIndexOf('<w:p ', offset);
+    const paraStartAlt = result.lastIndexOf('<w:p>', offset);
+    const pStart = Math.max(paraStart, paraStartAlt);
+    const paraEnd = result.indexOf('</w:p>', offset + match.length);
+    if (pStart === -1 || paraEnd === -1) return match;
+    const paragraph = result.substring(pStart, paraEnd);
+    if (paragraph.includes('\u00AB') || paragraph.includes('\u00BB') || paragraph.includes('{{') || paragraph.includes('}}') || paragraph.includes('{') && paragraph.includes('}')) {
       console.log(`[tag-parser] Consolidated fragmented dot: ${before}.${after}`);
       return `${before}.${after}`;
     }
-    return match; // Normal sentence period at run boundary — leave untouched
+    return match; // Paragraph has no merge tag delimiters — leave untouched
   });
 
-  // Also handle dots where the dot character is inside its own XML run — only near merge tags
+  // Also handle dots where the dot character is inside its own XML run — only inside paragraphs with delimiters
   const fragmentedDotInRun = /([A-Za-z0-9_]+)\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>\.\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>([A-Za-z0-9_]+)/g;
   result = result.replace(fragmentedDotInRun, (match, before, after, offset) => {
-    const contextStart = Math.max(0, offset - 200);
-    const contextEnd = Math.min(result.length, offset + match.length + 200);
-    const context = result.substring(contextStart, contextEnd);
-    if (context.includes('{{') || context.includes('}}') || context.includes('\u00AB') || context.includes('\u00BB')) {
+    const paraStart = result.lastIndexOf('<w:p ', offset);
+    const paraStartAlt = result.lastIndexOf('<w:p>', offset);
+    const pStart = Math.max(paraStart, paraStartAlt);
+    const paraEnd = result.indexOf('</w:p>', offset + match.length);
+    if (pStart === -1 || paraEnd === -1) return match;
+    const paragraph = result.substring(pStart, paraEnd);
+    if (paragraph.includes('\u00AB') || paragraph.includes('\u00BB') || paragraph.includes('{{') || paragraph.includes('}}') || paragraph.includes('{') && paragraph.includes('}')) {
       console.log(`[tag-parser] Consolidated dot-in-run: ${before}.${after}`);
       return `${before}.${after}`;
     }
-    return match; // Normal period in its own run — leave untouched
+    return match; // Paragraph has no merge tag delimiters — leave untouched
   });
 
   // Handle fragmented curly brace patterns {{...}}
@@ -1000,7 +1011,13 @@ export function replaceMergeTags(
       console.log(`[tag-parser] No data for ${tag.tagName} (canonical: ${canonicalKey})`);
     }
     
-    result = result.split(tag.fullMatch).join(resolvedValue);
+    // XML-escape the value to prevent corruption from &, <, >, " characters
+    const xmlSafeValue = resolvedValue
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+    result = result.split(tag.fullMatch).join(xmlSafeValue);
   }
   
   // Always run label-based replacement after merge tag replacement
@@ -1009,13 +1026,16 @@ export function replaceMergeTags(
   result = labelResult.content;
   console.log(`[tag-parser] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
 
-  // Final safety net: remove any remaining unresolved {{...}} merge tags
-  // to prevent dangling braces from corrupting document layout
-  const unresolvedTagPattern = /\{\{[A-Za-z0-9_.| ]+\}\}/g;
-  const unresolvedTags = result.match(unresolvedTagPattern);
-  if (unresolvedTags && unresolvedTags.length > 0) {
-    console.log(`[tag-parser] Cleaning ${unresolvedTags.length} unresolved tags: ${unresolvedTags.join(', ')}`);
-    result = result.replace(unresolvedTagPattern, '');
+  // Final safety net: remove remaining unresolved {{...}} merge tags
+  // Only do this when tags were actually detected — if 0 tags found,
+  // normalization may have failed and we should not blank valid tokens
+  if (tags.length > 0) {
+    const unresolvedTagPattern = /\{\{[A-Za-z0-9_.| ]+\}\}/g;
+    const unresolvedTags = result.match(unresolvedTagPattern);
+    if (unresolvedTags && unresolvedTags.length > 0) {
+      console.log(`[tag-parser] Cleaning ${unresolvedTags.length} unresolved tags: ${unresolvedTags.join(', ')}`);
+      result = result.replace(unresolvedTagPattern, '');
+    }
   }
 
   // NOTE: Removed aggressive dangling {{ cleanup — it was stripping valid merge tags

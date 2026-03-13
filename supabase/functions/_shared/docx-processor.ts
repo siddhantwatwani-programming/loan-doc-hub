@@ -28,14 +28,27 @@ export async function processDocx(
 
   for (const [filename, content] of Object.entries(decompressed)) {
     if (filename.endsWith(".xml") || filename.endsWith(".rels")) {
-      console.log(`[docx-processor] Processing XML file: ${filename} (${content.length} bytes)`);
-      const originalXml = decoder.decode(content);
-      const processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
-      // If unchanged, reuse original bytes to avoid encode/decode drift
-      if (processedXml === originalXml) {
-        processedFiles[filename] = [content, { level: 6 }];
+      // Only run merge tag replacement on content-bearing XML parts.
+      // Processing styles, numbering, settings, themes, etc. risks corrupting
+      // their XML structure (no merge tags exist there anyway).
+      const isContentPart = filename === "word/document.xml" ||
+        filename.startsWith("word/header") ||
+        filename.startsWith("word/footer") ||
+        filename.startsWith("word/footnotes") ||
+        filename.startsWith("word/endnotes");
+
+      if (isContentPart) {
+        console.log(`[docx-processor] Processing content XML: ${filename} (${content.length} bytes)`);
+        const originalXml = decoder.decode(content);
+        const processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+        if (processedXml === originalXml) {
+          processedFiles[filename] = [content, { level: 6 }];
+        } else {
+          processedFiles[filename] = [encoder.encode(processedXml), { level: 6 }];
+        }
       } else {
-        processedFiles[filename] = [encoder.encode(processedXml), { level: 6 }];
+        // Non-content XML: preserve original bytes untouched
+        processedFiles[filename] = [content, { level: 6 }];
       }
     } else {
       // Binary files: store without recompression to preserve exact bytes
