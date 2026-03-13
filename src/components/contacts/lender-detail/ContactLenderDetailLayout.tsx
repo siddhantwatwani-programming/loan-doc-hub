@@ -38,6 +38,8 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
     return result;
   });
 
+  const initialValuesRef = useRef<Record<string, string>>({ ...values });
+
   const handleValueChange = useCallback((fieldKey: string, value: string) => {
     setValues(prev => ({ ...prev, [fieldKey]: value }));
   }, []);
@@ -48,7 +50,24 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
       const stripped = key.replace(/^lender\./, '');
       contactData[stripped] = value;
     });
-    await onSave(contact.id, contactData);
+
+    // Detect changes for event journal
+    const changes: ContactFieldChange[] = [];
+    const allKeys = new Set([...Object.keys(values), ...Object.keys(initialValuesRef.current)]);
+    allKeys.forEach(key => {
+      const oldVal = initialValuesRef.current[key] || '';
+      const newVal = values[key] || '';
+      if (oldVal !== newVal) {
+        const label = key.replace(/^lender\./, '').replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        changes.push({ fieldLabel: label, oldValue: oldVal, newValue: newVal });
+      }
+    });
+
+    const saved = await onSave(contact.id, contactData);
+    if (saved && changes.length > 0) {
+      await logContactEvent(contact.id, 'Lender Info', changes);
+      initialValuesRef.current = { ...values };
+    }
   }, [values, contact.id, onSave]);
 
   const emptyFields: any[] = [];
