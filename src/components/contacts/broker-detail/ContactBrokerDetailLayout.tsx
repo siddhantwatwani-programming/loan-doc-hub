@@ -171,7 +171,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
       case 'attachments':
         return (
           <div className="p-6">
-            <BrokerAttachments brokerId={contact.contact_id} />
+            <BrokerAttachments brokerId={contact.contact_id} contactDbId={contact.id} />
           </div>
         );
       case 'events-journal':
