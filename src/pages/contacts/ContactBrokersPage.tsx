@@ -104,6 +104,43 @@ const ContactBrokersPage: React.FC = () => {
     await crud.deleteContacts(ids);
   }, [crud]);
 
+  const renderCellValue = useCallback((contact: ContactRecord, columnId: string): React.ReactNode => {
+    const cd = (contact.contact_data || {}) as Record<string, string>;
+
+    if (columnId === 'preferred_phone') {
+      if (cd['preferred.home'] === 'true') return 'Home';
+      if (cd['preferred.work'] === 'true') return 'Work';
+      if (cd['preferred.cell'] === 'true') return 'Cell';
+      if (cd['preferred.fax'] === 'true') return 'Fax';
+      return '-';
+    }
+
+    if (BOOLEAN_COLUMNS.has(columnId)) {
+      const val = cd[columnId];
+      return val === 'true' ? '✓' : '';
+    }
+
+    const topLevel: Record<string, string | null | undefined> = {
+      contact_id: contact.contact_id,
+      full_name: contact.full_name,
+      first_name: contact.first_name,
+      last_name: contact.last_name,
+      email: contact.email,
+      phone: contact.phone,
+      city: contact.city,
+      state: contact.state,
+      company: contact.company,
+    };
+    if (columnId in topLevel) {
+      const val = topLevel[columnId] || '';
+      if (columnId === 'full_name') return <span className="font-medium">{val || '-'}</span>;
+      return val || '-';
+    }
+
+    const val = cd[columnId] || '';
+    return val || '-';
+  }, []);
+
   if (selectedContact) {
     return (
       <div className="h-full flex flex-col">
@@ -132,10 +169,11 @@ const ContactBrokersPage: React.FC = () => {
         onCreateNew={() => setModalOpen(true)}
         onDeleteSelected={handleDeleteSelected}
         defaultColumns={DEFAULT_COLUMNS}
-        tableConfigKey="contact_brokers_v3"
+        tableConfigKey="contact_brokers_v4"
         addButtonLabel="Add Broker"
         breadcrumbLabel="Brokers"
         filterOptions={BROKER_FILTER_OPTIONS}
+        renderCellValue={renderCellValue}
       />
       <CreateContactModal
         open={modalOpen}
