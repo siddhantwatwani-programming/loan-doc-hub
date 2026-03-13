@@ -104,9 +104,18 @@ export function normalizeWordXml(xmlContent: string): string {
   const rightChevronFragmented = /((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>\s*<w:t(?:[^>]*)>)+)»/g;
   result = result.replace(rightChevronFragmented, () => "»");
   
-  // Handle underscores that get their own text runs
+  // Handle underscores that get their own text runs — only near merge tag delimiters
   const fragmentedUnderscore = /([A-Za-z0-9]+)(\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:[^>]*)>)_(\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:[^>]*)>)?([A-Za-z0-9]+)/g;
-  result = result.replace(fragmentedUnderscore, "$1_$4");
+  result = result.replace(fragmentedUnderscore, (match, before, _xml1, _xml2, after, offset) => {
+    const contextStart = Math.max(0, offset - 200);
+    const contextEnd = Math.min(result.length, offset + match.length + 200);
+    const context = result.substring(contextStart, contextEnd);
+    if (context.includes('{{') || context.includes('}}') || context.includes('\u00AB') || context.includes('\u00BB')) {
+      console.log(`[tag-parser] Consolidated fragmented underscore: ${before}_${after}`);
+      return `${before}_${after}`;
+    }
+    return match; // Not near a merge tag — leave untouched
+  });
   
   // Handle split opening braces: {</w:t></w:r><w:r><w:t>{ -> {{
   const splitOpenBraces = /\{((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\{/g;
@@ -131,19 +140,30 @@ export function normalizeWordXml(xmlContent: string): string {
     result = result.replace(instrTextConsolidate, '$1$2$4$3');
   } while (result !== prevInstr);
 
-  // Handle dots fragmented across runs: field</w:t></w:r><w:r><w:t>.name -> field.name
+  // Handle dots fragmented across runs — only near merge tag delimiters
   const fragmentedDot = /([A-Za-z0-9_]+)((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\.([A-Za-z0-9_]+)/g;
-  result = result.replace(fragmentedDot, (match, before, xmlTags, after) => {
-    console.log(`[tag-parser] Consolidated fragmented dot: ${before}.${after}`);
-    return `${before}.${after}`;
+  result = result.replace(fragmentedDot, (match, before, xmlTags, after, offset) => {
+    const contextStart = Math.max(0, offset - 200);
+    const contextEnd = Math.min(result.length, offset + match.length + 200);
+    const context = result.substring(contextStart, contextEnd);
+    if (context.includes('{{') || context.includes('}}') || context.includes('\u00AB') || context.includes('\u00BB')) {
+      console.log(`[tag-parser] Consolidated fragmented dot: ${before}.${after}`);
+      return `${before}.${after}`;
+    }
+    return match; // Normal sentence period at run boundary — leave untouched
   });
 
-  // Also handle dots where the dot character is inside its own XML run
-  // e.g., Terms</w:t></w:r><w:r><w:t>.</w:t></w:r><w:r><w:t>LoanNumber
+  // Also handle dots where the dot character is inside its own XML run — only near merge tags
   const fragmentedDotInRun = /([A-Za-z0-9_]+)\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>\.\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>([A-Za-z0-9_]+)/g;
-  result = result.replace(fragmentedDotInRun, (match, before, after) => {
-    console.log(`[tag-parser] Consolidated dot-in-run: ${before}.${after}`);
-    return `${before}.${after}`;
+  result = result.replace(fragmentedDotInRun, (match, before, after, offset) => {
+    const contextStart = Math.max(0, offset - 200);
+    const contextEnd = Math.min(result.length, offset + match.length + 200);
+    const context = result.substring(contextStart, contextEnd);
+    if (context.includes('{{') || context.includes('}}') || context.includes('\u00AB') || context.includes('\u00BB')) {
+      console.log(`[tag-parser] Consolidated dot-in-run: ${before}.${after}`);
+      return `${before}.${after}`;
+    }
+    return match; // Normal period in its own run — leave untouched
   });
 
   // Handle fragmented curly brace patterns {{...}}
@@ -998,9 +1018,9 @@ export function replaceMergeTags(
     result = result.replace(unresolvedTagPattern, '');
   }
 
-  // Also clean dangling {{ without matching }} (cross-paragraph fragmentation artifact)
-  // A {{ followed by 200+ chars before the next }} is almost certainly a broken tag
-  result = result.replace(/\{\{(?=[^}]{200,})/g, '');
+  // NOTE: Removed aggressive dangling {{ cleanup — it was stripping valid merge tags
+  // where Word XML markup between {{ and }} exceeded 200 chars. The paragraph-level
+  // consolidation safety net above handles truly fragmented tags adequately.
   
   return result;
 }
