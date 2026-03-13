@@ -160,7 +160,7 @@ export function normalizeWordXml(xmlContent: string): string {
     const paraEnd = result.indexOf('</w:p>', offset + match.length);
     if (pStart === -1 || paraEnd === -1) return match;
     const paragraph = result.substring(pStart, paraEnd);
-    if (paragraph.includes('\u00AB') || paragraph.includes('\u00BB') || paragraph.includes('{{') || paragraph.includes('}}') || paragraph.includes('{') && paragraph.includes('}')) {
+    if (paragraph.includes('\u00AB') || paragraph.includes('\u00BB') || paragraph.includes('{{') || paragraph.includes('}}')) {
       console.log(`[tag-parser] Consolidated fragmented dot: ${before}.${after}`);
       return `${before}.${after}`;
     }
