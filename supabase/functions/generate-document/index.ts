@@ -187,6 +187,18 @@ async function generateSingleDocument(
       });
     });
 
+    // Ensure field_dictionary field_key is populated even when indexed_key took priority
+    for (const sv of (sectionValues || [])) {
+      for (const [key, data] of Object.entries((sv as any).field_values || {})) {
+        const fieldDictId = key.includes("::") ? key.split("::")[1] : key;
+        const fieldDict = allFieldDictMap.get(fieldDictId);
+        if (fieldDict && !fieldValues.has(fieldDict.field_key)) {
+          const rawValue = extractRawValueFromJsonb(data, fieldDict.data_type || "text");
+          fieldValues.set(fieldDict.field_key, { rawValue, dataType: fieldDict.data_type || "text" });
+        }
+      }
+    }
+
     // Bridge indexed entity keys (e.g., borrower1.full_name) to non-indexed aliases
     // (e.g., borrower.full_name) so legacy merge tag aliases can resolve
     const indexedPattern = /^([a-zA-Z_]+?)(\d+)\.(.+)$/;
@@ -216,7 +228,8 @@ async function generateSingleDocument(
     // Inject systemDate so only templates using {{systemDate}} get the current date
     const systemDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     fieldValues.set("systemDate", { rawValue: systemDate, dataType: "date" });
-    console.log(`[generate-document] Injected systemDate: ${systemDate}`);
+    fieldValues.set("currentDate", { rawValue: systemDate, dataType: "date" });
+    console.log(`[generate-document] Injected systemDate and currentDate: ${systemDate}`);
 
     // Auto-compute borrower.borrower_description if not already set
     const existingDesc = fieldValues.get("borrower.borrower_description");
@@ -265,6 +278,23 @@ async function generateSingleDocument(
           fieldValues.set(`Property${idx}.Address`, { rawValue: fullAddress, dataType: "text" });
           console.log(`[generate-document] Auto-computed ${prefix}.address = "${fullAddress}"`);
         }
+      }
+    }
+
+    // Auto-compute pr_p_address from pr_p_* component fields (new naming convention)
+    const existingPrPAddr = fieldValues.get("pr_p_address");
+    if (!existingPrPAddr || !existingPrPAddr.rawValue) {
+      const street = fieldValues.get("pr_p_street")?.rawValue;
+      const city = fieldValues.get("pr_p_city")?.rawValue;
+      const state = fieldValues.get("pr_p_state")?.rawValue;
+      const zip = fieldValues.get("pr_p_zip")?.rawValue;
+      const county = fieldValues.get("pr_p_county")?.rawValue;
+      const country = fieldValues.get("pr_p_country")?.rawValue;
+      const parts = [street, city, state, country, zip].filter(Boolean).map(String);
+      if (parts.length > 0) {
+        const fullAddress = parts.join(", ");
+        fieldValues.set("pr_p_address", { rawValue: fullAddress, dataType: "text" });
+        console.log(`[generate-document] Auto-computed pr_p_address = "${fullAddress}"`);
       }
     }
 
