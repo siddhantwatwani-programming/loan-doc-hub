@@ -95,25 +95,57 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 }) => {
   const [form, setForm] = useState<Record<string, string>>(() => getInitialForm(contactType));
 
-  const set = (field: string, value: string) =>
-    setForm((prev) => ({ ...prev, [field]: value }));
+  // Determine primary address key prefix based on contact type
+  const primaryPrefix = contactType === 'lender' ? 'primary_address' : 'address';
+
+  const set = useCallback((field: string, value: string) => {
+    setForm((prev) => {
+      const updated = { ...prev, [field]: value };
+
+      // When "Same as Primary" is checked, copy primary to mailing
+      if (field === 'mailing_same_as_primary') {
+        const prefix = updated['primary_address.street'] !== undefined ? 'primary_address' : 'address';
+        if (value === 'true') {
+          updated['mailing.street'] = updated[`${prefix}.street`] || '';
+          updated['mailing.city'] = updated[`${prefix}.city`] || '';
+          updated['mailing.state'] = updated[`${prefix}.state`] || '';
+          updated['mailing.zip'] = updated[`${prefix}.zip`] || '';
+        } else {
+          updated['mailing.street'] = '';
+          updated['mailing.city'] = '';
+          updated['mailing.state'] = '';
+          updated['mailing.zip'] = '';
+        }
+      }
+
+      return updated;
+    });
+  }, []);
+
+  // Reactive sync: when primary address changes while "Same as Primary" is checked
+  const primaryStreet = form[`${primaryPrefix}.street`] || '';
+  const primaryCity = form[`${primaryPrefix}.city`] || '';
+  const primaryState = form[`${primaryPrefix}.state`] || '';
+  const primaryZip = form[`${primaryPrefix}.zip`] || '';
+  const isSameAsPrimary = form.mailing_same_as_primary === 'true';
+
+  useEffect(() => {
+    if (isSameAsPrimary) {
+      setForm((prev) => ({
+        ...prev,
+        'mailing.street': primaryStreet,
+        'mailing.city': primaryCity,
+        'mailing.state': primaryState,
+        'mailing.zip': primaryZip,
+      }));
+    }
+  }, [isSameAsPrimary, primaryStreet, primaryCity, primaryState, primaryZip]);
 
   const handleSubmit = () => {
     const data = { ...form };
     if (!data.full_name) {
       const mid = data.middle_name || data.middle_initial || '';
       data.full_name = [data.first_name, mid, data.last_name].filter(Boolean).join(' ');
-    }
-    if (data.mailing_same_as_primary === 'true') {
-      // Lender uses primary_address.*, broker uses address.*
-      const streetKey = data['primary_address.street'] !== undefined ? 'primary_address.street' : 'address.street';
-      const cityKey = data['primary_address.city'] !== undefined ? 'primary_address.city' : 'address.city';
-      const stateKey = data['primary_address.state'] !== undefined ? 'primary_address.state' : 'address.state';
-      const zipKey = data['primary_address.zip'] !== undefined ? 'primary_address.zip' : 'address.zip';
-      data['mailing.street'] = data[streetKey] || '';
-      data['mailing.city'] = data[cityKey] || '';
-      data['mailing.state'] = data[stateKey] || '';
-      data['mailing.zip'] = data[zipKey] || '';
     }
     onSubmit(data);
     setForm(getInitialForm(contactType));
