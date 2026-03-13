@@ -30,7 +30,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
   onBack,
   onSave,
 }) => {
-  const [activeSection, setActiveSection] = useState<BrokerSection>('dashboard');
+  const [activeSection, setActiveSection] = useState<BrokerSection>('broker');
   const [values, setValues] = useState<Record<string, string>>(() => {
     const result: Record<string, string> = {};
     Object.entries(contact.contact_data || {}).forEach(([key, value]) => {
