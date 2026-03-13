@@ -1,6 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { logContactEvent, type ContactFieldChange } from '@/hooks/useContactEventJournal';
 import LenderDetailSidebar, { type LenderSection } from './LenderDetailSidebar';
 import { LenderInfoForm } from '@/components/deal/LenderInfoForm';
 import { LenderAuthorizedPartyForm } from '@/components/deal/LenderAuthorizedPartyForm';
