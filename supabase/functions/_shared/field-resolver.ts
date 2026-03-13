@@ -304,10 +304,12 @@ export function extractRawValueFromJsonb(data: any, dataType: string): string | 
     case "percentage":
     case "decimal":
     case "integer":
-      return data.value_number;
+      // Prefer value_number; fall back to value_text if stored as string
+      return data.value_number ?? data.value_text ?? null;
     case "date":
     case "datetime":
-      return data.value_date;
+      // Prefer value_date; fall back to value_text if stored as string
+      return data.value_date ?? data.value_text ?? null;
     case "text":
     case "boolean":
     case "phone":

@@ -347,6 +347,25 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
 
     if (allTagsComplete) { parasSkippedComplete++; return para; }
 
+    // NEW GATE: Only consolidate if tag delimiters themselves are fragmented
+    // across runs. If all {{ }} « » are intact within individual runs, the
+    // regex-level passes should have handled field-name fragmentation already.
+    // Blindly consolidating destroys run-level formatting in content-heavy paragraphs.
+    const hasFragmentedDelimiters = tTexts.some(t => {
+      // Check for single { not part of {{ or single } not part of }}
+      const stripped = t.replace(/\{\{/g, '@@').replace(/\}\}/g, '@@');
+      if (stripped.includes('{') || stripped.includes('}')) return true;
+      // Check for unpaired chevrons (« without » or vice versa)
+      if (t.includes('\u00AB') !== t.includes('\u00BB')) return true;
+      return false;
+    });
+
+    if (!hasFragmentedDelimiters) {
+      parasSkippedComplete++;
+      console.log(`[tag-parser] Skipping paragraph consolidation — delimiters intact in individual runs`);
+      return para;
+    }
+
     // Some tags are fragmented across <w:t> elements — consolidate all text
     // into the first <w:t> and empty the rest. This preserves the first run's
     // formatting (font, size, bold, etc.) for the replacement value.
@@ -1026,15 +1045,20 @@ export function replaceMergeTags(
   result = labelResult.content;
   console.log(`[tag-parser] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
 
-  // Final safety net: remove remaining unresolved {{...}} merge tags
-  // Only do this when tags were actually detected — if 0 tags found,
-  // normalization may have failed and we should not blank valid tokens
+  // Final safety net: remove only merge tags that were explicitly parsed
+  // and had no data. Do NOT globally remove all {{...}} patterns — that can
+  // blank tags that normalization failed to consolidate but are still valid.
   if (tags.length > 0) {
-    const unresolvedTagPattern = /\{\{[A-Za-z0-9_.| ]+\}\}/g;
-    const unresolvedTags = result.match(unresolvedTagPattern);
-    if (unresolvedTags && unresolvedTags.length > 0) {
-      console.log(`[tag-parser] Cleaning ${unresolvedTags.length} unresolved tags: ${unresolvedTags.join(', ')}`);
-      result = result.replace(unresolvedTagPattern, '');
+    const noDataTags = tags.filter(tag => {
+      const ck = resolveFieldKeyWithMap(tag.tagName, mergeTagMap, validFieldKeys);
+      const resolved = getFieldData(ck, fieldValues);
+      return !resolved?.data;
+    });
+    if (noDataTags.length > 0) {
+      console.log(`[tag-parser] Cleaning ${noDataTags.length} no-data tags: ${noDataTags.map(t => t.tagName).join(', ')}`);
+      for (const tag of noDataTags) {
+        result = result.split(tag.fullMatch).join('');
+      }
     }
   }
 

@@ -1,60 +1,110 @@
 
-Goal: fix the still-broken “Mortgage_Broker_Agency_Disclosure_CA” generation with the smallest possible code changes, preserving the existing flow and template structure.
 
-1) What I verified (deep analysis)
-- Compared uploaded files:
-  - Original template contains full sections 1–4 and 6 mapped placeholders.
-  - Generated file is structurally truncated (content between “Account Number” and “Broker’s Representative” is dropped), with spacing/layout collapse.
-- Mapping health:
-  - Template validation shows all 6 tags are correctly mapped.
-  - Field dictionary keys exist for all 6 tags.
-- Data availability for the tested deal:
-  - Present: br_p_fullName, ln_p_loanNumber, bk_p_company, bk_p_firstName, bk_p_lastName.
-  - Missing in this deal: bk_p_brokerLicens is null.
-- Root cause:
-  - Current normalization in `tag-parser.ts` is still too broad: dot/underscore run-consolidation can rewrite non-tag Word XML when tag delimiters exist nearby in the same paragraph context, which can corrupt run/paragraph structure and cause Word to drop large content blocks.
-  - Paragraph safety-net consolidation can flatten run-level structure more than needed, causing formatting drift.
-  - Unresolved-tag cleanup can blank tags that were not safely reconstructed.
-  - Secondary population gap: numeric fields are extracted from `value_number` only; if a numeric-tag field is stored in `value_text`, it can appear “mapped but empty”.
+## Event Journal (Change Log System) Implementation Plan
 
-2) Minimal implementation changes (only what is required)
-A. `supabase/functions/_shared/tag-parser.ts` (primary fix)
-- Replace paragraph-scope dot/underscore normalization with strict tag-bound normalization:
-  - Only normalize fragmented `.` / `_` when the match is inside a confirmed delimiter pair (`{{...}}` or `«...»`) within the same tag boundary.
-  - Do not normalize punctuation/underscores outside confirmed merge-tag bodies.
-- Gate paragraph safety-net:
-  - Run paragraph-level consolidation only when unresolved fragmented delimiters are detected after normal passes.
-  - Skip it for already-parseable tags to preserve original run formatting.
-- Make unresolved cleanup safe:
-  - Stop globally removing remaining `{{...}}` tokens by default.
-  - Only clear unresolved placeholders when they are positively identified as replaceable in the same processing pass.
+### Overview
+Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
 
-B. `supabase/functions/_shared/field-resolver.ts` (targeted population fix)
-- In `extractRawValueFromJsonb`, for numeric-like data types:
-  - Use `value_number` when present.
-  - Fallback to `value_text` when `value_number` is null and text exists.
-- This is minimal and keeps existing save/update APIs unchanged (no schema changes).
+### 1. Database: New Migration
+Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
 
-3) Why this fixes the reported symptoms
-- Prevents structural XML rewrites outside tag boundaries, which is what causes dropped paragraphs/sections and layout shifts.
-- Preserves in-place run/paragraph/table structure, so line spacing/alignment/positions remain template-accurate.
-- Ensures mapped fields stored as text in numeric slots are still populated (without DB/schema changes).
+```sql
+CREATE TABLE public.event_journal (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
+  event_number integer NOT NULL,
+  actor_user_id uuid NOT NULL,
+  section text NOT NULL,
+  details jsonb NOT NULL DEFAULT '[]',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-4) Validation checklist after implementation
-- Regenerate “Mortgage_Broker_Agency_Disclosure_CA” and compare against original:
-  - Sections 1–4 intact (no missing content block).
-  - Same visual layout: spacing, alignment, and table geometry.
-  - In-place field replacement only.
-- Field verification:
-  - br_p_fullName populates both occurrences.
-  - ln_p_loanNumber populates.
-  - bk_p_company populates.
-  - bk_p_firstName + bk_p_LastName populate.
-  - bk_p_brokerLicens populates when source data exists (including text fallback case).
-- Regression smoke test with 2–3 other templates to confirm no break in existing generation behavior.
+CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
+ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
 
-Technical details (implementation scope)
-- No UI/component/API flow changes.
-- No database schema changes.
-- No template file modifications.
-- No changes outside `tag-parser.ts` and `field-resolver.ts` unless strictly required by the above fix.
+-- RLS: CSR and Admin can view/insert
+CREATE POLICY "CSRs can view event journal" ON public.event_journal
+  FOR SELECT TO authenticated
+  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "CSRs can insert event journal" ON public.event_journal
+  FOR INSERT TO authenticated
+  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
+
+-- Auto-increment event_number per deal
+CREATE OR REPLACE FUNCTION public.set_event_journal_number()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
+BEGIN
+  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
+  FROM public.event_journal WHERE deal_id = NEW.deal_id;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_event_journal_number
+  BEFORE INSERT ON public.event_journal
+  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
+```
+
+The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
+
+### 2. Hook: `useEventJournal.ts` (New File)
+- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
+- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
+- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
+
+### 3. Capture Old→New Values in `useDealFields.ts`
+- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
+- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
+- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
+- After successful save, update the snapshot
+
+### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
+Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
+- Table with columns: Event #, User, Section, Details, Timestamp
+- Details column shows truncated preview (first 80 chars)
+- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
+- Sorted by event_number descending (newest first)
+
+### 5. `EventJournalViewer` Component (New File)
+`src/components/deal/EventJournalViewer.tsx`:
+- Fetches from `event_journal` table filtered by `deal_id`
+- Joins actor names from `profiles`
+- Table layout using existing shadcn Table components
+- "Show More" modal using existing Dialog component
+- Detail entries formatted as `Field Label: oldValue → newValue`
+
+### 6. Global Event Journal Page (New File)
+`src/pages/csr/GlobalEventJournalPage.tsx`:
+- Deal selector dropdown (search by deal number) at the top
+- Once a deal is selected, renders `EventJournalViewer` for that deal
+- Same table structure as the per-deal view
+
+### 7. Sidebar Navigation Update
+In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
+```tsx
+<PromotedNavSection
+  label="Event Journal"
+  icon={BookOpen}
+  items={[]}
+  directPath="/event-journal"
+  isCollapsed={isCollapsed}
+  searchQuery={searchQuery}
+/>
+```
+
+### 8. Route Registration
+In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
+
+### Files Changed
+| File | Change |
+|------|--------|
+| New migration | Create `event_journal` table with trigger |
+| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
+| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
+| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
+| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
+| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
+| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
+| `src/App.tsx` | Add `/event-journal` route |
+
