@@ -321,12 +321,6 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {renderInline('Last', 'last_name')}
               {renderInline('Email', 'email', 'email')}
               <div className="pt-2 space-y-1">
-                <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Tax Info</h3>
-                {renderInline('Tax ID Type', 'tax_id_type')}
-                {renderInline('TIN', 'tax_id')}
-                {renderCheckbox('TIN Verified', 'tin_verified')}
-              </div>
-              <div className="pt-2 space-y-1">
                 {renderCheckbox('Frozen', 'frozen')}
                 {renderCheckbox('ACH', 'ach')}
                 {renderCheckbox('Agreement on File', 'agreement_on_file')}
@@ -377,6 +371,14 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                   />
                 </div>
               ))}
+            </div>
+
+            {/* Column 4: Tax Info */}
+            <div className="space-y-1.5">
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Tax Info</h3>
+              {renderInline('Tax ID Type', 'tax_id_type')}
+              {renderInline('TIN', 'tax_id')}
+              {renderCheckbox('TIN Verified', 'tin_verified')}
             </div>
           </div>
         )}
