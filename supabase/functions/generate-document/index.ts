@@ -216,7 +216,8 @@ async function generateSingleDocument(
     // Inject systemDate so only templates using {{systemDate}} get the current date
     const systemDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     fieldValues.set("systemDate", { rawValue: systemDate, dataType: "date" });
-    console.log(`[generate-document] Injected systemDate: ${systemDate}`);
+    fieldValues.set("currentDate", { rawValue: systemDate, dataType: "date" });
+    console.log(`[generate-document] Injected systemDate and currentDate: ${systemDate}`);
 
     // Auto-compute borrower.borrower_description if not already set
     const existingDesc = fieldValues.get("borrower.borrower_description");
