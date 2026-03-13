@@ -46,6 +46,11 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
   { id: 'company', label: 'Company', visible: false },
+  { id: 'tin', label: 'TIN', visible: false },
+  { id: 'ach', label: 'ACH', visible: false },
+  { id: 'hold', label: 'Hold', visible: false },
+  { id: 'agreement', label: 'Agreement', visible: false },
+  { id: 'verified', label: 'Verified', visible: false },
 ];
 
 const BORROWER_FILTER_OPTIONS: FilterOption[] = [

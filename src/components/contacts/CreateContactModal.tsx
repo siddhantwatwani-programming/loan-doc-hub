@@ -349,9 +349,10 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
         )}
 
         {contactType === 'borrower' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-0">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-x-6 gap-y-0">
+            {/* Column 1: Name / Details */}
             <div className="space-y-1.5">
-              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Borrower Details</h3>
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Name</h3>
               {renderSelect('Borrower Type', 'borrower_type', BORROWER_TYPE_OPTIONS)}
               {renderInline('Full Name', 'full_name')}
               {renderInline('First', 'first_name')}
@@ -359,13 +360,74 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {renderInline('Last', 'last_name')}
               {renderSelect('Capacity', 'capacity', BORROWER_CAPACITY_OPTIONS)}
               {renderInline('Email', 'email', 'email')}
+              {renderInline('DOB', 'dob', 'date')}
+              <div className="pt-2 space-y-1">
+                <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Tax Info</h3>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs">Tax ID Type</Label>
+                  <Select value={form['tax_id_type'] || ''} onValueChange={(v) => set('tax_id_type', v)}>
+                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      {TAX_ID_TYPE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {renderInline('TIN', 'tax_id')}
+                {renderCheckbox('TIN Verified', 'tin_verified')}
+              </div>
+              <div className="pt-2 space-y-1">
+                {renderCheckbox('Hold', 'hold')}
+                {renderCheckbox('ACH', 'ach')}
+                {renderCheckbox('Agreement on File', 'agreement_on_file')}
+                {renderCheckbox('Send 1099', 'issue_1099')}
+              </div>
             </div>
+
+            {/* Column 2: Address */}
             <div className="space-y-1.5">
               <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
               {renderInline('Street', 'address.street')}
               {renderInline('City', 'address.city')}
-              {renderInline('State', 'state')}
+              {renderInline('State', 'address.state')}
               {renderInline('ZIP', 'address.zip')}
+              <div className="pt-2 space-y-1.5">
+                <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
+                {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
+                {renderInline('Street', 'mailing.street')}
+                {renderInline('City', 'mailing.city')}
+                {renderInline('State', 'mailing.state')}
+                {renderInline('ZIP', 'mailing.zip')}
+              </div>
+            </div>
+
+            {/* Column 3: Phone */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between border-b border-border pb-1 mb-2">
+                <h3 className="font-semibold text-xs text-foreground">Phone</h3>
+                <span className="font-semibold text-xs text-foreground">Pref</span>
+              </div>
+              {[
+                { label: 'Home', phoneKey: 'phone.home', prefKey: 'preferred.home' },
+                { label: 'Work', phoneKey: 'phone.work', prefKey: 'preferred.work' },
+                { label: 'Cell', phoneKey: 'phone.cell', prefKey: 'preferred.cell' },
+                { label: 'Fax', phoneKey: 'phone.fax', prefKey: 'preferred.fax' },
+              ].map((p) => (
+                <div key={p.label} className="flex items-center gap-2">
+                  <Label className="w-[40px] shrink-0 text-xs">{p.label}</Label>
+                  <Input
+                    type="tel"
+                    value={form[p.phoneKey] || ''}
+                    onChange={(e) => set(p.phoneKey, e.target.value)}
+                    className="h-7 text-xs flex-1"
+                  />
+                  <Checkbox
+                    checked={form[p.prefKey] === 'true'}
+                    onCheckedChange={(checked) => set(p.prefKey, String(!!checked))}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         )}
