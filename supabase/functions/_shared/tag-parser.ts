@@ -1011,7 +1011,13 @@ export function replaceMergeTags(
       console.log(`[tag-parser] No data for ${tag.tagName} (canonical: ${canonicalKey})`);
     }
     
-    result = result.split(tag.fullMatch).join(resolvedValue);
+    // XML-escape the value to prevent corruption from &, <, >, " characters
+    const xmlSafeValue = resolvedValue
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+    result = result.split(tag.fullMatch).join(xmlSafeValue);
   }
   
   // Always run label-based replacement after merge tag replacement
