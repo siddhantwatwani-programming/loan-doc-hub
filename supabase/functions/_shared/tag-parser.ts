@@ -72,20 +72,26 @@ export function normalizeWordXml(xmlContent: string): string {
   // First: flatten Word MERGEFIELD structures into plain «fieldName» text runs
   let result = flattenMergeFieldStructures(xmlContent);
   
-  // Strip Word spell-check markers (proofErr) that fragment merge tags
-  // These self-closing elements have no content value and break tag detection
-  result = result.replace(/<w:proofErr[^/]*\/>/g, '');
+  // Strip proofErr, lastRenderedPageBreak, and bookmark elements ONLY inside
+  // paragraphs that contain merge-tag delimiters. This preserves page layout,
+  // bookmarks, and structural XML in all non-tag paragraphs.
+  result = result.replace(/<w:p[\s>][\s\S]*?<\/w:p>/g, (para) => {
+    // Only strip in paragraphs that contain merge tag delimiters
+    if (!para.includes('{') && !para.includes('\u00AB') && !para.includes('\u00BB')) {
+      return para;
+    }
+    let cleaned = para;
+    cleaned = cleaned.replace(/<w:proofErr[^/]*\/>/g, '');
+    cleaned = cleaned.replace(/<w:lastRenderedPageBreak\/>/g, '');
+    cleaned = cleaned.replace(/<w:bookmarkStart[^/]*\/>/g, '');
+    cleaned = cleaned.replace(/<w:bookmarkEnd[^/]*\/>/g, '');
+    return cleaned;
+  });
   
   // NOTE: We intentionally preserve <w:rPr> blocks (run properties) which contain
   // font names, sizes, bold, italic, colors, etc. Stripping them would collapse
   // formatted documents to default styling. The run-consolidation regex below
   // handles skipping over <w:rPr> blocks between adjacent runs.
-  
-  // Strip non-text inline elements that sit between <w:r> and <w:t> and prevent
-  // adjacent-run consolidation: lastRenderedPageBreak, bookmarkStart/End, noBreakHyphen, softHyphen, tab
-  result = result.replace(/<w:lastRenderedPageBreak\/>/g, '');
-  result = result.replace(/<w:bookmarkStart[^/]*\/>/g, '');
-  result = result.replace(/<w:bookmarkEnd[^/]*\/>/g, '');
   
   
   // Handle fragmented merge fields
