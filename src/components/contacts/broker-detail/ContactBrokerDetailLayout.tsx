@@ -109,7 +109,11 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
       case 'dashboard':
         return (
           <div className="p-6">
-            <BrokerDashboard broker={brokerObj} onUpdate={() => {}} />
+            <BrokerInfoForm
+              disabled={false}
+              values={values}
+              onValueChange={handleValueChange}
+            />
           </div>
         );
       case 'portfolio':

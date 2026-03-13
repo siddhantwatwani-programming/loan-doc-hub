@@ -63,9 +63,16 @@ const getInitialForm = (contactType: string): Record<string, string> => {
   }
   if (contactType === 'broker') {
     return {
-      company: '', first_name: '', middle_name: '', last_name: '',
+      company: '', first_name: '', middle_name: '', last_name: '', full_name: '',
       email: '', License: '',
       'address.street': '', 'address.city': '', 'address.state': '', 'address.zip': '',
+      'mailing.street': '', 'mailing.city': '', 'mailing.state': '', 'mailing.zip': '',
+      mailing_same_as_primary: 'false',
+      'phone.home': '', 'phone.work': '', 'phone.cell': '', 'phone.fax': '',
+      'preferred.home': 'false', 'preferred.work': 'false', 'preferred.cell': 'false', 'preferred.fax': 'false',
+      tax_id_type: '', tax_id: '', tin_verified: 'false',
+      frozen: 'false', ach: 'false', agreement_on_file: 'false',
+      issue_1099: 'false',
     };
   }
   // borrower
@@ -91,10 +98,15 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
       data.full_name = [data.first_name, mid, data.last_name].filter(Boolean).join(' ');
     }
     if (data.mailing_same_as_primary === 'true') {
-      data['mailing.street'] = data['primary_address.street'] || '';
-      data['mailing.city'] = data['primary_address.city'] || '';
-      data['mailing.state'] = data['primary_address.state'] || '';
-      data['mailing.zip'] = data['primary_address.zip'] || '';
+      // Lender uses primary_address.*, broker uses address.*
+      const streetKey = data['primary_address.street'] !== undefined ? 'primary_address.street' : 'address.street';
+      const cityKey = data['primary_address.city'] !== undefined ? 'primary_address.city' : 'address.city';
+      const stateKey = data['primary_address.state'] !== undefined ? 'primary_address.state' : 'address.state';
+      const zipKey = data['primary_address.zip'] !== undefined ? 'primary_address.zip' : 'address.zip';
+      data['mailing.street'] = data[streetKey] || '';
+      data['mailing.city'] = data[cityKey] || '';
+      data['mailing.state'] = data[stateKey] || '';
+      data['mailing.zip'] = data[zipKey] || '';
     }
     onSubmit(data);
     setForm(getInitialForm(contactType));
@@ -257,22 +269,74 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
         )}
 
         {contactType === 'broker' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-0">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-x-6 gap-y-0">
+            {/* Column 1: Name */}
             <div className="space-y-1.5">
-              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Broker Details</h3>
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Name</h3>
               {renderInline('License', 'License')}
               {renderInline('Company', 'company')}
+              {renderInline('Full Name', 'full_name')}
               {renderInline('First', 'first_name')}
               {renderInline('Middle', 'middle_name')}
               {renderInline('Last', 'last_name')}
               {renderInline('Email', 'email', 'email')}
+              <div className="pt-2 space-y-1">
+                <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Tax Info</h3>
+                {renderInline('Tax ID Type', 'tax_id_type')}
+                {renderInline('TIN', 'tax_id')}
+                {renderCheckbox('TIN Verified', 'tin_verified')}
+              </div>
+              <div className="pt-2 space-y-1">
+                {renderCheckbox('Frozen', 'frozen')}
+                {renderCheckbox('ACH', 'ach')}
+                {renderCheckbox('Agreement on File', 'agreement_on_file')}
+                {renderCheckbox('Send 1099', 'issue_1099')}
+              </div>
             </div>
+
+            {/* Column 2: Address */}
             <div className="space-y-1.5">
               <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
               {renderInline('Street', 'address.street')}
               {renderInline('City', 'address.city')}
               {renderInline('State', 'address.state')}
               {renderInline('ZIP', 'address.zip')}
+              <div className="pt-2 space-y-1.5">
+                <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
+                {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
+                {renderInline('Street', 'mailing.street')}
+                {renderInline('City', 'mailing.city')}
+                {renderInline('State', 'mailing.state')}
+                {renderInline('ZIP', 'mailing.zip')}
+              </div>
+            </div>
+
+            {/* Column 3: Phone */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between border-b border-border pb-1 mb-2">
+                <h3 className="font-semibold text-xs text-foreground">Phone</h3>
+                <span className="font-semibold text-xs text-foreground">Pref</span>
+              </div>
+              {[
+                { label: 'Home', phoneKey: 'phone.home', prefKey: 'preferred.home' },
+                { label: 'Work', phoneKey: 'phone.work', prefKey: 'preferred.work' },
+                { label: 'Cell', phoneKey: 'phone.cell', prefKey: 'preferred.cell' },
+                { label: 'Fax', phoneKey: 'phone.fax', prefKey: 'preferred.fax' },
+              ].map((p) => (
+                <div key={p.label} className="flex items-center gap-2">
+                  <Label className="w-[40px] shrink-0 text-xs">{p.label}</Label>
+                  <Input
+                    type="tel"
+                    value={form[p.phoneKey] || ''}
+                    onChange={(e) => set(p.phoneKey, e.target.value)}
+                    className="h-7 text-xs flex-1"
+                  />
+                  <Checkbox
+                    checked={form[p.prefKey] === 'true'}
+                    onCheckedChange={(checked) => set(p.prefKey, String(!!checked))}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         )}
