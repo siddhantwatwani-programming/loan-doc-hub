@@ -46,6 +46,11 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'company', label: 'Company', visible: true },
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
+  { id: 'license', label: 'License', visible: false },
+  { id: 'tin', label: 'TIN', visible: false },
+  { id: 'ach', label: 'ACH', visible: false },
+  { id: 'frozen', label: 'Frozen', visible: false },
+  { id: 'agreement', label: 'Agreement', visible: false },
 ];
 
 const BROKER_FILTER_OPTIONS: FilterOption[] = [
