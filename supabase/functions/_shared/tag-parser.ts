@@ -1045,15 +1045,20 @@ export function replaceMergeTags(
   result = labelResult.content;
   console.log(`[tag-parser] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
 
-  // Final safety net: remove remaining unresolved {{...}} merge tags
-  // Only do this when tags were actually detected — if 0 tags found,
-  // normalization may have failed and we should not blank valid tokens
+  // Final safety net: remove only merge tags that were explicitly parsed
+  // and had no data. Do NOT globally remove all {{...}} patterns — that can
+  // blank tags that normalization failed to consolidate but are still valid.
   if (tags.length > 0) {
-    const unresolvedTagPattern = /\{\{[A-Za-z0-9_.| ]+\}\}/g;
-    const unresolvedTags = result.match(unresolvedTagPattern);
-    if (unresolvedTags && unresolvedTags.length > 0) {
-      console.log(`[tag-parser] Cleaning ${unresolvedTags.length} unresolved tags: ${unresolvedTags.join(', ')}`);
-      result = result.replace(unresolvedTagPattern, '');
+    const noDataTags = tags.filter(tag => {
+      const ck = resolveFieldKeyWithMap(tag.tagName, mergeTagMap, validFieldKeys);
+      const resolved = getFieldData(ck, fieldValues);
+      return !resolved?.data;
+    });
+    if (noDataTags.length > 0) {
+      console.log(`[tag-parser] Cleaning ${noDataTags.length} no-data tags: ${noDataTags.map(t => t.tagName).join(', ')}`);
+      for (const tag of noDataTags) {
+        result = result.split(tag.fullMatch).join('');
+      }
     }
   }
 
