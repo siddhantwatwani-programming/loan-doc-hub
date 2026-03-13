@@ -187,6 +187,18 @@ async function generateSingleDocument(
       });
     });
 
+    // Ensure field_dictionary field_key is populated even when indexed_key took priority
+    for (const sv of (sectionValues || [])) {
+      for (const [key, data] of Object.entries((sv as any).field_values || {})) {
+        const fieldDictId = key.includes("::") ? key.split("::")[1] : key;
+        const fieldDict = allFieldDictMap.get(fieldDictId);
+        if (fieldDict && !fieldValues.has(fieldDict.field_key)) {
+          const rawValue = extractRawValueFromJsonb(data, fieldDict.data_type || "text");
+          fieldValues.set(fieldDict.field_key, { rawValue, dataType: fieldDict.data_type || "text" });
+        }
+      }
+    }
+
     // Bridge indexed entity keys (e.g., borrower1.full_name) to non-indexed aliases
     // (e.g., borrower.full_name) so legacy merge tag aliases can resolve
     const indexedPattern = /^([a-zA-Z_]+?)(\d+)\.(.+)$/;
