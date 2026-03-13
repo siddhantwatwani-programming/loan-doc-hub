@@ -28,21 +28,43 @@ function flattenMergeFieldStructures(xml: string): string {
   // Match: <w:r>...<w:fldChar begin/>...</w:r> ... <w:instrText>MERGEFIELD name</w:instrText> ...
   //        <w:r>...<w:fldChar separate/>...</w:r> ... display run(s) ... <w:r>...<w:fldChar end/>...</w:r>
   // We capture the field name from instrText and the rPr from the display run (if any).
-  const complexFieldPattern = /<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+w:fldCharType="begin"[^/]*\/>\s*<\/w:r>([\s\S]*?)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+w:fldCharType="separate"[^/]*\/>\s*<\/w:r>([\s\S]*?)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+w:fldCharType="end"[^/]*\/>\s*<\/w:r>/g;
+  const complexFieldPattern = /<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="begin"[^/]*\/>\s*<\/w:r>([\s\S]*?)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="separate"[^/]*\/>\s*<\/w:r>([\s\S]*?)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="end"[^/]*\/>\s*<\/w:r>/g;
 
   result = result.replace(complexFieldPattern, (fullMatch, instrSection, displaySection) => {
-    // Extract field name from instrText
+    // Extract field name from instrText — try MERGEFIELD first, then curly braces, then bare key
     const instrMatch = instrSection.match(/MERGEFIELD\s+"?([A-Za-z0-9_.]+)"?/i);
-    if (!instrMatch) return fullMatch; // Not a MERGEFIELD, leave unchanged
+    let fieldName: string | null = null;
+    let useCurlySyntax = false;
 
-    const fieldName = instrMatch[1];
+    if (instrMatch) {
+      fieldName = instrMatch[1];
+    } else {
+      // Fallback: instrText contains {{fieldName}} (curly-brace field code)
+      const instrText = instrSection.match(/<w:instrText[^>]*>([\s\S]*?)<\/w:instrText>/i);
+      if (instrText) {
+        const curlyMatch = instrText[1].match(/\{\{([A-Za-z0-9_.]+)\}\}/);
+        if (curlyMatch) {
+          fieldName = curlyMatch[1];
+          useCurlySyntax = true;
+        } else {
+          // Bare field key (e.g., just "bk_p_brokerLicens")
+          const bareMatch = instrText[1].trim().match(/^([A-Za-z][A-Za-z0-9_.]+)$/);
+          if (bareMatch) {
+            fieldName = bareMatch[1];
+          }
+        }
+      }
+    }
+
+    if (!fieldName) return fullMatch; // Unrecognized instruction, leave unchanged
 
     // Extract rPr from the first display run (to preserve formatting)
     const rPrMatch = displaySection.match(/<w:rPr>([\s\S]*?)<\/w:rPr>/);
     const rPr = rPrMatch ? `<w:rPr>${rPrMatch[1]}</w:rPr>` : '';
 
     complexCount++;
-    return `<w:r>${rPr}<w:t>\u00AB${fieldName}\u00BB</w:t></w:r>`;
+    const tagText = useCurlySyntax ? `{{${fieldName}}}` : `\u00AB${fieldName}\u00BB`;
+    return `<w:r>${rPr}<w:t>${tagText}</w:t></w:r>`;
   });
 
   // Pattern B: Simple field wrappers: <w:fldSimple w:instr="MERGEFIELD name ...">inner</w:fldSimple>
