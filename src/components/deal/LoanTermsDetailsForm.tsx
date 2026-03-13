@@ -161,7 +161,21 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
           {renderInlineField(FIELD_KEYS.company, 'Company')}
           {renderInlineField(FIELD_KEYS.loanNumber, 'Loan Number')}
           {renderInlineField(FIELD_KEYS.assignedCsr, 'Assigned CSR')}
-          {renderInlineField(FIELD_KEYS.originatingVendor, 'Originating Vendor')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.originatingVendor}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[130px] shrink-0 text-xs">Originating Vendor</Label>
+              <BrokerIdSearch
+                value={getValue(FIELD_KEYS.originatingVendor)}
+                onChange={(brokerId, brokerFullName) => {
+                  setValue(FIELD_KEYS.originatingVendor, brokerId);
+                  if (brokerFullName) {
+                    setValue('loan_terms.originating_vendor_name', brokerFullName);
+                  }
+                }}
+                disabled={disabled}
+              />
+            </div>
+          </DirtyFieldWrapper>
           {renderInlineField(FIELD_KEYS.origination, 'Origination', 'date')}
           {renderInlineField(FIELD_KEYS.boarding, 'Boarding', 'date')}
           {renderInlineField(FIELD_KEYS.maturityDate, 'Maturity Date', 'date')}
