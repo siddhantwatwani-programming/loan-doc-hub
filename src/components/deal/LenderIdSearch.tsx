@@ -43,16 +43,18 @@ export const LenderIdSearch: React.FC<LenderIdSearchProps> = ({
   const searchLenders = useCallback(async (searchTerm: string) => {
     setIsLoading(true);
     try {
-      let queryBuilder = supabase
+      let qb = supabase
         .from('contacts')
         .select('contact_id, full_name, contact_data')
         .eq('contact_type', 'lender');
 
       if (searchTerm && searchTerm.length >= 1) {
-        queryBuilder = queryBuilder.or(`contact_id.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%`);
+        qb = qb.or(`contact_id.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%`);
       }
+
+      const { data, error } = await qb
         .order('contact_id', { ascending: true })
-        .limit(10);
+        .limit(50);
 
       if (error) throw error;
       const mapped = (data || []).map((row: any) => ({
