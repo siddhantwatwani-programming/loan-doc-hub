@@ -103,9 +103,6 @@ const ContactLendersPage: React.FC = () => {
 
   const handleSave = useCallback(async (id: string, contactData: Record<string, string>) => {
     const result = await crud.updateContact(id, contactData);
-    if (result) {
-      setSelectedContact(null);
-    }
     return result;
   }, [crud]);
 
