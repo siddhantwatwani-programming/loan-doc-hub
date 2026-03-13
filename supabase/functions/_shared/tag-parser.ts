@@ -1018,9 +1018,9 @@ export function replaceMergeTags(
     result = result.replace(unresolvedTagPattern, '');
   }
 
-  // Also clean dangling {{ without matching }} (cross-paragraph fragmentation artifact)
-  // A {{ followed by 200+ chars before the next }} is almost certainly a broken tag
-  result = result.replace(/\{\{(?=[^}]{200,})/g, '');
+  // NOTE: Removed aggressive dangling {{ cleanup — it was stripping valid merge tags
+  // where Word XML markup between {{ and }} exceeded 200 chars. The paragraph-level
+  // consolidation safety net above handles truly fragmented tags adequately.
   
   return result;
 }
