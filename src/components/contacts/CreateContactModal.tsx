@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -95,8 +95,51 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 }) => {
   const [form, setForm] = useState<Record<string, string>>(() => getInitialForm(contactType));
 
-  const set = (field: string, value: string) =>
-    setForm((prev) => ({ ...prev, [field]: value }));
+  // Determine primary address key prefix based on contact type
+  const primaryPrefix = contactType === 'lender' ? 'primary_address' : 'address';
+
+  const set = useCallback((field: string, value: string) => {
+    setForm((prev) => {
+      const updated = { ...prev, [field]: value };
+
+      // When "Same as Primary" is checked, copy primary to mailing
+      if (field === 'mailing_same_as_primary') {
+        const prefix = updated['primary_address.street'] !== undefined ? 'primary_address' : 'address';
+        if (value === 'true') {
+          updated['mailing.street'] = updated[`${prefix}.street`] || '';
+          updated['mailing.city'] = updated[`${prefix}.city`] || '';
+          updated['mailing.state'] = updated[`${prefix}.state`] || '';
+          updated['mailing.zip'] = updated[`${prefix}.zip`] || '';
+        } else {
+          updated['mailing.street'] = '';
+          updated['mailing.city'] = '';
+          updated['mailing.state'] = '';
+          updated['mailing.zip'] = '';
+        }
+      }
+
+      return updated;
+    });
+  }, []);
+
+  // Reactive sync: when primary address changes while "Same as Primary" is checked
+  const primaryStreet = form[`${primaryPrefix}.street`] || '';
+  const primaryCity = form[`${primaryPrefix}.city`] || '';
+  const primaryState = form[`${primaryPrefix}.state`] || '';
+  const primaryZip = form[`${primaryPrefix}.zip`] || '';
+  const isSameAsPrimary = form.mailing_same_as_primary === 'true';
+
+  useEffect(() => {
+    if (isSameAsPrimary) {
+      setForm((prev) => ({
+        ...prev,
+        'mailing.street': primaryStreet,
+        'mailing.city': primaryCity,
+        'mailing.state': primaryState,
+        'mailing.zip': primaryZip,
+      }));
+    }
+  }, [isSameAsPrimary, primaryStreet, primaryCity, primaryState, primaryZip]);
 
   const handleSubmit = () => {
     const data = { ...form };
@@ -104,30 +147,20 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
       const mid = data.middle_name || data.middle_initial || '';
       data.full_name = [data.first_name, mid, data.last_name].filter(Boolean).join(' ');
     }
-    if (data.mailing_same_as_primary === 'true') {
-      // Lender uses primary_address.*, broker uses address.*
-      const streetKey = data['primary_address.street'] !== undefined ? 'primary_address.street' : 'address.street';
-      const cityKey = data['primary_address.city'] !== undefined ? 'primary_address.city' : 'address.city';
-      const stateKey = data['primary_address.state'] !== undefined ? 'primary_address.state' : 'address.state';
-      const zipKey = data['primary_address.zip'] !== undefined ? 'primary_address.zip' : 'address.zip';
-      data['mailing.street'] = data[streetKey] || '';
-      data['mailing.city'] = data[cityKey] || '';
-      data['mailing.state'] = data[stateKey] || '';
-      data['mailing.zip'] = data[zipKey] || '';
-    }
     onSubmit(data);
     setForm(getInitialForm(contactType));
   };
 
   const typeLabel = contactType.charAt(0).toUpperCase() + contactType.slice(1);
 
-  const renderInline = (label: string, key: string, type = 'text') => (
+  const renderInline = (label: string, key: string, type = 'text', forceDisabled = false) => (
     <div className="flex items-center gap-2">
       <Label className="w-[100px] shrink-0 text-xs">{label}</Label>
       <Input
         type={type}
         value={form[key] || ''}
         onChange={(e) => set(key, e.target.value)}
+        disabled={forceDisabled}
         className="h-7 text-xs flex-1"
       />
     </div>
@@ -205,10 +238,10 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               <div className="pt-2 space-y-1.5">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
                 {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
-                {renderInline('Street', 'mailing.street')}
-                {renderInline('City', 'mailing.city')}
-                {renderInline('State', 'mailing.state')}
-                {renderInline('ZIP', 'mailing.zip')}
+                {renderInline('Street', 'mailing.street', 'text', isSameAsPrimary)}
+                {renderInline('City', 'mailing.city', 'text', isSameAsPrimary)}
+                {renderInline('State', 'mailing.state', 'text', isSameAsPrimary)}
+                {renderInline('ZIP', 'mailing.zip', 'text', isSameAsPrimary)}
               </div>
               <div className="pt-2 space-y-1">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Options</h3>
@@ -311,10 +344,10 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               <div className="pt-2 space-y-1.5">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
                 {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
-                {renderInline('Street', 'mailing.street')}
-                {renderInline('City', 'mailing.city')}
-                {renderInline('State', 'mailing.state')}
-                {renderInline('ZIP', 'mailing.zip')}
+                {renderInline('Street', 'mailing.street', 'text', isSameAsPrimary)}
+                {renderInline('City', 'mailing.city', 'text', isSameAsPrimary)}
+                {renderInline('State', 'mailing.state', 'text', isSameAsPrimary)}
+                {renderInline('ZIP', 'mailing.zip', 'text', isSameAsPrimary)}
               </div>
             </div>
 
@@ -395,10 +428,10 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               <div className="pt-2 space-y-1.5">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
                 {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
-                {renderInline('Street', 'mailing.street')}
-                {renderInline('City', 'mailing.city')}
-                {renderInline('State', 'mailing.state')}
-                {renderInline('ZIP', 'mailing.zip')}
+                {renderInline('Street', 'mailing.street', 'text', isSameAsPrimary)}
+                {renderInline('City', 'mailing.city', 'text', isSameAsPrimary)}
+                {renderInline('State', 'mailing.state', 'text', isSameAsPrimary)}
+                {renderInline('ZIP', 'mailing.zip', 'text', isSameAsPrimary)}
               </div>
             </div>
 
