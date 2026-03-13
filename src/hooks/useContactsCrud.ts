@@ -134,6 +134,21 @@ export function useContactsCrud({ contactType, pageSize = 25 }: UseContactsCrudO
     if (!user) return false;
     try {
       const fullName = contactData.full_name || `${contactData.first_name || ''} ${contactData.last_name || ''}`.trim();
+
+      // Preserve underscore-prefixed internal keys (e.g. _events_journal, _charges, _conversation_log, _trust_ledger)
+      const { data: existing } = await supabase
+        .from('contacts')
+        .select('contact_data')
+        .eq('id', id)
+        .single();
+
+      const existingData = (existing?.contact_data as Record<string, any>) || {};
+      const mergedData: Record<string, any> = { ...contactData };
+      Object.entries(existingData).forEach(([key, value]) => {
+        if (key.startsWith('_')) {
+          mergedData[key] = value;
+        }
+      });
       
       const { error } = await supabase
         .from('contacts')
@@ -146,7 +161,7 @@ export function useContactsCrud({ contactType, pageSize = 25 }: UseContactsCrudO
           city: contactData.city || contactData['address.city'] || contactData['primary_address.city'] || '',
           state: contactData.state || contactData['address.state'] || contactData['primary_address.state'] || '',
           company: contactData.company || '',
-          contact_data: contactData,
+          contact_data: mergedData,
           updated_at: new Date().toISOString(),
         })
         .eq('id', id);
