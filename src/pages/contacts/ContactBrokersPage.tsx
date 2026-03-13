@@ -38,20 +38,33 @@ export interface ContactBroker {
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'contact_id', label: 'Broker ID', visible: true },
+  { id: 'frozen', label: 'Frozen', visible: true },
+  { id: 'company', label: 'Type', visible: true },
+  { id: 'ach', label: 'ACH', visible: true },
+  { id: 'email', label: 'Email', visible: true },
+  { id: 'agreement_on_file', label: 'Agreement on File', visible: true },
   { id: 'full_name', label: 'Full Name', visible: true },
   { id: 'first_name', label: 'First', visible: true },
   { id: 'last_name', label: 'Last', visible: true },
-  { id: 'email', label: 'Email', visible: true },
-  { id: 'phone', label: 'Phone', visible: true },
-  { id: 'company', label: 'Company', visible: true },
+  { id: 'address.street', label: 'Street', visible: true },
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
-  { id: 'license', label: 'License', visible: false },
-  { id: 'tin', label: 'TIN', visible: false },
-  { id: 'ach', label: 'ACH', visible: false },
-  { id: 'frozen', label: 'Frozen', visible: false },
-  { id: 'agreement', label: 'Agreement', visible: false },
+  { id: 'address.zip', label: 'ZIP', visible: true },
+  { id: 'phone.home', label: 'Home Phone', visible: true },
+  { id: 'phone.work', label: 'Work Phone', visible: true },
+  { id: 'phone.cell', label: 'Cell Phone', visible: true },
+  { id: 'phone.fax', label: 'Fax', visible: true },
+  { id: 'preferred_phone', label: 'Preferred Phone', visible: true },
+  { id: 'tax_id', label: 'TIN', visible: true },
+  { id: 'issue_1099', label: 'Send 1099', visible: true },
+  { id: 'tin_verified', label: 'Verified', visible: true },
+  { id: 'mailing.street', label: 'Mailing Street', visible: true },
+  { id: 'mailing.city', label: 'Mailing City', visible: true },
+  { id: 'mailing.state', label: 'Mailing State', visible: true },
+  { id: 'mailing.zip', label: 'Mailing ZIP', visible: true },
 ];
+
+const BOOLEAN_COLUMNS = new Set(['frozen', 'ach', 'agreement_on_file', 'issue_1099', 'tin_verified']);
 
 const BROKER_FILTER_OPTIONS: FilterOption[] = [
   {
@@ -91,6 +104,43 @@ const ContactBrokersPage: React.FC = () => {
     await crud.deleteContacts(ids);
   }, [crud]);
 
+  const renderCellValue = useCallback((contact: ContactRecord, columnId: string): React.ReactNode => {
+    const cd = (contact.contact_data || {}) as Record<string, string>;
+
+    if (columnId === 'preferred_phone') {
+      if (cd['preferred.home'] === 'true') return 'Home';
+      if (cd['preferred.work'] === 'true') return 'Work';
+      if (cd['preferred.cell'] === 'true') return 'Cell';
+      if (cd['preferred.fax'] === 'true') return 'Fax';
+      return '-';
+    }
+
+    if (BOOLEAN_COLUMNS.has(columnId)) {
+      const val = cd[columnId];
+      return val === 'true' ? '✓' : '';
+    }
+
+    const topLevel: Record<string, string | null | undefined> = {
+      contact_id: contact.contact_id,
+      full_name: contact.full_name,
+      first_name: contact.first_name,
+      last_name: contact.last_name,
+      email: contact.email,
+      phone: contact.phone,
+      city: contact.city,
+      state: contact.state,
+      company: contact.company,
+    };
+    if (columnId in topLevel) {
+      const val = topLevel[columnId] || '';
+      if (columnId === 'full_name') return <span className="font-medium">{val || '-'}</span>;
+      return val || '-';
+    }
+
+    const val = cd[columnId] || '';
+    return val || '-';
+  }, []);
+
   if (selectedContact) {
     return (
       <div className="h-full flex flex-col">
@@ -119,10 +169,11 @@ const ContactBrokersPage: React.FC = () => {
         onCreateNew={() => setModalOpen(true)}
         onDeleteSelected={handleDeleteSelected}
         defaultColumns={DEFAULT_COLUMNS}
-        tableConfigKey="contact_brokers_v3"
+        tableConfigKey="contact_brokers_v4"
         addButtonLabel="Add Broker"
         breadcrumbLabel="Brokers"
         filterOptions={BROKER_FILTER_OPTIONS}
+        renderCellValue={renderCellValue}
       />
       <CreateContactModal
         open={modalOpen}
