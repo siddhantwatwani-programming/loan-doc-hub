@@ -77,7 +77,7 @@ export function normalizeWordXml(xmlContent: string): string {
   // bookmarks, and structural XML in all non-tag paragraphs.
   result = result.replace(/<w:p[\s>][\s\S]*?<\/w:p>/g, (para) => {
     // Only strip in paragraphs that contain merge tag delimiters
-    if (!para.includes('{') && !para.includes('\u00AB') && !para.includes('\u00BB')) {
+    if (!para.includes('{{') && !para.includes('\u00AB') && !para.includes('\u00BB')) {
       return para;
     }
     let cleaned = para;
@@ -120,7 +120,7 @@ export function normalizeWordXml(xmlContent: string): string {
     const paraEnd = result.indexOf('</w:p>', offset + match.length);
     if (pStart === -1 || paraEnd === -1) return match;
     const paragraph = result.substring(pStart, paraEnd);
-    if (paragraph.includes('\u00AB') || paragraph.includes('\u00BB') || paragraph.includes('{{') || paragraph.includes('}}') || paragraph.includes('{') && paragraph.includes('}')) {
+    if (paragraph.includes('\u00AB') || paragraph.includes('\u00BB') || paragraph.includes('{{') || paragraph.includes('}}')) {
       console.log(`[tag-parser] Consolidated fragmented underscore: ${before}_${after}`);
       return `${before}_${after}`;
     }
@@ -160,7 +160,7 @@ export function normalizeWordXml(xmlContent: string): string {
     const paraEnd = result.indexOf('</w:p>', offset + match.length);
     if (pStart === -1 || paraEnd === -1) return match;
     const paragraph = result.substring(pStart, paraEnd);
-    if (paragraph.includes('\u00AB') || paragraph.includes('\u00BB') || paragraph.includes('{{') || paragraph.includes('}}') || paragraph.includes('{') && paragraph.includes('}')) {
+    if (paragraph.includes('\u00AB') || paragraph.includes('\u00BB') || paragraph.includes('{{') || paragraph.includes('}}')) {
       console.log(`[tag-parser] Consolidated fragmented dot: ${before}.${after}`);
       return `${before}.${after}`;
     }
@@ -176,7 +176,7 @@ export function normalizeWordXml(xmlContent: string): string {
     const paraEnd = result.indexOf('</w:p>', offset + match.length);
     if (pStart === -1 || paraEnd === -1) return match;
     const paragraph = result.substring(pStart, paraEnd);
-    if (paragraph.includes('\u00AB') || paragraph.includes('\u00BB') || paragraph.includes('{{') || paragraph.includes('}}') || paragraph.includes('{') && paragraph.includes('}')) {
+    if (paragraph.includes('\u00AB') || paragraph.includes('\u00BB') || paragraph.includes('{{') || paragraph.includes('}}')) {
       console.log(`[tag-parser] Consolidated dot-in-run: ${before}.${after}`);
       return `${before}.${after}`;
     }
@@ -417,7 +417,7 @@ export function parseWordMergeFields(content: string): ParsedMergeTag[] {
   }
   
   // Pattern 2: Double curly braces {{field_name}} or {{field_name|transform}}
-  const curlyPattern = /\{\{([^}<|]+)(?:\s*\|\s*([^}<]+))?\}\}/g;
+  const curlyPattern = /\{\{([^{}<|]+)(?:\s*\|\s*([^{}<]+))?\}\}/g;
   while ((match = curlyPattern.exec(content)) !== null) {
     if (!seenTags.has(match[0])) {
       seenTags.add(match[0]);
