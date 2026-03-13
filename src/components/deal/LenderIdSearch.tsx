@@ -41,20 +41,20 @@ export const LenderIdSearch: React.FC<LenderIdSearchProps> = ({
   }, [value]);
 
   const searchLenders = useCallback(async (searchTerm: string) => {
-    if (!searchTerm || searchTerm.length < 1) {
-      setResults([]);
-      setIsOpen(false);
-      return;
-    }
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      let qb = supabase
         .from('contacts')
         .select('contact_id, full_name, contact_data')
-        .eq('contact_type', 'lender')
-        .or(`contact_id.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%`)
+        .eq('contact_type', 'lender');
+
+      if (searchTerm && searchTerm.length >= 1) {
+        qb = qb.or(`contact_id.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%`);
+      }
+
+      const { data, error } = await qb
         .order('contact_id', { ascending: true })
-        .limit(10);
+        .limit(50);
 
       if (error) throw error;
       const mapped = (data || []).map((row: any) => ({
@@ -155,7 +155,7 @@ export const LenderIdSearch: React.FC<LenderIdSearchProps> = ({
         <Input
           value={query}
           onChange={handleInputChange}
-          onFocus={() => { if (query && query.length >= 1) searchLenders(query); }}
+          onFocus={() => searchLenders(query)}
           placeholder="Search Lender ID or Name"
           className={cn('h-7 text-sm pr-8', className)}
           disabled={disabled}
