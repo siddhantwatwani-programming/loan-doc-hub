@@ -6,10 +6,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
-import { CalendarIcon, Search } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { FundingFormData } from './AddFundingModal';
+import { LenderIdSearch } from './LenderIdSearch';
 
 interface FundingDetailFormProps {
   data: FundingFormData;
@@ -74,10 +75,16 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
         </div>
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender ID</Label>
-          <div className="relative flex-1">
-            <Input value={data.lenderId} onChange={(e) => handleChange('lenderId', e.target.value)} placeholder="Search" className="h-7 text-sm" />
-            <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          </div>
+          <LenderIdSearch
+            value={data.lenderId}
+            onChange={(lenderId, lenderFullName) => {
+              onChange({
+                ...data,
+                lenderId,
+                ...(lenderFullName ? { lenderFullName } : {}),
+              });
+            }}
+          />
         </div>
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Funding Amount</Label>
