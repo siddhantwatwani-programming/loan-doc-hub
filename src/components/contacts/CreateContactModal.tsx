@@ -321,12 +321,6 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {renderInline('Last', 'last_name')}
               {renderInline('Email', 'email', 'email')}
               <div className="pt-2 space-y-1">
-                <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Tax Info</h3>
-                {renderInline('Tax ID Type', 'tax_id_type')}
-                {renderInline('TIN', 'tax_id')}
-                {renderCheckbox('TIN Verified', 'tin_verified')}
-              </div>
-              <div className="pt-2 space-y-1">
                 {renderCheckbox('Frozen', 'frozen')}
                 {renderCheckbox('ACH', 'ach')}
                 {renderCheckbox('Agreement on File', 'agreement_on_file')}
@@ -378,6 +372,14 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 </div>
               ))}
             </div>
+
+            {/* Column 4: Tax Info */}
+            <div className="space-y-1.5">
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Tax Info</h3>
+              {renderInline('Tax ID Type', 'tax_id_type')}
+              {renderInline('TIN', 'tax_id')}
+              {renderCheckbox('TIN Verified', 'tin_verified')}
+            </div>
           </div>
         )}
 
@@ -394,22 +396,6 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {renderSelect('Capacity', 'capacity', BORROWER_CAPACITY_OPTIONS)}
               {renderInline('Email', 'email', 'email')}
               {renderInline('DOB', 'dob', 'date')}
-              <div className="pt-2 space-y-1">
-                <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Tax Info</h3>
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs">Tax ID Type</Label>
-                  <Select value={form['tax_id_type'] || ''} onValueChange={(v) => set('tax_id_type', v)}>
-                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      {TAX_ID_TYPE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {renderInline('TIN', 'tax_id')}
-                {renderCheckbox('TIN Verified', 'tin_verified')}
-              </div>
               <div className="pt-2 space-y-1">
                 {renderCheckbox('Hold', 'hold')}
                 {renderCheckbox('ACH', 'ach')}
@@ -461,6 +447,24 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                   />
                 </div>
               ))}
+            </div>
+
+            {/* Column 4: Tax Info */}
+            <div className="space-y-1.5">
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Tax Info</h3>
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Tax ID Type</Label>
+                <Select value={form['tax_id_type'] || ''} onValueChange={(v) => set('tax_id_type', v)}>
+                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    {TAX_ID_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {renderInline('TIN', 'tax_id')}
+              {renderCheckbox('TIN Verified', 'tin_verified')}
             </div>
           </div>
         )}
