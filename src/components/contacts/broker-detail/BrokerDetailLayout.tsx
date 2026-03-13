@@ -35,7 +35,7 @@ const BrokerDetailLayout: React.FC<BrokerDetailLayoutProps> = ({ broker, onBack,
       case 'banking': return <BrokerBanking broker={broker} onUpdate={onUpdate} />;
       case '1099': return <Broker1099 broker={broker} onUpdate={onUpdate} />;
       case 'authorized-party': return <BrokerAuthorizedParty brokerId={broker.brokerId} />;
-      case 'attachments': return <BrokerAttachments brokerId={broker.brokerId} />;
+      case 'attachments': return <BrokerAttachments brokerId={broker.brokerId} contactDbId={broker.id} />;
       case 'events-journal': return <BrokerEventsJournal brokerId={broker.brokerId} contactDbId="" />;
       default: return null;
     }
