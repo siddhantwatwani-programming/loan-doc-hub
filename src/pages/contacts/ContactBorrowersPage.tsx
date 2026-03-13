@@ -38,20 +38,33 @@ export interface ContactBorrower {
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'contact_id', label: 'Borrower ID', visible: true },
+  { id: 'hold', label: 'Hold', visible: true },
+  { id: 'borrower_type', label: 'Type', visible: true },
+  { id: 'ach', label: 'ACH', visible: true },
+  { id: 'email', label: 'Email', visible: true },
+  { id: 'agreement_on_file', label: 'Agreement on File', visible: true },
   { id: 'full_name', label: 'Full Name', visible: true },
   { id: 'first_name', label: 'First', visible: true },
   { id: 'last_name', label: 'Last', visible: true },
-  { id: 'email', label: 'Email', visible: true },
-  { id: 'phone', label: 'Phone', visible: true },
+  { id: 'address.street', label: 'Street', visible: true },
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
-  { id: 'company', label: 'Company', visible: false },
-  { id: 'tin', label: 'TIN', visible: false },
-  { id: 'ach', label: 'ACH', visible: false },
-  { id: 'hold', label: 'Hold', visible: false },
-  { id: 'agreement', label: 'Agreement', visible: false },
-  { id: 'verified', label: 'Verified', visible: false },
+  { id: 'address.zip', label: 'ZIP', visible: true },
+  { id: 'phone.home', label: 'Home Phone', visible: true },
+  { id: 'phone.work', label: 'Work Phone', visible: true },
+  { id: 'phone.cell', label: 'Cell Phone', visible: true },
+  { id: 'phone.fax', label: 'Fax', visible: true },
+  { id: 'preferred_phone', label: 'Preferred Phone', visible: true },
+  { id: 'tax_id', label: 'TIN', visible: true },
+  { id: 'issue_1099', label: 'Send 1099', visible: true },
+  { id: 'tin_verified', label: 'Verified', visible: true },
+  { id: 'mailing.street', label: 'Mailing Street', visible: true },
+  { id: 'mailing.city', label: 'Mailing City', visible: true },
+  { id: 'mailing.state', label: 'Mailing State', visible: true },
+  { id: 'mailing.zip', label: 'Mailing ZIP', visible: true },
 ];
+
+const BOOLEAN_COLUMNS = new Set(['hold', 'ach', 'agreement_on_file', 'issue_1099', 'tin_verified']);
 
 const BORROWER_FILTER_OPTIONS: FilterOption[] = [
   {
