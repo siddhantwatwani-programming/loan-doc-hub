@@ -167,7 +167,7 @@ export const LenderIdSearch: React.FC<LenderIdSearchProps> = ({
         )}
 
         {isOpen && (
-          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-md max-h-56 overflow-y-auto">
+          <div className="fixed z-[100] mt-1 bg-popover border border-border rounded-md shadow-md max-h-56 overflow-y-auto" style={{ width: containerRef.current?.offsetWidth, top: containerRef.current ? containerRef.current.getBoundingClientRect().bottom : 0, left: containerRef.current ? containerRef.current.getBoundingClientRect().left : 0 }}>
             {results.length > 0 ? (
               results.map((lender) => (
                 <button
