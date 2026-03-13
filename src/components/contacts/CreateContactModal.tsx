@@ -153,13 +153,14 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
   const typeLabel = contactType.charAt(0).toUpperCase() + contactType.slice(1);
 
-  const renderInline = (label: string, key: string, type = 'text') => (
+  const renderInline = (label: string, key: string, type = 'text', forceDisabled = false) => (
     <div className="flex items-center gap-2">
       <Label className="w-[100px] shrink-0 text-xs">{label}</Label>
       <Input
         type={type}
         value={form[key] || ''}
         onChange={(e) => set(key, e.target.value)}
+        disabled={forceDisabled}
         className="h-7 text-xs flex-1"
       />
     </div>
