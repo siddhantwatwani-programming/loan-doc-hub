@@ -1026,13 +1026,16 @@ export function replaceMergeTags(
   result = labelResult.content;
   console.log(`[tag-parser] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
 
-  // Final safety net: remove any remaining unresolved {{...}} merge tags
-  // to prevent dangling braces from corrupting document layout
-  const unresolvedTagPattern = /\{\{[A-Za-z0-9_.| ]+\}\}/g;
-  const unresolvedTags = result.match(unresolvedTagPattern);
-  if (unresolvedTags && unresolvedTags.length > 0) {
-    console.log(`[tag-parser] Cleaning ${unresolvedTags.length} unresolved tags: ${unresolvedTags.join(', ')}`);
-    result = result.replace(unresolvedTagPattern, '');
+  // Final safety net: remove remaining unresolved {{...}} merge tags
+  // Only do this when tags were actually detected — if 0 tags found,
+  // normalization may have failed and we should not blank valid tokens
+  if (tags.length > 0) {
+    const unresolvedTagPattern = /\{\{[A-Za-z0-9_.| ]+\}\}/g;
+    const unresolvedTags = result.match(unresolvedTagPattern);
+    if (unresolvedTags && unresolvedTags.length > 0) {
+      console.log(`[tag-parser] Cleaning ${unresolvedTags.length} unresolved tags: ${unresolvedTags.join(', ')}`);
+      result = result.replace(unresolvedTagPattern, '');
+    }
   }
 
   // NOTE: Removed aggressive dangling {{ cleanup — it was stripping valid merge tags
