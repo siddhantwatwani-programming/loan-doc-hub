@@ -155,7 +155,7 @@ export const LenderIdSearch: React.FC<LenderIdSearchProps> = ({
         <Input
           value={query}
           onChange={handleInputChange}
-          onFocus={() => { if (query && query.length >= 1) searchLenders(query); }}
+          onFocus={() => searchLenders(query)}
           placeholder="Search Lender ID or Name"
           className={cn('h-7 text-sm pr-8', className)}
           disabled={disabled}
