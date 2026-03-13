@@ -84,7 +84,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
       case 'portfolio':
         return (
           <div className="p-6">
-            <LenderPortfolio lenderId={contact.contact_id} />
+            <LenderPortfolio lenderId={contact.contact_id} contactDbId={contact.id} />
           </div>
         );
       case 'history':
