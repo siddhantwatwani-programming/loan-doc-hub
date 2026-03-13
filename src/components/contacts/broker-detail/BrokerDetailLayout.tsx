@@ -13,6 +13,7 @@ import Broker1099 from './Broker1099';
 import BrokerAuthorizedParty from './BrokerAuthorizedParty';
 import BrokerAttachments from './BrokerAttachments';
 import BrokerEventsJournal from './BrokerEventsJournal';
+import { BrokerInfoForm } from '@/components/deal/BrokerInfoForm';
 import type { ContactBroker } from '@/pages/contacts/ContactBrokersPage';
 
 interface BrokerDetailLayoutProps {
