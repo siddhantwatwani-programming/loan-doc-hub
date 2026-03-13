@@ -22,18 +22,24 @@ export async function processDocx(
   validFieldKeys?: Set<string>
 ): Promise<Uint8Array> {
   const decompressed = fflate.unzipSync(docxBuffer);
-  const processedFiles: { [key: string]: Uint8Array } = {};
+  const processedFiles: fflate.Zippable = {};
+  const decoder = new TextDecoder("utf-8");
+  const encoder = new TextEncoder();
 
   for (const [filename, content] of Object.entries(decompressed)) {
     if (filename.endsWith(".xml") || filename.endsWith(".rels")) {
       console.log(`[docx-processor] Processing XML file: ${filename} (${content.length} bytes)`);
-      const decoder = new TextDecoder("utf-8");
-      let xmlContent = decoder.decode(content);
-      xmlContent = replaceMergeTags(xmlContent, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
-      const encoder = new TextEncoder();
-      processedFiles[filename] = encoder.encode(xmlContent);
+      const originalXml = decoder.decode(content);
+      const processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+      // If unchanged, reuse original bytes to avoid encode/decode drift
+      if (processedXml === originalXml) {
+        processedFiles[filename] = [content, { level: 6 }];
+      } else {
+        processedFiles[filename] = [encoder.encode(processedXml), { level: 6 }];
+      }
     } else {
-      processedFiles[filename] = content;
+      // Binary files: store without recompression to preserve exact bytes
+      processedFiles[filename] = [content, { level: 0 }];
     }
   }
 
