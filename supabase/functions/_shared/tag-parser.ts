@@ -63,7 +63,8 @@ function flattenMergeFieldStructures(xml: string): string {
     const rPr = rPrMatch ? `<w:rPr>${rPrMatch[1]}</w:rPr>` : '';
 
     complexCount++;
-    return `<w:r>${rPr}<w:t>\u00AB${fieldName}\u00BB</w:t></w:r>`;
+    const tagText = useCurlySyntax ? `{{${fieldName}}}` : `\u00AB${fieldName}\u00BB`;
+    return `<w:r>${rPr}<w:t>${tagText}</w:t></w:r>`;
   });
 
   // Pattern B: Simple field wrappers: <w:fldSimple w:instr="MERGEFIELD name ...">inner</w:fldSimple>
