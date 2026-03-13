@@ -347,6 +347,25 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
 
     if (allTagsComplete) { parasSkippedComplete++; return para; }
 
+    // NEW GATE: Only consolidate if tag delimiters themselves are fragmented
+    // across runs. If all {{ }} « » are intact within individual runs, the
+    // regex-level passes should have handled field-name fragmentation already.
+    // Blindly consolidating destroys run-level formatting in content-heavy paragraphs.
+    const hasFragmentedDelimiters = tTexts.some(t => {
+      // Check for single { not part of {{ or single } not part of }}
+      const stripped = t.replace(/\{\{/g, '@@').replace(/\}\}/g, '@@');
+      if (stripped.includes('{') || stripped.includes('}')) return true;
+      // Check for unpaired chevrons (« without » or vice versa)
+      if (t.includes('\u00AB') !== t.includes('\u00BB')) return true;
+      return false;
+    });
+
+    if (!hasFragmentedDelimiters) {
+      parasSkippedComplete++;
+      console.log(`[tag-parser] Skipping paragraph consolidation — delimiters intact in individual runs`);
+      return para;
+    }
+
     // Some tags are fragmented across <w:t> elements — consolidate all text
     // into the first <w:t> and empty the rest. This preserves the first run's
     // formatting (font, size, bold, etc.) for the replacement value.
