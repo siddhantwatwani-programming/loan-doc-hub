@@ -13,6 +13,7 @@ import Broker1099 from './Broker1099';
 import BrokerAuthorizedParty from './BrokerAuthorizedParty';
 import BrokerAttachments from './BrokerAttachments';
 import BrokerEventsJournal from './BrokerEventsJournal';
+import { BrokerInfoForm } from '@/components/deal/BrokerInfoForm';
 import type { ContactBroker } from '@/pages/contacts/ContactBrokersPage';
 
 interface BrokerDetailLayoutProps {
@@ -22,10 +23,11 @@ interface BrokerDetailLayoutProps {
 }
 
 const BrokerDetailLayout: React.FC<BrokerDetailLayoutProps> = ({ broker, onBack, onUpdate }) => {
-  const [activeSection, setActiveSection] = useState<BrokerSection>('dashboard');
+  const [activeSection, setActiveSection] = useState<BrokerSection>('broker');
 
   const renderContent = () => {
     switch (activeSection) {
+      case 'broker': return <BrokerDashboard broker={broker} onUpdate={onUpdate} />;
       case 'dashboard': return <BrokerDashboard broker={broker} onUpdate={onUpdate} />;
       case 'portfolio': return <BrokerPortfolio brokerId={broker.brokerId} contactDbId={broker.id} />;
       case 'history': return <BrokerHistory brokerId={broker.brokerId} />;

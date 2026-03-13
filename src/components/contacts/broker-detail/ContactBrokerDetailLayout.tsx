@@ -30,7 +30,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
   onBack,
   onSave,
 }) => {
-  const [activeSection, setActiveSection] = useState<BrokerSection>('dashboard');
+  const [activeSection, setActiveSection] = useState<BrokerSection>('broker');
   const [values, setValues] = useState<Record<string, string>>(() => {
     const result: Record<string, string> = {};
     Object.entries(contact.contact_data || {}).forEach(([key, value]) => {
@@ -106,7 +106,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
 
   const renderContent = () => {
     switch (activeSection) {
-      case 'dashboard':
+      case 'broker':
         return (
           <div className="p-6">
             <BrokerInfoForm
@@ -114,6 +114,12 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
               values={values}
               onValueChange={handleValueChange}
             />
+          </div>
+        );
+      case 'dashboard':
+        return (
+          <div className="p-6">
+            <BrokerDashboard broker={brokerObj} onUpdate={() => {}} />
           </div>
         );
       case 'portfolio':
