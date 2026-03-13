@@ -5,11 +5,12 @@ import {
 } from 'lucide-react';
 
 export type BrokerSection =
-  | 'dashboard' | 'portfolio' | 'history' | 'charges' | 'trust-ledger'
+  | 'broker' | 'dashboard' | 'portfolio' | 'history' | 'charges' | 'trust-ledger'
   | 'conversation-log' | 'banking' | '1099' | 'authorized-party'
   | 'attachments' | 'events-journal';
 
 const SECTIONS: { id: BrokerSection; label: string; icon: React.ElementType }[] = [
+  { id: 'broker', label: 'Broker', icon: UserCheck },
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
   { id: 'history', label: 'History', icon: History },

@@ -106,7 +106,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
 
   const renderContent = () => {
     switch (activeSection) {
-      case 'dashboard':
+      case 'broker':
         return (
           <div className="p-6">
             <BrokerInfoForm
@@ -114,6 +114,12 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
               values={values}
               onValueChange={handleValueChange}
             />
+          </div>
+        );
+      case 'dashboard':
+        return (
+          <div className="p-6">
+            <BrokerDashboard broker={brokerObj} onUpdate={() => {}} />
           </div>
         );
       case 'portfolio':

@@ -22,7 +22,7 @@ interface BrokerDetailLayoutProps {
 }
 
 const BrokerDetailLayout: React.FC<BrokerDetailLayoutProps> = ({ broker, onBack, onUpdate }) => {
-  const [activeSection, setActiveSection] = useState<BrokerSection>('dashboard');
+  const [activeSection, setActiveSection] = useState<BrokerSection>('broker');
 
   const renderContent = () => {
     switch (activeSection) {
