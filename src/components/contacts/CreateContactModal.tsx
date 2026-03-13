@@ -344,10 +344,10 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               <div className="pt-2 space-y-1.5">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
                 {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
-                {renderInline('Street', 'mailing.street')}
-                {renderInline('City', 'mailing.city')}
-                {renderInline('State', 'mailing.state')}
-                {renderInline('ZIP', 'mailing.zip')}
+                {renderInline('Street', 'mailing.street', 'text', isSameAsPrimary)}
+                {renderInline('City', 'mailing.city', 'text', isSameAsPrimary)}
+                {renderInline('State', 'mailing.state', 'text', isSameAsPrimary)}
+                {renderInline('ZIP', 'mailing.zip', 'text', isSameAsPrimary)}
               </div>
             </div>
 
