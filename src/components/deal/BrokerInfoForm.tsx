@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -33,6 +33,27 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
     const filledCount = requiredFields.filter(field => getValue(field).trim() !== '').length;
     return { filledCount, totalRequired: requiredFields.length, missingCount: requiredFields.length - filledCount };
   }, [values]);
+
+  // Reactive sync: when primary address changes while "Same as Primary" is checked
+  const primaryStreetVal = getValue('street');
+  const primaryCityVal = getValue('city');
+  const primaryStateVal = getValue('state');
+  const primaryZipVal = getValue('zip');
+  const isMailingSame = getBoolValue('mailingSameAsPrimary');
+
+  useEffect(() => {
+    if (isMailingSame && onValueChange) {
+      const mappings: [keyof typeof FIELD_KEYS, string][] = [
+        ['mailingStreet', primaryStreetVal],
+        ['mailingCity', primaryCityVal],
+        ['mailingState', primaryStateVal],
+        ['mailingZip', primaryZipVal],
+      ];
+      mappings.forEach(([dst, srcVal]) => {
+        onValueChange(FIELD_KEYS[dst], srcVal);
+      });
+    }
+  }, [isMailingSame, primaryStreetVal, primaryCityVal, primaryStateVal, primaryZipVal]);
 
   const renderInlineField = (key: keyof typeof FIELD_KEYS, label: string, required = false) => (
     <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
@@ -128,14 +149,47 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-3 flex items-center gap-3">
             Mailing Address
             <div className="flex items-center gap-1.5 ml-2">
-              <Checkbox id="broker-mailingSameAsPrimary" checked={getBoolValue('mailingSameAsPrimary')} onCheckedChange={(checked) => handleChange('mailingSameAsPrimary', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+              <Checkbox id="broker-mailingSameAsPrimary" checked={getBoolValue('mailingSameAsPrimary')} onCheckedChange={(checked) => {
+                handleChange('mailingSameAsPrimary', !!checked);
+                if (checked) {
+                  handleChange('mailingStreet', getValue('street'));
+                  handleChange('mailingCity', getValue('city'));
+                  handleChange('mailingState', getValue('state'));
+                  handleChange('mailingZip', getValue('zip'));
+                } else {
+                  handleChange('mailingStreet', '');
+                  handleChange('mailingCity', '');
+                  handleChange('mailingState', '');
+                  handleChange('mailingZip', '');
+                }
+              }} disabled={disabled} className="h-3.5 w-3.5" />
               <Label htmlFor="broker-mailingSameAsPrimary" className="text-[10px] font-normal text-muted-foreground">Same as Primary</Label>
             </div>
           </h3>
-          {renderInlineField('mailingStreet', 'Street')}
-          {renderInlineField('mailingCity', 'City')}
-          {renderInlineField('mailingState', 'State')}
-          {renderInlineField('mailingZip', 'ZIP')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingStreet}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">Street</Label>
+              <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs flex-1" />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingCity}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">City</Label>
+              <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs flex-1" />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingState}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">State</Label>
+              <Input value={getValue('mailingState')} onChange={(e) => handleChange('mailingState', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs flex-1" />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingZip}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+              <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs flex-1" />
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
         {/* Column 3 - Phone */}
