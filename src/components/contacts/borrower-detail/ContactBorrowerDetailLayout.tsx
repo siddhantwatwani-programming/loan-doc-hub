@@ -53,16 +53,10 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
   const emptyFields: any[] = [];
   const emptyDirty = new Set<string>();
 
-  // Co-borrower values use coborrower.* prefix mapped from contact_data
+  // Co-borrower values are already stored with coborrower.* prefix in values state
   const coBorrowerValues = React.useMemo(() => {
-    const result: Record<string, string> = {};
-    Object.entries(contact.contact_data || {}).forEach(([key, value]) => {
-      if (key.startsWith('coborrower.')) {
-        result[`borrower.${key}`] = value;
-      }
-    });
-    return { ...values, ...result };
-  }, [contact.contact_data, values]);
+    return values;
+  }, [values]);
 
   const handleCoBorrowerValueChange = useCallback((fieldKey: string, value: string) => {
     setValues(prev => ({ ...prev, [fieldKey]: value }));
