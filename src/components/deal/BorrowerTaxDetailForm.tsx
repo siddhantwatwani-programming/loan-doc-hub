@@ -19,7 +19,7 @@ import { BORROWER_TAX_DETAIL_KEYS, BORROWER_PRIMARY_KEYS, BORROWER_GUARANTOR_KEY
 const FIELD_KEYS = BORROWER_TAX_DETAIL_KEYS;
 
 const DESIGNATED_RECIPIENT_OPTIONS = [
-  { value: 'primary', label: 'Primary' },
+  { value: 'primary', label: 'Borrower' },
   { value: 'co-borrower', label: 'Co-borrower' },
   { value: 'additional_guarantor', label: 'Additional Guarantor' },
   { value: 'other', label: 'Other' },
