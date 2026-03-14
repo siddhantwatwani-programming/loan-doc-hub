@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export type ContactBorrowerSubSection = 'primary' | 'additional_guarantor' | 'authorized_party' | 'banking' | 'tax_detail' | 'note';
+export type ContactBorrowerSubSection = 'primary' | 'co_borrower' | 'additional_guarantor' | 'authorized_party' | 'trust_ledger' | 'banking' | 'tax_detail';
 
 interface ContactBorrowerSubNavProps {
   activeSubSection: ContactBorrowerSubSection;
@@ -9,12 +9,13 @@ interface ContactBorrowerSubNavProps {
 }
 
 const SECTIONS: { key: ContactBorrowerSubSection; label: string }[] = [
-  { key: 'primary', label: 'Primary' },
+  { key: 'primary', label: 'Borrower' },
+  { key: 'co_borrower', label: 'Co-borrower' },
   { key: 'additional_guarantor', label: 'Additional Guarantor' },
   { key: 'authorized_party', label: 'Authorized Party' },
+  { key: 'trust_ledger', label: 'Trust Ledger' },
   { key: 'banking', label: 'Banking' },
   { key: 'tax_detail', label: '1098' },
-  { key: 'note', label: 'Notes' },
 ];
 
 export const ContactBorrowerSubNav: React.FC<ContactBorrowerSubNavProps> = ({
