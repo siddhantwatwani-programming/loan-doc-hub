@@ -396,6 +396,7 @@ export const LOAN_TERMS_BALANCES_KEYS = {
 export const LOAN_TERMS_DETAILS_KEYS = {
   company: 'loan_terms.details_company',
   loanNumber: 'Terms.LoanNumber',
+  borrowerId: 'loan_terms.details_borrower_id',
   assignedCsr: 'loan_terms.assigned_csr',
   originatingVendor: 'loan_terms.details_originating_vendor',
   origination: 'loan_terms.origination',
