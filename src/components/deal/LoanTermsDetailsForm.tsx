@@ -169,11 +169,28 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
                 onChange={(borrowerId, borrowerFullName) => {
                   setValue(FIELD_KEYS.borrowerId, borrowerId);
                   if (borrowerFullName) {
-                    setValue('loan_terms.details_borrower_name', borrowerFullName);
+                    setValue(FIELD_KEYS.borrowerName, borrowerFullName);
+                  }
+                  setValue(FIELD_KEYS.coBorrowerId, borrowerId);
+                  if (borrowerFullName) {
+                    setValue(FIELD_KEYS.coBorrowerName, borrowerFullName);
                   }
                 }}
                 disabled={disabled}
               />
+            </div>
+          </DirtyFieldWrapper>
+          {renderInlineField(FIELD_KEYS.borrowerName, 'Borrower Name')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.coBorrowerId}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[130px] shrink-0 text-xs">Co-Borrower ID</Label>
+              <Input id={FIELD_KEYS.coBorrowerId} value={getValue(FIELD_KEYS.coBorrowerId)} disabled className="h-8 text-xs flex-1 bg-muted" />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.coBorrowerName}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[130px] shrink-0 text-xs">Co-Borrower Name</Label>
+              <Input id={FIELD_KEYS.coBorrowerName} value={getValue(FIELD_KEYS.coBorrowerName)} disabled className="h-8 text-xs flex-1 bg-muted" />
             </div>
           </DirtyFieldWrapper>
           {renderInlineField(FIELD_KEYS.assignedCsr, 'Assigned CSR')}
