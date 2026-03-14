@@ -24,10 +24,14 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
   onSave,
 }) => {
   const [activeSection, setActiveSection] = useState<ContactBorrowerSubSection>('primary');
+  const NON_BORROWER_PREFIXES = ['ach.', 'coborrower.', 'borrower.guarantor.', 'borrower.authorized_party.', 'borrower.1098.'];
+
   const [values, setValues] = useState<Record<string, string>>(() => {
     const result: Record<string, string> = {};
     Object.entries(contact.contact_data || {}).forEach(([key, value]) => {
-      result[`borrower.${key}`] = value;
+      if (typeof value !== 'string') return;
+      const needsPrefix = !NON_BORROWER_PREFIXES.some(p => key.startsWith(p)) && !key.startsWith('borrower.');
+      result[needsPrefix ? `borrower.${key}` : key] = value;
     });
     return result;
   });
