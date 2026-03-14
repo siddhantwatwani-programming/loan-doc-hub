@@ -24,10 +24,14 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
   onSave,
 }) => {
   const [activeSection, setActiveSection] = useState<ContactBorrowerSubSection>('primary');
+  const NON_BORROWER_PREFIXES = ['ach.', 'coborrower.', 'borrower.guarantor.', 'borrower.authorized_party.', 'borrower.1098.'];
+
   const [values, setValues] = useState<Record<string, string>>(() => {
     const result: Record<string, string> = {};
     Object.entries(contact.contact_data || {}).forEach(([key, value]) => {
-      result[`borrower.${key}`] = value;
+      if (typeof value !== 'string') return;
+      const needsPrefix = !NON_BORROWER_PREFIXES.some(p => key.startsWith(p)) && !key.startsWith('borrower.');
+      result[needsPrefix ? `borrower.${key}` : key] = value;
     });
     return result;
   });
@@ -39,7 +43,8 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
   const handleSave = useCallback(async () => {
     const contactData: Record<string, string> = {};
     Object.entries(values).forEach(([key, value]) => {
-      const stripped = key.replace(/^borrower\./, '');
+      // Strip borrower. prefix only for primary borrower keys; keep ach.*, coborrower.*, etc. as-is
+      const stripped = NON_BORROWER_PREFIXES.some(p => key.startsWith(p)) ? key : key.replace(/^borrower\./, '');
       contactData[stripped] = value;
     });
     await onSave(contact.id, contactData);
@@ -48,16 +53,10 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
   const emptyFields: any[] = [];
   const emptyDirty = new Set<string>();
 
-  // Co-borrower values use coborrower.* prefix mapped from contact_data
+  // Co-borrower values are already stored with coborrower.* prefix in values state
   const coBorrowerValues = React.useMemo(() => {
-    const result: Record<string, string> = {};
-    Object.entries(contact.contact_data || {}).forEach(([key, value]) => {
-      if (key.startsWith('coborrower.')) {
-        result[`borrower.${key}`] = value;
-      }
-    });
-    return { ...values, ...result };
-  }, [contact.contact_data, values]);
+    return values;
+  }, [values]);
 
   const handleCoBorrowerValueChange = useCallback((fieldKey: string, value: string) => {
     setValues(prev => ({ ...prev, [fieldKey]: value }));
