@@ -161,7 +161,21 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Details</h3>
           {renderInlineField(FIELD_KEYS.company, 'Company')}
           {renderInlineField(FIELD_KEYS.loanNumber, 'Loan Number')}
-          {renderInlineField(FIELD_KEYS.assignedCsr, 'Assigned CSR')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.borrowerId}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[130px] shrink-0 text-xs">Borrower ID</Label>
+              <BorrowerIdSearch
+                value={getValue(FIELD_KEYS.borrowerId)}
+                onChange={(borrowerId, borrowerFullName) => {
+                  setValue(FIELD_KEYS.borrowerId, borrowerId);
+                  if (borrowerFullName) {
+                    setValue('loan_terms.details_borrower_name', borrowerFullName);
+                  }
+                }}
+                disabled={disabled}
+              />
+            </div>
+          </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.originatingVendor}>
             <div className="flex items-center gap-2">
               <Label className="w-[130px] shrink-0 text-xs">Originating Vendor</Label>
