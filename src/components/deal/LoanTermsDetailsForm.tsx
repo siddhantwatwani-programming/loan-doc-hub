@@ -176,6 +176,7 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
               />
             </div>
           </DirtyFieldWrapper>
+          {renderInlineField(FIELD_KEYS.assignedCsr, 'Assigned CSR')}
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.originatingVendor}>
             <div className="flex items-center gap-2">
               <Label className="w-[130px] shrink-0 text-xs">Originating Vendor</Label>
