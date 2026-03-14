@@ -43,7 +43,8 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
   const handleSave = useCallback(async () => {
     const contactData: Record<string, string> = {};
     Object.entries(values).forEach(([key, value]) => {
-      const stripped = key.replace(/^borrower\./, '');
+      // Strip borrower. prefix only for primary borrower keys; keep ach.*, coborrower.*, etc. as-is
+      const stripped = NON_BORROWER_PREFIXES.some(p => key.startsWith(p)) ? key : key.replace(/^borrower\./, '');
       contactData[stripped] = value;
     });
     await onSave(contact.id, contactData);
