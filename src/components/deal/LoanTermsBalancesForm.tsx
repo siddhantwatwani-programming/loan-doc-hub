@@ -189,15 +189,16 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">
                       Originating Vendor
                     </Label>
-                    <div className="relative flex-1">
-                      <Input
-                        value={getValue(FIELD_KEYS.soldRateOriginatingVendor)}
-                        onChange={(e) => setValue(FIELD_KEYS.soldRateOriginatingVendor, e.target.value)}
-                        disabled={disabled}
-                        className="h-8 text-sm pr-7"
-                        placeholder="%"
-                      />
-                    </div>
+                    <BrokerIdSearch
+                      value={getValue(FIELD_KEYS.soldRateOriginatingVendor)}
+                      onChange={(brokerId, brokerFullName) => {
+                        setValue(FIELD_KEYS.soldRateOriginatingVendor, brokerId);
+                        if (brokerFullName) {
+                          setValue('loan_terms.sold_rate_originating_vendor_name', brokerFullName);
+                        }
+                      }}
+                      disabled={disabled}
+                    />
                   </div>
                 </DirtyFieldWrapper>
                 <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateCompany}>
