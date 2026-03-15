@@ -220,7 +220,7 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
           </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.originatingVendorEmail}>
             <div className="flex items-center gap-2">
-              <Label className="w-[130px] shrink-0 text-xs">Email</Label>
+              <Label className="w-[130px] shrink-0 text-xs">Vendor Email</Label>
               <Input id={FIELD_KEYS.originatingVendorEmail} value={getValue(FIELD_KEYS.originatingVendorEmail)} disabled className="h-8 text-xs flex-1 bg-muted" />
             </div>
           </DirtyFieldWrapper>
