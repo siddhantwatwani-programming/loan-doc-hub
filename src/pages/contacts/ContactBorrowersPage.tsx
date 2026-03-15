@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useContactsCrud, type ContactRecord } from '@/hooks/useContactsCrud';
 import { ContactsListView } from '@/components/contacts/ContactsListView';
 import { CreateContactModal } from '@/components/contacts/CreateContactModal';
@@ -84,6 +84,18 @@ const ContactBorrowersPage: React.FC = () => {
   const crud = useContactsCrud({ contactType: 'borrower' });
   const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [localSearch, setLocalSearch] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      crud.setSearchQuery(localSearch);
+    }, 350);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [localSearch]);
 
   const handleCreate = useCallback(async (data: Record<string, string>) => {
     await crud.createContact(data);
@@ -164,8 +176,9 @@ const ContactBorrowersPage: React.FC = () => {
         totalPages={crud.totalPages}
         currentPage={crud.currentPage}
         isLoading={crud.isLoading}
-        searchQuery={crud.searchQuery}
-        onSearchChange={crud.setSearchQuery}
+        searchQuery={localSearch}
+        onSearchChange={setLocalSearch}
+        searchPlaceholder="Search by Borrower ID, Type, or Name..."
         onPageChange={crud.setCurrentPage}
         onRowClick={setSelectedContact}
         onCreateNew={() => setModalOpen(true)}
