@@ -36,6 +36,9 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
     Object.entries(contact.contact_data || {}).forEach(([key, value]) => {
       result[`broker.${key}`] = value;
     });
+    if (!result['broker.id']) {
+      result['broker.id'] = contact.contact_id;
+    }
     return result;
   });
 
