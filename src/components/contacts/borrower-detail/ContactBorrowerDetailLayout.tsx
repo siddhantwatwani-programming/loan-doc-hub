@@ -138,7 +138,7 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
             <ArrowLeft className="h-4 w-4 mr-1" /> Back to Borrowers
           </Button>
           <h3 className="font-semibold text-lg text-foreground">
-            Borrower Details — {contact.contact_id}
+          Borrower Details — {contact.contact_id}
           </h3>
         </div>
         <Button size="sm" onClick={handleSave} className="gap-1">
