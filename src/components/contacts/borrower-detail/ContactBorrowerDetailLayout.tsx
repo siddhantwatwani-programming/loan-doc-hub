@@ -34,8 +34,8 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
       result[needsPrefix ? `borrower.${key}` : key] = value;
     });
     // Auto-fill Borrower ID from contact record
-    if (!result['borrower.borrowerId']) {
-      result['borrower.borrowerId'] = contact.contact_id;
+    if (!result['borrower.borrower_id']) {
+      result['borrower.borrower_id'] = contact.contact_id;
     }
     return result;
   });
