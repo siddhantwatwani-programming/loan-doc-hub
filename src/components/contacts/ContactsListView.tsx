@@ -38,6 +38,7 @@ interface ContactsListViewProps {
   breadcrumbLabel?: string;
   filterOptions?: FilterOption[];
   renderCellValue?: (contact: ContactRecord, columnId: string) => React.ReactNode;
+  searchPlaceholder?: string;
 }
 
 export const ContactsListView: React.FC<ContactsListViewProps> = ({
