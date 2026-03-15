@@ -214,7 +214,7 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
           </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.originatingVendorFullName}>
             <div className="flex items-center gap-2">
-              <Label className="w-[130px] shrink-0 text-xs">Full Name</Label>
+              <Label className="w-[130px] shrink-0 text-xs">Vendor Name</Label>
               <Input id={FIELD_KEYS.originatingVendorFullName} value={getValue(FIELD_KEYS.originatingVendorFullName)} disabled className="h-8 text-xs flex-1 bg-muted" />
             </div>
           </DirtyFieldWrapper>
