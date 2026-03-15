@@ -138,15 +138,15 @@ const ContactLendersPage: React.FC = () => {
 
   return (
     <>
-      <ContactsListView
+       <ContactsListView
         title="Lenders"
         contacts={crud.contacts}
         totalCount={crud.totalCount}
         totalPages={crud.totalPages}
         currentPage={crud.currentPage}
         isLoading={crud.isLoading}
-        searchQuery={crud.searchQuery}
-        onSearchChange={crud.setSearchQuery}
+        searchQuery={localSearch}
+        onSearchChange={setLocalSearch}
         onPageChange={crud.setCurrentPage}
         onRowClick={setSelectedContact}
         onCreateNew={() => setModalOpen(true)}
@@ -156,6 +156,7 @@ const ContactLendersPage: React.FC = () => {
         addButtonLabel="Add Lender"
         breadcrumbLabel="Lenders"
         filterOptions={LENDER_FILTER_OPTIONS}
+        searchPlaceholder="Search by Lender ID, Type, or Name..."
       />
       <CreateContactModal
         open={modalOpen}
