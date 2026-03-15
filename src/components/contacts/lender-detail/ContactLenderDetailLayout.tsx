@@ -172,7 +172,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             <ArrowLeft className="h-4 w-4 mr-1" /> Back to Lenders
           </Button>
           <h3 className="font-semibold text-lg text-foreground">
-            Lender Details — {contact.contact_id}
+            Lender — {contact.contact_id}
           </h3>
         </div>
         <Button size="sm" onClick={handleSave} className="gap-1">
