@@ -176,8 +176,9 @@ const ContactBorrowersPage: React.FC = () => {
         totalPages={crud.totalPages}
         currentPage={crud.currentPage}
         isLoading={crud.isLoading}
-        searchQuery={crud.searchQuery}
-        onSearchChange={crud.setSearchQuery}
+        searchQuery={localSearch}
+        onSearchChange={setLocalSearch}
+        searchPlaceholder="Search by Borrower ID, Type, or Name..."
         onPageChange={crud.setCurrentPage}
         onRowClick={setSelectedContact}
         onCreateNew={() => setModalOpen(true)}
