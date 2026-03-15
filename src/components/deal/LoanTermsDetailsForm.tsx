@@ -199,7 +199,7 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
               <Label className="w-[130px] shrink-0 text-xs">Originating Vendor</Label>
               <BrokerIdSearch
                 value={getValue(FIELD_KEYS.originatingVendor)}
-                onChange={(brokerId, brokerFullName) => {
+                onChange={(brokerId, brokerFullName, contactData) => {
                   setValue(FIELD_KEYS.originatingVendor, brokerId);
                   if (brokerFullName) {
                     setValue(FIELD_KEYS.originatingVendorFullName, brokerFullName);
