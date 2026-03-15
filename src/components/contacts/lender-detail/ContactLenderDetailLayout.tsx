@@ -35,6 +35,10 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
     Object.entries(contact.contact_data || {}).forEach(([key, value]) => {
       result[`lender.${key}`] = value;
     });
+    // Auto-fill Lender ID from contact record
+    if (!result['lender.lender_id']) {
+      result['lender.lender_id'] = contact.contact_id;
+    }
     return result;
   });
 
@@ -172,7 +176,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             <ArrowLeft className="h-4 w-4 mr-1" /> Back to Lenders
           </Button>
           <h3 className="font-semibold text-lg text-foreground">
-            Lender Details — {contact.contact_id}
+            Lender — {contact.contact_id}
           </h3>
         </div>
         <Button size="sm" onClick={handleSave} className="gap-1">
