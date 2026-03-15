@@ -402,8 +402,6 @@ export const LOAN_TERMS_DETAILS_KEYS = {
   coBorrowerName: 'loan_terms.details_co_borrower_name',
   assignedCsr: 'loan_terms.assigned_csr',
   originatingVendor: 'loan_terms.details_originating_vendor',
-  originatingVendorFullName: 'loan_terms.originating_vendor_name',
-  originatingVendorEmail: 'loan_terms.originating_vendor_email',
   origination: 'loan_terms.origination',
   boarding: 'loan_terms.boarding',
   maturity: 'loan_terms.maturity',
