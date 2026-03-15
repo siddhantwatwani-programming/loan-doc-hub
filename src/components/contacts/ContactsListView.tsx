@@ -38,6 +38,7 @@ interface ContactsListViewProps {
   breadcrumbLabel?: string;
   filterOptions?: FilterOption[];
   renderCellValue?: (contact: ContactRecord, columnId: string) => React.ReactNode;
+  searchPlaceholder?: string;
 }
 
 export const ContactsListView: React.FC<ContactsListViewProps> = ({
@@ -59,6 +60,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
   breadcrumbLabel,
   filterOptions = [],
   renderCellValue,
+  searchPlaceholder,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig(tableConfigKey, defaultColumns);
   const visibleColumns = columns.filter((c) => c.visible);
@@ -229,7 +231,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
         selectedCount={selectedCount}
         onBulkDelete={onDeleteSelected ? () => setDeleteDialogOpen(true) : undefined}
         onExport={() => setExportOpen(true)}
-        searchPlaceholder={`Search ${title.toLowerCase()}...`}
+        searchPlaceholder={searchPlaceholder || `Search ${title.toLowerCase()}...`}
       />
 
       <div className="border border-border rounded-lg overflow-x-auto">

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { FilterOption } from '@/components/deal/GridToolbar';
 
 // Re-export for backward compatibility with existing components
@@ -96,6 +96,20 @@ const ContactLendersPage: React.FC = () => {
   const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
+  // Debounced search: local input state + delayed sync to crud
+  const [localSearch, setLocalSearch] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      crud.setSearchQuery(localSearch);
+    }, 350);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [localSearch]);
+
   const handleCreate = useCallback(async (data: Record<string, string>) => {
     await crud.createContact(data);
     setModalOpen(false);
@@ -124,15 +138,15 @@ const ContactLendersPage: React.FC = () => {
 
   return (
     <>
-      <ContactsListView
+       <ContactsListView
         title="Lenders"
         contacts={crud.contacts}
         totalCount={crud.totalCount}
         totalPages={crud.totalPages}
         currentPage={crud.currentPage}
         isLoading={crud.isLoading}
-        searchQuery={crud.searchQuery}
-        onSearchChange={crud.setSearchQuery}
+        searchQuery={localSearch}
+        onSearchChange={setLocalSearch}
         onPageChange={crud.setCurrentPage}
         onRowClick={setSelectedContact}
         onCreateNew={() => setModalOpen(true)}
@@ -142,6 +156,7 @@ const ContactLendersPage: React.FC = () => {
         addButtonLabel="Add Lender"
         breadcrumbLabel="Lenders"
         filterOptions={LENDER_FILTER_OPTIONS}
+        searchPlaceholder="Search by Lender ID, Type, or Name..."
       />
       <CreateContactModal
         open={modalOpen}
