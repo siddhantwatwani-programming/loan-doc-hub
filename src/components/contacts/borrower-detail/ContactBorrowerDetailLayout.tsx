@@ -33,6 +33,10 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
       const needsPrefix = !NON_BORROWER_PREFIXES.some(p => key.startsWith(p)) && !key.startsWith('borrower.');
       result[needsPrefix ? `borrower.${key}` : key] = value;
     });
+    // Auto-fill Borrower ID from contact record
+    if (!result['borrower.borrowerId']) {
+      result['borrower.borrowerId'] = contact.contact_id;
+    }
     return result;
   });
 
