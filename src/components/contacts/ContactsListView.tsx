@@ -231,7 +231,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
         selectedCount={selectedCount}
         onBulkDelete={onDeleteSelected ? () => setDeleteDialogOpen(true) : undefined}
         onExport={() => setExportOpen(true)}
-        searchPlaceholder={`Search ${title.toLowerCase()}...`}
+        searchPlaceholder={searchPlaceholder || `Search ${title.toLowerCase()}...`}
       />
 
       <div className="border border-border rounded-lg overflow-x-auto">
