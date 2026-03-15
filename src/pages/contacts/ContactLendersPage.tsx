@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { FilterOption } from '@/components/deal/GridToolbar';
 
 // Re-export for backward compatibility with existing components
