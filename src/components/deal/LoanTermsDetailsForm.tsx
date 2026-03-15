@@ -202,11 +202,26 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
                 onChange={(brokerId, brokerFullName) => {
                   setValue(FIELD_KEYS.originatingVendor, brokerId);
                   if (brokerFullName) {
-                    setValue('loan_terms.originating_vendor_name', brokerFullName);
+                    setValue(FIELD_KEYS.originatingVendorFullName, brokerFullName);
+                  }
+                  if (contactData) {
+                    setValue(FIELD_KEYS.originatingVendorEmail, contactData.email || contactData['borrower.email'] || '');
                   }
                 }}
                 disabled={disabled}
               />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.originatingVendorFullName}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[130px] shrink-0 text-xs">Full Name</Label>
+              <Input id={FIELD_KEYS.originatingVendorFullName} value={getValue(FIELD_KEYS.originatingVendorFullName)} disabled className="h-8 text-xs flex-1 bg-muted" />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.originatingVendorEmail}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[130px] shrink-0 text-xs">Email</Label>
+              <Input id={FIELD_KEYS.originatingVendorEmail} value={getValue(FIELD_KEYS.originatingVendorEmail)} disabled className="h-8 text-xs flex-1 bg-muted" />
             </div>
           </DirtyFieldWrapper>
           {renderInlineField(FIELD_KEYS.origination, 'Origination', 'date')}
