@@ -33,6 +33,10 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
       const needsPrefix = !NON_BORROWER_PREFIXES.some(p => key.startsWith(p)) && !key.startsWith('borrower.');
       result[needsPrefix ? `borrower.${key}` : key] = value;
     });
+    // Auto-fill Borrower ID from contact record
+    if (!result['borrower.borrowerId']) {
+      result['borrower.borrowerId'] = contact.contact_id;
+    }
     return result;
   });
 
@@ -138,7 +142,7 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
             <ArrowLeft className="h-4 w-4 mr-1" /> Back to Borrowers
           </Button>
           <h3 className="font-semibold text-lg text-foreground">
-            Borrower Details — {contact.contact_id}
+          Borrower — {contact.contact_id}
           </h3>
         </div>
         <Button size="sm" onClick={handleSave} className="gap-1">
