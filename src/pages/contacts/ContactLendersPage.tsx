@@ -96,6 +96,20 @@ const ContactLendersPage: React.FC = () => {
   const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
+  // Debounced search: local input state + delayed sync to crud
+  const [localSearch, setLocalSearch] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      crud.setSearchQuery(localSearch);
+    }, 350);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [localSearch]);
+
   const handleCreate = useCallback(async (data: Record<string, string>) => {
     await crud.createContact(data);
     setModalOpen(false);
