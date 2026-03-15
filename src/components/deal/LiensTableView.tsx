@@ -146,7 +146,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
         <GridToolbar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          onRefresh={onRefresh}
+          onRefresh={undefined}
           filterOptions={FILTER_OPTIONS}
           activeFilters={activeFilters}
           onFilterChange={setFilter}
