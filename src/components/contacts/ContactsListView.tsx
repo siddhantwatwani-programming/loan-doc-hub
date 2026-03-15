@@ -60,6 +60,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
   breadcrumbLabel,
   filterOptions = [],
   renderCellValue,
+  searchPlaceholder,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig(tableConfigKey, defaultColumns);
   const visibleColumns = columns.filter((c) => c.visible);
