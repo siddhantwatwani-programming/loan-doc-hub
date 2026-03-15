@@ -165,7 +165,7 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
       <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: '1.2fr 1.2fr 1.2fr auto' }}>
         {/* Column 1 - Name + Tax Info */}
         <div className="space-y-2">
-          <h4 className="font-semibold text-sm text-foreground pb-1">Name</h4>
+          <h4 className="font-semibold text-sm text-foreground pb-1">Borrower Details</h4>
 
           <InlineField label="Borrower ID" fieldKey={FIELD_KEYS.borrowerId}>
             <Input value={getValue('borrowerId')} onChange={(e) => handleChange('borrowerId', e.target.value)} disabled={disabled} className="h-7 text-sm" />
