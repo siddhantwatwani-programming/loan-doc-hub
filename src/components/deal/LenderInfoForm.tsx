@@ -182,7 +182,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
         
         {/* Column 1: Name */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Name</h3>
+          <h3 className="text-sm font-semibold text-foreground border-b pb-2">Lender Details</h3>
           <div className="space-y-3">
             {wrapField('lenderId', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Lender ID</Label>

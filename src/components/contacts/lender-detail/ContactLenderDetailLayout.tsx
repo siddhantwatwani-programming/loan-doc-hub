@@ -35,6 +35,10 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
     Object.entries(contact.contact_data || {}).forEach(([key, value]) => {
       result[`lender.${key}`] = value;
     });
+    // Auto-fill Lender ID from contact record
+    if (!result['lender.lender_id']) {
+      result['lender.lender_id'] = contact.contact_id;
+    }
     return result;
   });
 
