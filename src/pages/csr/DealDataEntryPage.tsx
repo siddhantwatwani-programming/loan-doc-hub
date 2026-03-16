@@ -64,17 +64,14 @@ interface Deal {
 const SECTION_LABELS: Partial<
   Record<FieldSection | "origination_fees" | "funding" | "event_journal" | "liens", string>
 > = {
-  borrower: "Borrower",
   property: "Property",
   loan_terms: "Loan",
   liens: "Liens",
   funding: "Funding",
-  broker: "Broker",
   charges: "Charges",
   escrow: "Escrow Impound",
   notes: "Conversation Log",
   event_journal: "Events Journal",
-  lender: "Lenders",
   seller: "Seller",
   other: "Other",
   origination_fees: "Other Origination",
