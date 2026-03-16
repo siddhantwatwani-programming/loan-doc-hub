@@ -105,7 +105,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
         </div>
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender Name</Label>
-          <Input value={data.lenderFullName} onChange={(e) => handleChange('lenderFullName', e.target.value)} className="h-7 text-sm" />
+          <Input value={data.lenderFullName} readOnly disabled className="h-7 text-sm bg-muted" />
         </div>
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Funding Date</Label>
