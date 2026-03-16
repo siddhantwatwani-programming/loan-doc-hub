@@ -34,6 +34,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
 
 export interface FundingRecord {
   id: string;
+  fundingDate: string;
   lenderAccount: string;
   lenderName: string;
   pctOwned: number;
