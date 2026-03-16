@@ -258,9 +258,9 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
         <div className="space-y-3 py-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-              {/* Loan - auto-populated, read-only */}
+              {/* Loan Account - auto-populated, read-only */}
               <div className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Loan</Label>
+                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Loan Account</Label>
                 <Input value={loanNumber || formData.loan} disabled className="h-7 text-sm opacity-50 bg-muted" />
               </div>
               {/* Borrower - auto-populated, read-only */}
