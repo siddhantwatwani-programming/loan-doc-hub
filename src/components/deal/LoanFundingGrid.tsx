@@ -164,7 +164,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       lenderFullName: record.lenderName,
       lenderRate: String(record.lenderRate),
       fundingAmount: String(record.originalAmount),
-      fundingDate: '',
+      fundingDate: record.fundingDate || '',
       interestFrom: '',
       notes: '',
       brokerParticipates: false,
