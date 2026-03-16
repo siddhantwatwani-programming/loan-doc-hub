@@ -32,7 +32,6 @@ interface FundingHistoryRecord {
   lenderAccount: string;
   lenderName: string;
   amountFunded: number;
-  notes: string;
 }
 
 interface FundingHistoryDialogProps {
@@ -48,7 +47,6 @@ const HISTORY_EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'lenderAccount', label: 'Lender Account' },
   { id: 'lenderName', label: 'Lender Name' },
   { id: 'amountFunded', label: 'Amount Funded' },
-  { id: 'notes', label: 'Notes' },
 ];
 
 export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
@@ -112,13 +110,12 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
                   <TableHead className="font-semibold">LENDER ACCOUNT</TableHead>
                   <TableHead className="font-semibold">LENDER NAME</TableHead>
                   <TableHead className="font-semibold text-left">AMOUNT FUNDED</TableHead>
-                  <TableHead className="font-semibold">NOTES</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedRecords.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                       No data available
                     </TableCell>
                   </TableRow>
@@ -140,9 +137,6 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
                       <TableCell>{record.lenderName}</TableCell>
                       <TableCell className="text-left">
                         {formatCurrency(record.amountFunded)}
-                      </TableCell>
-                      <TableCell className="max-w-[200px] truncate" title={record.notes}>
-                        {record.notes}
                       </TableCell>
                     </TableRow>
                   ))

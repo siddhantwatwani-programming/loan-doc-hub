@@ -57,7 +57,6 @@ async function resolveFieldDictId(fieldKey: string, cache: Map<string, string>):
 
 /**
  * Direct-persist a JSON value into deal_section_values for loan_terms section.
- * Mirrors the pattern used by handleDeleteRecord.
  */
 async function directPersistFundingField(
   dealId: string,
@@ -77,9 +76,7 @@ async function directPersistFundingField(
 
     if (fetchError) throw fetchError;
 
-    // If rows exist, update the first one that has this key, or the first row as fallback
     if (sectionRows && sectionRows.length > 0) {
-      // Find the row that already contains this field, or use first row
       let targetRow = sectionRows.find((sv) => {
         const fv = (sv.field_values as Record<string, any>) || {};
         return !!fv[fieldDictId];
@@ -106,7 +103,6 @@ async function directPersistFundingField(
       if (updateError) throw updateError;
       return true;
     } else {
-      // No loan_terms row exists yet — create one
       const fieldValues: Record<string, any> = {};
       fieldValues[fieldDictId] = {
         value_text: jsonValue,
@@ -157,7 +153,6 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     const last = values['borrower1.last_name'] || values['borrower.last_name'] || '';
     const fullName = (first || last) ? `${first} ${last}`.trim() : (values['borrower1.full_name'] || values['borrower.full_name'] || values['borrower.name'] || '');
     
-    // Include primary address if available
     const address = values['borrower1.primary_address'] || values['borrower.primary_address'] || values['borrower.address'] || '';
     const city = values['borrower1.city'] || values['borrower.city'] || '';
     const state = values['borrower1.state'] || values['borrower.state'] || '';
@@ -202,7 +197,6 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   useEffect(() => {
     if (hydrationAttemptedRef.current) return;
     if (!dealId) return;
-    // If values already contain funding data, skip
     if (values[FIELD_KEYS.fundingRecords] || values[FIELD_KEYS.fundingHistory]) {
       hydrationAttemptedRef.current = true;
       return;
@@ -253,17 +247,27 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   }, [fundingRecords, currentPage, pageSize]);
 
   const handleAddFunding = useCallback(async (data: FundingFormData) => {
+    // Determine lender rate from rate selection
+    let lenderRate = 0;
+    if (data.rateSelection === 'note_rate') lenderRate = parseFloat(data.rateNoteValue) || 0;
+    else if (data.rateSelection === 'sold_rate') lenderRate = parseFloat(data.rateSoldValue) || 0;
+    else if (data.rateSelection === 'lender_rate') lenderRate = parseFloat(data.rateLenderValue) || 0;
+
     const newRecord: FundingRecord = {
       id: `funding-${Date.now()}`,
       fundingDate: data.fundingDate || '',
       lenderAccount: data.lenderId || '',
       lenderName: data.lenderFullName || '',
       pctOwned: parseFloat(data.percentOwned) || 0,
-      lenderRate: parseFloat(data.lenderRate) || 0,
+      lenderRate,
       principalBalance: parseFloat(data.fundingAmount) || 0,
       originalAmount: parseFloat(data.fundingAmount) || 0,
       regularPayment: parseFloat(data.regularPayment) || 0,
       roundingError: false,
+      rateSelection: data.rateSelection,
+      rateNoteValue: data.rateNoteValue,
+      rateSoldValue: data.rateSoldValue,
+      rateLenderValue: data.rateLenderValue,
     };
 
     const updatedRecords = [...fundingRecords, newRecord];
@@ -285,7 +289,6 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       lenderAccount: data.lenderId,
       lenderName: data.lenderFullName,
       amountFunded: parseFloat(data.fundingAmount) || 0,
-      notes: data.notes,
     });
     const updatedHistoryJson = JSON.stringify(history);
     onValueChange(FIELD_KEYS.fundingHistory, updatedHistoryJson);
@@ -312,7 +315,6 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     const updatedRecords = fundingRecords.filter((r) => r.id !== record.id);
     onValueChange(FIELD_KEYS.fundingRecords, JSON.stringify(updatedRecords));
 
-    // Directly persist the updated records to the backend to avoid stale state issues
     try {
       const fieldDictId = await resolveFieldDictId(FIELD_KEYS.fundingRecords, dictCacheRef.current);
       if (!fieldDictId) throw new Error('Field dictionary entry not found for funding_records');
@@ -349,7 +351,6 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
         }
       }
 
-      // If we didn't find the key in any row, fallback to saveDraft
       if (saveDraft) {
         const success = await saveDraft();
         if (success) {
