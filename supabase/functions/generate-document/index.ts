@@ -641,6 +641,59 @@ async function generateSingleDocument(
     }
     console.log(`[generate-document] Auto-computed co_borrower_section = "${coBorrowerSection ? "populated" : "empty"}", name = "${coBorrowerName || "none"}", address = "${coBorrowerAddress || "none"}"`);
 
+    // ── Lien field bridging: map lien1.* / lien.* dot-notation to pr_li_* keys ──
+    {
+      const lienFieldToPrLi: Record<string, string> = {
+        "property": "pr_li_lienProper",
+        "priority": "pr_li_lienPriori",
+        "holder": "pr_li_lienHolder",
+        "account": "pr_li_lienAccoun",
+        "contact": "pr_li_lienContac",
+        "phone": "pr_li_lienPhone",
+        "original_balance": "pr_li_lienOriginBalanc",
+        "current_balance": "pr_li_lienCurrenBalanc",
+        "regular_payment": "pr_li_lienRegulaPaymen",
+        "last_checked": "pr_li_lienLastChecke",
+        "recording_number": "pr_li_lienAccoun2",
+        "balance_after": "pr_li_lienCurrenBalanc2",
+        "last_verified": "pr_li_lienLastChecke2",
+        "senior_lien_tracking": "pr_li_seniorLienTracki",
+        "note": "pr_li_lienHolder2",
+        "status": "pr_li_lienHolder3",
+      };
+
+      // Also bridge to property1.lien_* canonical keys
+      const lienFieldToCanonical: Record<string, string> = {
+        "property": "property1.lien_property",
+        "priority": "property1.lien_priority",
+        "holder": "property1.lien_holder",
+        "account": "property1.lien_account",
+        "contact": "property1.lien_contact",
+        "phone": "property1.lien_phone",
+        "original_balance": "property1.lien_original_balance",
+        "current_balance": "property1.lien_current_balance",
+        "regular_payment": "property1.lien_regular_payment",
+        "last_checked": "property1.lien_last_checked",
+      };
+
+      for (const [key, val] of [...fieldValues.entries()]) {
+        // Match lien1.holder, lien2.holder, lien.holder etc.
+        const lienMatch = key.match(/^lien(\d*)\.(.+)$/);
+        if (lienMatch && val.rawValue) {
+          const field = lienMatch[2];
+          const prLiKey = lienFieldToPrLi[field];
+          if (prLiKey && !fieldValues.has(prLiKey)) {
+            fieldValues.set(prLiKey, val);
+          }
+          const canonKey = lienFieldToCanonical[field];
+          if (canonKey && !fieldValues.has(canonKey)) {
+            fieldValues.set(canonKey, val);
+          }
+        }
+      }
+      console.log(`[generate-document] Lien field bridging complete`);
+    }
+
     // Build set of ALL valid field keys from the complete field_dictionary (for direct tag matching)
     // Use pagination to fetch all rows (table has 1700+ entries, default limit is 1000)
     // Include canonical_key for backward compatibility with old merge tags
