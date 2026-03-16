@@ -251,12 +251,12 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle>{isEditing ? 'Edit Funding' : 'Add Funding'}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 py-3">
+        <div className="flex-1 overflow-y-auto min-h-0 space-y-3 py-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
               {/* Loan Account - auto-populated, read-only */}
               <div className="flex items-center gap-3">
@@ -433,7 +433,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
             </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="shrink-0 border-t border-border pt-3">
           <Button variant="outline" size="sm" onClick={handleCancel}>Cancel</Button>
           <Button size="sm" onClick={handleSubmit}>{isEditing ? 'Update Funding' : 'Save Funding'}</Button>
         </DialogFooter>
