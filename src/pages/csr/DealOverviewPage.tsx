@@ -101,6 +101,17 @@ export const DealOverviewPage: React.FC = () => {
 
   const fetchDealData = async () => {
     try {
+      // Ensure auth session is available before querying (prevents RLS failures during transient session drops)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        await new Promise(r => setTimeout(r, 1000));
+        const { data: { session: retrySession } } = await supabase.auth.getSession();
+        if (!retrySession) {
+          // Still no session — don't show "File Not Found", just keep loading
+          return;
+        }
+      }
+
       // Fetch deal
       const { data: dealData, error: dealError } = await supabase
         .from('deals')
