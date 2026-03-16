@@ -71,15 +71,15 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2 text-sm">
             <DollarSign className="h-4 w-4 text-primary" />
             {isEdit ? 'Edit Charge' : 'New Charge'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 mt-3">
+        <div className="flex-1 overflow-y-auto min-h-0 sleek-scrollbar space-y-4 mt-3">
           {/* Loan Information */}
           <div>
             <div className="bg-primary/10 border border-primary/20 rounded px-2 py-1 mb-2">
@@ -159,7 +159,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
           </div>
         </div>
 
-        <DialogFooter className="mt-4">
+        <DialogFooter className="shrink-0 border-t border-border pt-3">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button size="sm" onClick={handleSave}>OK</Button>
         </DialogFooter>
