@@ -146,50 +146,11 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   const dictCacheRef = useRef<Map<string, string>>(new Map());
   const hydrationAttemptedRef = useRef(false);
 
-  const [contactBorrowerName, setContactBorrowerName] = useState('');
-
   // Get loan number and borrower name from values - auto-populate
   const loanNumber = values['Terms.LoanNumber'] || values['loan_terms.loan_number'] || '';
 
-  // Resolve borrower contact_id from deal values
-  const borrowerContactId = values['borrower1.borrower_id'] || values['borrower.borrower_id'] || values['borrower1.contact_id'] || values['borrower.contact_id'] || '';
-
-  // Fetch borrower details from Contacts table
-  useEffect(() => {
-    if (!borrowerContactId) {
-      // Fallback to deal form values if no contact_id - name only
-      const first = values['borrower1.first_name'] || values['borrower.first_name'] || '';
-      const last = values['borrower1.last_name'] || values['borrower.last_name'] || '';
-      const fullName = (first || last) ? `${first} ${last}`.trim() : (values['borrower1.full_name'] || values['borrower.full_name'] || values['borrower.name'] || '');
-      setContactBorrowerName(fullName);
-      return;
-    }
-
-    const fetchContact = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('contacts')
-          .select('full_name, contact_data')
-          .eq('contact_id', borrowerContactId)
-          .eq('contact_type', 'borrower')
-          .maybeSingle();
-
-        if (error || !data) {
-          setContactBorrowerName(borrowerContactId);
-          return;
-        }
-
-        const cd = (data.contact_data as Record<string, any>) || {};
-        const fullName = data.full_name || cd.full_name || '';
-        setContactBorrowerName(fullName);
-      } catch {
-        setContactBorrowerName(borrowerContactId);
-      }
-    };
-    fetchContact();
-  }, [borrowerContactId, values]);
-
-  const borrowerName = contactBorrowerName;
+  // Borrower Name: read directly from Loan → Details borrower name field
+  const borrowerName = values['loan_terms.details_borrower_name'] || '';
 
   // Get loan rates for Rate Selection
   const noteRate = values['loan_terms.note_rate'] || '';
