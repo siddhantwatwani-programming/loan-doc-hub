@@ -130,15 +130,15 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2 text-sm">
             <Home className="h-4 w-4 text-primary" />
             {isEdit ? 'Edit Property Lien' : 'New Property Lien'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 mt-3 overflow-y-auto flex-1">
+        <div className="flex-1 overflow-y-auto min-h-0 sleek-scrollbar space-y-3 mt-3">
           <div className="border-b border-border pb-1">
             <span className="font-semibold text-xs text-primary">Property Lien Information</span>
           </div>
@@ -270,7 +270,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
           )}
         </div>
 
-        <div className="flex justify-end gap-2 pt-3 border-t border-border shrink-0">
+        <div className="flex justify-end gap-2 pt-3 border-t border-border shrink-0 mt-0">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button size="sm" onClick={handleSave}>OK</Button>
         </div>

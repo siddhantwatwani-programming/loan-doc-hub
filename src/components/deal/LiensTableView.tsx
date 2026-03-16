@@ -6,6 +6,8 @@ import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { GridToolbar } from './GridToolbar';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
+import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
+import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
 import {
@@ -91,11 +93,27 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'lastVerified', label: 'Last Verified' },
 ];
 
+const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'property', label: 'Related Property', visible: true },
+  { id: 'holder', label: 'Lien Holder', visible: true },
+  { id: 'loanType', label: 'Loan Type', visible: true },
+  { id: 'lienPriorityNow', label: 'Lien Priority Now', visible: true },
+  { id: 'lienPriorityAfter', label: 'Lien Priority After', visible: true },
+  { id: 'interestRate', label: 'Interest Rate', visible: true },
+  { id: 'originalBalance', label: 'Original Balance', visible: true },
+  { id: 'balanceAfter', label: 'Balance After', visible: true },
+  { id: 'regularPayment', label: 'Regular Payment', visible: true },
+  { id: 'recordingNumber', label: 'Recording Number', visible: true },
+  { id: 'lastVerified', label: 'Last Verified', visible: true },
+];
+
 export const LiensTableView: React.FC<LiensTableViewProps> = ({
   liens, onAddLien, onEditLien, onRowClick, onDeleteLien, onBulkDelete, onRefresh, onBack, disabled = false,
 }) => {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('liens', DEFAULT_COLUMNS);
+  const visibleColumns = columns.filter((col) => col.visible);
 
   const {
     searchQuery, setSearchQuery, sortState, toggleSort,
@@ -124,6 +142,23 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
     setBulkDeleteOpen(false);
   };
 
+  const renderCellValue = (lien: LienData, columnId: string) => {
+    switch (columnId) {
+      case 'property': return lien.property || 'Unassigned';
+      case 'holder': return lien.holder || '-';
+      case 'loanType': return lien.loanType || '-';
+      case 'lienPriorityNow': return lien.lienPriorityNow || '-';
+      case 'lienPriorityAfter': return lien.lienPriorityAfter || '-';
+      case 'interestRate': return lien.interestRate ? `${lien.interestRate}%` : '-';
+      case 'originalBalance': return formatCurrency(lien.originalBalance) || '-';
+      case 'balanceAfter': return formatCurrency(lien.balanceAfter) || '-';
+      case 'regularPayment': return formatCurrency(lien.regularPayment) || '-';
+      case 'recordingNumber': return lien.recordingNumber || '-';
+      case 'lastVerified': return lien.lastVerified || '-';
+      default: return '-';
+    }
+  };
+
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
@@ -136,10 +171,18 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
           )}
           <h3 className="text-lg font-semibold text-foreground">Liens</h3>
         </div>
-        <Button size="sm" onClick={onAddLien} disabled={disabled} className="gap-1">
-          <Plus className="h-4 w-4" />
-          Add Lien
-        </Button>
+        <div className="flex items-center gap-2">
+          <ColumnConfigPopover
+            columns={columns}
+            onColumnsChange={setColumns}
+            onResetColumns={resetColumns}
+            disabled={disabled}
+          />
+          <Button variant="outline" size="sm" onClick={onAddLien} disabled={disabled} className="gap-1">
+            <Plus className="h-4 w-4" />
+            Add Lien
+          </Button>
+        </div>
       </div>
 
       <div className="mb-3">
@@ -167,23 +210,23 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                 <TableHead className="w-[40px]">
                   <Checkbox checked={isAllSelected} onCheckedChange={() => toggleAll()} aria-label="Select all" />
                 </TableHead>
-                <SortableTableHead columnId="property" label="Related Property" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
-                <SortableTableHead columnId="holder" label="Lien Holder" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
-                <SortableTableHead columnId="loanType" label="Loan Type" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
-                <SortableTableHead columnId="lienPriorityNow" label="Lien Priority Now" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[80px]" />
-                <SortableTableHead columnId="lienPriorityAfter" label="Lien Priority After" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[80px]" />
-                <SortableTableHead columnId="interestRate" label="Interest Rate" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
-                <SortableTableHead columnId="originalBalance" label="Original Balance" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px] text-right" />
-                <SortableTableHead columnId="balanceAfter" label="Balance After" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px] text-right" />
-                <SortableTableHead columnId="regularPayment" label="Regular Payment" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px] text-right" />
-                <SortableTableHead columnId="recordingNumber" label="Recording Number" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
-                <SortableTableHead columnId="lastVerified" label="Last Verified" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
+                {visibleColumns.map((col) => (
+                  <SortableTableHead
+                    key={col.id}
+                    columnId={col.id}
+                    label={col.label}
+                    sortColumnId={sortState.columnId}
+                    sortDirection={sortState.direction}
+                    onSort={toggleSort}
+                    className={['originalBalance', 'balanceAfter', 'regularPayment'].includes(col.id) ? 'min-w-[120px] text-right' : 'min-w-[100px]'}
+                  />
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
                     No liens added. Click "Add Lien" to create one.
                   </TableCell>
                 </TableRow>
@@ -193,17 +236,11 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                     <TableCell onClick={(e) => e.stopPropagation()} className="w-[40px]">
                       <Checkbox checked={selectedIds.has(lien.id)} onCheckedChange={() => toggleOne(lien.id)} aria-label={`Select lien`} />
                     </TableCell>
-                    <TableCell className="font-medium">{lien.property || 'Unassigned'}</TableCell>
-                    <TableCell>{lien.holder || '-'}</TableCell>
-                    <TableCell>{lien.loanType || '-'}</TableCell>
-                    <TableCell>{lien.lienPriorityNow || '-'}</TableCell>
-                    <TableCell>{lien.lienPriorityAfter || '-'}</TableCell>
-                    <TableCell>{lien.interestRate ? `${lien.interestRate}%` : '-'}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(lien.originalBalance) || '-'}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(lien.balanceAfter) || '-'}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(lien.regularPayment) || '-'}</TableCell>
-                    <TableCell>{lien.recordingNumber || '-'}</TableCell>
-                    <TableCell>{lien.lastVerified || '-'}</TableCell>
+                    {visibleColumns.map((col) => (
+                      <TableCell key={col.id} className={['originalBalance', 'balanceAfter', 'regularPayment'].includes(col.id) ? 'text-right' : ''}>
+                        {renderCellValue(lien, col.id)}
+                      </TableCell>
+                    ))}
                   </TableRow>
                 ))
               )}
