@@ -933,17 +933,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
               .filter((s) => SECTION_LABELS[s] && s !== "dates" && s !== "origination_fees")
               .map((section) => (
                 <TabsContent key={section} value={section} forceMount className={cn("animate-fade-in", activeTab !== section && "hidden")}>
-                  {section === "borrower" ? (
-                    <BorrowerSectionContent
-                      fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
-                      values={values}
-                      onValueChange={updateValue}
-                      onRemoveValuesByPrefix={removeValuesByPrefix}
-                      showValidation={showValidation}
-                      disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
-                      calculationResults={calculationResults}
-                    />
-                  ) : section === "property" ? (
+                  {section === "property" ? (
                     <PropertySectionContent
                       fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
                       values={values}
@@ -962,26 +952,6 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
                       dealId={id || ""}
-                    />
-                  ) : section === "lender" ? (
-                    <LenderSectionContent
-                      fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
-                      values={values}
-                      onValueChange={updateValue}
-                      onRemoveValuesByPrefix={removeValuesByPrefix}
-                      showValidation={showValidation}
-                      disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
-                      calculationResults={calculationResults}
-                    />
-                  ) : section === "broker" ? (
-                    <BrokerSectionContent
-                      fields={isExternalUser ? visibleFieldsBySection[section] || [] : fieldsBySection[section] || []}
-                      values={values}
-                      onValueChange={updateValue}
-                      onRemoveValuesByPrefix={removeValuesByPrefix}
-                      showValidation={showValidation}
-                      disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
-                      calculationResults={calculationResults}
                     />
                   ) : section === "charges" ? (
                     <ChargesSectionContent
