@@ -21,6 +21,7 @@ import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'fundingDate', label: 'Funding Date', visible: true },
   { id: 'lenderAccount', label: 'Lender Account', visible: true },
   { id: 'lenderName', label: 'Lender Name', visible: true },
   { id: 'pctOwned', label: 'Pct Owned', visible: true },
@@ -33,6 +34,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
 
 export interface FundingRecord {
   id: string;
+  fundingDate: string;
   lenderAccount: string;
   lenderName: string;
   pctOwned: number;
@@ -162,7 +164,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       lenderFullName: record.lenderName,
       lenderRate: String(record.lenderRate),
       fundingAmount: String(record.originalAmount),
-      fundingDate: '',
+      fundingDate: record.fundingDate || '',
       interestFrom: '',
       notes: '',
       brokerParticipates: false,
@@ -190,6 +192,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
 
   const renderCellValue = (record: FundingRecord, columnId: string) => {
     switch (columnId) {
+      case 'fundingDate':
+        return record.fundingDate || '-';
       case 'lenderAccount':
         return <span className="font-medium">{record.lenderAccount || '-'}</span>;
       case 'lenderName':
@@ -391,6 +395,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         onSubmit={(data) => {
           if (selectedRecord) {
             onUpdateRecord(selectedRecord.id, {
+              fundingDate: data.fundingDate || '',
               lenderAccount: data.lenderId,
               lenderName: data.lenderFullName,
               lenderRate: parseFloat(data.lenderRate) || 0,
