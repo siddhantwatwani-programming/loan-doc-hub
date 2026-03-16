@@ -69,6 +69,8 @@ const getEmptyLog = (): Omit<LogRow, 'id'> => {
     highPriority: false,
     reference: '',
     attachments: [],
+    account: '',
+    name: '',
   };
 };
 
