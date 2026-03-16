@@ -286,6 +286,25 @@
     scrollbar-color: hsl(var(--sidebar-border)) transparent;
   }
 
+  /* Sleek modal scrollbar */
+  .sleek-scrollbar::-webkit-scrollbar {
+    width: 5px;
+  }
+  .sleek-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sleek-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 9999px;
+  }
+  .sleek-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+  .sleek-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
   /* Focus ring utility */
   .focus-ring {
     @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background;
