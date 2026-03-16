@@ -166,14 +166,15 @@ export function normalizeWordXml(xmlContent: string): string {
   });
   
   // Handle split opening braces: {</w:t></w:r><w:r><w:t>{ -> {{
-  const splitOpenBraces = /\{((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\{/g;
+  // Allow ANY intermediate XML elements (w:rPr, w:fldChar, w:tab, w:br, w:lastRenderedPageBreak, etc.)
+  const splitOpenBraces = /\{((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>|<w:(?!t[\s>])[^>]*(?:\/>|>[\s\S]*?<\/w:[^>]+>)))*\s*<w:t[^>]*>)+)\{/g;
   result = result.replace(splitOpenBraces, (match) => {
     console.log(`[tag-parser] Consolidated fragmented opening braces {{`);
     return '{{';
   });
   
   // Handle split closing braces: }</w:t></w:r><w:r><w:t>} -> }}
-  const splitCloseBraces = /\}((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\}/g;
+  const splitCloseBraces = /\}((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>|<w:(?!t[\s>])[^>]*(?:\/>|>[\s\S]*?<\/w:[^>]+>)))*\s*<w:t[^>]*>)+)\}/g;
   result = result.replace(splitCloseBraces, (match) => {
     console.log(`[tag-parser] Consolidated fragmented closing braces }}`);
     return '}}';
@@ -367,9 +368,9 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
     if (!para.includes('{') && !para.includes('\u00AB')) return para;
     parasWithBraces++;
 
-    // Extract text content from each <w:t> element
+    // Extract text content from each <w:t> and <w:instrText> element
     const tTexts: string[] = [];
-    para.replace(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g, (_, text) => {
+    para.replace(/<w:(?:t|instrText)(?:\s[^>]*)?>([^<]*)<\/w:(?:t|instrText)>/g, (_, text) => {
       tTexts.push(text);
       return '';
     });
