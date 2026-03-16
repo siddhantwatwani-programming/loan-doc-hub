@@ -301,11 +301,13 @@ async function generateSingleDocument(
     // Auto-compute br_p_fullName from borrower name fields if not already set
     const existingBrPFullName = fieldValues.get("br_p_fullName");
     if (!existingBrPFullName || !existingBrPFullName.rawValue) {
+      // Check indexed borrower keys first
       const b1FullName = fieldValues.get("borrower1.full_name") || fieldValues.get("borrower.full_name");
       if (b1FullName && b1FullName.rawValue) {
         fieldValues.set("br_p_fullName", { rawValue: b1FullName.rawValue, dataType: "text" });
         console.log(`[generate-document] Auto-computed br_p_fullName = "${b1FullName.rawValue}"`);
       } else {
+        // Try assembling from borrower name components
         const bFirstName = fieldValues.get("borrower1.first_name")?.rawValue || fieldValues.get("borrower.first_name")?.rawValue || fieldValues.get("br_p_firstName")?.rawValue;
         const bMiddleName = fieldValues.get("borrower1.middle_initial")?.rawValue || fieldValues.get("borrower.middle_initial")?.rawValue || fieldValues.get("br_p_middleInitia")?.rawValue;
         const bLastName = fieldValues.get("borrower1.last_name")?.rawValue || fieldValues.get("borrower.last_name")?.rawValue || fieldValues.get("br_p_lastName")?.rawValue;
@@ -314,6 +316,13 @@ async function generateSingleDocument(
           const fullName = bNameParts.join(" ");
           fieldValues.set("br_p_fullName", { rawValue: fullName, dataType: "text" });
           console.log(`[generate-document] Auto-computed br_p_fullName from components = "${fullName}"`);
+        } else {
+          // Final fallback: check Loan Details borrower name field
+          const loanDetailsBorrowerName = fieldValues.get("loan_terms.details_borrower_name");
+          if (loanDetailsBorrowerName?.rawValue) {
+            fieldValues.set("br_p_fullName", { rawValue: loanDetailsBorrowerName.rawValue, dataType: "text" });
+            console.log(`[generate-document] Auto-computed br_p_fullName from loan_terms.details_borrower_name = "${loanDetailsBorrowerName.rawValue}"`);
+          }
         }
       }
     }

@@ -1,74 +1,110 @@
 
-Deep technical analysis: why `{{br_p_fullName}}` is not populating
 
-Summary
-- The placeholder is valid and is being detected correctly.
-- The document generation pipeline is functioning as designed.
-- The real problem is missing persisted borrower-name data for this deal, not placeholder parsing.
+## Event Journal (Change Log System) Implementation Plan
 
-What I verified
-1. Template content is correct
-   - The uploaded/mapped DOCX contains `{{br_p_fullName}}` twice.
-   - It also contains `{{ln_p_loanNumber}}`, which does populate.
+### Overview
+Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
 
-2. The tag parser is working
-   - Edge logs show:
-     - `Found 2 merge tags: br_p_fullName, ln_p_loanNumber`
-     - `Replacing ln_p_loanNumber -> ... = "3424234"`
-     - `No data for br_p_fullName (canonical: br_p_fullName)`
-     - `Cleaning 1 no-data tags: br_p_fullName`
-   - This proves the placeholder is being found, parsed, and then blanked only because no value exists.
+### 1. Database: New Migration
+Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
 
-3. The generator already has fallback logic
-   - In `supabase/functions/generate-document/index.ts`, the function:
-     - builds `fieldValues` from `deal_section_values`
-     - bridges indexed keys like `borrower1.full_name` to `borrower.full_name`
-     - auto-computes `br_p_fullName` from:
-       - `borrower1.full_name`
-       - `borrower.full_name`
-       - or borrower first/middle/last name parts
-   - So this is not currently a missing-bridge bug.
+```sql
+CREATE TABLE public.event_journal (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
+  event_number integer NOT NULL,
+  actor_user_id uuid NOT NULL,
+  section text NOT NULL,
+  details jsonb NOT NULL DEFAULT '[]',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-4. The backend data for this deal is missing the borrower source
-   - For deal `e78b793b-94c9-4e22-866f-f3633330fd60`, `deal_section_values` only contains:
-     - `loan_terms`
-     - `broker`
-   - There is no `borrower` section row at all.
-   - There is no stored value for `br_p_fullName`.
-   - `deals.borrower_name` is also `null`.
+CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
+ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
 
-5. The likely upstream persistence gap is in Loan Details
-   - `src/components/deal/LoanTermsDetailsForm.tsx` uses `loan_terms.details_borrower_name`.
-   - `src/hooks/useDealFields.ts` only persists keys that resolve to a real `field_dictionary` entry.
-   - I checked `field_dictionary`: there is no entry for `loan_terms.details_borrower_name`.
-   - Result: that value can exist in UI state, but `saveDraft()` will skip it and it never reaches the backend.
+-- RLS: CSR and Admin can view/insert
+CREATE POLICY "CSRs can view event journal" ON public.event_journal
+  FOR SELECT TO authenticated
+  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
 
-Root cause
-- `{{br_p_fullName}}` is blank because the document generator has no persisted borrower full-name value to read for this deal.
-- The failure is upstream data persistence/mapping, not DOCX replacement, merge-tag parsing, or template syntax.
+CREATE POLICY "CSRs can insert event journal" ON public.event_journal
+  FOR INSERT TO authenticated
+  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
 
-Important correction to earlier assumptions
-- `br_p_fullName` is not failing because the generator cannot bridge it anymore.
-- The current source already includes that fallback.
-- The actual blocker is that this deal has no borrower data stored in any source the generator reads.
+-- Auto-increment event_number per deal
+CREATE OR REPLACE FUNCTION public.set_event_journal_number()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
+BEGIN
+  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
+  FROM public.event_journal WHERE deal_id = NEW.deal_id;
+  RETURN NEW;
+END;
+$$;
 
-Why `ln_p_loanNumber` works but `br_p_fullName` does not
-- `ln_p_loanNumber` has persisted data in `loan_terms`.
-- `br_p_fullName` has no persisted borrower section data, and no populated fallback source.
+CREATE TRIGGER trg_event_journal_number
+  BEFORE INSERT ON public.event_journal
+  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
+```
 
-Technical evidence
-- `field_dictionary` contains `br_p_fullName` as a valid borrower field.
-- The mapped template has `0` `template_field_maps`, but that is not the blocker here because explicit `{{...}}` tags are resolved directly from `fieldValues`.
-- The tag parser only blanks the field after resolution fails.
+The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
 
-Recommended implementation path if approved
-1. Fix the save path so Loan Details “Borrower Name” writes into an existing persisted borrower source used by generation.
-2. Optionally add a final fallback in `generate-document` from an already-persisted deal-level borrower summary if that is the intended source of truth.
-3. Re-test this exact deal and confirm logs change from:
-   - `No data for br_p_fullName`
-   to a replacement log for `br_p_fullName`.
+### 2. Hook: `useEventJournal.ts` (New File)
+- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
+- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
+- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
 
-Minimum-change conclusion
-- No template change is needed.
-- No schema change is required if the borrower name is mapped into an existing persisted field.
-- The issue is a data-source/persistence gap, not a document-generation parsing defect.
+### 3. Capture Old→New Values in `useDealFields.ts`
+- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
+- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
+- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
+- After successful save, update the snapshot
+
+### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
+Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
+- Table with columns: Event #, User, Section, Details, Timestamp
+- Details column shows truncated preview (first 80 chars)
+- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
+- Sorted by event_number descending (newest first)
+
+### 5. `EventJournalViewer` Component (New File)
+`src/components/deal/EventJournalViewer.tsx`:
+- Fetches from `event_journal` table filtered by `deal_id`
+- Joins actor names from `profiles`
+- Table layout using existing shadcn Table components
+- "Show More" modal using existing Dialog component
+- Detail entries formatted as `Field Label: oldValue → newValue`
+
+### 6. Global Event Journal Page (New File)
+`src/pages/csr/GlobalEventJournalPage.tsx`:
+- Deal selector dropdown (search by deal number) at the top
+- Once a deal is selected, renders `EventJournalViewer` for that deal
+- Same table structure as the per-deal view
+
+### 7. Sidebar Navigation Update
+In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
+```tsx
+<PromotedNavSection
+  label="Event Journal"
+  icon={BookOpen}
+  items={[]}
+  directPath="/event-journal"
+  isCollapsed={isCollapsed}
+  searchQuery={searchQuery}
+/>
+```
+
+### 8. Route Registration
+In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
+
+### Files Changed
+| File | Change |
+|------|--------|
+| New migration | Create `event_journal` table with trigger |
+| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
+| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
+| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
+| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
+| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
+| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
+| `src/App.tsx` | Add `/event-journal` route |
+
