@@ -199,6 +199,130 @@ async function generateSingleDocument(
       }
     }
 
+    // ── Contact lookup: resolve borrower/lender/broker from contacts table ──
+    // When participant data lives in the Contacts module rather than deal_section_values,
+    // look up contact records by their IDs and inject their data into the field namespace.
+    {
+      const borrowerContactId = fieldValues.get("loan_terms.details_borrower_id")?.rawValue;
+      const coBorrowerContactId = fieldValues.get("loan_terms.details_co_borrower_id")?.rawValue;
+
+      // Collect unique contact IDs to fetch
+      const contactIdsToFetch = [...new Set(
+        [borrowerContactId, coBorrowerContactId].filter(Boolean).map(String)
+      )];
+
+      // Also scan for lender contact IDs (L-XXXXX pattern)
+      for (const [key, val] of fieldValues.entries()) {
+        if (val.rawValue && typeof val.rawValue === "string" && String(val.rawValue).startsWith("L-")) {
+          const lk = key.toLowerCase();
+          if (lk.includes("lender") && (lk.includes("_id") || lk.endsWith("id") || lk.includes("account"))) {
+            if (!contactIdsToFetch.includes(String(val.rawValue))) {
+              contactIdsToFetch.push(String(val.rawValue));
+            }
+          }
+        }
+      }
+
+      if (contactIdsToFetch.length > 0) {
+        const { data: contactRows } = await supabase
+          .from("contacts")
+          .select("contact_id, contact_type, full_name, first_name, last_name, email, phone, city, state, company, contact_data")
+          .in("contact_id", contactIdsToFetch);
+
+        if (contactRows && contactRows.length > 0) {
+          console.log(`[generate-document] Fetched ${contactRows.length} contact(s) for participant lookup`);
+
+          const setIfEmpty = (key: string, value: string) => {
+            if (value && (!fieldValues.has(key) || !fieldValues.get(key)?.rawValue)) {
+              fieldValues.set(key, { rawValue: value, dataType: "text" });
+            }
+          };
+
+          const injectContact = (contact: any, dotPrefixes: string[], shortPrefix?: string) => {
+            const cd = contact.contact_data || {};
+            const firstName = cd.first_name || contact.first_name || "";
+            const middleName = cd.middle_initial || "";
+            const lastName = cd.last_name || contact.last_name || "";
+            const assembledName = [firstName, middleName, lastName].filter(Boolean).join(" ");
+            const fullName = assembledName || cd.full_name || contact.full_name || "";
+            const email = cd.email || contact.email || "";
+            const company = cd.company || contact.company || "";
+            const phone = cd["phone.cell"] || cd["phone.work"] || cd["phone.home"] || contact.phone || "";
+            const fax = cd["phone.fax"] || "";
+
+            // Dot-notation prefixes (e.g., borrower1.full_name, borrower.full_name)
+            for (const prefix of dotPrefixes) {
+              setIfEmpty(`${prefix}.full_name`, fullName);
+              setIfEmpty(`${prefix}.first_name`, firstName);
+              setIfEmpty(`${prefix}.last_name`, lastName);
+              setIfEmpty(`${prefix}.middle_initial`, middleName);
+              setIfEmpty(`${prefix}.email`, email);
+              setIfEmpty(`${prefix}.company`, company);
+              setIfEmpty(`${prefix}.phone`, phone);
+              setIfEmpty(`${prefix}.fax`, fax);
+              if (cd["address.street"]) setIfEmpty(`${prefix}.address.street`, cd["address.street"]);
+              if (cd["address.city"] || contact.city) setIfEmpty(`${prefix}.address.city`, cd["address.city"] || contact.city);
+              if (cd["address.state"] || contact.state) setIfEmpty(`${prefix}.state`, cd["address.state"] || contact.state);
+              if (cd["address.zip"]) setIfEmpty(`${prefix}.address.zip`, cd["address.zip"]);
+              if (cd["mailing.street"]) setIfEmpty(`${prefix}.mailing_address.street`, cd["mailing.street"]);
+              if (cd["mailing.city"]) setIfEmpty(`${prefix}.mailing_address.city`, cd["mailing.city"]);
+              if (cd["mailing.state"]) setIfEmpty(`${prefix}.mailing_address.state`, cd["mailing.state"]);
+              if (cd["mailing.zip"]) setIfEmpty(`${prefix}.mailing_address.zip`, cd["mailing.zip"]);
+              if (cd.tax_id) setIfEmpty(`${prefix}.tax_id`, cd.tax_id);
+              if (cd.dob) setIfEmpty(`${prefix}.dob`, cd.dob);
+              if (cd.capacity) setIfEmpty(`${prefix}.capacity`, cd.capacity);
+              if (cd.borrower_type) setIfEmpty(`${prefix}.borrower_type`, cd.borrower_type);
+              if (cd.license_number) setIfEmpty(`${prefix}.license_number`, cd.license_number);
+            }
+
+            // Short-prefix keys (e.g., br_p_fullName, ld_p_fullName)
+            if (shortPrefix) {
+              setIfEmpty(`${shortPrefix}_fullName`, fullName);
+              setIfEmpty(`${shortPrefix}_firstName`, firstName);
+              setIfEmpty(`${shortPrefix}_lastName`, lastName);
+              setIfEmpty(`${shortPrefix}_middleInitia`, middleName);
+              setIfEmpty(`${shortPrefix}_email`, email);
+              setIfEmpty(`${shortPrefix}_company`, company);
+              setIfEmpty(`${shortPrefix}_phone`, phone);
+              setIfEmpty(`${shortPrefix}_fax`, fax);
+              if (cd.tax_id) setIfEmpty(`${shortPrefix}_taxId`, cd.tax_id);
+              if (cd["address.street"]) setIfEmpty(`${shortPrefix}_street`, cd["address.street"]);
+              if (cd["address.city"] || contact.city) setIfEmpty(`${shortPrefix}_city`, cd["address.city"] || contact.city);
+              if (cd["address.state"] || contact.state) setIfEmpty(`${shortPrefix}_state`, cd["address.state"] || contact.state);
+              if (cd["address.zip"]) setIfEmpty(`${shortPrefix}_zip`, cd["address.zip"]);
+            }
+          };
+
+          // Inject borrower contact data
+          if (borrowerContactId) {
+            const bc = contactRows.find((c: any) => c.contact_id === String(borrowerContactId));
+            if (bc) {
+              injectContact(bc, ["borrower1", "borrower"], "br_p");
+              console.log(`[generate-document] Injected borrower contact fields from ${(bc as any).contact_id}`);
+            }
+          }
+
+          // Inject co-borrower contact data (only if different from borrower)
+          if (coBorrowerContactId && coBorrowerContactId !== borrowerContactId) {
+            const cbc = contactRows.find((c: any) => c.contact_id === String(coBorrowerContactId));
+            if (cbc) {
+              injectContact(cbc, ["co_borrower1", "coborrower", "co_borrower"], undefined);
+              console.log(`[generate-document] Injected co-borrower contact fields from ${(cbc as any).contact_id}`);
+            }
+          }
+
+          // Inject lender contact data
+          for (const cr of contactRows) {
+            if ((cr as any).contact_type === "lender" && String((cr as any).contact_id).startsWith("L-")) {
+              injectContact(cr, ["lender1", "lender"], "ld_p");
+              console.log(`[generate-document] Injected lender contact fields from ${(cr as any).contact_id}`);
+              break;
+            }
+          }
+        }
+      }
+    }
+
     // Bridge indexed entity keys (e.g., borrower1.full_name) to non-indexed aliases
     // (e.g., borrower.full_name) so legacy merge tag aliases can resolve
     const indexedPattern = /^([a-zA-Z_]+?)(\d+)\.(.+)$/;
