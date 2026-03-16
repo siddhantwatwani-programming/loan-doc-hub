@@ -298,6 +298,36 @@ async function generateSingleDocument(
       }
     }
 
+    // Auto-compute br_p_fullName from borrower name fields if not already set
+    const existingBrPFullName = fieldValues.get("br_p_fullName");
+    if (!existingBrPFullName || !existingBrPFullName.rawValue) {
+      const b1FullName = fieldValues.get("borrower1.full_name") || fieldValues.get("borrower.full_name");
+      if (b1FullName && b1FullName.rawValue) {
+        fieldValues.set("br_p_fullName", { rawValue: b1FullName.rawValue, dataType: "text" });
+        console.log(`[generate-document] Auto-computed br_p_fullName = "${b1FullName.rawValue}"`);
+      } else {
+        const bFirstName = fieldValues.get("borrower1.first_name")?.rawValue || fieldValues.get("borrower.first_name")?.rawValue || fieldValues.get("br_p_firstName")?.rawValue;
+        const bMiddleName = fieldValues.get("borrower1.middle_initial")?.rawValue || fieldValues.get("borrower.middle_initial")?.rawValue || fieldValues.get("br_p_middleInitia")?.rawValue;
+        const bLastName = fieldValues.get("borrower1.last_name")?.rawValue || fieldValues.get("borrower.last_name")?.rawValue || fieldValues.get("br_p_lastName")?.rawValue;
+        const bNameParts = [bFirstName, bMiddleName, bLastName].filter(Boolean).map(String);
+        if (bNameParts.length > 0) {
+          const fullName = bNameParts.join(" ");
+          fieldValues.set("br_p_fullName", { rawValue: fullName, dataType: "text" });
+          console.log(`[generate-document] Auto-computed br_p_fullName from components = "${fullName}"`);
+        }
+      }
+    }
+    // Bridge reverse: if br_p_fullName has data but dot-notation variants don't
+    const resolvedBrPFullName = fieldValues.get("br_p_fullName");
+    if (resolvedBrPFullName?.rawValue) {
+      if (!fieldValues.has("borrower.full_name")) {
+        fieldValues.set("borrower.full_name", resolvedBrPFullName);
+      }
+      if (!fieldValues.has("borrower1.full_name")) {
+        fieldValues.set("borrower1.full_name", resolvedBrPFullName);
+      }
+    }
+
     // Auto-compute Broker.Name from broker1 name components if not already set
     const existingBrokerName = fieldValues.get("Broker.Name") || fieldValues.get("broker.name");
     if (!existingBrokerName || !existingBrokerName.rawValue) {
