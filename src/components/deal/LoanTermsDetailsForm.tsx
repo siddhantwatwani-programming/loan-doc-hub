@@ -176,7 +176,12 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
               />
             </div>
           </DirtyFieldWrapper>
-          {renderInlineField(FIELD_KEYS.borrowerName, 'Borrower Name')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.borrowerName}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[130px] shrink-0 text-xs">Borrower Name</Label>
+              <Input id={FIELD_KEYS.borrowerName} value={getValue(FIELD_KEYS.borrowerName)} readOnly disabled className="h-8 text-xs flex-1 bg-muted" />
+            </div>
+          </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.coBorrowerId}>
             <div className="flex items-center gap-2">
               <Label className="w-[130px] shrink-0 text-xs">Co-Borrower ID</Label>
