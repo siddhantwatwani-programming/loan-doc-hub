@@ -31,17 +31,18 @@ interface LogRow {
   highPriority: boolean;
   reference: string;
   attachments: string[];
+  account: string;
+  name: string;
 }
 
 const ALL_COLUMNS = [
-  { id: 'date', label: 'Date' },
+  { id: 'date', label: 'Date - Time' },
+  { id: 'highPriority', label: 'High Priority' },
   { id: 'type', label: 'Type' },
-  { id: 'subject', label: 'Subject' },
-  { id: 'from', label: 'From' },
-  { id: 'to', label: 'To' },
-  { id: 'status', label: 'Status' },
+  { id: 'account', label: 'Account' },
+  { id: 'name', label: 'Name' },
   { id: 'reference', label: 'Reference' },
-  { id: 'highPriority', label: 'Priority' },
+  { id: 'attachments', label: 'Attachment' },
 ];
 
 const LOG_TYPES = ['Conversation Log', 'Attorney / Client', 'Internal'];
