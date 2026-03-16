@@ -6,6 +6,8 @@ import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { GridToolbar } from './GridToolbar';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
+import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
+import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
 import {
