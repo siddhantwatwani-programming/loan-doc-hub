@@ -253,7 +253,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editData ? 'Percent Owned' : 'Add Funding'}</DialogTitle>
+          <DialogTitle>Add Funding</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3 py-3">
