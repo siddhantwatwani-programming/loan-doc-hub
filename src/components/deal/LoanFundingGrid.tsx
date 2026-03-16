@@ -192,6 +192,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
 
   const renderCellValue = (record: FundingRecord, columnId: string) => {
     switch (columnId) {
+      case 'fundingDate':
+        return record.fundingDate || '-';
       case 'lenderAccount':
         return <span className="font-medium">{record.lenderAccount || '-'}</span>;
       case 'lenderName':
