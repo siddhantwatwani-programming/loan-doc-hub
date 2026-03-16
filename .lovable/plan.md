@@ -1,102 +1,110 @@
 
 
-## Fix: `{{br_p_fullName}}` not populating in document generation
+## Event Journal (Change Log System) Implementation Plan
 
-### Root Cause
+### Overview
+Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
 
-The generate-document edge function builds the `fieldValues` map using **dot-notation keys** from indexed storage (e.g., `borrower1.full_name` → bridged to `borrower.full_name`). However, merge tags like `{{br_p_fullName}}` resolve to the field_dictionary's `field_key` (`br_p_fullName`), which never gets added to the `fieldValues` map. There is no bridge between `br_p_fullName` and `borrower.full_name`.
+### 1. Database: New Migration
+Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
 
-This affects **all** borrower, lender, broker, co-borrower, property, and other fields that use the `br_p_*` / `ld_p_*` / `bk_p_*` naming convention in templates. The `fullName` placeholder is just the first symptom.
+```sql
+CREATE TABLE public.event_journal (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
+  event_number integer NOT NULL,
+  actor_user_id uuid NOT NULL,
+  section text NOT NULL,
+  details jsonb NOT NULL DEFAULT '[]',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-### Fix (single file change)
+CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
+ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
 
-**File:** `supabase/functions/generate-document/index.ts`
+-- RLS: CSR and Admin can view/insert
+CREATE POLICY "CSRs can view event journal" ON public.event_journal
+  FOR SELECT TO authenticated
+  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
 
-After the existing field value population loop (around line 213, after the "Bridge indexed entity keys" block), add a new bridging step:
+CREATE POLICY "CSRs can insert event journal" ON public.event_journal
+  FOR INSERT TO authenticated
+  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
 
-1. Import the `legacyKeyMap` reverse mapping or build it inline from the `field_dictionary` data already fetched (`allFieldDictMap`).
-2. For each entry in `allFieldDictMap`, check if the `field_key` (e.g., `br_p_fullName`) is already in `fieldValues`. If not, check if there's a matching value under any known dot-notation alias by looking up the `canonical_key` in the field_dictionary or by scanning fieldValues for a matching `indexed_key` reference.
+-- Auto-increment event_number per deal
+CREATE OR REPLACE FUNCTION public.set_event_journal_number()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
+BEGIN
+  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
+  FROM public.event_journal WHERE deal_id = NEW.deal_id;
+  RETURN NEW;
+END;
+$$;
 
-Concretely, the approach:
-- The `allFieldDictMap` already maps `field_dictionary_id → { field_key, canonical_key, ... }`.
-- When iterating deal section values (lines 163-188), the code already resolves `fieldDict.field_key` (which is `br_p_fullName`) and sets it in fieldValues — **but only when no `indexed_key` is present**.
-- The issue is that borrower fields **always** have an `indexed_key` (e.g., `borrower1.full_name`), so line 173 uses the `indexed_key` instead of `fieldDict.field_key`. Line 178-185 then tries to also set the canonical `field_key`, but only when `!canonicalHasIndex` — and `br_p_fullName` doesn't have an index pattern, so it should be set.
-
-Let me re-examine the actual logic more carefully: the condition at line 181 checks if `fieldDict.field_key` matches `/^[a-zA-Z_]+\d+\./` (e.g., `property1.street`). `br_p_fullName` does NOT match this pattern, so it SHOULD be set at line 183. Let me trace why it's not.
-
-The second pass (lines 191-200) also tries to set `fieldDict.field_key` if not already present. So `br_p_fullName` should be getting set... unless the field_dictionary entry for borrower `full_name` has a *different* field_key than `br_p_fullName`.
-
-**Key insight:** The data is stored in `deal_section_values` with the field_dictionary_id as the JSONB key (composite: `borrower1::<uuid>`). The UUID `69d7cead-...` maps to `br_p_fullName` in field_dictionary. But this deal has **no borrower section data at all** — the query showed only `loan_terms` and `broker` sections exist. The field simply has no data entered.
-
-However, the edge function logs show `borrower1.full_name` data doesn't exist either. The log says `[tag-parser] No data for br_p_fullName` — this is correct because no borrower data was saved for this deal.
-
-**Wait** — but the user says the placeholder "should populate." Let me reconsider: perhaps the borrower name IS entered but stored in a different way, or perhaps the auto-compute for `Borrower.Name` should also set `br_p_fullName`.
-
-Looking at line 234-250: there's auto-compute for `borrower.borrower_description` using `borrower1.full_name`, but there's no auto-compute that sets `br_p_fullName`. The existing auto-compute for `Broker.Name` (line 302-317) sets both `Broker.Name` and `broker.name`, but there's no equivalent for borrower `br_p_fullName`.
-
-### Revised Root Cause
-
-For this deal, borrower data IS entered (the logs show `Broker.Name` was auto-computed from `broker1.first_name` etc., and `borrower.borrower_description` attempted computation). The logs show the function found 49 field values. But `br_p_fullName` has no data.
-
-The real issue: when borrower data is stored with composite key `borrower1::<field_dict_id>`, the `indexed_key` in the JSONB value is `borrower1.full_name`. The code at line 173 sets `fieldValues["borrower1.full_name"]` and at line 183 should also set `fieldValues["br_p_fullName"]`. But looking more carefully at the condition:
-
-```
-if (indexedKey && indexedKey !== fieldDict.field_key) {
-  const canonicalHasIndex = /^[a-zA-Z_]+\d+\./.test(fieldDict.field_key);
-  if (!canonicalHasIndex) {
-    fieldValues.set(fieldDict.field_key, ...);  // sets br_p_fullName
-  }
-}
+CREATE TRIGGER trg_event_journal_number
+  BEFORE INSERT ON public.event_journal
+  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
 ```
 
-This SHOULD set `br_p_fullName`. Unless the deal simply has no borrower data entered — which my database query confirmed: only `loan_terms` and `broker` sections exist for this deal.
+The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
 
-### Actual Solution
+### 2. Hook: `useEventJournal.ts` (New File)
+- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
+- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
+- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
 
-The borrower data doesn't exist in this deal's `deal_section_values`. The `br_p_fullName` field has no value to populate. However, the auto-compute block (lines 234-250) does try to build `borrower.borrower_description` from `borrower1.full_name` — if that data existed.
+### 3. Capture Old→New Values in `useDealFields.ts`
+- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
+- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
+- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
+- After successful save, update the snapshot
 
-The fix should add an auto-compute step that also sets `br_p_fullName` from `borrower1.full_name` (or vice versa) — similar to how `Broker.Name` is auto-computed. This ensures that even if data is stored under one key variant, the other variant is also available.
+### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
+Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
+- Table with columns: Event #, User, Section, Details, Timestamp
+- Details column shows truncated preview (first 80 chars)
+- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
+- Sorted by event_number descending (newest first)
 
-**In `supabase/functions/generate-document/index.ts`**, after the borrower description auto-compute block (around line 250), add:
+### 5. `EventJournalViewer` Component (New File)
+`src/components/deal/EventJournalViewer.tsx`:
+- Fetches from `event_journal` table filtered by `deal_id`
+- Joins actor names from `profiles`
+- Table layout using existing shadcn Table components
+- "Show More" modal using existing Dialog component
+- Detail entries formatted as `Field Label: oldValue → newValue`
 
-```typescript
-// Auto-compute br_p_fullName from borrower name fields if not already set
-const existingBrPFullName = fieldValues.get("br_p_fullName");
-if (!existingBrPFullName || !existingBrPFullName.rawValue) {
-  // Try borrower1.full_name first (indexed key)
-  const b1FullName = fieldValues.get("borrower1.full_name") || fieldValues.get("borrower.full_name");
-  if (b1FullName && b1FullName.rawValue) {
-    fieldValues.set("br_p_fullName", { rawValue: b1FullName.rawValue, dataType: "text" });
-    console.log(`[generate-document] Auto-computed br_p_fullName = "${b1FullName.rawValue}"`);
-  } else {
-    // Assemble from first + middle + last name components
-    const firstName = fieldValues.get("borrower1.first_name")?.rawValue || fieldValues.get("borrower.first_name")?.rawValue || fieldValues.get("br_p_firstName")?.rawValue;
-    const middleName = fieldValues.get("borrower1.middle_initial")?.rawValue || fieldValues.get("borrower.middle_initial")?.rawValue || fieldValues.get("br_p_middleInitia")?.rawValue;
-    const lastName = fieldValues.get("borrower1.last_name")?.rawValue || fieldValues.get("borrower.last_name")?.rawValue || fieldValues.get("br_p_lastName")?.rawValue;
-    const nameParts = [firstName, middleName, lastName].filter(Boolean).map(String);
-    if (nameParts.length > 0) {
-      const fullName = nameParts.join(" ");
-      fieldValues.set("br_p_fullName", { rawValue: fullName, dataType: "text" });
-      console.log(`[generate-document] Auto-computed br_p_fullName from components = "${fullName}"`);
-    }
-  }
-}
+### 6. Global Event Journal Page (New File)
+`src/pages/csr/GlobalEventJournalPage.tsx`:
+- Deal selector dropdown (search by deal number) at the top
+- Once a deal is selected, renders `EventJournalViewer` for that deal
+- Same table structure as the per-deal view
 
-// Also bridge the reverse: if br_p_fullName has data but borrower.full_name doesn't
-const resolvedBrPFullName = fieldValues.get("br_p_fullName");
-if (resolvedBrPFullName?.rawValue) {
-  if (!fieldValues.has("borrower.full_name")) {
-    fieldValues.set("borrower.full_name", resolvedBrPFullName);
-  }
-  if (!fieldValues.has("borrower1.full_name")) {
-    fieldValues.set("borrower1.full_name", resolvedBrPFullName);
-  }
-}
+### 7. Sidebar Navigation Update
+In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
+```tsx
+<PromotedNavSection
+  label="Event Journal"
+  icon={BookOpen}
+  items={[]}
+  directPath="/event-journal"
+  isCollapsed={isCollapsed}
+  searchQuery={searchQuery}
+/>
 ```
 
-### Summary
+### 8. Route Registration
+In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
 
-- **1 file modified**: `supabase/functions/generate-document/index.ts`
-- **Change**: Add auto-compute bridging for `br_p_fullName` from dot-notation borrower name fields (and vice versa), following the same pattern as existing `Broker.Name` and `Borrower.Address` auto-compute blocks
-- **No schema changes, no new tables, no UI changes**
+### Files Changed
+| File | Change |
+|------|--------|
+| New migration | Create `event_journal` table with trigger |
+| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
+| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
+| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
+| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
+| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
+| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
+| `src/App.tsx` | Add `/event-journal` route |
 
