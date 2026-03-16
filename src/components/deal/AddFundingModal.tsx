@@ -294,7 +294,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               </div>
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender Name</Label>
-                <Input value={formData.lenderFullName} onChange={(e) => handleChange('lenderFullName', e.target.value)} className="h-7 text-sm" />
+                <Input value={formData.lenderFullName} readOnly disabled className="h-7 text-sm opacity-50 bg-muted" />
               </div>
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Funding Date</Label>
