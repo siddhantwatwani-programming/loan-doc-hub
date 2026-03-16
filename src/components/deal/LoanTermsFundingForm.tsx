@@ -157,16 +157,11 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   // Fetch borrower details from Contacts table
   useEffect(() => {
     if (!borrowerContactId) {
-      // Fallback to deal form values if no contact_id
+      // Fallback to deal form values if no contact_id - name only
       const first = values['borrower1.first_name'] || values['borrower.first_name'] || '';
       const last = values['borrower1.last_name'] || values['borrower.last_name'] || '';
       const fullName = (first || last) ? `${first} ${last}`.trim() : (values['borrower1.full_name'] || values['borrower.full_name'] || values['borrower.name'] || '');
-      const address = values['borrower1.primary_address'] || values['borrower.primary_address'] || values['borrower.address'] || '';
-      const city = values['borrower1.city'] || values['borrower.city'] || '';
-      const state = values['borrower1.state'] || values['borrower.state'] || '';
-      const zip = values['borrower1.zip'] || values['borrower.zip'] || '';
-      const addressParts = [address, city, state, zip].filter(Boolean).join(', ');
-      setContactBorrowerName(addressParts ? `${fullName}\n${addressParts}` : fullName);
+      setContactBorrowerName(fullName);
       return;
     }
 
