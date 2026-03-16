@@ -181,12 +181,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
 
         const cd = (data.contact_data as Record<string, any>) || {};
         const fullName = data.full_name || cd.full_name || '';
-        const street = cd['primary_address.street'] || cd['primary_address'] || cd.street || cd.address || '';
-        const city = cd['primary_address.city'] || cd.city || '';
-        const state = cd['primary_address.state'] || cd.state || '';
-        const zip = cd['primary_address.zip'] || cd.zip || cd.zipCode || '';
-        const addressParts = [street, city, state, zip].filter(Boolean).join(', ');
-        setContactBorrowerName(addressParts ? `${fullName}\n${addressParts}` : fullName);
+        setContactBorrowerName(fullName);
       } catch {
         setContactBorrowerName(borrowerContactId);
       }
