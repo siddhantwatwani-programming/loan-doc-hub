@@ -155,8 +155,16 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   const borrowerName = useMemo(() => {
     const first = values['borrower1.first_name'] || values['borrower.first_name'] || '';
     const last = values['borrower1.last_name'] || values['borrower.last_name'] || '';
-    if (first || last) return `${first} ${last}`.trim();
-    return values['borrower1.full_name'] || values['borrower.full_name'] || values['borrower.name'] || '';
+    const fullName = (first || last) ? `${first} ${last}`.trim() : (values['borrower1.full_name'] || values['borrower.full_name'] || values['borrower.name'] || '');
+    
+    // Include primary address if available
+    const address = values['borrower1.primary_address'] || values['borrower.primary_address'] || values['borrower.address'] || '';
+    const city = values['borrower1.city'] || values['borrower.city'] || '';
+    const state = values['borrower1.state'] || values['borrower.state'] || '';
+    const zip = values['borrower1.zip'] || values['borrower.zip'] || '';
+    const addressParts = [address, city, state, zip].filter(Boolean).join(', ');
+    
+    return addressParts ? `${fullName}\n${addressParts}` : fullName;
   }, [values]);
 
   // Get loan rates for Rate Selection

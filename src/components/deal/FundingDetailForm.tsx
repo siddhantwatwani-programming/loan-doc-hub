@@ -48,30 +48,23 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
     onChange({ ...data, interestFrom: date ? format(date, 'yyyy-MM-dd') : '' });
   }, [data, onChange]);
 
-  // Compute Regular Payment = Total Payment * (Percent Owned / 100), or just percentOwned if no totalPayment
-  React.useEffect(() => {
-    const pct = parseFloat(data.percentOwned) || 0;
-    if (pct > 0) {
-      const tp = parseFloat(totalPayment) || 0;
-      const rp = tp > 0 ? (tp * pct / 100).toFixed(2) : data.percentOwned;
-      if (rp !== data.regularPayment) {
-        onChange({ ...data, regularPayment: rp });
-      }
-    } else if (data.regularPayment !== '' && data.regularPayment !== undefined) {
-      onChange({ ...data, regularPayment: '' });
-    }
-  }, [data.percentOwned, totalPayment]);
+  // Regular Payment is now editable independently - no auto-computation
 
   return (
     <div className="p-4 space-y-3">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
         <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Loan</Label>
+          <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Loan Account</Label>
           <Input value={data.loan} disabled className="h-7 text-sm opacity-50 bg-muted" />
         </div>
-        <div className="flex items-center gap-3">
-          <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Borrower</Label>
-          <Input value={data.borrower} disabled className="h-7 text-sm opacity-50 bg-muted" />
+        <div className="flex items-start gap-3">
+          <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0 mt-1">Borrower</Label>
+          <textarea
+            value={data.borrower}
+            disabled
+            className="flex w-full rounded-md border border-input bg-muted px-3 py-1.5 text-sm opacity-50 resize-none min-h-[48px]"
+            rows={2}
+          />
         </div>
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender ID</Label>
@@ -181,7 +174,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
           <Label className="text-sm text-muted-foreground shrink-0">Regular Payment</Label>
           <div className="relative w-28">
             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-            <Input type="text" value={data.regularPayment || ''} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
+            <Input type="text" inputMode="decimal" value={data.regularPayment || ''} onChange={(e) => handleChange('regularPayment', e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-sm pl-6" placeholder="0.00" />
           </div>
         </div>
         <div className="flex items-center gap-2">

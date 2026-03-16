@@ -150,19 +150,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     }
   }, [formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
 
-  // Compute Regular Payment = Total Payment * (Percent Owned / 100), or just percentOwned if no totalPayment
-  React.useEffect(() => {
-    const pct = parseFloat(formData.percentOwned) || 0;
-    if (pct > 0) {
-      const tp = parseFloat(totalPayment) || 0;
-      const rp = tp > 0 ? (tp * pct / 100).toFixed(2) : formData.percentOwned;
-      if (rp !== formData.regularPayment) {
-        setFormData(prev => ({ ...prev, regularPayment: rp }));
-      }
-    } else if (formData.regularPayment !== '') {
-      setFormData(prev => ({ ...prev, regularPayment: '' }));
-    }
-  }, [formData.percentOwned, totalPayment]);
+   // No longer auto-compute Regular Payment - it is now editable independently
 
   const handleChange = (field: keyof FundingFormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -253,20 +241,25 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editData ? 'Percent Owned' : 'Add Funding'}</DialogTitle>
+          <DialogTitle>Add Funding</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3 py-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-              {/* Loan - auto-populated, read-only */}
+              {/* Loan Account - auto-populated, read-only */}
               <div className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Loan</Label>
+                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Loan Account</Label>
                 <Input value={loanNumber || formData.loan} disabled className="h-7 text-sm opacity-50 bg-muted" />
               </div>
-              {/* Borrower - auto-populated, read-only */}
-              <div className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Borrower</Label>
-                <Input value={borrowerName || formData.borrower} disabled className="h-7 text-sm opacity-50 bg-muted" />
+              {/* Borrower - auto-populated textarea with full name + address */}
+              <div className="flex items-start gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0 mt-1">Borrower</Label>
+                <textarea
+                  value={borrowerName || formData.borrower}
+                  disabled
+                  className="flex w-full rounded-md border border-input bg-muted px-3 py-1.5 text-sm opacity-50 resize-none min-h-[48px]"
+                  rows={2}
+                />
               </div>
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender ID</Label>
@@ -365,7 +358,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 <Label className="text-sm text-muted-foreground shrink-0">Regular Payment</Label>
                 <div className="relative w-28">
                   <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-                  <Input type="text" value={formData.regularPayment} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
+                  <Input type="text" inputMode="decimal" value={formData.regularPayment} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('regularPayment', v); }} className="h-7 text-sm pl-6" placeholder="0.00" />
                 </div>
               </div>
               <div className="flex items-center gap-2">
