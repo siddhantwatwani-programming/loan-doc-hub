@@ -28,7 +28,8 @@ function flattenMergeFieldStructures(xml: string): string {
   // Match: <w:r>...<w:fldChar begin/>...</w:r> ... <w:instrText>MERGEFIELD name</w:instrText> ...
   //        <w:r>...<w:fldChar separate/>...</w:r> ... display run(s) ... <w:r>...<w:fldChar end/>...</w:r>
   // We capture the field name from instrText and the rPr from the display run (if any).
-  const complexFieldPattern = /<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="begin"[^/]*\/>\s*<\/w:r>([\s\S]*?)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="separate"[^/]*\/>\s*<\/w:r>([\s\S]*?)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="end"[^/]*\/>\s*<\/w:r>/g;
+  // Match both self-closing (<w:fldChar .../>) and non-self-closing (<w:fldChar ...></w:fldChar>) variants
+  const complexFieldPattern = /<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="begin"[^>]*(?:\/>\s*|>\s*<\/w:fldChar>\s*)<\/w:r>([\s\S]*?)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="separate"[^>]*(?:\/>\s*|>\s*<\/w:fldChar>\s*)<\/w:r>([\s\S]*?)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="end"[^>]*(?:\/>\s*|>\s*<\/w:fldChar>\s*)<\/w:r>/g;
 
   result = result.replace(complexFieldPattern, (fullMatch, instrSection, displaySection) => {
     // Extract field name from instrText — try MERGEFIELD first, then curly braces, then bare key
@@ -81,6 +82,21 @@ function flattenMergeFieldStructures(xml: string): string {
 
   if (complexCount > 0 || simpleCount > 0) {
     console.log(`[tag-parser] Flattened MERGEFIELD structures: ${complexCount} complex, ${simpleCount} simple`);
+  }
+
+  // Second-pass fallback: scan for any remaining <w:instrText> elements containing
+  // {{fieldKey}} patterns that the complexFieldPattern regex didn't catch (e.g., due to
+  // unexpected XML structure variations). Strip the entire fldChar begin...end structure
+  // and replace with a clean text run containing the merge tag.
+  let fallbackCount = 0;
+  const instrTextFallback = /<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar[^>]*w:fldCharType="begin"[\s\S]*?<w:instrText[^>]*>\s*\{\{([A-Za-z0-9_.]+)\}\}\s*<\/w:instrText>[\s\S]*?<w:fldChar[^>]*w:fldCharType="end"[\s\S]*?<\/w:r>/g;
+  result = result.replace(instrTextFallback, (_fullMatch, fieldName) => {
+    fallbackCount++;
+    console.log(`[tag-parser] Fallback: extracted {{${fieldName}}} from instrText field code structure`);
+    return `<w:r><w:t>{{${fieldName}}}</w:t></w:r>`;
+  });
+  if (fallbackCount > 0) {
+    console.log(`[tag-parser] Fallback pass extracted ${fallbackCount} field code(s) from instrText`);
   }
 
   return result;
