@@ -80,17 +80,14 @@ const SECTION_LABELS: Partial<
 
 // Custom ordering for top navbar tabs
 const SECTION_ORDER: string[] = [
-  "borrower",
   "loan_terms",
   "property",
   "liens",
   "funding",
-  "broker",
   "charges",
   "escrow",
   "notes",
   "event_journal",
-  "lender",
   "other",
   "origination_fees",
   "seller",
