@@ -84,6 +84,21 @@ function flattenMergeFieldStructures(xml: string): string {
     console.log(`[tag-parser] Flattened MERGEFIELD structures: ${complexCount} complex, ${simpleCount} simple`);
   }
 
+  // Second-pass fallback: scan for any remaining <w:instrText> elements containing
+  // {{fieldKey}} patterns that the complexFieldPattern regex didn't catch (e.g., due to
+  // unexpected XML structure variations). Strip the entire fldChar begin...end structure
+  // and replace with a clean text run containing the merge tag.
+  let fallbackCount = 0;
+  const instrTextFallback = /<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar[^>]*w:fldCharType="begin"[\s\S]*?<w:instrText[^>]*>\s*\{\{([A-Za-z0-9_.]+)\}\}\s*<\/w:instrText>[\s\S]*?<w:fldChar[^>]*w:fldCharType="end"[\s\S]*?<\/w:r>/g;
+  result = result.replace(instrTextFallback, (_fullMatch, fieldName) => {
+    fallbackCount++;
+    console.log(`[tag-parser] Fallback: extracted {{${fieldName}}} from instrText field code structure`);
+    return `<w:r><w:t>{{${fieldName}}}</w:t></w:r>`;
+  });
+  if (fallbackCount > 0) {
+    console.log(`[tag-parser] Fallback pass extracted ${fallbackCount} field code(s) from instrText`);
+  }
+
   return result;
 }
 
