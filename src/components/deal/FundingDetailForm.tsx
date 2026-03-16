@@ -48,19 +48,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
     onChange({ ...data, interestFrom: date ? format(date, 'yyyy-MM-dd') : '' });
   }, [data, onChange]);
 
-  // Compute Regular Payment = Total Payment * (Percent Owned / 100), or just percentOwned if no totalPayment
-  React.useEffect(() => {
-    const pct = parseFloat(data.percentOwned) || 0;
-    if (pct > 0) {
-      const tp = parseFloat(totalPayment) || 0;
-      const rp = tp > 0 ? (tp * pct / 100).toFixed(2) : data.percentOwned;
-      if (rp !== data.regularPayment) {
-        onChange({ ...data, regularPayment: rp });
-      }
-    } else if (data.regularPayment !== '' && data.regularPayment !== undefined) {
-      onChange({ ...data, regularPayment: '' });
-    }
-  }, [data.percentOwned, totalPayment]);
+  // Regular Payment is now editable independently - no auto-computation
 
   return (
     <div className="p-4 space-y-3">
