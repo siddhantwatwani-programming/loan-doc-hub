@@ -146,14 +146,15 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2 text-sm">
             <Home className="h-4 w-4 text-primary" />
             {isEdit ? 'Edit Property' : 'Add New Property'}
           </DialogTitle>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto min-h-0 sleek-scrollbar">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-1"><TabsTrigger value="general" className="text-xs">General</TabsTrigger></TabsList>
 
@@ -256,7 +257,9 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="mt-4">
+        </div>
+
+        <DialogFooter className="shrink-0 border-t border-border pt-3">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button size="sm" onClick={handleSave}>OK</Button>
         </DialogFooter>
