@@ -168,7 +168,11 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
       case '1099':
         return (
           <div className="p-6">
-            <Broker1099 broker={brokerObj} onUpdate={() => {}} />
+            <Broker1099
+              values={values}
+              onValueChange={handleValueChange}
+              onSave={handleSave}
+            />
           </div>
         );
       case 'authorized-party':
