@@ -159,7 +159,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
           </div>
         </div>
 
-        <DialogFooter className="mt-4">
+        <DialogFooter className="shrink-0 border-t border-border pt-3">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button size="sm" onClick={handleSave}>OK</Button>
         </DialogFooter>
