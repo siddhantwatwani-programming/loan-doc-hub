@@ -167,7 +167,20 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
       }
     } catch (error) {
       console.error("Error fetching deal:", error);
-      // If this is a persisted workspace file that can't be loaded, silently remove it
+      // Check if this is a transient auth issue before closing workspace tab
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // Transient auth drop — retry after recovery delay
+        await new Promise(r => setTimeout(r, 1500));
+        const { data: { session: retrySession } } = await supabase.auth.getSession();
+        if (retrySession) {
+          // Session recovered — retry fetch
+          hasFetchedDealRef.current = false;
+          fetchDeal();
+          return;
+        }
+      }
+      // Only close workspace file if session is valid (real 404/permission error)
       if (workspace && workspace.openFiles.find(f => f.id === id)) {
         workspace.closeFile(id);
       } else {
