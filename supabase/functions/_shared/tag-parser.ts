@@ -28,7 +28,7 @@ function flattenMergeFieldStructures(xml: string): string {
   // Match: <w:r>...<w:fldChar begin/>...</w:r> ... <w:instrText>MERGEFIELD name</w:instrText> ...
   //        <w:r>...<w:fldChar separate/>...</w:r> ... display run(s) ... <w:r>...<w:fldChar end/>...</w:r>
   // We capture the field name from instrText and the rPr from the display run (if any).
-  const complexFieldPattern = /<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="begin"[^/]*\/>\s*<\/w:r>([\s\S]*?)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="separate"[^/]*\/>\s*<\/w:r>([\s\S]*?)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="end"[^/]*\/>\s*<\/w:r>/g;
+  const complexFieldPattern = /<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="begin"[^>]*(?:\/>|><\/w:fldChar>)\s*<\/w:r>([\s\S]*?)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="separate"[^>]*(?:\/>|><\/w:fldChar>)\s*<\/w:r>([\s\S]*?)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="end"[^>]*(?:\/>|><\/w:fldChar>)\s*<\/w:r>/g;
 
   result = result.replace(complexFieldPattern, (fullMatch, instrSection, displaySection) => {
     // Extract field name from instrText — try MERGEFIELD first, then curly braces, then bare key
@@ -81,6 +81,34 @@ function flattenMergeFieldStructures(xml: string): string {
 
   if (complexCount > 0 || simpleCount > 0) {
     console.log(`[tag-parser] Flattened MERGEFIELD structures: ${complexCount} complex, ${simpleCount} simple`);
+  }
+
+  // Fallback pass: convert any remaining instrText containing merge tags into visible text runs.
+  // This catches field codes that the complex regex above missed (e.g., unusual nesting).
+  let instrFallbackCount = 0;
+  const instrTextFallbackPattern = /<w:r\b[^>]*>\s*(?:<w:rPr>([\s\S]*?)<\/w:rPr>\s*)?<w:instrText[^>]*>([\s\S]*?)<\/w:instrText>\s*<\/w:r>/g;
+  result = result.replace(instrTextFallbackPattern, (fullMatch, rPrContent, instrContent) => {
+    // Check if instrText contains a merge tag pattern
+    const curlyMatch = instrContent.match(/\{\{([A-Za-z0-9_.]+)\}\}/);
+    const mergeMatch = instrContent.match(/MERGEFIELD\s+"?([A-Za-z0-9_.]+)"?/i);
+    const bareMatch = instrContent.trim().match(/^([A-Za-z][A-Za-z0-9_.]{2,})$/);
+    
+    let fieldName: string | null = null;
+    let useCurly = false;
+    if (curlyMatch) { fieldName = curlyMatch[1]; useCurly = true; }
+    else if (mergeMatch) { fieldName = mergeMatch[1]; }
+    else if (bareMatch) { fieldName = bareMatch[1]; }
+    
+    if (!fieldName) return fullMatch;
+    
+    instrFallbackCount++;
+    const rPr = rPrContent ? `<w:rPr>${rPrContent}</w:rPr>` : '';
+    const tagText = useCurly ? `{{${fieldName}}}` : `\u00AB${fieldName}\u00BB`;
+    return `<w:r>${rPr}<w:t>${tagText}</w:t></w:r>`;
+  });
+
+  if (instrFallbackCount > 0) {
+    console.log(`[tag-parser] instrText fallback converted ${instrFallbackCount} hidden merge tags to visible text`);
   }
 
   return result;
