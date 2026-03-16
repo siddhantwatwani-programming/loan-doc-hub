@@ -25,6 +25,7 @@ interface AddFundingModalProps {
   borrowerName?: string;
   onSubmit: (data: FundingFormData) => void;
   editData?: FundingFormData | null;
+  isEditing?: boolean;
   noteRate?: string;
   soldRate?: string;
   totalPayment?: string;
@@ -114,6 +115,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   borrowerName = '',
   onSubmit,
   editData,
+  isEditing = false,
   noteRate = '',
   soldRate = '',
   totalPayment = '',
@@ -150,7 +152,17 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     }
   }, [formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
 
-   // No longer auto-compute Regular Payment - it is now editable independently
+  // Auto-compute Regular Payment = Total Payment * (Percent Owned / 100)
+  React.useEffect(() => {
+    const tp = parseFloat(totalPayment) || 0;
+    const pct = parseFloat(formData.percentOwned) || 0;
+    if (tp > 0 && pct > 0) {
+      const computed = (tp * pct / 100).toFixed(2);
+      if (computed !== formData.regularPayment) {
+        setFormData(prev => ({ ...prev, regularPayment: computed }));
+      }
+    }
+  }, [formData.percentOwned, totalPayment]);
 
   const handleChange = (field: keyof FundingFormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -241,7 +253,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Funding</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Funding' : 'Add Funding'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3 py-3">
@@ -358,7 +370,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 <Label className="text-sm text-muted-foreground shrink-0">Regular Payment</Label>
                 <div className="relative w-28">
                   <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-                  <Input type="text" inputMode="decimal" value={formData.regularPayment} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('regularPayment', v); }} className="h-7 text-sm pl-6" placeholder="0.00" />
+                  <Input type="text" inputMode="decimal" value={formData.regularPayment} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -424,7 +436,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={handleCancel}>Cancel</Button>
-          <Button size="sm" onClick={handleSubmit}>Save Funding</Button>
+          <Button size="sm" onClick={handleSubmit}>{isEditing ? 'Update Funding' : 'Save Funding'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

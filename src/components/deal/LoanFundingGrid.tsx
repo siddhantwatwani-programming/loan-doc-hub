@@ -43,6 +43,10 @@ export interface FundingRecord {
   originalAmount: number;
   regularPayment: number;
   roundingError: boolean;
+  rateSelection?: 'note_rate' | 'sold_rate' | 'lender_rate';
+  rateNoteValue?: string;
+  rateSoldValue?: string;
+  rateLenderValue?: string;
 }
 
 interface LoanFundingGridProps {
@@ -170,10 +174,10 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       brokerParticipates: false,
       percentOwned: String(record.pctOwned),
       regularPayment: String(record.regularPayment),
-      rateSelection: 'note_rate',
-      rateNoteValue: noteRate,
-      rateSoldValue: soldRate,
-      rateLenderValue: '',
+      rateSelection: record.rateSelection || 'note_rate',
+      rateNoteValue: record.rateNoteValue || noteRate,
+      rateSoldValue: record.rateSoldValue || soldRate,
+      rateLenderValue: record.rateLenderValue || '',
       overrideServicingFees: false,
       companyServicingFee: '', companyServicingFeePct: '', companyMaxFee: '', companyMaxFeePct: '',
       companyMinFee: '', companyMinFeePct: '', brokerServicingFee: '', brokerServicingFeePct: '',
@@ -187,6 +191,13 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       maturityLender: '', maturityCompany: '', maturityBroker: '', maturityTotal: '',
     });
     setSelectedRecord(record);
+    setIsAddModalOpen(true);
+  };
+
+  const handleAddFundingClick = () => {
+    // Explicitly clear edit state when adding new
+    setSelectedRecord(null);
+    setEditFundingData(null);
     setIsAddModalOpen(true);
   };
 
@@ -240,7 +251,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         <h3 className="font-semibold text-lg text-foreground">Loan Funding</h3>
         <div className="flex items-center gap-2">
           <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
-          <Button variant="outline" size="sm" onClick={() => setIsAddModalOpen(true)} className="gap-1" disabled={disabled}>
+          <Button variant="outline" size="sm" onClick={handleAddFundingClick} className="gap-1" disabled={disabled}>
             <Plus className="h-4 w-4" />
             Add Funding
           </Button>
@@ -394,21 +405,32 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         borrowerName={borrowerName}
         onSubmit={(data) => {
           if (selectedRecord) {
+            // Determine lender rate from rate selection
+            let lenderRate = 0;
+            if (data.rateSelection === 'note_rate') lenderRate = parseFloat(data.rateNoteValue) || 0;
+            else if (data.rateSelection === 'sold_rate') lenderRate = parseFloat(data.rateSoldValue) || 0;
+            else if (data.rateSelection === 'lender_rate') lenderRate = parseFloat(data.rateLenderValue) || 0;
+
             onUpdateRecord(selectedRecord.id, {
               fundingDate: data.fundingDate || '',
               lenderAccount: data.lenderId,
               lenderName: data.lenderFullName,
-              lenderRate: parseFloat(data.lenderRate) || 0,
+              lenderRate,
               originalAmount: parseFloat(data.fundingAmount) || 0,
               principalBalance: parseFloat(data.fundingAmount) || 0,
               pctOwned: parseFloat(data.percentOwned) || 0,
               regularPayment: parseFloat(data.regularPayment) || 0,
+              rateSelection: data.rateSelection,
+              rateNoteValue: data.rateNoteValue,
+              rateSoldValue: data.rateSoldValue,
+              rateLenderValue: data.rateLenderValue,
             });
           } else {
             onAddFunding(data);
           }
         }}
         editData={editFundingData}
+        isEditing={!!selectedRecord}
         noteRate={noteRate}
         soldRate={soldRate}
         totalPayment={totalPayment}
@@ -420,16 +442,15 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
         onConfirm={handleBulkDelete}
-        title={`Delete ${selectedCount} Funding Records`}
-        description={`Are you sure you want to delete ${selectedCount} selected funding records? This action cannot be undone.`}
+        title="Delete Selected Funding Records"
+        description={`Are you sure you want to delete ${selectedCount} selected funding record(s)? This action cannot be undone.`}
       />
-
       <GridExportDialog
         open={exportOpen}
         onOpenChange={setExportOpen}
         columns={exportColumns}
         data={fundingRecords}
-        fileName="funding"
+        fileName="funding_records"
       />
     </div>
   );
