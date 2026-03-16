@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import type { ContactBroker } from '@/pages/contacts/ContactBrokersPage';
 
 interface TaxData {
   tinType: string; tin: string; accountNumber: string;
@@ -13,16 +12,36 @@ interface TaxData {
   send1099: boolean; taxExempt: boolean;
 }
 
-const Broker1099: React.FC<{ broker: ContactBroker; onUpdate: (b: ContactBroker) => void }> = ({ broker }) => {
+interface Broker1099Props {
+  values: Record<string, string>;
+  onValueChange: (fieldKey: string, value: string) => void;
+  onSave: () => Promise<void>;
+}
+
+const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave }) => {
   const [form, setForm] = useState<TaxData>({
-    tinType: 'ssn', tin: broker.tin, accountNumber: '',
-    street: broker.street, city: broker.city, state: broker.state, zip: broker.zip,
-    send1099: broker.send1099, taxExempt: false,
+    tinType: values['broker.1099.tin_type'] || 'ssn',
+    tin: values['broker.1099.tin'] || values['broker.tin'] || '',
+    accountNumber: values['broker.1099.account_number'] || '',
+    street: values['broker.1099.street'] || values['broker.primary_address.street'] || '',
+    city: values['broker.1099.city'] || values['broker.city'] || '',
+    state: values['broker.1099.state'] || values['broker.state'] || '',
+    zip: values['broker.1099.zip'] || values['broker.primary_address.zip'] || '',
+    send1099: values['broker.1099.send_1099'] === 'true',
+    taxExempt: values['broker.1099.tax_exempt'] === 'true',
   });
 
-  const update = (field: keyof TaxData, value: any) => setForm(p => ({ ...p, [field]: value }));
+  // Sync form changes to parent values
+  const update = (field: keyof TaxData, value: any) => {
+    setForm(p => ({ ...p, [field]: value }));
+    const key = `broker.1099.${field === 'tinType' ? 'tin_type' : field === 'accountNumber' ? 'account_number' : field === 'send1099' ? 'send_1099' : field === 'taxExempt' ? 'tax_exempt' : field}`;
+    onValueChange(key, typeof value === 'boolean' ? String(value) : value);
+  };
 
-  const handleSave = () => { toast.success('1099 information saved.'); };
+  const handleSave = async () => {
+    await onSave();
+    toast.success('1099 information saved.');
+  };
 
   return (
     <div className="space-y-6 max-w-2xl">
