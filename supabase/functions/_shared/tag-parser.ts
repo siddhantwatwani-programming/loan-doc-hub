@@ -368,9 +368,9 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
     if (!para.includes('{') && !para.includes('\u00AB')) return para;
     parasWithBraces++;
 
-    // Extract text content from each <w:t> element
+    // Extract text content from each <w:t> and <w:instrText> element
     const tTexts: string[] = [];
-    para.replace(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g, (_, text) => {
+    para.replace(/<w:(?:t|instrText)(?:\s[^>]*)?>([^<]*)<\/w:(?:t|instrText)>/g, (_, text) => {
       tTexts.push(text);
       return '';
     });
