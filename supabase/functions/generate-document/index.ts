@@ -223,6 +223,14 @@ async function generateSingleDocument(
         }
       }
 
+      // Also scan for broker contact IDs (BR-XXXXX pattern)
+      const brokerContactId = fieldValues.get("loan_terms.details_originating_vendor")?.rawValue;
+      if (brokerContactId && typeof brokerContactId === "string" && String(brokerContactId).startsWith("BR-")) {
+        if (!contactIdsToFetch.includes(String(brokerContactId))) {
+          contactIdsToFetch.push(String(brokerContactId));
+        }
+      }
+
       if (contactIdsToFetch.length > 0) {
         const { data: contactRows } = await supabase
           .from("contacts")
@@ -316,6 +324,24 @@ async function generateSingleDocument(
             if ((cr as any).contact_type === "lender" && String((cr as any).contact_id).startsWith("L-")) {
               injectContact(cr, ["lender1", "lender"], "ld_p");
               console.log(`[generate-document] Injected lender contact fields from ${(cr as any).contact_id}`);
+              break;
+            }
+          }
+
+          // Inject broker contact data
+          for (const cr of contactRows) {
+            if ((cr as any).contact_type === "broker") {
+              injectContact(cr, ["broker1", "broker"], "bk_p");
+              // Inject broker license explicitly (truncated key not covered by generic shortPrefix logic)
+              const cd = (cr as any).contact_data || {};
+              const license = cd.license_number || cd.License || (cr as any).license_number || "";
+              if (license) {
+                setIfEmpty("bk_p_brokerLicens", String(license));
+                setIfEmpty("broker.License", String(license));
+                setIfEmpty("broker.license_number", String(license));
+                setIfEmpty("broker1.license_number", String(license));
+              }
+              console.log(`[generate-document] Injected broker contact fields from ${(cr as any).contact_id}`);
               break;
             }
           }
