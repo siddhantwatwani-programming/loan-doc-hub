@@ -257,7 +257,9 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="mt-4">
+        </div>
+
+        <DialogFooter className="shrink-0 border-t border-border pt-3">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button size="sm" onClick={handleSave}>OK</Button>
         </DialogFooter>
