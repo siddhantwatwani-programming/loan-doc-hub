@@ -223,6 +223,14 @@ async function generateSingleDocument(
         }
       }
 
+      // Also scan for broker contact IDs (BR-XXXXX pattern)
+      const brokerContactId = fieldValues.get("loan_terms.details_originating_vendor")?.rawValue;
+      if (brokerContactId && typeof brokerContactId === "string" && String(brokerContactId).startsWith("BR-")) {
+        if (!contactIdsToFetch.includes(String(brokerContactId))) {
+          contactIdsToFetch.push(String(brokerContactId));
+        }
+      }
+
       if (contactIdsToFetch.length > 0) {
         const { data: contactRows } = await supabase
           .from("contacts")
