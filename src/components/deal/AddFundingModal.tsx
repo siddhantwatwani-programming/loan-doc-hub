@@ -150,19 +150,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     }
   }, [formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
 
-  // Compute Regular Payment = Total Payment * (Percent Owned / 100), or just percentOwned if no totalPayment
-  React.useEffect(() => {
-    const pct = parseFloat(formData.percentOwned) || 0;
-    if (pct > 0) {
-      const tp = parseFloat(totalPayment) || 0;
-      const rp = tp > 0 ? (tp * pct / 100).toFixed(2) : formData.percentOwned;
-      if (rp !== formData.regularPayment) {
-        setFormData(prev => ({ ...prev, regularPayment: rp }));
-      }
-    } else if (formData.regularPayment !== '') {
-      setFormData(prev => ({ ...prev, regularPayment: '' }));
-    }
-  }, [formData.percentOwned, totalPayment]);
+   // No longer auto-compute Regular Payment - it is now editable independently
 
   const handleChange = (field: keyof FundingFormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
