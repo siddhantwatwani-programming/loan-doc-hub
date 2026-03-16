@@ -174,7 +174,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
           <Label className="text-sm text-muted-foreground shrink-0">Regular Payment</Label>
           <div className="relative w-28">
             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-            <Input type="text" value={data.regularPayment || ''} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
+            <Input type="text" inputMode="decimal" value={data.regularPayment || ''} onChange={(e) => handleChange('regularPayment', e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-sm pl-6" placeholder="0.00" />
           </div>
         </div>
         <div className="flex items-center gap-2">
