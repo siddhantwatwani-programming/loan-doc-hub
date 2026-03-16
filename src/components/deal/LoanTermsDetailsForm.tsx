@@ -171,10 +171,6 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
                   if (borrowerFullName) {
                     setValue(FIELD_KEYS.borrowerName, borrowerFullName);
                   }
-                  setValue(FIELD_KEYS.coBorrowerId, borrowerId);
-                  if (borrowerFullName) {
-                    setValue(FIELD_KEYS.coBorrowerName, borrowerFullName);
-                  }
                 }}
                 disabled={disabled}
               />
