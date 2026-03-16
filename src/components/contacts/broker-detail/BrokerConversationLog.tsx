@@ -299,6 +299,7 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string }>
                   <TableCell key={c.id} className="text-xs">
                     {c.id === 'date' ? formatDateTimeDisplay((r as any)[c.id] || '') :
                      c.id === 'highPriority' ? (r.highPriority ? 'Yes' : 'No') :
+                     c.id === 'attachments' ? (r.attachments && r.attachments.length > 0 ? <Paperclip className="h-4 w-4 text-primary" /> : '-') :
                      (r as any)[c.id] || '-'}
                   </TableCell>
                 ))}
