@@ -99,7 +99,7 @@ export function normalizeWordXml(xmlContent: string): string {
   // bookmarks, and structural XML in all non-tag paragraphs.
   result = result.replace(/<w:p[\s>][\s\S]*?<\/w:p>/g, (para) => {
     // Only strip in paragraphs that contain merge tag delimiters
-    if (!para.includes('{{') && !para.includes('\u00AB') && !para.includes('\u00BB')) {
+    if (!para.includes('{') && !para.includes('\u00AB') && !para.includes('\u00BB')) {
       return para;
     }
     let cleaned = para;

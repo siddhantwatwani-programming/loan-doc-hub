@@ -479,6 +479,19 @@ async function generateSingleDocument(
       }
     }
 
+    // Auto-compute bk_p_brokerLicens from broker section data
+    const existingLicense = fieldValues.get("bk_p_brokerLicens");
+    if (!existingLicense || !existingLicense.rawValue) {
+      const license = fieldValues.get("broker1.License")?.rawValue 
+        || fieldValues.get("broker1.license_number")?.rawValue
+        || fieldValues.get("broker.License")?.rawValue
+        || fieldValues.get("broker.license_number")?.rawValue;
+      if (license) {
+        fieldValues.set("bk_p_brokerLicens", { rawValue: String(license), dataType: "text" });
+        console.log(`[generate-document] Auto-computed bk_p_brokerLicens = "${license}"`);
+      }
+    }
+
     // Auto-compute Borrower.Address from component fields if not already set
     const existingBorrowerAddr = fieldValues.get("Borrower.Address") || fieldValues.get("borrower.address");
     if (!existingBorrowerAddr || !existingBorrowerAddr.rawValue) {
