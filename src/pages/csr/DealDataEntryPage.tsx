@@ -350,7 +350,9 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
   useEffect(() => {
     const targetSections = isExternalUser ? visibleSections : sections;
     if (targetSections.length > 0 && !activeTab) {
-      setActiveTab(targetSections[0]);
+      // Default to loan_terms if available, otherwise first section
+      const defaultTab = targetSections.includes('loan_terms' as any) ? 'loan_terms' : targetSections[0];
+      setActiveTab(defaultTab as string);
     }
   }, [sections, visibleSections, activeTab, isExternalUser]);
 
