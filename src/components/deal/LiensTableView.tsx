@@ -93,11 +93,27 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'lastVerified', label: 'Last Verified' },
 ];
 
+const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'property', label: 'Related Property', visible: true },
+  { id: 'holder', label: 'Lien Holder', visible: true },
+  { id: 'loanType', label: 'Loan Type', visible: true },
+  { id: 'lienPriorityNow', label: 'Lien Priority Now', visible: true },
+  { id: 'lienPriorityAfter', label: 'Lien Priority After', visible: true },
+  { id: 'interestRate', label: 'Interest Rate', visible: true },
+  { id: 'originalBalance', label: 'Original Balance', visible: true },
+  { id: 'balanceAfter', label: 'Balance After', visible: true },
+  { id: 'regularPayment', label: 'Regular Payment', visible: true },
+  { id: 'recordingNumber', label: 'Recording Number', visible: true },
+  { id: 'lastVerified', label: 'Last Verified', visible: true },
+];
+
 export const LiensTableView: React.FC<LiensTableViewProps> = ({
   liens, onAddLien, onEditLien, onRowClick, onDeleteLien, onBulkDelete, onRefresh, onBack, disabled = false,
 }) => {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('liens', DEFAULT_COLUMNS);
+  const visibleColumns = columns.filter((col) => col.visible);
 
   const {
     searchQuery, setSearchQuery, sortState, toggleSort,
@@ -126,6 +142,23 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
     setBulkDeleteOpen(false);
   };
 
+  const renderCellValue = (lien: LienData, columnId: string) => {
+    switch (columnId) {
+      case 'property': return lien.property || 'Unassigned';
+      case 'holder': return lien.holder || '-';
+      case 'loanType': return lien.loanType || '-';
+      case 'lienPriorityNow': return lien.lienPriorityNow || '-';
+      case 'lienPriorityAfter': return lien.lienPriorityAfter || '-';
+      case 'interestRate': return lien.interestRate ? `${lien.interestRate}%` : '-';
+      case 'originalBalance': return formatCurrency(lien.originalBalance) || '-';
+      case 'balanceAfter': return formatCurrency(lien.balanceAfter) || '-';
+      case 'regularPayment': return formatCurrency(lien.regularPayment) || '-';
+      case 'recordingNumber': return lien.recordingNumber || '-';
+      case 'lastVerified': return lien.lastVerified || '-';
+      default: return '-';
+    }
+  };
+
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
@@ -138,10 +171,18 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
           )}
           <h3 className="text-lg font-semibold text-foreground">Liens</h3>
         </div>
-        <Button size="sm" onClick={onAddLien} disabled={disabled} className="gap-1">
-          <Plus className="h-4 w-4" />
-          Add Lien
-        </Button>
+        <div className="flex items-center gap-2">
+          <ColumnConfigPopover
+            columns={columns}
+            onColumnsChange={setColumns}
+            onResetColumns={resetColumns}
+            disabled={disabled}
+          />
+          <Button variant="outline" size="sm" onClick={onAddLien} disabled={disabled} className="gap-1">
+            <Plus className="h-4 w-4" />
+            Add Lien
+          </Button>
+        </div>
       </div>
 
       <div className="mb-3">
