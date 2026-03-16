@@ -180,7 +180,7 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.coBorrowerId}>
             <div className="flex items-center gap-2">
               <Label className="w-[130px] shrink-0 text-xs">Co-Borrower ID</Label>
-              <Input id={FIELD_KEYS.coBorrowerId} value={getValue(FIELD_KEYS.coBorrowerId)} disabled className="h-8 text-xs flex-1 bg-muted" />
+              <Input id={FIELD_KEYS.coBorrowerId} value={getValue(FIELD_KEYS.coBorrowerId)} onChange={(e) => setValue(FIELD_KEYS.coBorrowerId, e.target.value)} disabled={disabled} className="h-8 text-xs flex-1" />
             </div>
           </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.coBorrowerName}>
