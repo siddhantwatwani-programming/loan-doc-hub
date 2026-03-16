@@ -21,6 +21,7 @@ import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'fundingDate', label: 'Funding Date', visible: true },
   { id: 'lenderAccount', label: 'Lender Account', visible: true },
   { id: 'lenderName', label: 'Lender Name', visible: true },
   { id: 'pctOwned', label: 'Pct Owned', visible: true },
