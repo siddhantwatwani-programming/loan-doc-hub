@@ -550,6 +550,27 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'property1.lien_regular_payment': 'pr_li_lienRegulaPaymen',
   'property1.lien_last_checked': 'pr_li_lienLastChecke',
 
+  // LIEN TAB (lien.* dot-notation from LienSectionContent)
+  'lien.property': 'pr_li_lienProper',
+  'lien.priority': 'pr_li_lienPriori',
+  'lien.holder': 'pr_li_lienHolder',
+  'lien.account': 'pr_li_lienAccoun',
+  'lien.contact': 'pr_li_lienContac',
+  'lien.phone': 'pr_li_lienPhone',
+  'lien.fax': 'pr_li_lienContac2',
+  'lien.email': 'pr_li_lienContac2',
+  'lien.loan_type': 'pr_li_lienPriori',
+  'lien.original_balance': 'pr_li_lienOriginBalanc',
+  'lien.current_balance': 'pr_li_lienCurrenBalanc',
+  'lien.balance_after': 'pr_li_lienCurrenBalanc2',
+  'lien.regular_payment': 'pr_li_lienRegulaPaymen',
+  'lien.recording_number': 'pr_li_lienAccoun2',
+  'lien.last_checked': 'pr_li_lienLastChecke',
+  'lien.last_verified': 'pr_li_lienLastChecke2',
+  'lien.senior_lien_tracking': 'pr_li_seniorLienTracki',
+  'lien.note': 'pr_li_lienHolder2',
+  'lien.status': 'pr_li_lienHolder3',
+
   // PROPERTY TAX
   'property1.tax.payee': 'pr_p_taxPayee',
   'property1.tax.payee_address': 'pr_p_taxPayeeAddres',
