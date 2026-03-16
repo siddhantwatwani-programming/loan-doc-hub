@@ -31,17 +31,18 @@ interface LogRow {
   highPriority: boolean;
   reference: string;
   attachments: string[];
+  account: string;
+  name: string;
 }
 
 const ALL_COLUMNS = [
-  { id: 'date', label: 'Date' },
+  { id: 'date', label: 'Date - Time' },
+  { id: 'highPriority', label: 'High Priority' },
   { id: 'type', label: 'Type' },
-  { id: 'subject', label: 'Subject' },
-  { id: 'from', label: 'From' },
-  { id: 'to', label: 'To' },
-  { id: 'status', label: 'Status' },
+  { id: 'account', label: 'Account' },
+  { id: 'name', label: 'Name' },
   { id: 'reference', label: 'Reference' },
-  { id: 'highPriority', label: 'Priority' },
+  { id: 'attachments', label: 'Attachment' },
 ];
 
 const LOG_TYPES = ['Conversation Log', 'Attorney / Client', 'Internal'];
@@ -68,6 +69,8 @@ const getEmptyLog = (): Omit<LogRow, 'id'> => {
     highPriority: false,
     reference: '',
     attachments: [],
+    account: '',
+    name: '',
   };
 };
 
@@ -304,6 +307,7 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
                   <TableCell key={c.id} className="text-xs">
                     {c.id === 'date' ? formatDateTimeDisplay((r as any)[c.id] || '') :
                      c.id === 'highPriority' ? (r.highPriority ? 'Yes' : 'No') :
+                     c.id === 'attachments' ? (r.attachments && r.attachments.length > 0 ? <Paperclip className="h-4 w-4 text-primary" /> : '-') :
                      (r as any)[c.id] || '-'}
                   </TableCell>
                 ))}
@@ -359,26 +363,16 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
-                <Label className="w-[80px] shrink-0 text-xs">Subject</Label>
-                <Input value={newLog.subject} onChange={e => setNewLog(p => ({ ...p, subject: e.target.value }))} className="h-7 text-xs flex-1" />
+                <Label className="w-[80px] shrink-0 text-xs">Account</Label>
+                <Input value={newLog.account} onChange={e => setNewLog(p => ({ ...p, account: e.target.value }))} className="h-7 text-xs flex-1" />
               </div>
               <div className="flex items-center gap-2">
-                <Label className="w-[80px] shrink-0 text-xs">Status</Label>
-                <Input value={newLog.status} onChange={e => setNewLog(p => ({ ...p, status: e.target.value }))} className="h-7 text-xs flex-1" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Label className="w-[80px] shrink-0 text-xs">From</Label>
-                <Input value={newLog.from} onChange={e => setNewLog(p => ({ ...p, from: e.target.value }))} className="h-7 text-xs flex-1" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-[80px] shrink-0 text-xs">To</Label>
-                <Input value={newLog.to} onChange={e => setNewLog(p => ({ ...p, to: e.target.value }))} className="h-7 text-xs flex-1" />
+                <Label className="w-[80px] shrink-0 text-xs">Name</Label>
+                <Input value={newLog.name} onChange={e => setNewLog(p => ({ ...p, name: e.target.value }))} className="h-7 text-xs flex-1" />
               </div>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Content</Label>
+              <Label className="text-xs">Conversation Log</Label>
               <div className="h-[160px] border border-border rounded-md overflow-hidden">
                 <RichTextEditor value={newLog.content} onChange={(v) => setNewLog(p => ({ ...p, content: v }))} placeholder="Enter conversation log content..." minHeight="60px" />
               </div>
