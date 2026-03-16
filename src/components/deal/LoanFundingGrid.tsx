@@ -395,6 +395,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         onSubmit={(data) => {
           if (selectedRecord) {
             onUpdateRecord(selectedRecord.id, {
+              fundingDate: data.fundingDate || '',
               lenderAccount: data.lenderId,
               lenderName: data.lenderFullName,
               lenderRate: parseFloat(data.lenderRate) || 0,

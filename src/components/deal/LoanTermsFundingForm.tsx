@@ -255,6 +255,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   const handleAddFunding = useCallback(async (data: FundingFormData) => {
     const newRecord: FundingRecord = {
       id: `funding-${Date.now()}`,
+      fundingDate: data.fundingDate || '',
       lenderAccount: data.lenderId || '',
       lenderName: data.lenderFullName || '',
       pctOwned: parseFloat(data.percentOwned) || 0,
