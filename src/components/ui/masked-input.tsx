@@ -33,35 +33,41 @@ export const MaskedInput: React.FC<MaskedInputProps> = ({
 
   const maskedValue = React.useMemo(() => {
     if (!value) return '';
-    if (value.length <= 4) return value;
-    const last4 = value.slice(-4);
-    const masked = '•'.repeat(value.length - 4);
-    return `${masked}${last4}`;
+    if (value.length <= 4) return '•'.repeat(value.length);
+    return '•'.repeat(value.length - 4) + value.slice(-4);
   }, [value]);
 
   return (
     <div className="relative flex-1">
       <Input
-        value={visible ? value : maskedValue}
-        onChange={visible ? onChange : undefined}
-        readOnly={!visible}
+        value={maskedValue}
+        onChange={onChange}
         disabled={disabled}
-        className={cn('h-8 text-sm pr-8', className)}
+        className={cn('h-8 text-sm', className)}
         placeholder={placeholder}
-        maxLength={visible ? maxLength : undefined}
-        inputMode={visible ? inputMode : undefined}
+        maxLength={maxLength}
+        inputMode={inputMode}
+        onBeforeInput={(e: any) => {
+          // Allow typing by appending to actual value
+          const nativeEvent = e.nativeEvent as InputEvent;
+          if (nativeEvent.data) {
+            e.preventDefault();
+            const syntheticEvent = {
+              target: { value: value + nativeEvent.data },
+            } as React.ChangeEvent<HTMLInputElement>;
+            onChange(syntheticEvent);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Backspace') {
+            e.preventDefault();
+            const syntheticEvent = {
+              target: { value: value.slice(0, -1) },
+            } as React.ChangeEvent<HTMLInputElement>;
+            onChange(syntheticEvent);
+          }
+        }}
       />
-      {value && !disabled && (
-        <button
-          type="button"
-          onClick={toggleVisibility}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-          tabIndex={-1}
-          aria-label={visible ? 'Hide value' : 'Show value'}
-        >
-          {visible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-        </button>
-      )}
     </div>
   );
 };
