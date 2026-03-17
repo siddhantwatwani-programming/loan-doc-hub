@@ -70,6 +70,7 @@ interface LoanFundingGridProps {
   noteRate?: string;
   soldRate?: string;
   totalPayment?: string;
+  loanAmount?: string;
 }
 
 const SEARCH_FIELDS = ['lenderAccount', 'lenderName'];
