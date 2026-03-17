@@ -50,17 +50,37 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
     onChange({ ...data, interestFrom: date ? format(date, 'yyyy-MM-dd') : '' });
   }, [data, onChange]);
 
-  // Auto-compute Regular Payment = Total Payment * (Percent Owned / 100)
+  // Auto-compute Percent Owned = Funding Amount / Loan Amount * 100
   React.useEffect(() => {
-    const tp = parseFloat(totalPayment) || 0;
-    const pct = parseFloat(data.percentOwned || '') || 0;
-    if (tp > 0 && pct > 0) {
-      const computed = (tp * pct / 100).toFixed(2);
-      if (computed !== data.regularPayment) {
-        onChange({ ...data, regularPayment: computed });
+    const fa = parseFloat(data.fundingAmount) || 0;
+    const la = parseFloat(loanAmount) || 0;
+    if (la > 0 && fa > 0) {
+      const computed = (fa / la * 100).toFixed(3);
+      if (computed !== data.percentOwned) {
+        onChange({ ...data, percentOwned: computed });
       }
     }
-  }, [data.percentOwned, totalPayment]);
+  }, [data.fundingAmount, loanAmount]);
+
+  // Regular Payment = Total Loan Monthly Payment (read-only)
+  React.useEffect(() => {
+    const tp = totalPayment || '';
+    if (tp !== data.regularPayment) {
+      onChange({ ...data, regularPayment: tp });
+    }
+  }, [totalPayment]);
+
+  // Lender Share = Regular Payment × Percent Owned / 100
+  React.useEffect(() => {
+    const rp = parseFloat(data.regularPayment) || 0;
+    const pct = parseFloat(data.percentOwned) || 0;
+    if (rp > 0 && pct > 0) {
+      const computed = (rp * pct / 100).toFixed(2);
+      if (computed !== data.lenderShare) {
+        onChange({ ...data, lenderShare: computed });
+      }
+    }
+  }, [data.regularPayment, data.percentOwned]);
 
   return (
     <div className="p-4 space-y-3">
