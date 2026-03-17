@@ -146,7 +146,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const totalOwnership = fundingRecords.reduce((sum, r) => sum + r.pctOwned, 0);
   const totalPrincipalBalance = fundingRecords.reduce((sum, r) => sum + r.principalBalance, 0);
   const totalPaymentSum = fundingRecords.reduce((sum, r) => sum + r.regularPayment, 0);
-  const totalLenderShare = fundingRecords.reduce((sum, r) => sum + (r.lenderShare || 0), 0);
+  
   const totalFundingAmount = fundingRecords.reduce((sum, r) => sum + r.originalAmount, 0);
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
