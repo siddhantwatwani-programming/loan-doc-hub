@@ -45,7 +45,6 @@ export const MaskedInput: React.FC<MaskedInputProps> = ({
         value={visible ? value : maskedValue}
         onChange={visible ? onChange : undefined}
         readOnly={!visible}
-        onFocus={() => { if (!visible && !disabled) setVisible(true); }}
         disabled={disabled}
         className={cn('h-8 text-sm pr-8', className)}
         placeholder={placeholder}
