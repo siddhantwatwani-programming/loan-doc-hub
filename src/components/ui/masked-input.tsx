@@ -29,8 +29,7 @@ export const MaskedInput: React.FC<MaskedInputProps> = ({
 
   const maskedValue = React.useMemo(() => {
     if (!value) return '';
-    if (value.length <= 4) return '•'.repeat(value.length);
-    return '•'.repeat(value.length - 4) + value.slice(-4);
+    return '•'.repeat(value.length);
   }, [value]);
 
   return (
