@@ -29,6 +29,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'principalBalance', label: 'Principal Balance', visible: true },
   { id: 'originalAmount', label: 'Original Amount', visible: true },
   { id: 'regularPayment', label: 'Regular Payment', visible: true },
+  { id: 'lenderShare', label: 'Lender Share', visible: true },
   { id: 'roundingError', label: 'Rounding Error', visible: true },
 ];
 
