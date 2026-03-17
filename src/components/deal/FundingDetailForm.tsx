@@ -131,7 +131,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
         </div>
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Funding Date</Label>
-          <Popover open={fundingDateOpen} onOpenChange={setFundingDateOpen} modal={true}>
+          <Popover open={fundingDateOpen} onOpenChange={setFundingDateOpen} modal={false}>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn('h-7 text-sm w-full justify-start text-left font-normal flex-1', !fundingDate && 'text-muted-foreground')}>
                 {fundingDate ? format(fundingDate, 'MM/dd/yyyy') : 'Select date'}
@@ -146,7 +146,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
 
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Interest From</Label>
-          <Popover open={interestFromOpen} onOpenChange={setInterestFromOpen} modal={true}>
+          <Popover open={interestFromOpen} onOpenChange={setInterestFromOpen} modal={false}>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn('h-7 text-sm w-full justify-start text-left font-normal flex-1', !interestFromDate && 'text-muted-foreground')}>
                 {interestFromDate ? format(interestFromDate, 'MM/dd/yyyy') : 'Select date'}
