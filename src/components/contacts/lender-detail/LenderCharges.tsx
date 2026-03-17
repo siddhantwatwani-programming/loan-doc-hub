@@ -383,6 +383,28 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
                       />
                     </PopoverContent>
                   </Popover>
+                ) : (col.id === 'unpaid_balance' || col.id === 'accrued_interest') ? (
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                    <Input
+                      className="h-8 text-xs pl-6"
+                      value={(newCharge as any)[col.id] || ''}
+                      onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value }))}
+                      placeholder="0.00"
+                      inputMode="decimal"
+                    />
+                  </div>
+                ) : col.id === 'interest_rate' ? (
+                  <div className="flex items-center gap-1">
+                    <Input
+                      className="h-8 text-xs"
+                      value={(newCharge as any)[col.id] || ''}
+                      onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value }))}
+                      placeholder="0.000"
+                      inputMode="decimal"
+                    />
+                    <span className="text-muted-foreground text-xs">%</span>
+                  </div>
                 ) : (
                   <Input
                     className="h-8 text-xs"
