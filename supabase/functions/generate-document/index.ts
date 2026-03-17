@@ -302,6 +302,7 @@ async function generateSingleDocument(
               if (cd.tax_id) setIfEmpty(`${prefix}.tax_id`, cd.tax_id);
               if (cd.dob) setIfEmpty(`${prefix}.dob`, cd.dob);
               if (cd.capacity) setIfEmpty(`${prefix}.capacity`, cd.capacity);
+              if (cd.vesting) setIfEmpty(`${prefix}.vesting`, cd.vesting);
               if (cd.borrower_type) setIfEmpty(`${prefix}.borrower_type`, cd.borrower_type);
               if (cd.license_number) setIfEmpty(`${prefix}.license_number`, cd.license_number);
             }
