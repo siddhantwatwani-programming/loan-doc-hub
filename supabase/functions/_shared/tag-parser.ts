@@ -150,6 +150,25 @@ function flattenMergeFieldStructures(xml: string): string {
     console.log(`[tag-parser] instrText fallback converted ${instrFallbackCount} hidden merge tags to visible text`);
   }
 
+  // Orphaned fldChar cleanup: remove begin/end pairs that no longer contain instrText.
+  // These are left behind when instrTextFallback converts the instrText run but leaves
+  // the surrounding fldChar begin and end runs intact.
+  let orphanedFldCharCount = 0;
+  const orphanedFldCharPattern = /<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="begin"[^>]*(?:\/>|><\/w:fldChar>)\s*<\/w:r>(\s*(?:<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:t[^>]*>[^<]*<\/w:t>\s*<\/w:r>\s*)*)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="end"[^>]*(?:\/>|><\/w:fldChar>)\s*<\/w:r>/g;
+  result = result.replace(orphanedFldCharPattern, (fullMatch, betweenContent) => {
+    // Only remove if there's no instrText or separate between begin/end
+    if (/<w:instrText/.test(betweenContent) || /w:fldCharType="separate"/.test(betweenContent)) {
+      return fullMatch;
+    }
+    orphanedFldCharCount++;
+    // Preserve any visible text runs between the fldChar markers
+    return betweenContent.trim();
+  });
+
+  if (orphanedFldCharCount > 0) {
+    console.log(`[tag-parser] Removed ${orphanedFldCharCount} orphaned fldChar begin/end pairs`);
+  }
+
   return result;
 }
 
