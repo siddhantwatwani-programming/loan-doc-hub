@@ -1,68 +1,110 @@
 
 
-## Problem Analysis
+## Event Journal (Change Log System) Implementation Plan
 
-The document generation for broker fields has two distinct issues:
+### Overview
+Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
 
-### Issue 1: `{{bk_p_brokerLicens}}` outputs `{{John Peterson` (wrong value + leftover braces)
+### 1. Database: New Migration
+Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
 
-**Root cause**: The broker contact lookup relies solely on `loan_terms.details_originating_vendor` containing a `BR-XXXXX` ID. If this field is empty or missing, the broker contact is never fetched from the `contacts` table. Meanwhile, deal_section_values may contain stale broker data from the old deal-based entry. Additionally, the `setIfEmpty` function never overrides existing values — so if the deal section has wrong data for `bk_p_brokerLicens` (e.g., the broker's name instead of the license), it persists.
+```sql
+CREATE TABLE public.event_journal (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
+  event_number integer NOT NULL,
+  actor_user_id uuid NOT NULL,
+  section text NOT NULL,
+  details jsonb NOT NULL DEFAULT '[]',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-The leftover `{{` suggests Word XML fragmentation where `{{` is in a separate run from the field code structure. The tag parser detects part of the tag but `{{` survives as literal text.
+CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
+ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
 
-### Issue 2: `{{bk_p_firstName}} {{bk_p_lastName}}` — entire line missing
+-- RLS: CSR and Admin can view/insert
+CREATE POLICY "CSRs can view event journal" ON public.event_journal
+  FOR SELECT TO authenticated
+  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
 
-**Root cause**: If the broker contact is not found (no BR- ID detected), these fields remain empty. The tag parser's no-data cleanup removes the empty tags, which may also remove the entire paragraph including the label text "Broker's Representative:".
+CREATE POLICY "CSRs can insert event journal" ON public.event_journal
+  FOR INSERT TO authenticated
+  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
 
----
+-- Auto-increment event_number per deal
+CREATE OR REPLACE FUNCTION public.set_event_journal_number()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
+BEGIN
+  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
+  FROM public.event_journal WHERE deal_id = NEW.deal_id;
+  RETURN NEW;
+END;
+$$;
 
-## Plan
+CREATE TRIGGER trg_event_journal_number
+  BEFORE INSERT ON public.event_journal
+  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
+```
 
-### 1. Expand broker contact ID detection (`generate-document/index.ts`)
+The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
 
-Currently only checks `loan_terms.details_originating_vendor`. Add fallback scans for:
-- `bk_p_brokerId` field value (the deal's broker section stores the broker ID here)
-- `broker.id` / `broker1.id` field values
-- Scan all field values for any value matching the `BR-XXXXX` pattern
+### 2. Hook: `useEventJournal.ts` (New File)
+- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
+- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
+- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
 
-This ensures the broker contact is fetched from the `contacts` table even when `loan_terms.details_originating_vendor` is not populated.
+### 3. Capture Old→New Values in `useDealFields.ts`
+- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
+- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
+- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
+- After successful save, update the snapshot
 
-### 2. Force-override broker fields from contact data (`generate-document/index.ts`)
+### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
+Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
+- Table with columns: Event #, User, Section, Details, Timestamp
+- Details column shows truncated preview (first 80 chars)
+- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
+- Sorted by event_number descending (newest first)
 
-Change the broker contact injection block to use a force-set function instead of `setIfEmpty` for broker-specific fields. Since the user states broker data has moved to Contacts, the contact data should take priority over any stale deal_section_values broker data.
+### 5. `EventJournalViewer` Component (New File)
+`src/components/deal/EventJournalViewer.tsx`:
+- Fetches from `event_journal` table filtered by `deal_id`
+- Joins actor names from `profiles`
+- Table layout using existing shadcn Table components
+- "Show More" modal using existing Dialog component
+- Detail entries formatted as `Field Label: oldValue → newValue`
 
-Specifically, create a `forceSet` helper alongside `setIfEmpty` and use it when injecting broker contact fields (firstName, lastName, fullName, license, etc. under the `bk_p_*` and `broker.*` namespaces).
+### 6. Global Event Journal Page (New File)
+`src/pages/csr/GlobalEventJournalPage.tsx`:
+- Deal selector dropdown (search by deal number) at the top
+- Once a deal is selected, renders `EventJournalViewer` for that deal
+- Same table structure as the per-deal view
 
-### 3. Fix broker license key resolution from contact_data (`generate-document/index.ts`)
+### 7. Sidebar Navigation Update
+In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
+```tsx
+<PromotedNavSection
+  label="Event Journal"
+  icon={BookOpen}
+  items={[]}
+  directPath="/event-journal"
+  isCollapsed={isCollapsed}
+  searchQuery={searchQuery}
+/>
+```
 
-The broker form saves the license field as `broker.License` → stripped to `License` in `contact_data`. The current code already checks `cd.License`. However, it should also check the `cd["License"]` key directly (capital L). Confirm and add `cd.license` (lowercase) as an additional fallback.
+### 8. Route Registration
+In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
 
-### 4. Clean up orphaned `{{` before replaced values (`tag-parser.ts`)
-
-Add a targeted cleanup pass in the `replaceMergeTags` function after all tag replacements. This pass will detect and remove orphaned `{{` that appear immediately before (possibly with XML tags in between) a resolved value — these are artifacts of Word field code structures where `{{` was literal text preceding an instrText-based merge field.
-
-Pattern: remove `{{` that are NOT followed by a closing `}}` within a reasonable distance (i.e., they are orphaned opening braces from a partially-fragmented tag).
-
-### 5. Preserve label text for empty broker fields (`tag-parser.ts`)
-
-The no-data tag cleanup currently removes empty placeholder tags. When a tag with no data is removed, if it leaves a label-only line (like "Broker's Representative:"), the label should be preserved with an empty value rather than having the entire line disappear.
-
-Modify the no-data tag cleanup to replace empty tags with an empty string (already the behavior) but NOT remove the surrounding paragraph. The current code at lines 1090-1101 already does `result.split(tag.fullMatch).join('')` which should keep labels. The issue may be in the paragraph consolidation — if the entire paragraph text becomes just the label with no other content, it should still be preserved.
-
----
-
-### Files Modified
-
+### Files Changed
 | File | Change |
 |------|--------|
-| `supabase/functions/generate-document/index.ts` | Expand broker ID detection; force-override broker fields from contacts; add lowercase license fallback |
-| `supabase/functions/_shared/tag-parser.ts` | Add orphaned `{{` cleanup pass after tag replacement |
-
-### No Changes To
-
-- Database schema
-- UI components
-- Template files
-- Other edge functions
-- Client-side code
+| New migration | Create `event_journal` table with trigger |
+| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
+| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
+| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
+| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
+| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
+| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
+| `src/App.tsx` | Add `/event-journal` route |
 

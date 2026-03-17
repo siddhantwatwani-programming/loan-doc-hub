@@ -224,10 +224,33 @@ async function generateSingleDocument(
       }
 
       // Also scan for broker contact IDs (BR-XXXXX pattern)
-      const brokerContactId = fieldValues.get("loan_terms.details_originating_vendor")?.rawValue;
-      if (brokerContactId && typeof brokerContactId === "string" && String(brokerContactId).startsWith("BR-")) {
-        if (!contactIdsToFetch.includes(String(brokerContactId))) {
-          contactIdsToFetch.push(String(brokerContactId));
+      // Check multiple possible sources for broker ID
+      let brokerContactId: string | null = null;
+      const brokerIdCandidates = [
+        fieldValues.get("loan_terms.details_originating_vendor")?.rawValue,
+        fieldValues.get("bk_p_brokerId")?.rawValue,
+        fieldValues.get("broker.id")?.rawValue,
+        fieldValues.get("broker1.id")?.rawValue,
+      ];
+      for (const candidate of brokerIdCandidates) {
+        if (candidate && typeof candidate === "string" && String(candidate).startsWith("BR-")) {
+          brokerContactId = String(candidate);
+          break;
+        }
+      }
+      // Fallback: scan all field values for a BR-XXXXX pattern
+      if (!brokerContactId) {
+        for (const [, val] of fieldValues.entries()) {
+          if (val.rawValue && typeof val.rawValue === "string" && /^BR-\d{3,}$/.test(String(val.rawValue))) {
+            brokerContactId = String(val.rawValue);
+            console.log(`[generate-document] Found broker ID via field scan: ${brokerContactId}`);
+            break;
+          }
+        }
+      }
+      if (brokerContactId) {
+        if (!contactIdsToFetch.includes(brokerContactId)) {
+          contactIdsToFetch.push(brokerContactId);
         }
       }
 
@@ -328,20 +351,63 @@ async function generateSingleDocument(
             }
           }
 
-          // Inject broker contact data
+          // Force-set helper: always overrides existing values (broker data comes from Contacts now)
+          const forceSet = (key: string, value: string) => {
+            if (value) {
+              fieldValues.set(key, { rawValue: value, dataType: "text" });
+            }
+          };
+
+          // Inject broker contact data (force-override since broker data lives in Contacts)
           for (const cr of contactRows) {
             if ((cr as any).contact_type === "broker") {
-              injectContact(cr, ["broker1", "broker"], "bk_p");
-              // Inject broker license explicitly (truncated key not covered by generic shortPrefix logic)
               const cd = (cr as any).contact_data || {};
-              const license = cd.license_number || cd.License || (cr as any).license_number || "";
+              const firstName = cd.first_name || (cr as any).first_name || "";
+              const middleName = cd.middle_initial || "";
+              const lastName = cd.last_name || (cr as any).last_name || "";
+              const assembledName = [firstName, middleName, lastName].filter(Boolean).join(" ");
+              const fullName = assembledName || cd.full_name || (cr as any).full_name || "";
+              const email = cd.email || (cr as any).email || "";
+              const company = cd.company || (cr as any).company || "";
+              const phone = cd["phone.cell"] || cd["phone.work"] || cd["phone.home"] || (cr as any).phone || "";
+              const fax = cd["phone.fax"] || "";
+              const license = cd.license_number || cd.License || cd.license || (cr as any).license_number || "";
+
+              // Force-set short prefix keys (bk_p_*)
+              forceSet("bk_p_fullName", fullName);
+              forceSet("bk_p_firstName", firstName);
+              forceSet("bk_p_lastName", lastName);
+              forceSet("bk_p_middleInitia", middleName);
+              forceSet("bk_p_email", email);
+              forceSet("bk_p_company", company);
+              forceSet("bk_p_phone", phone);
+              forceSet("bk_p_fax", fax);
               if (license) {
-                setIfEmpty("bk_p_brokerLicens", String(license));
-                setIfEmpty("broker.License", String(license));
-                setIfEmpty("broker.license_number", String(license));
-                setIfEmpty("broker1.license_number", String(license));
+                forceSet("bk_p_brokerLicens", String(license));
+                forceSet("broker.License", String(license));
+                forceSet("broker.license_number", String(license));
+                forceSet("broker1.license_number", String(license));
               }
-              console.log(`[generate-document] Injected broker contact fields from ${(cr as any).contact_id}`);
+
+              // Force-set dot-notation keys
+              for (const prefix of ["broker1", "broker"]) {
+                forceSet(`${prefix}.full_name`, fullName);
+                forceSet(`${prefix}.first_name`, firstName);
+                forceSet(`${prefix}.last_name`, lastName);
+                forceSet(`${prefix}.middle_initial`, middleName);
+                forceSet(`${prefix}.email`, email);
+                forceSet(`${prefix}.company`, company);
+                forceSet(`${prefix}.phone`, phone);
+                forceSet(`${prefix}.fax`, fax);
+                if (cd["address.street"]) forceSet(`${prefix}.address.street`, cd["address.street"]);
+                if (cd["address.city"] || (cr as any).city) forceSet(`${prefix}.address.city`, cd["address.city"] || (cr as any).city);
+                if (cd["address.state"] || (cr as any).state) forceSet(`${prefix}.state`, cd["address.state"] || (cr as any).state);
+                if (cd["address.zip"]) forceSet(`${prefix}.address.zip`, cd["address.zip"]);
+                if (cd.tax_id) forceSet(`${prefix}.tax_id`, cd.tax_id);
+                if (license) forceSet(`${prefix}.License`, String(license));
+              }
+
+              console.log(`[generate-document] Force-injected broker contact fields from ${(cr as any).contact_id} (license: ${license || 'n/a'})`);
               break;
             }
           }

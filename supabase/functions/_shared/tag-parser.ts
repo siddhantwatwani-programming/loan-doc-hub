@@ -1101,9 +1101,33 @@ export function replaceMergeTags(
     }
   }
 
-  // NOTE: Removed aggressive dangling {{ cleanup — it was stripping valid merge tags
-  // where Word XML markup between {{ and }} exceeded 200 chars. The paragraph-level
-  // consolidation safety net above handles truly fragmented tags adequately.
-  
+  // Clean up orphaned {{ that remain as literal text after tag replacement.
+  // These are artifacts of Word XML fragmentation where {{ was in a separate run
+  // from the field code structure. The tag was resolved but {{ survived as text.
+  // Only remove {{ that are NOT followed by }} within the same <w:t> context
+  // (i.e., they are genuinely orphaned, not part of a valid {{tag}}).
+  {
+    let orphanCount = 0;
+    // Match {{ in <w:t> elements that are NOT part of a valid {{...}} tag
+    result = result.replace(/<w:t([^>]*)>([^<]*)<\/w:t>/g, (fullMatch, attrs, textContent) => {
+      // If text contains {{ but NOT a complete {{...}} tag, strip the orphaned {{
+      if (textContent.includes('{{') && !/\{\{[A-Za-z0-9_.| ]+\}\}/.test(textContent)) {
+        const cleaned = textContent.replace(/\{\{/g, '');
+        if (cleaned !== textContent) {
+          orphanCount++;
+          if (!cleaned.trim()) {
+            // If the text is now empty or whitespace-only, preserve space
+            return `<w:t${attrs}>${cleaned}</w:t>`;
+          }
+          return `<w:t${attrs}>${cleaned}</w:t>`;
+        }
+      }
+      return fullMatch;
+    });
+    if (orphanCount > 0) {
+      console.log(`[tag-parser] Cleaned ${orphanCount} orphaned {{ from text runs`);
+    }
+  }
+
   return result;
 }
