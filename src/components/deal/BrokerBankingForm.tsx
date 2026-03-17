@@ -39,7 +39,17 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({
     <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
       <div className="flex items-center gap-2">
         <Label className="text-sm text-muted-foreground min-w-[120px] max-w-[120px] text-left shrink-0">{label}</Label>
-        <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-8 text-sm w-[160px] 3xl:w-[200px]" {...props} />
+        {key === 'routingNumber' || key === 'accountNumber' ? (
+          <MaskedInput
+            value={getValue(key)}
+            onChange={(e) => handleChange(key, e.target.value.replace(/\D/g, ''))}
+            disabled={disabled}
+            className="w-[160px] 3xl:w-[200px]"
+            {...props}
+          />
+        ) : (
+          <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-8 text-sm w-[160px] 3xl:w-[200px]" {...props} />
+        )}
       </div>
     </DirtyFieldWrapper>
   );
