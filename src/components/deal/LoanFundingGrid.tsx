@@ -429,6 +429,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               principalBalance: parseFloat(data.fundingAmount) || 0,
               pctOwned: parseFloat(data.percentOwned) || 0,
               regularPayment: parseFloat(data.regularPayment) || 0,
+              lenderShare: parseFloat(data.lenderShare) || 0,
               rateSelection: data.rateSelection,
               rateNoteValue: data.rateNoteValue,
               rateSoldValue: data.rateSoldValue,
