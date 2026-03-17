@@ -34,6 +34,11 @@ const TIN_TYPE_OPTIONS = [
   { value: '2', label: '2 – SSN' },
 ];
 
+const STATE_OPTIONS = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
+  'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
+  'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC',
+];
 import { LENDER_TAX_INFO_KEYS } from '@/lib/fieldKeyMap';
 
 // Use central field key map
@@ -163,12 +168,20 @@ export const LenderTaxInfoForm: React.FC<LenderTaxInfoFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.state}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">State</Label>
-              <Input
+              <Select
                 value={getValue('state')}
-                onChange={(e) => handleChange('state', e.target.value)}
+                onValueChange={(value) => handleChange('state', value)}
                 disabled={disabled}
-                className="h-7 text-sm flex-1"
-              />
+              >
+                <SelectTrigger className="h-7 text-sm flex-1 bg-background">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50 max-h-60">
+                  {STATE_OPTIONS.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.tin}>
