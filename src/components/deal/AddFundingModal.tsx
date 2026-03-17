@@ -179,19 +179,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     }
   }, [totalPayment]);
 
-  // Lender Share = Regular Payment × Percent Owned / 100
-  React.useEffect(() => {
-    const rp = parseFloat(formData.regularPayment) || 0;
-    const pct = parseFloat(formData.percentOwned) || 0;
-    if (rp > 0 && pct > 0) {
-      const computed = (rp * pct / 100).toFixed(2);
-      if (computed !== formData.lenderShare) {
-        setFormData(prev => ({ ...prev, lenderShare: computed }));
-      }
-    } else if (formData.lenderShare !== '') {
-      setFormData(prev => ({ ...prev, lenderShare: '' }));
-    }
-  }, [formData.regularPayment, formData.percentOwned]);
 
   const handleChange = (field: keyof FundingFormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
