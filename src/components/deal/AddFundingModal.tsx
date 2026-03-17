@@ -401,13 +401,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   <Input type="text" inputMode="decimal" value={formData.regularPayment} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-sm text-muted-foreground shrink-0">Lender Share</Label>
-                <div className="relative w-28">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-                  <Input type="text" inputMode="decimal" value={formData.lenderShare} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
-                </div>
-              </div>
             </div>
 
             {/* Broker checkbox */}
