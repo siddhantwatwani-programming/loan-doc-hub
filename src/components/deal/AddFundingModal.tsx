@@ -179,19 +179,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     }
   }, [totalPayment]);
 
-  // Lender Share = Regular Payment × Percent Owned / 100
-  React.useEffect(() => {
-    const rp = parseFloat(formData.regularPayment) || 0;
-    const pct = parseFloat(formData.percentOwned) || 0;
-    if (rp > 0 && pct > 0) {
-      const computed = (rp * pct / 100).toFixed(2);
-      if (computed !== formData.lenderShare) {
-        setFormData(prev => ({ ...prev, lenderShare: computed }));
-      }
-    } else if (formData.lenderShare !== '') {
-      setFormData(prev => ({ ...prev, lenderShare: '' }));
-    }
-  }, [formData.regularPayment, formData.percentOwned]);
 
   const handleChange = (field: keyof FundingFormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -399,13 +386,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 <div className="relative w-28">
                   <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
                   <Input type="text" inputMode="decimal" value={formData.regularPayment} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-sm text-muted-foreground shrink-0">Lender Share</Label>
-                <div className="relative w-28">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-                  <Input type="text" inputMode="decimal" value={formData.lenderShare} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
                 </div>
               </div>
             </div>

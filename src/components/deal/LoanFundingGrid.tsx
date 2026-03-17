@@ -29,7 +29,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'principalBalance', label: 'Principal Balance', visible: true },
   { id: 'originalAmount', label: 'Original Amount', visible: true },
   { id: 'regularPayment', label: 'Regular Payment', visible: true },
-  { id: 'lenderShare', label: 'Lender Share', visible: true },
+  
   { id: 'roundingError', label: 'Rounding Error', visible: true },
 ];
 
@@ -146,7 +146,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const totalOwnership = fundingRecords.reduce((sum, r) => sum + r.pctOwned, 0);
   const totalPrincipalBalance = fundingRecords.reduce((sum, r) => sum + r.principalBalance, 0);
   const totalPaymentSum = fundingRecords.reduce((sum, r) => sum + r.regularPayment, 0);
-  const totalLenderShare = fundingRecords.reduce((sum, r) => sum + (r.lenderShare || 0), 0);
+  
   const totalFundingAmount = fundingRecords.reduce((sum, r) => sum + r.originalAmount, 0);
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
@@ -225,8 +225,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         return <span>{formatCurrency(record.originalAmount)}</span>;
       case 'regularPayment':
         return <span>{formatCurrency(record.regularPayment)}</span>;
-      case 'lenderShare':
-        return <span>{formatCurrency(record.lenderShare || 0)}</span>;
       case 'roundingError':
         return (
           <div className="text-center" onClick={(e) => e.stopPropagation()}>
@@ -358,7 +356,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                     if (col.id === 'pctOwned') return <TableCell key={col.id} className="text-left"><span className="text-foreground">{formatPercentage(totalOwnership)}</span></TableCell>;
                     if (col.id === 'principalBalance') return <TableCell key={col.id} className="text-left">{formatCurrency(totalPrincipalBalance)}</TableCell>;
                     if (col.id === 'regularPayment') return <TableCell key={col.id} className="text-left">{formatCurrency(totalPaymentSum)}</TableCell>;
-                    if (col.id === 'lenderShare') return <TableCell key={col.id} className="text-left">{formatCurrency(totalLenderShare)}</TableCell>;
+                    
                     if (col.id === 'originalAmount') return <TableCell key={col.id} className="text-left">{formatCurrency(totalFundingAmount)}</TableCell>;
                     if (idx === 0) return <TableCell key={col.id} className="font-semibold">Totals:</TableCell>;
                     return <TableCell key={col.id}></TableCell>;
