@@ -96,7 +96,7 @@ export interface FundingFormData {
 const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: string, soldRate: string): FundingFormData => ({
   loan: loanNumber, borrower: borrowerName, lenderId: '', lenderFullName: '',
   lenderRate: '', fundingAmount: '', fundingDate: '', interestFrom: '', notes: '', brokerParticipates: false,
-  percentOwned: '', regularPayment: '',
+  percentOwned: '', regularPayment: '', lenderShare: '',
   rateSelection: 'note_rate', rateNoteValue: noteRate, rateSoldValue: soldRate, rateLenderValue: '',
   overrideServicingFees: false,
   companyServicingFee: '', companyServicingFeePct: '', companyMaxFee: '', companyMaxFeePct: '',
