@@ -224,10 +224,33 @@ async function generateSingleDocument(
       }
 
       // Also scan for broker contact IDs (BR-XXXXX pattern)
-      const brokerContactId = fieldValues.get("loan_terms.details_originating_vendor")?.rawValue;
-      if (brokerContactId && typeof brokerContactId === "string" && String(brokerContactId).startsWith("BR-")) {
-        if (!contactIdsToFetch.includes(String(brokerContactId))) {
-          contactIdsToFetch.push(String(brokerContactId));
+      // Check multiple possible sources for broker ID
+      let brokerContactId: string | null = null;
+      const brokerIdCandidates = [
+        fieldValues.get("loan_terms.details_originating_vendor")?.rawValue,
+        fieldValues.get("bk_p_brokerId")?.rawValue,
+        fieldValues.get("broker.id")?.rawValue,
+        fieldValues.get("broker1.id")?.rawValue,
+      ];
+      for (const candidate of brokerIdCandidates) {
+        if (candidate && typeof candidate === "string" && String(candidate).startsWith("BR-")) {
+          brokerContactId = String(candidate);
+          break;
+        }
+      }
+      // Fallback: scan all field values for a BR-XXXXX pattern
+      if (!brokerContactId) {
+        for (const [, val] of fieldValues.entries()) {
+          if (val.rawValue && typeof val.rawValue === "string" && /^BR-\d{3,}$/.test(String(val.rawValue))) {
+            brokerContactId = String(val.rawValue);
+            console.log(`[generate-document] Found broker ID via field scan: ${brokerContactId}`);
+            break;
+          }
+        }
+      }
+      if (brokerContactId) {
+        if (!contactIdsToFetch.includes(brokerContactId)) {
+          contactIdsToFetch.push(brokerContactId);
         }
       }
 
