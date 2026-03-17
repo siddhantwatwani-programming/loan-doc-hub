@@ -226,7 +226,12 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.state}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">State</Label>
-              <Input value={getValue('state')} onChange={(e) => handleChange('state', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              <Select value={getValue('state')} onValueChange={(value) => handleChange('state', value)} disabled={disabled}>
+                <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent className="bg-background z-50 max-h-60">
+                  {STATE_OPTIONS.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
           </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.tin}>
