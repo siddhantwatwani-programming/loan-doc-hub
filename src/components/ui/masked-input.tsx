@@ -1,5 +1,4 @@
-import React, { useState, useCallback } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import React from 'react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
