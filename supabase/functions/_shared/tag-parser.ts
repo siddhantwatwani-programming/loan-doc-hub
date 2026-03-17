@@ -67,6 +67,45 @@ function flattenMergeFieldStructures(xml: string): string {
     return `<w:r>${rPr}<w:t>${tagText}</w:t></w:r>`;
   });
 
+  // Pattern C: Field codes WITHOUT a `separate` marker: begin → instrText → end.
+  // Word hides content between begin/end as invisible field code. We collapse the
+  // entire structure into a visible <w:r><w:t>{{fieldName}}</w:t></w:r>.
+  let noSeparateCount = 0;
+  const noSeparatePattern = /<w:r\b[^>]*>\s*(?:<w:rPr>([\s\S]*?)<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="begin"[^>]*(?:\/>|><\/w:fldChar>)\s*<\/w:r>([\s\S]*?)<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:fldChar\s+[^>]*?w:fldCharType="end"[^>]*(?:\/>|><\/w:fldChar>)\s*<\/w:r>/g;
+
+  result = result.replace(noSeparatePattern, (fullMatch, beginRPr, middleSection) => {
+    // Only match if there is NO separate marker inside (Pattern A already handled those)
+    if (/w:fldCharType="separate"/.test(middleSection)) return fullMatch;
+
+    // Extract field name from instrText within the middle section
+    const allInstrText = (middleSection.match(/<w:instrText[^>]*>([\s\S]*?)<\/w:instrText>/g) || [])
+      .map((m: string) => m.replace(/<\/?w:instrText[^>]*>/g, ''))
+      .join('');
+
+    let fieldName: string | null = null;
+    let useCurly = false;
+
+    const mergeMatch = allInstrText.match(/MERGEFIELD\s+"?([A-Za-z0-9_.]+)"?/i);
+    const curlyMatch = allInstrText.match(/\{\{([A-Za-z0-9_.]+)\}\}/);
+    const bareMatch = allInstrText.trim().match(/^([A-Za-z][A-Za-z0-9_.]{2,})$/);
+
+    if (curlyMatch) { fieldName = curlyMatch[1]; useCurly = true; }
+    else if (mergeMatch) { fieldName = mergeMatch[1]; }
+    else if (bareMatch) { fieldName = bareMatch[1]; }
+
+    if (!fieldName) return fullMatch;
+
+    noSeparateCount++;
+    const rPr = beginRPr ? `<w:rPr>${beginRPr}</w:rPr>` : '';
+    const tagText = useCurly ? `{{${fieldName}}}` : `{{${fieldName}}}`;
+    return `<w:r>${rPr}<w:t>${tagText}</w:t></w:r>`;
+  });
+
+  if (noSeparateCount > 0) {
+    console.log(`[tag-parser] Pattern C flattened ${noSeparateCount} field codes without separate marker`);
+  }
+
+
   // Pattern B: Simple field wrappers: <w:fldSimple w:instr="MERGEFIELD name ...">inner</w:fldSimple>
   const simpleFieldPattern = /<w:fldSimple\s+[^>]*w:instr="[^"]*MERGEFIELD\s+"?([A-Za-z0-9_.]+)"?[^"]*"[^>]*>([\s\S]*?)<\/w:fldSimple>/g;
 
