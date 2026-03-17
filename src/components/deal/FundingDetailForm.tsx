@@ -23,6 +23,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
   data,
   onChange,
   totalPayment = '',
+  loanAmount = '',
 }) => {
   const [fundingDateOpen, setFundingDateOpen] = useState(false);
   const [interestFromOpen, setInterestFromOpen] = useState(false);
