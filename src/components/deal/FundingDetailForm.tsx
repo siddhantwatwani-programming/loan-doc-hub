@@ -131,14 +131,14 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
         </div>
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Funding Date</Label>
-          <Popover open={fundingDateOpen} onOpenChange={setFundingDateOpen}>
+          <Popover open={fundingDateOpen} onOpenChange={setFundingDateOpen} modal={true}>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn('h-7 text-sm w-full justify-start text-left font-normal flex-1', !fundingDate && 'text-muted-foreground')}>
                 {fundingDate ? format(fundingDate, 'MM/dd/yyyy') : 'Select date'}
                 <CalendarIcon className="ml-auto h-3.5 w-3.5" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 z-[9999]" align="start">
               <Calendar mode="single" selected={fundingDate} onSelect={handleFundingDateChange} initialFocus className="p-3 pointer-events-auto" />
             </PopoverContent>
           </Popover>
