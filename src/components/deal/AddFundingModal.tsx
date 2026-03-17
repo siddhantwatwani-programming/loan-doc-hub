@@ -157,17 +157,41 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     }
   }, [formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
 
-  // Auto-compute Regular Payment = Total Payment * (Percent Owned / 100)
+  // Auto-compute Percent Owned = Funding Amount / Loan Amount * 100
   React.useEffect(() => {
-    const tp = parseFloat(totalPayment) || 0;
-    const pct = parseFloat(formData.percentOwned) || 0;
-    if (tp > 0 && pct > 0) {
-      const computed = (tp * pct / 100).toFixed(2);
-      if (computed !== formData.regularPayment) {
-        setFormData(prev => ({ ...prev, regularPayment: computed }));
+    const fa = parseFloat(formData.fundingAmount) || 0;
+    const la = parseFloat(loanAmount) || 0;
+    if (la > 0 && fa > 0) {
+      const computed = (fa / la * 100).toFixed(3);
+      if (computed !== formData.percentOwned) {
+        setFormData(prev => ({ ...prev, percentOwned: computed }));
       }
+    } else if (fa === 0 && formData.percentOwned !== '') {
+      setFormData(prev => ({ ...prev, percentOwned: '' }));
     }
-  }, [formData.percentOwned, totalPayment]);
+  }, [formData.fundingAmount, loanAmount]);
+
+  // Regular Payment = Total Loan Monthly Payment (read-only, full amount)
+  React.useEffect(() => {
+    const tp = totalPayment || '';
+    if (tp !== formData.regularPayment) {
+      setFormData(prev => ({ ...prev, regularPayment: tp }));
+    }
+  }, [totalPayment]);
+
+  // Lender Share = Regular Payment × Percent Owned / 100
+  React.useEffect(() => {
+    const rp = parseFloat(formData.regularPayment) || 0;
+    const pct = parseFloat(formData.percentOwned) || 0;
+    if (rp > 0 && pct > 0) {
+      const computed = (rp * pct / 100).toFixed(2);
+      if (computed !== formData.lenderShare) {
+        setFormData(prev => ({ ...prev, lenderShare: computed }));
+      }
+    } else if (formData.lenderShare !== '') {
+      setFormData(prev => ({ ...prev, lenderShare: '' }));
+    }
+  }, [formData.regularPayment, formData.percentOwned]);
 
   const handleChange = (field: keyof FundingFormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
