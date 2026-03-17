@@ -1,110 +1,62 @@
 
+Problem confirmed: this is no longer a Contacts-source issue. The logs show the generator already fetches Broker data from Contacts and successfully resolves/replaces both `bk_p_firstName` and `bk_p_lastName`. The remaining bug is in the DOCX tag/XML handling path, where the paragraph containing “Broker’s Representative:” is still being hidden or structurally broken after replacement.
 
-## Event Journal (Change Log System) Implementation Plan
+What I found:
+- `generate-document/index.ts` already force-injects broker data from Contacts into:
+  - `bk_p_firstName`
+  - `bk_p_lastName`
+  - related broker keys
+- Logs confirm replacements happen:
+  - `Replacing bk_p_firstName -> ... = "Abhijit "`
+  - `Replacing bk_p_lastName -> ... = "Gadge"`
+- So the missing line is happening after data resolution, inside `tag-parser.ts`.
 
-### Overview
-Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
+Most likely root cause:
+- The template line is still stored in a Word field-code structure that the current normalization does not fully flatten in this specific case.
+- The parser currently:
+  - converts some hidden field-code forms,
+  - removes orphaned `{{`,
+  - removes orphaned `fldChar` begin/end pairs,
+  - may also remove surrounding structure when a block looks empty.
+- That combination can leave the visible text replaced in XML but still hidden to Word, or can collapse the paragraph in a way that drops the full “Broker’s Representative:” line.
 
-### 1. Database: New Migration
-Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
+Minimal implementation plan:
+1. Tighten the Word field-code flattening in `supabase/functions/_shared/tag-parser.ts`
+   - Add one more targeted normalization path for the specific field-code/run pattern where visible label text and hidden field text coexist in the same paragraph.
+   - Ensure `{{bk_p_firstName}} {{bk_p_lastName}}` becomes plain visible text runs before replacement, without leaving hidden field wrappers around it.
 
-```sql
-CREATE TABLE public.event_journal (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
-  event_number integer NOT NULL,
-  actor_user_id uuid NOT NULL,
-  section text NOT NULL,
-  details jsonb NOT NULL DEFAULT '[]',
-  created_at timestamptz NOT NULL DEFAULT now()
-);
+2. Make orphaned `fldChar` cleanup safer
+   - Preserve visible text runs exactly as-is.
+   - Only remove the hidden Word control runs, not any surrounding label or spacing content.
+   - This is the most likely place where the full line is disappearing even though replacement succeeded.
 
-CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
-ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
+3. Make orphaned `{{` cleanup more conservative
+   - Clean leftover braces only when they are clearly stray artifacts.
+   - Avoid touching text runs that already contain resolved visible text on the same line.
 
--- RLS: CSR and Admin can view/insert
-CREATE POLICY "CSRs can view event journal" ON public.event_journal
-  FOR SELECT TO authenticated
-  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
+4. Do not change broker data retrieval
+   - Keep the current Contacts-based broker injection exactly as implemented.
+   - No database changes, no template changes, no UI changes.
 
-CREATE POLICY "CSRs can insert event journal" ON public.event_journal
-  FOR INSERT TO authenticated
-  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
+5. Verify with the affected document only
+   - Regenerate “Agency Disclosure CA DRE Broker With Field Codes_v1”.
+   - Confirm the output is:
+     `Broker’s Representative: John Peterson`
+     or the current contact name in that deal.
+   - Confirm the label remains, both values appear on the same line, and formatting/layout remain identical.
 
--- Auto-increment event_number per deal
-CREATE OR REPLACE FUNCTION public.set_event_journal_number()
-RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
-BEGIN
-  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
-  FROM public.event_journal WHERE deal_id = NEW.deal_id;
-  RETURN NEW;
-END;
-$$;
+Files to update:
+- `supabase/functions/_shared/tag-parser.ts`
 
-CREATE TRIGGER trg_event_journal_number
-  BEFORE INSERT ON public.event_journal
-  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
-```
+Files not to change:
+- `supabase/functions/generate-document/index.ts`
+- database schema
+- template files
+- UI/components
+- document layout/styling logic beyond the minimal XML visibility fix
 
-The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
-
-### 2. Hook: `useEventJournal.ts` (New File)
-- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
-- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
-- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
-
-### 3. Capture Old→New Values in `useDealFields.ts`
-- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
-- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
-- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
-- After successful save, update the snapshot
-
-### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
-Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
-- Table with columns: Event #, User, Section, Details, Timestamp
-- Details column shows truncated preview (first 80 chars)
-- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
-- Sorted by event_number descending (newest first)
-
-### 5. `EventJournalViewer` Component (New File)
-`src/components/deal/EventJournalViewer.tsx`:
-- Fetches from `event_journal` table filtered by `deal_id`
-- Joins actor names from `profiles`
-- Table layout using existing shadcn Table components
-- "Show More" modal using existing Dialog component
-- Detail entries formatted as `Field Label: oldValue → newValue`
-
-### 6. Global Event Journal Page (New File)
-`src/pages/csr/GlobalEventJournalPage.tsx`:
-- Deal selector dropdown (search by deal number) at the top
-- Once a deal is selected, renders `EventJournalViewer` for that deal
-- Same table structure as the per-deal view
-
-### 7. Sidebar Navigation Update
-In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
-```tsx
-<PromotedNavSection
-  label="Event Journal"
-  icon={BookOpen}
-  items={[]}
-  directPath="/event-journal"
-  isCollapsed={isCollapsed}
-  searchQuery={searchQuery}
-/>
-```
-
-### 8. Route Registration
-In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
-
-### Files Changed
-| File | Change |
-|------|--------|
-| New migration | Create `event_journal` table with trigger |
-| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
-| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
-| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
-| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
-| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
-| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
-| `src/App.tsx` | Add `/event-journal` route |
-
+Expected result:
+- Broker data continues to come from Contacts
+- `{{bk_p_firstName}}` and `{{bk_p_lastName}}` both populate
+- The full line “Broker’s Representative:” remains visible
+- No template formatting, structure, or styling changes
