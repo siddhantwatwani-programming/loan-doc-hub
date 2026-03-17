@@ -29,6 +29,8 @@ interface AddFundingModalProps {
   noteRate?: string;
   soldRate?: string;
   totalPayment?: string;
+  loanAmount?: string;
+  existingRecords?: Array<{ id: string; roundingError: boolean }>;
 }
 
 export interface FundingFormData {
