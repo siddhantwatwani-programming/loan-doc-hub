@@ -46,6 +46,7 @@ export interface FundingFormData {
   brokerParticipates: boolean;
   percentOwned: string;
   regularPayment: string;
+  lenderShare: string;
   rateSelection: 'note_rate' | 'sold_rate' | 'lender_rate';
   rateNoteValue: string;
   rateSoldValue: string;
