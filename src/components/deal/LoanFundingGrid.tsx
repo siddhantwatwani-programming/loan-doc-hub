@@ -358,6 +358,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                     if (col.id === 'pctOwned') return <TableCell key={col.id} className="text-left"><span className="text-foreground">{formatPercentage(totalOwnership)}</span></TableCell>;
                     if (col.id === 'principalBalance') return <TableCell key={col.id} className="text-left">{formatCurrency(totalPrincipalBalance)}</TableCell>;
                     if (col.id === 'regularPayment') return <TableCell key={col.id} className="text-left">{formatCurrency(totalPaymentSum)}</TableCell>;
+                    if (col.id === 'lenderShare') return <TableCell key={col.id} className="text-left">{formatCurrency(totalLenderShare)}</TableCell>;
                     if (col.id === 'originalAmount') return <TableCell key={col.id} className="text-left">{formatCurrency(totalFundingAmount)}</TableCell>;
                     if (idx === 0) return <TableCell key={col.id} className="font-semibold">Totals:</TableCell>;
                     return <TableCell key={col.id}></TableCell>;
