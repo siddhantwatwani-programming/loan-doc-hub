@@ -96,7 +96,7 @@ function flattenMergeFieldStructures(xml: string): string {
     if (!fieldName) return fullMatch;
 
     noSeparateCount++;
-    const rPr = beginRPr ? `<w:rPr>${beginRPr}</w:rPr>` : '';
+    const rPr = '';
     const tagText = useCurly ? `{{${fieldName}}}` : `{{${fieldName}}}`;
     return `<w:r>${rPr}<w:t>${tagText}</w:t></w:r>`;
   });
