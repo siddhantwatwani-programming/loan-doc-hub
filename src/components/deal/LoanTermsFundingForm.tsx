@@ -389,6 +389,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       noteRate={noteRate}
       soldRate={soldRate}
       totalPayment={totalPayment}
+      loanAmount={loanAmount}
     />
   );
 };

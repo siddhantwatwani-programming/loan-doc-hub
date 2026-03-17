@@ -436,6 +436,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         noteRate={noteRate}
         soldRate={soldRate}
         totalPayment={totalPayment}
+        loanAmount={loanAmount}
+        existingRecords={fundingRecords.map(r => ({ id: r.id, roundingError: r.roundingError }))}
       />
 
       <FundingHistoryDialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen} dealId={dealId} historyRecords={historyRecords} />

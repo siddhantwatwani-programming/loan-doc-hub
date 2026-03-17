@@ -385,12 +385,12 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               </RadioGroup>
             </div>
 
-            {/* Percent Owned, Regular Payment, Lender Rate - inline */}
+            {/* Percent Owned, Regular Payment, Lender Share - inline */}
             <div className="flex items-center gap-6 flex-wrap mt-1">
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-muted-foreground shrink-0">Percent Owned</Label>
                 <div className="relative w-28">
-                  <Input type="text" inputMode="decimal" value={formData.percentOwned} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('percentOwned', v); }} placeholder="0.000" className="h-7 text-sm pr-6" />
+                  <Input type="text" inputMode="decimal" value={formData.percentOwned} disabled className="h-7 text-sm pr-6 opacity-50 bg-muted" placeholder="0.000" />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
                 </div>
               </div>
@@ -402,10 +402,10 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Label className="text-sm text-muted-foreground shrink-0">Lender Rate</Label>
+                <Label className="text-sm text-muted-foreground shrink-0">Lender Share</Label>
                 <div className="relative w-28">
-                  <Input type="text" value={formData.lenderRate} disabled className="h-7 text-sm pr-6 opacity-50 bg-muted" placeholder="0.000" />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
+                  <Input type="text" inputMode="decimal" value={formData.lenderShare} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
                 </div>
               </div>
             </div>
