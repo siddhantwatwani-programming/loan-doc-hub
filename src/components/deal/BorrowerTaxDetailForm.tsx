@@ -18,6 +18,13 @@ import { BORROWER_TAX_DETAIL_KEYS, BORROWER_PRIMARY_KEYS, BORROWER_GUARANTOR_KEY
 // Use central field key map
 const FIELD_KEYS = BORROWER_TAX_DETAIL_KEYS;
 
+const STATE_OPTIONS = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','DC','FL','GA','HI','ID','IL','IN',
+  'IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH',
+  'NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT',
+  'VT','VA','WA','WV','WI','WY',
+];
+
 const DESIGNATED_RECIPIENT_OPTIONS = [
   { value: 'primary', label: 'Borrower' },
   { value: 'co-borrower', label: 'Co-borrower' },
