@@ -225,8 +225,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         return <span>{formatCurrency(record.originalAmount)}</span>;
       case 'regularPayment':
         return <span>{formatCurrency(record.regularPayment)}</span>;
-      case 'lenderShare':
-        return <span>{formatCurrency(record.lenderShare || 0)}</span>;
       case 'roundingError':
         return (
           <div className="text-center" onClick={(e) => e.stopPropagation()}>
