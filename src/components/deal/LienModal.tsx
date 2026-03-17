@@ -175,7 +175,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
             {renderCurrencyField('currentBalance', 'Current Balance', isThisLoan || isAnticipated)}
             {renderInlineField('email', 'Email', 'text', isThisLoan)}
             {renderCurrencyField('balanceAfter', 'Balance After', isThisLoan || isPayoff)}
-            {renderInlineField('email', 'Email', 'text', isThisLoan)}
+            {renderInlineField('contact', 'Contact', 'text', isThisLoan)}
             {renderCurrencyField('regularPayment', 'Regular Payment', isThisLoan)}
             <div className="flex items-center gap-2">
               <Label className="w-[110px] shrink-0 text-xs text-foreground">Loan Type</Label>
