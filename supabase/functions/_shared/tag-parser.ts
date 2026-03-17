@@ -1197,5 +1197,25 @@ export function replaceMergeTags(
     }
   }
 
+  // Clean up orphaned }} that remain as literal text after tag replacement.
+  // Mirror of the orphaned {{ cleanup above — handles cases where Word splits
+  // }} into a separate run from the resolved tag content.
+  {
+    let orphanCount = 0;
+    result = result.replace(/<w:t([^>]*)>([^<]*)<\/w:t>/g, (fullMatch, attrs, textContent) => {
+      if (textContent.includes('}}') && !/\{\{[A-Za-z0-9_.| ]+\}\}/.test(textContent)) {
+        const cleaned = textContent.replace(/\}\}/g, '');
+        if (cleaned !== textContent) {
+          orphanCount++;
+          return `<w:t${attrs}>${cleaned}</w:t>`;
+        }
+      }
+      return fullMatch;
+    });
+    if (orphanCount > 0) {
+      console.log(`[tag-parser] Cleaned ${orphanCount} orphaned }} from text runs`);
+    }
+  }
+
   return result;
 }

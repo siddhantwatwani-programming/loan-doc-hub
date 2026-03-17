@@ -322,6 +322,8 @@ async function generateSingleDocument(
               if (cd["address.city"] || contact.city) setIfEmpty(`${shortPrefix}_city`, cd["address.city"] || contact.city);
               if (cd["address.state"] || contact.state) setIfEmpty(`${shortPrefix}_state`, cd["address.state"] || contact.state);
               if (cd["address.zip"]) setIfEmpty(`${shortPrefix}_zip`, cd["address.zip"]);
+              if (cd.capacity) setIfEmpty(`${shortPrefix}_capacity`, cd.capacity);
+              if (cd.vesting) setIfEmpty(`${shortPrefix}_vesting`, cd.vesting);
             }
           };
 
