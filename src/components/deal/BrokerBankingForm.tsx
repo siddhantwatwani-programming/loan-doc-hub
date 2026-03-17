@@ -2,6 +2,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { MaskedInput } from '@/components/ui/masked-input';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 import { BROKER_BANKING_KEYS } from '@/lib/fieldKeyMap';
