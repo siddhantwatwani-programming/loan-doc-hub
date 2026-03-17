@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { MaskedInput } from '@/components/ui/masked-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -128,16 +129,15 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.routingNumber}>
             <div className="flex items-center gap-4">
               <Label className="w-32 text-sm text-foreground flex-shrink-0">Routing Number</Label>
-              <Input
+              <MaskedInput
                 value={getValue('routingNumber')}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, '').slice(0, 9);
                   handleChange('routingNumber', val);
                 }}
                 disabled={disabled}
-                className="h-8 text-sm flex-1"
                 placeholder="•••••••••"
-                type="password"
+                maxLength={9}
                 inputMode="numeric"
               />
             </div>
@@ -147,16 +147,15 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.accountNumber}>
             <div className="flex items-center gap-4">
               <Label className="w-32 text-sm text-foreground flex-shrink-0">Account Number</Label>
-              <Input
+              <MaskedInput
                 value={getValue('accountNumber')}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, '').slice(0, 17);
                   handleChange('accountNumber', val);
                 }}
                 disabled={disabled}
-                className="h-8 text-sm flex-1"
                 placeholder="••••••••••••"
-                type="password"
+                maxLength={17}
                 inputMode="numeric"
               />
             </div>
