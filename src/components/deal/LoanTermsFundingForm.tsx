@@ -156,6 +156,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   const noteRate = values['loan_terms.note_rate'] || '';
   const soldRate = values['loan_terms.sold_rate'] || '';
   const totalPayment = values['loan_terms.total_payment'] || values['loan_terms.regular_payment'] || '';
+  const loanAmount = values['loan_terms.loan_amount'] || values['loan_terms.original_loan_amount'] || '';
 
   // Parse funding records from stored JSON value
   const fundingRecords: FundingRecord[] = useMemo(() => {
@@ -253,6 +254,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       principalBalance: parseFloat(data.fundingAmount) || 0,
       originalAmount: parseFloat(data.fundingAmount) || 0,
       regularPayment: parseFloat(data.regularPayment) || 0,
+      lenderShare: parseFloat(data.lenderShare) || 0,
       roundingError: false,
       rateSelection: data.rateSelection,
       rateNoteValue: data.rateNoteValue,
@@ -388,6 +390,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       noteRate={noteRate}
       soldRate={soldRate}
       totalPayment={totalPayment}
+      loanAmount={loanAmount}
     />
   );
 };

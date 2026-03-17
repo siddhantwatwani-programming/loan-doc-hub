@@ -29,6 +29,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'principalBalance', label: 'Principal Balance', visible: true },
   { id: 'originalAmount', label: 'Original Amount', visible: true },
   { id: 'regularPayment', label: 'Regular Payment', visible: true },
+  { id: 'lenderShare', label: 'Lender Share', visible: true },
   { id: 'roundingError', label: 'Rounding Error', visible: true },
 ];
 
@@ -42,6 +43,7 @@ export interface FundingRecord {
   principalBalance: number;
   originalAmount: number;
   regularPayment: number;
+  lenderShare: number;
   roundingError: boolean;
   rateSelection?: 'note_rate' | 'sold_rate' | 'lender_rate';
   rateNoteValue?: string;
@@ -70,6 +72,7 @@ interface LoanFundingGridProps {
   noteRate?: string;
   soldRate?: string;
   totalPayment?: string;
+  loanAmount?: string;
 }
 
 const SEARCH_FIELDS = ['lenderAccount', 'lenderName'];
@@ -119,6 +122,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   noteRate = '',
   soldRate = '',
   totalPayment = '',
+  loanAmount = '',
 }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -142,6 +146,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const totalOwnership = fundingRecords.reduce((sum, r) => sum + r.pctOwned, 0);
   const totalPrincipalBalance = fundingRecords.reduce((sum, r) => sum + r.principalBalance, 0);
   const totalPaymentSum = fundingRecords.reduce((sum, r) => sum + r.regularPayment, 0);
+  const totalLenderShare = fundingRecords.reduce((sum, r) => sum + (r.lenderShare || 0), 0);
   const totalFundingAmount = fundingRecords.reduce((sum, r) => sum + r.originalAmount, 0);
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
@@ -174,6 +179,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       brokerParticipates: false,
       percentOwned: String(record.pctOwned),
       regularPayment: String(record.regularPayment),
+      lenderShare: '',
       rateSelection: record.rateSelection || 'note_rate',
       rateNoteValue: record.rateNoteValue || noteRate,
       rateSoldValue: record.rateSoldValue || soldRate,
@@ -219,6 +225,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         return <span>{formatCurrency(record.originalAmount)}</span>;
       case 'regularPayment':
         return <span>{formatCurrency(record.regularPayment)}</span>;
+      case 'lenderShare':
+        return <span>{formatCurrency(record.lenderShare || 0)}</span>;
       case 'roundingError':
         return (
           <div className="text-center" onClick={(e) => e.stopPropagation()}>
@@ -350,6 +358,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                     if (col.id === 'pctOwned') return <TableCell key={col.id} className="text-left"><span className="text-foreground">{formatPercentage(totalOwnership)}</span></TableCell>;
                     if (col.id === 'principalBalance') return <TableCell key={col.id} className="text-left">{formatCurrency(totalPrincipalBalance)}</TableCell>;
                     if (col.id === 'regularPayment') return <TableCell key={col.id} className="text-left">{formatCurrency(totalPaymentSum)}</TableCell>;
+                    if (col.id === 'lenderShare') return <TableCell key={col.id} className="text-left">{formatCurrency(totalLenderShare)}</TableCell>;
                     if (col.id === 'originalAmount') return <TableCell key={col.id} className="text-left">{formatCurrency(totalFundingAmount)}</TableCell>;
                     if (idx === 0) return <TableCell key={col.id} className="font-semibold">Totals:</TableCell>;
                     return <TableCell key={col.id}></TableCell>;
@@ -420,6 +429,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               principalBalance: parseFloat(data.fundingAmount) || 0,
               pctOwned: parseFloat(data.percentOwned) || 0,
               regularPayment: parseFloat(data.regularPayment) || 0,
+              lenderShare: parseFloat(data.lenderShare) || 0,
               rateSelection: data.rateSelection,
               rateNoteValue: data.rateNoteValue,
               rateSoldValue: data.rateSoldValue,
@@ -434,6 +444,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         noteRate={noteRate}
         soldRate={soldRate}
         totalPayment={totalPayment}
+        loanAmount={loanAmount}
+        existingRecords={fundingRecords.map(r => ({ id: r.id, roundingError: r.roundingError }))}
       />
 
       <FundingHistoryDialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen} dealId={dealId} historyRecords={historyRecords} />

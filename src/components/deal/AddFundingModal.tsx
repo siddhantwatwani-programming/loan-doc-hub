@@ -29,6 +29,8 @@ interface AddFundingModalProps {
   noteRate?: string;
   soldRate?: string;
   totalPayment?: string;
+  loanAmount?: string;
+  existingRecords?: Array<{ id: string; roundingError: boolean }>;
 }
 
 export interface FundingFormData {
@@ -44,6 +46,7 @@ export interface FundingFormData {
   brokerParticipates: boolean;
   percentOwned: string;
   regularPayment: string;
+  lenderShare: string;
   rateSelection: 'note_rate' | 'sold_rate' | 'lender_rate';
   rateNoteValue: string;
   rateSoldValue: string;
@@ -93,7 +96,7 @@ export interface FundingFormData {
 const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: string, soldRate: string): FundingFormData => ({
   loan: loanNumber, borrower: borrowerName, lenderId: '', lenderFullName: '',
   lenderRate: '', fundingAmount: '', fundingDate: '', interestFrom: '', notes: '', brokerParticipates: false,
-  percentOwned: '', regularPayment: '',
+  percentOwned: '', regularPayment: '', lenderShare: '',
   rateSelection: 'note_rate', rateNoteValue: noteRate, rateSoldValue: soldRate, rateLenderValue: '',
   overrideServicingFees: false,
   companyServicingFee: '', companyServicingFeePct: '', companyMaxFee: '', companyMaxFeePct: '',
@@ -119,6 +122,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   noteRate = '',
   soldRate = '',
   totalPayment = '',
+  loanAmount = '',
+  existingRecords = [],
 }) => {
   const getInitialFormData = (): FundingFormData => {
     if (editData) return { ...editData, loan: loanNumber || editData.loan, borrower: borrowerName || editData.borrower };
@@ -152,17 +157,41 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     }
   }, [formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
 
-  // Auto-compute Regular Payment = Total Payment * (Percent Owned / 100)
+  // Auto-compute Percent Owned = Funding Amount / Loan Amount * 100
   React.useEffect(() => {
-    const tp = parseFloat(totalPayment) || 0;
-    const pct = parseFloat(formData.percentOwned) || 0;
-    if (tp > 0 && pct > 0) {
-      const computed = (tp * pct / 100).toFixed(2);
-      if (computed !== formData.regularPayment) {
-        setFormData(prev => ({ ...prev, regularPayment: computed }));
+    const fa = parseFloat(formData.fundingAmount) || 0;
+    const la = parseFloat(loanAmount) || 0;
+    if (la > 0 && fa > 0) {
+      const computed = (fa / la * 100).toFixed(3);
+      if (computed !== formData.percentOwned) {
+        setFormData(prev => ({ ...prev, percentOwned: computed }));
       }
+    } else if (fa === 0 && formData.percentOwned !== '') {
+      setFormData(prev => ({ ...prev, percentOwned: '' }));
     }
-  }, [formData.percentOwned, totalPayment]);
+  }, [formData.fundingAmount, loanAmount]);
+
+  // Regular Payment = Total Loan Monthly Payment (read-only, full amount)
+  React.useEffect(() => {
+    const tp = totalPayment || '';
+    if (tp !== formData.regularPayment) {
+      setFormData(prev => ({ ...prev, regularPayment: tp }));
+    }
+  }, [totalPayment]);
+
+  // Lender Share = Regular Payment × Percent Owned / 100
+  React.useEffect(() => {
+    const rp = parseFloat(formData.regularPayment) || 0;
+    const pct = parseFloat(formData.percentOwned) || 0;
+    if (rp > 0 && pct > 0) {
+      const computed = (rp * pct / 100).toFixed(2);
+      if (computed !== formData.lenderShare) {
+        setFormData(prev => ({ ...prev, lenderShare: computed }));
+      }
+    } else if (formData.lenderShare !== '') {
+      setFormData(prev => ({ ...prev, lenderShare: '' }));
+    }
+  }, [formData.regularPayment, formData.percentOwned]);
 
   const handleChange = (field: keyof FundingFormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -356,12 +385,12 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               </RadioGroup>
             </div>
 
-            {/* Percent Owned, Regular Payment, Lender Rate - inline */}
+            {/* Percent Owned, Regular Payment, Lender Share - inline */}
             <div className="flex items-center gap-6 flex-wrap mt-1">
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-muted-foreground shrink-0">Percent Owned</Label>
                 <div className="relative w-28">
-                  <Input type="text" inputMode="decimal" value={formData.percentOwned} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('percentOwned', v); }} placeholder="0.000" className="h-7 text-sm pr-6" />
+                  <Input type="text" inputMode="decimal" value={formData.percentOwned} disabled className="h-7 text-sm pr-6 opacity-50 bg-muted" placeholder="0.000" />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
                 </div>
               </div>
@@ -373,10 +402,10 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Label className="text-sm text-muted-foreground shrink-0">Lender Rate</Label>
+                <Label className="text-sm text-muted-foreground shrink-0">Lender Share</Label>
                 <div className="relative w-28">
-                  <Input type="text" value={formData.lenderRate} disabled className="h-7 text-sm pr-6 opacity-50 bg-muted" placeholder="0.000" />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
+                  <Input type="text" inputMode="decimal" value={formData.lenderShare} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
                 </div>
               </div>
             </div>
