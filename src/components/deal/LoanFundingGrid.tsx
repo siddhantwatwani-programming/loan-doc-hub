@@ -120,6 +120,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   noteRate = '',
   soldRate = '',
   totalPayment = '',
+  loanAmount = '',
 }) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
