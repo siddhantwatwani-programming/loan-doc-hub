@@ -176,6 +176,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       brokerParticipates: false,
       percentOwned: String(record.pctOwned),
       regularPayment: String(record.regularPayment),
+      lenderShare: '',
       rateSelection: record.rateSelection || 'note_rate',
       rateNoteValue: record.rateNoteValue || noteRate,
       rateSoldValue: record.rateSoldValue || soldRate,
