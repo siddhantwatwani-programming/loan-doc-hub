@@ -70,17 +70,6 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
     }
   }, [totalPayment]);
 
-  // Lender Share = Regular Payment × Percent Owned / 100
-  React.useEffect(() => {
-    const rp = parseFloat(data.regularPayment) || 0;
-    const pct = parseFloat(data.percentOwned) || 0;
-    if (rp > 0 && pct > 0) {
-      const computed = (rp * pct / 100).toFixed(2);
-      if (computed !== data.lenderShare) {
-        onChange({ ...data, lenderShare: computed });
-      }
-    }
-  }, [data.regularPayment, data.percentOwned]);
 
   return (
     <div className="p-4 space-y-3">
