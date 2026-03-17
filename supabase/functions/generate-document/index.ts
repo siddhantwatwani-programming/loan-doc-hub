@@ -302,6 +302,7 @@ async function generateSingleDocument(
               if (cd.tax_id) setIfEmpty(`${prefix}.tax_id`, cd.tax_id);
               if (cd.dob) setIfEmpty(`${prefix}.dob`, cd.dob);
               if (cd.capacity) setIfEmpty(`${prefix}.capacity`, cd.capacity);
+              if (cd.vesting) setIfEmpty(`${prefix}.vesting`, cd.vesting);
               if (cd.borrower_type) setIfEmpty(`${prefix}.borrower_type`, cd.borrower_type);
               if (cd.license_number) setIfEmpty(`${prefix}.license_number`, cd.license_number);
             }
@@ -321,6 +322,8 @@ async function generateSingleDocument(
               if (cd["address.city"] || contact.city) setIfEmpty(`${shortPrefix}_city`, cd["address.city"] || contact.city);
               if (cd["address.state"] || contact.state) setIfEmpty(`${shortPrefix}_state`, cd["address.state"] || contact.state);
               if (cd["address.zip"]) setIfEmpty(`${shortPrefix}_zip`, cd["address.zip"]);
+              if (cd.capacity) setIfEmpty(`${shortPrefix}_capacity`, cd.capacity);
+              if (cd.vesting) setIfEmpty(`${shortPrefix}_vesting`, cd.vesting);
             }
           };
 
