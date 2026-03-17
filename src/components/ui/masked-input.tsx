@@ -26,9 +26,6 @@ export const MaskedInput: React.FC<MaskedInputProps> = ({
   maxLength,
   inputMode = 'numeric',
 }) => {
-  const [visible, setVisible] = useState(false);
-
-  const toggleVisibility = useCallback(() => setVisible(prev => !prev), []);
 
   const maskedValue = React.useMemo(() => {
     if (!value) return '';
