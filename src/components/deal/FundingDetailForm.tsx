@@ -16,6 +16,7 @@ interface FundingDetailFormProps {
   data: FundingFormData;
   onChange: (data: FundingFormData) => void;
   totalPayment?: string;
+  loanAmount?: string;
 }
 
 export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
