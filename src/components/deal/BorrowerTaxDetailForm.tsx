@@ -18,6 +18,13 @@ import { BORROWER_TAX_DETAIL_KEYS, BORROWER_PRIMARY_KEYS, BORROWER_GUARANTOR_KEY
 // Use central field key map
 const FIELD_KEYS = BORROWER_TAX_DETAIL_KEYS;
 
+const STATE_OPTIONS = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','DC','FL','GA','HI','ID','IL','IN',
+  'IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH',
+  'NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT',
+  'VT','VA','WA','WV','WI','WY',
+];
+
 const DESIGNATED_RECIPIENT_OPTIONS = [
   { value: 'primary', label: 'Borrower' },
   { value: 'co-borrower', label: 'Co-borrower' },
@@ -226,7 +233,12 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.state}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">State</Label>
-              <Input value={getValue('state')} onChange={(e) => handleChange('state', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              <Select value={getValue('state')} onValueChange={(value) => handleChange('state', value)} disabled={disabled}>
+                <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent className="bg-background z-50 max-h-60">
+                  {STATE_OPTIONS.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
           </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.tin}>
