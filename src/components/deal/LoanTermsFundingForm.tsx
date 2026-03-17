@@ -254,6 +254,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       principalBalance: parseFloat(data.fundingAmount) || 0,
       originalAmount: parseFloat(data.fundingAmount) || 0,
       regularPayment: parseFloat(data.regularPayment) || 0,
+      lenderShare: parseFloat(data.lenderShare) || 0,
       roundingError: false,
       rateSelection: data.rateSelection,
       rateNoteValue: data.rateNoteValue,
