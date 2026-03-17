@@ -236,15 +236,25 @@ export function normalizeWordXml(xmlContent: string): string {
   });
   
   // Handle split opening braces: {</w:t></w:r><w:r><w:t>{ -> {{
+  // CRITICAL: Must NOT cross paragraph boundaries (</w:p> or <w:p)
   const splitOpenBraces = /\{((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\{/g;
-  result = result.replace(splitOpenBraces, (match) => {
+  result = result.replace(splitOpenBraces, (match, runBreak) => {
+    // Reject matches that cross paragraph boundaries
+    if (/<\/w:p>/.test(runBreak) || /<w:p[\s>]/.test(runBreak)) {
+      return match;
+    }
     console.log(`[tag-parser] Consolidated fragmented opening braces {{`);
     return '{{';
   });
   
   // Handle split closing braces: }</w:t></w:r><w:r><w:t>} -> }}
+  // CRITICAL: Must NOT cross paragraph boundaries (</w:p> or <w:p)
   const splitCloseBraces = /\}((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\}/g;
-  result = result.replace(splitCloseBraces, (match) => {
+  result = result.replace(splitCloseBraces, (match, runBreak) => {
+    // Reject matches that cross paragraph boundaries
+    if (/<\/w:p>/.test(runBreak) || /<w:p[\s>]/.test(runBreak)) {
+      return match;
+    }
     console.log(`[tag-parser] Consolidated fragmented closing braces }}`);
     return '}}';
   });
