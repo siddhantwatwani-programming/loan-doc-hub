@@ -43,6 +43,7 @@ export interface FundingRecord {
   principalBalance: number;
   originalAmount: number;
   regularPayment: number;
+  lenderShare: number;
   roundingError: boolean;
   rateSelection?: 'note_rate' | 'sold_rate' | 'lender_rate';
   rateNoteValue?: string;
