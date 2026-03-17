@@ -37,8 +37,8 @@ const BrokerBanking: React.FC<{ broker: ContactBroker; onUpdate: (b: ContactBrok
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div><Label>Bank Name</Label><Input value={form.bankName} onChange={e => update('bankName', e.target.value)} /></div>
-          <div><Label>Routing Number</Label><Input value={form.routingNumber} onChange={e => update('routingNumber', e.target.value)} /></div>
-          <div><Label>Account Number</Label><Input value={form.accountNumber} onChange={e => update('accountNumber', e.target.value)} /></div>
+          <div><Label>Routing Number</Label><MaskedInput value={form.routingNumber} onChange={e => update('routingNumber', e.target.value)} inputMode="numeric" maxLength={9} /></div>
+          <div><Label>Account Number</Label><MaskedInput value={form.accountNumber} onChange={e => update('accountNumber', e.target.value)} inputMode="numeric" /></div>
           <div>
             <Label>Account Type</Label>
             <Select value={form.accountType} onValueChange={v => update('accountType', v)}>

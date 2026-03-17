@@ -72,12 +72,12 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
             
             {wrapField('routingNumber', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Routing Number</Label>
-              <Input value={getValue('routingNumber')} onChange={(e) => { const value = e.target.value.replace(/\D/g, ''); handleChange('routingNumber', value); }} disabled={disabled} className="h-8" maxLength={9} />
+              <MaskedInput value={getValue('routingNumber')} onChange={(e) => { const value = e.target.value.replace(/\D/g, ''); handleChange('routingNumber', value); }} disabled={disabled} maxLength={9} inputMode="numeric" />
             </div>)}
             
             {wrapField('accountNumber', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Account Number</Label>
-              <Input value={getValue('accountNumber')} onChange={(e) => { const value = e.target.value.replace(/\D/g, ''); handleChange('accountNumber', value); }} disabled={disabled} className="h-8" />
+              <MaskedInput value={getValue('accountNumber')} onChange={(e) => { const value = e.target.value.replace(/\D/g, ''); handleChange('accountNumber', value); }} disabled={disabled} inputMode="numeric" />
             </div>)}
             
             {wrapField('accountType', <div className="grid grid-cols-2 gap-2 items-center">
