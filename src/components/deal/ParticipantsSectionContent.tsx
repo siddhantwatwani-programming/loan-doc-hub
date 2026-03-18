@@ -239,19 +239,33 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
     if (data) {
       // Sync participant data back to contact — always overwrite with participant values
       const updates: Record<string, any> = {};
+      const existingData = (data.contact_data || {}) as Record<string, string>;
+      const mergedContactData = { ...existingData };
+
       if (participant.name) {
         updates.full_name = participant.name;
         const parts = participant.name.split(' ');
-        updates.first_name = parts[0] || '';
-        updates.last_name = parts.slice(1).join(' ') || '';
+        const firstName = parts[0] || '';
+        const lastName = parts.slice(1).join(' ') || '';
+        updates.first_name = firstName;
+        updates.last_name = lastName;
+        mergedContactData['full_name'] = participant.name;
+        mergedContactData['first_name'] = firstName;
+        mergedContactData['last_name'] = lastName;
       }
-      if (participant.email) updates.email = participant.email;
+      if (participant.email) {
+        updates.email = participant.email;
+        mergedContactData['email'] = participant.email;
+      }
       if (participant.phone) {
         updates.phone = participant.phone;
-        // Also store in contact_data as phone.home so the detail form sees it
-        const existingData = (data.contact_data || {}) as Record<string, string>;
-        updates.contact_data = { ...existingData, 'phone.home': participant.phone };
+        mergedContactData['phone.home'] = participant.phone;
       }
+      // Map role to capacity
+      const capacityLabel = ROLE_LABELS[participant.role] || participant.role;
+      mergedContactData['capacity'] = capacityLabel;
+
+      updates.contact_data = mergedContactData;
 
       if (Object.keys(updates).length > 0) {
         await supabase.from('contacts').update(updates).eq('id', data.id);

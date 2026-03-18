@@ -170,17 +170,35 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           p_type: contactType,
         });
 
+        const firstName = name.split(' ')[0] || '';
+        const lastName = name.split(' ').slice(1).join(' ') || '';
+
+        // Build contact_data so detail forms see the fields
+        const contactDataPayload: Record<string, string> = {
+          'full_name': name,
+          'first_name': firstName,
+          'last_name': lastName,
+        };
+        if (email) contactDataPayload['email'] = email;
+        if (phone) contactDataPayload['phone.home'] = phone;
+        // Map participant role to capacity
+        const capacityLabel = participantType === 'borrower' ? 'Borrower'
+          : participantType === 'lender' ? 'Lender'
+          : participantType === 'broker' ? 'Broker' : participantType;
+        contactDataPayload['capacity'] = capacityLabel;
+
         const { data: newContact, error: contactError } = await supabase
           .from('contacts')
           .insert({
             contact_type: contactType,
             contact_id: genId || `${contactType.charAt(0).toUpperCase()}-${Date.now()}`,
             full_name: name,
-            first_name: name.split(' ')[0] || '',
-            last_name: name.split(' ').slice(1).join(' ') || '',
+            first_name: firstName,
+            last_name: lastName,
             email,
             phone,
             created_by: user?.id || '',
+            contact_data: contactDataPayload,
           })
           .select('id')
           .single();
