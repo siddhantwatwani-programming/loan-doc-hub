@@ -236,6 +236,10 @@ const FORM_ABBR: Record<string, string> = {
   escrow_title: 'et',
   document_provisions: 'dp',
   origination_fees: 'of',
+  general_details: 'gd',
+  loan_type: 'lt',
+  balance_payment: 'bp',
+  recording_tracking: 'rt',
 };
 
 // All form types for the create/edit dialog (union)
