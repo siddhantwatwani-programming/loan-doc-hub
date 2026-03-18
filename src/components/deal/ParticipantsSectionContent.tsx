@@ -27,10 +27,12 @@ import { cn } from '@/lib/utils';
 
 interface Participant {
   id: string;
+  contact_id_display: string;
   name: string;
   email: string;
   phone: string;
   role: string;
+  capacity: string;
   status: string;
   contact_id: string | null;
   created_at: string;
