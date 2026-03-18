@@ -55,6 +55,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
   onParticipantAdded,
 }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState<'type' | 'details'>('type');
   const [participantType, setParticipantType] = useState<ParticipantType | ''>('');
   const [mode, setMode] = useState<'existing' | 'new'>('existing');
