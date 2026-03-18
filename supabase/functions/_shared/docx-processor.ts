@@ -40,7 +40,13 @@ export async function processDocx(
       if (isContentPart) {
         console.log(`[docx-processor] Processing content XML: ${filename} (${content.length} bytes)`);
         const originalXml = decoder.decode(content);
-        const processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+        let processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+
+        // Post-process: ensure Signature paragraph has a page break before it
+        if (filename === "word/document.xml") {
+          processedXml = ensureSignaturePageBreak(processedXml);
+        }
+
         if (processedXml === originalXml) {
           processedFiles[filename] = [content, { level: 6 }];
         } else {
