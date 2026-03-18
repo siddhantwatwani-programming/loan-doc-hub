@@ -1,43 +1,110 @@
 
 
-## Plan: Preserve Signature Section on Page 2 During Generation
+## Event Journal (Change Log System) Implementation Plan
 
-### Problem
-When the "Declaration of Oral Disclosure With Field Codes" template is re-uploaded, the previously injected `<w:pageBreakBefore>` page break is lost. The generation engine then produces a document where the Signature section shifts off Page 2 due to content length changes from merge tag replacement.
+### Overview
+Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
 
-### Root Cause
-The fix was applied directly to the stored template file. Each re-upload overwrites it. The fix must instead live in the **generation pipeline** so it applies automatically regardless of which template file is uploaded.
+### 1. Database: New Migration
+Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
 
-### Solution
-Add a post-processing step in `supabase/functions/_shared/docx-processor.ts` that runs **after** merge tag replacement. It will:
+```sql
+CREATE TABLE public.event_journal (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
+  event_number integer NOT NULL,
+  actor_user_id uuid NOT NULL,
+  section text NOT NULL,
+  details jsonb NOT NULL DEFAULT '[]',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-1. Scan the processed `word/document.xml` for a paragraph containing the text `Signature:` (the distinctive marker of the signature block)
-2. If found, check whether that paragraph already has `<w:pageBreakBefore/>`
-3. If not, inject `<w:pageBreakBefore w:val="1"/>` into its `<w:pPr>` block (creating one if absent)
+CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
+ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
 
-This ensures the Signature section always starts on a new page, regardless of how content above it reflows after tag replacement.
+-- RLS: CSR and Admin can view/insert
+CREATE POLICY "CSRs can view event journal" ON public.event_journal
+  FOR SELECT TO authenticated
+  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
 
-### File Changed
-**`supabase/functions/_shared/docx-processor.ts`** — Add ~20 lines after the `replaceMergeTags` call (around line 43) to post-process only `word/document.xml`:
+CREATE POLICY "CSRs can insert event journal" ON public.event_journal
+  FOR INSERT TO authenticated
+  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
 
-```typescript
-// After replaceMergeTags, ensure Signature paragraph has page break
-if (filename === "word/document.xml") {
-  processedXml = ensureSignaturePageBreak(processedXml);
-}
+-- Auto-increment event_number per deal
+CREATE OR REPLACE FUNCTION public.set_event_journal_number()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
+BEGIN
+  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
+  FROM public.event_journal WHERE deal_id = NEW.deal_id;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_event_journal_number
+  BEFORE INSERT ON public.event_journal
+  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
 ```
 
-The `ensureSignaturePageBreak` function will:
-- Match the `<w:p>` containing `Signature:` followed by underscores
-- Insert `<w:pageBreakBefore w:val="1"/>` into its `<w:pPr>` if missing
-- If no `<w:pPr>` exists, wrap the property in a new `<w:pPr>` block
-- Leave all other paragraphs untouched
+The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
 
-### What is NOT Changed
-- No UI changes
-- No database changes
-- No changes to tag-parser.ts, formatting.ts, field-resolver.ts, or generate-document/index.ts
-- No changes to upload-template or template management flows
-- No other templates affected (the pattern targets `Signature:` + underscores specifically)
-- Empty merge tags continue to be replaced with blank space (existing behavior, per user preference)
+### 2. Hook: `useEventJournal.ts` (New File)
+- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
+- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
+- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
+
+### 3. Capture Old→New Values in `useDealFields.ts`
+- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
+- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
+- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
+- After successful save, update the snapshot
+
+### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
+Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
+- Table with columns: Event #, User, Section, Details, Timestamp
+- Details column shows truncated preview (first 80 chars)
+- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
+- Sorted by event_number descending (newest first)
+
+### 5. `EventJournalViewer` Component (New File)
+`src/components/deal/EventJournalViewer.tsx`:
+- Fetches from `event_journal` table filtered by `deal_id`
+- Joins actor names from `profiles`
+- Table layout using existing shadcn Table components
+- "Show More" modal using existing Dialog component
+- Detail entries formatted as `Field Label: oldValue → newValue`
+
+### 6. Global Event Journal Page (New File)
+`src/pages/csr/GlobalEventJournalPage.tsx`:
+- Deal selector dropdown (search by deal number) at the top
+- Once a deal is selected, renders `EventJournalViewer` for that deal
+- Same table structure as the per-deal view
+
+### 7. Sidebar Navigation Update
+In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
+```tsx
+<PromotedNavSection
+  label="Event Journal"
+  icon={BookOpen}
+  items={[]}
+  directPath="/event-journal"
+  isCollapsed={isCollapsed}
+  searchQuery={searchQuery}
+/>
+```
+
+### 8. Route Registration
+In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
+
+### Files Changed
+| File | Change |
+|------|--------|
+| New migration | Create `event_journal` table with trigger |
+| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
+| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
+| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
+| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
+| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
+| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
+| `src/App.tsx` | Add `/event-journal` route |
 

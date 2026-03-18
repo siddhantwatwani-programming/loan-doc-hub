@@ -40,7 +40,13 @@ export async function processDocx(
       if (isContentPart) {
         console.log(`[docx-processor] Processing content XML: ${filename} (${content.length} bytes)`);
         const originalXml = decoder.decode(content);
-        const processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+        let processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+
+        // Post-process: ensure Signature paragraph has a page break before it
+        if (filename === "word/document.xml") {
+          processedXml = ensureSignaturePageBreak(processedXml);
+        }
+
         if (processedXml === originalXml) {
           processedFiles[filename] = [content, { level: 6 }];
         } else {
@@ -58,6 +64,47 @@ export async function processDocx(
 
   const compressed = fflate.zipSync(processedFiles);
   return compressed;
+}
+
+/**
+ * Ensure the paragraph containing "Signature:" + underscores always starts on a new page.
+ * Injects <w:pageBreakBefore w:val="1"/> into its <w:pPr> block if not already present.
+ */
+function ensureSignaturePageBreak(xml: string): string {
+  // Match a <w:p> element whose text content contains "Signature:" followed by underscores
+  const signatureParaRegex = /(<w:p\b[^>]*>)([\s\S]*?Signature:\s*_[\s\S]*?)(<\/w:p>)/;
+  const match = xml.match(signatureParaRegex);
+  if (!match) {
+    console.log("[docx-processor] No Signature paragraph found; skipping page-break injection.");
+    return xml;
+  }
+
+  const fullPara = match[0];
+
+  // Already has pageBreakBefore — nothing to do
+  if (fullPara.includes("w:pageBreakBefore")) {
+    console.log("[docx-processor] Signature paragraph already has pageBreakBefore.");
+    return xml;
+  }
+
+  let updatedPara: string;
+  const pPrMatch = fullPara.match(/(<w:pPr\b[^>]*>)/);
+  if (pPrMatch) {
+    // Insert inside existing <w:pPr>
+    updatedPara = fullPara.replace(
+      pPrMatch[1],
+      pPrMatch[1] + '<w:pageBreakBefore w:val="1"/>'
+    );
+  } else {
+    // No <w:pPr> — create one right after <w:p ...>
+    updatedPara = fullPara.replace(
+      match[1],
+      match[1] + '<w:pPr><w:pageBreakBefore w:val="1"/></w:pPr>'
+    );
+  }
+
+  console.log("[docx-processor] Injected pageBreakBefore into Signature paragraph.");
+  return xml.replace(fullPara, updatedPara);
 }
 
 /**
