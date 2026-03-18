@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { FieldDefinition } from "@/hooks/useDealFields";
 import type { CalculationResult } from "@/lib/calculationEngine";
 import { DirtyFieldWrapper } from "./DirtyFieldWrapper";
-import { BrokerIdSearch } from "./BrokerIdSearch";
+
 
 interface LoanTermsBalancesFormProps {
   fields: FieldDefinition[];
