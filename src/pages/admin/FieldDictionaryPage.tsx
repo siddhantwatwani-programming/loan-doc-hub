@@ -198,6 +198,7 @@ const SECTION_ABBR: Record<string, string> = {
   origination_fees: 'of',
   insurance: 'in',
   notes: 'nt',
+  liens: 'li',
 };
 
 const FORM_ABBR: Record<string, string> = {
