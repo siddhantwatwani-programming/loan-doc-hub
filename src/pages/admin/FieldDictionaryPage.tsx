@@ -24,7 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchAllRows } from '@/lib/supabasePagination';
 import { 
-  Plus, 
+   
   Search, 
   Key, 
   Loader2, 
