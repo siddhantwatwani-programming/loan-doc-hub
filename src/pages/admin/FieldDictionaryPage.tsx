@@ -71,6 +71,7 @@ const SECTIONS = [
   { value: 'notes', label: 'Conversation Log' },
   { value: 'lender', label: 'Lenders' },
   { value: 'origination_fees', label: 'Other Origination' },
+  { value: 'liens', label: 'Liens' },
 ];
 
 // Map UI section → DB section(s) used for filtering
@@ -85,12 +86,13 @@ const SECTION_TO_DB: Record<string, string[]> = {
   notes: ['notes'],
   lender: ['lender'],
   origination_fees: ['origination_fees'],
+  liens: ['liens'],
 };
 
 // All valid DB sections we show (everything else is scaffolding/excluded)
 const VALID_DB_SECTIONS = new Set([
   'borrower', 'co_borrower', 'loan_terms', 'property', 'insurance',
-  'broker', 'charges', 'escrow', 'notes', 'lender', 'origination_fees',
+  'broker', 'charges', 'escrow', 'notes', 'lender', 'origination_fees', 'liens',
 ]);
 
 // Forms per UI section — must match the actual sub-navigation in the deal UI
@@ -113,7 +115,6 @@ const SECTION_FORMS: Record<string, { value: string; label: string; dbSection?: 
   property: [
     { value: 'property_details', label: 'Property Details' },
     { value: 'legal_description', label: 'Legal Description' },
-    { value: 'liens', label: 'Liens' },
     { value: 'insurance', label: 'Insurance', dbSection: 'insurance' },
     { value: 'property_tax', label: 'Property Tax' },
   ],
@@ -146,6 +147,12 @@ const SECTION_FORMS: Record<string, { value: string; label: string; dbSection?: 
     { value: 'insurance_conditions', label: 'Insurance Conditions' },
     { value: 'servicing', label: 'Servicing' },
     { value: 'origination_fees', label: 'Origination Fees' },
+  ],
+  liens: [
+    { value: 'general_details', label: 'General Details' },
+    { value: 'loan_type', label: 'Loan Type' },
+    { value: 'balance_payment', label: 'Balance & Payment' },
+    { value: 'recording_tracking', label: 'Recording & Tracking' },
   ],
 };
 
@@ -190,6 +197,7 @@ const SECTION_ABBR: Record<string, string> = {
   origination_fees: 'of',
   insurance: 'in',
   notes: 'nt',
+  liens: 'li',
 };
 
 const FORM_ABBR: Record<string, string> = {
@@ -227,6 +235,10 @@ const FORM_ABBR: Record<string, string> = {
   escrow_title: 'et',
   document_provisions: 'dp',
   origination_fees: 'of',
+  general_details: 'gd',
+  loan_type: 'lt',
+  balance_payment: 'bp',
+  recording_tracking: 'rt',
 };
 
 // All form types for the create/edit dialog (union)
