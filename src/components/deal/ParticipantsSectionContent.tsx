@@ -416,26 +416,12 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
   };
 
   return (
-    <div className="space-y-3">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-2">
-        <GridToolbar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          filterOptions={[
-            { id: 'role', label: 'Type', options: roleFilterOptions },
-            { id: 'status', label: 'Status', options: statusFilterOptions },
-          ]}
-          activeFilters={activeFilters}
-          onFilterChange={setFilter}
-          onClearFilters={clearFilters}
-          activeFilterCount={activeFilterCount}
-          disabled={disabled}
-          selectedCount={selectedIds.size}
-          onBulkDelete={() => setDeleteDialogOpen(true)}
-          onExport={() => setExportOpen(true)}
-          searchPlaceholder="Search participants..."
-        />
+    <div className="p-6 space-y-4">
+      {/* Header with title and actions */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-lg text-foreground">Participants</h3>
+        </div>
         <div className="flex items-center gap-2">
           <ColumnConfigPopover
             columns={columns}
@@ -444,16 +430,36 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             disabled={disabled}
           />
           <Button
+            variant="outline"
             size="sm"
             onClick={() => setAddModalOpen(true)}
             disabled={disabled}
             className="gap-1"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-4 w-4" />
             Add Participant
           </Button>
         </div>
       </div>
+
+      {/* Grid Toolbar */}
+      <GridToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        filterOptions={[
+          { id: 'role', label: 'Type', options: roleFilterOptions },
+          { id: 'status', label: 'Status', options: statusFilterOptions },
+        ]}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        activeFilterCount={activeFilterCount}
+        disabled={disabled}
+        selectedCount={selectedIds.size}
+        onBulkDelete={() => setDeleteDialogOpen(true)}
+        onExport={() => setExportOpen(true)}
+        searchPlaceholder="Search participants..."
+      />
 
       {/* Table */}
       {loading ? (
