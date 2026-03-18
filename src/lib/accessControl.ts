@@ -309,6 +309,8 @@ export const getRoleDisplayName = (role: AppRole): string => {
       return 'Broker';
     case 'lender':
       return 'Lender';
+    case 'other':
+      return 'Other';
     default:
       return 'Unknown';
   }
