@@ -784,6 +784,21 @@ async function generateSingleDocument(
         "last_checked": "property1.lien_last_checked",
       };
 
+      // Bridge to new Liens section li_gd_*, li_bp_*, li_rt_* keys
+      const lienFieldToLiKeys: Record<string, string> = {
+        "interest_rate": "li_gd_interestRate",
+        "lien_priority_now": "li_gd_lienPriorityNow",
+        "lien_priority_after": "li_gd_lienPriorityAfter",
+        "maturity_date": "li_gd_maturityDate",
+        "email": "li_gd_email",
+        "fax": "li_gd_fax",
+        "loan_type": "li_gd_loanType",
+        "this_loan": "li_gd_thisLoan",
+        "recording_date": "li_rt_recordingDate",
+        "existing_paydown_amount": "li_bp_existingPaydownAmount",
+        "existing_payoff_amount": "li_bp_existingPayoffAmount",
+      };
+
       for (const [key, val] of [...fieldValues.entries()]) {
         // Match lien1.holder, lien2.holder, lien.holder etc.
         const lienMatch = key.match(/^lien(\d*)\.(.+)$/);
@@ -796,6 +811,10 @@ async function generateSingleDocument(
           const canonKey = lienFieldToCanonical[field];
           if (canonKey && !fieldValues.has(canonKey)) {
             fieldValues.set(canonKey, val);
+          }
+          const liKey = lienFieldToLiKeys[field];
+          if (liKey && !fieldValues.has(liKey)) {
+            fieldValues.set(liKey, val);
           }
         }
       }
