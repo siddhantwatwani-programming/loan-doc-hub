@@ -274,8 +274,8 @@ export function parseToCanonical(value: string, dataType: string): string {
   
   switch (dataType) {
     case 'currency':
-      // Remove everything except digits and decimal; no negatives allowed
-      return value.replace(/[^0-9.]/g, '');
+      // Remove everything except digits, decimal, and minus
+      return value.replace(/[^0-9.\-]/g, '');
     case 'number':
     case 'percentage':
       // Remove everything except digits, decimal, and minus
