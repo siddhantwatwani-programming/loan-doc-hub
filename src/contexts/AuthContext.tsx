@@ -173,18 +173,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     manualSignOutRef.current = true;
 
-    // Clear all workspace session storage on logout
-    sessionStorage.removeItem('workspace_openFiles');
-    sessionStorage.removeItem('workspace_activeFileId');
-    // Clear all deal navigation states (deal-nav-* keys)
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < sessionStorage.length; i++) {
-      const key = sessionStorage.key(i);
-      if (key && key.startsWith('deal-nav-')) {
-        keysToRemove.push(key);
-      }
-    }
-    keysToRemove.forEach(key => sessionStorage.removeItem(key));
+    // Clear all browser storage and cached data on logout
+    sessionStorage.clear();
+    localStorage.clear();
     await supabase.auth.signOut();
     setRole(null);
   };
