@@ -107,7 +107,7 @@ export const DealOverviewPage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('deal_participants')
-        .select('id, name, email, role, status, contact_id')
+        .select('id, name, email, phone, role, status, contact_id')
         .eq('deal_id', id)
         .order('created_at', { ascending: true });
       if (!error) setDealParticipants(data || []);
