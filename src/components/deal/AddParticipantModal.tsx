@@ -153,6 +153,34 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
         name = selectedContact.full_name;
         email = selectedContact.email;
         phone = selectedContact.phone;
+
+        // Update contact_data with capacity/role for existing contact
+        const { data: existingContact } = await supabase
+          .from('contacts')
+          .select('contact_data')
+          .eq('id', selectedContact.id)
+          .maybeSingle();
+
+        const existingData = (existingContact?.contact_data || {}) as Record<string, string>;
+        const capacityLabel = participantType === 'borrower' ? 'Borrower'
+          : participantType === 'lender' ? 'Lender'
+          : participantType === 'broker' ? 'Broker' : participantType;
+        const mergedData: Record<string, string> = {
+          ...existingData,
+          'full_name': name,
+          'email': email,
+          'capacity': capacityLabel,
+        };
+        if (phone) mergedData['phone.home'] = phone;
+        if (name) {
+          mergedData['first_name'] = name.split(' ')[0] || '';
+          mergedData['last_name'] = name.split(' ').slice(1).join(' ') || '';
+        }
+
+        await supabase
+          .from('contacts')
+          .update({ contact_data: mergedData })
+          .eq('id', selectedContact.id);
       } else if (mode === 'new') {
         name = newName.trim();
         email = newEmail.trim();
@@ -170,17 +198,35 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           p_type: contactType,
         });
 
+        const firstName = name.split(' ')[0] || '';
+        const lastName = name.split(' ').slice(1).join(' ') || '';
+
+        // Build contact_data so detail forms see the fields
+        const contactDataPayload: Record<string, string> = {
+          'full_name': name,
+          'first_name': firstName,
+          'last_name': lastName,
+        };
+        if (email) contactDataPayload['email'] = email;
+        if (phone) contactDataPayload['phone.home'] = phone;
+        // Map participant role to capacity
+        const capacityLabel = participantType === 'borrower' ? 'Borrower'
+          : participantType === 'lender' ? 'Lender'
+          : participantType === 'broker' ? 'Broker' : participantType;
+        contactDataPayload['capacity'] = capacityLabel;
+
         const { data: newContact, error: contactError } = await supabase
           .from('contacts')
           .insert({
             contact_type: contactType,
             contact_id: genId || `${contactType.charAt(0).toUpperCase()}-${Date.now()}`,
             full_name: name,
-            first_name: name.split(' ')[0] || '',
-            last_name: name.split(' ').slice(1).join(' ') || '',
+            first_name: firstName,
+            last_name: lastName,
             email,
             phone,
             created_by: user?.id || '',
+            contact_data: contactDataPayload,
           })
           .select('id')
           .single();
