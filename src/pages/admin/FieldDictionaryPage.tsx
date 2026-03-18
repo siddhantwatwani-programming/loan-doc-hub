@@ -763,7 +763,10 @@ export const FieldDictionaryPage: React.FC = () => {
                   <Input
                     id="fieldKey"
                     value={formData.field_key}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, field_key: e.target.value }))}
+                    onChange={(e) => {
+                      const sanitized = e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, '');
+                      setFormData((prev) => ({ ...prev, field_key: sanitized }));
+                    }}
                     placeholder="Auto-generated from convention"
                     className="font-mono text-sm"
                   />
