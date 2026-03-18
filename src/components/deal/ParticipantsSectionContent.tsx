@@ -538,6 +538,16 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
           </TableBody>
         </Table>
         </div>
+
+        {/* Footer with totals */}
+        {participants.length > 0 && (
+          <div className="flex justify-end">
+            <div className="text-sm text-muted-foreground">
+              {filteredData.length !== participants.length && `Showing ${filteredData.length} of `}
+              Total Participants: {participants.length}
+            </div>
+          </div>
+        )}
       )}
 
       {/* Add Participant Modal */}
