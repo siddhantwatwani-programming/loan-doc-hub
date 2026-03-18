@@ -1,0 +1,70 @@
+
+INSERT INTO public.field_dictionary (field_key, label, section, data_type, form_type, is_calculated, is_repeatable, is_mandatory)
+SELECT * FROM (VALUES
+  -- Borrower
+  ('origination_app.borrower.dob', 'DOB', 'other'::field_section, 'date'::field_data_type, 'application', false, false, false),
+  ('origination_app.borrower.occupation', 'Occupation', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.borrower.employer', 'Employer', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.borrower.employed_since', 'Employed Since', 'other'::field_section, 'date'::field_data_type, 'application', false, false, false),
+  ('origination_app.borrower.contact', 'Contact', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.borrower.phone', 'Phone', 'other'::field_section, 'phone'::field_data_type, 'application', false, false, false),
+  ('origination_app.borrower.email', 'Email', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.borrower.filed_bankruptcy', 'Filed for Bankruptcy (12 Months)', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.borrower.discharged', 'Discharged', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.borrower.credit_score', 'Credit Score', 'other'::field_section, 'number'::field_data_type, 'application', false, false, false),
+  ('origination_app.borrower.extra_label_1', 'Extra Label 1', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.borrower.extra_value_1', 'Extra Value 1', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.borrower.extra_label_2', 'Extra Label 2', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.borrower.extra_value_2', 'Extra Value 2', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  -- Gross Monthly Income
+  ('origination_app.income.salary', 'Salary', 'other'::field_section, 'currency'::field_data_type, 'application', false, false, false),
+  ('origination_app.income.interest', 'Interest', 'other'::field_section, 'currency'::field_data_type, 'application', false, false, false),
+  ('origination_app.income.dividend', 'Dividend', 'other'::field_section, 'currency'::field_data_type, 'application', false, false, false),
+  ('origination_app.income.rental', 'Rental', 'other'::field_section, 'currency'::field_data_type, 'application', false, false, false),
+  ('origination_app.income.other', 'Other Income', 'other'::field_section, 'currency'::field_data_type, 'application', false, false, false),
+  -- Gross Monthly Expenses
+  ('origination_app.expense.credit_card', 'Credit Card', 'other'::field_section, 'currency'::field_data_type, 'application', false, false, false),
+  ('origination_app.expense.mortgage', 'Mortgage', 'other'::field_section, 'currency'::field_data_type, 'application', false, false, false),
+  ('origination_app.expense.spousal_child_support', 'Spousal / Child Support', 'other'::field_section, 'currency'::field_data_type, 'application', false, false, false),
+  ('origination_app.expense.insurance', 'Insurance', 'other'::field_section, 'currency'::field_data_type, 'application', false, false, false),
+  ('origination_app.expense.automobile', 'Automobile', 'other'::field_section, 'currency'::field_data_type, 'application', false, false, false),
+  ('origination_app.expense.other', 'Other Expense', 'other'::field_section, 'currency'::field_data_type, 'application', false, false, false),
+  -- Document Request
+  ('origination_app.doc.balance_sheet_received', 'Balance Sheet Received', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.balance_sheet_reviewed', 'Balance Sheet Reviewed', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.income_statement_received', 'Income Statement Received', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.income_statement_reviewed', 'Income Statement Reviewed', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.audited_financials', 'Audited Financials', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.audited_financials_reviewed', 'Audited Financials Reviewed', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.periods_reviewed', 'Periods Reviewed', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_info_check1', 'Additional Information Attached (Check 1)', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_info_check2', 'Additional Information Attached (Check 2)', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  -- Additional Rows 1-8
+  ('origination_app.doc.additional_row_1_text', 'Additional Row 1', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_1_check1', 'Additional Row 1 Check 1', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_1_check2', 'Additional Row 1 Check 2', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_2_text', 'Additional Row 2', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_2_check1', 'Additional Row 2 Check 1', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_2_check2', 'Additional Row 2 Check 2', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_3_text', 'Additional Row 3', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_3_check1', 'Additional Row 3 Check 1', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_3_check2', 'Additional Row 3 Check 2', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_4_text', 'Additional Row 4', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_4_check1', 'Additional Row 4 Check 1', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_4_check2', 'Additional Row 4 Check 2', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_5_text', 'Additional Row 5', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_5_check1', 'Additional Row 5 Check 1', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_5_check2', 'Additional Row 5 Check 2', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_6_text', 'Additional Row 6', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_6_check1', 'Additional Row 6 Check 1', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_6_check2', 'Additional Row 6 Check 2', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_7_text', 'Additional Row 7', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_7_check1', 'Additional Row 7 Check 1', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_7_check2', 'Additional Row 7 Check 2', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_8_text', 'Additional Row 8', 'other'::field_section, 'text'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_8_check1', 'Additional Row 8 Check 1', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false),
+  ('origination_app.doc.additional_row_8_check2', 'Additional Row 8 Check 2', 'other'::field_section, 'boolean'::field_data_type, 'application', false, false, false)
+) AS v(field_key, label, section, data_type, form_type, is_calculated, is_repeatable, is_mandatory)
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.field_dictionary fd WHERE fd.field_key = v.field_key
+);
