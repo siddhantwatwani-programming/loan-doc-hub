@@ -110,7 +110,61 @@ export const DealOverviewPage: React.FC = () => {
         .select('id, name, email, phone, role, status, contact_id')
         .eq('deal_id', id)
         .order('created_at', { ascending: true });
-      if (!error) setDealParticipants(data || []);
+      if (error) throw error;
+
+      const rows = data || [];
+
+      // Sync latest contact data
+      const contactIds = rows
+        .map((p: any) => p.contact_id)
+        .filter((cid: string | null): cid is string => !!cid);
+
+      if (contactIds.length > 0) {
+        const { data: contacts } = await supabase
+          .from('contacts')
+          .select('id, full_name, email, phone')
+          .in('id', contactIds);
+
+        if (contacts) {
+          const contactMap: Record<string, { full_name: string; email: string; phone: string }> = {};
+          for (const c of contacts) {
+            contactMap[c.id] = { full_name: c.full_name || '', email: c.email || '', phone: c.phone || '' };
+          }
+
+          // Update stale records silently
+          for (const p of rows) {
+            const contact = p.contact_id ? contactMap[p.contact_id] : null;
+            if (contact) {
+              const needsUpdate =
+                (contact.full_name && contact.full_name !== (p.name || '')) ||
+                (contact.email && contact.email !== (p.email || '')) ||
+                (contact.phone && contact.phone !== (p.phone || ''));
+              if (needsUpdate) {
+                supabase
+                  .from('deal_participants')
+                  .update({ name: contact.full_name || p.name, email: contact.email || p.email, phone: contact.phone || p.phone })
+                  .eq('id', p.id)
+                  .then(() => {});
+              }
+            }
+          }
+
+          // Use contact data for display
+          const synced = rows.map((p: any) => {
+            const contact = p.contact_id ? contactMap[p.contact_id] : null;
+            return {
+              ...p,
+              name: contact?.full_name || p.name || '',
+              email: contact?.email || p.email || '',
+              phone: contact?.phone || p.phone || '',
+            };
+          });
+          setDealParticipants(synced);
+          return;
+        }
+      }
+
+      setDealParticipants(rows);
     } catch (err) {
       console.error('Error fetching participants:', err);
     }
