@@ -526,7 +526,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
             {/* Servicing Fees */}
             <div className="flex items-center gap-3">
-              <Label className="text-sm font-semibold text-foreground min-w-[140px] max-w-[140px] text-left shrink-0">
+              <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0">
                 Servicing Fees
               </Label>
               <div className="relative flex-1">
