@@ -153,10 +153,13 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
 
         if (contacts) {
           for (const c of contacts) {
+            const cData = (c.contact_data || {}) as Record<string, string>;
             contactMap[c.id] = {
               full_name: c.full_name || '',
               email: c.email || '',
               phone: c.phone || '',
+              contact_id: c.contact_id || '',
+              capacity: cData['capacity'] || '',
             };
           }
         }
