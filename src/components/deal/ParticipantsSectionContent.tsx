@@ -524,6 +524,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             ))}
           </TableBody>
         </Table>
+        </div>
       )}
 
       {/* Add Participant Modal */}

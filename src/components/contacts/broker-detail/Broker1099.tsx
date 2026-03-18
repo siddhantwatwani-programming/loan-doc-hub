@@ -53,8 +53,9 @@ const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave }
           <Select value={form.tinType} onValueChange={v => update('tinType', v)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="ssn">SSN</SelectItem>
-              <SelectItem value="ein">EIN</SelectItem>
+              <SelectItem value="0">0 - Unknown</SelectItem>
+              <SelectItem value="2">2 - EIN</SelectItem>
+              <SelectItem value="3">3 - SSN</SelectItem>
             </SelectContent>
           </Select>
         </div>
