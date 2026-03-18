@@ -395,7 +395,6 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         onConfirm={handleBulkDelete}
         title="Delete Participants"
         description={`Are you sure you want to delete ${selectedIds.size} selected participant(s)? This action cannot be undone.`}
-        loading={deleting}
       />
     </div>
   );
