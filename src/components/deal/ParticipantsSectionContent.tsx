@@ -223,12 +223,34 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
     }
     const { data } = await supabase
       .from('contacts')
-      .select('id, contact_type')
+      .select('id, contact_type, full_name, email, phone')
       .eq('email', participant.email)
       .limit(1)
       .maybeSingle();
 
     if (data) {
+      // Sync participant data back to contact if contact fields are empty
+      const updates: Record<string, string> = {};
+      if (!data.full_name && participant.name) {
+        updates.full_name = participant.name;
+        const parts = participant.name.split(' ');
+        updates.first_name = parts[0] || '';
+        updates.last_name = parts.slice(1).join(' ') || '';
+      }
+      if (!data.phone && participant.phone) updates.phone = participant.phone;
+
+      if (Object.keys(updates).length > 0) {
+        await supabase.from('contacts').update(updates).eq('id', data.id);
+      }
+
+      // Link contact_id back to participant if missing
+      if (!participant.contact_id) {
+        await supabase
+          .from('deal_participants')
+          .update({ contact_id: data.id })
+          .eq('id', participant.id);
+      }
+
       const route = data.contact_type === 'lender' ? 'lenders' : data.contact_type === 'broker' ? 'brokers' : 'borrowers';
       navigate(`/contacts/${route}/${data.id}`);
     } else {
