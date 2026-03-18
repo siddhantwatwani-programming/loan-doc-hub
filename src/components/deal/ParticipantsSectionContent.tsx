@@ -144,11 +144,11 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         .map((p: any) => p.contact_id)
         .filter((id: string | null): id is string => !!id);
 
-      let contactMap: Record<string, { full_name: string; email: string; phone: string }> = {};
+      let contactMap: Record<string, { full_name: string; email: string; phone: string; contact_id: string; capacity: string }> = {};
       if (contactIds.length > 0) {
         const { data: contacts } = await supabase
           .from('contacts')
-          .select('id, full_name, email, phone')
+          .select('id, full_name, email, phone, contact_id, contact_data')
           .in('id', contactIds);
 
         if (contacts) {
