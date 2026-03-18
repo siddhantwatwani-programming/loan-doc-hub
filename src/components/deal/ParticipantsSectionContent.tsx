@@ -86,7 +86,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'created_at', label: 'Added Date', visible: true },
 ];
 
-const SEARCHABLE_FIELDS = ['name', 'email', 'phone', 'role', 'contact_id_display', 'capacity'];
+const SEARCHABLE_FIELDS = ['name', 'email', 'phone', 'role', 'contact_id_display', 'capacity', 'participant_type_capacity'];
 
 export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProps> = ({
   dealId,
