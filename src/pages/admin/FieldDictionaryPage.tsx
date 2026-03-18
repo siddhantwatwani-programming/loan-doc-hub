@@ -92,7 +92,7 @@ const SECTION_TO_DB: Record<string, string[]> = {
 // All valid DB sections we show (everything else is scaffolding/excluded)
 const VALID_DB_SECTIONS = new Set([
   'borrower', 'co_borrower', 'loan_terms', 'property', 'insurance',
-  'broker', 'charges', 'escrow', 'notes', 'lender', 'origination_fees',
+  'broker', 'charges', 'escrow', 'notes', 'lender', 'origination_fees', 'liens',
 ]);
 
 // Forms per UI section — must match the actual sub-navigation in the deal UI
