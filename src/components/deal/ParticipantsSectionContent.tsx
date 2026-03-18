@@ -494,9 +494,9 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         </div>
       ) : (
         <div className="border border-border rounded-lg overflow-x-auto">
-        <Table>
+        <Table className="min-w-[1400px]">
           <TableHeader>
-            <TableRow>
+            <TableRow className="bg-muted/50">
               <TableHead className="w-[40px]">
                 <Checkbox
                   checked={isAllSelected}
@@ -507,7 +507,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
                 <SortableTableHead
                   key={col.id}
                   columnId={col.id}
-                  label={col.label}
+                  label={col.label.toUpperCase()}
                   sortColumnId={sortState.columnId}
                   sortDirection={sortState.direction}
                   onSort={toggleSort}
