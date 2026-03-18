@@ -157,6 +157,7 @@ export const DealOverviewPage: React.FC = () => {
               name: contact?.full_name || p.name || '',
               email: contact?.email || p.email || '',
               phone: contact?.phone || p.phone || '',
+              contact_id_display: contact?.contact_id || '',
             };
           });
           setDealParticipants(synced);
