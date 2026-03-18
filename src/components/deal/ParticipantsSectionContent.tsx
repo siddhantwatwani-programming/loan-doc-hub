@@ -237,14 +237,34 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
     }
   };
 
-  const navigateToContactById = async (contactId: string, role: string) => {
+  const navigateToContactById = async (contactId: string, role: string, participant?: Participant) => {
     const { data } = await supabase
       .from('contacts')
-      .select('id, contact_type')
+      .select('id, contact_type, full_name, email, phone')
       .eq('id', contactId)
       .maybeSingle();
 
     if (data) {
+      // Sync participant data back to contact if contact fields are empty
+      if (participant) {
+        const updates: Record<string, string> = {};
+        if (!data.full_name && participant.name) {
+          updates.full_name = participant.name;
+          const parts = participant.name.split(' ');
+          updates.first_name = parts[0] || '';
+          updates.last_name = parts.slice(1).join(' ') || '';
+        }
+        if (!data.email && participant.email) updates.email = participant.email;
+        if (!data.phone && participant.phone) updates.phone = participant.phone;
+
+        if (Object.keys(updates).length > 0) {
+          await supabase
+            .from('contacts')
+            .update(updates)
+            .eq('id', contactId);
+        }
+      }
+
       const route = data.contact_type === 'lender' ? 'lenders' : data.contact_type === 'broker' ? 'brokers' : 'borrowers';
       navigate(`/contacts/${route}/${data.id}`);
     } else {
