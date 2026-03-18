@@ -669,7 +669,11 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
                         {/* Name and role */}
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-foreground">
-                            {participant.name || getRoleDisplayName(participant.role)}
+                            {participant.name
+                              ? participant.contact_id_display
+                                ? `${participant.name} - ${participant.contact_id_display}`
+                                : participant.name
+                              : getRoleDisplayName(participant.role)}
                           </span>
                           <Badge variant="outline" className="text-xs gap-1">
                             {participant.access_method === 'magic_link' ? (
