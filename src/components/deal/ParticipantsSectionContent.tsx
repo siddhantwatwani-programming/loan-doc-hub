@@ -413,6 +413,12 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         return <span className="text-muted-foreground">{participant.email || '—'}</span>;
       case 'phone':
         return <span className="text-muted-foreground">{participant.phone || '—'}</span>;
+      case 'participant_type_capacity':
+        return (
+          <Badge variant="secondary" className={cn('text-xs', ROLE_COLORS[participant.role] || '')}>
+            {participant.participant_type_capacity || '—'}
+          </Badge>
+        );
       case 'role':
         return (
           <Badge variant="secondary" className={cn('text-xs', ROLE_COLORS[participant.role] || '')}>
