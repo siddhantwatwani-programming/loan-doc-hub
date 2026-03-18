@@ -189,19 +189,35 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
         contactId = newContact.id;
       }
 
-      // Check if participant already exists for this deal
-      const { data: existing } = await supabase
-        .from('deal_participants')
-        .select('id')
-        .eq('deal_id', dealId)
-        .eq('email', email)
-        .eq('role', participantType)
-        .maybeSingle();
+      // Check if participant already exists for this deal (by contact_id + type, or email + type)
+      if (contactId) {
+        const { data: existing } = await supabase
+          .from('deal_participants')
+          .select('id')
+          .eq('deal_id', dealId)
+          .eq('contact_id', contactId)
+          .eq('role', participantType)
+          .maybeSingle();
 
-      if (existing) {
-        toast.error('This participant already exists in this file');
-        setSaving(false);
-        return;
+        if (existing) {
+          toast.error('This participant already exists in this file');
+          setSaving(false);
+          return;
+        }
+      } else if (email) {
+        const { data: existing } = await supabase
+          .from('deal_participants')
+          .select('id')
+          .eq('deal_id', dealId)
+          .eq('email', email)
+          .eq('role', participantType)
+          .maybeSingle();
+
+        if (existing) {
+          toast.error('This participant already exists in this file');
+          setSaving(false);
+          return;
+        }
       }
 
       // Insert deal participant
