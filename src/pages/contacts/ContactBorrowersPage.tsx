@@ -196,7 +196,7 @@ const ContactBorrowersPage: React.FC = () => {
       <div className="h-full flex flex-col">
         <ContactBorrowerDetailLayout
           contact={selectedContact}
-          onBack={() => setSelectedContact(null)}
+          onBack={() => { setSelectedContact(null); if (contactId) navigate('/contacts/borrowers'); }}
           onSave={handleSave}
         />
       </div>

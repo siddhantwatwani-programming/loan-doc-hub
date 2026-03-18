@@ -194,7 +194,7 @@ const ContactBrokersPage: React.FC = () => {
       <div className="h-full flex flex-col">
         <ContactBrokerDetailLayout
           contact={selectedContact}
-          onBack={() => setSelectedContact(null)}
+          onBack={() => { setSelectedContact(null); if (contactId) navigate('/contacts/brokers'); }}
           onSave={handleSave}
         />
       </div>
