@@ -33,6 +33,7 @@ interface Participant {
   phone: string;
   role: string;
   capacity: string;
+  participant_type_capacity: string;
   status: string;
   contact_id: string | null;
   created_at: string;
@@ -81,13 +82,12 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'name', label: 'Name', visible: true },
   { id: 'email', label: 'Email', visible: true },
   { id: 'phone', label: 'Phone', visible: true },
-  { id: 'role', label: 'Participant Type', visible: true },
-  { id: 'capacity', label: 'Capacity', visible: true },
+  { id: 'participant_type_capacity', label: 'Participant Type', visible: true },
   { id: 'status', label: 'Status', visible: true },
   { id: 'created_at', label: 'Added Date', visible: true },
 ];
 
-const SEARCHABLE_FIELDS = ['name', 'email', 'phone', 'role', 'contact_id_display', 'capacity'];
+const SEARCHABLE_FIELDS = ['name', 'email', 'phone', 'role', 'contact_id_display', 'capacity', 'participant_type_capacity'];
 
 export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProps> = ({
   dealId,
@@ -102,7 +102,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const [columns, setColumns, resetColumns] = useTableColumnConfig('participants_v2', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('participants_v3', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((c) => c.visible);
 
   const {
@@ -199,6 +199,11 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
       setParticipants(
         rows.map((p: any) => {
           const contact = p.contact_id ? contactMap[p.contact_id] : null;
+          const roleLabel = ROLE_LABELS[p.role] || p.role || '';
+          const capacityVal = contact?.capacity || '';
+          const mergedTypeCapacity = capacityVal && capacityVal !== roleLabel
+            ? `${roleLabel} - ${capacityVal}`
+            : roleLabel;
           return {
             id: p.id,
             contact_id_display: contact?.contact_id || '',
@@ -206,7 +211,8 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             email: contact?.email || p.email || '',
             phone: contact?.phone || p.phone || '',
             role: p.role || '',
-            capacity: contact?.capacity || ROLE_LABELS[p.role] || p.role || '',
+            capacity: capacityVal || roleLabel,
+            participant_type_capacity: mergedTypeCapacity,
             status: p.status || 'invited',
             contact_id: p.contact_id,
             created_at: p.created_at,
@@ -407,6 +413,12 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         return <span className="text-muted-foreground">{participant.email || '—'}</span>;
       case 'phone':
         return <span className="text-muted-foreground">{participant.phone || '—'}</span>;
+      case 'participant_type_capacity':
+        return (
+          <Badge variant="secondary" className={cn('text-xs', ROLE_COLORS[participant.role] || '')}>
+            {participant.participant_type_capacity || '—'}
+          </Badge>
+        );
       case 'role':
         return (
           <Badge variant="secondary" className={cn('text-xs', ROLE_COLORS[participant.role] || '')}>

@@ -90,6 +90,8 @@ interface Participant {
   revoked_at: string | null;
   email: string | null;
   name: string | null;
+  contact_id: string | null;
+  contact_id_display: string;
 }
 
 interface MagicLinkInfo {
@@ -154,7 +156,32 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
         .order('sequence_order', { ascending: true, nullsFirst: false });
 
       if (error) throw error;
-      setParticipants((data || []) as Participant[]);
+      const rows = data || [];
+
+      // Fetch contact_id display values for linked participants
+      const contactIds = rows
+        .map((p) => p.contact_id)
+        .filter((id): id is string => !!id);
+
+      let contactIdMap: Record<string, string> = {};
+      if (contactIds.length > 0) {
+        const { data: contacts } = await supabase
+          .from('contacts')
+          .select('id, contact_id')
+          .in('id', contactIds);
+        if (contacts) {
+          for (const c of contacts) {
+            contactIdMap[c.id] = c.contact_id || '';
+          }
+        }
+      }
+
+      setParticipants(
+        rows.map((p) => ({
+          ...p,
+          contact_id_display: p.contact_id ? contactIdMap[p.contact_id] || '' : '',
+        })) as Participant[]
+      );
 
       // Fetch magic links for each participant
       const linksByParticipant: Record<string, MagicLinkInfo[]> = {};
@@ -642,7 +669,11 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
                         {/* Name and role */}
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-foreground">
-                            {participant.name || getRoleDisplayName(participant.role)}
+                            {participant.name
+                              ? participant.contact_id_display
+                                ? `${participant.name} - ${participant.contact_id_display}`
+                                : participant.name
+                              : getRoleDisplayName(participant.role)}
                           </span>
                           <Badge variant="outline" className="text-xs gap-1">
                             {participant.access_method === 'magic_link' ? (
