@@ -680,12 +680,6 @@ export const FieldDictionaryPage: React.FC = () => {
             setIsDialogOpen(open);
             if (!open) resetForm();
           }}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Field
-              </Button>
-            </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>{editingField ? 'Edit Field' : 'Create Field'}</DialogTitle>
