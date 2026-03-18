@@ -90,6 +90,8 @@ interface Participant {
   revoked_at: string | null;
   email: string | null;
   name: string | null;
+  contact_id: string | null;
+  contact_id_display: string;
 }
 
 interface MagicLinkInfo {
