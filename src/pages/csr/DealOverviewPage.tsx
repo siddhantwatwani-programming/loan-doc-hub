@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { logDealMarkedReady } from '@/hooks/useActivityLog';
 import { useWorkspaceOptional } from '@/contexts/WorkspaceContext';
 import { MaxFilesDialog } from '@/components/workspace/MaxFilesDialog';
+import { cn } from '@/lib/utils';
 import { 
   ArrowLeft, 
   Loader2, 
