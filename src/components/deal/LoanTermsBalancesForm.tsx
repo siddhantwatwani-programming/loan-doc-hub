@@ -396,7 +396,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     </div>
                   </div>
                   <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">{isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent) ? '%' : '$'}</span>
                     <Input
                       value={getValue(FIELD_KEYS.acceptShortPaymentsAmount)}
                       onChange={(e) => setValue(FIELD_KEYS.acceptShortPaymentsAmount, e.target.value)}
