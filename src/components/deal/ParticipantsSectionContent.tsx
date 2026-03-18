@@ -364,10 +364,14 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             {ROLE_LABELS[participant.role] || participant.role}
           </Badge>
         );
+      case 'role_capacity':
+        return (
+          <span className="text-muted-foreground">{ROLE_LABELS[participant.role] || participant.role}</span>
+        );
       case 'status':
         return (
           <Badge variant="secondary" className={cn('text-xs', STATUS_COLORS[participant.status] || '')}>
-            {participant.status.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+            {STATUS_LABELS[participant.status] || 'Active'}
           </Badge>
         );
       case 'created_at':
