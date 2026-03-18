@@ -1,36 +1,40 @@
 
 
-## Plan: Fix Signature Section Page Placement
+## Plan: Participants Layout Update, Remove Role/Capacity Column, Broker Tax ID Type Dropdown
 
-### Root Cause
+### 1. Remove 'Role/Capacity' column from Participants table
 
-The uploaded template is a single-page document where the Signature section sits at the bottom. When rendered in Word, the content + table + spacing naturally flows to 2 pages due to font sizes and line spacing. However, there is no **explicit page break** in the template XML — pagination depends entirely on content length.
+**File:** `src/components/deal/ParticipantsSectionContent.tsx`
 
-When merge tags are replaced (some populated, some blanked to empty), the text length changes, causing Word to reflow content. This pushes the Signature block to page 3 instead of keeping it on page 2.
+- Remove `{ id: 'role_capacity', label: 'Role/Capacity', visible: true }` from `DEFAULT_COLUMNS` (line 82)
+- Remove the `case 'role_capacity'` block from `renderCellValue` (lines 406-409)
 
-### Fix
+### 2. Update Participants layout to match Property tab
 
-Add an explicit `<w:pageBreakBefore>` to the paragraph containing the "Signature:" text in the stored template. This guarantees the Signature section always starts on a new page regardless of how content above it reflows.
+**File:** `src/components/deal/ParticipantsSectionContent.tsx`
 
-Per project conventions (from memory): use `<w:pageBreakBefore w:val="1"/>` inside the paragraph's `<w:pPr>` block rather than inline `<w:br w:type="page"/>`.
+Restructure the return JSX (lines 423-553) to match the Property tab's layout pattern:
+- Add a header section with `<h3>Participants</h3>` title on the left
+- Move `ColumnConfigPopover` and `Add Participant` button to the header row (right side), matching Property's `Add Property` button style (use `variant="outline"`)
+- Place `GridToolbar` below the header (separate row), same as Property tab
+- Wrap the table in `<div className="border border-border rounded-lg overflow-x-auto">` like Property
+- Wrap everything in `<div className="p-6 space-y-4">` like Property
 
-### Implementation
+### 3. Broker Tax ID Type dropdown with correct values
 
-**Approach**: Modify the template DOCX file in storage by extracting its XML, adding the page break property to the Signature paragraph, and re-uploading.
+**File:** `src/components/contacts/broker-detail/Broker1099.tsx`
 
-Steps:
-1. Download the current template from storage (`1773850234074_Declaration_of_Oral_Disclosure_With_Field_Codes__1_.docx`)
-2. Extract XML using the docx extraction script
-3. Locate the paragraph containing "Signature:" in `word/document.xml`
-4. Add `<w:pageBreakBefore w:val="1"/>` to that paragraph's `<w:pPr>` block
-5. Repack the DOCX
-6. Upload the modified template back to storage, replacing the existing file
+Change the `TIN Type` dropdown options from `ssn`/`ein` to the standardized values:
+- `0` → Unknown
+- `2` → EIN  
+- `3` → SSN
 
-### What is NOT changed
-- No edge function code changes
-- No tag-parser changes
-- No UI changes
-- No database changes
-- No other templates affected
-- Template content, formatting, and styling remain identical — only an explicit page break property is added
+Update default value from `'ssn'` to `'0'` (line 23).
+
+No backend changes needed — `tinType` is already persisted via `broker.1099.tin_type` in `contact_data` JSONB using the existing save flow.
+
+### No other changes
+- No database schema changes
+- No new APIs
+- No other files modified
 
