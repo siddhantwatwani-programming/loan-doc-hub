@@ -337,7 +337,7 @@ export const FieldDictionaryPage: React.FC = () => {
       return {
         ...prev,
         label,
-        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(label, dbSection, prev.form_type),
+        field_key: generateFieldKeyFromConvention(label, dbSection, prev.form_type),
       };
     });
   };
