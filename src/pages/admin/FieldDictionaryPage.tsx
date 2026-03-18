@@ -86,6 +86,7 @@ const SECTION_TO_DB: Record<string, string[]> = {
   notes: ['notes'],
   lender: ['lender'],
   origination_fees: ['origination_fees'],
+  liens: ['liens'],
 };
 
 // All valid DB sections we show (everything else is scaffolding/excluded)
