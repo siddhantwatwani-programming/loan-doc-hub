@@ -6,6 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
+const US_STATES = [
+  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'DC', 'FL', 'GA',
+  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
+  'AS', 'GU', 'MP', 'PR', 'VI',
+];
+
 interface TaxData {
   tinType: string; tin: string; accountNumber: string;
   street: string; city: string; state: string; zip: string;
@@ -68,7 +77,15 @@ const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave }
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2"><Label>Street</Label><Input value={form.street} onChange={e => update('street', e.target.value)} /></div>
           <div><Label>City</Label><Input value={form.city} onChange={e => update('city', e.target.value)} /></div>
-          <div><Label>State</Label><Input value={form.state} onChange={e => update('state', e.target.value)} /></div>
+          <div>
+            <Label>State</Label>
+            <Select value={form.state} onValueChange={v => update('state', v)}>
+              <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>
+                {US_STATES.map(s => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </div>
           <div><Label>ZIP</Label><Input value={form.zip} onChange={e => update('zip', e.target.value)} /></div>
         </div>
       </div>
