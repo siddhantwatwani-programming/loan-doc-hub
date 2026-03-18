@@ -423,7 +423,12 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             </div>)}
             {wrapField('mailingState', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">State</Label>
-              <Input value={getValue('mailingState')} onChange={(e) => handleChange('mailingState', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-8" />
+              <Select value={getValue('mailingState') || ''} onValueChange={(val) => handleChange('mailingState', val)} disabled={disabled || getBoolValue('mailingSameAsPrimary')}>
+                <SelectTrigger className="h-8"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>)}
             {wrapField('mailingZip', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">ZIP</Label>
