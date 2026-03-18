@@ -115,7 +115,6 @@ const SECTION_FORMS: Record<string, { value: string; label: string; dbSection?: 
   property: [
     { value: 'property_details', label: 'Property Details' },
     { value: 'legal_description', label: 'Legal Description' },
-    { value: 'liens', label: 'Liens' },
     { value: 'insurance', label: 'Insurance', dbSection: 'insurance' },
     { value: 'property_tax', label: 'Property Tax' },
   ],
