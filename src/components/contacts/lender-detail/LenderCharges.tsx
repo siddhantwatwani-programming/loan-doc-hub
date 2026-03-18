@@ -383,7 +383,7 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
                       />
                     </PopoverContent>
                   </Popover>
-                ) : (col.id === 'unpaid_balance' || col.id === 'accrued_interest') ? (
+                ) : (col.id === 'unpaid_balance' || col.id === 'accrued_interest' || col.id === 'total_due_to_you') ? (
                   <div className="relative">
                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                     <Input
