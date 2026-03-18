@@ -1,39 +1,43 @@
 
-Minimal plan to fix only the Signature & Date page-placement issue in “Declaration of Oral Disclosure With Field Codes”:
 
-1. Confirm the exact active template file
-- The current template record in Lovable Cloud points to:
-  `1773855841066_Declaration_of_Oral_Disclosure_With_Field_Codes__1_.docx`
-- Only this template file will be touched.
+## Plan: Preserve Signature Section on Page 2 During Generation
 
-2. Apply a template-only pagination fix
-- Do not change the document generation code.
-- Edit the stored DOCX itself by opening `word/document.xml`.
-- Locate the paragraph that contains the visible `Signature:` line.
-- Add a paragraph-level page boundary there:
-  `<w:pageBreakBefore w:val="1"/>`
-- Put it inside that paragraph’s existing `<w:pPr>` block.
-- Do not alter any surrounding runs, tabs, blank paragraphs, spacing paragraphs, alignment, or field tags.
+### Problem
+When the "Declaration of Oral Disclosure With Field Codes" template is re-uploaded, the previously injected `<w:pageBreakBefore>` page break is lost. The generation engine then produces a document where the Signature section shifts off Page 2 due to content length changes from merge tag replacement.
 
-3. Preserve all original spacing exactly
-- Keep the intentional empty lines / spacing blocks above the signature section unchanged.
-- Do not collapse or trim whitespace.
-- Do not move the broker-name line:
-  `{{bk_p_firstName}} {{bk_p_LastName}}`
-- Do not insert inline page-break runs (`<w:br w:type="page"/>`) unless the paragraph has no safe paragraph-properties block; prefer the paragraph-level setting to avoid reflow side effects.
+### Root Cause
+The fix was applied directly to the stored template file. Each re-upload overwrites it. The fix must instead live in the **generation pipeline** so it applies automatically regardless of which template file is uploaded.
 
-4. Re-upload the corrected file to the same template path
-- Replace only the current template source file in storage.
-- Do not create a new template record.
-- Do not modify any other templates.
+### Solution
+Add a post-processing step in `supabase/functions/_shared/docx-processor.ts` that runs **after** merge tag replacement. It will:
 
-Why this is the minimal fix
-- The current generation flow downloads the template and processes only content XML; it preserves non-targeted XML/binary parts.
-- The merge-tag parser does not globally trim blank paragraphs; its empty-paragraph cleanup is limited to conditional blocks.
-- That means the safest fix is not a code refactor — it is a precise XML correction in the template so the Signature section always starts on Page 2 and the original Page 2 spacing stays intact.
+1. Scan the processed `word/document.xml` for a paragraph containing the text `Signature:` (the distinctive marker of the signature block)
+2. If found, check whether that paragraph already has `<w:pageBreakBefore/>`
+3. If not, inject `<w:pageBreakBefore w:val="1"/>` into its `<w:pPr>` block (creating one if absent)
 
-Validation after implementation
-- Regenerate the document from the same template.
-- Confirm the output is exactly 2 pages.
-- Confirm the Signature line, Date field, and broker name stay fixed on Page 2 in the same visual position as the original template.
-- Confirm no other text, spacing, or layout shifts occurred elsewhere in the document.
+This ensures the Signature section always starts on a new page, regardless of how content above it reflows after tag replacement.
+
+### File Changed
+**`supabase/functions/_shared/docx-processor.ts`** — Add ~20 lines after the `replaceMergeTags` call (around line 43) to post-process only `word/document.xml`:
+
+```typescript
+// After replaceMergeTags, ensure Signature paragraph has page break
+if (filename === "word/document.xml") {
+  processedXml = ensureSignaturePageBreak(processedXml);
+}
+```
+
+The `ensureSignaturePageBreak` function will:
+- Match the `<w:p>` containing `Signature:` followed by underscores
+- Insert `<w:pageBreakBefore w:val="1"/>` into its `<w:pPr>` if missing
+- If no `<w:pPr>` exists, wrap the property in a new `<w:pPr>` block
+- Leave all other paragraphs untouched
+
+### What is NOT Changed
+- No UI changes
+- No database changes
+- No changes to tag-parser.ts, formatting.ts, field-resolver.ts, or generate-document/index.ts
+- No changes to upload-template or template management flows
+- No other templates affected (the pattern targets `Signature:` + underscores specifically)
+- Empty merge tags continue to be replaced with blank space (existing behavior, per user preference)
+
