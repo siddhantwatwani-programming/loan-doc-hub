@@ -162,9 +162,10 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           return;
         }
 
-        // Create new contact
+        // Create new contact - use 'borrower' as default contact_type for 'other'
+        const contactType = participantType === 'other' ? 'borrower' : participantType;
         const { data: genId } = await supabase.rpc('generate_contact_id', {
-          p_type: participantType,
+          p_type: contactType,
         });
 
         const { data: newContact, error: contactError } = await supabase
