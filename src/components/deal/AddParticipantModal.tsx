@@ -42,10 +42,10 @@ interface ContactResult {
 type ParticipantType = 'borrower' | 'lender' | 'broker' | 'other';
 
 const PARTICIPANT_TYPES = [
-  { value: 'borrower', label: 'Borrower' },
-  { value: 'lender', label: 'Lender' },
-  { value: 'broker', label: 'Broker' },
-  { value: 'other', label: 'Other' },
+  { value: 'borrower', label: 'Borrower', disabled: false },
+  { value: 'lender', label: 'Lender', disabled: false },
+  { value: 'broker', label: 'Broker', disabled: false },
+  { value: 'other', label: 'Other', disabled: true },
 ];
 
 export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
@@ -189,19 +189,35 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
         contactId = newContact.id;
       }
 
-      // Check if participant already exists for this deal
-      const { data: existing } = await supabase
-        .from('deal_participants')
-        .select('id')
-        .eq('deal_id', dealId)
-        .eq('email', email)
-        .eq('role', participantType)
-        .maybeSingle();
+      // Check if participant already exists for this deal (by contact_id + type, or email + type)
+      if (contactId) {
+        const { data: existing } = await supabase
+          .from('deal_participants')
+          .select('id')
+          .eq('deal_id', dealId)
+          .eq('contact_id', contactId)
+          .eq('role', participantType)
+          .maybeSingle();
 
-      if (existing) {
-        toast.error('This participant already exists in this file');
-        setSaving(false);
-        return;
+        if (existing) {
+          toast.error('This participant already exists in this file');
+          setSaving(false);
+          return;
+        }
+      } else if (email) {
+        const { data: existing } = await supabase
+          .from('deal_participants')
+          .select('id')
+          .eq('deal_id', dealId)
+          .eq('email', email)
+          .eq('role', participantType)
+          .maybeSingle();
+
+        if (existing) {
+          toast.error('This participant already exists in this file');
+          setSaving(false);
+          return;
+        }
       }
 
       // Insert deal participant
@@ -259,8 +275,8 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
                 </SelectTrigger>
                 <SelectContent className="z-[70]">
                   {PARTICIPANT_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      {t.label}
+                    <SelectItem key={t.value} value={t.value} disabled={t.disabled} className={t.disabled ? 'opacity-50' : ''}>
+                      {t.label}{t.disabled ? ' (Disabled)' : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
