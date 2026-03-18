@@ -199,6 +199,11 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
       setParticipants(
         rows.map((p: any) => {
           const contact = p.contact_id ? contactMap[p.contact_id] : null;
+          const roleLabel = ROLE_LABELS[p.role] || p.role || '';
+          const capacityVal = contact?.capacity || '';
+          const mergedTypeCapacity = capacityVal && capacityVal !== roleLabel
+            ? `${roleLabel} - ${capacityVal}`
+            : roleLabel;
           return {
             id: p.id,
             contact_id_display: contact?.contact_id || '',
@@ -206,7 +211,8 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             email: contact?.email || p.email || '',
             phone: contact?.phone || p.phone || '',
             role: p.role || '',
-            capacity: contact?.capacity || ROLE_LABELS[p.role] || p.role || '',
+            capacity: capacityVal || roleLabel,
+            participant_type_capacity: mergedTypeCapacity,
             status: p.status || 'invited',
             contact_id: p.contact_id,
             created_at: p.created_at,
