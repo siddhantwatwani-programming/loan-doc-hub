@@ -337,7 +337,7 @@ export const FieldDictionaryPage: React.FC = () => {
       return {
         ...prev,
         label,
-        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(label, dbSection, prev.form_type),
+        field_key: generateFieldKeyFromConvention(label, dbSection, prev.form_type),
       };
     });
   };
@@ -350,7 +350,7 @@ export const FieldDictionaryPage: React.FC = () => {
         ...prev,
         section,
         form_type: firstForm,
-        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, dbSection, firstForm),
+        field_key: generateFieldKeyFromConvention(prev.label, dbSection, firstForm),
       };
     });
   };
@@ -361,7 +361,7 @@ export const FieldDictionaryPage: React.FC = () => {
       return {
         ...prev,
         form_type: formType,
-        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, dbSection, formType),
+        field_key: generateFieldKeyFromConvention(prev.label, dbSection, formType),
       };
     });
   };
