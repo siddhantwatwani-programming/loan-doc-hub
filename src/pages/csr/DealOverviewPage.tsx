@@ -107,7 +107,7 @@ export const DealOverviewPage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('deal_participants')
-        .select('id, name, email, role, status, contact_id')
+        .select('id, name, email, phone, role, status, contact_id')
         .eq('deal_id', id)
         .order('created_at', { ascending: true });
       if (!error) setDealParticipants(data || []);
@@ -624,19 +624,54 @@ export const DealOverviewPage: React.FC = () => {
           </div>
 
           {/* Participants Block */}
-          {dealParticipants.length > 0 && (
-            <div className="section-card">
-              <div className="flex items-center gap-2 mb-4">
+          <div className="section-card">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-semibold text-foreground">Participants</h3>
                 <Badge variant="secondary" className="text-xs">{dealParticipants.length}</Badge>
               </div>
+              {isCsr && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 text-xs"
+                  onClick={() => {
+                    if (workspace && deal) {
+                      const alreadyOpen = workspace.openFiles.find(f => f.id === deal.id);
+                      if (!alreadyOpen) {
+                        if (workspace.isAtLimit()) {
+                          setShowMaxFilesDialog(true);
+                          return;
+                        }
+                        workspace.openFile({
+                          id: deal.id,
+                          dealNumber: deal.deal_number,
+                          state: deal.state || '',
+                          productType: deal.product_type || '',
+                          openedAt: Date.now(),
+                        });
+                      } else {
+                        workspace.switchToFile(deal.id);
+                      }
+                    }
+                    navigate(`/deals/${deal.id}/edit`);
+                  }}
+                >
+                  <Edit className="h-3 w-3" />
+                  Manage
+                </Button>
+              )}
+            </div>
+            {dealParticipants.length > 0 ? (
               <div className="space-y-2">
                 {dealParticipants.map((p: any) => {
                   const roleColors: Record<string, string> = {
                     borrower: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
                     lender: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
                     broker: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+                    csr: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+                    admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
                   };
                   const roleLabels: Record<string, string> = { borrower: 'Borrower', lender: 'Lender', broker: 'Broker', csr: 'CSR', admin: 'Admin' };
                   return (
@@ -668,19 +703,31 @@ export const DealOverviewPage: React.FC = () => {
                         }
                       }}
                     >
-                      <div className="flex items-center gap-2">
-                        <User className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-sm font-medium text-foreground">{p.name || 'Unnamed'}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-sm font-medium text-foreground truncate">{p.name || 'Unnamed'}</span>
+                        </div>
+                        {(p.email || p.phone) && (
+                          <p className="text-xs text-muted-foreground ml-5.5 truncate">
+                            {[p.email, p.phone].filter(Boolean).join(' • ')}
+                          </p>
+                        )}
                       </div>
-                      <Badge variant="secondary" className={cn('text-xs', roleColors[p.role] || '')}>
+                      <Badge variant="secondary" className={cn('text-xs shrink-0 ml-2', roleColors[p.role] || '')}>
                         {roleLabels[p.role] || p.role}
                       </Badge>
                     </div>
                   );
                 })}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="text-center py-4">
+                <Users className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">No participants added yet</p>
+              </div>
+            )}
+          </div>
 
           {/* Participants Panel - CSR only */}
           {isCsr && (
