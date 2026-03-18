@@ -334,11 +334,20 @@ const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId }) => {
                     className="rounded border-input"
                   />
                 </TableCell>
-                {activeColumns.map(c => (
-                  <TableCell key={c.id} className="whitespace-nowrap text-xs">
-                    {(r as any)[c.id] || '-'}
-                  </TableCell>
-                ))}
+                {activeColumns.map(c => {
+                  const val = (r as any)[c.id] || '';
+                  let display = val || '-';
+                  if (val && (c.id === 'unpaid_balance' || c.id === 'accrued_interest' || c.id === 'total_due_to_you' || c.id === 'total_owed_by_you' || c.id === 'deferred')) {
+                    display = `$ ${val}`;
+                  } else if (val && (c.id === 'interest_rate')) {
+                    display = `${val} %`;
+                  }
+                  return (
+                    <TableCell key={c.id} className="whitespace-nowrap text-xs">
+                      {display}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             ))}
           </TableBody>
@@ -373,6 +382,28 @@ const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId }) => {
                       />
                     </PopoverContent>
                   </Popover>
+                ) : (col.id === 'unpaid_balance' || col.id === 'accrued_interest' || col.id === 'total_due_to_you' || col.id === 'total_owed_by_you' || col.id === 'deferred') ? (
+                  <div className="relative">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                    <Input
+                      className="h-8 text-xs pl-6"
+                      value={(newCharge as any)[col.id] || ''}
+                      onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value }))}
+                      placeholder="0.00"
+                      inputMode="decimal"
+                    />
+                  </div>
+                ) : col.id === 'interest_rate' ? (
+                  <div className="flex items-center gap-1">
+                    <Input
+                      className="h-8 text-xs"
+                      value={(newCharge as any)[col.id] || ''}
+                      onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value }))}
+                      placeholder="0.000"
+                      inputMode="decimal"
+                    />
+                    <span className="text-muted-foreground text-xs">%</span>
+                  </div>
                 ) : (
                   <Input
                     className="h-8 text-xs"
