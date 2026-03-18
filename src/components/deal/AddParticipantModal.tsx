@@ -256,7 +256,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
                 <SelectTrigger>
                   <SelectValue placeholder="Choose type..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[70]">
                   {PARTICIPANT_TYPES.map((t) => (
                     <SelectItem key={t.value} value={t.value}>
                       {t.label}
