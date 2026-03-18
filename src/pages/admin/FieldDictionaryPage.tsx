@@ -376,6 +376,17 @@ export const FieldDictionaryPage: React.FC = () => {
       return;
     }
 
+    // Validate field key format: lowercase, digits, underscores, dots only
+    const fieldKeyRegex = /^[a-z0-9][a-z0-9_.]*[a-z0-9]$/;
+    if (!fieldKeyRegex.test(formData.field_key)) {
+      toast({
+        title: 'Invalid Field Key',
+        description: 'Field Key must be lowercase, using only letters, numbers, underscores (_), and dots (.). No spaces or special characters allowed.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const duplicateExists = fields.some(
       (f) => f.field_key === formData.field_key && f.id !== editingField?.id
     );
@@ -386,6 +397,14 @@ export const FieldDictionaryPage: React.FC = () => {
         variant: 'destructive',
       });
       return;
+    }
+
+    // Warn if editing an existing field's key (may break mappings)
+    if (editingField && editingField.field_key !== formData.field_key) {
+      const confirmed = confirm(
+        `Warning: Changing the field key from "${editingField.field_key}" to "${formData.field_key}" may affect existing data, document templates, and form mappings.\n\nAre you sure you want to proceed?`
+      );
+      if (!confirmed) return;
     }
 
     setSaving(true);
