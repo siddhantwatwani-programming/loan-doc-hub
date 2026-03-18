@@ -98,8 +98,23 @@ export const DealOverviewPage: React.FC = () => {
   useEffect(() => {
     if (id) {
       fetchDealData();
+      fetchParticipants();
     }
   }, [id]);
+
+  const fetchParticipants = async () => {
+    if (!id) return;
+    try {
+      const { data, error } = await supabase
+        .from('deal_participants')
+        .select('id, name, email, role, status, contact_id')
+        .eq('deal_id', id)
+        .order('created_at', { ascending: true });
+      if (!error) setDealParticipants(data || []);
+    } catch (err) {
+      console.error('Error fetching participants:', err);
+    }
+  };
 
   const fetchDealData = async () => {
     try {

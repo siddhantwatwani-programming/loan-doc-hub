@@ -1038,6 +1038,15 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                 </TabsContent>
               ))}
 
+            {/* Participants - standalone top-level tab */}
+            <TabsContent value="participants" forceMount className={cn("animate-fade-in", activeTab !== "participants" && "hidden")}>
+              <ParticipantsSectionContent
+                dealId={id || ""}
+                disabled={isSectionDisabledByFormPerm("participants")}
+                onRefresh={handleGridRefresh}
+              />
+            </TabsContent>
+
             {/* Liens - standalone top-level tab */}
             <TabsContent value="liens" forceMount className={cn("animate-fade-in", activeTab !== "liens" && "hidden")}>
               <LienSectionContent
