@@ -201,7 +201,12 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingState}>
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs">State</Label>
-              <Input value={getValue('mailingState')} onChange={(e) => handleChange('mailingState', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs flex-1" />
+              <Select value={getValue('mailingState') || ''} onValueChange={(val) => handleChange('mailingState', val)} disabled={disabled || getBoolValue('mailingSameAsPrimary')}>
+                <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
           </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingZip}>
