@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Loader2, Search, UserPlus, Users } from 'lucide-react';
@@ -54,6 +55,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
   onParticipantAdded,
 }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState<'type' | 'details'>('type');
   const [participantType, setParticipantType] = useState<ParticipantType | ''>('');
   const [mode, setMode] = useState<'existing' | 'new'>('existing');
@@ -225,9 +227,8 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
       // Navigate to contact detail page
       if (contactId) {
         const route = participantType === 'lender' ? 'lenders' : participantType === 'broker' ? 'brokers' : 'borrowers';
-        // Use window to avoid navigation issues in modal close
         setTimeout(() => {
-          window.location.href = `/contacts/${route}/${contactId}`;
+          navigate(`/contacts/${route}/${contactId}`);
         }, 300);
       }
     } catch (err: any) {

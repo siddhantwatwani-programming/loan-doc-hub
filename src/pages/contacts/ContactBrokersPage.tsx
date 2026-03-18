@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useContactsCrud, type ContactRecord } from '@/hooks/useContactsCrud';
 import { ContactsListView } from '@/components/contacts/ContactsListView';
 import { CreateContactModal } from '@/components/contacts/CreateContactModal';
@@ -86,11 +87,46 @@ const BROKER_FILTER_OPTIONS: FilterOption[] = [
 ];
 
 const ContactBrokersPage: React.FC = () => {
+  const { contactId } = useParams<{ contactId?: string }>();
+  const navigate = useNavigate();
   const crud = useContactsCrud({ contactType: 'broker' });
   const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const deepLinkLoaded = useRef(false);
+
+  // Deep-link: auto-load contact by URL param
+  useEffect(() => {
+    if (!contactId || deepLinkLoaded.current) return;
+    deepLinkLoaded.current = true;
+    (async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('id', contactId)
+        .maybeSingle();
+      if (data) {
+        setSelectedContact({
+          id: data.id,
+          contact_id: data.contact_id,
+          contact_type: data.contact_type,
+          full_name: data.full_name || '',
+          first_name: data.first_name || '',
+          last_name: data.last_name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          city: data.city || '',
+          state: data.state || '',
+          company: data.company || '',
+          contact_data: (data.contact_data || {}) as Record<string, string>,
+          created_at: data.created_at || '',
+          updated_at: data.updated_at || '',
+        });
+      }
+    })();
+  }, [contactId]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -158,7 +194,7 @@ const ContactBrokersPage: React.FC = () => {
       <div className="h-full flex flex-col">
         <ContactBrokerDetailLayout
           contact={selectedContact}
-          onBack={() => setSelectedContact(null)}
+          onBack={() => { setSelectedContact(null); if (contactId) navigate('/contacts/brokers'); }}
           onSave={handleSave}
         />
       </div>
