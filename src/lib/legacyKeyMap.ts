@@ -570,6 +570,7 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'lien.senior_lien_tracking': 'pr_li_seniorLienTracki',
   'lien.note': 'pr_li_lienHolder2',
   'lien.status': 'pr_li_lienHolder3',
+  'lien.interest_rate': 'li_gd_interestRate',
 
   // PROPERTY TAX
   'property1.tax.payee': 'pr_p_taxPayee',
