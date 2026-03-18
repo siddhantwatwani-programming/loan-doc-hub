@@ -153,7 +153,17 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
           {renderInlineField('street', 'Street')}
           {renderInlineField('city', 'City')}
-          {renderInlineField('state', 'State')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.state}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">State</Label>
+              <Select value={getValue('state') || ''} onValueChange={(val) => handleChange('state', val)} disabled={disabled}>
+                <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
           {renderInlineField('zip', 'ZIP')}
 
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-3 flex items-center gap-3">
