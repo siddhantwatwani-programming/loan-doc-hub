@@ -480,6 +480,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
           )}
         </div>
       ) : (
+        <div className="border border-border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
