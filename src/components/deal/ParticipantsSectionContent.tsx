@@ -60,10 +60,17 @@ const ROLE_COLORS: Record<string, string> = {
   admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  invited: 'Active',
+  in_progress: 'Active',
+  completed: 'Active',
+  expired: 'Inactive',
+};
+
 const STATUS_COLORS: Record<string, string> = {
-  invited: 'bg-muted text-muted-foreground',
-  in_progress: 'bg-warning/10 text-warning',
-  completed: 'bg-success/10 text-success',
+  invited: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  in_progress: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  completed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   expired: 'bg-destructive/10 text-destructive',
 };
 
@@ -72,6 +79,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'email', label: 'Email', visible: true },
   { id: 'phone', label: 'Phone', visible: true },
   { id: 'role', label: 'Participant Type', visible: true },
+  { id: 'role_capacity', label: 'Role/Capacity', visible: true },
   { id: 'status', label: 'Status', visible: true },
   { id: 'created_at', label: 'Added Date', visible: true },
 ];
@@ -223,21 +231,27 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
     }
     const { data } = await supabase
       .from('contacts')
-      .select('id, contact_type, full_name, email, phone')
+      .select('id, contact_type, full_name, email, phone, contact_data')
       .eq('email', participant.email)
       .limit(1)
       .maybeSingle();
 
     if (data) {
-      // Sync participant data back to contact if contact fields are empty
-      const updates: Record<string, string> = {};
-      if (!data.full_name && participant.name) {
+      // Sync participant data back to contact — always overwrite with participant values
+      const updates: Record<string, any> = {};
+      if (participant.name) {
         updates.full_name = participant.name;
         const parts = participant.name.split(' ');
         updates.first_name = parts[0] || '';
         updates.last_name = parts.slice(1).join(' ') || '';
       }
-      if (!data.phone && participant.phone) updates.phone = participant.phone;
+      if (participant.email) updates.email = participant.email;
+      if (participant.phone) {
+        updates.phone = participant.phone;
+        // Also store in contact_data as phone.home so the detail form sees it
+        const existingData = (data.contact_data || {}) as Record<string, string>;
+        updates.contact_data = { ...existingData, 'phone.home': participant.phone };
+      }
 
       if (Object.keys(updates).length > 0) {
         await supabase.from('contacts').update(updates).eq('id', data.id);
@@ -261,22 +275,27 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
   const navigateToContactById = async (contactId: string, role: string, participant?: Participant) => {
     const { data } = await supabase
       .from('contacts')
-      .select('id, contact_type, full_name, email, phone')
+      .select('id, contact_type, full_name, email, phone, contact_data')
       .eq('id', contactId)
       .maybeSingle();
 
     if (data) {
-      // Sync participant data back to contact if contact fields are empty
+      // Sync participant data back to contact — always overwrite with participant values
       if (participant) {
-        const updates: Record<string, string> = {};
-        if (!data.full_name && participant.name) {
+        const updates: Record<string, any> = {};
+        if (participant.name) {
           updates.full_name = participant.name;
           const parts = participant.name.split(' ');
           updates.first_name = parts[0] || '';
           updates.last_name = parts.slice(1).join(' ') || '';
         }
-        if (!data.email && participant.email) updates.email = participant.email;
-        if (!data.phone && participant.phone) updates.phone = participant.phone;
+        if (participant.email) updates.email = participant.email;
+        if (participant.phone) {
+          updates.phone = participant.phone;
+          // Also store in contact_data as phone.home so the detail form sees it
+          const existingData = (data.contact_data || {}) as Record<string, string>;
+          updates.contact_data = { ...existingData, 'phone.home': participant.phone };
+        }
 
         if (Object.keys(updates).length > 0) {
           await supabase
@@ -337,7 +356,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
 
   const statusFilterOptions = useMemo(() => {
     const statuses = [...new Set(participants.map((p) => p.status))];
-    return statuses.map((s) => ({ value: s, label: s.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()) }));
+    return statuses.map((s) => ({ value: s, label: STATUS_LABELS[s] || 'Active' }));
   }, [participants]);
 
   const exportColumns: ExportColumn[] = columns.map((c) => ({ id: c.id, label: c.label }));
@@ -356,10 +375,14 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             {ROLE_LABELS[participant.role] || participant.role}
           </Badge>
         );
+      case 'role_capacity':
+        return (
+          <span className="text-muted-foreground">{ROLE_LABELS[participant.role] || participant.role}</span>
+        );
       case 'status':
         return (
           <Badge variant="secondary" className={cn('text-xs', STATUS_COLORS[participant.status] || '')}>
-            {participant.status.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+            {STATUS_LABELS[participant.status] || 'Active'}
           </Badge>
         );
       case 'created_at':
