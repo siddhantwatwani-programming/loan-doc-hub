@@ -149,6 +149,12 @@ const SECTION_FORMS: Record<string, { value: string; label: string; dbSection?: 
     { value: 'servicing', label: 'Servicing' },
     { value: 'origination_fees', label: 'Origination Fees' },
   ],
+  liens: [
+    { value: 'general_details', label: 'General Details' },
+    { value: 'loan_type', label: 'Loan Type' },
+    { value: 'balance_payment', label: 'Balance & Payment' },
+    { value: 'recording_tracking', label: 'Recording & Tracking' },
+  ],
 };
 
 const DATA_TYPES = [
