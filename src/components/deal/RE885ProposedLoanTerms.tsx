@@ -367,7 +367,7 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
             <Input
               inputMode="decimal"
               value={getValue(FK.vi_max_interest_rate)}
-              onChange={(e) => setValue(FK.vi_max_interest_rate, e.target.value.replace(/[^0-9.]/g, ''))}
+              onChange={(e) => setValue(FK.vi_max_interest_rate, e.target.value.replace(/[^0-9.\-]/g, ''))}
               disabled={adjustableSectionsDisabled}
               placeholder="0.00"
               className="h-8 text-xs text-right pr-5"
