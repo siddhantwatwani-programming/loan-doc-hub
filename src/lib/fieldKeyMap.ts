@@ -384,7 +384,6 @@ export const LOAN_TERMS_BALANCES_KEYS = {
   totalBalanceDue: 'loan_terms.total_balance_due',
   estimatedBalloonPayment: 'loan_terms.estimated_balloon_payment',
   acceptShortPaymentsEnabled: 'loan_terms.accept_short_payments_enabled',
-  acceptShortPaymentsType: 'loan_terms.accept_short_payments_type',
   acceptShortPaymentsAmount: 'loan_terms.accept_short_payments_amount',
   acceptShortPaymentsOrPercent: 'loan_terms.accept_short_payments_or_percent',
   acceptShortPaymentsPercent: 'loan_terms.accept_short_payments_percent',

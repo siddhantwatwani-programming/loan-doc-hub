@@ -395,50 +395,27 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                       </Label>
                     </div>
                   </div>
-                  <Select
-                    value={getValue(FIELD_KEYS.acceptShortPaymentsType) || 'amount'}
-                    onValueChange={(val) => {
-                      setValue(FIELD_KEYS.acceptShortPaymentsType, val);
-                      // Reset value when switching types
-                      setValue(FIELD_KEYS.acceptShortPaymentsAmount, '');
-                    }}
-                    disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
-                  >
-                    <SelectTrigger className="h-8 text-sm w-[100px] shrink-0">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="amount">Amount</SelectItem>
-                      <SelectItem value="percent">Percent</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <div className="relative flex-1">
-                    {(getValue(FIELD_KEYS.acceptShortPaymentsType) || 'amount') === 'amount' ? (
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
-                    ) : null}
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                     <Input
                       value={getValue(FIELD_KEYS.acceptShortPaymentsAmount)}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        const currentType = getValue(FIELD_KEYS.acceptShortPaymentsType) || 'amount';
-                        // Only allow digits and decimal
-                        const cleaned = raw.replace(/[^0-9.]/g, '');
-                        // For percent, clamp to 0-100
-                        if (currentType === 'percent' && cleaned) {
-                          const num = parseFloat(cleaned);
-                          if (!isNaN(num) && num > 100) return;
-                        }
-                        setValue(FIELD_KEYS.acceptShortPaymentsAmount, cleaned);
-                      }}
+                      onChange={(e) => setValue(FIELD_KEYS.acceptShortPaymentsAmount, e.target.value)}
                       disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
-                      className={`h-8 text-sm ${(getValue(FIELD_KEYS.acceptShortPaymentsType) || 'amount') === 'amount' ? 'pl-7' : 'pr-7'}`}
-                      placeholder={(getValue(FIELD_KEYS.acceptShortPaymentsType) || 'amount') === 'amount' ? '0.00' : '0.000'}
-                      inputMode="decimal"
+                      className="h-8 text-sm pl-7"
+                      placeholder="-"
                     />
-                    {(getValue(FIELD_KEYS.acceptShortPaymentsType) || 'amount') === 'percent' ? (
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">%</span>
-                    ) : null}
                   </div>
+                </div>
+                <div className="flex items-center gap-2 pl-5 mt-0.5">
+                  <span className="text-xs text-muted-foreground">Or</span>
+                  <Checkbox
+                    id={`${FIELD_KEYS.acceptShortPaymentsOrPercent}-cb`}
+                    checked={isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)}
+                    onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptShortPaymentsOrPercent)}
+                    disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
+                    className="h-3.5 w-3.5"
+                  />
+                  <Label className="text-xs text-muted-foreground">Percent</Label>
                 </div>
               </div>
 
