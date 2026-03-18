@@ -42,10 +42,10 @@ interface ContactResult {
 type ParticipantType = 'borrower' | 'lender' | 'broker' | 'other';
 
 const PARTICIPANT_TYPES = [
-  { value: 'borrower', label: 'Borrower' },
-  { value: 'lender', label: 'Lender' },
-  { value: 'broker', label: 'Broker' },
-  { value: 'other', label: 'Other' },
+  { value: 'borrower', label: 'Borrower', disabled: false },
+  { value: 'lender', label: 'Lender', disabled: false },
+  { value: 'broker', label: 'Broker', disabled: false },
+  { value: 'other', label: 'Other', disabled: true },
 ];
 
 export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
