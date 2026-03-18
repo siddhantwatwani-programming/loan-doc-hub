@@ -20,7 +20,7 @@ interface Broker1099Props {
 
 const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave }) => {
   const [form, setForm] = useState<TaxData>({
-    tinType: values['broker.1099.tin_type'] || 'ssn',
+    tinType: values['broker.1099.tin_type'] || '0',
     tin: values['broker.1099.tin'] || values['broker.tin'] || '',
     accountNumber: values['broker.1099.account_number'] || '',
     street: values['broker.1099.street'] || values['broker.primary_address.street'] || '',
@@ -53,8 +53,9 @@ const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave }
           <Select value={form.tinType} onValueChange={v => update('tinType', v)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="ssn">SSN</SelectItem>
-              <SelectItem value="ein">EIN</SelectItem>
+              <SelectItem value="0">0 - Unknown</SelectItem>
+              <SelectItem value="2">2 - EIN</SelectItem>
+              <SelectItem value="3">3 - SSN</SelectItem>
             </SelectContent>
           </Select>
         </div>
