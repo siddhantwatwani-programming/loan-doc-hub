@@ -356,7 +356,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
 
   const statusFilterOptions = useMemo(() => {
     const statuses = [...new Set(participants.map((p) => p.status))];
-    return statuses.map((s) => ({ value: s, label: s.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()) }));
+    return statuses.map((s) => ({ value: s, label: STATUS_LABELS[s] || 'Active' }));
   }, [participants]);
 
   const exportColumns: ExportColumn[] = columns.map((c) => ({ id: c.id, label: c.label }));
