@@ -24,6 +24,7 @@ import {
   Clock,
   Edit,
   User,
+  Users,
   History,
   FileOutput
 } from 'lucide-react';
