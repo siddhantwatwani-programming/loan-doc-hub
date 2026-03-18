@@ -16,7 +16,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -24,7 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchAllRows } from '@/lib/supabasePagination';
 import { 
-  Plus, 
+   
   Search, 
   Key, 
   Loader2, 
@@ -680,12 +680,6 @@ export const FieldDictionaryPage: React.FC = () => {
             setIsDialogOpen(open);
             if (!open) resetForm();
           }}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Field
-              </Button>
-            </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>{editingField ? 'Edit Field' : 'Create Field'}</DialogTitle>
