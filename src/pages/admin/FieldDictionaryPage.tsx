@@ -16,7 +16,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -24,7 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchAllRows } from '@/lib/supabasePagination';
 import { 
-   
+  Plus, 
   Search, 
   Key, 
   Loader2, 
@@ -337,7 +337,7 @@ export const FieldDictionaryPage: React.FC = () => {
       return {
         ...prev,
         label,
-        field_key: generateFieldKeyFromConvention(label, dbSection, prev.form_type),
+        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(label, dbSection, prev.form_type),
       };
     });
   };
@@ -350,7 +350,7 @@ export const FieldDictionaryPage: React.FC = () => {
         ...prev,
         section,
         form_type: firstForm,
-        field_key: generateFieldKeyFromConvention(prev.label, dbSection, firstForm),
+        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, dbSection, firstForm),
       };
     });
   };
@@ -361,7 +361,7 @@ export const FieldDictionaryPage: React.FC = () => {
       return {
         ...prev,
         form_type: formType,
-        field_key: generateFieldKeyFromConvention(prev.label, dbSection, formType),
+        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, dbSection, formType),
       };
     });
   };
@@ -371,17 +371,6 @@ export const FieldDictionaryPage: React.FC = () => {
       toast({
         title: 'Validation error',
         description: 'Please fill in all required fields',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Validate field key format: lowercase, digits, underscores, dots only
-    const fieldKeyRegex = /^[a-z0-9][a-z0-9_.]*[a-z0-9]$/;
-    if (!fieldKeyRegex.test(formData.field_key)) {
-      toast({
-        title: 'Invalid Field Key',
-        description: 'Field Key must be lowercase, using only letters, numbers, underscores (_), and dots (.). No spaces or special characters allowed.',
         variant: 'destructive',
       });
       return;
@@ -397,14 +386,6 @@ export const FieldDictionaryPage: React.FC = () => {
         variant: 'destructive',
       });
       return;
-    }
-
-    // Warn if editing an existing field's key (may break mappings)
-    if (editingField && editingField.field_key !== formData.field_key) {
-      const confirmed = confirm(
-        `Warning: Changing the field key from "${editingField.field_key}" to "${formData.field_key}" may affect existing data, document templates, and form mappings.\n\nAre you sure you want to proceed?`
-      );
-      if (!confirmed) return;
     }
 
     setSaving(true);
@@ -699,6 +680,12 @@ export const FieldDictionaryPage: React.FC = () => {
             setIsDialogOpen(open);
             if (!open) resetForm();
           }}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add Field
+              </Button>
+            </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>{editingField ? 'Edit Field' : 'Create Field'}</DialogTitle>
@@ -763,10 +750,7 @@ export const FieldDictionaryPage: React.FC = () => {
                   <Input
                     id="fieldKey"
                     value={formData.field_key}
-                    onChange={(e) => {
-                      const sanitized = e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, '');
-                      setFormData((prev) => ({ ...prev, field_key: sanitized }));
-                    }}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, field_key: e.target.value }))}
                     placeholder="Auto-generated from convention"
                     className="font-mono text-sm"
                   />
