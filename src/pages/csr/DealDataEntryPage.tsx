@@ -62,8 +62,9 @@ interface Deal {
 
 // Section labels for display (partial - only includes displayable main sections)
 const SECTION_LABELS: Partial<
-  Record<FieldSection | "origination_fees" | "funding" | "event_journal" | "liens", string>
+  Record<FieldSection | "origination_fees" | "funding" | "event_journal" | "liens" | "participants", string>
 > = {
+  participants: "Participants",
   property: "Property",
   loan_terms: "Loan",
   liens: "Liens",
@@ -80,6 +81,7 @@ const SECTION_LABELS: Partial<
 
 // Custom ordering for top navbar tabs
 const SECTION_ORDER: string[] = [
+  "participants",
   "loan_terms",
   "property",
   "liens",
