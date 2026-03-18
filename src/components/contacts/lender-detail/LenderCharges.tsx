@@ -399,7 +399,7 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
                     <Input
                       className="h-8 text-xs"
                       value={(newCharge as any)[col.id] || ''}
-                      onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value }))}
+                      onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value.replace(/-/g, '') }))}
                       placeholder="0.000"
                       inputMode="decimal"
                     />
