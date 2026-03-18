@@ -126,9 +126,9 @@ export const DealOverviewPage: React.FC = () => {
           .in('id', contactIds);
 
         if (contacts) {
-          const contactMap: Record<string, { full_name: string; email: string; phone: string }> = {};
+          const contactMap: Record<string, { full_name: string; email: string; phone: string; contact_id: string }> = {};
           for (const c of contacts) {
-            contactMap[c.id] = { full_name: c.full_name || '', email: c.email || '', phone: c.phone || '' };
+            contactMap[c.id] = { full_name: c.full_name || '', email: c.email || '', phone: c.phone || '', contact_id: c.contact_id || '' };
           }
 
           // Update stale records silently
