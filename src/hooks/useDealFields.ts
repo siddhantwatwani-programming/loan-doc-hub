@@ -310,6 +310,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
         'escrow',
         'origination_fees',
         'insurance',
+        'liens',
         'participants',
         'notes',
         'seller',
