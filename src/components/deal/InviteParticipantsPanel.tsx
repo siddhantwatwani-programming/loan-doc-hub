@@ -648,8 +648,8 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
                         : "border-border"
                   )}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 flex-1">
+                  <div className="flex items-start justify-between gap-3 overflow-hidden">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
                       {/* Role avatar with sequence number */}
                       <div className="relative">
                         <div className={cn(
