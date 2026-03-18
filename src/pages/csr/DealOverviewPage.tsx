@@ -83,6 +83,7 @@ export const DealOverviewPage: React.FC = () => {
   const { role } = useAuth();
   const workspace = useWorkspaceOptional();
   const [showMaxFilesDialog, setShowMaxFilesDialog] = useState(false);
+  const [dealParticipants, setDealParticipants] = useState<any[]>([]);
   
   const [deal, setDeal] = useState<Deal | null>(null);
   const [packet, setPacket] = useState<Packet | null>(null);
