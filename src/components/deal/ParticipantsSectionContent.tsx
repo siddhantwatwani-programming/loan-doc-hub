@@ -210,11 +210,10 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
 
   const handleRowClick = (participant: Participant) => {
     if (!participant.contact_id) {
-      // Try to find contact by email match
       navigateToContactByEmail(participant);
       return;
     }
-    navigateToContactById(participant.contact_id, participant.role);
+    navigateToContactById(participant.contact_id, participant.role, participant);
   };
 
   const navigateToContactByEmail = async (participant: Participant) => {
