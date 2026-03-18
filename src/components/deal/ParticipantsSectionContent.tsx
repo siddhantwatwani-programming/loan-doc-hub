@@ -399,6 +399,8 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
 
   const renderCellValue = (participant: Participant, columnId: string) => {
     switch (columnId) {
+      case 'contact_id_display':
+        return <span className="font-medium text-foreground">{participant.contact_id_display || '—'}</span>;
       case 'name':
         return <span className="font-medium text-foreground">{participant.name || '—'}</span>;
       case 'email':
@@ -411,6 +413,8 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             {ROLE_LABELS[participant.role] || participant.role}
           </Badge>
         );
+      case 'capacity':
+        return <span className="text-muted-foreground">{participant.capacity || '—'}</span>;
       case 'status':
         return (
           <Badge variant="secondary" className={cn('text-xs', STATUS_COLORS[participant.status] || '')}>
