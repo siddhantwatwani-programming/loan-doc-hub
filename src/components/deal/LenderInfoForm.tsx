@@ -376,7 +376,12 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             </div>)}
             {wrapField('primaryState', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">State</Label>
-              <Input value={getValue('primaryState')} onChange={(e) => handleChange('primaryState', e.target.value)} disabled={disabled} className="h-8" />
+              <Select value={getValue('primaryState') || ''} onValueChange={(val) => handleChange('primaryState', val)} disabled={disabled}>
+                <SelectTrigger className="h-8"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>)}
             {wrapField('primaryZip', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[60px] text-left shrink-0">ZIP</Label>
