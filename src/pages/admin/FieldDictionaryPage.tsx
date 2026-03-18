@@ -71,6 +71,7 @@ const SECTIONS = [
   { value: 'notes', label: 'Conversation Log' },
   { value: 'lender', label: 'Lenders' },
   { value: 'origination_fees', label: 'Other Origination' },
+  { value: 'liens', label: 'Liens' },
 ];
 
 // Map UI section → DB section(s) used for filtering
