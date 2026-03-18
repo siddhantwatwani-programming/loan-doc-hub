@@ -201,10 +201,12 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
           const contact = p.contact_id ? contactMap[p.contact_id] : null;
           return {
             id: p.id,
+            contact_id_display: contact?.contact_id || '',
             name: contact?.full_name || p.name || '',
             email: contact?.email || p.email || '',
             phone: contact?.phone || p.phone || '',
             role: p.role || '',
+            capacity: contact?.capacity || ROLE_LABELS[p.role] || p.role || '',
             status: p.status || 'invited',
             contact_id: p.contact_id,
             created_at: p.created_at,
