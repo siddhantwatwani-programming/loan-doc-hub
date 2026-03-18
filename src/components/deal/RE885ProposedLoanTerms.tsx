@@ -58,7 +58,7 @@ const CurrencyInput: React.FC<{
       inputMode="decimal"
       value={value}
       onChange={(e) => {
-        const v = e.target.value.replace(/[^0-9.]/g, '');
+        const v = e.target.value.replace(/[^0-9.\-]/g, '');
         onChange(v);
       }}
       disabled={disabled}
@@ -279,7 +279,7 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
                 inputMode="decimal"
                 value={getValue(FK.interest_rate)}
                 onChange={(e) => {
-                  const v = e.target.value.replace(/[^0-9.]/g, '');
+                  const v = e.target.value.replace(/[^0-9.\-]/g, '');
                   setValue(FK.interest_rate, v);
                 }}
                 disabled={disabled}
@@ -349,7 +349,7 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
             <Input
               inputMode="decimal"
               value={getValue(FK.v_fully_indexed_rate)}
-              onChange={(e) => setValue(FK.v_fully_indexed_rate, e.target.value.replace(/[^0-9.]/g, ''))}
+              onChange={(e) => setValue(FK.v_fully_indexed_rate, e.target.value.replace(/[^0-9.\-]/g, ''))}
               disabled={adjustableSectionsDisabled}
               placeholder="0.00"
               className="h-8 text-xs text-right pr-5"
@@ -367,7 +367,7 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
             <Input
               inputMode="decimal"
               value={getValue(FK.vi_max_interest_rate)}
-              onChange={(e) => setValue(FK.vi_max_interest_rate, e.target.value.replace(/[^0-9.]/g, ''))}
+              onChange={(e) => setValue(FK.vi_max_interest_rate, e.target.value.replace(/[^0-9.\-]/g, ''))}
               disabled={adjustableSectionsDisabled}
               placeholder="0.00"
               className="h-8 text-xs text-right pr-5"
@@ -403,7 +403,7 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
               <Input
                 inputMode="decimal"
                 value={getValue(FK.viii_rate_increase_pct)}
-                onChange={(e) => setValue(FK.viii_rate_increase_pct, e.target.value.replace(/[^0-9.]/g, ''))}
+                onChange={(e) => setValue(FK.viii_rate_increase_pct, e.target.value.replace(/[^0-9.\-]/g, ''))}
                 disabled={adjustableSectionsDisabled}
                 placeholder="0.00"
                 className="h-8 text-xs text-right pr-5"
@@ -444,7 +444,7 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
               <Input
                 inputMode="decimal"
                 value={getValue(FK.ix_payment_end_pct)}
-                onChange={(e) => setValue(FK.ix_payment_end_pct, e.target.value.replace(/[^0-9.]/g, ''))}
+                onChange={(e) => setValue(FK.ix_payment_end_pct, e.target.value.replace(/[^0-9.\-]/g, ''))}
                 disabled={adjustableSectionsDisabled}
                 placeholder="0.00"
                 className="h-8 text-xs text-right pr-5"
