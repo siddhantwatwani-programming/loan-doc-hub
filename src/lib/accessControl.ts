@@ -309,6 +309,8 @@ export const getRoleDisplayName = (role: AppRole): string => {
       return 'Broker';
     case 'lender':
       return 'Lender';
+    case 'other':
+      return 'Other';
     default:
       return 'Unknown';
   }
@@ -329,6 +331,8 @@ export const getRoleBadgeClasses = (role: AppRole): string => {
       return 'bg-warning/10 text-warning';
     case 'lender':
       return 'bg-accent/10 text-accent-foreground';
+    case 'other':
+      return 'bg-muted text-muted-foreground';
     default:
       return 'bg-muted text-muted-foreground';
   }

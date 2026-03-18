@@ -38,12 +38,13 @@ interface ContactResult {
   contact_type: string;
 }
 
-type ParticipantType = 'borrower' | 'lender' | 'broker';
+type ParticipantType = 'borrower' | 'lender' | 'broker' | 'other';
 
 const PARTICIPANT_TYPES = [
   { value: 'borrower', label: 'Borrower' },
   { value: 'lender', label: 'Lender' },
   { value: 'broker', label: 'Broker' },
+  { value: 'other', label: 'Other' },
 ];
 
 export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
@@ -95,10 +96,16 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
       setSearching(true);
       try {
         const q = searchQuery.trim();
-        const { data, error } = await supabase
+        let query = supabase
           .from('contacts')
-          .select('id, contact_id, full_name, email, phone, contact_type')
-          .eq('contact_type', participantType)
+          .select('id, contact_id, full_name, email, phone, contact_type');
+        
+        // For 'other' type, search all contacts; otherwise filter by matching type
+        if (participantType !== 'other') {
+          query = query.eq('contact_type', participantType);
+        }
+        
+        const { data, error } = await query
           .or(`full_name.ilike.%${q}%,email.ilike.%${q}%,contact_id.ilike.%${q}%`)
           .limit(10);
 
@@ -155,16 +162,17 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           return;
         }
 
-        // Create new contact
+        // Create new contact - use 'borrower' as default contact_type for 'other'
+        const contactType = participantType === 'other' ? 'borrower' : participantType;
         const { data: genId } = await supabase.rpc('generate_contact_id', {
-          p_type: participantType,
+          p_type: contactType,
         });
 
         const { data: newContact, error: contactError } = await supabase
           .from('contacts')
           .insert({
-            contact_type: participantType,
-            contact_id: genId || `${participantType.charAt(0).toUpperCase()}-${Date.now()}`,
+            contact_type: contactType,
+            contact_id: genId || `${contactType.charAt(0).toUpperCase()}-${Date.now()}`,
             full_name: name,
             first_name: name.split(' ')[0] || '',
             last_name: name.split(' ').slice(1).join(' ') || '',

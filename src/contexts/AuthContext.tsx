@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-export type AppRole = 'admin' | 'csr' | 'borrower' | 'broker' | 'lender' | null;
+export type AppRole = 'admin' | 'csr' | 'borrower' | 'broker' | 'lender' | 'other' | null;
 
 export const EXTERNAL_ROLES: AppRole[] = ['borrower', 'broker', 'lender'];
 export const INTERNAL_ROLES: AppRole[] = ['admin', 'csr'];

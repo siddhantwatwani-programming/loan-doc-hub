@@ -1215,7 +1215,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "csr" | "borrower" | "broker" | "lender"
+      app_role: "admin" | "csr" | "borrower" | "broker" | "lender" | "other"
       deal_mode: "doc_prep" | "servicing_only"
       deal_status: "draft" | "ready" | "generated"
       field_data_type:
@@ -1449,7 +1449,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "csr", "borrower", "broker", "lender"],
+      app_role: ["admin", "csr", "borrower", "broker", "lender", "other"],
       deal_mode: ["doc_prep", "servicing_only"],
       deal_status: ["draft", "ready", "generated"],
       field_data_type: [
