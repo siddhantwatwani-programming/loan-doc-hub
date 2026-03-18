@@ -153,6 +153,34 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
         name = selectedContact.full_name;
         email = selectedContact.email;
         phone = selectedContact.phone;
+
+        // Update contact_data with capacity/role for existing contact
+        const { data: existingContact } = await supabase
+          .from('contacts')
+          .select('contact_data')
+          .eq('id', selectedContact.id)
+          .maybeSingle();
+
+        const existingData = (existingContact?.contact_data || {}) as Record<string, string>;
+        const capacityLabel = participantType === 'borrower' ? 'Borrower'
+          : participantType === 'lender' ? 'Lender'
+          : participantType === 'broker' ? 'Broker' : participantType;
+        const mergedData: Record<string, string> = {
+          ...existingData,
+          'full_name': name,
+          'email': email,
+          'capacity': capacityLabel,
+        };
+        if (phone) mergedData['phone.home'] = phone;
+        if (name) {
+          mergedData['first_name'] = name.split(' ')[0] || '';
+          mergedData['last_name'] = name.split(' ').slice(1).join(' ') || '';
+        }
+
+        await supabase
+          .from('contacts')
+          .update({ contact_data: mergedData })
+          .eq('id', selectedContact.id);
       } else if (mode === 'new') {
         name = newName.trim();
         email = newEmail.trim();
