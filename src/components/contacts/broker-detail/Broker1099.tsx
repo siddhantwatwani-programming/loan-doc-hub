@@ -77,7 +77,15 @@ const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave }
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2"><Label>Street</Label><Input value={form.street} onChange={e => update('street', e.target.value)} /></div>
           <div><Label>City</Label><Input value={form.city} onChange={e => update('city', e.target.value)} /></div>
-          <div><Label>State</Label><Input value={form.state} onChange={e => update('state', e.target.value)} /></div>
+          <div>
+            <Label>State</Label>
+            <Select value={form.state} onValueChange={v => update('state', v)}>
+              <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>
+                {US_STATES.map(s => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </div>
           <div><Label>ZIP</Label><Input value={form.zip} onChange={e => update('zip', e.target.value)} /></div>
         </div>
       </div>
