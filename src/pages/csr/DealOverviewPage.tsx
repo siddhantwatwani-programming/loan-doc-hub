@@ -122,7 +122,7 @@ export const DealOverviewPage: React.FC = () => {
       if (contactIds.length > 0) {
         const { data: contacts } = await supabase
           .from('contacts')
-          .select('id, full_name, email, phone')
+          .select('id, full_name, email, phone, contact_id')
           .in('id', contactIds);
 
         if (contacts) {
