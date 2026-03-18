@@ -279,7 +279,7 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
                 inputMode="decimal"
                 value={getValue(FK.interest_rate)}
                 onChange={(e) => {
-                  const v = e.target.value.replace(/[^0-9.]/g, '');
+                  const v = e.target.value.replace(/[^0-9.\-]/g, '');
                   setValue(FK.interest_rate, v);
                 }}
                 disabled={disabled}
