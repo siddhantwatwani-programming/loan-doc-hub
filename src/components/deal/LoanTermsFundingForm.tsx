@@ -290,6 +290,52 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       directPersistFundingField(dealId, FIELD_KEYS.fundingRecords, updatedRecordsJson, dictCacheRef.current),
       directPersistFundingField(dealId, FIELD_KEYS.fundingHistory, updatedHistoryJson, dictCacheRef.current),
     ]);
+
+    // Auto-add lender to deal_participants if not already present
+    if (data.lenderFullName) {
+      try {
+        const { data: existing } = await supabase
+          .from('deal_participants')
+          .select('id')
+          .eq('deal_id', dealId)
+          .eq('role', 'lender')
+          .eq('name', data.lenderFullName)
+          .maybeSingle();
+
+        if (!existing) {
+          // Look up contact for email/phone/contact_id
+          let contactId: string | null = null;
+          let email: string | null = null;
+          let phone: string | null = null;
+
+          if (data.lenderId) {
+            const { data: contact } = await supabase
+              .from('contacts')
+              .select('id, email, phone')
+              .eq('contact_id', data.lenderId)
+              .maybeSingle();
+            if (contact) {
+              contactId = contact.id;
+              email = contact.email;
+              phone = contact.phone;
+            }
+          }
+
+          await supabase.from('deal_participants').insert({
+            deal_id: dealId,
+            role: 'lender' as any,
+            name: data.lenderFullName,
+            email,
+            phone,
+            contact_id: contactId,
+            status: 'invited',
+            access_method: 'login',
+          });
+        }
+      } catch (err) {
+        console.error('[LoanTermsFundingForm] Auto-add lender participant failed:', err);
+      }
+    }
   }, [fundingRecords, values, onValueChange, dealId]);
 
   const handleUpdateRecord = useCallback(async (id: string, updates: Partial<FundingRecord>) => {
