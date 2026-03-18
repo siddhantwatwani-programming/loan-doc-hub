@@ -60,10 +60,17 @@ const ROLE_COLORS: Record<string, string> = {
   admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  invited: 'Active',
+  in_progress: 'Active',
+  completed: 'Active',
+  expired: 'Inactive',
+};
+
 const STATUS_COLORS: Record<string, string> = {
-  invited: 'bg-muted text-muted-foreground',
-  in_progress: 'bg-warning/10 text-warning',
-  completed: 'bg-success/10 text-success',
+  invited: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  in_progress: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  completed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   expired: 'bg-destructive/10 text-destructive',
 };
 
