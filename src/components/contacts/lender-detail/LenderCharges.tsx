@@ -338,7 +338,7 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
                 {activeColumns.map(c => {
                   const val = (r as any)[c.id] || '';
                   let display = val || '-';
-                  if (val && (c.id === 'unpaid_balance' || c.id === 'accrued_interest')) {
+                  if (val && (c.id === 'unpaid_balance' || c.id === 'accrued_interest' || c.id === 'total_due_to_you')) {
                     display = `$ ${val}`;
                   } else if (val && c.id === 'interest_rate') {
                     display = `${val} %`;
