@@ -402,10 +402,6 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             {ROLE_LABELS[participant.role] || participant.role}
           </Badge>
         );
-      case 'role_capacity':
-        return (
-          <span className="text-muted-foreground">{ROLE_LABELS[participant.role] || participant.role}</span>
-        );
       case 'status':
         return (
           <Badge variant="secondary" className={cn('text-xs', STATUS_COLORS[participant.status] || '')}>
