@@ -855,6 +855,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                 // Add virtual tabs for internal users
                 const allTabs = [...baseSections];
                 if (isInternalUser) {
+                  if (!allTabs.includes("participants" as any)) allTabs.push("participants" as any);
                   if (!allTabs.includes("liens" as any)) allTabs.push("liens" as any);
                   if (!allTabs.includes("funding" as any)) allTabs.push("funding" as any);
                   if (!allTabs.includes("conversation_log" as any)) allTabs.push("conversation_log" as any);
