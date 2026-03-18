@@ -184,23 +184,6 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {/* Sold Rate sub-fields - visible only when Sold Rate is checked */}
             {isChecked(FIELD_KEYS.soldRateEnabled) && (
               <div className="space-y-2 pl-5">
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOriginatingVendor}>
-                  <div className="flex items-center gap-3">
-                    <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">
-                      Originating Vendor
-                    </Label>
-                    <BrokerIdSearch
-                      value={getValue(FIELD_KEYS.soldRateOriginatingVendor)}
-                      onChange={(brokerId, brokerFullName) => {
-                        setValue(FIELD_KEYS.soldRateOriginatingVendor, brokerId);
-                        if (brokerFullName) {
-                          setValue('loan_terms.sold_rate_originating_vendor_name', brokerFullName);
-                        }
-                      }}
-                      disabled={disabled}
-                    />
-                  </div>
-                </DirtyFieldWrapper>
                 <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateCompany}>
                   <div className="flex items-center gap-3">
                     <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">

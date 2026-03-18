@@ -161,70 +161,7 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Details</h3>
           {renderInlineField(FIELD_KEYS.company, 'Company')}
           {renderInlineField(FIELD_KEYS.loanNumber, 'Loan Number')}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.borrowerId}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[130px] shrink-0 text-xs">Borrower ID</Label>
-              <BorrowerIdSearch
-                value={getValue(FIELD_KEYS.borrowerId)}
-                onChange={(borrowerId, borrowerFullName) => {
-                  setValue(FIELD_KEYS.borrowerId, borrowerId);
-                  if (borrowerFullName) {
-                    setValue(FIELD_KEYS.borrowerName, borrowerFullName);
-                  }
-                }}
-                disabled={disabled}
-              />
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.borrowerName}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[130px] shrink-0 text-xs">Borrower Name</Label>
-              <Input id={FIELD_KEYS.borrowerName} value={getValue(FIELD_KEYS.borrowerName)} readOnly disabled className="h-8 text-xs flex-1 bg-muted" />
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.coBorrowerId}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[130px] shrink-0 text-xs">Co-Borrower ID</Label>
-              <Input id={FIELD_KEYS.coBorrowerId} value={getValue(FIELD_KEYS.coBorrowerId)} onChange={(e) => setValue(FIELD_KEYS.coBorrowerId, e.target.value)} disabled={disabled} className="h-8 text-xs flex-1" />
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.coBorrowerName}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[130px] shrink-0 text-xs">Co-Borrower Name</Label>
-              <Input id={FIELD_KEYS.coBorrowerName} value={getValue(FIELD_KEYS.coBorrowerName)} onChange={(e) => setValue(FIELD_KEYS.coBorrowerName, e.target.value)} disabled={disabled} className="h-8 text-xs flex-1" />
-            </div>
-          </DirtyFieldWrapper>
           {renderInlineField(FIELD_KEYS.assignedCsr, 'Assigned CSR')}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.originatingVendor}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[130px] shrink-0 text-xs">Originating Vendor</Label>
-              <BrokerIdSearch
-                value={getValue(FIELD_KEYS.originatingVendor)}
-                onChange={(brokerId, brokerFullName, contactData) => {
-                  setValue(FIELD_KEYS.originatingVendor, brokerId);
-                  if (brokerFullName) {
-                    setValue(FIELD_KEYS.originatingVendorFullName, brokerFullName);
-                  }
-                  if (contactData) {
-                    setValue(FIELD_KEYS.originatingVendorEmail, contactData.email || contactData['borrower.email'] || '');
-                  }
-                }}
-                disabled={disabled}
-              />
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.originatingVendorFullName}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[130px] shrink-0 text-xs">Vendor Name</Label>
-              <Input id={FIELD_KEYS.originatingVendorFullName} value={getValue(FIELD_KEYS.originatingVendorFullName)} disabled className="h-8 text-xs flex-1 bg-muted" />
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.originatingVendorEmail}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[130px] shrink-0 text-xs">Vendor Email</Label>
-              <Input id={FIELD_KEYS.originatingVendorEmail} value={getValue(FIELD_KEYS.originatingVendorEmail)} disabled className="h-8 text-xs flex-1 bg-muted" />
-            </div>
-          </DirtyFieldWrapper>
           {renderInlineField(FIELD_KEYS.origination, 'Origination', 'date')}
           {renderInlineField(FIELD_KEYS.boarding, 'Boarding', 'date')}
           {renderInlineField(FIELD_KEYS.maturityDate, 'Maturity Date', 'date')}
