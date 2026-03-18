@@ -171,8 +171,8 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
         const { data: newContact, error: contactError } = await supabase
           .from('contacts')
           .insert({
-            contact_type: participantType,
-            contact_id: genId || `${participantType.charAt(0).toUpperCase()}-${Date.now()}`,
+            contact_type: contactType,
+            contact_id: genId || `${contactType.charAt(0).toUpperCase()}-${Date.now()}`,
             full_name: name,
             first_name: name.split(' ')[0] || '',
             last_name: name.split(' ').slice(1).join(' ') || '',
