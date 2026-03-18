@@ -126,17 +126,76 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
 
       if (error) throw error;
 
+      const rows = data || [];
+
+      // For participants with a linked contact, fetch latest name/email/phone from contacts
+      const contactIds = rows
+        .map((p: any) => p.contact_id)
+        .filter((id: string | null): id is string => !!id);
+
+      let contactMap: Record<string, { full_name: string; email: string; phone: string }> = {};
+      if (contactIds.length > 0) {
+        const { data: contacts } = await supabase
+          .from('contacts')
+          .select('id, full_name, email, phone')
+          .in('id', contactIds);
+
+        if (contacts) {
+          for (const c of contacts) {
+            contactMap[c.id] = {
+              full_name: c.full_name || '',
+              email: c.email || '',
+              phone: c.phone || '',
+            };
+          }
+        }
+
+        // Sync stale deal_participants with latest contact data
+        const updates: { id: string; name: string; email: string; phone: string }[] = [];
+        for (const p of rows) {
+          const contact = p.contact_id ? contactMap[p.contact_id] : null;
+          if (contact) {
+            const needsUpdate =
+              (contact.full_name && contact.full_name !== (p.name || '')) ||
+              (contact.email && contact.email !== (p.email || '')) ||
+              (contact.phone && contact.phone !== (p.phone || ''));
+            if (needsUpdate) {
+              updates.push({
+                id: p.id,
+                name: contact.full_name || p.name || '',
+                email: contact.email || p.email || '',
+                phone: contact.phone || p.phone || '',
+              });
+            }
+          }
+        }
+
+        // Batch-update stale participant records in background
+        if (updates.length > 0) {
+          for (const u of updates) {
+            supabase
+              .from('deal_participants')
+              .update({ name: u.name, email: u.email, phone: u.phone })
+              .eq('id', u.id)
+              .then(() => {});
+          }
+        }
+      }
+
       setParticipants(
-        (data || []).map((p: any) => ({
-          id: p.id,
-          name: p.name || '',
-          email: p.email || '',
-          phone: p.phone || '',
-          role: p.role || '',
-          status: p.status || 'invited',
-          contact_id: p.contact_id,
-          created_at: p.created_at,
-        }))
+        rows.map((p: any) => {
+          const contact = p.contact_id ? contactMap[p.contact_id] : null;
+          return {
+            id: p.id,
+            name: contact?.full_name || p.name || '',
+            email: contact?.email || p.email || '',
+            phone: contact?.phone || p.phone || '',
+            role: p.role || '',
+            status: p.status || 'invited',
+            contact_id: p.contact_id,
+            created_at: p.created_at,
+          };
+        })
       );
     } catch (err) {
       console.error('Error fetching participants:', err);
