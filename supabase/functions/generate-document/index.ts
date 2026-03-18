@@ -820,16 +820,6 @@ async function generateSingleDocument(
         }
       }
       console.log(`[generate-document] Lien field bridging complete`);
-
-      // Fallback: if li_gd_interestRate is still empty, populate from loan terms
-      if (!fieldValues.has("li_gd_interestRate") || !fieldValues.get("li_gd_interestRate")?.rawValue) {
-        const loanInterestRate = fieldValues.get("ln_p_interestRate") || fieldValues.get("ln_p_noteRate");
-        if (loanInterestRate?.rawValue) {
-          fieldValues.set("li_gd_interestRate", loanInterestRate);
-          console.log(`[generate-document] Fallback: li_gd_interestRate populated from loan terms = "${loanInterestRate.rawValue}"`);
-        }
-      }
-
       // Bridge ln_p_lienPosit (template tag) -> ln_p_lienPositi (actual field key)
       const lienPosVal = fieldValues.get("ln_p_lienPositi");
       if (lienPosVal && !fieldValues.has("ln_p_lienPosit")) {
