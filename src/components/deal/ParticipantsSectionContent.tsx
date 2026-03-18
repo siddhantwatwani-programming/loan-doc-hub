@@ -275,22 +275,27 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
   const navigateToContactById = async (contactId: string, role: string, participant?: Participant) => {
     const { data } = await supabase
       .from('contacts')
-      .select('id, contact_type, full_name, email, phone')
+      .select('id, contact_type, full_name, email, phone, contact_data')
       .eq('id', contactId)
       .maybeSingle();
 
     if (data) {
-      // Sync participant data back to contact if contact fields are empty
+      // Sync participant data back to contact — always overwrite with participant values
       if (participant) {
-        const updates: Record<string, string> = {};
-        if (!data.full_name && participant.name) {
+        const updates: Record<string, any> = {};
+        if (participant.name) {
           updates.full_name = participant.name;
           const parts = participant.name.split(' ');
           updates.first_name = parts[0] || '';
           updates.last_name = parts.slice(1).join(' ') || '';
         }
-        if (!data.email && participant.email) updates.email = participant.email;
-        if (!data.phone && participant.phone) updates.phone = participant.phone;
+        if (participant.email) updates.email = participant.email;
+        if (participant.phone) {
+          updates.phone = participant.phone;
+          // Also store in contact_data as phone.home so the detail form sees it
+          const existingData = (data.contact_data || {}) as Record<string, string>;
+          updates.contact_data = { ...existingData, 'phone.home': participant.phone };
+        }
 
         if (Object.keys(updates).length > 0) {
           await supabase
