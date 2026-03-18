@@ -762,7 +762,7 @@ export const DealOverviewPage: React.FC = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <span className="text-sm font-medium text-foreground truncate">{p.name || 'Unnamed'}</span>
+                          <span className="text-sm font-medium text-foreground truncate">{p.name ? (p.contact_id_display ? `${p.name} - ${p.contact_id_display}` : p.name) : 'Unnamed'}</span>
                         </div>
                         {(p.email || p.phone) && (
                           <p className="text-xs text-muted-foreground ml-5.5 truncate">
