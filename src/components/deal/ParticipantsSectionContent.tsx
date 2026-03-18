@@ -33,6 +33,7 @@ interface Participant {
   phone: string;
   role: string;
   capacity: string;
+  participant_type_capacity: string;
   status: string;
   contact_id: string | null;
   created_at: string;
