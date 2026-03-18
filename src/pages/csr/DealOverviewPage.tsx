@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { logDealMarkedReady } from '@/hooks/useActivityLog';
 import { useWorkspaceOptional } from '@/contexts/WorkspaceContext';
 import { MaxFilesDialog } from '@/components/workspace/MaxFilesDialog';
+import { cn } from '@/lib/utils';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -23,10 +24,10 @@ import {
   Clock,
   Edit,
   User,
+  Users,
   History,
   FileOutput
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface Deal {
   id: string;
@@ -82,6 +83,7 @@ export const DealOverviewPage: React.FC = () => {
   const { role } = useAuth();
   const workspace = useWorkspaceOptional();
   const [showMaxFilesDialog, setShowMaxFilesDialog] = useState(false);
+  const [dealParticipants, setDealParticipants] = useState<any[]>([]);
   
   const [deal, setDeal] = useState<Deal | null>(null);
   const [packet, setPacket] = useState<Packet | null>(null);
@@ -96,8 +98,23 @@ export const DealOverviewPage: React.FC = () => {
   useEffect(() => {
     if (id) {
       fetchDealData();
+      fetchParticipants();
     }
   }, [id]);
+
+  const fetchParticipants = async () => {
+    if (!id) return;
+    try {
+      const { data, error } = await supabase
+        .from('deal_participants')
+        .select('id, name, email, role, status, contact_id')
+        .eq('deal_id', id)
+        .order('created_at', { ascending: true });
+      if (!error) setDealParticipants(data || []);
+    } catch (err) {
+      console.error('Error fetching participants:', err);
+    }
+  };
 
   const fetchDealData = async () => {
     try {
@@ -605,6 +622,65 @@ export const DealOverviewPage: React.FC = () => {
               )}
             </dl>
           </div>
+
+          {/* Participants Block */}
+          {dealParticipants.length > 0 && (
+            <div className="section-card">
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <h3 className="font-semibold text-foreground">Participants</h3>
+                <Badge variant="secondary" className="text-xs">{dealParticipants.length}</Badge>
+              </div>
+              <div className="space-y-2">
+                {dealParticipants.map((p: any) => {
+                  const roleColors: Record<string, string> = {
+                    borrower: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+                    lender: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+                    broker: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+                  };
+                  const roleLabels: Record<string, string> = { borrower: 'Borrower', lender: 'Lender', broker: 'Broker', csr: 'CSR', admin: 'Admin' };
+                  return (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={async () => {
+                        if (p.contact_id) {
+                          const { data } = await supabase
+                            .from('contacts')
+                            .select('id, contact_type')
+                            .eq('id', p.contact_id)
+                            .maybeSingle();
+                          if (data) {
+                            const route = data.contact_type === 'lender' ? 'lenders' : data.contact_type === 'broker' ? 'brokers' : 'borrowers';
+                            navigate(`/contacts/${route}/${data.id}`);
+                          }
+                        } else if (p.email) {
+                          const { data } = await supabase
+                            .from('contacts')
+                            .select('id, contact_type')
+                            .eq('email', p.email)
+                            .limit(1)
+                            .maybeSingle();
+                          if (data) {
+                            const route = data.contact_type === 'lender' ? 'lenders' : data.contact_type === 'broker' ? 'brokers' : 'borrowers';
+                            navigate(`/contacts/${route}/${data.id}`);
+                          }
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <User className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-sm font-medium text-foreground">{p.name || 'Unnamed'}</span>
+                      </div>
+                      <Badge variant="secondary" className={cn('text-xs', roleColors[p.role] || '')}>
+                        {roleLabels[p.role] || p.role}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Participants Panel - CSR only */}
           {isCsr && (

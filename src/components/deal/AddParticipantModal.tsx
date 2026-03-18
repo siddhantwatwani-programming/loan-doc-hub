@@ -1,0 +1,408 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { Loader2, Search, UserPlus, Users } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface AddParticipantModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  dealId: string;
+  onParticipantAdded: () => void;
+}
+
+interface ContactResult {
+  id: string;
+  contact_id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  contact_type: string;
+}
+
+type ParticipantType = 'borrower' | 'lender' | 'broker';
+
+const PARTICIPANT_TYPES = [
+  { value: 'borrower', label: 'Borrower' },
+  { value: 'lender', label: 'Lender' },
+  { value: 'broker', label: 'Broker' },
+];
+
+export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
+  open,
+  onOpenChange,
+  dealId,
+  onParticipantAdded,
+}) => {
+  const { user } = useAuth();
+  const [step, setStep] = useState<'type' | 'details'>('type');
+  const [participantType, setParticipantType] = useState<ParticipantType | ''>('');
+  const [mode, setMode] = useState<'existing' | 'new'>('existing');
+  const [saving, setSaving] = useState(false);
+
+  // Existing contact search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<ContactResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<ContactResult | null>(null);
+
+  // New contact fields
+  const [newName, setNewName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+
+  // Reset state when modal opens/closes
+  useEffect(() => {
+    if (open) {
+      setStep('type');
+      setParticipantType('');
+      setMode('existing');
+      setSearchQuery('');
+      setSearchResults([]);
+      setSelectedContact(null);
+      setNewName('');
+      setNewEmail('');
+      setNewPhone('');
+    }
+  }, [open]);
+
+  // Search contacts when query changes
+  useEffect(() => {
+    if (!searchQuery.trim() || !participantType) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const q = searchQuery.trim();
+        const { data, error } = await supabase
+          .from('contacts')
+          .select('id, contact_id, full_name, email, phone, contact_type')
+          .eq('contact_type', participantType)
+          .or(`full_name.ilike.%${q}%,email.ilike.%${q}%,contact_id.ilike.%${q}%`)
+          .limit(10);
+
+        if (error) throw error;
+        setSearchResults(
+          (data || []).map((c: any) => ({
+            id: c.id,
+            contact_id: c.contact_id || '',
+            full_name: c.full_name || '',
+            email: c.email || '',
+            phone: c.phone || '',
+            contact_type: c.contact_type,
+          }))
+        );
+      } catch (err) {
+        console.error('Error searching contacts:', err);
+      } finally {
+        setSearching(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, participantType]);
+
+  const handleTypeSelected = () => {
+    if (participantType) {
+      setStep('details');
+    }
+  };
+
+  const handleSave = async () => {
+    if (!participantType || !dealId) return;
+
+    setSaving(true);
+    try {
+      let contactId: string | null = null;
+      let name = '';
+      let email = '';
+      let phone = '';
+
+      if (mode === 'existing' && selectedContact) {
+        contactId = selectedContact.id;
+        name = selectedContact.full_name;
+        email = selectedContact.email;
+        phone = selectedContact.phone;
+      } else if (mode === 'new') {
+        name = newName.trim();
+        email = newEmail.trim();
+        phone = newPhone.trim();
+
+        if (!name) {
+          toast.error('Name is required');
+          setSaving(false);
+          return;
+        }
+
+        // Create new contact
+        const { data: genId } = await supabase.rpc('generate_contact_id', {
+          p_type: participantType,
+        });
+
+        const { data: newContact, error: contactError } = await supabase
+          .from('contacts')
+          .insert({
+            contact_type: participantType,
+            contact_id: genId || `${participantType.charAt(0).toUpperCase()}-${Date.now()}`,
+            full_name: name,
+            first_name: name.split(' ')[0] || '',
+            last_name: name.split(' ').slice(1).join(' ') || '',
+            email,
+            phone,
+            created_by: user?.id || '',
+          })
+          .select('id')
+          .single();
+
+        if (contactError) throw contactError;
+        contactId = newContact.id;
+      }
+
+      // Check if participant already exists for this deal
+      const { data: existing } = await supabase
+        .from('deal_participants')
+        .select('id')
+        .eq('deal_id', dealId)
+        .eq('email', email)
+        .eq('role', participantType)
+        .maybeSingle();
+
+      if (existing) {
+        toast.error('This participant already exists in this file');
+        setSaving(false);
+        return;
+      }
+
+      // Insert deal participant
+      const { error: insertError } = await supabase
+        .from('deal_participants')
+        .insert({
+          deal_id: dealId,
+          role: participantType as any,
+          name,
+          email: email || null,
+          phone: phone || null,
+          contact_id: contactId,
+          status: 'invited',
+          access_method: 'login',
+        });
+
+      if (insertError) throw insertError;
+
+      toast.success('Participant added successfully');
+      onParticipantAdded();
+      onOpenChange(false);
+
+      // Navigate to contact detail page
+      if (contactId) {
+        const route = participantType === 'lender' ? 'lenders' : participantType === 'broker' ? 'brokers' : 'borrowers';
+        // Use window to avoid navigation issues in modal close
+        setTimeout(() => {
+          window.location.href = `/contacts/${route}/${contactId}`;
+        }, 300);
+      }
+    } catch (err: any) {
+      console.error('Error adding participant:', err);
+      toast.error(err.message || 'Failed to add participant');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
+          <DialogTitle className="flex items-center gap-2">
+            <UserPlus className="h-4 w-4" />
+            Add Participant
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto min-h-0 py-3 sleek-scrollbar">
+          {step === 'type' ? (
+            <div className="space-y-4">
+              <Label className="text-sm font-medium">Select Participant Type</Label>
+              <Select value={participantType} onValueChange={(v) => setParticipantType(v as ParticipantType)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {PARTICIPANT_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                <span>Type:</span>
+                <span className="font-medium text-foreground capitalize">{participantType}</span>
+              </div>
+
+              {/* Mode Toggle */}
+              <div className="flex gap-2">
+                <Button
+                  variant={mode === 'existing' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setMode('existing')}
+                  className="gap-1"
+                >
+                  <Search className="h-3.5 w-3.5" />
+                  Existing Contact
+                </Button>
+                <Button
+                  variant={mode === 'new' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setMode('new')}
+                  className="gap-1"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  New Contact
+                </Button>
+              </div>
+
+              {mode === 'existing' ? (
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by name, email, or ID..."
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setSelectedContact(null);
+                      }}
+                      className="pl-8"
+                    />
+                  </div>
+
+                  {searching && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Searching...
+                    </div>
+                  )}
+
+                  {searchResults.length > 0 && (
+                    <div className="border border-border rounded-md max-h-[200px] overflow-y-auto">
+                      {searchResults.map((contact) => (
+                        <div
+                          key={contact.id}
+                          onClick={() => setSelectedContact(contact)}
+                          className={cn(
+                            'p-3 cursor-pointer border-b last:border-b-0 hover:bg-muted/50 transition-colors',
+                            selectedContact?.id === contact.id && 'bg-primary/5 border-primary/20'
+                          )}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{contact.full_name}</p>
+                              <p className="text-xs text-muted-foreground">{contact.email || 'No email'}</p>
+                            </div>
+                            <span className="text-xs text-muted-foreground">{contact.contact_id}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {searchQuery && !searching && searchResults.length === 0 && (
+                    <p className="text-sm text-muted-foreground py-2">
+                      No contacts found. Try a different search or add a new contact.
+                    </p>
+                  )}
+
+                  {selectedContact && (
+                    <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                      <p className="text-sm font-medium text-foreground">Selected: {selectedContact.full_name}</p>
+                      <p className="text-xs text-muted-foreground">{selectedContact.email} • {selectedContact.phone || 'No phone'}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-sm">Name *</Label>
+                    <Input
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      placeholder="Full name"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Email</Label>
+                    <Input
+                      type="email"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Phone</Label>
+                    <Input
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(e.target.value)}
+                      placeholder="(555) 555-5555"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="shrink-0">
+          {step === 'type' ? (
+            <>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button onClick={handleTypeSelected} disabled={!participantType}>Next</Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setStep('type')}>Back</Button>
+              <Button
+                onClick={handleSave}
+                disabled={
+                  saving ||
+                  (mode === 'existing' && !selectedContact) ||
+                  (mode === 'new' && !newName.trim())
+                }
+              >
+                {saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                Save & Go to Contact
+              </Button>
+            </>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default AddParticipantModal;

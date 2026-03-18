@@ -29,6 +29,7 @@ import { ChargesSectionContent } from "@/components/deal/ChargesSectionContent";
 import { OriginationFeesSectionContent } from "@/components/deal/OriginationFeesSectionContent";
 import { NotesSectionContent } from "@/components/deal/NotesSectionContent";
 import { EventJournalViewer } from "@/components/deal/EventJournalViewer";
+import { ParticipantsSectionContent } from "@/components/deal/ParticipantsSectionContent";
 import { logDealUpdated, logDealMarkedReady, logDealRevertedToDraft } from "@/hooks/useActivityLog";
 import {
   ArrowLeft,
@@ -62,8 +63,9 @@ interface Deal {
 
 // Section labels for display (partial - only includes displayable main sections)
 const SECTION_LABELS: Partial<
-  Record<FieldSection | "origination_fees" | "funding" | "event_journal" | "liens", string>
+  Record<FieldSection | "origination_fees" | "funding" | "event_journal" | "liens" | "participants", string>
 > = {
+  participants: "Participants",
   property: "Property",
   loan_terms: "Loan",
   liens: "Liens",
@@ -80,6 +82,7 @@ const SECTION_LABELS: Partial<
 
 // Custom ordering for top navbar tabs
 const SECTION_ORDER: string[] = [
+  "participants",
   "loan_terms",
   "property",
   "liens",
@@ -852,6 +855,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                 // Add virtual tabs for internal users
                 const allTabs = [...baseSections];
                 if (isInternalUser) {
+                  if (!allTabs.includes("participants" as any)) allTabs.push("participants" as any);
                   if (!allTabs.includes("liens" as any)) allTabs.push("liens" as any);
                   if (!allTabs.includes("funding" as any)) allTabs.push("funding" as any);
                   if (!allTabs.includes("conversation_log" as any)) allTabs.push("conversation_log" as any);
@@ -1033,6 +1037,15 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                   )}
                 </TabsContent>
               ))}
+
+            {/* Participants - standalone top-level tab */}
+            <TabsContent value="participants" forceMount className={cn("animate-fade-in", activeTab !== "participants" && "hidden")}>
+              <ParticipantsSectionContent
+                dealId={id || ""}
+                disabled={isSectionDisabledByFormPerm("participants")}
+                onRefresh={handleGridRefresh}
+              />
+            </TabsContent>
 
             {/* Liens - standalone top-level tab */}
             <TabsContent value="liens" forceMount className={cn("animate-fade-in", activeTab !== "liens" && "hidden")}>

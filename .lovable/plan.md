@@ -1,69 +1,110 @@
 
 
-## Plan: Add Participants Tab to Deal Data Entry + Dashboard Block
+## Event Journal (Change Log System) Implementation Plan
 
 ### Overview
+Implement a per-deal Event Journal that automatically logs every field change with old→new values, plus a Global Event Journal page accessible from the sidebar. The existing `activity_log` table will be reused — no new tables.
 
-Add a "Participants" tab as the first tab in the Enter File Data screen (while keeping Loan as the default landing tab), a Participants block on the File Dashboard, an "Add Participant" modal with existing contact lookup or new entry, row-click navigation to Contact module, and auto-add lender from Funding saves.
+### 1. Database: New Migration
+Add a new `event_journal` table (separate from `activity_log` to avoid polluting the existing system):
 
-### Data Storage
+```sql
+CREATE TABLE public.event_journal (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  deal_id uuid NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
+  event_number integer NOT NULL,
+  actor_user_id uuid NOT NULL,
+  section text NOT NULL,
+  details jsonb NOT NULL DEFAULT '[]',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-**No new tables or schema changes.** Participants will be stored in the existing `deal_participants` table which already has: id, deal_id, role, user_id, email, name, status, access_method, etc. We will add a `phone` and `contact_id` column via migration to support the grid display fields (phone, participant type mapping to contacts). Alternatively, we can store extra metadata in a JSONB approach — but since the requirement says "no new tables or schema changes", we'll use the existing columns and join to `contacts` table for additional info.
+CREATE INDEX idx_event_journal_deal ON public.event_journal(deal_id, event_number DESC);
+ALTER TABLE public.event_journal ENABLE ROW LEVEL SECURITY;
 
-**Revised approach**: To avoid schema changes, we'll query `contacts` for phone/company data when displaying the grid, joining on email or name match. The `deal_participants` table already has `name`, `email`, `role`, `status` which covers the core grid fields.
+-- RLS: CSR and Admin can view/insert
+CREATE POLICY "CSRs can view event journal" ON public.event_journal
+  FOR SELECT TO authenticated
+  USING (has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin'));
 
-### Implementation
+CREATE POLICY "CSRs can insert event journal" ON public.event_journal
+  FOR INSERT TO authenticated
+  WITH CHECK ((has_role(auth.uid(), 'csr') OR has_role(auth.uid(), 'admin')) AND auth.uid() = actor_user_id);
 
-#### 1. Create `ParticipantsSectionContent` component
-**File**: `src/components/deal/ParticipantsSectionContent.tsx`
+-- Auto-increment event_number per deal
+CREATE OR REPLACE FUNCTION public.set_event_journal_number()
+RETURNS trigger LANGUAGE plpgsql SET search_path TO 'public' AS $$
+BEGIN
+  SELECT COALESCE(MAX(event_number), 0) + 1 INTO NEW.event_number
+  FROM public.event_journal WHERE deal_id = NEW.deal_id;
+  RETURN NEW;
+END;
+$$;
 
-- Grid/table displaying participants for the current deal from `deal_participants` table
-- Columns: Name, Email, Phone (from contacts lookup), Participant Type (role), Status, Added Date
-- Standard features: search (via GridToolbar), sorting (via SortableTableHead), column config (via ColumnConfigPopover), Excel export (via GridExportDialog)
-- Checkbox selection for bulk delete
-- Row click → navigate to Contact module (`/contacts/borrowers/:id`, `/contacts/lenders/:id`, `/contacts/brokers/:id`) based on role, matching by email/name to find the contact record
+CREATE TRIGGER trg_event_journal_number
+  BEFORE INSERT ON public.event_journal
+  FOR EACH ROW EXECUTE FUNCTION public.set_event_journal_number();
+```
 
-#### 2. Create `AddParticipantModal` component
-**File**: `src/components/deal/AddParticipantModal.tsx`
+The `details` column stores an array of `{ fieldLabel, oldValue, newValue }` objects.
 
-- Step 1: Select participant type (Borrower, Lender, Broker, Other)
-- Step 2: Search existing contacts or enter new participant details (name, email, phone)
-- On save:
-  - Insert into `deal_participants` (existing table)
-  - If "new", also create a contact record in `contacts` table
-  - Navigate to the Contact module detail page for the participant
+### 2. Hook: `useEventJournal.ts` (New File)
+- `logFieldChanges(dealId, section, changes[])` — inserts a single event_journal row with all field changes from a save
+- Called from `saveDraft` in `useDealFields.ts` — compare old values (snapshot taken at load time) vs new values to detect changes, grouped by section label
+- `useEventJournalEntries(dealId)` — fetches event journal entries for a deal, with actor names from profiles
 
-#### 3. Update `DealDataEntryPage.tsx` — Add Participants Tab
-- Add "Participants" to `SECTION_LABELS` and as first item in `SECTION_ORDER`
-- Add `TabsTrigger` for "participants" as the first tab
-- Add `TabsContent` rendering `ParticipantsSectionContent`
-- Keep `loan_terms` as default active tab (existing logic already defaults to `loan_terms`)
+### 3. Capture Old→New Values in `useDealFields.ts`
+- Add a `savedValuesSnapshot` ref that stores values at load time and after each successful save
+- In `saveDraft`, before persisting, compute the diff: for each dirty field, compare `savedValuesSnapshot[key]` vs `values[key]`
+- Group diffs by section, resolve field labels from `resolvedFields`, and call `logFieldChanges`
+- After successful save, update the snapshot
 
-#### 4. Update `DealOverviewPage.tsx` — Add Participants Dashboard Block
-- Add a "Participants" section-card in the sidebar (below File Information, above Activity Log)
-- Query `deal_participants` for the deal
-- Show participant name, role badge, status
-- Click → navigate to Contact module
+### 4. Per-Deal Event Journal Tab Content (Replace "Coming Soon")
+Replace the placeholder at line 996-1004 in `DealDataEntryPage.tsx` with `EventJournalViewer` component:
+- Table with columns: Event #, User, Section, Details, Timestamp
+- Details column shows truncated preview (first 80 chars)
+- "Show More" button opens a Dialog/modal with full details formatted as `Field Label: Old Value → New Value`
+- Sorted by event_number descending (newest first)
 
-#### 5. Auto-add from Funding
-- In `LoanTermsFundingForm.tsx`, after successfully saving a new funding record, check if the lender already exists in `deal_participants` for this deal
-- If not, insert a new `deal_participants` row with role='lender', name=lenderFullName, and email from the contact lookup
+### 5. `EventJournalViewer` Component (New File)
+`src/components/deal/EventJournalViewer.tsx`:
+- Fetches from `event_journal` table filtered by `deal_id`
+- Joins actor names from `profiles`
+- Table layout using existing shadcn Table components
+- "Show More" modal using existing Dialog component
+- Detail entries formatted as `Field Label: oldValue → newValue`
 
-### Files to Create
-1. `src/components/deal/ParticipantsSectionContent.tsx` — Grid view with search, sort, export, column config
-2. `src/components/deal/AddParticipantModal.tsx` — Modal for adding participants
+### 6. Global Event Journal Page (New File)
+`src/pages/csr/GlobalEventJournalPage.tsx`:
+- Deal selector dropdown (search by deal number) at the top
+- Once a deal is selected, renders `EventJournalViewer` for that deal
+- Same table structure as the per-deal view
 
-### Files to Modify
-1. `src/pages/csr/DealDataEntryPage.tsx` — Add Participants tab (first position, but loan_terms remains default)
-2. `src/pages/csr/DealOverviewPage.tsx` — Add Participants block to dashboard sidebar
-3. `src/components/deal/LoanTermsFundingForm.tsx` — Auto-add lender to participants on funding save
+### 7. Sidebar Navigation Update
+In `AppSidebar.tsx`, add "Event Journal" nav item above the Contacts section (around line 429) for CSR users:
+```tsx
+<PromotedNavSection
+  label="Event Journal"
+  icon={BookOpen}
+  items={[]}
+  directPath="/event-journal"
+  isCollapsed={isCollapsed}
+  searchQuery={searchQuery}
+/>
+```
 
-### Database Changes
-- **Migration**: Add `phone` and `contact_id` columns to `deal_participants` table (nullable text fields) to support grid display without joins. This is minimal and doesn't create new tables.
+### 8. Route Registration
+In `App.tsx`, add route for the global event journal page inside the CSR/Admin role guard.
 
-### What Will NOT Change
-- No changes to existing UI layout, components, or APIs beyond what's described
-- No changes to document generation, templates, or field dictionary
-- No changes to authentication, RLS policies, or other modules
-- Existing InviteParticipantsPanel remains unchanged
+### Files Changed
+| File | Change |
+|------|--------|
+| New migration | Create `event_journal` table with trigger |
+| `src/hooks/useEventJournal.ts` | New — logging + fetching hook |
+| `src/hooks/useDealFields.ts` | Add saved-values snapshot, diff computation on save, call event journal logger |
+| `src/components/deal/EventJournalViewer.tsx` | New — table + modal component |
+| `src/pages/csr/DealDataEntryPage.tsx` | Replace "Coming Soon" placeholder with EventJournalViewer |
+| `src/pages/csr/GlobalEventJournalPage.tsx` | New — global view with deal selector |
+| `src/components/layout/AppSidebar.tsx` | Add Event Journal nav item above Contacts |
+| `src/App.tsx` | Add `/event-journal` route |
 
