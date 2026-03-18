@@ -1,0 +1,404 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Plus, Loader2, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { GridToolbar } from './GridToolbar';
+import { SortableTableHead } from './SortableTableHead';
+import { ColumnConfigPopover, type ColumnConfig } from './ColumnConfigPopover';
+import { GridExportDialog, type ExportColumn } from './GridExportDialog';
+import { useGridSortFilter } from '@/hooks/useGridSortFilter';
+import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+import { useGridSelection } from '@/hooks/useGridSelection';
+import { AddParticipantModal } from './AddParticipantModal';
+import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { cn } from '@/lib/utils';
+
+interface Participant {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  status: string;
+  contact_id: string | null;
+  created_at: string;
+}
+
+interface ParticipantsSectionContentProps {
+  dealId: string;
+  disabled?: boolean;
+  onRefresh?: () => void;
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  borrower: 'Borrower',
+  lender: 'Lender',
+  broker: 'Broker',
+  csr: 'CSR',
+  admin: 'Admin',
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  borrower: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  lender: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  broker: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  csr: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  invited: 'bg-muted text-muted-foreground',
+  in_progress: 'bg-warning/10 text-warning',
+  completed: 'bg-success/10 text-success',
+  expired: 'bg-destructive/10 text-destructive',
+};
+
+const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'name', label: 'Name', visible: true },
+  { id: 'email', label: 'Email', visible: true },
+  { id: 'phone', label: 'Phone', visible: true },
+  { id: 'role', label: 'Participant Type', visible: true },
+  { id: 'status', label: 'Status', visible: true },
+  { id: 'created_at', label: 'Added Date', visible: true },
+];
+
+const SEARCHABLE_FIELDS = ['name', 'email', 'phone', 'role'];
+
+export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProps> = ({
+  dealId,
+  disabled = false,
+  onRefresh,
+}) => {
+  const navigate = useNavigate();
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('participants_v1', DEFAULT_COLUMNS);
+  const visibleColumns = columns.filter((c) => c.visible);
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    sortState,
+    toggleSort,
+    activeFilters,
+    setFilter,
+    clearFilters,
+    activeFilterCount,
+    filteredData,
+  } = useGridSortFilter<Participant>(participants, SEARCHABLE_FIELDS);
+
+  const {
+    selectedIds,
+    isAllSelected,
+    toggleOne,
+    toggleAll,
+    clearSelection,
+  } = useGridSelection(filteredData.map((p) => p.id));
+
+  const fetchParticipants = useCallback(async () => {
+    if (!dealId) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('deal_participants')
+        .select('id, name, email, phone, role, status, contact_id, created_at')
+        .eq('deal_id', dealId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      setParticipants(
+        (data || []).map((p: any) => ({
+          id: p.id,
+          name: p.name || '',
+          email: p.email || '',
+          phone: p.phone || '',
+          role: p.role || '',
+          status: p.status || 'invited',
+          contact_id: p.contact_id,
+          created_at: p.created_at,
+        }))
+      );
+    } catch (err) {
+      console.error('Error fetching participants:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [dealId]);
+
+  useEffect(() => {
+    fetchParticipants();
+  }, [fetchParticipants]);
+
+  const handleRowClick = (participant: Participant) => {
+    if (!participant.contact_id) {
+      // Try to find contact by email match
+      navigateToContactByEmail(participant);
+      return;
+    }
+    navigateToContactById(participant.contact_id, participant.role);
+  };
+
+  const navigateToContactByEmail = async (participant: Participant) => {
+    if (!participant.email) {
+      toast.info('No contact record linked to this participant');
+      return;
+    }
+    const { data } = await supabase
+      .from('contacts')
+      .select('id, contact_type')
+      .eq('email', participant.email)
+      .limit(1)
+      .maybeSingle();
+
+    if (data) {
+      const route = data.contact_type === 'lender' ? 'lenders' : data.contact_type === 'broker' ? 'brokers' : 'borrowers';
+      navigate(`/contacts/${route}/${data.id}`);
+    } else {
+      toast.info('No contact record found for this participant');
+    }
+  };
+
+  const navigateToContactById = async (contactId: string, role: string) => {
+    const { data } = await supabase
+      .from('contacts')
+      .select('id, contact_type')
+      .eq('id', contactId)
+      .maybeSingle();
+
+    if (data) {
+      const route = data.contact_type === 'lender' ? 'lenders' : data.contact_type === 'broker' ? 'brokers' : 'borrowers';
+      navigate(`/contacts/${route}/${data.id}`);
+    } else {
+      toast.info('Contact record not found');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    setDeleting(true);
+    try {
+      const ids = Array.from(selectedIds);
+      const { error } = await supabase
+        .from('deal_participants')
+        .delete()
+        .in('id', ids);
+
+      if (error) throw error;
+
+      toast.success(`Deleted ${ids.length} participant(s)`);
+      clearSelection();
+      fetchParticipants();
+    } catch (err) {
+      console.error('Error deleting participants:', err);
+      toast.error('Failed to delete participants');
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  const handleParticipantAdded = () => {
+    fetchParticipants();
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  // Filter options from unique roles
+  const roleFilterOptions = useMemo(() => {
+    const roles = [...new Set(participants.map((p) => p.role))];
+    return roles.map((r) => ({ value: r, label: ROLE_LABELS[r] || r }));
+  }, [participants]);
+
+  const statusFilterOptions = useMemo(() => {
+    const statuses = [...new Set(participants.map((p) => p.status))];
+    return statuses.map((s) => ({ value: s, label: s.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()) }));
+  }, [participants]);
+
+  const exportColumns: ExportColumn[] = columns.map((c) => ({ id: c.id, label: c.label }));
+
+  const renderCellValue = (participant: Participant, columnId: string) => {
+    switch (columnId) {
+      case 'name':
+        return <span className="font-medium text-foreground">{participant.name || '—'}</span>;
+      case 'email':
+        return <span className="text-muted-foreground">{participant.email || '—'}</span>;
+      case 'phone':
+        return <span className="text-muted-foreground">{participant.phone || '—'}</span>;
+      case 'role':
+        return (
+          <Badge variant="secondary" className={cn('text-xs', ROLE_COLORS[participant.role] || '')}>
+            {ROLE_LABELS[participant.role] || participant.role}
+          </Badge>
+        );
+      case 'status':
+        return (
+          <Badge variant="secondary" className={cn('text-xs', STATUS_COLORS[participant.status] || '')}>
+            {participant.status.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+          </Badge>
+        );
+      case 'created_at':
+        return <span className="text-muted-foreground">{formatDate(participant.created_at)}</span>;
+      default:
+        return '—';
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-2">
+        <GridToolbar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          filterOptions={[
+            { id: 'role', label: 'Type', options: roleFilterOptions },
+            { id: 'status', label: 'Status', options: statusFilterOptions },
+          ]}
+          activeFilters={activeFilters}
+          onFilterChange={setFilter}
+          onClearFilters={clearFilters}
+          activeFilterCount={activeFilterCount}
+          disabled={disabled}
+          selectedCount={selectedIds.size}
+          onBulkDelete={() => setDeleteDialogOpen(true)}
+          onExport={() => setExportOpen(true)}
+          searchPlaceholder="Search participants..."
+        />
+        <div className="flex items-center gap-2">
+          <ColumnConfigPopover
+            columns={columns}
+            onColumnsChange={setColumns}
+            onResetColumns={resetColumns}
+            disabled={disabled}
+          />
+          <Button
+            size="sm"
+            onClick={() => setAddModalOpen(true)}
+            disabled={disabled}
+            className="gap-1"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Participant
+          </Button>
+        </div>
+      </div>
+
+      {/* Table */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : filteredData.length === 0 ? (
+        <div className="text-center py-12 border border-dashed border-border rounded-lg">
+          <Users className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+          <p className="text-sm text-muted-foreground">
+            {participants.length === 0 ? 'No participants added yet' : 'No participants match your search'}
+          </p>
+          {participants.length === 0 && !disabled && (
+            <Button variant="outline" size="sm" className="mt-3 gap-1" onClick={() => setAddModalOpen(true)}>
+              <Plus className="h-3.5 w-3.5" />
+              Add First Participant
+            </Button>
+          )}
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={isAllSelected}
+                  onCheckedChange={toggleAll}
+                />
+              </TableHead>
+              {visibleColumns.map((col) => (
+                <SortableTableHead
+                  key={col.id}
+                  columnId={col.id}
+                  label={col.label}
+                  sortColumnId={sortState.columnId}
+                  sortDirection={sortState.direction}
+                  onSort={toggleSort}
+                />
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredData.map((participant) => (
+              <TableRow
+                key={participant.id}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleRowClick(participant)}
+              >
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    checked={selectedIds.has(participant.id)}
+                    onCheckedChange={() => toggleOne(participant.id)}
+                  />
+                </TableCell>
+                {visibleColumns.map((col) => (
+                  <TableCell key={col.id}>
+                    {renderCellValue(participant, col.id)}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+
+      {/* Add Participant Modal */}
+      <AddParticipantModal
+        open={addModalOpen}
+        onOpenChange={setAddModalOpen}
+        dealId={dealId}
+        onParticipantAdded={handleParticipantAdded}
+      />
+
+      {/* Export Dialog */}
+      <GridExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        columns={exportColumns}
+        data={filteredData}
+        fileName="participants"
+      />
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleBulkDelete}
+        title="Delete Participants"
+        description={`Are you sure you want to delete ${selectedIds.size} selected participant(s)? This action cannot be undone.`}
+        loading={deleting}
+      />
+    </div>
+  );
+};
+
+export default ParticipantsSectionContent;

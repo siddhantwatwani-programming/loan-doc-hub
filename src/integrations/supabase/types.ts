@@ -189,12 +189,14 @@ export type Database = {
         Row: {
           access_method: Database["public"]["Enums"]["participant_access_method"]
           completed_at: string | null
+          contact_id: string | null
           created_at: string
           deal_id: string
           email: string | null
           id: string
           invited_at: string
           name: string | null
+          phone: string | null
           revoked_at: string | null
           role: Database["public"]["Enums"]["app_role"]
           sequence_order: number | null
@@ -205,12 +207,14 @@ export type Database = {
         Insert: {
           access_method?: Database["public"]["Enums"]["participant_access_method"]
           completed_at?: string | null
+          contact_id?: string | null
           created_at?: string
           deal_id: string
           email?: string | null
           id?: string
           invited_at?: string
           name?: string | null
+          phone?: string | null
           revoked_at?: string | null
           role: Database["public"]["Enums"]["app_role"]
           sequence_order?: number | null
@@ -221,12 +225,14 @@ export type Database = {
         Update: {
           access_method?: Database["public"]["Enums"]["participant_access_method"]
           completed_at?: string | null
+          contact_id?: string | null
           created_at?: string
           deal_id?: string
           email?: string | null
           id?: string
           invited_at?: string
           name?: string | null
+          phone?: string | null
           revoked_at?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           sequence_order?: number | null
@@ -235,6 +241,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "deal_participants_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "deal_participants_deal_id_fkey"
             columns: ["deal_id"]
