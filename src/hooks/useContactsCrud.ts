@@ -167,6 +167,26 @@ export function useContactsCrud({ contactType, pageSize = 25 }: UseContactsCrudO
         .eq('id', id);
 
       if (error) throw error;
+
+      // Sync updated contact fields back to any linked deal_participants
+      const phoneValue = contactData.phone || contactData['phone.cell'] || contactData['phone.mobile'] || contactData['phone.home'] || contactData['phone.work'] || '';
+      const { data: linkedParticipants } = await supabase
+        .from('deal_participants')
+        .select('id')
+        .eq('contact_id', id);
+
+      if (linkedParticipants && linkedParticipants.length > 0) {
+        const participantIds = linkedParticipants.map((p: any) => p.id);
+        await supabase
+          .from('deal_participants')
+          .update({
+            name: fullName,
+            email: contactData.email || '',
+            phone: phoneValue,
+          })
+          .in('id', participantIds);
+      }
+
       toast.success('Contact saved');
       fetchContacts(currentPage, searchQuery);
       return true;
