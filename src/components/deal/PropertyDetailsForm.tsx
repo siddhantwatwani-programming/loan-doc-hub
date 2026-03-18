@@ -59,7 +59,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   const getFieldValue = (key: string) => values[key] || '';
   const sanitizeNumericValue = (value: string): string => value.replace(/[^0-9.-]/g, '');
   const handleCurrencyChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value));
-  const handlePercentageChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value));
+  const handlePercentageChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value).replace(/-/g, ''));
 
   const isCopyBorrower = getFieldValue(FIELD_KEYS.copyBorrowerAddress) === 'true';
   const borrowerStreet = values['borrower.address.street'] || '';

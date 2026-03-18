@@ -122,7 +122,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
     <div className="flex items-center gap-2">
       <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
       <div className="flex items-center gap-1 flex-1">
-        <Input value={formData[field]} onChange={(e) => handleChange(field, e.target.value)} className={`h-7 text-xs text-right ${forceDisabled ? 'opacity-50 bg-muted' : ''}`} inputMode="decimal" placeholder="0.000" disabled={forceDisabled} />
+        <Input value={formData[field]} onChange={(e) => handleChange(field, e.target.value.replace(/-/g, ''))} className={`h-7 text-xs text-right ${forceDisabled ? 'opacity-50 bg-muted' : ''}`} inputMode="decimal" placeholder="0.000" disabled={forceDisabled} />
         <span className="text-xs text-muted-foreground">%</span>
       </div>
     </div>
