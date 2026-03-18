@@ -787,6 +787,7 @@ async function generateSingleDocument(
       // Bridge to new Liens section li_gd_*, li_bp_*, li_rt_* keys
       const lienFieldToLiKeys: Record<string, string> = {
         "interest_rate": "li_gd_interestRate",
+        "priority": "ln_p_lienPositi",
         "lien_priority_now": "li_gd_lienPriorityNow",
         "lien_priority_after": "li_gd_lienPriorityAfter",
         "maturity_date": "li_gd_maturityDate",
@@ -819,6 +820,13 @@ async function generateSingleDocument(
         }
       }
       console.log(`[generate-document] Lien field bridging complete`);
+
+      // Bridge ln_p_lienPosit (template tag) -> ln_p_lienPositi (actual field key)
+      const lienPosVal = fieldValues.get("ln_p_lienPositi");
+      if (lienPosVal && !fieldValues.has("ln_p_lienPosit")) {
+        fieldValues.set("ln_p_lienPosit", lienPosVal);
+        console.log(`[generate-document] Bridged ln_p_lienPositi -> ln_p_lienPosit`);
+      }
     }
 
     // Build set of ALL valid field keys from the complete field_dictionary (for direct tag matching)
