@@ -337,7 +337,7 @@ const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId }) => {
                 {activeColumns.map(c => {
                   const val = (r as any)[c.id] || '';
                   let display = val || '-';
-                  if (val && (c.id === 'unpaid_balance' || c.id === 'accrued_interest' || c.id === 'total_due_to_you' || c.id === 'total_owed_by_you' || c.id === 'deferred')) {
+                  if (val && (c.id === 'unpaid_balance' || c.id === 'accrued_interest' || c.id === 'total_due_to_you' || c.id === 'total_owed_by_you')) {
                     display = `$ ${val}`;
                   } else if (val && (c.id === 'interest_rate')) {
                     display = `${val} %`;
