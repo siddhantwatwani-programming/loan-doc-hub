@@ -27,10 +27,12 @@ import { cn } from '@/lib/utils';
 
 interface Participant {
   id: string;
+  contact_id_display: string;
   name: string;
   email: string;
   phone: string;
   role: string;
+  capacity: string;
   status: string;
   contact_id: string | null;
   created_at: string;
@@ -75,15 +77,17 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'contact_id_display', label: 'ID', visible: true },
   { id: 'name', label: 'Name', visible: true },
   { id: 'email', label: 'Email', visible: true },
   { id: 'phone', label: 'Phone', visible: true },
   { id: 'role', label: 'Participant Type', visible: true },
+  { id: 'capacity', label: 'Capacity', visible: true },
   { id: 'status', label: 'Status', visible: true },
   { id: 'created_at', label: 'Added Date', visible: true },
 ];
 
-const SEARCHABLE_FIELDS = ['name', 'email', 'phone', 'role'];
+const SEARCHABLE_FIELDS = ['name', 'email', 'phone', 'role', 'contact_id_display', 'capacity'];
 
 export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProps> = ({
   dealId,
@@ -98,7 +102,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const [columns, setColumns, resetColumns] = useTableColumnConfig('participants_v1', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('participants_v2', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((c) => c.visible);
 
   const {
@@ -140,19 +144,22 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         .map((p: any) => p.contact_id)
         .filter((id: string | null): id is string => !!id);
 
-      let contactMap: Record<string, { full_name: string; email: string; phone: string }> = {};
+      let contactMap: Record<string, { full_name: string; email: string; phone: string; contact_id: string; capacity: string }> = {};
       if (contactIds.length > 0) {
         const { data: contacts } = await supabase
           .from('contacts')
-          .select('id, full_name, email, phone')
+          .select('id, full_name, email, phone, contact_id, contact_data')
           .in('id', contactIds);
 
         if (contacts) {
           for (const c of contacts) {
+            const cData = (c.contact_data || {}) as Record<string, string>;
             contactMap[c.id] = {
               full_name: c.full_name || '',
               email: c.email || '',
               phone: c.phone || '',
+              contact_id: c.contact_id || '',
+              capacity: cData['capacity'] || '',
             };
           }
         }
@@ -194,10 +201,12 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
           const contact = p.contact_id ? contactMap[p.contact_id] : null;
           return {
             id: p.id,
+            contact_id_display: contact?.contact_id || '',
             name: contact?.full_name || p.name || '',
             email: contact?.email || p.email || '',
             phone: contact?.phone || p.phone || '',
             role: p.role || '',
+            capacity: contact?.capacity || ROLE_LABELS[p.role] || p.role || '',
             status: p.status || 'invited',
             contact_id: p.contact_id,
             created_at: p.created_at,
@@ -390,6 +399,8 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
 
   const renderCellValue = (participant: Participant, columnId: string) => {
     switch (columnId) {
+      case 'contact_id_display':
+        return <span className="font-medium text-foreground">{participant.contact_id_display || '—'}</span>;
       case 'name':
         return <span className="font-medium text-foreground">{participant.name || '—'}</span>;
       case 'email':
@@ -402,6 +413,8 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             {ROLE_LABELS[participant.role] || participant.role}
           </Badge>
         );
+      case 'capacity':
+        return <span className="text-muted-foreground">{participant.capacity || '—'}</span>;
       case 'status':
         return (
           <Badge variant="secondary" className={cn('text-xs', STATUS_COLORS[participant.status] || '')}>
@@ -481,9 +494,9 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         </div>
       ) : (
         <div className="border border-border rounded-lg overflow-x-auto">
-        <Table>
+        <Table className="min-w-[1400px]">
           <TableHeader>
-            <TableRow>
+            <TableRow className="bg-muted/50">
               <TableHead className="w-[40px]">
                 <Checkbox
                   checked={isAllSelected}
@@ -494,7 +507,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
                 <SortableTableHead
                   key={col.id}
                   columnId={col.id}
-                  label={col.label}
+                  label={col.label.toUpperCase()}
                   sortColumnId={sortState.columnId}
                   sortDirection={sortState.direction}
                   onSort={toggleSort}
@@ -524,6 +537,16 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             ))}
           </TableBody>
         </Table>
+        </div>
+      )}
+
+      {/* Footer with totals */}
+      {participants.length > 0 && (
+        <div className="flex justify-end">
+          <div className="text-sm text-muted-foreground">
+            {filteredData.length !== participants.length && `Showing ${filteredData.length} of `}
+            Total Participants: {participants.length}
+          </div>
         </div>
       )}
 
