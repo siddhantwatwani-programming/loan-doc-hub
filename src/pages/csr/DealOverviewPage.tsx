@@ -122,13 +122,13 @@ export const DealOverviewPage: React.FC = () => {
       if (contactIds.length > 0) {
         const { data: contacts } = await supabase
           .from('contacts')
-          .select('id, full_name, email, phone')
+          .select('id, full_name, email, phone, contact_id')
           .in('id', contactIds);
 
         if (contacts) {
-          const contactMap: Record<string, { full_name: string; email: string; phone: string }> = {};
+          const contactMap: Record<string, { full_name: string; email: string; phone: string; contact_id: string }> = {};
           for (const c of contacts) {
-            contactMap[c.id] = { full_name: c.full_name || '', email: c.email || '', phone: c.phone || '' };
+            contactMap[c.id] = { full_name: c.full_name || '', email: c.email || '', phone: c.phone || '', contact_id: c.contact_id || '' };
           }
 
           // Update stale records silently
@@ -157,6 +157,7 @@ export const DealOverviewPage: React.FC = () => {
               name: contact?.full_name || p.name || '',
               email: contact?.email || p.email || '',
               phone: contact?.phone || p.phone || '',
+              contact_id_display: contact?.contact_id || '',
             };
           });
           setDealParticipants(synced);
@@ -761,7 +762,7 @@ export const DealOverviewPage: React.FC = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <span className="text-sm font-medium text-foreground truncate">{p.name || 'Unnamed'}</span>
+                          <span className="text-sm font-medium text-foreground truncate">{p.name ? (p.contact_id_display ? `${p.name} - ${p.contact_id_display}` : p.name) : 'Unnamed'}</span>
                         </div>
                         {(p.email || p.phone) && (
                           <p className="text-xs text-muted-foreground ml-5.5 truncate">
