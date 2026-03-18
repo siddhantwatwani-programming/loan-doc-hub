@@ -38,12 +38,13 @@ interface ContactResult {
   contact_type: string;
 }
 
-type ParticipantType = 'borrower' | 'lender' | 'broker';
+type ParticipantType = 'borrower' | 'lender' | 'broker' | 'other';
 
 const PARTICIPANT_TYPES = [
   { value: 'borrower', label: 'Borrower' },
   { value: 'lender', label: 'Lender' },
   { value: 'broker', label: 'Broker' },
+  { value: 'other', label: 'Other' },
 ];
 
 export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
