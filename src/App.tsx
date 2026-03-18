@@ -73,8 +73,11 @@ const App = () => (
                   {/* Contacts */}
                   <Route path="/contacts" element={<ComingSoonPage />} />
                   <Route path="/contacts/lenders" element={<ContactLendersPage />} />
+                  <Route path="/contacts/lenders/:contactId" element={<ContactLendersPage />} />
                   <Route path="/contacts/borrowers" element={<ContactBorrowersPage />} />
+                  <Route path="/contacts/borrowers/:contactId" element={<ContactBorrowersPage />} />
                   <Route path="/contacts/brokers" element={<ContactBrokersPage />} />
+                  <Route path="/contacts/brokers/:contactId" element={<ContactBrokersPage />} />
                   <Route path="/contacts/others/vendors" element={<ComingSoonPage />} />
                   <Route path="/contacts/others/tax-authority" element={<ComingSoonPage />} />
                   <Route path="/contacts/others/insurance-company" element={<ComingSoonPage />} />
