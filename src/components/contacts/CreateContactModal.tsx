@@ -216,7 +216,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                   <Label className="w-[100px] shrink-0 text-xs">Tax ID Type</Label>
                   <Select value={form['tax_id_type'] || ''} onValueChange={(v) => set('tax_id_type', v)}>
                     <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-background border border-border z-[200]">
                       {TAX_ID_TYPE_OPTIONS.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                       ))}
