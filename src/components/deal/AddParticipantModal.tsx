@@ -227,9 +227,8 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
       // Navigate to contact detail page
       if (contactId) {
         const route = participantType === 'lender' ? 'lenders' : participantType === 'broker' ? 'brokers' : 'borrowers';
-        // Use window to avoid navigation issues in modal close
         setTimeout(() => {
-          window.location.href = `/contacts/${route}/${contactId}`;
+          navigate(`/contacts/${route}/${contactId}`);
         }, 300);
       }
     } catch (err: any) {
