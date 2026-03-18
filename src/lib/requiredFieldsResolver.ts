@@ -55,6 +55,7 @@ export const SECTION_ORDER: FieldSection[] = [
   'escrow',
   'origination_fees',
   'insurance',
+  'liens',
   'notes',
   'seller',
 ];
