@@ -110,7 +110,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
     toggleOne,
     toggleAll,
     clearSelection,
-  } = useGridSelection(filteredData.map((p) => p.id));
+  } = useGridSelection(filteredData);
 
   const fetchParticipants = useCallback(async () => {
     if (!dealId) return;
