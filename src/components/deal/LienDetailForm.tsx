@@ -119,6 +119,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
 
   // Handle loan type radio change — clear all, set selected
   const handleLoanTypeChange = (value: string) => {
+    onChange('loanType', value);
     onChange('anticipated', value === 'anticipated' ? 'true' : 'false');
     onChange('existingRemain', value === 'existing_remain' ? 'true' : 'false');
     onChange('existingPaydown', value === 'existing_paydown' ? 'true' : 'false');

@@ -171,7 +171,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
       <Label className="w-[100px] shrink-0 text-xs">{label}</Label>
       <Select value={form[key] || ''} onValueChange={(v) => set(key, v)}>
         <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-background border border-border z-[200]">
           {options.map((opt) => (
             <SelectItem key={opt} value={opt}>{opt}</SelectItem>
           ))}
