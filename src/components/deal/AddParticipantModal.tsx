@@ -96,10 +96,16 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
       setSearching(true);
       try {
         const q = searchQuery.trim();
-        const { data, error } = await supabase
+        let query = supabase
           .from('contacts')
-          .select('id, contact_id, full_name, email, phone, contact_type')
-          .eq('contact_type', participantType)
+          .select('id, contact_id, full_name, email, phone, contact_type');
+        
+        // For 'other' type, search all contacts; otherwise filter by matching type
+        if (participantType !== 'other') {
+          query = query.eq('contact_type', participantType);
+        }
+        
+        const { data, error } = await query
           .or(`full_name.ilike.%${q}%,email.ilike.%${q}%,contact_id.ilike.%${q}%`)
           .limit(10);
 
