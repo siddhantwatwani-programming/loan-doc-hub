@@ -1,5 +1,6 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
+import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -199,7 +200,7 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
               </div>
               <div className="flex items-center gap-2">
                 <Label className="w-[80px] text-sm shrink-0">ZIP</Label>
-                <Input value={v(otherKeys.zip)} onChange={(e) => sv(otherKeys.zip, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+                <ZipInput value={v(otherKeys.zip)} onValueChange={(val) => sv(otherKeys.zip, val)} disabled={disabled} className="h-7 text-sm" />
               </div>
               <div className="flex items-center gap-2">
                 <Label className="w-[80px] text-sm shrink-0">Phone</Label>
@@ -228,7 +229,12 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             {renderTextField('Street', FK.escrow_street)}
             {renderTextField('City', FK.escrow_city)}
             {renderTextField('State', FK.escrow_state)}
-            {renderTextField('ZIP', FK.escrow_zip)}
+            <DirtyFieldWrapper fieldKey={FK.escrow_zip}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] text-sm shrink-0">ZIP</Label>
+                <ZipInput value={v(FK.escrow_zip)} onValueChange={(val) => sv(FK.escrow_zip, val)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+            </DirtyFieldWrapper>
             {renderTextField('Escrow Officer Name', FK.escrow_officer)}
             {renderTextField('Escrow Contact', FK.escrow_contact)}
             {renderTextField('Escrow Telephone', FK.escrow_telephone)}
@@ -245,7 +251,12 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             {renderTextField('Street', FK.title_street)}
             {renderTextField('City', FK.title_city)}
             {renderTextField('State', FK.title_state)}
-            {renderTextField('ZIP', FK.title_zip)}
+            <DirtyFieldWrapper fieldKey={FK.title_zip}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] text-sm shrink-0">ZIP</Label>
+                <ZipInput value={v(FK.title_zip)} onValueChange={(val) => sv(FK.title_zip, val)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+            </DirtyFieldWrapper>
             {renderTextField('Title Officer Name', FK.title_officer)}
             {renderTextField('Title Contact', FK.title_contact)}
             {renderTextField('Title Telephone', FK.title_telephone)}
@@ -284,7 +295,12 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             {renderTextField('Street', FK.trustee_street)}
             {renderTextField('City', FK.trustee_city)}
             {renderTextField('State', FK.trustee_state)}
-            {renderTextField('ZIP', FK.trustee_zip)}
+            <DirtyFieldWrapper fieldKey={FK.trustee_zip}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] text-sm shrink-0">ZIP</Label>
+                <ZipInput value={v(FK.trustee_zip)} onValueChange={(val) => sv(FK.trustee_zip, val)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+            </DirtyFieldWrapper>
             {renderTextField('Escrow Officer Name', FK.trustee_officer)}
             {renderTextField('Escrow Contact', FK.trustee_contact)}
             {renderTextField('Telephone', FK.trustee_telephone)}
