@@ -428,10 +428,9 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
                   </div>
                   <div>
                     <Label className="text-sm">Email</Label>
-                    <Input
-                      type="email"
+                    <EmailInput
                       value={newEmail}
-                      onChange={(e) => setNewEmail(e.target.value)}
+                      onValueChange={(v) => setNewEmail(v)}
                       placeholder="email@example.com"
                     />
                   </div>

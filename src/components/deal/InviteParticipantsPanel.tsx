@@ -841,11 +841,9 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
               {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
+                <EmailInput
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onValueChange={(v) => setEmail(v)}
                   placeholder="participant@example.com"
                 />
               </div>
