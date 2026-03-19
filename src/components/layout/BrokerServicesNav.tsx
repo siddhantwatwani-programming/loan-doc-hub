@@ -89,7 +89,10 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
   const [internalOpen, setInternalOpen] = React.useState(false);
   const openParent = isOpen !== undefined ? isOpen : internalOpen;
   const handleOpenChange = onOpenChange || setInternalOpen;
-  const [openChildren, setOpenChildren] = React.useState<string[]>([]);
+  const [openChildren, setOpenChildren] = React.useState<string[]>(() => {
+    if (location.pathname === '/deals') return ['Loan Documents Processing'];
+    return [];
+  });
   // Track which section the user last navigated from (for shared paths like /deals)
   // Default to 'Loan Documents Processing' for /deals so only that section highlights
   const [activeSection, setActiveSection] = React.useState<string | null>(() => {
@@ -98,6 +101,16 @@ export const BrokerServicesNav: React.FC<BrokerServicesNavProps> = ({ isCollapse
     }
     return null;
   });
+
+  // Auto-expand when navigating to /deals (e.g. from top nav "All Loan Documents")
+  React.useEffect(() => {
+    if (location.pathname === '/deals') {
+      setActiveSection('Loan Documents Processing');
+      setOpenChildren(prev => prev.includes('Loan Documents Processing') ? prev : [...prev, 'Loan Documents Processing']);
+      // Also ensure parent is open
+      if (!openParent) handleOpenChange(true);
+    }
+  }, [location.pathname]);
 
   const collapseAll = () => {
     setOpenChildren([]);
