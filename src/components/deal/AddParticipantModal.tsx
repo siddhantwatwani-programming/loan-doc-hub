@@ -49,6 +49,15 @@ const PARTICIPANT_TYPES = [
   { value: 'other', label: 'Other', disabled: true },
 ];
 
+const CAPACITY_OPTIONS: Record<string, string[]> = {
+  borrower: [
+    'Borrower', 'Co-borrower', 'Trustee', 'Co-Trustee',
+    'Managing Member', 'Authorized Signer', 'Additional Guarantor',
+  ],
+  lender: ['Broker', 'Primary Lender', 'Authorized Party'],
+  broker: ['Broker'],
+};
+
 export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
   open,
   onOpenChange,
@@ -61,6 +70,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
   const [participantType, setParticipantType] = useState<ParticipantType | ''>('');
   const [mode, setMode] = useState<'existing' | 'new'>('existing');
   const [saving, setSaving] = useState(false);
+  const [capacity, setCapacity] = useState('');
 
   // Existing contact search
   const [searchQuery, setSearchQuery] = useState('');
