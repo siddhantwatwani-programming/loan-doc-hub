@@ -728,10 +728,7 @@ export const TemplateManagementPage: React.FC = () => {
   };
 
   const filteredTemplates = templates.filter(
-    (t) =>
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.product_type.toLowerCase().includes(searchQuery.toLowerCase())
+    (t) => t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
@@ -921,16 +918,6 @@ export const TemplateManagementPage: React.FC = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">State</p>
-                  <p className="font-medium text-foreground">{previewTemplate.state}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Product Type</p>
-                  <p className="font-medium text-foreground">{previewTemplate.product_type}</p>
-                </div>
-              </div>
 
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Status</p>
@@ -1223,8 +1210,6 @@ export const TemplateManagementPage: React.FC = () => {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Name</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">State</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Product</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Version</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Files</th>
@@ -1235,8 +1220,6 @@ export const TemplateManagementPage: React.FC = () => {
                 {filteredTemplates.map((template) => (
                   <tr key={template.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
                     <td className="py-4 px-4 font-medium text-foreground">{template.name}</td>
-                    <td className="py-4 px-4 text-foreground">{template.state}</td>
-                    <td className="py-4 px-4 text-foreground">{template.product_type}</td>
                     <td className="py-4 px-4 text-muted-foreground">v{template.version}</td>
                     <td className="py-4 px-4">
                       <button

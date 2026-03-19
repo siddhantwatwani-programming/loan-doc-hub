@@ -169,19 +169,10 @@ export const PacketManagementPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.product_type) {
+    if (!formData.name) {
       toast({
         title: 'Validation error',
-        description: 'Please fill in all required fields',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!formData.all_states && formData.states.length === 0) {
-      toast({
-        title: 'Validation error',
-        description: 'Please select at least one state or check "All States"',
+        description: 'Please fill in the packet name',
         variant: 'destructive',
       });
       return;
@@ -189,35 +180,26 @@ export const PacketManagementPage: React.FC = () => {
 
     setSaving(true);
     try {
-      // Use first selected state as the legacy `state` field for backward compat
-      const legacyState = formData.all_states ? 'ALL' : (formData.states[0] || 'TBD');
+      const payload = {
+        name: formData.name,
+        state: 'TBD',
+        product_type: 'TBD',
+        description: formData.description || null,
+        is_active: formData.is_active,
+        all_states: false,
+        states: [] as string[],
+      };
 
       if (editingPacket) {
         const { error } = await supabase
           .from('packets')
-          .update({
-            name: formData.name,
-            state: legacyState,
-            product_type: formData.product_type,
-            description: formData.description || null,
-            is_active: formData.is_active,
-            all_states: formData.all_states,
-            states: formData.all_states ? [] : formData.states,
-          })
+          .update(payload)
           .eq('id', editingPacket.id);
 
         if (error) throw error;
         toast({ title: 'Packet updated successfully' });
       } else {
-        const { error } = await supabase.from('packets').insert({
-          name: formData.name,
-          state: legacyState,
-          product_type: formData.product_type,
-          description: formData.description || null,
-          is_active: formData.is_active,
-          all_states: formData.all_states,
-          states: formData.all_states ? [] : formData.states,
-        });
+        const { error } = await supabase.from('packets').insert(payload);
 
         if (error) throw error;
         toast({ title: 'Packet created successfully' });
@@ -346,10 +328,7 @@ export const PacketManagementPage: React.FC = () => {
   };
 
   const filteredPackets = packets.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.all_states ? 'all states' : (p.states || []).join(', ')).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.product_type.toLowerCase().includes(searchQuery.toLowerCase())
+    (p) => p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredStates = US_STATES.filter((s) =>
@@ -411,85 +390,6 @@ export const PacketManagementPage: React.FC = () => {
                   placeholder="e.g., CA Conventional Package"
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Product Type *</Label>
-                <Select
-                  value={formData.product_type}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, product_type: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRODUCT_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* All States Checkbox */}
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="all-states"
-                  checked={formData.all_states}
-                  onCheckedChange={(checked) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      all_states: !!checked,
-                      states: checked ? [] : prev.states,
-                    }))
-                  }
-                />
-                <Label htmlFor="all-states" className="cursor-pointer">All States</Label>
-              </div>
-
-              {/* Multi-select States */}
-              {!formData.all_states && (
-                <div className="space-y-2">
-                  <Label>States *</Label>
-                  {formData.states.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {formData.states.map((s) => (
-                        <Badge key={s} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleStateSelection(s)}>
-                          {s}
-                          <X className="h-3 w-3" />
-                        </Badge>
-                      ))}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs text-muted-foreground"
-                        onClick={() => setFormData((prev) => ({ ...prev, states: [] }))}
-                      >
-                        Clear all
-                      </Button>
-                    </div>
-                  )}
-                  <Input
-                    placeholder="Search states..."
-                    value={stateSearchQuery}
-                    onChange={(e) => setStateSearchQuery(e.target.value)}
-                    className="mb-1"
-                  />
-                  <ScrollArea className="h-36 rounded-md border border-border p-2">
-                    <div className="space-y-1">
-                      {filteredStates.map((state) => (
-                        <label
-                          key={state}
-                          className="flex items-center gap-2 py-1 px-1 rounded hover:bg-muted/50 cursor-pointer select-none"
-                        >
-                          <Checkbox
-                            checked={formData.states.includes(state)}
-                            onCheckedChange={() => toggleStateSelection(state)}
-                          />
-                          <span className="text-sm">{state}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </div>
-              )}
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
@@ -610,9 +510,6 @@ export const PacketManagementPage: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">{packet.name}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {getStatesDisplay(packet)} • {packet.product_type}
-                    </p>
                   </div>
                 </div>
                 <DropdownMenu>
