@@ -103,6 +103,30 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_log_types: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          label: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          label: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          label?: string
+        }
+        Relationships: []
+      }
       deal_assignments: {
         Row: {
           assigned_at: string
