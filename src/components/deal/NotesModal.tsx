@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { format, parse } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 import { StickyNote, Paperclip, X, CalendarIcon } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -57,13 +58,33 @@ const getEmptyNote = (defaultAccount: string, defaultName: string): NoteData => 
   };
 };
 
-const NOTE_TYPES = ['Conversation Log', 'Attorney / Client', 'Internal'];
+const NOTE_TYPES_FALLBACK = ['Conversation Log', 'Attorney / Client', 'Internal'];
 
 export const NotesModal: React.FC<NotesModalProps> = ({
   open, onOpenChange, note, onSave, isEdit = false, defaultAccount = '', defaultName = '',
 }) => {
   const [formData, setFormData] = useState<NoteData>(getEmptyNote(defaultAccount, defaultName));
+  const [noteTypes, setNoteTypes] = useState<string[]>([]);
+  const [typesLoading, setTypesLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setTypesLoading(true);
+    supabase
+      .from('conversation_log_types')
+      .select('label')
+      .eq('is_active', true)
+      .order('display_order')
+      .then(({ data, error }) => {
+        if (error || !data?.length) {
+          setNoteTypes(NOTE_TYPES_FALLBACK);
+        } else {
+          setNoteTypes(data.map((r: any) => r.label));
+        }
+        setTypesLoading(false);
+      });
+  }, [open]);
 
   useEffect(() => {
     if (open) setFormData(note ? { ...note, attachments: note.attachments || [], asOfDate: note.asOfDate || '' } : getEmptyNote(defaultAccount, defaultName));
@@ -256,9 +277,11 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                   <SelectValue placeholder="Select type..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {NOTE_TYPES.map(t => (
+                  {noteTypes.length > 0 ? noteTypes.map(t => (
                     <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
-                  ))}
+                  )) : (
+                    <SelectItem value="__none__" disabled className="text-xs text-muted-foreground">No options available</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
