@@ -24,6 +24,36 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+/* Small self-closing date picker used in the Add Charge dialog */
+const DateFieldPicker: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const parsed = value ? new Date(value) : undefined;
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className={cn("w-full h-8 text-xs justify-start font-normal", !value && "text-muted-foreground")}>
+          <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+          {value || 'MM/DD/YYYY'}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={parsed}
+          onSelect={(date) => {
+            onChange(date ? format(date, 'MM/dd/yyyy') : '');
+            setOpen(false);
+          }}
+          initialFocus
+          className={cn("p-3 pointer-events-auto")}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 interface ChargeRow {
   id: string;
