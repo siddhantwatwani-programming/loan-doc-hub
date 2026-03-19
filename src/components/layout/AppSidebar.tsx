@@ -244,10 +244,10 @@ export const AppSidebar: React.FC = () => {
       {/* Nav panel - collapses width */}
       <aside 
         className={cn(
-          "fixed left-0 h-full bg-sidebar flex flex-col z-50 transition-all duration-300",
+          "fixed left-0 bg-sidebar flex flex-col z-50 transition-all duration-300",
           isCollapsed ? "w-16" : "w-64"
         )}
-        style={{ top: `${topHeightPx}px` }}
+        style={{ top: `${topHeightPx}px`, height: `calc(100vh - ${topHeightPx}px)` }}
       >
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto sidebar-scrollbar">
           <TooltipProvider delayDuration={0}>
