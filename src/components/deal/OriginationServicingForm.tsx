@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
