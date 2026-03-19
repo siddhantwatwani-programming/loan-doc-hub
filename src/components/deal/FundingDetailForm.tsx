@@ -50,29 +50,34 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
     onChange({ ...data, interestFrom: date ? format(date, 'yyyy-MM-dd') : '' });
   }, [data, onChange]);
 
-  // Auto-compute Percent Owned = Funding Amount / Loan Amount * 100, capped at 100
+  // Auto-compute Percent Owned = Funding Amount / Loan Amount * 100 (no cap – show error)
   React.useEffect(() => {
     const fa = parseFloat(data.fundingAmount) || 0;
     const la = parseFloat(loanAmount) || 0;
     if (la > 0 && fa > 0) {
-      const raw = fa / la * 100;
-      const capped = Math.min(raw, 100);
-      const computed = capped.toFixed(3);
+      const computed = (fa / la * 100).toFixed(3);
       if (computed !== data.percentOwned) {
         onChange({ ...data, percentOwned: computed });
       }
     }
   }, [data.fundingAmount, loanAmount]);
 
-  // Regular Payment = Total Loan Monthly Payment × (Percent Owned / 100)
+  // Regular Payment = Loan Amount × Rate / 12 (always based on TOTAL LOAN)
   React.useEffect(() => {
-    const tp = parseFloat(totalPayment) || 0;
-    const pct = parseFloat(data.percentOwned) || 0;
-    const lenderPayment = pct > 0 && tp > 0 ? (tp * pct / 100).toFixed(2) : '';
-    if (lenderPayment !== data.regularPayment) {
-      onChange({ ...data, regularPayment: lenderPayment });
+    const la = parseFloat(loanAmount) || 0;
+    let rate = 0;
+    if (data.rateSelection === 'note_rate') rate = parseFloat(data.rateNoteValue || '') || 0;
+    else if (data.rateSelection === 'sold_rate') rate = parseFloat(data.rateSoldValue || '') || 0;
+    else if (data.rateSelection === 'lender_rate') rate = parseFloat(data.rateLenderValue || '') || 0;
+
+    const payment = la > 0 && rate > 0 ? (la * (rate / 100) / 12).toFixed(2) : '';
+    if (payment !== data.regularPayment) {
+      onChange({ ...data, regularPayment: payment });
     }
-  }, [totalPayment, data.percentOwned]);
+  }, [loanAmount, data.rateSelection, data.rateNoteValue, data.rateSoldValue, data.rateLenderValue]);
+
+  const percentOwnedNum = parseFloat(data.percentOwned) || 0;
+  const percentOwnedError = percentOwnedNum > 100;
 
 
   return (
