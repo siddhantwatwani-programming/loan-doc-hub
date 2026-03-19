@@ -728,10 +728,7 @@ export const TemplateManagementPage: React.FC = () => {
   };
 
   const filteredTemplates = templates.filter(
-    (t) =>
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.product_type.toLowerCase().includes(searchQuery.toLowerCase())
+    (t) => t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
