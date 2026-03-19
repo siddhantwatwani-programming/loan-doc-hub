@@ -112,7 +112,10 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
               {renderInlineField('paymentMailingStreet', 'Street')}
               {renderInlineField('paymentMailingCity', 'City')}
               {renderInlineField('paymentMailingState', 'State')}
-              {renderInlineField('paymentMailingZip', 'ZIP')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP</Label>
+                <ZipInput value={String(formData.paymentMailingZip || '')} onValueChange={(v) => handleChange('paymentMailingZip', v)} className="h-7 text-xs" />
+              </div>
 
               <div className="flex items-center gap-2 pt-1">
                 <Checkbox id="modal-insurance-active" checked={formData.active} onCheckedChange={(checked) => handleChange('active', !!checked)} className="h-3.5 w-3.5" />
