@@ -63,8 +63,8 @@ const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave }
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="0">0 - Unknown</SelectItem>
-              <SelectItem value="2">2 - EIN</SelectItem>
-              <SelectItem value="3">3 - SSN</SelectItem>
+              <SelectItem value="1">1 - EIN</SelectItem>
+              <SelectItem value="2">2 - SSN</SelectItem>
             </SelectContent>
           </Select>
         </div>
