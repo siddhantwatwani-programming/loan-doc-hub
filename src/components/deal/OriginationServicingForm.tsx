@@ -83,7 +83,12 @@ export const OriginationServicingForm: React.FC<OriginationServicingFormProps> =
       {renderTextField('Street', keys.street, extraDisabled)}
       {renderTextField('City', keys.city, extraDisabled)}
       {renderTextField('State', keys.state, extraDisabled)}
-      {renderTextField('ZIP', keys.zip, extraDisabled)}
+      <DirtyFieldWrapper fieldKey={keys.zip}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[80px] text-sm shrink-0">ZIP</Label>
+          <ZipInput value={v(keys.zip)} onValueChange={(val) => sv(keys.zip, val)} disabled={disabled || extraDisabled} className="h-7 text-sm" />
+        </div>
+      </DirtyFieldWrapper>
       {renderTextField('Phone', keys.phone, extraDisabled)}
       {renderTextField('Email', keys.email, extraDisabled)}
     </div>
