@@ -114,7 +114,10 @@ export const BrokerModal: React.FC<BrokerModalProps> = ({ open, onOpenChange, br
                 </SelectContent>
               </Select>
             </div>
-            {renderInlineField('zip', 'ZIP Code')}
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP Code</Label>
+              <ZipInput value={formData.zip} onValueChange={(v) => handleFieldChange('zip', v)} className="h-7 text-xs" />
+            </div>
             {renderInlineField('phoneWork', 'Work Phone', { type: 'tel' })}
             {renderInlineField('phoneCell', 'Cell Phone', { type: 'tel' })}
           </div>

@@ -135,7 +135,10 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
               {renderInlineField('street', 'Street')}
-              {renderInlineField('zip', 'Zip')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Zip</Label>
+                <ZipInput value={String(formData.zip || '')} onValueChange={(v) => handleChange('zip', v)} className="h-7 text-xs" />
+              </div>
             </div>
 
             {/* Tax ID Type dropdown - same width as Street (half row) */}

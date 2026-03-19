@@ -184,7 +184,10 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
               {renderInlineField('mailingStreet', 'Street', { disabled: formData.mailingSameAsPrimary })}
               {renderInlineField('mailingCity', 'City', { disabled: formData.mailingSameAsPrimary })}
               {renderInlineSelect('mailingState', 'State', STATE_OPTIONS, 'State')}
-              {renderInlineField('mailingZip', 'ZIP', { disabled: formData.mailingSameAsPrimary })}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+                <ZipInput value={String(formData.mailingZip || '')} onValueChange={(v) => handleFieldChange('mailingZip', v)} disabled={formData.mailingSameAsPrimary} className="h-7 text-xs" />
+              </div>
 
               {/* Delivery Options & Send - stacked layout */}
               <div className="pt-2 space-y-2">
