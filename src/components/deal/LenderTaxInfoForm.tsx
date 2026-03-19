@@ -202,11 +202,11 @@ export const LenderTaxInfoForm: React.FC<LenderTaxInfoFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.zip}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">ZIP</Label>
-              <Input
+              <ZipInput
                 value={getValue('zip')}
-                onChange={(e) => handleChange('zip', e.target.value)}
+                onValueChange={(v) => handleChange('zip', v)}
                 disabled={disabled}
-                className="h-7 text-sm flex-1"
+                className="h-7 text-sm"
               />
             </div>
           </DirtyFieldWrapper>

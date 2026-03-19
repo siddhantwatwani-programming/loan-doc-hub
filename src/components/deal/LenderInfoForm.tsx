@@ -3,6 +3,7 @@ import { format, parse } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
+import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
