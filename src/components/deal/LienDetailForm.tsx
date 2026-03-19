@@ -73,6 +73,8 @@ const getLoanTypeRadio = (lien: LienData): string => {
   if (lien.existingRemain === 'true') return 'existing_remain';
   if (lien.existingPaydown === 'true') return 'existing_paydown';
   if (lien.existingPayoff === 'true') return 'existing_payoff';
+  // Fallback: use the persisted loanType string if booleans aren't set
+  if (lien.loanType && lien.loanType !== '') return lien.loanType;
   return '';
 };
 
@@ -117,8 +119,9 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
     onChange,
   ]);
 
-  // Handle loan type radio change — clear all, set selected
+  // Handle loan type radio change — clear all, set selected, also persist the string value
   const handleLoanTypeChange = (value: string) => {
+    onChange('loanType', value);
     onChange('anticipated', value === 'anticipated' ? 'true' : 'false');
     onChange('existingRemain', value === 'existing_remain' ? 'true' : 'false');
     onChange('existingPaydown', value === 'existing_paydown' ? 'true' : 'false');
