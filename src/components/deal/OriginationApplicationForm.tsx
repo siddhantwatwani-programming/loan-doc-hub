@@ -233,7 +233,12 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
           {renderDatePicker('Employed Since', FIELD_KEYS.employed_since)}
           {renderTextField('Contact', FIELD_KEYS.contact)}
           {renderTextField('Phone', FIELD_KEYS.phone)}
-          {renderTextField('Email', FIELD_KEYS.email)}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.email}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[140px] text-sm shrink-0">Email</Label>
+              <EmailInput value={getValue(FIELD_KEYS.email)} onValueChange={(val) => setValue(FIELD_KEYS.email, val)} disabled={disabled} className="h-7 text-sm" />
+            </div>
+          </DirtyFieldWrapper>
           <div className="pt-1 space-y-2">
             {renderCheckboxField('Filed for Bankruptcy (12 Months)', FIELD_KEYS.filed_bankruptcy)}
             {renderCheckboxField('Discharged?', FIELD_KEYS.discharged)}
