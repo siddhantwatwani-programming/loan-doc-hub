@@ -235,16 +235,16 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <Label className="w-[100px] shrink-0 text-xs text-foreground">Year Built</Label>
-                  <Popover>
+                  <Popover open={yearBuiltOpen} onOpenChange={setYearBuiltOpen}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !formData.yearBuilt && 'text-muted-foreground')}>
                         {formData.yearBuilt ? format(parseDate(formData.yearBuilt)!, 'MM/dd/yyyy') : 'Date'}
                         <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 z-[200]" align="start">
                       <Calendar mode="single" selected={parseDate(formData.yearBuilt || '')}
-                        onSelect={(date) => date && handleFieldChange('yearBuilt', format(date, 'yyyy-MM-dd'))}
+                        onSelect={(date) => { if (date) { handleFieldChange('yearBuilt', format(date, 'yyyy-MM-dd')); setYearBuiltOpen(false); } }}
                         initialFocus className="p-3 pointer-events-auto" />
                     </PopoverContent>
                   </Popover>
