@@ -169,19 +169,10 @@ export const PacketManagementPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.product_type) {
+    if (!formData.name) {
       toast({
         title: 'Validation error',
-        description: 'Please fill in all required fields',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!formData.all_states && formData.states.length === 0) {
-      toast({
-        title: 'Validation error',
-        description: 'Please select at least one state or check "All States"',
+        description: 'Please fill in the packet name',
         variant: 'destructive',
       });
       return;
