@@ -84,6 +84,7 @@ const getEmptyProperty = (): PropertyData => ({
 export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange, property, onSave, isEdit = false }) => {
   const [formData, setFormData] = useState<PropertyData>(getEmptyProperty());
   const [activeTab, setActiveTab] = useState('general');
+  const [yearBuiltOpen, setYearBuiltOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
