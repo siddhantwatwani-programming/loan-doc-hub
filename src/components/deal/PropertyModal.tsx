@@ -115,21 +115,26 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
     </div>
   );
 
-  const renderInlineSelect = (field: keyof PropertyData, label: string, options: string[] | { value: string; label: string }[], placeholder: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
-      <Select value={String(formData[field] || '')} onValueChange={(val) => handleFieldChange(field, val)}>
-        <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder={placeholder} /></SelectTrigger>
-        <SelectContent className="bg-background border border-border z-50 max-h-60">
-          {options.map(opt => {
-            const v = typeof opt === 'string' ? opt : opt.value;
-            const l = typeof opt === 'string' ? opt : opt.label;
-            return <SelectItem key={v} value={v}>{l}</SelectItem>;
-          })}
-        </SelectContent>
-      </Select>
-    </div>
-  );
+  const renderInlineSelect = (field: keyof PropertyData, label: string, options: string[] | { value: string; label: string }[], placeholder: string) => {
+    const rawVal = String(formData[field] || '');
+    const selectVal = rawVal === '' ? '__none__' : rawVal;
+    return (
+      <div className="flex items-center gap-2">
+        <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+        <Select value={selectVal} onValueChange={(val) => handleFieldChange(field, val)}>
+          <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder={placeholder} /></SelectTrigger>
+          <SelectContent className="bg-background border border-border z-[200] max-h-60">
+            <SelectItem value="__none__">{placeholder}</SelectItem>
+            {options.map(opt => {
+              const v = typeof opt === 'string' ? opt : opt.value;
+              const l = typeof opt === 'string' ? opt : opt.label;
+              return <SelectItem key={v} value={v}>{l}</SelectItem>;
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+    );
+  };
 
   const renderCurrencyField = (field: keyof PropertyData, label: string) => (
     <div className="flex items-center gap-2">
