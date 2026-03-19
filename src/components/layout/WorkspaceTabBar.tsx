@@ -15,7 +15,9 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
   const { openFiles, activeFileId, switchToFile, isFileDirty } = useWorkspace();
   const { isCollapsed } = useSidebar();
 
-  const isAllDocsActive = location.pathname === '/deals';
+  // "All Loan Documents" is active only when no file tab is selected
+  // This ensures file tabs remain active when clicking left nav items
+  const isAllDocsActive = !activeFileId || activeFileId === '';
 
   const handleAllDocsClick = () => {
     switchToFile('');
@@ -54,7 +56,7 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
 
           {/* File tabs */}
           {openFiles.map(file => {
-            const isActive = activeFileId === file.id && !isAllDocsActive;
+            const isActive = activeFileId === file.id;
             const isDirty = isFileDirty(file.id);
 
             return (
