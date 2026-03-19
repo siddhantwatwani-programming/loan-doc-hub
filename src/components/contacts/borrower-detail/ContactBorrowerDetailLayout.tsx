@@ -25,6 +25,7 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
   onSave,
 }) => {
   const [activeSection, setActiveSection] = useState<ContactBorrowerSubSection>('primary');
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const NON_BORROWER_PREFIXES = ['ach.', 'coborrower.', 'borrower.guarantor.', 'borrower.authorized_party.', 'borrower.1098.'];
 
   const [values, setValues] = useState<Record<string, string>>(() => {
