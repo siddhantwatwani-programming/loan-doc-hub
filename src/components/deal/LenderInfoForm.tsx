@@ -1,5 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { format, parse } from 'date-fns';
+import { format, parse, isValid } from 'date-fns';
+
+const safeParseDateStr = (val: string): Date | undefined => {
+  if (!val) return undefined;
+  try {
+    const d = parse(val, 'yyyy-MM-dd', new Date());
+    return isValid(d) ? d : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const safeFormatDate = (val: string, fmt: string = 'MM/dd/yyyy'): string | undefined => {
+  const d = safeParseDateStr(val);
+  return d ? format(d, fmt) : undefined;
+};
 import { CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
