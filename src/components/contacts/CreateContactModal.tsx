@@ -10,6 +10,13 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface CreateContactModalProps {
   open: boolean;
@@ -209,7 +216,26 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {renderInline('Last', 'last_name')}
               {renderSelect('Capacity', 'capacity', LENDER_CAPACITY_OPTIONS)}
               {renderInline('Email', 'email', 'email')}
-              {renderInline('DOB', 'dob', 'date')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">DOB</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("h-7 text-xs flex-1 justify-start font-normal", !form['dob'] && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                      {form['dob'] || 'MM/DD/YYYY'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-[200]" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={form['dob'] ? new Date(form['dob']) : undefined}
+                      onSelect={(date) => set('dob', date ? format(date, 'MM/dd/yyyy') : '')}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
               <div className="pt-2 space-y-1">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Tax Info</h3>
                 <div className="flex items-center gap-2">
@@ -376,7 +402,17 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
             {/* Column 4: Tax Info */}
             <div className="space-y-1.5">
               <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Tax Info</h3>
-              {renderInline('Tax ID Type', 'tax_id_type')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Tax ID Type</Label>
+                <Select value={form['tax_id_type'] || ''} onValueChange={(v) => set('tax_id_type', v)}>
+                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-[200]">
+                    {TAX_ID_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               {renderInline('TIN', 'tax_id')}
               {renderCheckbox('TIN Verified', 'tin_verified')}
             </div>
