@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
+import { SaveConfirmationDialog } from '@/components/workspace/SaveConfirmationDialog';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logContactEvent, type ContactFieldChange } from '@/hooks/useContactEventJournal';
