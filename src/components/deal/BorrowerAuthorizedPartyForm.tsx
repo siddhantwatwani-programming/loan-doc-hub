@@ -1,5 +1,6 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
@@ -93,7 +94,12 @@ export const BorrowerAuthorizedPartyForm: React.FC<BorrowerAuthorizedPartyFormPr
               </SelectContent>
             </Select>
           </div>
-          {renderInlineField('email', 'Email', 'email')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.email}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs text-muted-foreground">Email</Label>
+              <EmailInput value={getValue('email')} onValueChange={(v) => handleChange('email', v)} disabled={disabled} className="h-7 text-xs" />
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
         {/* Column 2: Address */}

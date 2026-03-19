@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -107,7 +108,7 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
           <Label>Email</Label>
-          <Input value={form.email} onChange={(e) => set('email', e.target.value)} />
+          <EmailInput value={form.email} onValueChange={(v) => set('email', v)} />
         </div>
         <div>
           <Label>Home Phone</Label>

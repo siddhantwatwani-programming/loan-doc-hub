@@ -5,6 +5,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -92,7 +93,10 @@ export const BrokerModal: React.FC<BrokerModalProps> = ({ open, onOpenChange, br
             {renderInlineField('firstName', 'First Name')}
             {renderInlineField('middleName', 'Middle Name')}
             {renderInlineField('lastName', 'Last Name')}
-            {renderInlineField('email', 'Email', { type: 'email' })}
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">Email</Label>
+              <EmailInput value={String(formData.email || '')} onValueChange={(v) => handleFieldChange('email', v)} className="h-7 text-xs" />
+            </div>
           </div>
 
           {/* Right Column */}

@@ -4,6 +4,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -119,7 +120,10 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
             </div>
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-              {renderInlineField('email', 'Email', { type: 'email' })}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Email</Label>
+                <EmailInput value={String(formData.email || '')} onValueChange={(v) => handleChange('email', v)} className={`h-7 text-xs ${errors.email ? 'border-destructive' : ''}`} />
+              </div>
               {renderInlineField('phone', 'Phone', { type: 'tel' })}
             </div>
 

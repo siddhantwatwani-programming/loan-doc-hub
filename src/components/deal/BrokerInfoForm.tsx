@@ -1,5 +1,6 @@
 import React, { useMemo, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -112,7 +113,12 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
           {renderInlineField('firstName', 'First')}
           {renderInlineField('middleName', 'Middle')}
           {renderInlineField('lastName', 'Last')}
-          {renderInlineField('email', 'Email')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.email}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">Email</Label>
+              <EmailInput value={getValue('email')} onValueChange={(v) => handleChange('email', v)} disabled={disabled} className="h-7 text-xs" />
+            </div>
+          </DirtyFieldWrapper>
 
           <div className="space-y-1.5 pt-2">
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.taxIdType}>

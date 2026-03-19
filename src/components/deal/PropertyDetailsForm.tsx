@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -228,7 +229,12 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           {renderInlineField(FIELD_KEYS.appraiserState, 'State')}
           {renderInlineField(FIELD_KEYS.appraiserZip, 'ZIP')}
           {renderInlineField(FIELD_KEYS.appraiserPhone, 'Phone')}
-          {renderInlineField(FIELD_KEYS.appraiserEmail, 'Email')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.appraiserEmail}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Email</Label>
+              <EmailInput value={getFieldValue(FIELD_KEYS.appraiserEmail)} onValueChange={(v) => onValueChange(FIELD_KEYS.appraiserEmail, v)} disabled={disabled} className="h-7 text-xs" />
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
         {/* Right Column - Construction & Delinquency */}

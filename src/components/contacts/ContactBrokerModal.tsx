@@ -4,6 +4,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -76,7 +77,7 @@ export const ContactBrokerModal: React.FC<Props> = ({ open, onOpenChange, onSubm
           </div>
           <div>
             <Label>Email</Label>
-            <Input value={form.email} onChange={(e) => set('email', e.target.value)} />
+            <EmailInput value={form.email} onValueChange={(v) => set('email', v)} />
           </div>
           <div>
             <Label>Cell Phone</Label>

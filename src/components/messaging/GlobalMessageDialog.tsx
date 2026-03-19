@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -497,12 +498,11 @@ export const GlobalMessageDialog: React.FC<GlobalMessageDialogProps> = ({
                     onChange={(e) => setExternalName(e.target.value)}
                     className="h-8 text-xs"
                   />
-                  <Input
+                  <EmailInput
                     placeholder="Email address"
                     value={externalEmail}
-                    onChange={(e) => setExternalEmail(e.target.value)}
+                    onValueChange={(v) => setExternalEmail(v)}
                     className="h-8 text-xs"
-                    type="email"
                   />
                   <Button
                     size="sm"

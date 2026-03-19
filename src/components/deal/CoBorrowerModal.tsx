@@ -4,6 +4,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -143,7 +144,10 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
               {renderInlineField('middleName', 'Middle')}
               {renderInlineField('lastName', 'Last')}
               {renderInlineSelect('capacity', 'Capacity', CAPACITY_OPTIONS, 'Select')}
-              {renderInlineField('email', 'Email', { type: 'email' })}
+              <div className="flex items-center gap-2">
+                <Label className="w-[140px] shrink-0 text-xs">Email</Label>
+                <EmailInput value={String(formData.email || '')} onValueChange={(v) => handleInputChange('email', v)} className="h-7 text-xs" />
+              </div>
               <div className="h-1" />
               {renderInlineField('creditScore', 'Credit Score')}
               {renderInlineSelect('taxIdType', 'Tax ID Type', TAX_ID_TYPE_OPTIONS, 'Select')}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
@@ -94,7 +95,12 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
                 </Select>
               </div>
             </DirtyFieldWrapper>
-            {renderInlineField('email', 'Email', 'min-w-[60px]', { type: 'email' })}
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.email}>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground min-w-[60px]">Email</Label>
+                <EmailInput value={getValue('email')} onValueChange={(v) => handleChange('email', v)} disabled={disabled} className="h-8 text-sm" />
+              </div>
+            </DirtyFieldWrapper>
           </div>
         </div>
 

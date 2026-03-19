@@ -1,5 +1,6 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { MaskedInput } from '@/components/ui/masked-input';
@@ -97,7 +98,12 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({
           {renderField('checkZip', 'Zip Code', { placeholder: 'Enter ZIP' })}
 
           <h3 className="font-semibold text-sm text-foreground border-b border-border pb-2 pt-2">ACH Notification</h3>
-          {renderField('achEmail', 'ACH Email', { type: 'email', placeholder: 'Enter email' })}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.achEmail}>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground min-w-[120px] max-w-[120px] text-left shrink-0">ACH Email</Label>
+              <EmailInput value={getValue('achEmail')} onValueChange={(v) => handleChange('achEmail', v)} disabled={disabled} className="h-8" placeholder="Enter email" />
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
         {/* Column 3 - Credit Card Section */}

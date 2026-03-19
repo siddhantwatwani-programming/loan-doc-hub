@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { format, parse } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -291,10 +292,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             
             {wrapField('email', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Email</Label>
-              <Input
-                type="email"
+              <EmailInput
                 value={getValue('email')}
-                onChange={(e) => handleChange('email', e.target.value)}
+                onValueChange={(v) => handleChange('email', v)}
                 disabled={disabled}
                 className="h-8"
               />

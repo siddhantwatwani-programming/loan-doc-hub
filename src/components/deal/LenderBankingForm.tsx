@@ -1,6 +1,7 @@
 import React from 'react';
 import { MaskedInput } from '@/components/ui/masked-input';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -144,11 +145,11 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
           <div className="space-y-3">
             {wrapField('achEmail', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Add ACH Email</Label>
-              <Input type="email" value={getValue('achEmail')} onChange={(e) => handleChange('achEmail', e.target.value)} disabled={disabled} className="h-8" />
+              <EmailInput value={getValue('achEmail')} onValueChange={(v) => handleChange('achEmail', v)} disabled={disabled} className="h-8" />
             </div>)}
             {wrapField('achEmail2', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Add ACH Email</Label>
-              <Input type="email" value={getValue('achEmail2')} onChange={(e) => handleChange('achEmail2', e.target.value)} disabled={disabled} className="h-8" />
+              <EmailInput value={getValue('achEmail2')} onValueChange={(v) => handleChange('achEmail2', v)} disabled={disabled} className="h-8" />
             </div>)}
           </div>
         </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -76,7 +77,7 @@ export const ContactBorrowerDetailForm: React.FC<Props> = ({ borrower, onSave, o
 
       <Section title="Contact Information">
         <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2"><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} /></div>
+          <div className="col-span-2"><Label>Email</Label><EmailInput value={form.email} onValueChange={(v) => set('email', v)} /></div>
           <div><Label>Home Phone</Label><Input value={form.homePhone} onChange={(e) => set('homePhone', e.target.value)} /></div>
           <div><Label>Work Phone</Label><Input value={form.workPhone} onChange={(e) => set('workPhone', e.target.value)} /></div>
           <div><Label>Cell Phone</Label><Input value={form.cellPhone} onChange={(e) => set('cellPhone', e.target.value)} /></div>

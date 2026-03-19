@@ -5,6 +5,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -173,7 +174,10 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
             {renderCurrencyField('originalBalance', 'Original Balance', isThisLoan || isAnticipated)}
             {renderInlineField('fax', 'Fax', 'text', isThisLoan)}
             {renderCurrencyField('currentBalance', 'Current Balance', isThisLoan || isAnticipated)}
-            {renderInlineField('email', 'Email', 'text', isThisLoan)}
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs text-foreground">Email</Label>
+              <EmailInput value={String(formData.email || '')} onValueChange={(v) => handleChange('email', v)} className="h-7 text-xs" disabled={isThisLoan} />
+            </div>
             {renderCurrencyField('balanceAfter', 'Balance After', isThisLoan || isPayoff)}
             {renderInlineField('contact', 'Contact', 'text', isThisLoan)}
             {renderCurrencyField('regularPayment', 'Regular Payment', isThisLoan)}

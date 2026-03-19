@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -427,10 +428,9 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
                   </div>
                   <div>
                     <Label className="text-sm">Email</Label>
-                    <Input
-                      type="email"
+                    <EmailInput
                       value={newEmail}
-                      onChange={(e) => setNewEmail(e.target.value)}
+                      onValueChange={(v) => setNewEmail(v)}
                       placeholder="email@example.com"
                     />
                   </div>
