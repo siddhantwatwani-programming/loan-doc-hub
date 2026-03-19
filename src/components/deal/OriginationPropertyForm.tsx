@@ -1,5 +1,6 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -111,7 +112,12 @@ export const OriginationPropertyForm: React.FC<OriginationPropertyFormProps> = (
         </div>
       </DirtyFieldWrapper>
       {renderTextField('Phone', FK.appraiser_phone)}
-      {renderTextField('Email', FK.appraiser_email)}
+      <DirtyFieldWrapper fieldKey={FK.appraiser_email}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[180px] text-sm shrink-0">Email</Label>
+          <EmailInput value={v(FK.appraiser_email)} onValueChange={(val) => sv(FK.appraiser_email, val)} disabled={disabled} className="h-7 text-sm" />
+        </div>
+      </DirtyFieldWrapper>
 
       <div className="pt-4" />
 

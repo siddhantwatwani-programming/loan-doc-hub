@@ -1,5 +1,6 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -238,7 +239,12 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             {renderTextField('Escrow Officer Name', FK.escrow_officer)}
             {renderTextField('Escrow Contact', FK.escrow_contact)}
             {renderTextField('Escrow Telephone', FK.escrow_telephone)}
-            {renderTextField('Escrow Email', FK.escrow_email)}
+            <DirtyFieldWrapper fieldKey={FK.escrow_email}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] text-sm shrink-0">Escrow Email</Label>
+                <EmailInput value={v(FK.escrow_email)} onValueChange={(val) => sv(FK.escrow_email, val)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+            </DirtyFieldWrapper>
           </div>
         </div>
 
@@ -260,7 +266,12 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             {renderTextField('Title Officer Name', FK.title_officer)}
             {renderTextField('Title Contact', FK.title_contact)}
             {renderTextField('Title Telephone', FK.title_telephone)}
-            {renderTextField('Title Email', FK.title_email)}
+            <DirtyFieldWrapper fieldKey={FK.title_email}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] text-sm shrink-0">Title Email</Label>
+                <EmailInput value={v(FK.title_email)} onValueChange={(val) => sv(FK.title_email, val)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+            </DirtyFieldWrapper>
           </div>
         </div>
 

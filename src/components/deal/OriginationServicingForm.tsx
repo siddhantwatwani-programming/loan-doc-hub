@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
+import { EmailInput } from '@/components/ui/email-input';
 import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -90,7 +91,12 @@ export const OriginationServicingForm: React.FC<OriginationServicingFormProps> =
         </div>
       </DirtyFieldWrapper>
       {renderTextField('Phone', keys.phone, extraDisabled)}
-      {renderTextField('Email', keys.email, extraDisabled)}
+      <DirtyFieldWrapper fieldKey={keys.email}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[80px] text-sm shrink-0">Email</Label>
+          <EmailInput value={v(keys.email)} onValueChange={(val) => sv(keys.email, val)} disabled={disabled || extraDisabled} className="h-7 text-sm" />
+        </div>
+      </DirtyFieldWrapper>
     </div>
   );
 
