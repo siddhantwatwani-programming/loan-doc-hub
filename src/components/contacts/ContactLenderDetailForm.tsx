@@ -202,7 +202,7 @@ export const ContactLenderDetailForm: React.FC<Props> = ({ lender, onSave, onCan
             </div>
             <div>
               <Label>ZIP</Label>
-              <Input value={form.zip} onChange={(e) => set('zip', e.target.value)} />
+              <ZipInput value={form.zip} onValueChange={(v) => set('zip', v)} />
             </div>
           </div>
         </div>
