@@ -236,7 +236,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingZip}>
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
-              <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs flex-1" />
+              <ZipInput value={getValue('mailingZip')} onValueChange={(v) => handleChange('mailingZip', v)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs" />
             </div>
           </DirtyFieldWrapper>
         </div>
