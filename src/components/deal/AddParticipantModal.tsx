@@ -51,11 +51,10 @@ const PARTICIPANT_TYPES = [
 
 const CAPACITY_OPTIONS: Record<string, string[]> = {
   borrower: [
-    'Borrower', 'Co-borrower', 'Trustee', 'Co-Trustee',
+    'Borrower (Primary)', 'Co-Borrower', 'Trustee', 'Co-Trustee',
     'Managing Member', 'Authorized Signer', 'Additional Guarantor',
   ],
-  lender: ['Broker', 'Primary Lender', 'Authorized Party'],
-  broker: ['Broker'],
+  lender: ['Primary Lender', 'Participant Lender', 'Syndicate Lender', 'Authorized Party'],
 };
 
 export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
