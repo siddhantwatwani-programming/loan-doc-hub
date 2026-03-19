@@ -82,7 +82,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'name', label: 'Name', visible: true },
   { id: 'email', label: 'Email', visible: true },
   { id: 'phone', label: 'Phone', visible: true },
-  { id: 'participant_type_capacity', label: 'Participant Type', visible: true },
+  { id: 'participant_type_capacity', label: 'Participant Type - Capacity', visible: true },
   { id: 'status', label: 'Status', visible: true },
   { id: 'created_at', label: 'Added Date', visible: true },
 ];
