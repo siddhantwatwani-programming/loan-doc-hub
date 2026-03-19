@@ -342,7 +342,23 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
                 <span className="font-medium text-foreground capitalize">{participantType}</span>
               </div>
 
-              {/* Mode Toggle */}
+              {/* Capacity Dropdown */}
+              {participantType && CAPACITY_OPTIONS[participantType] && (
+                <div>
+                  <Label className="text-sm font-medium">Capacity</Label>
+                  <Select value={capacity} onValueChange={setCapacity}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select capacity..." />
+                    </SelectTrigger>
+                    <SelectContent className="z-[70]">
+                      {CAPACITY_OPTIONS[participantType].map((opt) => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <Button
                   variant={mode === 'existing' ? 'default' : 'outline'}
