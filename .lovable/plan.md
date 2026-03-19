@@ -1,26 +1,23 @@
 
 
-# Fix: Template Dropdown Rendering Behind Modal
+# Fix: Remove Empty Parentheses from Packet Dropdown
 
 ## Problem
-The `SelectContent` dropdown in the "Manage Templates" dialog renders behind the modal overlay due to z-index stacking.
+Line 761 in `src/pages/csr/DealDocumentsPage.tsx` always appends parentheses with state info. When `all_states` is false and `states` is empty, it renders `PacketName ()`.
 
-## Solution
-Add a high z-index class and portal container to the `SelectContent` component on line 435 of `PacketManagementPage.tsx`.
+## Change
 
-### Change
-**File: `src/pages/admin/PacketManagementPage.tsx` (line 435)**
+**File: `src/pages/csr/DealDocumentsPage.tsx` (line 761)**
 
-Update:
+Update the display logic to only show parentheses when there is content:
+
 ```tsx
-<SelectContent>
-```
-To:
-```tsx
-<SelectContent className="z-[200] bg-background border-border">
+// From:
+{p.name} {p.all_states ? '(All States)' : `(${(p.states || []).join(', ')})`}
+
+// To:
+{p.name}{p.all_states ? ' (All States)' : (p.states?.length ? ` (${p.states.join(', ')})` : '')}
 ```
 
-This follows the project's established z-index layering standard where dropdowns within modals use `z-[200]` to appear above dialog overlays (`z-[60]`).
-
-No other files or logic are modified.
+Single line change. No other files affected.
 
