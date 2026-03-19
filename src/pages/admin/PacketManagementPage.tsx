@@ -432,7 +432,7 @@ export const PacketManagementPage: React.FC = () => {
                 <SelectTrigger>
                   <SelectValue placeholder="Select template to add" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[200] bg-background border-border">
                   {availableTemplates.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
                       {t.name} ({t.state} - {t.product_type} v{t.version})
