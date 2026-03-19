@@ -71,7 +71,7 @@ const SECTION_LABELS: Partial<
   liens: "Liens",
   funding: "Funding",
   charges: "Charges",
-  escrow: "Escrow Impound",
+  
   notes: "Conversation Log",
   event_journal: "Events Journal",
   seller: "Seller",
