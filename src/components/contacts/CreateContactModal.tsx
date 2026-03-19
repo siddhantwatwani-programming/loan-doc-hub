@@ -32,7 +32,7 @@ const LENDER_TYPE_OPTIONS = [
   'IRA / ERISA', 'Investment Fund', '401k', 'Foreign Holder W-8', 'Non-profit',
 ];
 
-const LENDER_CAPACITY_OPTIONS = ['Broker', 'Primary Lender', 'Authorized Party'];
+
 
 const TAX_ID_TYPE_OPTIONS = [
   { value: '0', label: '0 - Unknown' },
