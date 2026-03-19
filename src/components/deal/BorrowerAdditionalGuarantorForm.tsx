@@ -276,7 +276,7 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
           </InlineField>
 
           <InlineField label="ZIP" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.mailingZip}>
-            <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
+            <ZipInput value={getValue('mailingZip')} onValueChange={(v) => handleChange('mailingZip', v)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
           </InlineField>
 
           {/* Delivery Options & Send - stacked, inline checkboxes */}
