@@ -88,7 +88,6 @@ const SECTION_ORDER: string[] = [
   "liens",
   "funding",
   "charges",
-  "escrow",
   "notes",
   "event_journal",
   "other",
@@ -974,6 +973,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
                       dealId={id || ""}
+                      escrowFields={isExternalUser ? visibleFieldsBySection['escrow'] || [] : fieldsBySection['escrow'] || []}
                     />
                   ) : section === "charges" ? (
                     <ChargesSectionContent
