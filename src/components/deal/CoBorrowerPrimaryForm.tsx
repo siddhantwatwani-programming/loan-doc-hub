@@ -390,7 +390,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           </InlineField>
 
           <InlineField label="ZIP" labelWidth="min-w-[60px]" fieldKey={fk('primary_address.zip')}>
-            <Input value={getValue('primary_address.zip')} onChange={(e) => handleChange('primary_address.zip', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+            <ZipInput value={getValue('primary_address.zip')} onValueChange={(v) => handleChange('primary_address.zip', v)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
           <h4 className="font-semibold text-sm text-foreground pb-1 pt-2 flex items-center gap-3">
