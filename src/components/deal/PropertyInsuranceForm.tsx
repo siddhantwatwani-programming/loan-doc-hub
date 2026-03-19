@@ -196,7 +196,7 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.email}>
             <div>
               <Label className="text-sm text-foreground">E-mail</Label>
-              <Input type="email" value={getFieldValue(FIELD_KEYS.email)} onChange={(e) => onValueChange(FIELD_KEYS.email, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+              <EmailInput value={getFieldValue(FIELD_KEYS.email)} onValueChange={(v) => onValueChange(FIELD_KEYS.email, v)} disabled={disabled} className="h-8 text-sm mt-1" />
             </div>
           </DirtyFieldWrapper>
         </div>

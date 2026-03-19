@@ -168,7 +168,12 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
           {renderField('businessAddressZip', 'ZIP')}
           {renderField('phoneNumber', 'Phone Number')}
           {renderField('faxNumber', 'Fax Number')}
-          {renderField('email', 'E-mail', { type: 'email' })}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.email}>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">E-mail</Label>
+              <EmailInput value={String(insurance.email || '')} onValueChange={(v) => onChange('email', v)} disabled={disabled} className="h-7 text-sm" />
+            </div>
+          </DirtyFieldWrapper>
 
           {/* Insurance Tracking */}
           <div className="border-b border-border pb-2 pt-2">
