@@ -39,7 +39,7 @@ const DateFieldPicker: React.FC<{ value: string; onChange: (v: string) => void }
           {value || 'MM/DD/YYYY'}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto p-0 z-[70]" align="start">
         <Calendar
           mode="single"
           selected={parsed}
