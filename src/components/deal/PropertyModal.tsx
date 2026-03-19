@@ -185,7 +185,10 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                 {renderInlineField('street', 'Street')}
                 {renderInlineField('city', 'City')}
                 {renderInlineSelect('state', 'State', US_STATES, 'Select state')}
-                {renderInlineField('zipCode', 'Zip Code')}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Zip Code</Label>
+                  <ZipInput value={String(formData.zipCode || '')} onValueChange={(v) => handleFieldChange('zipCode', v)} className="h-7 text-xs" />
+                </div>
                 {renderInlineField('county', 'County')}
                 <div className="flex items-center gap-2 pt-1">
                   <Checkbox id="modal-primary-property" checked={formData.isPrimary} onCheckedChange={(checked) => handleFieldChange('isPrimary', !!checked)} className="h-3.5 w-3.5" />
