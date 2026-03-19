@@ -181,7 +181,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             Lender — {contact.contact_id}
           </h3>
         </div>
-        <Button size="sm" onClick={handleSave} className="gap-1">
+        <Button size="sm" onClick={() => setShowSaveConfirm(true)} className="gap-1">
           <Save className="h-4 w-4" /> Save Draft
         </Button>
       </div>
