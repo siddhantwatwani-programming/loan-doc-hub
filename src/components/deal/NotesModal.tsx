@@ -64,7 +64,27 @@ export const NotesModal: React.FC<NotesModalProps> = ({
   open, onOpenChange, note, onSave, isEdit = false, defaultAccount = '', defaultName = '',
 }) => {
   const [formData, setFormData] = useState<NoteData>(getEmptyNote(defaultAccount, defaultName));
+  const [noteTypes, setNoteTypes] = useState<string[]>([]);
+  const [typesLoading, setTypesLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setTypesLoading(true);
+    supabase
+      .from('conversation_log_types')
+      .select('label')
+      .eq('is_active', true)
+      .order('display_order')
+      .then(({ data, error }) => {
+        if (error || !data?.length) {
+          setNoteTypes(NOTE_TYPES_FALLBACK);
+        } else {
+          setNoteTypes(data.map((r: any) => r.label));
+        }
+        setTypesLoading(false);
+      });
+  }, [open]);
 
   useEffect(() => {
     if (open) setFormData(note ? { ...note, attachments: note.attachments || [], asOfDate: note.asOfDate || '' } : getEmptyNote(defaultAccount, defaultName));
