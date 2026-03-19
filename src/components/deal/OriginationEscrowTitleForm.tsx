@@ -295,7 +295,12 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             {renderTextField('Street', FK.trustee_street)}
             {renderTextField('City', FK.trustee_city)}
             {renderTextField('State', FK.trustee_state)}
-            {renderTextField('ZIP', FK.trustee_zip)}
+            <DirtyFieldWrapper fieldKey={FK.trustee_zip}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] text-sm shrink-0">ZIP</Label>
+                <ZipInput value={v(FK.trustee_zip)} onValueChange={(val) => sv(FK.trustee_zip, val)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+            </DirtyFieldWrapper>
             {renderTextField('Escrow Officer Name', FK.trustee_officer)}
             {renderTextField('Escrow Contact', FK.trustee_contact)}
             {renderTextField('Telephone', FK.trustee_telephone)}
