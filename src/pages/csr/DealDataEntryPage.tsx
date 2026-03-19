@@ -88,7 +88,6 @@ const SECTION_ORDER: string[] = [
   "liens",
   "funding",
   "charges",
-  "escrow",
   "notes",
   "event_journal",
   "other",
