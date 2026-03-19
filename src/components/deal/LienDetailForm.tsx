@@ -73,6 +73,8 @@ const getLoanTypeRadio = (lien: LienData): string => {
   if (lien.existingRemain === 'true') return 'existing_remain';
   if (lien.existingPaydown === 'true') return 'existing_paydown';
   if (lien.existingPayoff === 'true') return 'existing_payoff';
+  // Fallback: use the persisted loanType string if booleans aren't set
+  if (lien.loanType && lien.loanType !== '') return lien.loanType;
   return '';
 };
 
