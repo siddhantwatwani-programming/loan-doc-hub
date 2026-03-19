@@ -468,7 +468,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
         <DialogFooter className="shrink-0 border-t border-border pt-3">
           <Button variant="outline" size="sm" onClick={handleCancel}>Cancel</Button>
-          <Button size="sm" onClick={handleSubmit}>{isEditing ? 'Update Funding' : 'Save Funding'}</Button>
+          <Button size="sm" onClick={handleSubmit} disabled={percentOwnedError || totalPercentError}>{isEditing ? 'Update Funding' : 'Save Funding'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
