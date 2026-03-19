@@ -1,15 +1,21 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { SaveConfirmationDialog } from '@/components/workspace/SaveConfirmationDialog';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ContactBorrowerSubNav, type ContactBorrowerSubSection } from './ContactBorrowerSubNav';
+import BorrowerDetailSidebar, { type BorrowerSection } from './BorrowerDetailSidebar';
 import { BorrowerPrimaryForm } from '@/components/deal/BorrowerPrimaryForm';
 import { BorrowerAdditionalGuarantorForm } from '@/components/deal/BorrowerAdditionalGuarantorForm';
 import { BorrowerAuthorizedPartyForm } from '@/components/deal/BorrowerAuthorizedPartyForm';
 import { BorrowerBankingForm } from '@/components/deal/BorrowerBankingForm';
 import { BorrowerTaxDetailForm } from '@/components/deal/BorrowerTaxDetailForm';
-import { CoBorrowerPrimaryForm } from '@/components/deal/CoBorrowerPrimaryForm';
 import BorrowerTrustLedger from './BorrowerTrustLedger';
+import BorrowerDashboard from './BorrowerDashboard';
+import BorrowerPortfolio from './BorrowerPortfolio';
+import BorrowerHistory from './BorrowerHistory';
+import BorrowerCharges from './BorrowerCharges';
+import BorrowerConversationLog from './BorrowerConversationLog';
+import BorrowerAttachments from './BorrowerAttachments';
+import BorrowerEventsJournal from './BorrowerEventsJournal';
 import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { ContactRecord } from '@/hooks/useContactsCrud';
 
@@ -24,7 +30,7 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
   onBack,
   onSave,
 }) => {
-  const [activeSection, setActiveSection] = useState<ContactBorrowerSubSection>('primary');
+  const [activeSection, setActiveSection] = useState<BorrowerSection>('borrower');
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const NON_BORROWER_PREFIXES = ['ach.', 'coborrower.', 'borrower.guarantor.', 'borrower.authorized_party.', 'borrower.1098.'];
 
@@ -35,7 +41,6 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
       const needsPrefix = !NON_BORROWER_PREFIXES.some(p => key.startsWith(p)) && !key.startsWith('borrower.');
       result[needsPrefix ? `borrower.${key}` : key] = value;
     });
-    // Auto-fill Borrower ID from contact record
     if (!result['borrower.borrower_id']) {
       result['borrower.borrower_id'] = contact.contact_id;
     }
@@ -49,7 +54,6 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
   const handleSave = useCallback(async () => {
     const contactData: Record<string, string> = {};
     Object.entries(values).forEach(([key, value]) => {
-      // Strip borrower. prefix only for primary borrower keys; keep ach.*, coborrower.*, etc. as-is
       const stripped = NON_BORROWER_PREFIXES.some(p => key.startsWith(p)) ? key : key.replace(/^borrower\./, '');
       contactData[stripped] = value;
     });
@@ -59,18 +63,9 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
   const emptyFields: any[] = [];
   const emptyDirty = new Set<string>();
 
-  // Co-borrower values are already stored with coborrower.* prefix in values state
-  const coBorrowerValues = React.useMemo(() => {
-    return values;
-  }, [values]);
-
-  const handleCoBorrowerValueChange = useCallback((fieldKey: string, value: string) => {
-    setValues(prev => ({ ...prev, [fieldKey]: value }));
-  }, []);
-
   const renderContent = () => {
     switch (activeSection) {
-      case 'primary':
+      case 'borrower':
         return (
           <BorrowerPrimaryForm
             fields={emptyFields}
@@ -79,40 +74,14 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
             disabled={false}
           />
         );
-      case 'co_borrower':
-        return (
-          <CoBorrowerPrimaryForm
-            fields={emptyFields}
-            values={coBorrowerValues}
-            onValueChange={handleCoBorrowerValueChange}
-            disabled={false}
-          />
-        );
-      case 'additional_guarantor':
-        return (
-          <BorrowerAdditionalGuarantorForm
-            fields={emptyFields}
-            values={values}
-            onValueChange={handleValueChange}
-            disabled={false}
-          />
-        );
-      case 'authorized_party':
-        return (
-          <BorrowerAuthorizedPartyForm
-            fields={emptyFields}
-            values={values}
-            onValueChange={handleValueChange}
-            disabled={false}
-          />
-        );
-      case 'trust_ledger':
-        return (
-          <BorrowerTrustLedger
-            borrowerId={contact.contact_id}
-            contactDbId={contact.id}
-          />
-        );
+      case 'dashboard':
+        return <BorrowerDashboard contact={contact} />;
+      case 'portfolio':
+        return <BorrowerPortfolio borrowerId={contact.contact_id} contactDbId={contact.id} />;
+      case 'history':
+        return <BorrowerHistory borrowerId={contact.contact_id} />;
+      case 'charges':
+        return <BorrowerCharges borrowerId={contact.contact_id} contactDbId={contact.id} />;
       case 'banking':
         return (
           <BorrowerBankingForm
@@ -122,7 +91,7 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
             disabled={false}
           />
         );
-      case 'tax_detail':
+      case '1098':
         return (
           <BorrowerTaxDetailForm
             fields={emptyFields}
@@ -131,6 +100,28 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
             disabled={false}
           />
         );
+      case 'authorized-party':
+        return (
+          <BorrowerAuthorizedPartyForm
+            fields={emptyFields}
+            values={values}
+            onValueChange={handleValueChange}
+            disabled={false}
+          />
+        );
+      case 'trust-ledger':
+        return (
+          <BorrowerTrustLedger
+            borrowerId={contact.contact_id}
+            contactDbId={contact.id}
+          />
+        );
+      case 'conversation-log':
+        return <BorrowerConversationLog borrowerId={contact.contact_id} contactDbId={contact.id} />;
+      case 'attachments':
+        return <BorrowerAttachments borrowerId={contact.contact_id} contactDbId={contact.id} />;
+      case 'events-journal':
+        return <BorrowerEventsJournal borrowerId={contact.contact_id} contactDbId={contact.id} />;
       default:
         return null;
     }
@@ -152,8 +143,8 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
         </Button>
       </div>
       <div className="flex flex-1 overflow-hidden">
-        <ContactBorrowerSubNav activeSubSection={activeSection} onSubSectionChange={setActiveSection} />
-        <div className="flex-1 overflow-auto">
+        <BorrowerDetailSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+        <div className="flex-1 overflow-auto p-4">
           <DirtyFieldsProvider dirtyFieldKeys={emptyDirty}>
             {renderContent()}
           </DirtyFieldsProvider>
