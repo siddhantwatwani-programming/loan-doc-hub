@@ -58,7 +58,7 @@ const getEmptyNote = (defaultAccount: string, defaultName: string): NoteData => 
   };
 };
 
-const NOTE_TYPES = ['Conversation Log', 'Attorney / Client', 'Internal'];
+const NOTE_TYPES_FALLBACK = ['Conversation Log', 'Attorney / Client', 'Internal'];
 
 export const NotesModal: React.FC<NotesModalProps> = ({
   open, onOpenChange, note, onSave, isEdit = false, defaultAccount = '', defaultName = '',
