@@ -216,7 +216,26 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {renderInline('Last', 'last_name')}
               {renderSelect('Capacity', 'capacity', LENDER_CAPACITY_OPTIONS)}
               {renderInline('Email', 'email', 'email')}
-              {renderInline('DOB', 'dob', 'date')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">DOB</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("h-7 text-xs flex-1 justify-start font-normal", !form['dob'] && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                      {form['dob'] || 'MM/DD/YYYY'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-[200]" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={form['dob'] ? new Date(form['dob']) : undefined}
+                      onSelect={(date) => set('dob', date ? format(date, 'MM/dd/yyyy') : '')}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
               <div className="pt-2 space-y-1">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Tax Info</h3>
                 <div className="flex items-center gap-2">
