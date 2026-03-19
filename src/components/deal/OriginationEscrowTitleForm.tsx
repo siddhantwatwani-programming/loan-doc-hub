@@ -229,7 +229,12 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             {renderTextField('Street', FK.escrow_street)}
             {renderTextField('City', FK.escrow_city)}
             {renderTextField('State', FK.escrow_state)}
-            {renderTextField('ZIP', FK.escrow_zip)}
+            <DirtyFieldWrapper fieldKey={FK.escrow_zip}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] text-sm shrink-0">ZIP</Label>
+                <ZipInput value={v(FK.escrow_zip)} onValueChange={(val) => sv(FK.escrow_zip, val)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+            </DirtyFieldWrapper>
             {renderTextField('Escrow Officer Name', FK.escrow_officer)}
             {renderTextField('Escrow Contact', FK.escrow_contact)}
             {renderTextField('Escrow Telephone', FK.escrow_telephone)}
