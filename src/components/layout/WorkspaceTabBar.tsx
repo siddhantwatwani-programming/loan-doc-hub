@@ -56,7 +56,7 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
 
           {/* File tabs */}
           {openFiles.map(file => {
-            const isActive = activeFileId === file.id && !isAllDocsActive;
+            const isActive = activeFileId === file.id;
             const isDirty = isFileDirty(file.id);
 
             return (
