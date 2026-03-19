@@ -197,15 +197,21 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
     </div>
   );
 
+  const [dobOpen, setDobOpen] = useState(false);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className={cn(
+        contactType === 'lender' ? "max-w-4xl max-h-[90vh] flex flex-col overflow-hidden" : "max-w-4xl max-h-[85vh] overflow-y-auto"
+      )}>
+        <DialogHeader className={contactType === 'lender' ? "shrink-0" : undefined}>
           <DialogTitle>Create New {typeLabel}</DialogTitle>
         </DialogHeader>
 
         {contactType === 'lender' && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-x-6 gap-y-0">
+          <>
+          <div className="flex-1 overflow-y-auto min-h-0 sleek-scrollbar">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-6 gap-y-0">
             {/* Column 1: Name / Details */}
             <div className="space-y-1.5">
               <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Name</h3>
@@ -218,7 +224,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {renderInline('Email', 'email', 'email')}
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">DOB</Label>
-                <Popover>
+                <Popover open={dobOpen} onOpenChange={setDobOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn("h-7 text-xs flex-1 justify-start font-normal", !form['dob'] && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-3.5 w-3.5" />
@@ -229,7 +235,10 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                     <Calendar
                       mode="single"
                       selected={form['dob'] ? new Date(form['dob']) : undefined}
-                      onSelect={(date) => set('dob', date ? format(date, 'MM/dd/yyyy') : '')}
+                      onSelect={(date) => {
+                        set('dob', date ? format(date, 'MM/dd/yyyy') : '');
+                        setDobOpen(false);
+                      }}
                       initialFocus
                       className={cn("p-3 pointer-events-auto")}
                     />
@@ -254,7 +263,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               </div>
             </div>
 
-            {/* Column 2: Primary Address + Mailing */}
+            {/* Column 2: Primary Address + Mailing + Options */}
             <div className="space-y-1.5">
               <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
               {renderInline('Street', 'primary_address.street')}
@@ -278,7 +287,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               </div>
             </div>
 
-            {/* Column 3: Phone + Preferred + Delivery + Send */}
+            {/* Column 3: Phone + Delivery + Send */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between border-b border-border pb-1 mb-2">
                 <h3 className="font-semibold text-xs text-foreground">Phone</h3>
@@ -320,18 +329,20 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 {renderCheckbox('Maturity Notice', 'send_pref.maturity_notice')}
               </div>
             </div>
-
-            {/* Column 4: Vesting */}
-            <div className="space-y-1.5">
-              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Vesting</h3>
-              <Textarea
-                value={form['vesting'] || ''}
-                onChange={(e) => set('vesting', e.target.value)}
-                rows={4}
-                className="resize-none w-full text-xs"
-              />
-            </div>
           </div>
+
+          {/* Vesting - full width at bottom */}
+          <div className="mt-4 space-y-1.5">
+            <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Vesting</h3>
+            <Textarea
+              value={form['vesting'] || ''}
+              onChange={(e) => set('vesting', e.target.value)}
+              rows={3}
+              className="resize-none w-full text-xs"
+            />
+          </div>
+          </div>
+          </>
         )}
 
         {contactType === 'broker' && (
