@@ -174,9 +174,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           .maybeSingle();
 
         const existingData = (existingContact?.contact_data || {}) as Record<string, string>;
-        const capacityLabel = participantType === 'borrower' ? 'Borrower'
-          : participantType === 'lender' ? 'Lender'
-          : participantType === 'broker' ? 'Broker' : participantType;
+        const capacityLabel = capacity || participantType;
         const mergedData: Record<string, string> = {
           ...existingData,
           'full_name': name,
