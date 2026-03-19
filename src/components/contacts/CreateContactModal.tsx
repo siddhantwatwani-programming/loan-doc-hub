@@ -83,7 +83,7 @@ const getInitialForm = (contactType: string): Record<string, string> => {
   // borrower
   return {
     borrower_type: '', full_name: '', first_name: '', middle_initial: '', last_name: '',
-    capacity: '', email: '', dob: '',
+    email: '', dob: '',
     'address.street': '', 'address.city': '', 'address.state': '', 'address.zip': '',
     'mailing.street': '', 'mailing.city': '', 'mailing.state': '', 'mailing.zip': '',
     mailing_same_as_primary: 'false',
