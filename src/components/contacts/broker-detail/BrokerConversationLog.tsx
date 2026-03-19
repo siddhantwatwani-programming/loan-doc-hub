@@ -45,7 +45,7 @@ const ALL_COLUMNS = [
   { id: 'attachments', label: 'Attachment' },
 ];
 
-const LOG_TYPES = ['Conversation Log', 'Attorney / Client', 'Internal'];
+const LOG_TYPES_FALLBACK = ['Conversation Log', 'Attorney / Client', 'Internal'];
 
 const formatDateTimeDisplay = (isoStr: string): string => {
   try {
@@ -89,6 +89,14 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string }>
   const [filterStatus, setFilterStatus] = useState('');
   const [addAsOfOpen, setAddAsOfOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [logTypes, setLogTypes] = useState<string[]>([]);
+
+  useEffect(() => {
+    (supabase as any).from('conversation_log_types').select('label').eq('is_active', true).order('display_order').then(({ data, error }: any) => {
+      if (error || !data?.length) setLogTypes(LOG_TYPES_FALLBACK);
+      else setLogTypes(data.map((r: any) => r.label));
+    });
+  }, []);
 
   useEffect(() => {
     if (!contactDbId) return;
@@ -342,9 +350,11 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string }>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
                 <Label className="w-[80px] shrink-0 text-xs">Type</Label>
-                <Select value={newLog.type} onValueChange={(v) => setNewLog(p => ({ ...p, type: v }))}>
+                <Select value={newLog.type || undefined} onValueChange={(v) => setNewLog(p => ({ ...p, type: v }))}>
                   <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select type..." /></SelectTrigger>
-                  <SelectContent>{LOG_TYPES.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
+                  <SelectContent className="z-[9999]">
+                    {logTypes.length > 0 ? logTypes.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>) : <SelectItem value="__none__" disabled className="text-xs">No options available</SelectItem>}
+                  </SelectContent>
                 </Select>
               </div>
               <div className="flex items-center gap-2">
