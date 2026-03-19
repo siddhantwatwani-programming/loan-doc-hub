@@ -110,7 +110,7 @@ export const ContactBorrowerDetailForm: React.FC<Props> = ({ borrower, onSave, o
           <div className="col-span-2"><Label>Street</Label><Input value={form.street} onChange={(e) => set('street', e.target.value)} /></div>
           <div><Label>City</Label><Input value={form.city} onChange={(e) => set('city', e.target.value)} /></div>
           <div><Label>State</Label><Input value={form.state} onChange={(e) => set('state', e.target.value)} /></div>
-          <div><Label>ZIP</Label><Input value={form.zip} onChange={(e) => set('zip', e.target.value)} /></div>
+          <div><Label>ZIP</Label><ZipInput value={form.zip} onValueChange={(v) => set('zip', v)} /></div>
         </div>
       </Section>
 
