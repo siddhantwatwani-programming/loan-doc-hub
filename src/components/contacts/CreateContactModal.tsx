@@ -50,7 +50,7 @@ const getInitialForm = (contactType: string): Record<string, string> => {
   if (contactType === 'lender') {
     return {
       type: '', full_name: '', first_name: '', middle_name: '', last_name: '',
-      capacity: '', email: '', dob: '',
+      email: '', dob: '',
       tax_id_type: '', tax_id: '', tin_verified: 'false',
       'primary_address.street': '', 'primary_address.city': '',
       'primary_address.state': '', 'primary_address.zip': '',
