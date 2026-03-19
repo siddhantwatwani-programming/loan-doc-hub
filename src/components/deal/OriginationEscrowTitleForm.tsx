@@ -200,7 +200,7 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
               </div>
               <div className="flex items-center gap-2">
                 <Label className="w-[80px] text-sm shrink-0">ZIP</Label>
-                <Input value={v(otherKeys.zip)} onChange={(e) => sv(otherKeys.zip, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+                <ZipInput value={v(otherKeys.zip)} onValueChange={(val) => sv(otherKeys.zip, val)} disabled={disabled} className="h-7 text-sm" />
               </div>
               <div className="flex items-center gap-2">
                 <Label className="w-[80px] text-sm shrink-0">Phone</Label>
