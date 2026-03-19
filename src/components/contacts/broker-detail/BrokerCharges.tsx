@@ -386,53 +386,55 @@ const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId }) => {
 
       {/* Add Charge Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader className="shrink-0">
             <DialogTitle>Add Charge</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-3">
-            {ALL_COLUMNS.map(col => (
-              <div key={col.id} className={`space-y-1 ${col.id === 'total_owed_by_you' ? 'col-span-1' : ''}`}>
-                <Label className="text-xs">{col.label}</Label>
-                {col.id === 'date' ? (
-                  <DateFieldPicker
-                    value={(newCharge as any).date}
-                    onChange={(val) => setNewCharge(prev => ({ ...prev, date: val }))}
-                  />
-                ) : (col.id === 'unpaid_balance' || col.id === 'accrued_interest' || col.id === 'total_due_to_you' || col.id === 'total_owed_by_you') ? (
-                  <div className="relative">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-                    <Input
-                      className="h-8 text-xs pl-6"
-                      value={(newCharge as any)[col.id] || ''}
-                      onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value }))}
-                      placeholder="0.00"
-                      inputMode="decimal"
+          <div className="flex-1 overflow-y-auto min-h-0 sleek-scrollbar">
+            <div className="grid grid-cols-2 gap-3 p-1">
+              {ALL_COLUMNS.map(col => (
+                <div key={col.id} className={`space-y-1 ${col.id === 'total_owed_by_you' ? 'col-span-1' : ''}`}>
+                  <Label className="text-xs">{col.label}</Label>
+                  {col.id === 'date' ? (
+                    <DateFieldPicker
+                      value={(newCharge as any).date}
+                      onChange={(val) => setNewCharge(prev => ({ ...prev, date: val }))}
                     />
-                  </div>
-                ) : col.id === 'interest_rate' ? (
-                  <div className="flex items-center gap-1">
+                  ) : (col.id === 'unpaid_balance' || col.id === 'accrued_interest' || col.id === 'total_due_to_you' || col.id === 'total_owed_by_you') ? (
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                      <Input
+                        className="h-8 text-xs pl-6"
+                        value={(newCharge as any)[col.id] || ''}
+                        onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value }))}
+                        placeholder="0.00"
+                        inputMode="decimal"
+                      />
+                    </div>
+                  ) : col.id === 'interest_rate' ? (
+                    <div className="flex items-center gap-1">
+                      <Input
+                        className="h-8 text-xs"
+                        value={(newCharge as any)[col.id] || ''}
+                        onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value.replace(/-/g, '') }))}
+                        placeholder="0.000"
+                        inputMode="decimal"
+                      />
+                      <span className="text-muted-foreground text-xs">%</span>
+                    </div>
+                  ) : (
                     <Input
                       className="h-8 text-xs"
                       value={(newCharge as any)[col.id] || ''}
-                      onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value.replace(/-/g, '') }))}
-                      placeholder="0.000"
-                      inputMode="decimal"
+                      onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value }))}
+                      placeholder={col.label}
                     />
-                    <span className="text-muted-foreground text-xs">%</span>
-                  </div>
-                ) : (
-                  <Input
-                    className="h-8 text-xs"
-                    value={(newCharge as any)[col.id] || ''}
-                    onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value }))}
-                    placeholder={col.label}
-                  />
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0">
             <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
             <Button size="sm" onClick={handleAddCharge} disabled={isSaving}>
               {isSaving ? 'Saving...' : 'Add Charge'}
