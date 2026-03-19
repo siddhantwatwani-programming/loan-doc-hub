@@ -270,13 +270,13 @@ export const NotesModal: React.FC<NotesModalProps> = ({
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs text-foreground">Type</Label>
               <Select
-                value={formData.type}
+                value={formData.type || undefined}
                 onValueChange={(val) => setFormData(prev => ({ ...prev, type: val }))}
               >
                 <SelectTrigger className="h-7 text-xs flex-1">
                   <SelectValue placeholder="Select type..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[9999]">
                   {noteTypes.length > 0 ? noteTypes.map(t => (
                     <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
                   )) : (
