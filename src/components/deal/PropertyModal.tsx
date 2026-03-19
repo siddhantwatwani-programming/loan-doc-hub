@@ -92,7 +92,11 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
     }
   }, [open, property]);
 
-  const handleFieldChange = (field: keyof PropertyData, value: string | boolean) => setFormData(prev => ({ ...prev, [field]: value }));
+  const handleFieldChange = (field: keyof PropertyData, value: string | boolean) => {
+    // Treat placeholder 'none' as empty for persistence
+    const resolved = value === '__none__' ? '' : value;
+    setFormData(prev => ({ ...prev, [field]: resolved }));
+  };
   const sanitizeNumericValue = (value: string): string => value.replace(/[^0-9.-]/g, '');
   const handleCurrencyChange = (field: keyof PropertyData, value: string) => setFormData(prev => ({ ...prev, [field]: sanitizeNumericValue(value) }));
   const handlePercentageChange = (field: keyof PropertyData, value: string) => setFormData(prev => ({ ...prev, [field]: sanitizeNumericValue(value).replace(/-/g, '') }));
