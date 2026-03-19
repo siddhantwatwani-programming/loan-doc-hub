@@ -328,10 +328,7 @@ export const PacketManagementPage: React.FC = () => {
   };
 
   const filteredPackets = packets.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.all_states ? 'all states' : (p.states || []).join(', ')).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.product_type.toLowerCase().includes(searchQuery.toLowerCase())
+    (p) => p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const filteredStates = US_STATES.filter((s) =>
