@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Home, CalendarIcon } from 'lucide-react';
 import { EmailInput } from '@/components/ui/email-input';
+import { ZipInput } from '@/components/ui/zip-input';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
