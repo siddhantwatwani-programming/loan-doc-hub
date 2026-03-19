@@ -391,15 +391,20 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               </RadioGroup>
             </div>
 
-            {/* Percent Owned, Regular Payment, Lender Share - inline */}
-            <div className="flex items-center gap-6 flex-wrap mt-1">
+             <div className="flex items-center gap-6 flex-wrap mt-1">
               <div className="flex items-center gap-2">
-                <Label className="text-sm text-muted-foreground shrink-0">Percent Owned</Label>
+                <Label className={cn("text-sm shrink-0", percentOwnedError ? "text-destructive font-medium" : "text-muted-foreground")}>Percent Owned</Label>
                 <div className="relative w-28">
-                  <Input type="text" inputMode="decimal" value={formData.percentOwned} disabled className="h-7 text-sm pr-6 opacity-50 bg-muted" placeholder="0.000" />
+                  <Input type="text" inputMode="decimal" value={formData.percentOwned} disabled className={cn("h-7 text-sm pr-6 opacity-50 bg-muted", percentOwnedError && "border-destructive")} placeholder="0.000" />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
                 </div>
               </div>
+              {percentOwnedError && (
+                <span className="text-xs text-destructive font-medium">Percent Owned cannot exceed 100%</span>
+              )}
+              {!percentOwnedError && totalPercentError && (
+                <span className="text-xs text-destructive font-medium">Total ownership across all lenders cannot exceed 100% (currently {projectedTotal.toFixed(3)}%)</span>
+              )}
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-muted-foreground shrink-0">Regular Payment</Label>
                 <div className="relative w-28">
