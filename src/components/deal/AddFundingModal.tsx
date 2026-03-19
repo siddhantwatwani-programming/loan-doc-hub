@@ -124,6 +124,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   totalPayment = '',
   loanAmount = '',
   existingRecords = [],
+  editingRecordId,
 }) => {
   const getInitialFormData = (): FundingFormData => {
     if (editData) return { ...editData, loan: loanNumber || editData.loan, borrower: borrowerName || editData.borrower };
