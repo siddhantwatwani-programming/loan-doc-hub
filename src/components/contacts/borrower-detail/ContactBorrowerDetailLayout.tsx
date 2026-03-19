@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
+import { SaveConfirmationDialog } from '@/components/workspace/SaveConfirmationDialog';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContactBorrowerSubNav, type ContactBorrowerSubSection } from './ContactBorrowerSubNav';
@@ -24,6 +25,7 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
   onSave,
 }) => {
   const [activeSection, setActiveSection] = useState<ContactBorrowerSubSection>('primary');
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const NON_BORROWER_PREFIXES = ['ach.', 'coborrower.', 'borrower.guarantor.', 'borrower.authorized_party.', 'borrower.1098.'];
 
   const [values, setValues] = useState<Record<string, string>>(() => {
@@ -145,7 +147,7 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
           Borrower — {contact.contact_id}
           </h3>
         </div>
-        <Button size="sm" onClick={handleSave} className="gap-1">
+        <Button size="sm" onClick={() => setShowSaveConfirm(true)} className="gap-1">
           <Save className="h-4 w-4" /> Save Draft
         </Button>
       </div>
@@ -157,6 +159,11 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
           </DirtyFieldsProvider>
         </div>
       </div>
+      <SaveConfirmationDialog
+        open={showSaveConfirm}
+        onConfirm={() => { setShowSaveConfirm(false); handleSave(); }}
+        onCancel={() => setShowSaveConfirm(false)}
+      />
     </div>
   );
 };

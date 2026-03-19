@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
+import { SaveConfirmationDialog } from '@/components/workspace/SaveConfirmationDialog';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { logContactEvent, type ContactFieldChange } from '@/hooks/useContactEventJournal';
@@ -30,6 +31,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
   onSave,
 }) => {
   const [activeSection, setActiveSection] = useState<LenderSection>('lender-info');
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [values, setValues] = useState<Record<string, string>>(() => {
     const result: Record<string, string> = {};
     Object.entries(contact.contact_data || {}).forEach(([key, value]) => {
@@ -179,7 +181,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             Lender — {contact.contact_id}
           </h3>
         </div>
-        <Button size="sm" onClick={handleSave} className="gap-1">
+        <Button size="sm" onClick={() => setShowSaveConfirm(true)} className="gap-1">
           <Save className="h-4 w-4" /> Save Draft
         </Button>
       </div>
@@ -191,6 +193,11 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
           </DirtyFieldsProvider>
         </div>
       </div>
+      <SaveConfirmationDialog
+        open={showSaveConfirm}
+        onConfirm={() => { setShowSaveConfirm(false); handleSave(); }}
+        onCancel={() => setShowSaveConfirm(false)}
+      />
     </div>
   );
 };
