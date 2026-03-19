@@ -337,14 +337,32 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                <span>Type:</span>
-                <span className="font-medium text-foreground capitalize">{participantType}</span>
+              {/* Participant Type - changeable inline */}
+              <div>
+                <Label className="text-sm font-medium">Type</Label>
+                <Select value={participantType} onValueChange={(v) => {
+                  setParticipantType(v as ParticipantType);
+                  setCapacity('');
+                  setSelectedContact(null);
+                  setSearchQuery('');
+                  setSearchResults([]);
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose type..." />
+                  </SelectTrigger>
+                  <SelectContent className="z-[70]">
+                    {PARTICIPANT_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value} disabled={t.disabled} className={t.disabled ? 'opacity-50' : ''}>
+                        {t.label}{t.disabled ? ' (Disabled)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Capacity Dropdown */}
               {participantType && CAPACITY_OPTIONS[participantType] && (
-                <div>
+                <div className="mb-2">
                   <Label className="text-sm font-medium">Capacity</Label>
                   <Select value={capacity} onValueChange={setCapacity}>
                     <SelectTrigger>
