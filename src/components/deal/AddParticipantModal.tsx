@@ -337,8 +337,8 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           ) : (
             <div className="space-y-4">
               {/* Participant Type - changeable inline */}
-              <div>
-                <Label className="text-sm font-medium">Type</Label>
+              <div className="mb-4">
+                <Label className="text-sm font-medium mb-1.5 block">Type</Label>
                 <Select value={participantType} onValueChange={(v) => {
                   setParticipantType(v as ParticipantType);
                   setCapacity('');
