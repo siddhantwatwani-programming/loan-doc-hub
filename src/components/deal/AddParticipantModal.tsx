@@ -51,11 +51,10 @@ const PARTICIPANT_TYPES = [
 
 const CAPACITY_OPTIONS: Record<string, string[]> = {
   borrower: [
-    'Borrower', 'Co-borrower', 'Trustee', 'Co-Trustee',
+    'Borrower (Primary)', 'Co-Borrower', 'Trustee', 'Co-Trustee',
     'Managing Member', 'Authorized Signer', 'Additional Guarantor',
   ],
-  lender: ['Broker', 'Primary Lender', 'Authorized Party'],
-  broker: ['Broker'],
+  lender: ['Primary Lender', 'Participant Lender', 'Syndicate Lender', 'Authorized Party'],
 };
 
 export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
@@ -338,8 +337,8 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           ) : (
             <div className="space-y-4">
               {/* Participant Type - changeable inline */}
-              <div>
-                <Label className="text-sm font-medium">Type</Label>
+              <div className="mb-4">
+                <Label className="text-sm font-medium mb-1.5 block">Type</Label>
                 <Select value={participantType} onValueChange={(v) => {
                   setParticipantType(v as ParticipantType);
                   setCapacity('');
@@ -360,10 +359,10 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
                 </Select>
               </div>
 
-              {/* Capacity Dropdown */}
-              {participantType && CAPACITY_OPTIONS[participantType] && (
-                <div className="mb-2">
-                  <Label className="text-sm font-medium">Capacity</Label>
+              {/* Capacity Dropdown - hidden for broker */}
+              {participantType && participantType !== 'broker' && CAPACITY_OPTIONS[participantType] && (
+                <div className="mb-4">
+                  <Label className="text-sm font-medium mb-1.5 block">Capacity</Label>
                   <Select value={capacity} onValueChange={setCapacity}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select capacity..." />
