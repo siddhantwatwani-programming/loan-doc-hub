@@ -277,7 +277,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                   <SelectValue placeholder="Select type..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {NOTE_TYPES.map(t => (
+                  {noteTypes.length > 0 ? noteTypes.map(t => (
                     <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
                   ))}
                 </SelectContent>
