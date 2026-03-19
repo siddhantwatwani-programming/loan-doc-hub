@@ -239,7 +239,12 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             {renderTextField('Escrow Officer Name', FK.escrow_officer)}
             {renderTextField('Escrow Contact', FK.escrow_contact)}
             {renderTextField('Escrow Telephone', FK.escrow_telephone)}
-            {renderTextField('Escrow Email', FK.escrow_email)}
+            <DirtyFieldWrapper fieldKey={FK.escrow_email}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] text-sm shrink-0">Escrow Email</Label>
+                <EmailInput value={v(FK.escrow_email)} onValueChange={(val) => sv(FK.escrow_email, val)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+            </DirtyFieldWrapper>
           </div>
         </div>
 
