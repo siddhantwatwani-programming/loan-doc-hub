@@ -183,7 +183,12 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
               </Select>
             </div>
           </DirtyFieldWrapper>
-          {renderInlineField('zip', 'ZIP')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.zip}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+              <ZipInput value={getValue('zip')} onValueChange={(v) => handleChange('zip', v)} disabled={disabled} className="h-7 text-xs" />
+            </div>
+          </DirtyFieldWrapper>
 
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-3 flex items-center gap-3">
             Mailing Address
