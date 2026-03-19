@@ -292,8 +292,8 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
       onParticipantAdded();
       onOpenChange(false);
 
-      // Navigate to contact detail page
-      if (contactId) {
+      // Only navigate to contact detail page for NEW contacts
+      if (mode === 'new' && contactId) {
         const route = participantType === 'lender' ? 'lenders' : participantType === 'broker' ? 'brokers' : 'borrowers';
         setTimeout(() => {
           navigate(`/contacts/${route}/${contactId}`);
