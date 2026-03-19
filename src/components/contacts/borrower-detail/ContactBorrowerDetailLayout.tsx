@@ -159,6 +159,11 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
           </DirtyFieldsProvider>
         </div>
       </div>
+      <SaveConfirmationDialog
+        open={showSaveConfirm}
+        onConfirm={() => { setShowSaveConfirm(false); handleSave(); }}
+        onCancel={() => setShowSaveConfirm(false)}
+      />
     </div>
   );
 };
