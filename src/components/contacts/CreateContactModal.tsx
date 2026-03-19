@@ -376,7 +376,17 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
             {/* Column 4: Tax Info */}
             <div className="space-y-1.5">
               <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Tax Info</h3>
-              {renderInline('Tax ID Type', 'tax_id_type')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Tax ID Type</Label>
+                <Select value={form['tax_id_type'] || ''} onValueChange={(v) => set('tax_id_type', v)}>
+                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-[200]">
+                    {TAX_ID_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               {renderInline('TIN', 'tax_id')}
               {renderCheckbox('TIN Verified', 'tin_verified')}
             </div>
