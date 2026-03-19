@@ -45,7 +45,7 @@ const ALL_COLUMNS = [
   { id: 'attachments', label: 'Attachment' },
 ];
 
-const LOG_TYPES = ['Conversation Log', 'Attorney / Client', 'Internal'];
+const LOG_TYPES_FALLBACK = ['Conversation Log', 'Attorney / Client', 'Internal'];
 
 const formatDateTimeDisplay = (isoStr: string): string => {
   try {
