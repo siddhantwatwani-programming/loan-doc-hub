@@ -918,16 +918,6 @@ export const TemplateManagementPage: React.FC = () => {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">State</p>
-                  <p className="font-medium text-foreground">{previewTemplate.state}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Product Type</p>
-                  <p className="font-medium text-foreground">{previewTemplate.product_type}</p>
-                </div>
-              </div>
 
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">Status</p>
