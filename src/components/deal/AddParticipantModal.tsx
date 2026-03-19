@@ -95,6 +95,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
       setNewName('');
       setNewEmail('');
       setNewPhone('');
+      setCapacity('');
     }
   }, [open]);
 
