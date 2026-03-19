@@ -132,7 +132,10 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
               {renderInlineField('businessAddress', 'Bus. Address')}
               {renderInlineField('businessAddressCity', 'City')}
               {renderInlineField('businessAddressState', 'State')}
-              {renderInlineField('businessAddressZip', 'ZIP')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP</Label>
+                <ZipInput value={String(formData.businessAddressZip || '')} onValueChange={(v) => handleChange('businessAddressZip', v)} className="h-7 text-xs" />
+              </div>
               {renderInlineField('phoneNumber', 'Phone Number')}
               {renderInlineField('faxNumber', 'Fax Number')}
               <div className="flex items-center gap-2">
