@@ -50,15 +50,6 @@ const BORROWER_TYPE_OPTIONS = [
   'Non-profit',
 ];
 
-const CAPACITY_OPTIONS = [
-  'Borrower',
-  'Co-borrower',
-  'Trustee',
-  'Co-Trustee',
-  'Managing Member',
-  'Authorized Signer',
-  'Additional Guarantor',
-];
 
 const TAX_ID_TYPE_OPTIONS = [
   '0 – Unknown',
