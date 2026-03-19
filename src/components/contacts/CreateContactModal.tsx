@@ -490,7 +490,10 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 {renderInline('Street', 'mailing.street', 'text', isSameAsPrimary)}
                 {renderInline('City', 'mailing.city', 'text', isSameAsPrimary)}
                 {renderInline('State', 'mailing.state', 'text', isSameAsPrimary)}
-                {renderInline('ZIP', 'mailing.zip', 'text', isSameAsPrimary)}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+                  <ZipInput value={form['mailing.zip'] || ''} onValueChange={(val) => set('mailing.zip', val)} disabled={isSameAsPrimary} className="h-7 text-xs" />
+                </div>
               </div>
             </div>
 
