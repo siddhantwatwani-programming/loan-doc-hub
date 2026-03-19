@@ -516,7 +516,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className={contactType === 'lender' ? "shrink-0" : undefined}>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSubmit}>Create</Button>
         </DialogFooter>
