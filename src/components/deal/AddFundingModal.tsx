@@ -32,6 +32,7 @@ interface AddFundingModalProps {
   loanAmount?: string;
   existingRecords?: Array<{ id: string; roundingError: boolean; pctOwned: number }>;
   editingRecordId?: string;
+}
 
 export interface FundingFormData {
   loan: string;
