@@ -193,6 +193,11 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
           </DirtyFieldsProvider>
         </div>
       </div>
+      <SaveConfirmationDialog
+        open={showSaveConfirm}
+        onConfirm={() => { setShowSaveConfirm(false); handleSave(); }}
+        onCancel={() => setShowSaveConfirm(false)}
+      />
     </div>
   );
 };

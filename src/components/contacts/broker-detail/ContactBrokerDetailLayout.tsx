@@ -223,6 +223,11 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
           </DirtyFieldsProvider>
         </div>
       </div>
+      <SaveConfirmationDialog
+        open={showSaveConfirm}
+        onConfirm={() => { setShowSaveConfirm(false); handleSave(); }}
+        onCancel={() => setShowSaveConfirm(false)}
+      />
     </div>
   );
 };
