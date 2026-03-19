@@ -102,15 +102,17 @@ export const LoanTermsSectionContent: React.FC<LoanTermsSectionContentProps> = (
         return <ComingSoonInline label="Trust Ledger" />;
       case 'escrow_impound':
         return (
-          <DealSectionTab
-            fields={escrowFields}
-            values={values}
-            onValueChange={onValueChange}
-            missingRequiredFields={escrowFields.filter(f => f.is_required && !values[f.field_key])}
-            showValidation={showValidation}
-            calculationResults={calculationResults}
-            hideValidationStatus
-          />
+          <div className="p-4">
+            <DealSectionTab
+              fields={escrowFields}
+              values={values}
+              onValueChange={onValueChange}
+              missingRequiredFields={escrowFields.filter(f => f.is_required && !values[f.field_key])}
+              showValidation={showValidation}
+              calculationResults={calculationResults}
+              hideValidationStatus
+            />
+          </div>
         );
       default:
         return null;

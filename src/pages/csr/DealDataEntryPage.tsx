@@ -71,7 +71,7 @@ const SECTION_LABELS: Partial<
   liens: "Liens",
   funding: "Funding",
   charges: "Charges",
-  escrow: "Escrow Impound",
+  
   notes: "Conversation Log",
   event_journal: "Events Journal",
   seller: "Seller",
@@ -948,6 +948,13 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                   {SECTION_LABELS["origination_fees"]}
                 </TabsTrigger>
               )}
+
+              {/* Attachments - Coming Soon tab */}
+              {isInternalUser && (
+                <TabsTrigger value="attachments" className="gap-2 data-[state=active]:bg-background">
+                  Attachments
+                </TabsTrigger>
+              )}
             </TabsList>
 
             {(isExternalUser ? visibleSections : sections)
@@ -1111,6 +1118,25 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                   disabled={isSectionDisabledByFormPerm('origination_fees')}
                   calculationResults={calculationResults}
                 />
+              </TabsContent>
+            )}
+
+            {/* Attachments - Coming Soon */}
+            {isInternalUser && (
+              <TabsContent value="attachments" forceMount className={cn("animate-fade-in", activeTab !== "attachments" && "hidden")}>
+                <div className="flex items-center justify-center min-h-[300px]">
+                  <div className="text-center space-y-2">
+                    <h1 className="text-4xl font-bold text-foreground tracking-tight" style={{ fontFamily: "'Brush Script MT', cursive" }}>
+                      Coming
+                    </h1>
+                    <p className="text-3xl font-extrabold uppercase tracking-widest text-foreground/80">
+                      SOON
+                    </p>
+                    <p className="text-sm text-muted-foreground pt-2">
+                      Attachments is under development. Data will be available soon.
+                    </p>
+                  </div>
+                </div>
               </TabsContent>
             )}
           </Tabs>
