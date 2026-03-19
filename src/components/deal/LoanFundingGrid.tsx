@@ -443,7 +443,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         soldRate={soldRate}
         totalPayment={totalPayment}
         loanAmount={loanAmount}
-        existingRecords={fundingRecords.map(r => ({ id: r.id, roundingError: r.roundingError }))}
+        existingRecords={fundingRecords.map(r => ({ id: r.id, roundingError: r.roundingError, pctOwned: r.pctOwned }))}
+        editingRecordId={selectedRecord?.id}
       />
 
       <FundingHistoryDialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen} dealId={dealId} historyRecords={historyRecords} />
