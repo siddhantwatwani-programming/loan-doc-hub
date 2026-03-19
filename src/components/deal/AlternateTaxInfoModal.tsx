@@ -174,9 +174,9 @@ export const AlternateTaxInfoModal: React.FC<AlternateTaxInfoModalProps> = ({
             </div>
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">Zip Code</Label>
-              <Input
+              <ZipInput
                 value={formData.zip}
-                onChange={(e) => handleChange('zip', e.target.value)}
+                onValueChange={(v) => handleChange('zip', v)}
                 className="h-9"
               />
             </div>
