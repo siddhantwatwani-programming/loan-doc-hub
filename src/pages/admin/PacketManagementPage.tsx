@@ -510,9 +510,6 @@ export const PacketManagementPage: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">{packet.name}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {getStatesDisplay(packet)} • {packet.product_type}
-                    </p>
                   </div>
                 </div>
                 <DropdownMenu>

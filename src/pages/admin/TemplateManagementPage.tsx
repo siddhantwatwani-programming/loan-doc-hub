@@ -1220,8 +1220,6 @@ export const TemplateManagementPage: React.FC = () => {
                 {filteredTemplates.map((template) => (
                   <tr key={template.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
                     <td className="py-4 px-4 font-medium text-foreground">{template.name}</td>
-                    <td className="py-4 px-4 text-foreground">{template.state}</td>
-                    <td className="py-4 px-4 text-foreground">{template.product_type}</td>
                     <td className="py-4 px-4 text-muted-foreground">v{template.version}</td>
                     <td className="py-4 px-4">
                       <button
