@@ -104,7 +104,12 @@ export const OriginationPropertyForm: React.FC<OriginationPropertyFormProps> = (
       {renderTextField('Street', FK.appraiser_street)}
       {renderTextField('City', FK.appraiser_city)}
       {renderTextField('State', FK.appraiser_state)}
-      {renderTextField('ZIP', FK.appraiser_zip)}
+      <DirtyFieldWrapper fieldKey={FK.appraiser_zip}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[180px] text-sm shrink-0">ZIP</Label>
+          <ZipInput value={v(FK.appraiser_zip)} onValueChange={(val) => sv(FK.appraiser_zip, val)} disabled={disabled} className="h-7 text-sm" />
+        </div>
+      </DirtyFieldWrapper>
       {renderTextField('Phone', FK.appraiser_phone)}
       {renderTextField('Email', FK.appraiser_email)}
 

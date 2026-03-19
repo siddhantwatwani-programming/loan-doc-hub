@@ -274,14 +274,20 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {renderInline('Street', 'primary_address.street')}
               {renderInline('City', 'primary_address.city')}
               {renderInline('State', 'primary_address.state')}
-              {renderInline('ZIP', 'primary_address.zip')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+                <ZipInput value={form['primary_address.zip'] || ''} onValueChange={(val) => set('primary_address.zip', val)} className="h-7 text-xs" />
+              </div>
               <div className="pt-2 space-y-1.5">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
                 {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
                 {renderInline('Street', 'mailing.street', 'text', isSameAsPrimary)}
                 {renderInline('City', 'mailing.city', 'text', isSameAsPrimary)}
                 {renderInline('State', 'mailing.state', 'text', isSameAsPrimary)}
-                {renderInline('ZIP', 'mailing.zip', 'text', isSameAsPrimary)}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+                  <ZipInput value={form['mailing.zip'] || ''} onValueChange={(val) => set('mailing.zip', val)} disabled={isSameAsPrimary} className="h-7 text-xs" />
+                </div>
               </div>
               <div className="pt-2 space-y-1">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Options</h3>
@@ -379,14 +385,20 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {renderInline('Street', 'address.street')}
               {renderInline('City', 'address.city')}
               {renderInline('State', 'address.state')}
-              {renderInline('ZIP', 'address.zip')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+                <ZipInput value={form['address.zip'] || ''} onValueChange={(val) => set('address.zip', val)} className="h-7 text-xs" />
+              </div>
               <div className="pt-2 space-y-1.5">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
                 {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
                 {renderInline('Street', 'mailing.street', 'text', isSameAsPrimary)}
                 {renderInline('City', 'mailing.city', 'text', isSameAsPrimary)}
                 {renderInline('State', 'mailing.state', 'text', isSameAsPrimary)}
-                {renderInline('ZIP', 'mailing.zip', 'text', isSameAsPrimary)}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+                  <ZipInput value={form['mailing.zip'] || ''} onValueChange={(val) => set('mailing.zip', val)} disabled={isSameAsPrimary} className="h-7 text-xs" />
+                </div>
               </div>
             </div>
 
@@ -468,14 +480,20 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {renderInline('Street', 'address.street')}
               {renderInline('City', 'address.city')}
               {renderInline('State', 'address.state')}
-              {renderInline('ZIP', 'address.zip')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+                <ZipInput value={form['address.zip'] || ''} onValueChange={(val) => set('address.zip', val)} className="h-7 text-xs" />
+              </div>
               <div className="pt-2 space-y-1.5">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
                 {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
                 {renderInline('Street', 'mailing.street', 'text', isSameAsPrimary)}
                 {renderInline('City', 'mailing.city', 'text', isSameAsPrimary)}
                 {renderInline('State', 'mailing.state', 'text', isSameAsPrimary)}
-                {renderInline('ZIP', 'mailing.zip', 'text', isSameAsPrimary)}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+                  <ZipInput value={form['mailing.zip'] || ''} onValueChange={(val) => set('mailing.zip', val)} disabled={isSameAsPrimary} className="h-7 text-xs" />
+                </div>
               </div>
             </div>
 
