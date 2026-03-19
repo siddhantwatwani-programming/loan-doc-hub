@@ -169,7 +169,10 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
               {renderInlineField('primaryStreet', 'Street')}
               {renderInlineField('primaryCity', 'City')}
               {renderInlineSelect('primaryState', 'State', STATE_OPTIONS, 'State')}
-              {renderInlineField('primaryZip', 'ZIP')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+                <ZipInput value={String(formData.primaryZip || '')} onValueChange={(v) => handleFieldChange('primaryZip', v)} className="h-7 text-xs" />
+              </div>
 
               <div className="font-semibold text-xs text-foreground pb-1 mt-2 mb-1.5 flex items-center gap-2">
                 Mailing Address
