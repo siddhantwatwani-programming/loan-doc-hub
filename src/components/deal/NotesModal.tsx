@@ -16,7 +16,9 @@ import { RichTextEditor } from './RichTextEditor';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import type { NoteData } from './NotesTableView';
+import { toast } from 'sonner';
+import type { NoteData, AttachmentMeta } from './NotesTableView';
+import { getAttachmentName } from './NotesTableView';
 
 interface NotesModalProps {
   open: boolean;
@@ -26,6 +28,7 @@ interface NotesModalProps {
   isEdit?: boolean;
   defaultAccount?: string;
   defaultName?: string;
+  dealId?: string;
 }
 
 const formatDateTimeDisplay = (isoStr: string): string => {
@@ -61,12 +64,14 @@ const getEmptyNote = (defaultAccount: string, defaultName: string): NoteData => 
 const NOTE_TYPES_FALLBACK = ['Conversation Log', 'Attorney / Client', 'Internal'];
 
 export const NotesModal: React.FC<NotesModalProps> = ({
-  open, onOpenChange, note, onSave, isEdit = false, defaultAccount = '', defaultName = '',
+  open, onOpenChange, note, onSave, isEdit = false, defaultAccount = '', defaultName = '', dealId = '',
 }) => {
   const [formData, setFormData] = useState<NoteData>(getEmptyNote(defaultAccount, defaultName));
   const [noteTypes, setNoteTypes] = useState<string[]>([]);
   const [typesLoading, setTypesLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -87,7 +92,10 @@ export const NotesModal: React.FC<NotesModalProps> = ({
   }, [open]);
 
   useEffect(() => {
-    if (open) setFormData(note ? { ...note, attachments: note.attachments || [], asOfDate: note.asOfDate || '' } : getEmptyNote(defaultAccount, defaultName));
+    if (open) {
+      setFormData(note ? { ...note, attachments: note.attachments || [], asOfDate: note.asOfDate || '' } : getEmptyNote(defaultAccount, defaultName));
+      setPendingFiles([]);
+    }
   }, [open, note, defaultAccount, defaultName]);
 
   const asOfDateObj = formData.asOfDate ? (() => {
@@ -101,7 +109,6 @@ export const NotesModal: React.FC<NotesModalProps> = ({
 
   const handleAsOfDateSelect = (date: Date | undefined) => {
     if (date) {
-      // Preserve existing time portion if present, otherwise use current time
       const existing = formData.asOfDate ? new Date(formData.asOfDate) : new Date();
       const hasValidTime = !isNaN(existing.getTime());
       date.setHours(hasValidTime ? existing.getHours() : new Date().getHours());
@@ -123,17 +130,61 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     } catch { return isoDate; }
   };
 
-  const handleSave = () => { onSave(formData); onOpenChange(false); };
+  const uploadFilesToStorage = async (files: File[], noteId: string): Promise<AttachmentMeta[]> => {
+    const results: AttachmentMeta[] = [];
+    for (const file of files) {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `deal/${dealId || 'unknown'}/${noteId}/${Date.now()}_${safeName}`;
+      const { error } = await supabase.storage.from('contact-attachments').upload(path, file);
+      if (error) {
+        console.error('Upload failed:', error);
+        toast.error(`Failed to upload ${file.name}`);
+        continue;
+      }
+      results.push({ name: file.name, storagePath: path, uploadedAt: new Date().toISOString() });
+    }
+    return results;
+  };
+
+  const handleSave = async () => {
+    setUploading(true);
+    let finalAttachments = [...formData.attachments];
+
+    if (pendingFiles.length > 0) {
+      const uploaded = await uploadFilesToStorage(pendingFiles, formData.id);
+      // Keep existing persisted attachments, replace pending placeholders with uploaded ones
+      const existingPersisted = formData.attachments.filter(
+        att => typeof att === 'object' && att.storagePath
+      );
+      finalAttachments = [...existingPersisted, ...uploaded];
+    }
+
+    onSave({ ...formData, attachments: finalAttachments });
+    setPendingFiles([]);
+    setUploading(false);
+    onOpenChange(false);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    const newNames = Array.from(files).map(f => f.name);
-    setFormData(prev => ({ ...prev, attachments: [...prev.attachments, ...newNames] }));
+    const fileArr = Array.from(files);
+    setPendingFiles(prev => [...prev, ...fileArr]);
+    const newMetas: AttachmentMeta[] = fileArr.map(f => ({ name: f.name, storagePath: '', uploadedAt: '' }));
+    setFormData(prev => ({ ...prev, attachments: [...prev.attachments, ...newMetas] }));
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const removeAttachment = (index: number) => {
+    // Check if it's a pending file (no storagePath)
+    const att = formData.attachments[index];
+    if (typeof att === 'object' && !att.storagePath) {
+      // Find corresponding pending file index
+      const pendingIdx = pendingFiles.findIndex(f => f.name === att.name);
+      if (pendingIdx >= 0) {
+        setPendingFiles(prev => prev.filter((_, i) => i !== pendingIdx));
+      }
+    }
     setFormData(prev => ({ ...prev, attachments: prev.attachments.filter((_, i) => i !== index) }));
   };
 
@@ -325,12 +376,12 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                 onChange={handleFileChange}
               />
             </div>
-            {formData.attachments.length > 0 && (
+            {formData.attachments.length > 0 ? (
               <div className="space-y-1 pl-[100px]">
-                {formData.attachments.map((name, idx) => (
+                {formData.attachments.map((att, idx) => (
                   <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
                     <Paperclip className="h-3 w-3 shrink-0" />
-                    <span className="flex-1 truncate">{name}</span>
+                    <span className="flex-1 truncate">{getAttachmentName(att)}</span>
                     <Button
                       type="button"
                       variant="ghost"
@@ -343,13 +394,15 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                   </div>
                 ))}
               </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic pl-[100px]">No attachments available</p>
             )}
           </div>
         </div>
 
         <DialogFooter className="mt-4">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSave}>OK</Button>
+          <Button size="sm" onClick={handleSave} disabled={uploading}>{uploading ? 'Uploading...' : 'OK'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

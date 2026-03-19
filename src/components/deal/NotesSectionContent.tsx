@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { NotesTableView, type NoteData } from './NotesTableView';
+import { NotesTableView, type NoteData, type AttachmentMeta } from './NotesTableView';
 import { NotesModal } from './NotesModal';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
@@ -13,6 +13,7 @@ interface NotesSectionContentProps {
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
   dealNumber?: string;
+  dealId?: string;
   userName?: string;
   onRefresh?: () => void;
 }
@@ -27,6 +28,17 @@ const extractNotesFromValues = (values: Record<string, string>): NoteData[] => {
   });
 
   prefixes.forEach(prefix => {
+    let attachments: (string | AttachmentMeta)[] = [];
+    const rawAtt = values[`${prefix}.attachments`];
+    if (rawAtt) {
+      try {
+        const parsed = JSON.parse(rawAtt);
+        attachments = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        attachments = [];
+      }
+    }
+
     notes.push({
       id: prefix,
       highPriority: values[`${prefix}.high_priority`] === 'true',
@@ -37,7 +49,7 @@ const extractNotesFromValues = (values: Record<string, string>): NoteData[] => {
       reference: values[`${prefix}.reference`] || '',
       content: values[`${prefix}.content`] || '',
       type: values[`${prefix}.type`] || '',
-      attachments: values[`${prefix}.attachments`] ? JSON.parse(values[`${prefix}.attachments`]) : [],
+      attachments,
     });
   });
 
@@ -62,7 +74,7 @@ const getNextNotePrefix = (values: Record<string, string>): string => {
 };
 
 export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
-  values, onValueChange, onRemoveValuesByPrefix, disabled = false, dealNumber = '', userName = '', onRefresh,
+  values, onValueChange, onRemoveValuesByPrefix, disabled = false, dealNumber = '', dealId = '', userName = '', onRefresh,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<NoteData | null>(null);
@@ -77,7 +89,7 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
 
   const handleAddNote = useCallback(() => { setEditingNote(null); setModalOpen(true); }, []);
   const handleEditNote = useCallback((note: NoteData) => { setEditingNote(note); setModalOpen(true); }, []);
-  const handleRowClick = useCallback((note: NoteData) => { setEditingNote(note); setModalOpen(true); }, []);
+  const handleRowClick = useCallback((note: NoteData) => { /* row click now handled by NotesTableView detail dialog */ }, []);
 
   const handleDeleteNote = useCallback((note: NoteData) => {
     if (onRemoveValuesByPrefix) {
@@ -139,6 +151,7 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
         isEdit={!!editingNote}
         defaultAccount={dealNumber}
         defaultName={userName}
+        dealId={dealId}
       />
     </>
   );
