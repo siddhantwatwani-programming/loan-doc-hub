@@ -340,7 +340,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           </InlineField>
 
           <InlineField label="Email" fieldKey={fk('email')}>
-            <Input type="email" value={getValue('email')} onChange={(e) => handleChange('email', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+            <EmailInput value={getValue('email')} onValueChange={(v) => handleChange('email', v)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
           <div className="h-0.5" />
