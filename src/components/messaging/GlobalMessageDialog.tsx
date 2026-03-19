@@ -498,12 +498,11 @@ export const GlobalMessageDialog: React.FC<GlobalMessageDialogProps> = ({
                     onChange={(e) => setExternalName(e.target.value)}
                     className="h-8 text-xs"
                   />
-                  <Input
+                  <EmailInput
                     placeholder="Email address"
                     value={externalEmail}
-                    onChange={(e) => setExternalEmail(e.target.value)}
+                    onValueChange={(v) => setExternalEmail(v)}
                     className="h-8 text-xs"
-                    type="email"
                   />
                   <Button
                     size="sm"
