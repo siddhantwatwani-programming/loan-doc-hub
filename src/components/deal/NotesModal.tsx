@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { format, parse } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 import { StickyNote, Paperclip, X, CalendarIcon } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
