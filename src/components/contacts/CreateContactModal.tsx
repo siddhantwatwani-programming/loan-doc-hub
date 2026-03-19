@@ -218,7 +218,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {renderInline('First', 'first_name')}
               {renderInline('Middle', 'middle_name')}
               {renderInline('Last', 'last_name')}
-              {renderSelect('Capacity', 'capacity', LENDER_CAPACITY_OPTIONS)}
+              
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">Email</Label>
                 <EmailInput value={form['email'] || ''} onValueChange={(v) => set('email', v)} className="h-7 text-xs" />
