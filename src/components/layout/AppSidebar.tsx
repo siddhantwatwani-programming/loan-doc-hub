@@ -128,6 +128,13 @@ export const AppSidebar: React.FC = () => {
     setActiveSection(open ? section : null);
   };
 
+  // Auto-expand Broker Services when navigating to /deals (e.g. from top nav "All Loan Documents")
+  React.useEffect(() => {
+    if (location.pathname === '/deals') {
+      setActiveSection('broker');
+    }
+  }, [location.pathname]);
+
   // Filter items based on role
   const getFilteredItems = (): NavItem[] => {
     if (isExternalUser) {
