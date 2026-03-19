@@ -497,7 +497,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("h-7 text-xs", !getValue('investorQuestionnaireDueDate') && "text-muted-foreground")} disabled={disabled}>
-                    {getValue('investorQuestionnaireDueDate') ? format(parse(getValue('investorQuestionnaireDueDate'), 'yyyy-MM-dd', new Date()), 'MM/dd/yyyy') : 'Date'}
+                    {safeFormatDate(getValue('investorQuestionnaireDueDate')) || 'Date'}
                     <CalendarIcon className="ml-auto h-3 w-3" />
                   </Button>
                 </PopoverTrigger>
