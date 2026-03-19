@@ -222,7 +222,10 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {renderInline('Middle', 'middle_name')}
               {renderInline('Last', 'last_name')}
               {renderSelect('Capacity', 'capacity', LENDER_CAPACITY_OPTIONS)}
-              {renderInline('Email', 'email', 'email')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Email</Label>
+                <EmailInput value={form['email'] || ''} onValueChange={(v) => set('email', v)} className="h-7 text-xs" />
+              </div>
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">DOB</Label>
                 <Popover open={dobOpen} onOpenChange={setDobOpen}>
