@@ -1,5 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { format, parse } from 'date-fns';
+import { format, parse, isValid } from 'date-fns';
+
+const safeParseDateStr = (val: string): Date | undefined => {
+  if (!val) return undefined;
+  try {
+    const d = parse(val, 'yyyy-MM-dd', new Date());
+    return isValid(d) ? d : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const safeFormatDate = (val: string, fmt: string = 'MM/dd/yyyy'): string | undefined => {
+  const d = safeParseDateStr(val);
+  return d ? format(d, fmt) : undefined;
+};
 import { CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
@@ -314,14 +329,14 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                     )}
                     disabled={disabled}
                   >
-                    {getValue('dob') ? format(parse(getValue('dob'), 'yyyy-MM-dd', new Date()), 'MM/dd/yyyy') : <span>Pick a date</span>}
+                    {safeFormatDate(getValue('dob')) || <span>Pick a date</span>}
                     <CalendarIcon className="ml-auto h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={getValue('dob') ? parse(getValue('dob'), 'yyyy-MM-dd', new Date()) : undefined}
+                    selected={safeParseDateStr(getValue('dob'))}
                     onSelect={(date) => { handleChange('dob', date ? format(date, 'yyyy-MM-dd') : ''); setDobOpen(false); }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
@@ -482,14 +497,14 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("h-7 text-xs", !getValue('investorQuestionnaireDueDate') && "text-muted-foreground")} disabled={disabled}>
-                    {getValue('investorQuestionnaireDueDate') ? format(parse(getValue('investorQuestionnaireDueDate'), 'yyyy-MM-dd', new Date()), 'MM/dd/yyyy') : 'Date'}
+                    {safeFormatDate(getValue('investorQuestionnaireDueDate')) || 'Date'}
                     <CalendarIcon className="ml-auto h-3 w-3" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={getValue('investorQuestionnaireDueDate') ? parse(getValue('investorQuestionnaireDueDate'), 'yyyy-MM-dd', new Date()) : undefined}
+                    selected={safeParseDateStr(getValue('investorQuestionnaireDueDate'))}
                     onSelect={(date) => handleChange('investorQuestionnaireDueDate', date ? format(date, 'yyyy-MM-dd') : '')}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
