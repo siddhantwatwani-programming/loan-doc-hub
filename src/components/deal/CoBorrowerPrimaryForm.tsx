@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
+import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -389,7 +390,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           </InlineField>
 
           <InlineField label="ZIP" labelWidth="min-w-[60px]" fieldKey={fk('primary_address.zip')}>
-            <Input value={getValue('primary_address.zip')} onChange={(e) => handleChange('primary_address.zip', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+            <ZipInput value={getValue('primary_address.zip')} onValueChange={(v) => handleChange('primary_address.zip', v)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
           <h4 className="font-semibold text-sm text-foreground pb-1 pt-2 flex items-center gap-3">
@@ -416,7 +417,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           </InlineField>
 
           <InlineField label="ZIP" labelWidth="min-w-[60px]" fieldKey={fk('mailing_address.zip')}>
-            <Input value={getValue('mailing_address.zip')} onChange={(e) => handleChange('mailing_address.zip', e.target.value)} disabled={disabled || getBoolValue('mailing_same_as_primary')} className="h-7 text-sm" />
+            <ZipInput value={getValue('mailing_address.zip')} onValueChange={(v) => handleChange('mailing_address.zip', v)} disabled={disabled || getBoolValue('mailing_same_as_primary')} className="h-7 text-sm" />
           </InlineField>
 
           {/* Delivery Options & Send */}

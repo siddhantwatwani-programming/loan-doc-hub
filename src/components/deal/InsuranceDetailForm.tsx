@@ -1,6 +1,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
+import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Shield } from 'lucide-react';
@@ -145,7 +146,12 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
           {renderField('paymentMailingStreet', 'Street')}
           {renderField('paymentMailingCity', 'City')}
           {renderField('paymentMailingState', 'State')}
-          {renderField('paymentMailingZip', 'ZIP')}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.paymentMailingZip}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">ZIP</Label>
+              <ZipInput value={String(insurance.paymentMailingZip || '')} onValueChange={(v) => onChange('paymentMailingZip', v)} disabled={disabled} className="h-7 text-sm" />
+            </div>
+          </DirtyFieldWrapper>
 
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.active}>
             <div className="flex items-center gap-2 pt-1">
@@ -165,7 +171,12 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
           {renderField('businessAddress', 'Bus. Address')}
           {renderField('businessAddressCity', 'City')}
           {renderField('businessAddressState', 'State')}
-          {renderField('businessAddressZip', 'ZIP')}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.businessAddressZip}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">ZIP</Label>
+              <ZipInput value={String(insurance.businessAddressZip || '')} onValueChange={(v) => onChange('businessAddressZip', v)} disabled={disabled} className="h-7 text-sm" />
+            </div>
+          </DirtyFieldWrapper>
           {renderField('phoneNumber', 'Phone Number')}
           {renderField('faxNumber', 'Fax Number')}
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.email}>

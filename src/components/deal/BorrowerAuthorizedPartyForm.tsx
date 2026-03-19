@@ -1,6 +1,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
+import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
@@ -108,7 +109,12 @@ export const BorrowerAuthorizedPartyForm: React.FC<BorrowerAuthorizedPartyFormPr
           {renderInlineField('street', 'Street')}
           {renderInlineField('city', 'City')}
           {renderInlineField('state', 'State')}
-          {renderInlineField('zip', 'ZIP')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.zip} key="zip">
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs text-muted-foreground">ZIP</Label>
+              <ZipInput value={getValue('zip')} onValueChange={(v) => handleChange('zip', v)} disabled={disabled} className="h-7 text-xs" />
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
         {/* Column 3: Phone */}

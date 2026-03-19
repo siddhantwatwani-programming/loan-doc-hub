@@ -1,6 +1,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
+import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
@@ -111,7 +112,12 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
             {renderInlineField('street', 'Street', 'min-w-[50px]')}
             {renderInlineField('city', 'City', 'min-w-[50px]')}
             {renderInlineField('state', 'State', 'min-w-[50px]')}
-            {renderInlineField('zip', 'ZIP', 'min-w-[50px]')}
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.zip}>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground min-w-[50px]">ZIP</Label>
+                <ZipInput value={getValue('zip')} onValueChange={(v) => handleChange('zip', v)} disabled={disabled} className="h-8 text-sm" />
+              </div>
+            </DirtyFieldWrapper>
           </div>
         </div>
 

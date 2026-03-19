@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ZipInput } from '@/components/ui/zip-input';
 import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -201,7 +202,7 @@ export const ContactLenderDetailForm: React.FC<Props> = ({ lender, onSave, onCan
             </div>
             <div>
               <Label>ZIP</Label>
-              <Input value={form.zip} onChange={(e) => set('zip', e.target.value)} />
+              <ZipInput value={form.zip} onValueChange={(v) => set('zip', v)} />
             </div>
           </div>
         </div>
@@ -251,9 +252,9 @@ export const ContactLenderDetailForm: React.FC<Props> = ({ lender, onSave, onCan
             </div>
             <div>
               <Label>Mailing ZIP</Label>
-              <Input
+              <ZipInput
                 value={form.mailingZip}
-                onChange={(e) => set('mailingZip', e.target.value)}
+                onValueChange={(v) => set('mailingZip', v)}
                 readOnly={form.sameAsPrimary}
                 className={form.sameAsPrimary ? 'bg-muted/50' : ''}
               />

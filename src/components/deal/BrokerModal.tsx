@@ -6,6 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
+import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -113,7 +114,10 @@ export const BrokerModal: React.FC<BrokerModalProps> = ({ open, onOpenChange, br
                 </SelectContent>
               </Select>
             </div>
-            {renderInlineField('zip', 'ZIP Code')}
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP Code</Label>
+              <ZipInput value={formData.zip} onValueChange={(v) => handleFieldChange('zip', v)} className="h-7 text-xs" />
+            </div>
             {renderInlineField('phoneWork', 'Work Phone', { type: 'tel' })}
             {renderInlineField('phoneCell', 'Cell Phone', { type: 'tel' })}
           </div>

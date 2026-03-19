@@ -1,6 +1,7 @@
 import React, { useMemo, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
+import { ZipInput } from '@/components/ui/zip-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -182,7 +183,12 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
               </Select>
             </div>
           </DirtyFieldWrapper>
-          {renderInlineField('zip', 'ZIP')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.zip}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+              <ZipInput value={getValue('zip')} onValueChange={(v) => handleChange('zip', v)} disabled={disabled} className="h-7 text-xs" />
+            </div>
+          </DirtyFieldWrapper>
 
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-3 flex items-center gap-3">
             Mailing Address
@@ -230,7 +236,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingZip}>
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
-              <Input value={getValue('mailingZip')} onChange={(e) => handleChange('mailingZip', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs flex-1" />
+              <ZipInput value={getValue('mailingZip')} onValueChange={(v) => handleChange('mailingZip', v)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs" />
             </div>
           </DirtyFieldWrapper>
         </div>

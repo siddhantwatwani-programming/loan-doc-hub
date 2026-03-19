@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ZipInput } from '@/components/ui/zip-input';
 import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -109,7 +110,7 @@ export const ContactBorrowerDetailForm: React.FC<Props> = ({ borrower, onSave, o
           <div className="col-span-2"><Label>Street</Label><Input value={form.street} onChange={(e) => set('street', e.target.value)} /></div>
           <div><Label>City</Label><Input value={form.city} onChange={(e) => set('city', e.target.value)} /></div>
           <div><Label>State</Label><Input value={form.state} onChange={(e) => set('state', e.target.value)} /></div>
-          <div><Label>ZIP</Label><Input value={form.zip} onChange={(e) => set('zip', e.target.value)} /></div>
+          <div><Label>ZIP</Label><ZipInput value={form.zip} onValueChange={(v) => set('zip', v)} /></div>
         </div>
       </Section>
 
@@ -122,7 +123,7 @@ export const ContactBorrowerDetailForm: React.FC<Props> = ({ borrower, onSave, o
           <div className="col-span-2"><Label>Mailing Street</Label><Input value={form.mailingStreet} onChange={(e) => set('mailingStreet', e.target.value)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} /></div>
           <div><Label>Mailing City</Label><Input value={form.mailingCity} onChange={(e) => set('mailingCity', e.target.value)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} /></div>
           <div><Label>Mailing State</Label><Input value={form.mailingState} onChange={(e) => set('mailingState', e.target.value)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} /></div>
-          <div><Label>Mailing ZIP</Label><Input value={form.mailingZip} onChange={(e) => set('mailingZip', e.target.value)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} /></div>
+          <div><Label>Mailing ZIP</Label><ZipInput value={form.mailingZip} onValueChange={(v) => set('mailingZip', v)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} /></div>
         </div>
       </Section>
 

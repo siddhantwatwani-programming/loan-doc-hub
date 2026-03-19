@@ -6,6 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
+import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -168,7 +169,10 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
               {renderInlineField('primaryStreet', 'Street')}
               {renderInlineField('primaryCity', 'City')}
               {renderInlineSelect('primaryState', 'State', STATE_OPTIONS, 'State')}
-              {renderInlineField('primaryZip', 'ZIP')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+                <ZipInput value={String(formData.primaryZip || '')} onValueChange={(v) => handleFieldChange('primaryZip', v)} className="h-7 text-xs" />
+              </div>
 
               <div className="font-semibold text-xs text-foreground pb-1 mt-2 mb-1.5 flex items-center gap-2">
                 Mailing Address
@@ -180,7 +184,10 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
               {renderInlineField('mailingStreet', 'Street', { disabled: formData.mailingSameAsPrimary })}
               {renderInlineField('mailingCity', 'City', { disabled: formData.mailingSameAsPrimary })}
               {renderInlineSelect('mailingState', 'State', STATE_OPTIONS, 'State')}
-              {renderInlineField('mailingZip', 'ZIP', { disabled: formData.mailingSameAsPrimary })}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+                <ZipInput value={String(formData.mailingZip || '')} onValueChange={(v) => handleFieldChange('mailingZip', v)} disabled={formData.mailingSameAsPrimary} className="h-7 text-xs" />
+              </div>
 
               {/* Delivery Options & Send - stacked layout */}
               <div className="pt-2 space-y-2">

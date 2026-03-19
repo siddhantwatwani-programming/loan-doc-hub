@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -173,9 +174,9 @@ export const AlternateTaxInfoModal: React.FC<AlternateTaxInfoModalProps> = ({
             </div>
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">Zip Code</Label>
-              <Input
+              <ZipInput
                 value={formData.zip}
-                onChange={(e) => handleChange('zip', e.target.value)}
+                onValueChange={(v) => handleChange('zip', v)}
                 className="h-9"
               />
             </div>

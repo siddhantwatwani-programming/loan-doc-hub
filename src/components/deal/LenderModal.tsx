@@ -5,6 +5,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
+import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -134,7 +135,10 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
               {renderInlineField('street', 'Street')}
-              {renderInlineField('zip', 'Zip')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Zip</Label>
+                <ZipInput value={String(formData.zip || '')} onValueChange={(v) => handleChange('zip', v)} className="h-7 text-xs" />
+              </div>
             </div>
 
             {/* Tax ID Type dropdown - same width as Street (half row) */}
