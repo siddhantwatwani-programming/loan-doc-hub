@@ -360,7 +360,10 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {renderInline('First', 'first_name')}
               {renderInline('Middle', 'middle_name')}
               {renderInline('Last', 'last_name')}
-              {renderInline('Email', 'email', 'email')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Email</Label>
+                <EmailInput value={form['email'] || ''} onValueChange={(v) => set('email', v)} className="h-7 text-xs" />
+              </div>
               <div className="pt-2 space-y-1">
                 {renderCheckbox('Frozen', 'frozen')}
                 {renderCheckbox('ACH', 'ach')}
