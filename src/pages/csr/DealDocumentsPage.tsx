@@ -758,7 +758,7 @@ export const DealDocumentsPage: React.FC = () => {
                     <SelectContent>
                       {availablePackets.map(p => (
                         <SelectItem key={p.id} value={p.id}>
-                          {p.name} {p.all_states ? '(All States)' : `(${(p.states || []).join(', ')})`}
+                          {p.name}{p.all_states ? ' (All States)' : (p.states?.length ? ` (${p.states.join(', ')})` : '')}
                         </SelectItem>
                       ))}
                     </SelectContent>
