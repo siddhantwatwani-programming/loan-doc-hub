@@ -123,7 +123,7 @@ export const ContactBorrowerDetailForm: React.FC<Props> = ({ borrower, onSave, o
           <div className="col-span-2"><Label>Mailing Street</Label><Input value={form.mailingStreet} onChange={(e) => set('mailingStreet', e.target.value)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} /></div>
           <div><Label>Mailing City</Label><Input value={form.mailingCity} onChange={(e) => set('mailingCity', e.target.value)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} /></div>
           <div><Label>Mailing State</Label><Input value={form.mailingState} onChange={(e) => set('mailingState', e.target.value)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} /></div>
-          <div><Label>Mailing ZIP</Label><Input value={form.mailingZip} onChange={(e) => set('mailingZip', e.target.value)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} /></div>
+          <div><Label>Mailing ZIP</Label><ZipInput value={form.mailingZip} onValueChange={(v) => set('mailingZip', v)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} /></div>
         </div>
       </Section>
 

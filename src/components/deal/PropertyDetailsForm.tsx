@@ -188,7 +188,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.zip}>
             <div className="flex items-center gap-2">
               <Label className="w-[110px] shrink-0 text-xs text-foreground">Zip Code</Label>
-              <Input value={getFieldValue(FIELD_KEYS.zip)} onChange={(e) => onValueChange(FIELD_KEYS.zip, e.target.value)} disabled={disabled || isCopyBorrower} className="h-7 text-xs flex-1" />
+              <ZipInput value={getFieldValue(FIELD_KEYS.zip)} onValueChange={(v) => onValueChange(FIELD_KEYS.zip, v)} disabled={disabled || isCopyBorrower} className="h-7 text-xs" />
             </div>
           </DirtyFieldWrapper>
           {renderInlineField(FIELD_KEYS.county, 'County')}

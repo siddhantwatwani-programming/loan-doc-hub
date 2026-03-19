@@ -171,7 +171,12 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
           {renderField('businessAddress', 'Bus. Address')}
           {renderField('businessAddressCity', 'City')}
           {renderField('businessAddressState', 'State')}
-          {renderField('businessAddressZip', 'ZIP')}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.businessAddressZip}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">ZIP</Label>
+              <ZipInput value={String(insurance.businessAddressZip || '')} onValueChange={(v) => onChange('businessAddressZip', v)} disabled={disabled} className="h-7 text-sm" />
+            </div>
+          </DirtyFieldWrapper>
           {renderField('phoneNumber', 'Phone Number')}
           {renderField('faxNumber', 'Fax Number')}
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.email}>

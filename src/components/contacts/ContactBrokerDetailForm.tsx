@@ -202,7 +202,7 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
           </div>
           <div>
             <Label>Mailing ZIP</Label>
-            <Input value={form.mailingZip} onChange={(e) => set('mailingZip', e.target.value)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} />
+            <ZipInput value={form.mailingZip} onValueChange={(v) => set('mailingZip', v)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} />
           </div>
         </div>
       </div>

@@ -417,7 +417,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           </InlineField>
 
           <InlineField label="ZIP" labelWidth="min-w-[60px]" fieldKey={fk('mailing_address.zip')}>
-            <Input value={getValue('mailing_address.zip')} onChange={(e) => handleChange('mailing_address.zip', e.target.value)} disabled={disabled || getBoolValue('mailing_same_as_primary')} className="h-7 text-sm" />
+            <ZipInput value={getValue('mailing_address.zip')} onValueChange={(v) => handleChange('mailing_address.zip', v)} disabled={disabled || getBoolValue('mailing_same_as_primary')} className="h-7 text-sm" />
           </InlineField>
 
           {/* Delivery Options & Send */}
