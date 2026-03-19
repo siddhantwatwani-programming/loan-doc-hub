@@ -504,7 +504,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={getValue('investorQuestionnaireDueDate') ? parse(getValue('investorQuestionnaireDueDate'), 'yyyy-MM-dd', new Date()) : undefined}
+                    selected={safeParseDateStr(getValue('investorQuestionnaireDueDate'))}
                     onSelect={(date) => handleChange('investorQuestionnaireDueDate', date ? format(date, 'yyyy-MM-dd') : '')}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
