@@ -75,11 +75,6 @@ const LENDER_TYPE_OPTIONS = [
   { value: 'Non-profit', label: 'Non-profit' },
 ];
 
-const LENDER_CAPACITY_OPTIONS = [
-  { value: 'Broker', label: 'Broker' },
-  { value: 'Primary Lender', label: 'Primary Lender' },
-  { value: 'Authorized Party', label: 'Authorized Party' },
-];
 
 const FORD_DROPDOWN_OPTIONS = [
   { value: 'Spouse, Kids, Grandkids', label: 'Spouse, Kids, Grandkids' },
