@@ -132,7 +132,10 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
               {renderInlineField('businessAddressZip', 'ZIP')}
               {renderInlineField('phoneNumber', 'Phone Number')}
               {renderInlineField('faxNumber', 'Fax Number')}
-              {renderInlineField('email', 'E-mail', { type: 'email' })}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs text-foreground">E-mail</Label>
+                <EmailInput value={String(formData.email || '')} onValueChange={(v) => handleChange('email', v)} className="h-7 text-xs" />
+              </div>
 
               {/* Insurance Tracking */}
               <div className="border-b border-border pb-1 mb-2 pt-2">
