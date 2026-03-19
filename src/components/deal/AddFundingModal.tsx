@@ -158,7 +158,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     }
   }, [formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
 
-  // Auto-compute Percent Owned = Funding Amount / Loan Amount * 100
+   // Auto-compute Percent Owned = Funding Amount / Loan Amount * 100 (NO cap – show error instead)
   React.useEffect(() => {
     const fa = parseFloat(formData.fundingAmount) || 0;
     const la = parseFloat(loanAmount) || 0;
@@ -172,13 +172,30 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     }
   }, [formData.fundingAmount, loanAmount]);
 
-  // Regular Payment = Total Loan Monthly Payment (read-only, full amount)
+  // Regular Payment = Loan Amount × Rate / 12 (always based on TOTAL LOAN)
   React.useEffect(() => {
-    const tp = totalPayment || '';
-    if (tp !== formData.regularPayment) {
-      setFormData(prev => ({ ...prev, regularPayment: tp }));
+    const la = parseFloat(loanAmount) || 0;
+    let rate = 0;
+    if (formData.rateSelection === 'note_rate') rate = parseFloat(formData.rateNoteValue) || 0;
+    else if (formData.rateSelection === 'sold_rate') rate = parseFloat(formData.rateSoldValue) || 0;
+    else if (formData.rateSelection === 'lender_rate') rate = parseFloat(formData.rateLenderValue) || 0;
+
+    const payment = la > 0 && rate > 0 ? (la * (rate / 100) / 12).toFixed(2) : '';
+    if (payment !== formData.regularPayment) {
+      setFormData(prev => ({ ...prev, regularPayment: payment }));
     }
-  }, [totalPayment]);
+  }, [loanAmount, formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
+
+  // Validation: percent owned > 100
+  const percentOwnedNum = parseFloat(formData.percentOwned) || 0;
+  const percentOwnedError = percentOwnedNum > 100;
+
+  // Validation: total % across all lenders > 100
+  const otherLendersTotal = existingRecords
+    .filter(r => r.id !== editingRecordId)
+    .reduce((sum, r) => sum + r.pctOwned, 0);
+  const projectedTotal = otherLendersTotal + percentOwnedNum;
+  const totalPercentError = projectedTotal > 100;
 
 
   const handleChange = (field: keyof FundingFormData, value: string | boolean) => {
