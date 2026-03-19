@@ -365,23 +365,10 @@ const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId }) => {
               <div key={col.id} className={`space-y-1 ${col.id === 'total_owed_by_you' ? 'col-span-1' : ''}`}>
                 <Label className="text-xs">{col.label}</Label>
                 {col.id === 'date' ? (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full h-8 text-xs justify-start font-normal">
-                        {(newCharge as any).date ? (newCharge as any).date : <span className="text-muted-foreground">Date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={(newCharge as any).date ? new Date((newCharge as any).date) : undefined}
-                        onSelect={(date) => {
-                          setNewCharge(prev => ({ ...prev, date: date ? format(date, 'MM/dd/yyyy') : '' }));
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <DateFieldPicker
+                    value={(newCharge as any).date}
+                    onChange={(val) => setNewCharge(prev => ({ ...prev, date: val }))}
+                  />
                 ) : (col.id === 'unpaid_balance' || col.id === 'accrued_interest' || col.id === 'total_due_to_you' || col.id === 'total_owed_by_you') ? (
                   <div className="relative">
                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
