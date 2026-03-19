@@ -32,7 +32,7 @@ const LENDER_TYPE_OPTIONS = [
   'IRA / ERISA', 'Investment Fund', '401k', 'Foreign Holder W-8', 'Non-profit',
 ];
 
-const LENDER_CAPACITY_OPTIONS = ['Broker', 'Primary Lender', 'Authorized Party'];
+
 
 const TAX_ID_TYPE_OPTIONS = [
   { value: '0', label: '0 - Unknown' },
@@ -45,16 +45,12 @@ const BORROWER_TYPE_OPTIONS = [
   'IRA / ERISA', 'Investment Fund', '401K', 'Foreign Holder W-8', 'Non-profit',
 ];
 
-const BORROWER_CAPACITY_OPTIONS = [
-  'Borrower', 'Co-borrower', 'Trustee', 'Co-Trustee',
-  'Managing Member', 'Authorized Signer', 'Additional Guarantor',
-];
 
 const getInitialForm = (contactType: string): Record<string, string> => {
   if (contactType === 'lender') {
     return {
       type: '', full_name: '', first_name: '', middle_name: '', last_name: '',
-      capacity: '', email: '', dob: '',
+      email: '', dob: '',
       tax_id_type: '', tax_id: '', tin_verified: 'false',
       'primary_address.street': '', 'primary_address.city': '',
       'primary_address.state': '', 'primary_address.zip': '',
@@ -87,7 +83,7 @@ const getInitialForm = (contactType: string): Record<string, string> => {
   // borrower
   return {
     borrower_type: '', full_name: '', first_name: '', middle_initial: '', last_name: '',
-    capacity: '', email: '', dob: '',
+    email: '', dob: '',
     'address.street': '', 'address.city': '', 'address.state': '', 'address.zip': '',
     'mailing.street': '', 'mailing.city': '', 'mailing.state': '', 'mailing.zip': '',
     mailing_same_as_primary: 'false',
@@ -222,7 +218,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {renderInline('First', 'first_name')}
               {renderInline('Middle', 'middle_name')}
               {renderInline('Last', 'last_name')}
-              {renderSelect('Capacity', 'capacity', LENDER_CAPACITY_OPTIONS)}
+              
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">Email</Label>
                 <EmailInput value={form['email'] || ''} onValueChange={(v) => set('email', v)} className="h-7 text-xs" />
@@ -460,7 +456,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {renderInline('First', 'first_name')}
               {renderInline('Middle', 'middle_initial')}
               {renderInline('Last', 'last_name')}
-              {renderSelect('Capacity', 'capacity', BORROWER_CAPACITY_OPTIONS)}
+              
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">Email</Label>
                 <EmailInput value={form['email'] || ''} onValueChange={(v) => set('email', v)} className="h-7 text-xs" />

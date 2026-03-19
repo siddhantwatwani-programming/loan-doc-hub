@@ -49,6 +49,15 @@ const PARTICIPANT_TYPES = [
   { value: 'other', label: 'Other', disabled: true },
 ];
 
+const CAPACITY_OPTIONS: Record<string, string[]> = {
+  borrower: [
+    'Borrower', 'Co-borrower', 'Trustee', 'Co-Trustee',
+    'Managing Member', 'Authorized Signer', 'Additional Guarantor',
+  ],
+  lender: ['Broker', 'Primary Lender', 'Authorized Party'],
+  broker: ['Broker'],
+};
+
 export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
   open,
   onOpenChange,
@@ -61,6 +70,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
   const [participantType, setParticipantType] = useState<ParticipantType | ''>('');
   const [mode, setMode] = useState<'existing' | 'new'>('existing');
   const [saving, setSaving] = useState(false);
+  const [capacity, setCapacity] = useState('');
 
   // Existing contact search
   const [searchQuery, setSearchQuery] = useState('');
@@ -85,6 +95,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
       setNewName('');
       setNewEmail('');
       setNewPhone('');
+      setCapacity('');
     }
   }, [open]);
 
@@ -163,9 +174,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           .maybeSingle();
 
         const existingData = (existingContact?.contact_data || {}) as Record<string, string>;
-        const capacityLabel = participantType === 'borrower' ? 'Borrower'
-          : participantType === 'lender' ? 'Lender'
-          : participantType === 'broker' ? 'Broker' : participantType;
+        const capacityLabel = capacity || participantType;
         const mergedData: Record<string, string> = {
           ...existingData,
           'full_name': name,
@@ -210,11 +219,8 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
         };
         if (email) contactDataPayload['email'] = email;
         if (phone) contactDataPayload['phone.home'] = phone;
-        // Map participant role to capacity
-        const capacityLabel = participantType === 'borrower' ? 'Borrower'
-          : participantType === 'lender' ? 'Lender'
-          : participantType === 'broker' ? 'Broker' : participantType;
-        contactDataPayload['capacity'] = capacityLabel;
+        // Use selected capacity
+        contactDataPayload['capacity'] = capacity || participantType;
 
         const { data: newContact, error: contactError } = await supabase
           .from('contacts')
@@ -336,7 +342,23 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
                 <span className="font-medium text-foreground capitalize">{participantType}</span>
               </div>
 
-              {/* Mode Toggle */}
+              {/* Capacity Dropdown */}
+              {participantType && CAPACITY_OPTIONS[participantType] && (
+                <div>
+                  <Label className="text-sm font-medium">Capacity</Label>
+                  <Select value={capacity} onValueChange={setCapacity}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select capacity..." />
+                    </SelectTrigger>
+                    <SelectContent className="z-[70]">
+                      {CAPACITY_OPTIONS[participantType].map((opt) => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <Button
                   variant={mode === 'existing' ? 'default' : 'outline'}
