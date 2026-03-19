@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, Plus, Settings2, Filter, Download, CalendarIcon, X, Paperclip } from 'lucide-react';
+import { Search, Plus, Settings2, Filter, Download, CalendarIcon, X, Paperclip, FileDown, Eye } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -18,6 +18,12 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
+interface AttachmentMeta {
+  name: string;
+  storagePath: string;
+  uploadedAt: string;
+}
+
 interface LogRow {
   id: string;
   date: string;
@@ -30,13 +36,14 @@ interface LogRow {
   content: string;
   highPriority: boolean;
   reference: string;
-  attachments: string[];
+  attachments: (string | AttachmentMeta)[];
   account: string;
   name: string;
 }
 
 const ALL_COLUMNS = [
   { id: 'date', label: 'Date - Time' },
+  { id: 'asOfDate', label: 'As Of' },
   { id: 'highPriority', label: 'High Priority' },
   { id: 'type', label: 'Type' },
   { id: 'account', label: 'Account' },
@@ -53,6 +60,22 @@ const formatDateTimeDisplay = (isoStr: string): string => {
     if (isNaN(d.getTime())) return isoStr;
     return format(d, 'MM/dd/yyyy HH:mm:ss');
   } catch { return isoStr; }
+};
+
+const formatDateDisplay = (isoStr: string): string => {
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return isoStr;
+    return format(d, 'MM/dd/yyyy');
+  } catch { return isoStr; }
+};
+
+const getAttachmentName = (att: string | AttachmentMeta): string => {
+  return typeof att === 'string' ? att : att.name;
+};
+
+const getAttachmentPath = (att: string | AttachmentMeta): string | null => {
+  return typeof att === 'object' && att.storagePath ? att.storagePath : null;
 };
 
 const getEmptyLog = (): Omit<LogRow, 'id'> => {
@@ -90,6 +113,9 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
   const [addAsOfOpen, setAddAsOfOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logTypes, setLogTypes] = useState<string[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [viewingRow, setViewingRow] = useState<LogRow | null>(null);
 
   useEffect(() => {
     (supabase as any).from('conversation_log_types').select('label').eq('is_active', true).order('display_order').then(({ data, error }: any) => {
@@ -98,7 +124,6 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
     });
   }, []);
 
-  // Load from DB
   useEffect(() => {
     if (!contactDbId) return;
     const load = async () => {
@@ -157,13 +182,40 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
     return result;
   }, [rows, search, sortCol, sortDir, asOfDateFilter, filterType, filterStatus]);
 
+  const uploadFilesToStorage = async (files: File[], logId: string): Promise<AttachmentMeta[]> => {
+    const results: AttachmentMeta[] = [];
+    for (const file of files) {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `lender/${contactDbId}/${logId}/${Date.now()}_${safeName}`;
+      const { error } = await supabase.storage.from('contact-attachments').upload(path, file);
+      if (error) {
+        console.error('Upload failed:', error);
+        toast.error(`Failed to upload ${file.name}`);
+        continue;
+      }
+      results.push({ name: file.name, storagePath: path, uploadedAt: new Date().toISOString() });
+    }
+    return results;
+  };
+
   const handleAddLog = async () => {
-    const entry: LogRow = { ...newLog, id: `conv_${Date.now()}` };
+    setUploading(true);
+    const logId = `conv_${Date.now()}`;
+    let attachmentsMeta: (string | AttachmentMeta)[] = [...newLog.attachments];
+
+    if (pendingFiles.length > 0) {
+      const uploaded = await uploadFilesToStorage(pendingFiles, logId);
+      attachmentsMeta = uploaded;
+    }
+
+    const entry: LogRow = { ...newLog, id: logId, attachments: attachmentsMeta };
     const updated = [...rows, entry];
     setRows(updated);
     await persistLogs(updated);
     setNewLog(getEmptyLog());
+    setPendingFiles([]);
     setAddOpen(false);
+    setUploading(false);
     toast.success('Conversation log added');
     logContactEvent(contactDbId, 'Conversation Log', [{ fieldLabel: 'Log Added', oldValue: '', newValue: entry.subject || 'New log' }]);
   };
@@ -198,9 +250,35 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    const newNames = Array.from(files).map(f => f.name);
+    const fileArr = Array.from(files);
+    setPendingFiles(prev => [...prev, ...fileArr]);
+    const newNames: AttachmentMeta[] = fileArr.map(f => ({ name: f.name, storagePath: '', uploadedAt: '' }));
     setNewLog(prev => ({ ...prev, attachments: [...prev.attachments, ...newNames] }));
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeAttachment = (idx: number) => {
+    setPendingFiles(prev => prev.filter((_, i) => i !== idx));
+    setNewLog(p => ({ ...p, attachments: p.attachments.filter((_, i) => i !== idx) }));
+  };
+
+  const handleDownloadAttachment = async (att: string | AttachmentMeta) => {
+    const path = getAttachmentPath(att);
+    if (!path) {
+      toast.info('This attachment has no downloadable file');
+      return;
+    }
+    const { data, error } = await supabase.storage.from('contact-attachments').download(path);
+    if (error || !data) {
+      toast.error('Failed to download file');
+      return;
+    }
+    const url = URL.createObjectURL(data);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = getAttachmentName(att);
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const addAsOfDateObj = newLog.asOfDate ? (() => {
@@ -212,11 +290,9 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
 
   return (
     <div className="space-y-4">
-      {/* Row 1: Title + As Of + Columns + Add */}
       <div className="flex items-center justify-between">
         <h4 className="text-lg font-semibold text-foreground">Conversation Log</h4>
         <div className="flex items-center gap-2">
-          {/* As Of date filter */}
           <span className="text-xs text-muted-foreground">As Of</span>
           <Popover open={asOfFilterOpen} onOpenChange={setAsOfFilterOpen}>
             <PopoverTrigger asChild>
@@ -234,8 +310,6 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
               )}
             </PopoverContent>
           </Popover>
-
-          {/* Columns */}
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="h-8 text-xs gap-1"><Settings2 className="h-3.5 w-3.5" /> Columns</Button>
@@ -249,14 +323,12 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
               ))}
             </PopoverContent>
           </Popover>
-
-          <Button size="sm" className="h-8 text-xs gap-1" onClick={() => { setNewLog(getEmptyLog()); setAddOpen(true); }}>
+          <Button size="sm" className="h-8 text-xs gap-1" onClick={() => { setNewLog(getEmptyLog()); setPendingFiles([]); setAddOpen(true); }}>
             <Plus className="h-3.5 w-3.5" /> Add Conversation Logs
           </Button>
         </div>
       </div>
 
-      {/* Row 2: Search + Filters + Export */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1 max-w-[220px]">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -296,7 +368,6 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
         )}
       </div>
 
-      {/* Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
@@ -309,13 +380,16 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
             {filtered.length === 0 ? (
               <TableRow><TableCell colSpan={activeColumns.length + 1} className="text-center py-8 text-muted-foreground">No conversation log entries found.</TableCell></TableRow>
             ) : filtered.map(r => (
-              <TableRow key={r.id}>
-                <TableCell><Checkbox checked={selectedRows.has(r.id)} onCheckedChange={() => { const n = new Set(selectedRows); n.has(r.id) ? n.delete(r.id) : n.add(r.id); setSelectedRows(n); }} /></TableCell>
+              <TableRow key={r.id} className="cursor-pointer hover:bg-muted/30" onClick={() => setViewingRow(r)}>
+                <TableCell onClick={e => e.stopPropagation()}><Checkbox checked={selectedRows.has(r.id)} onCheckedChange={() => { const n = new Set(selectedRows); n.has(r.id) ? n.delete(r.id) : n.add(r.id); setSelectedRows(n); }} /></TableCell>
                 {activeColumns.map(c => (
                   <TableCell key={c.id} className="text-xs">
                     {c.id === 'date' ? formatDateTimeDisplay((r as any)[c.id] || '') :
+                     c.id === 'asOfDate' ? formatDateDisplay(r.asOfDate || '') :
                      c.id === 'highPriority' ? (r.highPriority ? 'Yes' : 'No') :
-                     c.id === 'attachments' ? (r.attachments && r.attachments.length > 0 ? <Paperclip className="h-4 w-4 text-primary" /> : '-') :
+                     c.id === 'attachments' ? (r.attachments && r.attachments.length > 0 ? (
+                       <span className="flex items-center gap-1"><Paperclip className="h-3.5 w-3.5 text-primary" /><span>{r.attachments.length}</span></span>
+                     ) : '-') :
                      (r as any)[c.id] || '-'}
                   </TableCell>
                 ))}
@@ -324,6 +398,95 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
           </TableBody>
         </Table>
       </div>
+
+      <div className="text-xs text-muted-foreground text-right">
+        Total Conversation Logs: {filtered.length}
+      </div>
+
+      {/* View Row Detail Dialog */}
+      <Dialog open={!!viewingRow} onOpenChange={(open) => { if (!open) setViewingRow(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Conversation Log Details</DialogTitle>
+          </DialogHeader>
+          {viewingRow && (
+            <div className="space-y-3 mt-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Date</Label>
+                  <span className="text-xs">{formatDateTimeDisplay(viewingRow.date)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">As Of</Label>
+                  <span className="text-xs">{formatDateDisplay(viewingRow.asOfDate)}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Type</Label>
+                  <span className="text-xs">{viewingRow.type || '-'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Reference</Label>
+                  <span className="text-xs">{viewingRow.reference || '-'}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Account</Label>
+                  <span className="text-xs">{viewingRow.account || '-'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Name</Label>
+                  <span className="text-xs">{viewingRow.name || '-'}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Priority</Label>
+                <span className="text-xs">{viewingRow.highPriority ? 'Yes' : 'No'}</span>
+              </div>
+              {viewingRow.content && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Content</Label>
+                  <div className="mt-1 p-2 border border-border rounded text-xs bg-muted/30 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: viewingRow.content }} />
+                </div>
+              )}
+
+              {/* Attachments Section */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-foreground">Attachments</Label>
+                {(!viewingRow.attachments || viewingRow.attachments.length === 0) ? (
+                  <p className="text-xs text-muted-foreground italic">No attachments available</p>
+                ) : (
+                  <div className="space-y-1">
+                    {viewingRow.attachments.map((att, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-3 py-2 border border-border">
+                        <Paperclip className="h-3.5 w-3.5 shrink-0 text-primary" />
+                        <span className="flex-1 truncate font-medium">{getAttachmentName(att)}</span>
+                        {typeof att === 'object' && att.uploadedAt && (
+                          <span className="text-muted-foreground shrink-0">{formatDateDisplay(att.uploadedAt)}</span>
+                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs gap-1 shrink-0"
+                          onClick={() => handleDownloadAttachment(att)}
+                        >
+                          <FileDown className="h-3 w-3" /> Download
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter className="mt-4">
+            <Button variant="outline" size="sm" onClick={() => setViewingRow(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
@@ -397,10 +560,10 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
               </div>
               {newLog.attachments.length > 0 && (
                 <div className="space-y-1">
-                  {newLog.attachments.map((name, idx) => (
+                  {newLog.attachments.map((att, idx) => (
                     <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
-                      <Paperclip className="h-3 w-3 shrink-0" /><span className="flex-1 truncate">{name}</span>
-                      <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={() => setNewLog(p => ({ ...p, attachments: p.attachments.filter((_, i) => i !== idx) }))}><X className="h-3 w-3" /></Button>
+                      <Paperclip className="h-3 w-3 shrink-0" /><span className="flex-1 truncate">{getAttachmentName(att)}</span>
+                      <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={() => removeAttachment(idx)}><X className="h-3 w-3" /></Button>
                     </div>
                   ))}
                 </div>
@@ -409,7 +572,7 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
           </div>
           <DialogFooter className="mt-4">
             <Button variant="outline" size="sm" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleAddLog}>OK</Button>
+            <Button size="sm" onClick={handleAddLog} disabled={uploading}>{uploading ? 'Uploading...' : 'OK'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
