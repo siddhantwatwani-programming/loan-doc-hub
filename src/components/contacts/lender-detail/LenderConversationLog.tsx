@@ -89,6 +89,14 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
   const [filterStatus, setFilterStatus] = useState('');
   const [addAsOfOpen, setAddAsOfOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [logTypes, setLogTypes] = useState<string[]>([]);
+
+  useEffect(() => {
+    (supabase as any).from('conversation_log_types').select('label').eq('is_active', true).order('display_order').then(({ data, error }: any) => {
+      if (error || !data?.length) setLogTypes(LOG_TYPES_FALLBACK);
+      else setLogTypes(data.map((r: any) => r.label));
+    });
+  }, []);
 
   // Load from DB
   useEffect(() => {
