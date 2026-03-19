@@ -180,35 +180,26 @@ export const PacketManagementPage: React.FC = () => {
 
     setSaving(true);
     try {
-      // Use first selected state as the legacy `state` field for backward compat
-      const legacyState = formData.all_states ? 'ALL' : (formData.states[0] || 'TBD');
+      const payload = {
+        name: formData.name,
+        state: 'TBD',
+        product_type: 'TBD',
+        description: formData.description || null,
+        is_active: formData.is_active,
+        all_states: false,
+        states: [] as string[],
+      };
 
       if (editingPacket) {
         const { error } = await supabase
           .from('packets')
-          .update({
-            name: formData.name,
-            state: legacyState,
-            product_type: formData.product_type,
-            description: formData.description || null,
-            is_active: formData.is_active,
-            all_states: formData.all_states,
-            states: formData.all_states ? [] : formData.states,
-          })
+          .update(payload)
           .eq('id', editingPacket.id);
 
         if (error) throw error;
         toast({ title: 'Packet updated successfully' });
       } else {
-        const { error } = await supabase.from('packets').insert({
-          name: formData.name,
-          state: legacyState,
-          product_type: formData.product_type,
-          description: formData.description || null,
-          is_active: formData.is_active,
-          all_states: formData.all_states,
-          states: formData.all_states ? [] : formData.states,
-        });
+        const { error } = await supabase.from('packets').insert(payload);
 
         if (error) throw error;
         toast({ title: 'Packet created successfully' });
