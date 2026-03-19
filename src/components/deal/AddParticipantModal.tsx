@@ -219,11 +219,8 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
         };
         if (email) contactDataPayload['email'] = email;
         if (phone) contactDataPayload['phone.home'] = phone;
-        // Map participant role to capacity
-        const capacityLabel = participantType === 'borrower' ? 'Borrower'
-          : participantType === 'lender' ? 'Lender'
-          : participantType === 'broker' ? 'Broker' : participantType;
-        contactDataPayload['capacity'] = capacityLabel;
+        // Use selected capacity
+        contactDataPayload['capacity'] = capacity || participantType;
 
         const { data: newContact, error: contactError } = await supabase
           .from('contacts')
