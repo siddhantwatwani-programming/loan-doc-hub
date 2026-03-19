@@ -30,7 +30,8 @@ interface AddFundingModalProps {
   soldRate?: string;
   totalPayment?: string;
   loanAmount?: string;
-  existingRecords?: Array<{ id: string; roundingError: boolean }>;
+  existingRecords?: Array<{ id: string; roundingError: boolean; pctOwned: number }>;
+  editingRecordId?: string;
 }
 
 export interface FundingFormData {
@@ -124,6 +125,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   totalPayment = '',
   loanAmount = '',
   existingRecords = [],
+  editingRecordId,
 }) => {
   const getInitialFormData = (): FundingFormData => {
     if (editData) return { ...editData, loan: loanNumber || editData.loan, borrower: borrowerName || editData.borrower };
@@ -157,7 +159,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     }
   }, [formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
 
-  // Auto-compute Percent Owned = Funding Amount / Loan Amount * 100
+   // Auto-compute Percent Owned = Funding Amount / Loan Amount * 100 (NO cap – show error instead)
   React.useEffect(() => {
     const fa = parseFloat(formData.fundingAmount) || 0;
     const la = parseFloat(loanAmount) || 0;
@@ -171,13 +173,30 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     }
   }, [formData.fundingAmount, loanAmount]);
 
-  // Regular Payment = Total Loan Monthly Payment (read-only, full amount)
+  // Regular Payment = Loan Amount × Rate / 12 (always based on TOTAL LOAN)
   React.useEffect(() => {
-    const tp = totalPayment || '';
-    if (tp !== formData.regularPayment) {
-      setFormData(prev => ({ ...prev, regularPayment: tp }));
+    const la = parseFloat(loanAmount) || 0;
+    let rate = 0;
+    if (formData.rateSelection === 'note_rate') rate = parseFloat(formData.rateNoteValue) || 0;
+    else if (formData.rateSelection === 'sold_rate') rate = parseFloat(formData.rateSoldValue) || 0;
+    else if (formData.rateSelection === 'lender_rate') rate = parseFloat(formData.rateLenderValue) || 0;
+
+    const payment = la > 0 && rate > 0 ? (la * (rate / 100) / 12).toFixed(2) : '';
+    if (payment !== formData.regularPayment) {
+      setFormData(prev => ({ ...prev, regularPayment: payment }));
     }
-  }, [totalPayment]);
+  }, [loanAmount, formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
+
+  // Validation: percent owned > 100
+  const percentOwnedNum = parseFloat(formData.percentOwned) || 0;
+  const percentOwnedError = percentOwnedNum > 100;
+
+  // Validation: total % across all lenders > 100
+  const otherLendersTotal = existingRecords
+    .filter(r => r.id !== editingRecordId)
+    .reduce((sum, r) => sum + r.pctOwned, 0);
+  const projectedTotal = otherLendersTotal + percentOwnedNum;
+  const totalPercentError = projectedTotal > 100;
 
 
   const handleChange = (field: keyof FundingFormData, value: string | boolean) => {
@@ -372,15 +391,20 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               </RadioGroup>
             </div>
 
-            {/* Percent Owned, Regular Payment, Lender Share - inline */}
-            <div className="flex items-center gap-6 flex-wrap mt-1">
+             <div className="flex items-center gap-6 flex-wrap mt-1">
               <div className="flex items-center gap-2">
-                <Label className="text-sm text-muted-foreground shrink-0">Percent Owned</Label>
+                <Label className={cn("text-sm shrink-0", percentOwnedError ? "text-destructive font-medium" : "text-muted-foreground")}>Percent Owned</Label>
                 <div className="relative w-28">
-                  <Input type="text" inputMode="decimal" value={formData.percentOwned} disabled className="h-7 text-sm pr-6 opacity-50 bg-muted" placeholder="0.000" />
+                  <Input type="text" inputMode="decimal" value={formData.percentOwned} disabled className={cn("h-7 text-sm pr-6 opacity-50 bg-muted", percentOwnedError && "border-destructive")} placeholder="0.000" />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
                 </div>
               </div>
+              {percentOwnedError && (
+                <span className="text-xs text-destructive font-medium">Percent Owned cannot exceed 100%</span>
+              )}
+              {!percentOwnedError && totalPercentError && (
+                <span className="text-xs text-destructive font-medium">Total ownership across all lenders cannot exceed 100% (currently {projectedTotal.toFixed(3)}%)</span>
+              )}
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-muted-foreground shrink-0">Regular Payment</Label>
                 <div className="relative w-28">
@@ -444,7 +468,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
         <DialogFooter className="shrink-0 border-t border-border pt-3">
           <Button variant="outline" size="sm" onClick={handleCancel}>Cancel</Button>
-          <Button size="sm" onClick={handleSubmit}>{isEditing ? 'Update Funding' : 'Save Funding'}</Button>
+          <Button size="sm" onClick={handleSubmit} disabled={percentOwnedError || totalPercentError}>{isEditing ? 'Update Funding' : 'Save Funding'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -392,7 +392,10 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         </div>
       </div>
 
-      {totalOwnership !== 100 && fundingRecords.length > 0 && (
+      {totalOwnership > 100 && fundingRecords.length > 0 && (
+        <p className="text-sm text-destructive font-medium">⚠ Total ownership exceeds 100% ({formatPercentage(totalOwnership)}). Cannot save new funding until resolved.</p>
+      )}
+      {totalOwnership !== 100 && totalOwnership <= 100 && fundingRecords.length > 0 && (
         <p className="text-sm text-foreground">Total ownership must equal 100% (currently {formatPercentage(totalOwnership)})</p>
       )}
 
@@ -443,7 +446,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         soldRate={soldRate}
         totalPayment={totalPayment}
         loanAmount={loanAmount}
-        existingRecords={fundingRecords.map(r => ({ id: r.id, roundingError: r.roundingError }))}
+        existingRecords={fundingRecords.map(r => ({ id: r.id, roundingError: r.roundingError, pctOwned: r.pctOwned }))}
+        editingRecordId={selectedRecord?.id}
       />
 
       <FundingHistoryDialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen} dealId={dealId} historyRecords={historyRecords} />
