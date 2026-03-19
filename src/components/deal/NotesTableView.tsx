@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Plus, Download } from 'lucide-react';
+import { Plus, Download, Paperclip, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
@@ -14,6 +16,14 @@ import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+export interface AttachmentMeta {
+  name: string;
+  storagePath: string;
+  uploadedAt: string;
+}
 
 export interface NoteData {
   id: string;
@@ -25,8 +35,16 @@ export interface NoteData {
   reference: string;
   content: string;
   type: string;
-  attachments: string[];
+  attachments: (string | AttachmentMeta)[];
 }
+
+export const getAttachmentName = (att: string | AttachmentMeta): string => {
+  return typeof att === 'string' ? att : att.name;
+};
+
+export const getAttachmentPath = (att: string | AttachmentMeta): string | null => {
+  return typeof att === 'object' && att.storagePath ? att.storagePath : null;
+};
 
 interface NotesTableViewProps {
   notes: NoteData[];
@@ -51,6 +69,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'account', label: 'Account', visible: true },
   { id: 'name', label: 'Name', visible: true },
   { id: 'reference', label: 'Reference', visible: true },
+  { id: 'attachments', label: 'Attachment', visible: true },
 ];
 
 const SEARCH_FIELDS = ['name', 'account', 'reference', 'type', 'content', 'date', 'asOfDate'];
@@ -101,9 +120,10 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
   notes, onAddNote, onEditNote, onRowClick, onDeleteNote, onBulkDelete, onExport, onRefresh, disabled = false, isLoading = false,
   asOfFilter, onAsOfFilterChange,
 }) => {
-  const [columns, setColumns, resetColumns] = useTableColumnConfig('notes_v3', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('notes_v4', DEFAULT_COLUMNS);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [viewingNote, setViewingNote] = useState<NoteData | null>(null);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const {
@@ -131,6 +151,25 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
     } catch { return dateStr; }
   };
 
+  const handleDownloadAttachment = async (att: string | AttachmentMeta) => {
+    const path = getAttachmentPath(att);
+    if (!path) {
+      toast.info('This attachment has no downloadable file');
+      return;
+    }
+    const { data, error } = await supabase.storage.from('contact-attachments').download(path);
+    if (error || !data) {
+      toast.error('Failed to download file');
+      return;
+    }
+    const url = URL.createObjectURL(data);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = getAttachmentName(att);
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const renderCellValue = (note: NoteData, columnId: string) => {
     switch (columnId) {
       case 'date': return formatDateTime(note.date);
@@ -140,6 +179,9 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
       case 'account': return note.account || '-';
       case 'name': return note.name || '-';
       case 'reference': return note.reference || '-';
+      case 'attachments': return note.attachments && note.attachments.length > 0 ? (
+        <span className="flex items-center gap-1"><Paperclip className="h-3.5 w-3.5 text-primary" /><span>{note.attachments.length}</span></span>
+      ) : '-';
       default: return '-';
     }
   };
@@ -154,7 +196,11 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
     setBulkDeleteOpen(false);
   };
 
-  const exportColumns: ExportColumn[] = DEFAULT_COLUMNS.map(c => ({ id: c.id, label: c.label }));
+  const handleRowClick = (note: NoteData) => {
+    setViewingNote(note);
+  };
+
+  const exportColumns: ExportColumn[] = DEFAULT_COLUMNS.filter(c => c.id !== 'attachments').map(c => ({ id: c.id, label: c.label }));
 
   return (
     <div className="space-y-4">
@@ -245,7 +291,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
               </TableRow>
             ) : (
               filteredData.map((note) => (
-                <TableRow key={note.id} className="cursor-pointer hover:bg-muted/30" onClick={() => onRowClick(note)}>
+                <TableRow key={note.id} className="cursor-pointer hover:bg-muted/30" onClick={() => handleRowClick(note)}>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <Checkbox checked={selectedIds.has(note.id)} onCheckedChange={() => toggleOne(note.id)} disabled={disabled} />
                   </TableCell>
@@ -268,6 +314,95 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* View Detail Dialog */}
+      <Dialog open={!!viewingNote} onOpenChange={(open) => { if (!open) setViewingNote(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Conversation Log Details</DialogTitle>
+          </DialogHeader>
+          {viewingNote && (
+            <div className="space-y-3 mt-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Date</Label>
+                  <span className="text-xs">{formatDateTime(viewingNote.date)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">As Of</Label>
+                  <span className="text-xs">{formatDate(viewingNote.asOfDate)}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Type</Label>
+                  <span className="text-xs">{viewingNote.type || '-'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Reference</Label>
+                  <span className="text-xs">{viewingNote.reference || '-'}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Account</Label>
+                  <span className="text-xs">{viewingNote.account || '-'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Name</Label>
+                  <span className="text-xs">{viewingNote.name || '-'}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Priority</Label>
+                <span className="text-xs">{viewingNote.highPriority ? 'Yes' : 'No'}</span>
+              </div>
+              {viewingNote.content && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Content</Label>
+                  <div className="mt-1 p-2 border border-border rounded text-xs bg-muted/30 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: viewingNote.content }} />
+                </div>
+              )}
+
+              {/* Attachments Section */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-foreground">Attachments</Label>
+                {(!viewingNote.attachments || viewingNote.attachments.length === 0) ? (
+                  <p className="text-xs text-muted-foreground italic">No attachments available</p>
+                ) : (
+                  <div className="space-y-1">
+                    {viewingNote.attachments.map((att, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-3 py-2 border border-border">
+                        <Paperclip className="h-3.5 w-3.5 shrink-0 text-primary" />
+                        <span className="flex-1 truncate font-medium">{getAttachmentName(att)}</span>
+                        {typeof att === 'object' && att.uploadedAt && (
+                          <span className="text-muted-foreground shrink-0">{formatDate(att.uploadedAt)}</span>
+                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs gap-1 shrink-0"
+                          onClick={() => handleDownloadAttachment(att)}
+                        >
+                          <FileDown className="h-3 w-3" /> Download
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => { setViewingNote(null); onEditNote(viewingNote); }}>Edit</Button>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="mt-4">
+            <Button variant="outline" size="sm" onClick={() => setViewingNote(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <DeleteConfirmationDialog
         open={bulkDeleteOpen}
