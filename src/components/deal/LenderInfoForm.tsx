@@ -336,7 +336,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={getValue('dob') ? parse(getValue('dob'), 'yyyy-MM-dd', new Date()) : undefined}
+                    selected={safeParseDateStr(getValue('dob'))}
                     onSelect={(date) => { handleChange('dob', date ? format(date, 'yyyy-MM-dd') : ''); setDobOpen(false); }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
