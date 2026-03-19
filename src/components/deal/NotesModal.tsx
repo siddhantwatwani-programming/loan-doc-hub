@@ -279,7 +279,9 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                 <SelectContent>
                   {noteTypes.length > 0 ? noteTypes.map(t => (
                     <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
-                  ))}
+                  )) : (
+                    <SelectItem value="__none__" disabled className="text-xs text-muted-foreground">No options available</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
