@@ -948,6 +948,13 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                   {SECTION_LABELS["origination_fees"]}
                 </TabsTrigger>
               )}
+
+              {/* Attachments - Coming Soon tab */}
+              {isInternalUser && (
+                <TabsTrigger value="attachments" className="gap-2 data-[state=active]:bg-background">
+                  Attachments
+                </TabsTrigger>
+              )}
             </TabsList>
 
             {(isExternalUser ? visibleSections : sections)
