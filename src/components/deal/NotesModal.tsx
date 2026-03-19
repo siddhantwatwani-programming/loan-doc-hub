@@ -71,12 +71,12 @@ export const NotesModal: React.FC<NotesModalProps> = ({
   useEffect(() => {
     if (!open) return;
     setTypesLoading(true);
-    supabase
+    (supabase as any)
       .from('conversation_log_types')
       .select('label')
       .eq('is_active', true)
       .order('display_order')
-      .then(({ data, error }) => {
+      .then(({ data, error }: { data: any[] | null; error: any }) => {
         if (error || !data?.length) {
           setNoteTypes(NOTE_TYPES_FALLBACK);
         } else {
