@@ -77,7 +77,7 @@ export const ContactBrokerModal: React.FC<Props> = ({ open, onOpenChange, onSubm
           </div>
           <div>
             <Label>Email</Label>
-            <Input value={form.email} onChange={(e) => set('email', e.target.value)} />
+            <EmailInput value={form.email} onValueChange={(v) => set('email', v)} />
           </div>
           <div>
             <Label>Cell Phone</Label>

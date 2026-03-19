@@ -108,7 +108,7 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
           <Label>Email</Label>
-          <Input value={form.email} onChange={(e) => set('email', e.target.value)} />
+          <EmailInput value={form.email} onValueChange={(v) => set('email', v)} />
         </div>
         <div>
           <Label>Home Phone</Label>

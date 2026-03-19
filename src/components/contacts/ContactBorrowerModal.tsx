@@ -60,7 +60,7 @@ export const ContactBorrowerModal: React.FC<ContactBorrowerModalProps> = ({ open
               </SelectContent>
             </Select>
           </div>
-          <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} /></div>
+          <div><Label>Email</Label><EmailInput value={form.email} onValueChange={(v) => set('email', v)} /></div>
           <div><Label>Cell Phone</Label><Input value={form.cellPhone} onChange={(e) => set('cellPhone', e.target.value)} /></div>
           <div><Label>City</Label><Input value={form.city} onChange={(e) => set('city', e.target.value)} /></div>
           <div><Label>State</Label><Input value={form.state} onChange={(e) => set('state', e.target.value)} /></div>
