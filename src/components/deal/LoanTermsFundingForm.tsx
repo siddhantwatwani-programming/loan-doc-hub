@@ -154,26 +154,39 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   useEffect(() => {
     if (!dealId) return;
     const fetchBorrower = async () => {
-      const { data } = await supabase
+      // Fetch ALL borrower participants for this deal
+      const { data: participants } = await supabase
         .from('deal_participants')
         .select('name, contact_id')
         .eq('deal_id', dealId)
         .eq('role', 'borrower')
-        .order('created_at', { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      if (data?.name) {
-        setParticipantBorrowerName(data.name);
-      } else if (data?.contact_id) {
-        // Fallback: fetch name from contacts table
+        .order('created_at', { ascending: true });
+
+      if (!participants || participants.length === 0) return;
+
+      // Primary = first borrower participant
+      const primary = participants[0];
+      let primaryName = primary.name || '';
+
+      // If no name on participant row, fallback to contacts table
+      if (!primaryName && primary.contact_id) {
         const { data: contact } = await supabase
           .from('contacts')
           .select('full_name, first_name, last_name')
-          .eq('id', data.contact_id)
+          .eq('id', primary.contact_id)
           .maybeSingle();
         if (contact) {
-          setParticipantBorrowerName(contact.full_name || `${contact.first_name || ''} ${contact.last_name || ''}`.trim());
+          primaryName = contact.full_name || `${contact.first_name || ''} ${contact.last_name || ''}`.trim();
         }
+      }
+
+      // Indicate additional borrowers if present
+      if (participants.length > 1) {
+        primaryName = `${primaryName} (+${participants.length - 1} more)`;
+      }
+
+      if (primaryName) {
+        setParticipantBorrowerName(primaryName);
       }
     };
     fetchBorrower();
