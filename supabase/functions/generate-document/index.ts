@@ -204,7 +204,7 @@ async function generateSingleDocument(
     {
       const { data: participants, error: partError } = await supabase
         .from("deal_participants")
-        .select("role, contact_id, name, email, phone, capacity")
+        .select("role, contact_id, name, email, phone")
         .eq("deal_id", dealId);
 
       if (partError) {
@@ -310,15 +310,21 @@ async function generateSingleDocument(
       const lenderParticipants = participantRows.filter((p: any) => p.role === "lender");
       const brokerParticipants = participantRows.filter((p: any) => p.role === "broker");
 
-      // Select primary borrower (first one, or one with "Primary" capacity)
-      const primaryBorrower = borrowerParticipants.find((p: any) =>
-        p.capacity && String(p.capacity).toLowerCase().includes("primary")
-      ) || borrowerParticipants[0];
+      // Select primary borrower (check contact_data.capacity from resolved contacts)
+      const primaryBorrower = borrowerParticipants.find((p: any) => {
+        if (!p.contact_id) return false;
+        const c = contactRowsByUuid.get(p.contact_id);
+        const cap = c?.contact_data?.capacity;
+        return cap && String(cap).toLowerCase().includes("primary");
+      }) || borrowerParticipants[0];
 
-      // Select co-borrower (second borrower, or one with "Co-Borrower" capacity)
-      const coBorrower = borrowerParticipants.find((p: any) =>
-        p.capacity && String(p.capacity).toLowerCase().includes("co-borrower")
-      ) || borrowerParticipants.find((p: any) => p !== primaryBorrower);
+      // Select co-borrower (check contact_data.capacity, or fall back to second borrower)
+      const coBorrower = borrowerParticipants.find((p: any) => {
+        if (!p.contact_id) return false;
+        const c = contactRowsByUuid.get(p.contact_id);
+        const cap = c?.contact_data?.capacity;
+        return cap && String(cap).toLowerCase().includes("co-borrower");
+      }) || borrowerParticipants.find((p: any) => p !== primaryBorrower);
 
       // Inject primary borrower
       if (primaryBorrower?.contact_id) {
