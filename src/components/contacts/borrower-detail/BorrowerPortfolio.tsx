@@ -453,7 +453,6 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
             ) : (
               filtered.map(r => (
                 <TableRow key={r.id}>
-                >
                   {activeColumns.map(c => (
                     <TableCell key={c.id} className="whitespace-nowrap text-xs">
                       {c.id === 'status' ? (
