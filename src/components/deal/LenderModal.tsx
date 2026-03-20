@@ -50,6 +50,7 @@ const getDefaultLenderData = (): LenderData => ({
 export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, lender, onSave, isEdit = false }) => {
   const [formData, setFormData] = useState<LenderData>(getDefaultLenderData());
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (open) {
