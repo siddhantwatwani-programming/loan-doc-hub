@@ -16,7 +16,7 @@ interface PortfolioLoan {
   dealId: string;
   loanNumber: string;
   loanAmount: string;
-  role: string;
+  capacity: string;
   status: string;
   nextPaymentDate: string;
   principalBalance: string;
@@ -27,7 +27,7 @@ interface PortfolioLoan {
 const ALL_COLUMNS = [
   { id: 'loanNumber', label: 'Loan Number' },
   { id: 'loanAmount', label: 'Loan Amount' },
-  { id: 'role', label: 'Role' },
+  { id: 'capacity', label: 'Capacity' },
   { id: 'status', label: 'Status' },
   { id: 'nextPaymentDate', label: 'Next Payment Date' },
   { id: 'principalBalance', label: 'Principal Balance' },
@@ -185,7 +185,7 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
             dealId: p.deal_id,
             loanNumber: deal.deal_number || '-',
             loanAmount: formatCurrency(deal.loan_amount),
-            role: displayRole,
+            capacity: displayRole,
             status: displayStatus,
             nextPaymentDate: formatDate(loanTerms['next_payment_date'] || loanTerms['nextPaymentDate']),
             principalBalance: formatCurrency(loanTerms['principal_balance'] || loanTerms['principalBalance'] || deal.loan_amount),
@@ -237,7 +237,7 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
       result = result.filter(r => r.loanNumber.toLowerCase().includes(q));
     }
     if (roleFilter !== 'all') {
-      result = result.filter(r => r.role === roleFilter);
+      result = result.filter(r => r.capacity === roleFilter);
     }
     if (statusFilter !== 'all') {
       result = result.filter(r => r.status === statusFilter);
@@ -315,10 +315,10 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
         </div>
         <Select value={roleFilter} onValueChange={setRoleFilter}>
           <SelectTrigger className="h-8 w-[180px] text-xs">
-            <SelectValue placeholder="Filter by Role" />
+            <SelectValue placeholder="Filter by Capacity" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="all">All Capacities</SelectItem>
             {ROLE_FILTER_OPTIONS.map(r => (
               <SelectItem key={r} value={r}>{r}</SelectItem>
             ))}
