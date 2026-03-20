@@ -197,7 +197,7 @@ export const ContactLenderModal: React.FC<ContactLenderModalProps> = ({
       </Dialog>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[9999]">
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Create Lender</AlertDialogTitle>
             <AlertDialogDescription>

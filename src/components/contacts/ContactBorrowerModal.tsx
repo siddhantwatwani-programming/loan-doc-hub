@@ -113,7 +113,7 @@ export const ContactBorrowerModal: React.FC<ContactBorrowerModalProps> = ({ open
       </Dialog>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[9999]">
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Create Borrower</AlertDialogTitle>
             <AlertDialogDescription>
