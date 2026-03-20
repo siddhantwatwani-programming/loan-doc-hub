@@ -185,7 +185,7 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
             dealId: p.deal_id,
             loanNumber: deal.deal_number || '-',
             loanAmount: formatCurrency(deal.loan_amount),
-            role: displayRole,
+            capacity: displayRole,
             status: displayStatus,
             nextPaymentDate: formatDate(loanTerms['next_payment_date'] || loanTerms['nextPaymentDate']),
             principalBalance: formatCurrency(loanTerms['principal_balance'] || loanTerms['principalBalance'] || deal.loan_amount),
