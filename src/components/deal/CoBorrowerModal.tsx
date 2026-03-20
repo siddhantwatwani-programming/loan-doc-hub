@@ -83,6 +83,7 @@ const emptyCoBorrower: CoBorrowerData = {
 
 export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenChange, coBorrower, onSave, isEdit = false, parentBorrowerVesting = '' }) => {
   const [formData, setFormData] = useState<CoBorrowerData>(emptyCoBorrower);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (coBorrower) {
