@@ -131,7 +131,20 @@ export const ContactBorrowerDetailForm: React.FC<Props> = ({ borrower, onSave, o
       </Section>
 
       <div className="flex gap-3 pt-2">
-        <Button onClick={() => onSave(form)}>Save</Button>
+        <Button onClick={() => {
+          if (!hasAtLeastOneFieldFilled(form as any, ['borrowerId', 'preferredPhone', 'type'])) {
+            toast.error('Please fill at least one field before saving');
+            return;
+          }
+          const phoneErrors = validatePhoneFields([
+            { label: 'Home Phone', value: form.homePhone },
+            { label: 'Work Phone', value: form.workPhone },
+            { label: 'Cell Phone', value: form.cellPhone },
+            { label: 'Fax', value: form.fax },
+          ]);
+          if (phoneErrors.length > 0) { toast.error(phoneErrors[0]); return; }
+          onSave(form);
+        }}>Save</Button>
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
       </div>
     </div>
