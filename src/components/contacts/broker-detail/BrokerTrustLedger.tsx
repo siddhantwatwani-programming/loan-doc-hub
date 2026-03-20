@@ -18,7 +18,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ColumnConfigPopover, ColumnConfig } from '@/components/deal/ColumnConfigPopover';
@@ -303,7 +303,7 @@ const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string }> = (
 
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Add Trust Ledger Entry</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Add Trust Ledger Entry</DialogTitle><DialogDescription>Select a category and enter the trust ledger transaction details.</DialogDescription></DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             {[
               { key: 'date', label: 'Date', type: 'date' },
@@ -324,8 +324,8 @@ const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string }> = (
             <div className="space-y-1">
               <Label className="text-xs">Category</Label>
               <Select value={newEntry.category || undefined} onValueChange={v => setNewEntry(prev => ({ ...prev, category: v as any }))}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select category" /></SelectTrigger>
+                <SelectContent className="z-[9999]">
                   <SelectItem value="all">All</SelectItem>
                   <SelectItem value="reserve">Reserve</SelectItem>
                   <SelectItem value="impound">Impound</SelectItem>
