@@ -174,9 +174,9 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
               <Input value={getValue('ccSecurityCode')} onChange={(e) => { const value = e.target.value.replace(/\D/g, ''); handleChange('ccSecurityCode', value); }} disabled={disabled} className="h-8" maxLength={4} type="password" />
             </div>)}
             
-            {wrapField('ccExpiration', <div className="grid grid-cols-2 gap-2 items-center">
+             {wrapField('ccExpiration', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Expiration</Label>
-              <Input value={getValue('ccExpiration')} onChange={(e) => handleChange('ccExpiration', e.target.value)} disabled={disabled} className="h-8" placeholder="MM/YY" />
+              <ExpirationInput value={getValue('ccExpiration')} onValueChange={(v) => handleChange('ccExpiration', v)} disabled={disabled} />
             </div>)}
             
             {wrapField('ccZip', <div className="grid grid-cols-2 gap-2 items-center">
