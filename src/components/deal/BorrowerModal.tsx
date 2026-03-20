@@ -85,6 +85,7 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
   open, onOpenChange, borrower, onSave, isEdit = false,
 }) => {
   const [formData, setFormData] = useState<BorrowerData>(getEmptyBorrower());
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (open) {
