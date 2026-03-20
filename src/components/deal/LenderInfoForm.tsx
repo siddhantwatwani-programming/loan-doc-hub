@@ -17,6 +17,7 @@ const safeFormatDate = (val: string, fmt: string = 'MM/dd/yyyy'): string | undef
 };
 import { CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { EmailInput } from '@/components/ui/email-input';
 import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
@@ -495,10 +496,9 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               <DirtyFieldWrapper key={phone.label} fieldKey={FIELD_KEYS[phone.fieldKey]}>
                 <div className="flex items-center gap-3">
                   <Label className="text-sm text-muted-foreground min-w-[50px] text-left shrink-0">{phone.label}</Label>
-                  <Input
-                    type="tel"
+                  <PhoneInput
                     value={getValue(phone.fieldKey)}
-                    onChange={(e) => handleChange(phone.fieldKey, e.target.value)}
+                    onValueChange={(val) => handleChange(phone.fieldKey, val)}
                     disabled={disabled}
                     className="h-8"
                   />

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
 import { ZipInput } from '@/components/ui/zip-input';
@@ -229,7 +230,12 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           {renderInlineField(FIELD_KEYS.appraiserCity, 'City')}
           {renderInlineField(FIELD_KEYS.appraiserState, 'State')}
           {renderInlineField(FIELD_KEYS.appraiserZip, 'ZIP')}
-          {renderInlineField(FIELD_KEYS.appraiserPhone, 'Phone')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.appraiserPhone}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Phone</Label>
+              <PhoneInput value={getFieldValue(FIELD_KEYS.appraiserPhone)} onValueChange={(v) => onValueChange(FIELD_KEYS.appraiserPhone, v)} disabled={disabled} className="h-7 text-xs" />
+            </div>
+          </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.appraiserEmail}>
             <div className="flex items-center gap-2">
               <Label className="w-[110px] shrink-0 text-xs text-foreground">Email</Label>

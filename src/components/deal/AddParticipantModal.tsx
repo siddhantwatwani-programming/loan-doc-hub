@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -475,9 +476,9 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
                   </div>
                   <div>
                     <Label className="text-sm">Phone</Label>
-                    <Input
+                    <PhoneInput
                       value={newPhone}
-                      onChange={(e) => setNewPhone(e.target.value)}
+                      onValueChange={(val) => setNewPhone(val)}
                       placeholder="(555) 555-5555"
                     />
                   </div>

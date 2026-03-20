@@ -1,5 +1,6 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { EmailInput } from '@/components/ui/email-input';
 import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
@@ -205,7 +206,7 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
               </div>
               <div className="flex items-center gap-2">
                 <Label className="w-[80px] text-sm shrink-0">Phone</Label>
-                <Input value={v(otherKeys.phone)} onChange={(e) => sv(otherKeys.phone, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+                <PhoneInput value={v(otherKeys.phone)} onValueChange={(val) => sv(otherKeys.phone, val)} disabled={disabled} className="h-7 text-sm" />
               </div>
             </div>
           )}
@@ -238,7 +239,12 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             </DirtyFieldWrapper>
             {renderTextField('Escrow Officer Name', FK.escrow_officer)}
             {renderTextField('Escrow Contact', FK.escrow_contact)}
-            {renderTextField('Escrow Telephone', FK.escrow_telephone)}
+            <DirtyFieldWrapper fieldKey={FK.escrow_telephone}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] text-sm shrink-0">Escrow Telephone</Label>
+                <PhoneInput value={v(FK.escrow_telephone)} onValueChange={(val) => sv(FK.escrow_telephone, val)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+            </DirtyFieldWrapper>
             <DirtyFieldWrapper fieldKey={FK.escrow_email}>
               <div className="flex items-center gap-2">
                 <Label className="w-[120px] text-sm shrink-0">Escrow Email</Label>
@@ -265,7 +271,12 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             </DirtyFieldWrapper>
             {renderTextField('Title Officer Name', FK.title_officer)}
             {renderTextField('Title Contact', FK.title_contact)}
-            {renderTextField('Title Telephone', FK.title_telephone)}
+            <DirtyFieldWrapper fieldKey={FK.title_telephone}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] text-sm shrink-0">Title Telephone</Label>
+                <PhoneInput value={v(FK.title_telephone)} onValueChange={(val) => sv(FK.title_telephone, val)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+            </DirtyFieldWrapper>
             <DirtyFieldWrapper fieldKey={FK.title_email}>
               <div className="flex items-center gap-2">
                 <Label className="w-[120px] text-sm shrink-0">Title Email</Label>
@@ -314,7 +325,12 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             </DirtyFieldWrapper>
             {renderTextField('Escrow Officer Name', FK.trustee_officer)}
             {renderTextField('Escrow Contact', FK.trustee_contact)}
-            {renderTextField('Telephone', FK.trustee_telephone)}
+            <DirtyFieldWrapper fieldKey={FK.trustee_telephone}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] text-sm shrink-0">Telephone</Label>
+                <PhoneInput value={v(FK.trustee_telephone)} onValueChange={(val) => sv(FK.trustee_telephone, val)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+            </DirtyFieldWrapper>
           </div>
         </div>
       </div>

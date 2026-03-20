@@ -5,6 +5,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { EmailInput } from '@/components/ui/email-input';
 import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
@@ -235,7 +236,7 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
                 return (
                   <div key={phoneKey} className="flex items-center gap-2">
                     <Label className="w-[50px] shrink-0 text-xs">{phoneLabel}</Label>
-                    <Input value={String(formData[phoneKey] || '')} onChange={(e) => handleFieldChange(phoneKey, e.target.value)} className="h-7 text-xs flex-1" />
+                    <PhoneInput value={String(formData[phoneKey] || '')} onValueChange={(val) => handleFieldChange(phoneKey, val)} className="h-7 text-xs flex-1" />
                     <Checkbox id={`modal-borrower-${prefKey}`} checked={!!formData[prefKey]} onCheckedChange={(checked) => handleFieldChange(prefKey, !!checked)} className="h-3 w-3 shrink-0" />
                   </div>
                 );
