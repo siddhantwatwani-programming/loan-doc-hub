@@ -212,7 +212,20 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
 
       <div className="flex justify-end gap-2 pt-6">
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button onClick={() => onSave(form)}>Save</Button>
+        <Button onClick={() => {
+          if (!hasAtLeastOneFieldFilled(form as any, ['brokerId', 'preferredPhone', 'type'])) {
+            toast.error('Please fill at least one field before saving');
+            return;
+          }
+          const phoneErrors = validatePhoneFields([
+            { label: 'Home Phone', value: form.homePhone },
+            { label: 'Work Phone', value: form.workPhone },
+            { label: 'Cell Phone', value: form.cellPhone },
+            { label: 'Fax', value: form.fax },
+          ]);
+          if (phoneErrors.length > 0) { toast.error(phoneErrors[0]); return; }
+          onSave(form);
+        }}>Save</Button>
       </div>
     </div>
   );
