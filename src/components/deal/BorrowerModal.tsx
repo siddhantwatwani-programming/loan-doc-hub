@@ -97,7 +97,11 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  const isFormFilled = hasModalFormData(formData, ['id', 'borrowerType'], { mailingSameAsPrimary: false, isPrimary: false, issue1098: false, alternateReporting: false, deliveryOnline: false, deliveryMail: false, preferredHome: false, preferredWork: false, preferredCell: false, preferredFax: false, tinVerified: false, deliveryPrint: false, deliveryEmail: false, deliverySms: false, sendPaymentNotification: false, sendLateNotice: false, sendBorrowerStatement: false, sendMaturityNotice: false });
+
+  const handleSaveClick = () => setShowConfirm(true);
+  const handleConfirmSave = () => {
+    setShowConfirm(false);
     const primaryPhone = formData.mobilePhone || formData.homePhone || formData.workPhone || formData.phone || '';
     onSave({ ...formData, phone: primaryPhone });
     onOpenChange(false);
