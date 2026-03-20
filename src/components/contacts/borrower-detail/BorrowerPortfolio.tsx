@@ -96,11 +96,29 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
         if (dErr) throw dErr;
 
         // 4. Fetch deal_section_values for loan_terms to get interest rate, maturity, etc.
+        // Field dictionary UUIDs for the fields we need
+        const FIELD_IDS = {
+          loanAmount: '163cd0b4-7cc0-4975-bcfb-43aa4be9c5c8',
+          noteRate: '969b2029-d56f-4789-8d77-1f9aecc88f2b',
+          principalBalance: '27c1bee2-05d4-46e5-a16b-e10c1e38cafd',
+          maturityDate: '33fadfcb-b70c-4425-944e-23044f21a06b',
+          nextPaymentDate: '384a8113-5d6d-47fd-9146-b3b1e9f65037',
+          nextPayment: '18cff33e-9553-4860-becf-e6c4b54f2a20',
+        };
+
         const { data: sectionValues } = await supabase
           .from('deal_section_values')
           .select('deal_id, field_values')
           .in('deal_id', dealIds)
           .eq('section', 'loan_terms');
+
+        // Helper to extract a value from the stored field_values JSON structure
+        const extractFieldValue = (fieldValues: Record<string, any>, fieldId: string, valueKey: string): any => {
+          const entry = fieldValues[fieldId];
+          if (!entry) return null;
+          if (typeof entry === 'object' && entry !== null) return entry[valueKey] ?? null;
+          return entry;
+        };
 
         const sectionMap = new Map<string, Record<string, any>>();
         (sectionValues || []).forEach(sv => {
@@ -117,9 +135,7 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
         const participantCapacityMap = new Map<string, string>();
         (participantSections || []).forEach(ps => {
           const fv = ps.field_values as Record<string, any>;
-          // Look for capacity associated with this contact
           if (fv) {
-            // Check indexed entries (e.g., borrower_0_capacity, borrower_1_capacity)
             Object.entries(fv).forEach(([key, val]) => {
               if (key.includes('capacity') && typeof val === 'string') {
                 const contactKey = key.replace('capacity', 'contact_id');
@@ -131,9 +147,38 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           }
         });
 
+        // 6. Also fetch funding section for lender funding data
+        const { data: fundingSections } = await supabase
+          .from('deal_section_values')
+          .select('deal_id, field_values')
+          .in('deal_id', dealIds)
+          .in('section', ['loan_terms']);
+
+        // Build a map for funding records (stored under 'loan_terms.funding_records' key)
+        const fundingMap = new Map<string, any[]>();
+        (fundingSections || []).forEach(fs => {
+          const fv = fs.field_values as Record<string, any>;
+          if (fv) {
+            // Check for funding_records stored with various key patterns
+            const fundingRecords = fv['loan_terms.funding_records'];
+            if (fundingRecords) {
+              try {
+                const parsed = typeof fundingRecords === 'string' ? JSON.parse(fundingRecords) : fundingRecords;
+                if (typeof parsed === 'object' && parsed !== null) {
+                  const val = parsed.value_json || parsed.value_text;
+                  const records = val ? (typeof val === 'string' ? JSON.parse(val) : val) : parsed;
+                  if (Array.isArray(records)) {
+                    fundingMap.set(fs.deal_id, records);
+                  }
+                }
+              } catch { /* ignore parse errors */ }
+            }
+          }
+        });
+
         const dealsMap = new Map((deals || []).map(d => [d.id, d]));
 
-        // 6. Build rows - one per unique deal
+        // 7. Build rows - one per unique deal
         const seenDeals = new Set<string>();
         const portfolioRows: PortfolioLoan[] = [];
 
@@ -150,17 +195,12 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
 
           // Map deal status to portfolio status
           let displayStatus = 'Active';
-          if (deal.status === 'generated') displayStatus = 'Active';
-          else if (deal.status === 'draft') displayStatus = 'Active';
-          else if (deal.status === 'ready') displayStatus = 'Active';
-
-          // Check loan terms for status override
           const loanStatus = loanTerms['loan_status'] || loanTerms['status'] || '';
           if (typeof loanStatus === 'string' && loanStatus.toLowerCase().includes('closed')) displayStatus = 'Closed';
           if (typeof loanStatus === 'string' && loanStatus.toLowerCase().includes('default')) displayStatus = 'Default';
 
           const formatCurrency = (val: any) => {
-            if (!val) return '-';
+            if (val == null || val === '') return '-';
             const num = typeof val === 'number' ? val : parseFloat(String(val));
             if (isNaN(num)) return '-';
             return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
@@ -169,28 +209,45 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           const formatDate = (val: any) => {
             if (!val) return '-';
             try {
-              return new Date(String(val)).toLocaleDateString('en-US');
+              const d = new Date(String(val));
+              if (isNaN(d.getTime())) return '-';
+              return d.toLocaleDateString('en-US');
             } catch { return '-'; }
           };
 
           const formatPercent = (val: any) => {
-            if (!val) return '-';
+            if (val == null || val === '') return '-';
             const num = typeof val === 'number' ? val : parseFloat(String(val));
             if (isNaN(num)) return '-';
             return `${num}%`;
           };
 
+          // Extract values from field_values using field dictionary IDs
+          const loanAmountVal = extractFieldValue(loanTerms, FIELD_IDS.loanAmount, 'value_number');
+          const noteRateVal = extractFieldValue(loanTerms, FIELD_IDS.noteRate, 'value_number');
+          const principalBalanceVal = extractFieldValue(loanTerms, FIELD_IDS.principalBalance, 'value_number');
+          const maturityDateVal = extractFieldValue(loanTerms, FIELD_IDS.maturityDate, 'value_date') 
+                               || extractFieldValue(loanTerms, FIELD_IDS.maturityDate, 'value_text');
+          const nextPaymentDateVal = extractFieldValue(loanTerms, FIELD_IDS.nextPaymentDate, 'value_date')
+                                   || extractFieldValue(loanTerms, FIELD_IDS.nextPaymentDate, 'value_text')
+                                   || extractFieldValue(loanTerms, FIELD_IDS.nextPayment, 'value_date')
+                                   || extractFieldValue(loanTerms, FIELD_IDS.nextPayment, 'value_text');
+
+          // Use loan_amount from section values first, then fall back to deals table
+          const displayLoanAmount = loanAmountVal ?? deal.loan_amount;
+          const displayPrincipalBalance = principalBalanceVal ?? loanAmountVal ?? deal.loan_amount;
+
           portfolioRows.push({
             id: `${p.deal_id}`,
             dealId: p.deal_id,
             loanNumber: deal.deal_number || '-',
-            loanAmount: formatCurrency(deal.loan_amount),
+            loanAmount: formatCurrency(displayLoanAmount),
             capacity: displayRole,
             status: displayStatus,
-            nextPaymentDate: formatDate(loanTerms['next_payment_date'] || loanTerms['nextPaymentDate']),
-            principalBalance: formatCurrency(loanTerms['principal_balance'] || loanTerms['principalBalance'] || deal.loan_amount),
-            interestRate: formatPercent(loanTerms['interest_rate'] || loanTerms['interestRate']),
-            maturityDate: formatDate(loanTerms['maturity_date'] || loanTerms['maturityDate']),
+            nextPaymentDate: formatDate(nextPaymentDateVal),
+            principalBalance: formatCurrency(displayPrincipalBalance),
+            interestRate: formatPercent(noteRateVal),
+            maturityDate: formatDate(maturityDateVal),
           });
         }
 
