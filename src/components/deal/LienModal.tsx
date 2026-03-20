@@ -12,6 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import type { LienData } from './LiensTableView';
+import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 
 interface LienModalProps {
   open: boolean;
