@@ -537,10 +537,9 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               ].map((p) => (
                 <div key={p.label} className="flex items-center gap-2">
                   <Label className="w-[40px] shrink-0 text-xs">{p.label}</Label>
-                  <Input
-                    type="tel"
+                  <PhoneInput
                     value={form[p.phoneKey] || ''}
-                    onChange={(e) => set(p.phoneKey, e.target.value)}
+                    onValueChange={(v) => set(p.phoneKey, v)}
                     className="h-7 text-xs flex-1"
                   />
                   <Checkbox
