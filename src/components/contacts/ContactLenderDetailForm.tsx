@@ -123,19 +123,19 @@ export const ContactLenderDetailForm: React.FC<Props> = ({ lender, onSave, onCan
           </div>
           <div>
             <Label>Home Phone</Label>
-            <Input value={form.homePhone} onChange={(e) => set('homePhone', e.target.value)} />
+            <PhoneInput value={form.homePhone} onValueChange={(v) => set('homePhone', v)} />
           </div>
           <div>
             <Label>Work Phone</Label>
-            <Input value={form.workPhone} onChange={(e) => set('workPhone', e.target.value)} />
+            <PhoneInput value={form.workPhone} onValueChange={(v) => set('workPhone', v)} />
           </div>
           <div>
             <Label>Cell Phone</Label>
-            <Input value={form.cellPhone} onChange={(e) => set('cellPhone', e.target.value)} />
+            <PhoneInput value={form.cellPhone} onValueChange={(v) => set('cellPhone', v)} />
           </div>
           <div>
             <Label>Fax</Label>
-            <Input value={form.fax} onChange={(e) => set('fax', e.target.value)} />
+            <PhoneInput value={form.fax} onValueChange={(v) => set('fax', v)} />
           </div>
           <div className="col-span-2">
             <Label className="mb-2 block">Preferred Phone</Label>
