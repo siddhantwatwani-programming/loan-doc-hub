@@ -135,6 +135,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   };
 
   const [formData, setFormData] = useState<FundingFormData>(getInitialFormData());
+  const [showConfirm, setShowConfirm] = useState(false);
   const [fundingDateOpen, setFundingDateOpen] = useState(false);
   const [interestFromOpen, setInterestFromOpen] = useState(false);
 
