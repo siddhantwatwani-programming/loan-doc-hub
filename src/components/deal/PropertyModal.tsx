@@ -18,6 +18,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { ModalSaveConfirmation } from './ModalSaveConfirmation';
+import { hasModalFormData } from '@/lib/modalFormValidation';
 import type { PropertyData } from './PropertiesTableView';
 
 interface PropertyModalProps {
@@ -62,6 +64,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   const [formData, setFormData] = useState<PropertyData>(getEmptyProperty());
   const [activeTab, setActiveTab] = useState('general');
   const [yearBuiltOpen, setYearBuiltOpen] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -71,7 +74,6 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   }, [open, property]);
 
   const handleFieldChange = (field: keyof PropertyData, value: string | boolean) => {
-    // Treat placeholder 'none' as empty for persistence
     const resolved = value === '__none__' ? '' : value;
     setFormData(prev => ({ ...prev, [field]: resolved }));
   };
@@ -84,7 +86,10 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
     try { return parse(val, 'yyyy-MM-dd', new Date()); } catch { return undefined; }
   };
 
-  const handleSave = () => { onSave(formData); onOpenChange(false); };
+  const isFormFilled = hasModalFormData(formData, ['id']);
+
+  const handleSaveClick = () => setShowConfirm(true);
+  const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
 
   const renderInlineField = (field: keyof PropertyData, label: string, type = 'text') => (
     <div className="flex items-center gap-2">
@@ -132,138 +137,136 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
-        <DialogHeader className="shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-sm">
-            <Home className="h-4 w-4 text-primary" />
-            {isEdit ? 'Edit Property' : 'Add New Property'}
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-sm">
+              <Home className="h-4 w-4 text-primary" />
+              {isEdit ? 'Edit Property' : 'Add New Property'}
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto min-h-0 sleek-scrollbar">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-1"><TabsTrigger value="general" className="text-xs">General</TabsTrigger></TabsList>
+          <div className="flex-1 overflow-y-auto min-h-0 sleek-scrollbar">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-1"><TabsTrigger value="general" className="text-xs">General</TabsTrigger></TabsList>
 
-          <TabsContent value="general" className="mt-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
-              {/* Left Column - Property Information */}
-              <div className="space-y-1.5">
-                <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Property Information</span></div>
-                {renderInlineField('description', 'Description')}
-                <div className="pt-1">
-                  <span className="text-xs font-medium text-primary">Address</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox id="modal-copy-borrower-address" checked={!!formData.copyBorrowerAddress} onCheckedChange={(checked) => handleFieldChange('copyBorrowerAddress', !!checked)} className="h-3.5 w-3.5" />
-                  <Label htmlFor="modal-copy-borrower-address" className="text-xs text-primary">Copy Borrower's Address</Label>
-                </div>
-                {renderInlineField('street', 'Street')}
-                {renderInlineField('city', 'City')}
-                {renderInlineSelect('state', 'State', US_STATES, 'Select state')}
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Zip Code</Label>
-                  <ZipInput value={String(formData.zipCode || '')} onValueChange={(v) => handleFieldChange('zipCode', v)} className="h-7 text-xs" />
-                </div>
-                {renderInlineField('county', 'County')}
-                <div className="flex items-center gap-2 pt-1">
-                  <Checkbox id="modal-primary-property" checked={formData.isPrimary} onCheckedChange={(checked) => handleFieldChange('isPrimary', !!checked)} className="h-3.5 w-3.5" />
-                  <Label htmlFor="modal-primary-property" className="text-xs text-foreground">Primary Property</Label>
-                </div>
-              </div>
-
-              {/* Right Column - Appraisal Information */}
-              <div className="space-y-1.5">
-                <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Appraisal Information</span></div>
-                {renderInlineField('appraisedDate', 'Appraisal Date', 'date')}
-                {renderInlineSelect('performedBy', 'Performed By', PERFORMED_BY_OPTIONS, 'Select')}
-                {renderInlineSelect('propertyType', 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
-                {renderInlineSelect('occupancy', 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Loan To Value</Label>
-                  <div className="relative flex-1">
-                    <Input value={formData.ltv} onChange={(e) => handlePercentageChange('ltv', e.target.value)} className="h-7 text-xs pr-6" inputMode="decimal" />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
+            <TabsContent value="general" className="mt-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
+                <div className="space-y-1.5">
+                  <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Property Information</span></div>
+                  {renderInlineField('description', 'Description')}
+                  <div className="pt-1">
+                    <span className="text-xs font-medium text-primary">Address</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox id="modal-copy-borrower-address" checked={!!formData.copyBorrowerAddress} onCheckedChange={(checked) => handleFieldChange('copyBorrowerAddress', !!checked)} className="h-3.5 w-3.5" />
+                    <Label htmlFor="modal-copy-borrower-address" className="text-xs text-primary">Copy Borrower's Address</Label>
+                  </div>
+                  {renderInlineField('street', 'Street')}
+                  {renderInlineField('city', 'City')}
+                  {renderInlineSelect('state', 'State', US_STATES, 'Select state')}
+                  <div className="flex items-center gap-2">
+                    <Label className="w-[100px] shrink-0 text-xs text-foreground">Zip Code</Label>
+                    <ZipInput value={String(formData.zipCode || '')} onValueChange={(v) => handleFieldChange('zipCode', v)} className="h-7 text-xs" />
+                  </div>
+                  {renderInlineField('county', 'County')}
+                  <div className="flex items-center gap-2 pt-1">
+                    <Checkbox id="modal-primary-property" checked={formData.isPrimary} onCheckedChange={(checked) => handleFieldChange('isPrimary', !!checked)} className="h-3.5 w-3.5" />
+                    <Label htmlFor="modal-primary-property" className="text-xs text-foreground">Primary Property</Label>
                   </div>
                 </div>
-                {renderInlineField('zoning', 'Zoning')}
-                {renderCurrencyField('appraisedValue', 'Appraised Value')}
-                {renderCurrencyField('pledgedEquity', 'Pledged Equity')}
-                {renderInlineSelect('loanPriority', 'Priority', PRIORITY_OPTIONS, 'Select')}
-                {renderInlineSelect('floodZone', 'Flood Zone', FLOOD_ZONE_OPTIONS, 'Select')}
-              </div>
-            </div>
 
-            {/* Additional Property Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0 mt-4">
-              {/* Left - Purchase & Appraiser Contact */}
-              <div className="space-y-1.5">
-                {renderCurrencyField('purchasePrice', 'Purchase Price')}
-                {renderCurrencyField('downPayment', 'Down Payment')}
-                {renderCurrencyField('delinquentTaxes', 'Delinquent Taxes')}
-
-                <p className="text-xs italic text-foreground pt-3 pb-1">Appraiser Contact</p>
-                {renderInlineField('appraiserStreet', 'Street')}
-                {renderInlineField('appraiserCity', 'City')}
-                {renderInlineField('appraiserState', 'State')}
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP</Label>
-                  <ZipInput value={String(formData.appraiserZip || '')} onValueChange={(v) => handleFieldChange('appraiserZip', v)} className="h-7 text-xs" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Phone</Label>
-                  <PhoneInput value={String(formData.appraiserPhone || '')} onValueChange={(v) => handleFieldChange('appraiserPhone', v)} className="h-7 text-xs flex-1" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Email</Label>
-                  <EmailInput value={String(formData.appraiserEmail || '')} onValueChange={(v) => handleFieldChange('appraiserEmail', v)} className="h-7 text-xs" />
+                <div className="space-y-1.5">
+                  <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Appraisal Information</span></div>
+                  {renderInlineField('appraisedDate', 'Appraisal Date', 'date')}
+                  {renderInlineSelect('performedBy', 'Performed By', PERFORMED_BY_OPTIONS, 'Select')}
+                  {renderInlineSelect('propertyType', 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
+                  {renderInlineSelect('occupancy', 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
+                  <div className="flex items-center gap-2">
+                    <Label className="w-[100px] shrink-0 text-xs text-foreground">Loan To Value</Label>
+                    <div className="relative flex-1">
+                      <Input value={formData.ltv} onChange={(e) => handlePercentageChange('ltv', e.target.value)} className="h-7 text-xs pr-6" inputMode="decimal" />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
+                    </div>
+                  </div>
+                  {renderInlineField('zoning', 'Zoning')}
+                  {renderCurrencyField('appraisedValue', 'Appraised Value')}
+                  {renderCurrencyField('pledgedEquity', 'Pledged Equity')}
+                  {renderInlineSelect('loanPriority', 'Priority', PRIORITY_OPTIONS, 'Select')}
+                  {renderInlineSelect('floodZone', 'Flood Zone', FLOOD_ZONE_OPTIONS, 'Select')}
                 </div>
               </div>
 
-              {/* Right - Construction & Delinquency */}
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Year Built</Label>
-                  <Popover open={yearBuiltOpen} onOpenChange={setYearBuiltOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !formData.yearBuilt && 'text-muted-foreground')}>
-                        {formData.yearBuilt ? format(parseDate(formData.yearBuilt)!, 'MM/dd/yyyy') : 'Date'}
-                        <CalendarIcon className="ml-auto h-3.5 w-3.5" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 z-[200]" align="start">
-                      <Calendar mode="single" selected={parseDate(formData.yearBuilt || '')}
-                        onSelect={(date) => { if (date) { handleFieldChange('yearBuilt', format(date, 'yyyy-MM-dd')); setYearBuiltOpen(false); } }}
-                        initialFocus className="p-3 pointer-events-auto" />
-                    </PopoverContent>
-                  </Popover>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0 mt-4">
+                <div className="space-y-1.5">
+                  {renderCurrencyField('purchasePrice', 'Purchase Price')}
+                  {renderCurrencyField('downPayment', 'Down Payment')}
+                  {renderCurrencyField('delinquentTaxes', 'Delinquent Taxes')}
+
+                  <p className="text-xs italic text-foreground pt-3 pb-1">Appraiser Contact</p>
+                  {renderInlineField('appraiserStreet', 'Street')}
+                  {renderInlineField('appraiserCity', 'City')}
+                  {renderInlineField('appraiserState', 'State')}
+                  <div className="flex items-center gap-2">
+                    <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP</Label>
+                    <ZipInput value={String(formData.appraiserZip || '')} onValueChange={(v) => handleFieldChange('appraiserZip', v)} className="h-7 text-xs" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="w-[100px] shrink-0 text-xs text-foreground">Phone</Label>
+                    <PhoneInput value={String(formData.appraiserPhone || '')} onValueChange={(v) => handleFieldChange('appraiserPhone', v)} className="h-7 text-xs flex-1" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="w-[100px] shrink-0 text-xs text-foreground">Email</Label>
+                    <EmailInput value={String(formData.appraiserEmail || '')} onValueChange={(v) => handleFieldChange('appraiserEmail', v)} className="h-7 text-xs" />
+                  </div>
                 </div>
-                {renderInlineField('squareFeet', 'Square Feet')}
-                {renderInlineSelect('constructionType', 'Type of Construction', CONSTRUCTION_TYPES, 'Select...')}
-                {renderCurrencyField('monthlyIncome', 'Generates Monthly Income')}
-                {renderCurrencyField('lienProtectiveEquity', 'Lien (Protective Equity)')}
-                {renderInlineSelect('sourceLienInfo', 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
 
-                <p className="text-xs font-medium text-foreground pt-3 pb-1">During Previous 12 Months</p>
-                {renderCheckboxField('delinquencies60day', '60-day + Delinquencies')}
-                {renderInlineField('delinquenciesHowMany', 'How Many')}
-                {renderCheckboxField('currentlyDelinquent', 'Currently Delinquent')}
-                {renderCheckboxField('paidByLoan', 'Will be Paid by this Loan')}
-                {renderInlineField('sourceOfPayment', 'If No, List Source of Payment')}
-                {renderInlineField('recordingNumber', 'Recording number')}
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Label className="w-[100px] shrink-0 text-xs text-foreground">Year Built</Label>
+                    <Popover open={yearBuiltOpen} onOpenChange={setYearBuiltOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !formData.yearBuilt && 'text-muted-foreground')}>
+                          {formData.yearBuilt ? format(parseDate(formData.yearBuilt)!, 'MM/dd/yyyy') : 'Date'}
+                          <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-[200]" align="start">
+                        <Calendar mode="single" selected={parseDate(formData.yearBuilt || '')}
+                          onSelect={(date) => { if (date) { handleFieldChange('yearBuilt', format(date, 'yyyy-MM-dd')); setYearBuiltOpen(false); } }}
+                          initialFocus className="p-3 pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  {renderInlineField('squareFeet', 'Square Feet')}
+                  {renderInlineSelect('constructionType', 'Type of Construction', CONSTRUCTION_TYPES, 'Select...')}
+                  {renderCurrencyField('monthlyIncome', 'Generates Monthly Income')}
+                  {renderCurrencyField('lienProtectiveEquity', 'Lien (Protective Equity)')}
+                  {renderInlineSelect('sourceLienInfo', 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
+
+                  <p className="text-xs font-medium text-foreground pt-3 pb-1">During Previous 12 Months</p>
+                  {renderCheckboxField('delinquencies60day', '60-day + Delinquencies')}
+                  {renderInlineField('delinquenciesHowMany', 'How Many')}
+                  {renderCheckboxField('currentlyDelinquent', 'Currently Delinquent')}
+                  {renderCheckboxField('paidByLoan', 'Will be Paid by this Loan')}
+                  {renderInlineField('sourceOfPayment', 'If No, List Source of Payment')}
+                  {renderInlineField('recordingNumber', 'Recording number')}
+                </div>
               </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+          </Tabs>
 
-        </div>
+          </div>
 
-        <DialogFooter className="shrink-0 border-t border-border pt-3">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSave}>OK</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter className="shrink-0 border-t border-border pt-3">
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>OK</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <ModalSaveConfirmation open={showConfirm} onConfirm={handleConfirmSave} onCancel={() => setShowConfirm(false)} />
+    </>
   );
 };
 

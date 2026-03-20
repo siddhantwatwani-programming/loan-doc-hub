@@ -12,6 +12,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { ModalSaveConfirmation } from './ModalSaveConfirmation';
+import { hasModalFormData } from '@/lib/modalFormValidation';
 import type { InsuranceData } from './InsuranceTableView';
 
 interface InsuranceModalProps {
@@ -44,13 +46,18 @@ const getDefaultInsurance = (): InsuranceData => ({
 
 export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChange, insurance, onSave, isEdit, propertyOptions = [] }) => {
   const [formData, setFormData] = useState<InsuranceData>(getDefaultInsurance());
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (open) setFormData(insurance ? insurance : getDefaultInsurance());
   }, [open, insurance]);
 
   const handleChange = (field: keyof InsuranceData, value: string | boolean) => setFormData(prev => ({ ...prev, [field]: value }));
-  const handleSave = () => { onSave(formData); onOpenChange(false); };
+
+  const isFormFilled = hasModalFormData(formData, ['id', 'active']);
+
+  const handleSaveClick = () => setShowConfirm(true);
+  const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
 
   const renderInlineField = (field: keyof InsuranceData, label: string, props: Record<string, any> = {}) => (
     <div className="flex items-center gap-2">
@@ -76,98 +83,97 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-sm">
-            <Shield className="h-4 w-4 text-primary" />
-            {isEdit ? 'Edit Insurance' : 'New Insurance'}
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sm">
+              <Shield className="h-4 w-4 text-primary" />
+              {isEdit ? 'Edit Insurance' : 'New Insurance'}
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="mt-3 overflow-y-auto flex-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
-            {/* Left Column */}
-            <div className="space-y-1.5">
-              <div className="border-b border-border pb-1 mb-2">
-                <span className="font-semibold text-xs text-primary">Insurance Policy Information</span>
-              </div>
-              {renderInlineSelect('property', 'Property', [{ id: 'unassigned', label: 'Unassigned' }, ...propertyOptions], 'Unassigned')}
-              {renderInlineSelect('description', 'Description', INSURANCE_DESCRIPTION_OPTIONS, 'Select')}
-              {renderInlineField('insuredName', "Insured's Name")}
-              {renderInlineField('companyName', 'Ins. Company')}
-              {renderInlineField('policyNumber', 'Policy Number')}
-              {renderInlineField('expiration', 'Expiration', { type: 'date' })}
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs text-foreground">Coverage</Label>
-                <div className="flex items-center gap-1 flex-1">
-                  <span className="text-xs text-muted-foreground">$</span>
-                  <Input value={String(formData.coverage || '')} onChange={(e) => handleChange('coverage', e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
+          <div className="mt-3 overflow-y-auto flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
+              <div className="space-y-1.5">
+                <div className="border-b border-border pb-1 mb-2">
+                  <span className="font-semibold text-xs text-primary">Insurance Policy Information</span>
+                </div>
+                {renderInlineSelect('property', 'Property', [{ id: 'unassigned', label: 'Unassigned' }, ...propertyOptions], 'Unassigned')}
+                {renderInlineSelect('description', 'Description', INSURANCE_DESCRIPTION_OPTIONS, 'Select')}
+                {renderInlineField('insuredName', "Insured's Name")}
+                {renderInlineField('companyName', 'Ins. Company')}
+                {renderInlineField('policyNumber', 'Policy Number')}
+                {renderInlineField('expiration', 'Expiration', { type: 'date' })}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Coverage</Label>
+                  <div className="flex items-center gap-1 flex-1">
+                    <span className="text-xs text-muted-foreground">$</span>
+                    <Input value={String(formData.coverage || '')} onChange={(e) => handleChange('coverage', e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
+                  </div>
+                </div>
+
+                <div className="border-b border-border pb-1 mb-2 pt-2">
+                  <span className="font-semibold text-xs text-primary">Payment Mailing Address</span>
+                </div>
+                {renderInlineField('paymentMailingStreet', 'Street')}
+                {renderInlineField('paymentMailingCity', 'City')}
+                {renderInlineField('paymentMailingState', 'State')}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP</Label>
+                  <ZipInput value={String(formData.paymentMailingZip || '')} onValueChange={(v) => handleChange('paymentMailingZip', v)} className="h-7 text-xs" />
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <Checkbox id="modal-insurance-active" checked={formData.active} onCheckedChange={(checked) => handleChange('active', !!checked)} className="h-3.5 w-3.5" />
+                  <Label htmlFor="modal-insurance-active" className="text-xs text-foreground">Active</Label>
                 </div>
               </div>
 
-              {/* Payment Mailing Address */}
-              <div className="border-b border-border pb-1 mb-2 pt-2">
-                <span className="font-semibold text-xs text-primary">Payment Mailing Address</span>
-              </div>
-              {renderInlineField('paymentMailingStreet', 'Street')}
-              {renderInlineField('paymentMailingCity', 'City')}
-              {renderInlineField('paymentMailingState', 'State')}
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP</Label>
-                <ZipInput value={String(formData.paymentMailingZip || '')} onValueChange={(v) => handleChange('paymentMailingZip', v)} className="h-7 text-xs" />
-              </div>
+              <div className="space-y-1.5">
+                <div className="border-b border-border pb-1 mb-2">
+                  <span className="font-semibold text-xs text-primary">Insurance Agent Information</span>
+                </div>
+                {renderInlineField('agentName', "Agent's Name")}
+                {renderInlineField('businessAddress', 'Bus. Address')}
+                {renderInlineField('businessAddressCity', 'City')}
+                {renderInlineField('businessAddressState', 'State')}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP</Label>
+                  <ZipInput value={String(formData.businessAddressZip || '')} onValueChange={(v) => handleChange('businessAddressZip', v)} className="h-7 text-xs" />
+                </div>
+                {renderInlineField('phoneNumber', 'Phone Number')}
+                {renderInlineField('faxNumber', 'Fax Number')}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">E-mail</Label>
+                  <EmailInput value={String(formData.email || '')} onValueChange={(v) => handleChange('email', v)} className="h-7 text-xs" />
+                </div>
 
-              <div className="flex items-center gap-2 pt-1">
-                <Checkbox id="modal-insurance-active" checked={formData.active} onCheckedChange={(checked) => handleChange('active', !!checked)} className="h-3.5 w-3.5" />
-                <Label htmlFor="modal-insurance-active" className="text-xs text-foreground">Active</Label>
+                <div className="border-b border-border pb-1 mb-2 pt-2">
+                  <span className="font-semibold text-xs text-primary">Insurance Tracking</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="modal-insurance-tracking" checked={formData.insuranceTracking} onCheckedChange={(checked) => handleChange('insuranceTracking', !!checked)} className="h-3.5 w-3.5" />
+                  <Label htmlFor="modal-insurance-tracking" className="text-xs text-foreground">Insurance Tracking</Label>
+                </div>
+                {formData.insuranceTracking && (
+                  <>
+                    {renderInlineField('lastVerified', 'Last Verified', { type: 'date' })}
+                    {renderInlineSelect('trackingStatus', 'Status', TRACKING_STATUS_OPTIONS, 'Select status')}
+                  </>
+                )}
               </div>
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-1.5">
-              <div className="border-b border-border pb-1 mb-2">
-                <span className="font-semibold text-xs text-primary">Insurance Agent Information</span>
-              </div>
-              {renderInlineField('agentName', "Agent's Name")}
-              {renderInlineField('businessAddress', 'Bus. Address')}
-              {renderInlineField('businessAddressCity', 'City')}
-              {renderInlineField('businessAddressState', 'State')}
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP</Label>
-                <ZipInput value={String(formData.businessAddressZip || '')} onValueChange={(v) => handleChange('businessAddressZip', v)} className="h-7 text-xs" />
-              </div>
-              {renderInlineField('phoneNumber', 'Phone Number')}
-              {renderInlineField('faxNumber', 'Fax Number')}
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs text-foreground">E-mail</Label>
-                <EmailInput value={String(formData.email || '')} onValueChange={(v) => handleChange('email', v)} className="h-7 text-xs" />
-              </div>
-
-              {/* Insurance Tracking */}
-              <div className="border-b border-border pb-1 mb-2 pt-2">
-                <span className="font-semibold text-xs text-primary">Insurance Tracking</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="modal-insurance-tracking" checked={formData.insuranceTracking} onCheckedChange={(checked) => handleChange('insuranceTracking', !!checked)} className="h-3.5 w-3.5" />
-                <Label htmlFor="modal-insurance-tracking" className="text-xs text-foreground">Insurance Tracking</Label>
-              </div>
-              {formData.insuranceTracking && (
-                <>
-                  {renderInlineField('lastVerified', 'Last Verified', { type: 'date' })}
-                  {renderInlineSelect('trackingStatus', 'Status', TRACKING_STATUS_OPTIONS, 'Select status')}
-                </>
-              )}
             </div>
           </div>
-        </div>
 
-        <div className="flex justify-end gap-2 pt-3 border-t border-border shrink-0">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSave}>OK</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+          <div className="flex justify-end gap-2 pt-3 border-t border-border shrink-0">
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>OK</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <ModalSaveConfirmation open={showConfirm} onConfirm={handleConfirmSave} onCancel={() => setShowConfirm(false)} />
+    </>
   );
 };
 

@@ -17,6 +17,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { ModalSaveConfirmation } from './ModalSaveConfirmation';
+import { hasModalFormData } from '@/lib/modalFormValidation';
 import type { NoteData, AttachmentMeta } from './NotesTableView';
 import { getAttachmentName } from './NotesTableView';
 
@@ -72,6 +74,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -146,13 +149,17 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     return results;
   };
 
-  const handleSave = async () => {
+  const isFormFilled = hasModalFormData(formData, ['id', 'date', 'asOfDate', 'account', 'name']);
+
+  const handleSaveClick = () => setShowConfirm(true);
+
+  const handleConfirmSave = async () => {
+    setShowConfirm(false);
     setUploading(true);
     let finalAttachments = [...formData.attachments];
 
     if (pendingFiles.length > 0) {
       const uploaded = await uploadFilesToStorage(pendingFiles, formData.id);
-      // Keep existing persisted attachments, replace pending placeholders with uploaded ones
       const existingPersisted = formData.attachments.filter(
         att => typeof att === 'object' && att.storagePath
       );
@@ -176,10 +183,8 @@ export const NotesModal: React.FC<NotesModalProps> = ({
   };
 
   const removeAttachment = (index: number) => {
-    // Check if it's a pending file (no storagePath)
     const att = formData.attachments[index];
     if (typeof att === 'object' && !att.storagePath) {
-      // Find corresponding pending file index
       const pendingIdx = pendingFiles.findIndex(f => f.name === att.name);
       if (pendingIdx >= 0) {
         setPendingFiles(prev => prev.filter((_, i) => i !== pendingIdx));
@@ -201,211 +206,208 @@ export const NotesModal: React.FC<NotesModalProps> = ({
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-2xl max-h-[90vh] overflow-y-auto p-4"
-        onInteractOutside={(e) => {
-          const target = e.target as HTMLElement | null;
-          if (target?.closest('[data-radix-popper-content-wrapper]')) {
-            e.preventDefault();
-          }
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-sm">
-            <StickyNote className="h-4 w-4 text-primary" />
-            {isEdit ? 'Edit Conversation Log' : 'Add New Conversation Log'}
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          className="max-w-2xl max-h-[90vh] overflow-y-auto p-4"
+          onInteractOutside={(e) => {
+            const target = e.target as HTMLElement | null;
+            if (target?.closest('[data-radix-popper-content-wrapper]')) {
+              e.preventDefault();
+            }
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sm">
+              <StickyNote className="h-4 w-4 text-primary" />
+              {isEdit ? 'Edit Conversation Log' : 'Add New Conversation Log'}
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-3 mt-3">
-          {/* High Priority */}
-          <div className="flex items-center gap-2">
-            <Checkbox
-              checked={formData.highPriority}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, highPriority: !!checked }))}
-            />
-            <Label className="text-xs text-foreground">High Priority</Label>
-          </div>
-
-          {/* Row 1: Date-Time | As Of */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-3 mt-3">
             <div className="flex items-center gap-2">
-              <Label className="w-[100px] shrink-0 text-xs text-foreground">Date - Time</Label>
-              <Input
-                value={formatDateTimeDisplay(formData.date)}
-                readOnly
-                disabled
-                className="h-7 text-xs flex-1 bg-muted"
+              <Checkbox
+                checked={formData.highPriority}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, highPriority: !!checked }))}
               />
+              <Label className="text-xs text-foreground">High Priority</Label>
             </div>
-            <div className="flex items-center gap-2">
-              <Label className="w-[100px] shrink-0 text-xs text-foreground">As Of</Label>
-              <Popover modal={true} open={asOfDateOpen} onOpenChange={setAsOfDateOpen}>
-                <PopoverTrigger asChild>
-                  <div className="relative flex-1 cursor-pointer">
-                    <Input
-                      value={formData.asOfDate ? formatAsOfDisplay(formData.asOfDate) : ''}
-                      readOnly
-                      placeholder="Select date..."
-                      className="h-7 text-xs flex-1 pr-7 cursor-pointer"
-                    />
-                    <CalendarIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                  </div>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 pointer-events-auto z-[9999]" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={asOfDateObj}
-                    onSelect={handleAsOfDateSelect}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                  <div className="flex items-center gap-1 px-3 pb-3 border-t border-border pt-2">
-                    <Label className="text-xs text-muted-foreground mr-1">Time:</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={23}
-                      value={asOfDateObj ? String(asOfDateObj.getHours()).padStart(2, '0') : '00'}
-                      onChange={(e) => {
-                        const h = Math.max(0, Math.min(23, parseInt(e.target.value) || 0));
-                        const d = asOfDateObj ? new Date(asOfDateObj) : new Date();
-                        d.setHours(h);
-                        setFormData(prev => ({ ...prev, asOfDate: d.toISOString() }));
-                      }}
-                      className="h-7 w-12 text-xs text-center px-1"
-                    />
-                    <span className="text-xs text-muted-foreground">:</span>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={59}
-                      value={asOfDateObj ? String(asOfDateObj.getMinutes()).padStart(2, '0') : '00'}
-                      onChange={(e) => {
-                        const m = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
-                        const d = asOfDateObj ? new Date(asOfDateObj) : new Date();
-                        d.setMinutes(m);
-                        setFormData(prev => ({ ...prev, asOfDate: d.toISOString() }));
-                      }}
-                      className="h-7 w-12 text-xs text-center px-1"
-                    />
-                    <span className="text-xs text-muted-foreground">:</span>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={59}
-                      value={asOfDateObj ? String(asOfDateObj.getSeconds()).padStart(2, '0') : '00'}
-                      onChange={(e) => {
-                        const s = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
-                        const d = asOfDateObj ? new Date(asOfDateObj) : new Date();
-                        d.setSeconds(s);
-                        setFormData(prev => ({ ...prev, asOfDate: d.toISOString() }));
-                      }}
-                      className="h-7 w-12 text-xs text-center px-1"
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
 
-          {/* Row 2: Account | Name */}
-          <div className="grid grid-cols-2 gap-4">
-            {renderInlineField('account', 'Account')}
-            {renderInlineField('name', 'Name')}
-          </div>
-
-          {/* Row 3: Type | Reference */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2">
-              <Label className="w-[100px] shrink-0 text-xs text-foreground">Type</Label>
-              <Select
-                value={formData.type || undefined}
-                onValueChange={(val) => setFormData(prev => ({ ...prev, type: val }))}
-              >
-                <SelectTrigger className="h-7 text-xs flex-1">
-                  <SelectValue placeholder="Select type..." />
-                </SelectTrigger>
-                <SelectContent className="z-[9999]">
-                  {noteTypes.length > 0 ? noteTypes.map(t => (
-                    <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
-                  )) : (
-                    <SelectItem value="__none__" disabled className="text-xs text-muted-foreground">No options available</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            {renderInlineField('reference', 'Reference')}
-          </div>
-
-
-          {/* Notes content - Rich Text Editor */}
-          <div className="space-y-1 shrink-0">
-            <Label className="text-xs text-foreground">Conversation Log</Label>
-            <div className="h-[200px] border border-border rounded-md overflow-hidden">
-              <RichTextEditor
-                value={formData.content}
-                onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
-                placeholder="Enter conversation log content..."
-                minHeight="60px"
-              />
-            </div>
-          </div>
-
-          {/* Attachments */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="text-xs text-foreground">Attachments</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs gap-1"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Paperclip className="h-3 w-3" />
-                Attach File
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                multiple
-                accept=".doc,.docx,.xls,.xlsx,.pdf,.csv,.txt,.png,.jpg,.jpeg"
-                onChange={handleFileChange}
-              />
-            </div>
-            {formData.attachments.length > 0 ? (
-              <div className="space-y-1 pl-[100px]">
-                {formData.attachments.map((att, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
-                    <Paperclip className="h-3 w-3 shrink-0" />
-                    <span className="flex-1 truncate">{getAttachmentName(att)}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5"
-                      onClick={() => removeAttachment(idx)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs text-foreground">Date - Time</Label>
+                <Input
+                  value={formatDateTimeDisplay(formData.date)}
+                  readOnly
+                  disabled
+                  className="h-7 text-xs flex-1 bg-muted"
+                />
               </div>
-            ) : (
-              <p className="text-xs text-muted-foreground italic pl-[100px]">No attachments available</p>
-            )}
-          </div>
-        </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs text-foreground">As Of</Label>
+                <Popover modal={true} open={asOfDateOpen} onOpenChange={setAsOfDateOpen}>
+                  <PopoverTrigger asChild>
+                    <div className="relative flex-1 cursor-pointer">
+                      <Input
+                        value={formData.asOfDate ? formatAsOfDisplay(formData.asOfDate) : ''}
+                        readOnly
+                        placeholder="Select date..."
+                        className="h-7 text-xs flex-1 pr-7 cursor-pointer"
+                      />
+                      <CalendarIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 pointer-events-auto z-[9999]" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={asOfDateObj}
+                      onSelect={handleAsOfDateSelect}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                    <div className="flex items-center gap-1 px-3 pb-3 border-t border-border pt-2">
+                      <Label className="text-xs text-muted-foreground mr-1">Time:</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={23}
+                        value={asOfDateObj ? String(asOfDateObj.getHours()).padStart(2, '0') : '00'}
+                        onChange={(e) => {
+                          const h = Math.max(0, Math.min(23, parseInt(e.target.value) || 0));
+                          const d = asOfDateObj ? new Date(asOfDateObj) : new Date();
+                          d.setHours(h);
+                          setFormData(prev => ({ ...prev, asOfDate: d.toISOString() }));
+                        }}
+                        className="h-7 w-12 text-xs text-center px-1"
+                      />
+                      <span className="text-xs text-muted-foreground">:</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={59}
+                        value={asOfDateObj ? String(asOfDateObj.getMinutes()).padStart(2, '0') : '00'}
+                        onChange={(e) => {
+                          const m = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
+                          const d = asOfDateObj ? new Date(asOfDateObj) : new Date();
+                          d.setMinutes(m);
+                          setFormData(prev => ({ ...prev, asOfDate: d.toISOString() }));
+                        }}
+                        className="h-7 w-12 text-xs text-center px-1"
+                      />
+                      <span className="text-xs text-muted-foreground">:</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={59}
+                        value={asOfDateObj ? String(asOfDateObj.getSeconds()).padStart(2, '0') : '00'}
+                        onChange={(e) => {
+                          const s = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
+                          const d = asOfDateObj ? new Date(asOfDateObj) : new Date();
+                          d.setSeconds(s);
+                          setFormData(prev => ({ ...prev, asOfDate: d.toISOString() }));
+                        }}
+                        className="h-7 w-12 text-xs text-center px-1"
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
 
-        <DialogFooter className="mt-4">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSave} disabled={uploading}>{uploading ? 'Uploading...' : 'OK'}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <div className="grid grid-cols-2 gap-4">
+              {renderInlineField('account', 'Account')}
+              {renderInlineField('name', 'Name')}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs text-foreground">Type</Label>
+                <Select
+                  value={formData.type || undefined}
+                  onValueChange={(val) => setFormData(prev => ({ ...prev, type: val }))}
+                >
+                  <SelectTrigger className="h-7 text-xs flex-1">
+                    <SelectValue placeholder="Select type..." />
+                  </SelectTrigger>
+                  <SelectContent className="z-[9999]">
+                    {noteTypes.length > 0 ? noteTypes.map(t => (
+                      <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>
+                    )) : (
+                      <SelectItem value="__none__" disabled className="text-xs text-muted-foreground">No options available</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              {renderInlineField('reference', 'Reference')}
+            </div>
+
+
+            <div className="space-y-1 shrink-0">
+              <Label className="text-xs text-foreground">Conversation Log</Label>
+              <div className="h-[200px] border border-border rounded-md overflow-hidden">
+                <RichTextEditor
+                  value={formData.content}
+                  onChange={(val) => setFormData(prev => ({ ...prev, content: val }))}
+                  placeholder="Enter conversation log content..."
+                  minHeight="60px"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-foreground">Attachments</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Paperclip className="h-3 w-3" />
+                  Attach File
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  multiple
+                  accept=".doc,.docx,.xls,.xlsx,.pdf,.csv,.txt,.png,.jpg,.jpeg"
+                  onChange={handleFileChange}
+                />
+              </div>
+              {formData.attachments.length > 0 ? (
+                <div className="space-y-1 pl-[100px]">
+                  {formData.attachments.map((att, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
+                      <Paperclip className="h-3 w-3 shrink-0" />
+                      <span className="flex-1 truncate">{getAttachmentName(att)}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={() => removeAttachment(idx)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic pl-[100px]">No attachments available</p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button size="sm" onClick={handleSaveClick} disabled={uploading || !isFormFilled}>{uploading ? 'Uploading...' : 'OK'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <ModalSaveConfirmation open={showConfirm} onConfirm={handleConfirmSave} onCancel={() => setShowConfirm(false)} />
+    </>
   );
 };
 

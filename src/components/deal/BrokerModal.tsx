@@ -4,6 +4,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { ModalSaveConfirmation } from './ModalSaveConfirmation';
+import { hasModalFormData } from '@/lib/modalFormValidation';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { EmailInput } from '@/components/ui/email-input';
@@ -34,13 +36,18 @@ const getEmptyBroker = (): BrokerData => ({
 
 export const BrokerModal: React.FC<BrokerModalProps> = ({ open, onOpenChange, broker, onSave, isEdit = false }) => {
   const [formData, setFormData] = useState<BrokerData>(getEmptyBroker());
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (open) setFormData(broker ? broker : getEmptyBroker());
   }, [open, broker]);
 
   const handleFieldChange = (field: keyof BrokerData, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
-  const handleSave = () => { onSave(formData); onOpenChange(false); };
+
+  const isFormFilled = hasModalFormData(formData, ['id']);
+
+  const handleSaveClick = () => setShowConfirm(true);
+  const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
 
   const renderInlineField = (field: keyof BrokerData, label: string, props: Record<string, any> = {}) => (
     <div className="flex items-center gap-2">
@@ -50,6 +57,7 @@ export const BrokerModal: React.FC<BrokerModalProps> = ({ open, onOpenChange, br
   );
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -106,10 +114,12 @@ export const BrokerModal: React.FC<BrokerModalProps> = ({ open, onOpenChange, br
 
         <DialogFooter className="mt-4">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSave}>OK</Button>
+          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>OK</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <ModalSaveConfirmation open={showConfirm} onConfirm={handleConfirmSave} onCancel={() => setShowConfirm(false)} />
+    </>
   );
 };
 

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
+import { ModalSaveConfirmation } from './ModalSaveConfirmation';
+import { hasModalFormData } from '@/lib/modalFormValidation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
@@ -81,6 +83,7 @@ const emptyCoBorrower: CoBorrowerData = {
 
 export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenChange, coBorrower, onSave, isEdit = false, parentBorrowerVesting = '' }) => {
   const [formData, setFormData] = useState<CoBorrowerData>(emptyCoBorrower);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (coBorrower) {
@@ -91,7 +94,11 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
   }, [coBorrower, open, parentBorrowerVesting]);
 
   const handleInputChange = (field: keyof CoBorrowerData, value: string | boolean) => setFormData(prev => ({ ...prev, [field]: value }));
-  const handleSave = () => onSave(formData);
+
+  const isFormFilled = hasModalFormData(formData, ['id', 'type', 'parentBorrowerPrefix', 'format'], { isPrimary: false, mailingSameAsPrimary: false, issue1098: false, alternateReporting: false, deliveryOnline: false, deliveryMail: false, preferredHome: false, preferredWork: false, preferredCell: false, preferredFax: false, creditReporting: false, sendBorrowerNotifications: false, deliveryPrint: true, deliveryEmail: false, deliverySms: false, tinVerified: false, sendPaymentNotification: false, sendLateNotice: false, sendBorrowerStatement: false, sendMaturityNotice: false });
+
+  const handleSaveClick = () => setShowConfirm(true);
+  const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); };
 
   const renderInlineField = (field: keyof CoBorrowerData, label: string, props: Record<string, any> = {}) => (
     <div className="flex items-center gap-2">
@@ -111,6 +118,7 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
   );
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
         <DialogHeader>
@@ -283,10 +291,12 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
 
         <DialogFooter className="mt-4 shrink-0">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSave}>{isEdit ? 'Save Changes' : 'Add Co-Borrower'}</Button>
+          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>{isEdit ? 'Save Changes' : 'Add Co-Borrower'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <ModalSaveConfirmation open={showConfirm} onConfirm={handleConfirmSave} onCancel={() => setShowConfirm(false)} />
+    </>
   );
 };
 

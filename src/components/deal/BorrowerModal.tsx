@@ -3,6 +3,8 @@ import { User } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
+import { ModalSaveConfirmation } from './ModalSaveConfirmation';
+import { hasModalFormData } from '@/lib/modalFormValidation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
@@ -83,6 +85,7 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
   open, onOpenChange, borrower, onSave, isEdit = false,
 }) => {
   const [formData, setFormData] = useState<BorrowerData>(getEmptyBorrower());
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -94,7 +97,11 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  const isFormFilled = hasModalFormData(formData, ['id', 'borrowerType'], { mailingSameAsPrimary: false, isPrimary: false, issue1098: false, alternateReporting: false, deliveryOnline: false, deliveryMail: false, preferredHome: false, preferredWork: false, preferredCell: false, preferredFax: false, tinVerified: false, deliveryPrint: false, deliveryEmail: false, deliverySms: false, sendPaymentNotification: false, sendLateNotice: false, sendBorrowerStatement: false, sendMaturityNotice: false });
+
+  const handleSaveClick = () => setShowConfirm(true);
+  const handleConfirmSave = () => {
+    setShowConfirm(false);
     const primaryPhone = formData.mobilePhone || formData.homePhone || formData.workPhone || formData.phone || '';
     onSave({ ...formData, phone: primaryPhone });
     onOpenChange(false);
@@ -118,6 +125,7 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
   );
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
         <DialogHeader>
@@ -291,10 +299,12 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
 
         <DialogFooter className="mt-4 shrink-0">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSave}>OK</Button>
+          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>OK</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <ModalSaveConfirmation open={showConfirm} onConfirm={handleConfirmSave} onCancel={() => setShowConfirm(false)} />
+    </>
   );
 };
 

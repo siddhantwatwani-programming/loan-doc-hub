@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
+import { ModalSaveConfirmation } from './ModalSaveConfirmation';
+import { hasModalFormData } from '@/lib/modalFormValidation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
@@ -48,6 +50,7 @@ const getDefaultLenderData = (): LenderData => ({
 export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, lender, onSave, isEdit = false }) => {
   const [formData, setFormData] = useState<LenderData>(getDefaultLenderData());
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -61,6 +64,8 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
+  const isFormFilled = hasModalFormData(formData, ['id'], { isPrimary: false });
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!formData.fullName.trim() && !formData.firstName.trim()) newErrors.fullName = 'Full Name or First Name is required';
@@ -68,7 +73,8 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => { if (validateForm()) onSave(formData); };
+  const handleSaveClick = () => setShowConfirm(true);
+  const handleConfirmSave = () => { setShowConfirm(false); if (validateForm()) onSave(formData); };
 
   const renderInlineField = (field: keyof LenderData, label: string, props: Record<string, any> = {}) => (
     <div className="flex items-center gap-2">
@@ -78,6 +84,7 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
   );
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh]">
         <DialogHeader>
@@ -171,10 +178,12 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
 
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSave}>{isEdit ? 'Save Changes' : 'Add Lender'}</Button>
+          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>{isEdit ? 'Save Changes' : 'Add Lender'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <ModalSaveConfirmation open={showConfirm} onConfirm={handleConfirmSave} onCancel={() => setShowConfirm(false)} />
+    </>
   );
 };
 

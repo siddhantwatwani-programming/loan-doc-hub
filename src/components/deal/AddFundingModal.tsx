@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { ModalSaveConfirmation } from './ModalSaveConfirmation';
+import { hasModalFormData } from '@/lib/modalFormValidation';
 import {
   Dialog,
   DialogContent,
@@ -133,6 +135,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   };
 
   const [formData, setFormData] = useState<FundingFormData>(getInitialFormData());
+  const [showConfirm, setShowConfirm] = useState(false);
   const [fundingDateOpen, setFundingDateOpen] = useState(false);
   const [interestFromOpen, setInterestFromOpen] = useState(false);
 
@@ -203,7 +206,11 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = () => {
+  const isFormFilled = hasModalFormData(formData, ['loan', 'borrower', 'rateSelection', 'rateNoteValue', 'rateSoldValue', 'percentOwned', 'regularPayment', 'lenderRate'], { brokerParticipates: false, overrideServicingFees: false, overrideDefaultFees: false });
+
+  const handleSaveClick = () => setShowConfirm(true);
+  const handleConfirmSave = () => {
+    setShowConfirm(false);
     onSubmit({
       ...formData,
       loan: loanNumber || formData.loan,
@@ -285,6 +292,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   );
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader className="shrink-0">
@@ -468,10 +476,12 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
         <DialogFooter className="shrink-0 border-t border-border pt-3">
           <Button variant="outline" size="sm" onClick={handleCancel}>Cancel</Button>
-          <Button size="sm" onClick={handleSubmit} disabled={percentOwnedError || totalPercentError}>{isEditing ? 'Update Funding' : 'Save Funding'}</Button>
+          <Button size="sm" onClick={handleSaveClick} disabled={percentOwnedError || totalPercentError || !isFormFilled}>{isEditing ? 'Update Funding' : 'Save Funding'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <ModalSaveConfirmation open={showConfirm} onConfirm={handleConfirmSave} onCancel={() => setShowConfirm(false)} />
+    </>
   );
 };
 
