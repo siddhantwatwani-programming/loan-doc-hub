@@ -230,6 +230,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   const [dobOpen, setDobOpen] = useState(false);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
         contactType === 'lender' ? "max-w-4xl max-h-[90vh] flex flex-col overflow-hidden" : "max-w-4xl max-h-[85vh] overflow-y-auto"
