@@ -206,7 +206,11 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = () => {
+  const isFormFilled = hasModalFormData(formData, ['loan', 'borrower', 'rateSelection', 'rateNoteValue', 'rateSoldValue', 'percentOwned', 'regularPayment', 'lenderRate'], { brokerParticipates: false, overrideServicingFees: false, overrideDefaultFees: false });
+
+  const handleSaveClick = () => setShowConfirm(true);
+  const handleConfirmSave = () => {
+    setShowConfirm(false);
     onSubmit({
       ...formData,
       loan: loanNumber || formData.loan,
