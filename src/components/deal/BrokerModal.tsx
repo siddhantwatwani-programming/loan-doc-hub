@@ -43,7 +43,11 @@ export const BrokerModal: React.FC<BrokerModalProps> = ({ open, onOpenChange, br
   }, [open, broker]);
 
   const handleFieldChange = (field: keyof BrokerData, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
-  const handleSave = () => { onSave(formData); onOpenChange(false); };
+
+  const isFormFilled = hasModalFormData(formData, ['id']);
+
+  const handleSaveClick = () => setShowConfirm(true);
+  const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
 
   const renderInlineField = (field: keyof BrokerData, label: string, props: Record<string, any> = {}) => (
     <div className="flex items-center gap-2">
