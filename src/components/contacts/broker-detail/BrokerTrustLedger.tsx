@@ -42,7 +42,7 @@ interface LedgerEntry {
   clr: string;
   deposit: string;
   balance: string;
-  category: 'all' | 'reserve' | 'impound';
+  category: '' | 'all' | 'reserve' | 'impound';
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -97,7 +97,7 @@ const filterByDate = (entries: LedgerEntry[], filter: string): LedgerEntry[] => 
   return entries.filter(e => { if (!e.date) return false; return new Date(e.date) >= cutoff; });
 };
 
-const EMPTY_ENTRY = { date: '', reference: '', fromWhomReceivedPaid: '', memo: '', payment: '', clr: '', deposit: '', balance: '', category: 'all' as const };
+const EMPTY_ENTRY = { date: '', reference: '', fromWhomReceivedPaid: '', memo: '', payment: '', clr: '', deposit: '', balance: '', category: '' as const };
 
 const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string }> = ({ contactDbId }) => {
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
@@ -323,7 +323,7 @@ const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string }> = (
             ))}
             <div className="space-y-1">
               <Label className="text-xs">Category</Label>
-              <Select value={newEntry.category} onValueChange={v => setNewEntry(prev => ({ ...prev, category: v as any }))}>
+              <Select value={newEntry.category || undefined} onValueChange={v => setNewEntry(prev => ({ ...prev, category: v as any }))}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
