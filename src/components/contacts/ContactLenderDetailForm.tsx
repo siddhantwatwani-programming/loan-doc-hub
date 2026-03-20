@@ -14,7 +14,6 @@ import { Separator } from '@/components/ui/separator';
 import { hasAtLeastOneFieldFilled, validatePhoneFields } from '@/lib/contactFormValidation';
 import { toast } from 'sonner';
 import type { ContactLender } from '@/pages/contacts/ContactLendersPage';
-import type { ContactLender } from '@/pages/contacts/ContactLendersPage';
 
 interface Props {
   lender: ContactLender;
