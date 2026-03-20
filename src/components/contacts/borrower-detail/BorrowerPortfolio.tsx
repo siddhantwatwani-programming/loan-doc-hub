@@ -454,8 +454,7 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
               filtered.map(r => (
                 <TableRow
                   key={r.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleRowClick(r)}
+                >
                 >
                   {activeColumns.map(c => (
                     <TableCell key={c.id} className="whitespace-nowrap text-xs">
