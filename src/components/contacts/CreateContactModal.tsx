@@ -106,6 +106,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   open, onOpenChange, contactType, onSubmit,
 }) => {
   const [form, setForm] = useState<Record<string, string>>(() => getInitialForm(contactType));
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // Determine primary address key prefix based on contact type
   const primaryPrefix = contactType === 'lender' ? 'primary_address' : 'address';
