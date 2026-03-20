@@ -303,7 +303,7 @@ const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string }> = (
 
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Add Trust Ledger Entry</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Add Trust Ledger Entry</DialogTitle><DialogDescription>Select a category and enter the trust ledger transaction details.</DialogDescription></DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             {[
               { key: 'date', label: 'Date', type: 'date' },
