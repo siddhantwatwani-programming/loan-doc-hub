@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { logContactEvent } from '@/hooks/useContactEventJournal';
+import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Plus, Filter, Download, Settings2 } from 'lucide-react';
