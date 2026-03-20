@@ -579,7 +579,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
     </Dialog>
 
     <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-      <AlertDialogContent>
+      <AlertDialogContent className="z-[9999]">
         <AlertDialogHeader>
           <AlertDialogTitle>Confirm Create {typeLabel}</AlertDialogTitle>
           <AlertDialogDescription>

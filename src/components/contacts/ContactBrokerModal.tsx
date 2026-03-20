@@ -147,7 +147,7 @@ export const ContactBrokerModal: React.FC<Props> = ({ open, onOpenChange, onSubm
       </Dialog>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[9999]">
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Create Broker</AlertDialogTitle>
             <AlertDialogDescription>
