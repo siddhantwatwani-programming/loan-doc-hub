@@ -237,7 +237,7 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
       result = result.filter(r => r.loanNumber.toLowerCase().includes(q));
     }
     if (roleFilter !== 'all') {
-      result = result.filter(r => r.role === roleFilter);
+      result = result.filter(r => r.capacity === roleFilter);
     }
     if (statusFilter !== 'all') {
       result = result.filter(r => r.status === statusFilter);
