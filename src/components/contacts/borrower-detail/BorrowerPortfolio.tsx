@@ -16,7 +16,7 @@ interface PortfolioLoan {
   dealId: string;
   loanNumber: string;
   loanAmount: string;
-  role: string;
+  capacity: string;
   status: string;
   nextPaymentDate: string;
   principalBalance: string;
@@ -27,7 +27,7 @@ interface PortfolioLoan {
 const ALL_COLUMNS = [
   { id: 'loanNumber', label: 'Loan Number' },
   { id: 'loanAmount', label: 'Loan Amount' },
-  { id: 'role', label: 'Role' },
+  { id: 'capacity', label: 'Capacity' },
   { id: 'status', label: 'Status' },
   { id: 'nextPaymentDate', label: 'Next Payment Date' },
   { id: 'principalBalance', label: 'Principal Balance' },
