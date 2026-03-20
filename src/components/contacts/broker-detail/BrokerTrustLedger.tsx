@@ -97,7 +97,7 @@ const filterByDate = (entries: LedgerEntry[], filter: string): LedgerEntry[] => 
   return entries.filter(e => { if (!e.date) return false; return new Date(e.date) >= cutoff; });
 };
 
-const EMPTY_ENTRY = { date: '', reference: '', fromWhomReceivedPaid: '', memo: '', payment: '', clr: '', deposit: '', balance: '', category: 'all' as const };
+const EMPTY_ENTRY = { date: '', reference: '', fromWhomReceivedPaid: '', memo: '', payment: '', clr: '', deposit: '', balance: '', category: '' as const };
 
 const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string }> = ({ contactDbId }) => {
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
