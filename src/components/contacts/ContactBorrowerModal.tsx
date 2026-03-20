@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
@@ -10,6 +14,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { hasAtLeastOneFieldFilled, validatePhoneFields } from '@/lib/contactFormValidation';
+import { toast } from 'sonner';
 import type { ContactBorrower } from '@/pages/contacts/ContactBorrowersPage';
 
 interface ContactBorrowerModalProps {
@@ -28,6 +35,7 @@ const EMPTY: Omit<ContactBorrower, 'id' | 'borrowerId'> = {
 
 export const ContactBorrowerModal: React.FC<ContactBorrowerModalProps> = ({ open, onOpenChange, onSubmit }) => {
   const [form, setForm] = useState(EMPTY);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const set = (field: string, value: any) => setForm((p) => {
     const updated = { ...p, [field]: value };
@@ -39,43 +47,85 @@ export const ContactBorrowerModal: React.FC<ContactBorrowerModalProps> = ({ open
     return updated;
   });
 
-  const handleSubmit = () => { onSubmit(form); setForm(EMPTY); };
+  const handleSubmit = () => {
+    if (!hasAtLeastOneFieldFilled(form as any, ['preferredPhone', 'type'])) {
+      toast.error('Please fill at least one field before saving');
+      return;
+    }
+    const phoneErrors = validatePhoneFields([
+      { label: 'Home Phone', value: form.homePhone },
+      { label: 'Work Phone', value: form.workPhone },
+      { label: 'Cell Phone', value: form.cellPhone },
+      { label: 'Fax', value: form.fax },
+    ]);
+    if (phoneErrors.length > 0) {
+      toast.error(phoneErrors[0]);
+      return;
+    }
+    setConfirmOpen(true);
+  };
+
+  const handleConfirm = () => {
+    setConfirmOpen(false);
+    onSubmit(form);
+    setForm(EMPTY);
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Create New Borrower</DialogTitle></DialogHeader>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div><Label>First Name</Label><Input value={form.firstName} onChange={(e) => set('firstName', e.target.value)} /></div>
-            <div><Label>Last Name</Label><Input value={form.lastName} onChange={(e) => set('lastName', e.target.value)} /></div>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Create New Borrower</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>First Name</Label><Input value={form.firstName} onChange={(e) => set('firstName', e.target.value)} /></div>
+              <div><Label>Last Name</Label><Input value={form.lastName} onChange={(e) => set('lastName', e.target.value)} /></div>
+            </div>
+            <div><Label>Type</Label>
+              <Select value={form.type} onValueChange={(v) => set('type', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Individual">Individual</SelectItem>
+                  <SelectItem value="Entity">Entity</SelectItem>
+                  <SelectItem value="Trust">Trust</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Email</Label><EmailInput value={form.email} onValueChange={(v) => set('email', v)} /></div>
+            <div>
+              <Label>Cell Phone</Label>
+              <PhoneInput value={form.cellPhone} onValueChange={(v) => set('cellPhone', v)} />
+            </div>
+            <div><Label>City</Label><Input value={form.city} onChange={(e) => set('city', e.target.value)} /></div>
+            <div><Label>State</Label><Input value={form.state} onChange={(e) => set('state', e.target.value)} /></div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2"><Checkbox checked={form.hold} onCheckedChange={(v) => set('hold', !!v)} /><Label>Hold</Label></div>
+              <div className="flex items-center gap-2"><Checkbox checked={form.ach} onCheckedChange={(v) => set('ach', !!v)} /><Label>ACH</Label></div>
+              <div className="flex items-center gap-2"><Checkbox checked={form.verified} onCheckedChange={(v) => set('verified', !!v)} /><Label>Verified</Label></div>
+              <div className="flex items-center gap-2"><Checkbox checked={form.agreement} onCheckedChange={(v) => set('agreement', !!v)} /><Label>Agreement</Label></div>
+            </div>
           </div>
-          <div><Label>Type</Label>
-            <Select value={form.type} onValueChange={(v) => set('type', v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Individual">Individual</SelectItem>
-                <SelectItem value="Entity">Entity</SelectItem>
-                <SelectItem value="Trust">Trust</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div><Label>Email</Label><EmailInput value={form.email} onValueChange={(v) => set('email', v)} /></div>
-          <div><Label>Cell Phone</Label><Input value={form.cellPhone} onChange={(e) => set('cellPhone', e.target.value)} /></div>
-          <div><Label>City</Label><Input value={form.city} onChange={(e) => set('city', e.target.value)} /></div>
-          <div><Label>State</Label><Input value={form.state} onChange={(e) => set('state', e.target.value)} /></div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2"><Checkbox checked={form.hold} onCheckedChange={(v) => set('hold', !!v)} /><Label>Hold</Label></div>
-            <div className="flex items-center gap-2"><Checkbox checked={form.ach} onCheckedChange={(v) => set('ach', !!v)} /><Label>ACH</Label></div>
-            <div className="flex items-center gap-2"><Checkbox checked={form.verified} onCheckedChange={(v) => set('verified', !!v)} /><Label>Verified</Label></div>
-            <div className="flex items-center gap-2"><Checkbox checked={form.agreement} onCheckedChange={(v) => set('agreement', !!v)} /><Label>Agreement</Label></div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSubmit}>Create</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button onClick={handleSubmit}>Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Create Borrower</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to create this new borrower contact? Please verify the entered data is correct.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirm}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };

@@ -3,9 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ZipInput } from '@/components/ui/zip-input';
 import { EmailInput } from '@/components/ui/email-input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { hasAtLeastOneFieldFilled, validatePhoneFields } from '@/lib/contactFormValidation';
+import { toast } from 'sonner';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -113,19 +116,19 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
         </div>
         <div>
           <Label>Home Phone</Label>
-          <Input value={form.homePhone} onChange={(e) => set('homePhone', e.target.value)} />
+          <PhoneInput value={form.homePhone} onValueChange={(v) => set('homePhone', v)} />
         </div>
         <div>
           <Label>Work Phone</Label>
-          <Input value={form.workPhone} onChange={(e) => set('workPhone', e.target.value)} />
+          <PhoneInput value={form.workPhone} onValueChange={(v) => set('workPhone', v)} />
         </div>
         <div>
           <Label>Cell Phone</Label>
-          <Input value={form.cellPhone} onChange={(e) => set('cellPhone', e.target.value)} />
+          <PhoneInput value={form.cellPhone} onValueChange={(v) => set('cellPhone', v)} />
         </div>
         <div>
           <Label>Fax</Label>
-          <Input value={form.fax} onChange={(e) => set('fax', e.target.value)} />
+          <PhoneInput value={form.fax} onValueChange={(v) => set('fax', v)} />
         </div>
         <div className="col-span-2">
           <Label>Preferred Phone</Label>
@@ -209,7 +212,20 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
 
       <div className="flex justify-end gap-2 pt-6">
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button onClick={() => onSave(form)}>Save</Button>
+        <Button onClick={() => {
+          if (!hasAtLeastOneFieldFilled(form as any, ['brokerId', 'preferredPhone', 'type'])) {
+            toast.error('Please fill at least one field before saving');
+            return;
+          }
+          const phoneErrors = validatePhoneFields([
+            { label: 'Home Phone', value: form.homePhone },
+            { label: 'Work Phone', value: form.workPhone },
+            { label: 'Cell Phone', value: form.cellPhone },
+            { label: 'Fax', value: form.fax },
+          ]);
+          if (phoneErrors.length > 0) { toast.error(phoneErrors[0]); return; }
+          onSave(form);
+        }}>Save</Button>
       </div>
     </div>
   );

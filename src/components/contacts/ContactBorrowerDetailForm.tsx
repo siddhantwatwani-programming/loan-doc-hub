@@ -3,9 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ZipInput } from '@/components/ui/zip-input';
 import { EmailInput } from '@/components/ui/email-input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { hasAtLeastOneFieldFilled, validatePhoneFields } from '@/lib/contactFormValidation';
+import { toast } from 'sonner';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -79,10 +82,10 @@ export const ContactBorrowerDetailForm: React.FC<Props> = ({ borrower, onSave, o
       <Section title="Contact Information">
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2"><Label>Email</Label><EmailInput value={form.email} onValueChange={(v) => set('email', v)} /></div>
-          <div><Label>Home Phone</Label><Input value={form.homePhone} onChange={(e) => set('homePhone', e.target.value)} /></div>
-          <div><Label>Work Phone</Label><Input value={form.workPhone} onChange={(e) => set('workPhone', e.target.value)} /></div>
-          <div><Label>Cell Phone</Label><Input value={form.cellPhone} onChange={(e) => set('cellPhone', e.target.value)} /></div>
-          <div><Label>Fax</Label><Input value={form.fax} onChange={(e) => set('fax', e.target.value)} /></div>
+          <div><Label>Home Phone</Label><PhoneInput value={form.homePhone} onValueChange={(v) => set('homePhone', v)} /></div>
+          <div><Label>Work Phone</Label><PhoneInput value={form.workPhone} onValueChange={(v) => set('workPhone', v)} /></div>
+          <div><Label>Cell Phone</Label><PhoneInput value={form.cellPhone} onValueChange={(v) => set('cellPhone', v)} /></div>
+          <div><Label>Fax</Label><PhoneInput value={form.fax} onValueChange={(v) => set('fax', v)} /></div>
         </div>
         <div>
           <Label>Preferred Phone</Label>
@@ -128,7 +131,20 @@ export const ContactBorrowerDetailForm: React.FC<Props> = ({ borrower, onSave, o
       </Section>
 
       <div className="flex gap-3 pt-2">
-        <Button onClick={() => onSave(form)}>Save</Button>
+        <Button onClick={() => {
+          if (!hasAtLeastOneFieldFilled(form as any, ['borrowerId', 'preferredPhone', 'type'])) {
+            toast.error('Please fill at least one field before saving');
+            return;
+          }
+          const phoneErrors = validatePhoneFields([
+            { label: 'Home Phone', value: form.homePhone },
+            { label: 'Work Phone', value: form.workPhone },
+            { label: 'Cell Phone', value: form.cellPhone },
+            { label: 'Fax', value: form.fax },
+          ]);
+          if (phoneErrors.length > 0) { toast.error(phoneErrors[0]); return; }
+          onSave(form);
+        }}>Save</Button>
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
       </div>
     </div>

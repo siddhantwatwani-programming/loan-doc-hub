@@ -2,6 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
@@ -19,6 +23,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { hasAtLeastOneFieldFilled, validatePhoneFields } from '@/lib/contactFormValidation';
+import { toast } from 'sonner';
 
 interface CreateContactModalProps {
   open: boolean;
@@ -99,6 +106,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   open, onOpenChange, contactType, onSubmit,
 }) => {
   const [form, setForm] = useState<Record<string, string>>(() => getInitialForm(contactType));
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // Determine primary address key prefix based on contact type
   const primaryPrefix = contactType === 'lender' ? 'primary_address' : 'address';
@@ -147,6 +155,30 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   }, [isSameAsPrimary, primaryStreet, primaryCity, primaryState, primaryZip]);
 
   const handleSubmit = () => {
+    // Check at least one meaningful field is filled
+    const skipKeys = ['mailing_same_as_primary', 'preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax',
+      'delivery.print', 'delivery.email', 'delivery.sms', 'send_pref.payment_notification',
+      'send_pref.late_notice', 'send_pref.borrower_statement', 'send_pref.maturity_notice'];
+    if (!hasAtLeastOneFieldFilled(form, skipKeys)) {
+      toast.error('Please fill at least one field before saving');
+      return;
+    }
+    // Validate phone fields
+    const phoneErrors = validatePhoneFields([
+      { label: 'Home Phone', value: form['phone.home'] || '' },
+      { label: 'Work Phone', value: form['phone.work'] || '' },
+      { label: 'Cell Phone', value: form['phone.cell'] || '' },
+      { label: 'Fax', value: form['phone.fax'] || '' },
+    ]);
+    if (phoneErrors.length > 0) {
+      toast.error(phoneErrors[0]);
+      return;
+    }
+    setConfirmOpen(true);
+  };
+
+  const handleConfirm = () => {
+    setConfirmOpen(false);
     const data = { ...form };
     if (!data.full_name) {
       const mid = data.middle_name || data.middle_initial || '';
@@ -198,6 +230,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   const [dobOpen, setDobOpen] = useState(false);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
         contactType === 'lender' ? "max-w-4xl max-h-[90vh] flex flex-col overflow-hidden" : "max-w-4xl max-h-[85vh] overflow-y-auto"
@@ -308,10 +341,9 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               ].map((p) => (
                 <div key={p.label} className="flex items-center gap-2">
                   <Label className="w-[40px] shrink-0 text-xs">{p.label}</Label>
-                  <Input
-                    type="tel"
+                  <PhoneInput
                     value={form[p.phoneKey] || ''}
-                    onChange={(e) => set(p.phoneKey, e.target.value)}
+                    onValueChange={(v) => set(p.phoneKey, v)}
                     className="h-7 text-xs flex-1"
                   />
                   <Checkbox
@@ -412,10 +444,9 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               ].map((p) => (
                 <div key={p.label} className="flex items-center gap-2">
                   <Label className="w-[40px] shrink-0 text-xs">{p.label}</Label>
-                  <Input
-                    type="tel"
+                  <PhoneInput
                     value={form[p.phoneKey] || ''}
-                    onChange={(e) => set(p.phoneKey, e.target.value)}
+                    onValueChange={(v) => set(p.phoneKey, v)}
                     className="h-7 text-xs flex-1"
                   />
                   <Checkbox
@@ -507,10 +538,9 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               ].map((p) => (
                 <div key={p.label} className="flex items-center gap-2">
                   <Label className="w-[40px] shrink-0 text-xs">{p.label}</Label>
-                  <Input
-                    type="tel"
+                  <PhoneInput
                     value={form[p.phoneKey] || ''}
-                    onChange={(e) => set(p.phoneKey, e.target.value)}
+                    onValueChange={(v) => set(p.phoneKey, v)}
                     className="h-7 text-xs flex-1"
                   />
                   <Checkbox
@@ -547,5 +577,21 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Confirm Create {typeLabel}</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to create this new {contactType} contact? Please verify the entered data is correct.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirm}>Confirm</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };
