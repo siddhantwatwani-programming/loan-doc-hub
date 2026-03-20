@@ -315,10 +315,10 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
         </div>
         <Select value={roleFilter} onValueChange={setRoleFilter}>
           <SelectTrigger className="h-8 w-[180px] text-xs">
-            <SelectValue placeholder="Filter by Role" />
+            <SelectValue placeholder="Filter by Capacity" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="all">All Capacities</SelectItem>
             {ROLE_FILTER_OPTIONS.map(r => (
               <SelectItem key={r} value={r}>{r}</SelectItem>
             ))}
