@@ -149,8 +149,37 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   // Get loan number and borrower name from values - auto-populate
   const loanNumber = values['Terms.LoanNumber'] || values['loan_terms.loan_number'] || '';
 
-  // Borrower Name: read directly from Loan → Details borrower name field
-  const borrowerName = values['loan_terms.details_borrower_name'] || '';
+  // Borrower Name: auto-populate from Participants table (primary borrower)
+  const [participantBorrowerName, setParticipantBorrowerName] = useState('');
+  useEffect(() => {
+    if (!dealId) return;
+    const fetchBorrower = async () => {
+      const { data } = await supabase
+        .from('deal_participants')
+        .select('name, contact_id')
+        .eq('deal_id', dealId)
+        .eq('role', 'borrower')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (data?.name) {
+        setParticipantBorrowerName(data.name);
+      } else if (data?.contact_id) {
+        // Fallback: fetch name from contacts table
+        const { data: contact } = await supabase
+          .from('contacts')
+          .select('full_name, first_name, last_name')
+          .eq('id', data.contact_id)
+          .maybeSingle();
+        if (contact) {
+          setParticipantBorrowerName(contact.full_name || `${contact.first_name || ''} ${contact.last_name || ''}`.trim());
+        }
+      }
+    };
+    fetchBorrower();
+  }, [dealId]);
+
+  const borrowerName = participantBorrowerName || values['loan_terms.details_borrower_name'] || '';
 
   // Get loan rates for Rate Selection
   const noteRate = values['loan_terms.note_rate'] || '';
