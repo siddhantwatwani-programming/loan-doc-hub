@@ -234,7 +234,7 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
                 return (
                   <div key={phoneKey} className="flex items-center gap-2">
                     <Label className="w-[50px] shrink-0 text-xs">{phoneLabel}</Label>
-                    <Input value={String(formData[phoneKey] || '')} onChange={(e) => handleInputChange(phoneKey, e.target.value)} className="h-7 text-xs flex-1" />
+                    <PhoneInput value={String(formData[phoneKey] || '')} onValueChange={(val) => handleInputChange(phoneKey, val)} className="h-7 text-xs flex-1" />
                     <Checkbox id={`modal-${prefKey}`} checked={!!formData[prefKey]} onCheckedChange={(checked) => handleInputChange(prefKey, !!checked)} className="h-3 w-3 shrink-0" />
                   </div>
                 );
