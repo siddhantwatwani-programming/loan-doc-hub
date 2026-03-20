@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 
 interface ChargesDetailFormProps {
   values: Record<string, string>;
