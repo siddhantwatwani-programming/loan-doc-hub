@@ -141,7 +141,7 @@ export const ContactBrokerModal: React.FC<Props> = ({ open, onOpenChange, onSubm
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button onClick={handleSubmit}>Create</Button>
+            <Button onClick={handleSubmit} disabled={!hasAtLeastOneFieldFilled(form as any, ['preferredPhone', 'type'])}>Create</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
