@@ -84,7 +84,7 @@ export const BrokerModal: React.FC<BrokerModalProps> = ({ open, onOpenChange, br
               <Select value={formData.state} onValueChange={(val) => handleFieldChange('state', val)}>
                 <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent className="bg-background border border-border z-50 max-h-60">
-                  {US_STATES.map(s => (<SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>))}
+                  {US_STATES.map(s => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>

@@ -57,13 +57,7 @@ const TAX_ID_TYPE_OPTIONS = [
   '2 – SSN',
 ];
 
-const STATE_OPTIONS = [
-  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC',
-];
+import { STATE_OPTIONS } from '@/lib/usStates';
 
 import { BORROWER_PRIMARY_KEYS } from '@/lib/fieldKeyMap';
 

@@ -83,11 +83,11 @@ const LENDER_FILTER_OPTIONS: FilterOption[] = [
     id: 'state',
     label: 'State',
     options: [
-      { value: 'CA', label: 'California' },
-      { value: 'TX', label: 'Texas' },
-      { value: 'FL', label: 'Florida' },
-      { value: 'NY', label: 'New York' },
-      { value: 'WA', label: 'Washington' },
+      { value: 'CA', label: 'CA' },
+      { value: 'TX', label: 'TX' },
+      { value: 'FL', label: 'FL' },
+      { value: 'NY', label: 'NY' },
+      { value: 'WA', label: 'WA' },
     ],
   },
 ];
