@@ -478,7 +478,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             <DirtyFieldWrapper key={key} fieldKey={fk(key)}>
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-muted-foreground min-w-[40px] text-left shrink-0">{label}</Label>
-                <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+                <PhoneInput value={getValue(key)} onValueChange={(val) => handleChange(key, val)} disabled={disabled} className="h-7 text-sm flex-1" />
               </div>
             </DirtyFieldWrapper>
           ))}
