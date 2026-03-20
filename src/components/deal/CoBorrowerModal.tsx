@@ -94,7 +94,11 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
   }, [coBorrower, open, parentBorrowerVesting]);
 
   const handleInputChange = (field: keyof CoBorrowerData, value: string | boolean) => setFormData(prev => ({ ...prev, [field]: value }));
-  const handleSave = () => onSave(formData);
+
+  const isFormFilled = hasModalFormData(formData, ['id', 'type', 'parentBorrowerPrefix', 'format'], { isPrimary: false, mailingSameAsPrimary: false, issue1098: false, alternateReporting: false, deliveryOnline: false, deliveryMail: false, preferredHome: false, preferredWork: false, preferredCell: false, preferredFax: false, creditReporting: false, sendBorrowerNotifications: false, deliveryPrint: true, deliveryEmail: false, deliverySms: false, tinVerified: false, sendPaymentNotification: false, sendLateNotice: false, sendBorrowerStatement: false, sendMaturityNotice: false });
+
+  const handleSaveClick = () => setShowConfirm(true);
+  const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); };
 
   const renderInlineField = (field: keyof CoBorrowerData, label: string, props: Record<string, any> = {}) => (
     <div className="flex items-center gap-2">
