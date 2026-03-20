@@ -373,7 +373,7 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
                         {(newCharge as any).date ? (newCharge as any).date : <span className="text-muted-foreground">Date</span>}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0 !z-[9999]" align="start">
                       <Calendar
                         mode="single"
                         selected={(newCharge as any).date ? new Date((newCharge as any).date) : undefined}
@@ -381,6 +381,7 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
                           setNewCharge(prev => ({ ...prev, date: date ? format(date, 'MM/dd/yyyy') : '' }));
                         }}
                         initialFocus
+                        className="p-3 pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
