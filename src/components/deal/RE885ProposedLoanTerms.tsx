@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 
 const FK = {
   proposed_loan_amount: 'origination_fees.re885_proposed_loan_amount',
