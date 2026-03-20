@@ -1,6 +1,7 @@
 import React from 'react';
 import { MaskedInput } from '@/components/ui/masked-input';
 import { Input } from '@/components/ui/input';
+import { ExpirationInput } from '@/components/ui/expiration-input';
 import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -174,9 +175,9 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
               <Input value={getValue('ccSecurityCode')} onChange={(e) => { const value = e.target.value.replace(/\D/g, ''); handleChange('ccSecurityCode', value); }} disabled={disabled} className="h-8" maxLength={4} type="password" />
             </div>)}
             
-            {wrapField('ccExpiration', <div className="grid grid-cols-2 gap-2 items-center">
+             {wrapField('ccExpiration', <div className="grid grid-cols-2 gap-2 items-center">
               <Label className="text-sm text-muted-foreground">Expiration</Label>
-              <Input value={getValue('ccExpiration')} onChange={(e) => handleChange('ccExpiration', e.target.value)} disabled={disabled} className="h-8" placeholder="MM/YY" />
+              <ExpirationInput value={getValue('ccExpiration')} onValueChange={(v) => handleChange('ccExpiration', v)} disabled={disabled} />
             </div>)}
             
             {wrapField('ccZip', <div className="grid grid-cols-2 gap-2 items-center">

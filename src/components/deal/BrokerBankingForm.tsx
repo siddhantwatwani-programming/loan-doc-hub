@@ -1,5 +1,6 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
+import { ExpirationInput } from '@/components/ui/expiration-input';
 import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -48,6 +49,8 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({
             className="w-[160px] 3xl:w-[200px]"
             {...props}
           />
+        ) : key === 'ccExpiration' ? (
+          <ExpirationInput value={getValue(key)} onValueChange={(v) => handleChange(key, v)} disabled={disabled} className="w-[160px] 3xl:w-[200px]" />
         ) : (
           <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-8 text-sm w-[160px] 3xl:w-[200px]" {...props} />
         )}
