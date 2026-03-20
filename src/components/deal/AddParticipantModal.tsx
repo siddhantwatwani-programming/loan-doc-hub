@@ -477,8 +477,14 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
                     <Label className="text-sm">Phone</Label>
                     <Input
                       value={newPhone}
-                      onChange={(e) => setNewPhone(e.target.value)}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setNewPhone(digits);
+                      }}
                       placeholder="(555) 555-5555"
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={14}
                     />
                   </div>
                 </div>
