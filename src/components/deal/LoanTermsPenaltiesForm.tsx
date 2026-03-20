@@ -271,11 +271,14 @@ const DefaultInterestColumn: React.FC<{
           onCheckboxChange={(checked) => onValueChange(`${prefix}.modifier_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
         >
-          <Input
+           <Input
             value={values[`${prefix}.modifier`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.modifier`, e.target.value)}
+            onChange={(e) => onValueChange(`${prefix}.modifier`, sanitizeInterestInput(e.target.value))}
+            onBlur={() => { const v = normalizeInterestOnBlur(values[`${prefix}.modifier`] || '', 2); if (v !== (values[`${prefix}.modifier`] || '')) onValueChange(`${prefix}.modifier`, v); }}
             disabled={disabled || !isEnabled || values[`${prefix}.modifier_enabled`] !== 'true'}
             className="h-7 text-sm"
+            inputMode="decimal"
+            placeholder="0.00"
           />
         </FieldRow>
         <FieldRow label="Active Until" fieldKey={`${prefix}.active_until`}>
