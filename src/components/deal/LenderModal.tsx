@@ -64,6 +64,8 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
+  const isFormFilled = hasModalFormData(formData, ['id'], { isPrimary: false });
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!formData.fullName.trim() && !formData.firstName.trim()) newErrors.fullName = 'Full Name or First Name is required';
