@@ -1,50 +1,41 @@
 
 
-# Fix Document Generation: Fetch Data from Participants Instead of Contacts
+# Fix: Document Generation Failing Due to Non-Existent `capacity` Column
 
-## Problem
-The document generation edge function (`generate-document/index.ts`) currently discovers borrower/lender/broker contact IDs by scanning field values (e.g., `loan_terms.details_borrower_id`, `BR-XXXXX` patterns) and then queries the `contacts` table directly. Since participant management now lives in `deal_participants`, this approach produces missing or stale data.
+## Root Cause
 
-## Solution
-Replace the contact-ID-scanning and contacts-table lookup block (lines 202-418) with a participants-based approach that:
-1. Queries `deal_participants` for the current `dealId`
-2. Collects linked `contact_id` UUIDs
-3. Fetches those contacts from the `contacts` table
-4. Injects data using the same field key namespaces (`br_p_*`, `ld_p_*`, `bk_p_*`, `borrower1.*`, `lender1.*`, `broker1.*`, etc.)
+The edge function queries `deal_participants` selecting a `capacity` column that does not exist in the table schema. This causes the query to fail silently, returning 0 participants, which means no borrower/lender/broker data is injected into the document.
 
-## Changes (Single File)
+Error from logs:
+```
+Failed to fetch deal_participants: column deal_participants.capacity does not exist
+```
+
+Capacity is stored in the **contact's `contact_data` JSONB** (as `contact_data.capacity`), not on the `deal_participants` table itself.
+
+## Fix (Single File)
 
 **File: `supabase/functions/generate-document/index.ts`**
 
-Replace the "Contact lookup" block (lines 202-418) with:
+**Line 207**: Remove `capacity` from the select query:
 
-1. **Query `deal_participants`** for `deal_id = dealId`, selecting `role, contact_id, name, email, phone`
-2. **Collect unique `contact_id` UUIDs** (non-null) from the participant rows
-3. **Fetch contacts** from the `contacts` table using those UUID `id` values (not `contact_id` text field)
-4. **Group participants by role**: find the first borrower, co-borrower (second borrower or capacity-based), lender, and broker
-5. **Reuse the existing `injectContact` and `forceSet` helper functions** to populate field values identically to the current logic
-6. **Participant selection logic**:
-   - Borrower: first participant with `role = 'borrower'` (or capacity containing "Primary")
-   - Co-Borrower: second borrower participant, or one with capacity "Co-Borrower"
-   - Lender: first participant with `role = 'lender'`
-   - Broker: first participant with `role = 'broker'`
+```
+// Before
+.select("role, contact_id, name, email, phone, capacity")
 
-## What Stays Unchanged
-- The `injectContact` function and all field key mappings (`br_p_*`, `bk_p_*`, `ld_p_*`, dot-notation)
-- The `setIfEmpty` and `forceSet` helpers
-- All code after line 418 (indexed entity bridging, systemDate injection, property address computation, DOCX processing)
-- Template structure, placeholder names, formatting logic
-- Database schema, UI components, other edge functions
-
-## Technical Detail
-
-```text
-Current flow:
-  deal_section_values → scan for contact IDs → contacts table → inject
-
-New flow:
-  deal_participants (where deal_id = X) → contact_id UUIDs → contacts table → inject
+// After
+.select("role, contact_id, name, email, phone")
 ```
 
-The `deal_participants` table has `contact_id` (UUID FK to `contacts.id`), `role` (borrower/lender/broker), and basic fields (name, email, phone). The contacts table join provides full `contact_data` JSONB with addresses, license numbers, tax IDs, etc. needed for document placeholders.
+The capacity-based participant selection logic (lines 314-321) already reads capacity from `contact_data` via the contact lookup, so it will continue to work by checking `contact_data.capacity` on the resolved contact records instead. However, since the participant selection currently checks `p.capacity` (which would be undefined), we also need to update the primary borrower / co-borrower selection to check the contact's `contact_data.capacity` instead of the participant row's non-existent capacity field.
+
+**Updated participant selection logic** (lines ~314-321):
+
+Instead of checking `p.capacity` on the participant row, after resolving contacts, select the primary borrower and co-borrower based on the linked contact's `contact_data.capacity` field. If no capacity distinction exists, fall back to first/second borrower ordering.
+
+## What Stays Unchanged
+- All field key mappings, `injectContact`, `forceSet`, `setIfEmpty` helpers
+- Template structure, placeholder names, formatting logic
+- Database schema (no new columns)
+- UI components, other edge functions
 
