@@ -399,7 +399,8 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
                     <Input
                       className="h-8 text-xs"
                       value={(newCharge as any)[col.id] || ''}
-                      onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: e.target.value.replace(/-/g, '') }))}
+                      onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: sanitizeInterestInput(e.target.value) }))}
+                      onBlur={() => { const v = normalizeInterestOnBlur((newCharge as any)[col.id] || '', 3); if (v !== ((newCharge as any)[col.id] || '')) setNewCharge(prev => ({ ...prev, [col.id]: v })); }}
                       placeholder="0.000"
                       inputMode="decimal"
                     />

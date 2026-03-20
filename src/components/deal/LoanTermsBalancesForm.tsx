@@ -175,7 +175,8 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               <div className="relative flex-1">
                 <Input
                   value={getValue(FIELD_KEYS.soldRate)}
-                  onChange={(e) => setValue(FIELD_KEYS.soldRate, e.target.value)}
+                  onChange={(e) => setValue(FIELD_KEYS.soldRate, sanitizeInterestInput(e.target.value))}
+                  onBlur={() => { const v = normalizeInterestOnBlur(getValue(FIELD_KEYS.soldRate), 3); if (v !== getValue(FIELD_KEYS.soldRate)) setValue(FIELD_KEYS.soldRate, v); }}
                   disabled={disabled || !isChecked(FIELD_KEYS.soldRateEnabled)}
                   className="h-8 text-sm pr-7"
                   placeholder="0.000"
