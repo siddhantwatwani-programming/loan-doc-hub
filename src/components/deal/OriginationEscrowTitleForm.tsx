@@ -206,7 +206,7 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
               </div>
               <div className="flex items-center gap-2">
                 <Label className="w-[80px] text-sm shrink-0">Phone</Label>
-                <Input value={v(otherKeys.phone)} onChange={(e) => sv(otherKeys.phone, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+                <PhoneInput value={v(otherKeys.phone)} onValueChange={(val) => sv(otherKeys.phone, val)} disabled={disabled} className="h-7 text-sm" />
               </div>
             </div>
           )}
