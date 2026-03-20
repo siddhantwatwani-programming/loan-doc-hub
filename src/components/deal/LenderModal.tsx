@@ -73,7 +73,8 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => { if (validateForm()) onSave(formData); };
+  const handleSaveClick = () => setShowConfirm(true);
+  const handleConfirmSave = () => { setShowConfirm(false); if (validateForm()) onSave(formData); };
 
   const renderInlineField = (field: keyof LenderData, label: string, props: Record<string, any> = {}) => (
     <div className="flex items-center gap-2">
