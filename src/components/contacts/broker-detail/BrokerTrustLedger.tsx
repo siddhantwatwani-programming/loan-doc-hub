@@ -42,7 +42,7 @@ interface LedgerEntry {
   clr: string;
   deposit: string;
   balance: string;
-  category: 'all' | 'reserve' | 'impound';
+  category: '' | 'all' | 'reserve' | 'impound';
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
