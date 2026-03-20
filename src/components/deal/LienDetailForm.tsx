@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Home } from 'lucide-react';
+import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 import {
   Select,
   SelectContent,
