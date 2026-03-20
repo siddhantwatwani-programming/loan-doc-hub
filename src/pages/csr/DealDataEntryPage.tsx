@@ -860,7 +860,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                   if (!allTabs.includes("participants" as any)) allTabs.push("participants" as any);
                   if (!allTabs.includes("liens" as any)) allTabs.push("liens" as any);
                   if (!allTabs.includes("funding" as any)) allTabs.push("funding" as any);
-                  if (!allTabs.includes("conversation_log" as any)) allTabs.push("conversation_log" as any);
+                  
                   if (!allTabs.includes("event_journal" as any)) allTabs.push("event_journal" as any);
                 }
 
