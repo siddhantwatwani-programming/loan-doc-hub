@@ -254,11 +254,14 @@ const DefaultInterestColumn: React.FC<{
           onCheckboxChange={(checked) => onValueChange(`${prefix}.flat_rate_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
         >
-          <Input
+           <Input
             value={values[`${prefix}.flat_rate`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.flat_rate`, e.target.value)}
+            onChange={(e) => onValueChange(`${prefix}.flat_rate`, sanitizeInterestInput(e.target.value))}
+            onBlur={() => { const v = normalizeInterestOnBlur(values[`${prefix}.flat_rate`] || '', 2); if (v !== (values[`${prefix}.flat_rate`] || '')) onValueChange(`${prefix}.flat_rate`, v); }}
             disabled={disabled || !isEnabled || values[`${prefix}.flat_rate_enabled`] !== 'true'}
             className="h-7 text-sm"
+            inputMode="decimal"
+            placeholder="0.00"
           />
         </FieldRow>
         <FieldRow
