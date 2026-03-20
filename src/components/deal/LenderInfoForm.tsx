@@ -17,6 +17,7 @@ const safeFormatDate = (val: string, fmt: string = 'MM/dd/yyyy'): string | undef
 };
 import { CalendarIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { EmailInput } from '@/components/ui/email-input';
 import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
