@@ -351,7 +351,8 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
             <Input
               inputMode="decimal"
               value={getValue(FK.v_fully_indexed_rate)}
-              onChange={(e) => setValue(FK.v_fully_indexed_rate, e.target.value.replace(/[^0-9.\-]/g, ''))}
+              onChange={(e) => setValue(FK.v_fully_indexed_rate, sanitizeInterestInput(e.target.value))}
+              onBlur={() => { const v = normalizeInterestOnBlur(getValue(FK.v_fully_indexed_rate), 2); if (v !== getValue(FK.v_fully_indexed_rate)) setValue(FK.v_fully_indexed_rate, v); }}
               disabled={adjustableSectionsDisabled}
               placeholder="0.00"
               className="h-8 text-xs text-right pr-5"
