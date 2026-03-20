@@ -155,6 +155,30 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   }, [isSameAsPrimary, primaryStreet, primaryCity, primaryState, primaryZip]);
 
   const handleSubmit = () => {
+    // Check at least one meaningful field is filled
+    const skipKeys = ['mailing_same_as_primary', 'preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax',
+      'delivery.print', 'delivery.email', 'delivery.sms', 'send_pref.payment_notification',
+      'send_pref.late_notice', 'send_pref.borrower_statement', 'send_pref.maturity_notice'];
+    if (!hasAtLeastOneFieldFilled(form, skipKeys)) {
+      toast.error('Please fill at least one field before saving');
+      return;
+    }
+    // Validate phone fields
+    const phoneErrors = validatePhoneFields([
+      { label: 'Home Phone', value: form['phone.home'] || '' },
+      { label: 'Work Phone', value: form['phone.work'] || '' },
+      { label: 'Cell Phone', value: form['phone.cell'] || '' },
+      { label: 'Fax', value: form['phone.fax'] || '' },
+    ]);
+    if (phoneErrors.length > 0) {
+      toast.error(phoneErrors[0]);
+      return;
+    }
+    setConfirmOpen(true);
+  };
+
+  const handleConfirm = () => {
+    setConfirmOpen(false);
     const data = { ...form };
     if (!data.full_name) {
       const mid = data.middle_name || data.middle_initial || '';
