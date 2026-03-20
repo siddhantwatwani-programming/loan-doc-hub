@@ -199,225 +199,210 @@ async function generateSingleDocument(
       }
     }
 
-    // ── Contact lookup: resolve borrower/lender/broker from contacts table ──
-    // When participant data lives in the Contacts module rather than deal_section_values,
-    // look up contact records by their IDs and inject their data into the field namespace.
+    // ── Participant-based contact lookup ──
+    // Fetch participants from deal_participants, then resolve their contact records
     {
-      const borrowerContactId = fieldValues.get("loan_terms.details_borrower_id")?.rawValue;
-      const coBorrowerContactId = fieldValues.get("loan_terms.details_co_borrower_id")?.rawValue;
+      const { data: participants, error: partError } = await supabase
+        .from("deal_participants")
+        .select("role, contact_id, name, email, phone, capacity")
+        .eq("deal_id", dealId);
 
-      // Collect unique contact IDs to fetch
-      const contactIdsToFetch = [...new Set(
-        [borrowerContactId, coBorrowerContactId].filter(Boolean).map(String)
+      if (partError) {
+        console.error(`[generate-document] Failed to fetch deal_participants:`, partError.message);
+      }
+
+      const participantRows = participants || [];
+      console.log(`[generate-document] Found ${participantRows.length} participant(s) for deal`);
+
+      // Collect unique contact_id UUIDs (these are UUID references to contacts.id)
+      const contactUuids = [...new Set(
+        participantRows.map((p: any) => p.contact_id).filter(Boolean)
       )];
 
-      // Also scan for lender contact IDs (L-XXXXX pattern)
-      for (const [key, val] of fieldValues.entries()) {
-        if (val.rawValue && typeof val.rawValue === "string" && String(val.rawValue).startsWith("L-")) {
-          const lk = key.toLowerCase();
-          if (lk.includes("lender") && (lk.includes("_id") || lk.endsWith("id") || lk.includes("account"))) {
-            if (!contactIdsToFetch.includes(String(val.rawValue))) {
-              contactIdsToFetch.push(String(val.rawValue));
-            }
-          }
-        }
-      }
-
-      // Also scan for broker contact IDs (BR-XXXXX pattern)
-      // Check multiple possible sources for broker ID
-      let brokerContactId: string | null = null;
-      const brokerIdCandidates = [
-        fieldValues.get("loan_terms.details_originating_vendor")?.rawValue,
-        fieldValues.get("bk_p_brokerId")?.rawValue,
-        fieldValues.get("broker.id")?.rawValue,
-        fieldValues.get("broker1.id")?.rawValue,
-      ];
-      for (const candidate of brokerIdCandidates) {
-        if (candidate && typeof candidate === "string" && String(candidate).startsWith("BR-")) {
-          brokerContactId = String(candidate);
-          break;
-        }
-      }
-      // Fallback: scan all field values for a BR-XXXXX pattern
-      if (!brokerContactId) {
-        for (const [, val] of fieldValues.entries()) {
-          if (val.rawValue && typeof val.rawValue === "string" && /^BR-\d{3,}$/.test(String(val.rawValue))) {
-            brokerContactId = String(val.rawValue);
-            console.log(`[generate-document] Found broker ID via field scan: ${brokerContactId}`);
-            break;
-          }
-        }
-      }
-      if (brokerContactId) {
-        if (!contactIdsToFetch.includes(brokerContactId)) {
-          contactIdsToFetch.push(brokerContactId);
-        }
-      }
-
-      if (contactIdsToFetch.length > 0) {
+      // Fetch full contact records by UUID id
+      let contactRowsByUuid = new Map<string, any>();
+      if (contactUuids.length > 0) {
         const { data: contactRows } = await supabase
           .from("contacts")
-          .select("contact_id, contact_type, full_name, first_name, last_name, email, phone, city, state, company, contact_data")
-          .in("contact_id", contactIdsToFetch);
+          .select("id, contact_id, contact_type, full_name, first_name, last_name, email, phone, city, state, company, contact_data")
+          .in("id", contactUuids);
 
-        if (contactRows && contactRows.length > 0) {
-          console.log(`[generate-document] Fetched ${contactRows.length} contact(s) for participant lookup`);
-
-          const setIfEmpty = (key: string, value: string) => {
-            if (value && (!fieldValues.has(key) || !fieldValues.get(key)?.rawValue)) {
-              fieldValues.set(key, { rawValue: value, dataType: "text" });
-            }
-          };
-
-          const injectContact = (contact: any, dotPrefixes: string[], shortPrefix?: string) => {
-            const cd = contact.contact_data || {};
-            const firstName = cd.first_name || contact.first_name || "";
-            const middleName = cd.middle_initial || "";
-            const lastName = cd.last_name || contact.last_name || "";
-            const assembledName = [firstName, middleName, lastName].filter(Boolean).join(" ");
-            const fullName = assembledName || cd.full_name || contact.full_name || "";
-            const email = cd.email || contact.email || "";
-            const company = cd.company || contact.company || "";
-            const phone = cd["phone.cell"] || cd["phone.work"] || cd["phone.home"] || contact.phone || "";
-            const fax = cd["phone.fax"] || "";
-
-            // Dot-notation prefixes (e.g., borrower1.full_name, borrower.full_name)
-            for (const prefix of dotPrefixes) {
-              setIfEmpty(`${prefix}.full_name`, fullName);
-              setIfEmpty(`${prefix}.first_name`, firstName);
-              setIfEmpty(`${prefix}.last_name`, lastName);
-              setIfEmpty(`${prefix}.middle_initial`, middleName);
-              setIfEmpty(`${prefix}.email`, email);
-              setIfEmpty(`${prefix}.company`, company);
-              setIfEmpty(`${prefix}.phone`, phone);
-              setIfEmpty(`${prefix}.fax`, fax);
-              if (cd["address.street"]) setIfEmpty(`${prefix}.address.street`, cd["address.street"]);
-              if (cd["address.city"] || contact.city) setIfEmpty(`${prefix}.address.city`, cd["address.city"] || contact.city);
-              if (cd["address.state"] || contact.state) setIfEmpty(`${prefix}.state`, cd["address.state"] || contact.state);
-              if (cd["address.zip"]) setIfEmpty(`${prefix}.address.zip`, cd["address.zip"]);
-              if (cd["mailing.street"]) setIfEmpty(`${prefix}.mailing_address.street`, cd["mailing.street"]);
-              if (cd["mailing.city"]) setIfEmpty(`${prefix}.mailing_address.city`, cd["mailing.city"]);
-              if (cd["mailing.state"]) setIfEmpty(`${prefix}.mailing_address.state`, cd["mailing.state"]);
-              if (cd["mailing.zip"]) setIfEmpty(`${prefix}.mailing_address.zip`, cd["mailing.zip"]);
-              if (cd.tax_id) setIfEmpty(`${prefix}.tax_id`, cd.tax_id);
-              if (cd.dob) setIfEmpty(`${prefix}.dob`, cd.dob);
-              if (cd.capacity) setIfEmpty(`${prefix}.capacity`, cd.capacity);
-              if (cd.vesting) setIfEmpty(`${prefix}.vesting`, cd.vesting);
-              if (cd.borrower_type) setIfEmpty(`${prefix}.borrower_type`, cd.borrower_type);
-              if (cd.license_number) setIfEmpty(`${prefix}.license_number`, cd.license_number);
-            }
-
-            // Short-prefix keys (e.g., br_p_fullName, ld_p_fullName)
-            if (shortPrefix) {
-              setIfEmpty(`${shortPrefix}_fullName`, fullName);
-              setIfEmpty(`${shortPrefix}_firstName`, firstName);
-              setIfEmpty(`${shortPrefix}_lastName`, lastName);
-              setIfEmpty(`${shortPrefix}_middleInitia`, middleName);
-              setIfEmpty(`${shortPrefix}_email`, email);
-              setIfEmpty(`${shortPrefix}_company`, company);
-              setIfEmpty(`${shortPrefix}_phone`, phone);
-              setIfEmpty(`${shortPrefix}_fax`, fax);
-              if (cd.tax_id) setIfEmpty(`${shortPrefix}_taxId`, cd.tax_id);
-              if (cd["address.street"]) setIfEmpty(`${shortPrefix}_street`, cd["address.street"]);
-              if (cd["address.city"] || contact.city) setIfEmpty(`${shortPrefix}_city`, cd["address.city"] || contact.city);
-              if (cd["address.state"] || contact.state) setIfEmpty(`${shortPrefix}_state`, cd["address.state"] || contact.state);
-              if (cd["address.zip"]) setIfEmpty(`${shortPrefix}_zip`, cd["address.zip"]);
-              if (cd.capacity) setIfEmpty(`${shortPrefix}_capacity`, cd.capacity);
-              if (cd.vesting) setIfEmpty(`${shortPrefix}_vesting`, cd.vesting);
-            }
-          };
-
-          // Inject borrower contact data
-          if (borrowerContactId) {
-            const bc = contactRows.find((c: any) => c.contact_id === String(borrowerContactId));
-            if (bc) {
-              injectContact(bc, ["borrower1", "borrower"], "br_p");
-              console.log(`[generate-document] Injected borrower contact fields from ${(bc as any).contact_id}`);
-            }
-          }
-
-          // Inject co-borrower contact data (only if different from borrower)
-          if (coBorrowerContactId && coBorrowerContactId !== borrowerContactId) {
-            const cbc = contactRows.find((c: any) => c.contact_id === String(coBorrowerContactId));
-            if (cbc) {
-              injectContact(cbc, ["co_borrower1", "coborrower", "co_borrower"], undefined);
-              console.log(`[generate-document] Injected co-borrower contact fields from ${(cbc as any).contact_id}`);
-            }
-          }
-
-          // Inject lender contact data
+        if (contactRows) {
           for (const cr of contactRows) {
-            if ((cr as any).contact_type === "lender" && String((cr as any).contact_id).startsWith("L-")) {
-              injectContact(cr, ["lender1", "lender"], "ld_p");
-              console.log(`[generate-document] Injected lender contact fields from ${(cr as any).contact_id}`);
-              break;
-            }
+            contactRowsByUuid.set(cr.id, cr);
+          }
+          console.log(`[generate-document] Fetched ${contactRows.length} contact(s) via participant lookup`);
+        }
+      }
+
+      const setIfEmpty = (key: string, value: string) => {
+        if (value && (!fieldValues.has(key) || !fieldValues.get(key)?.rawValue)) {
+          fieldValues.set(key, { rawValue: value, dataType: "text" });
+        }
+      };
+
+      const forceSet = (key: string, value: string) => {
+        if (value) {
+          fieldValues.set(key, { rawValue: value, dataType: "text" });
+        }
+      };
+
+      const injectContact = (contact: any, dotPrefixes: string[], shortPrefix?: string) => {
+        const cd = contact.contact_data || {};
+        const firstName = cd.first_name || contact.first_name || "";
+        const middleName = cd.middle_initial || "";
+        const lastName = cd.last_name || contact.last_name || "";
+        const assembledName = [firstName, middleName, lastName].filter(Boolean).join(" ");
+        const fullName = assembledName || cd.full_name || contact.full_name || "";
+        const email = cd.email || contact.email || "";
+        const company = cd.company || contact.company || "";
+        const phone = cd["phone.cell"] || cd["phone.work"] || cd["phone.home"] || contact.phone || "";
+        const fax = cd["phone.fax"] || "";
+
+        // Dot-notation prefixes (e.g., borrower1.full_name, borrower.full_name)
+        for (const prefix of dotPrefixes) {
+          setIfEmpty(`${prefix}.full_name`, fullName);
+          setIfEmpty(`${prefix}.first_name`, firstName);
+          setIfEmpty(`${prefix}.last_name`, lastName);
+          setIfEmpty(`${prefix}.middle_initial`, middleName);
+          setIfEmpty(`${prefix}.email`, email);
+          setIfEmpty(`${prefix}.company`, company);
+          setIfEmpty(`${prefix}.phone`, phone);
+          setIfEmpty(`${prefix}.fax`, fax);
+          if (cd["address.street"]) setIfEmpty(`${prefix}.address.street`, cd["address.street"]);
+          if (cd["address.city"] || contact.city) setIfEmpty(`${prefix}.address.city`, cd["address.city"] || contact.city);
+          if (cd["address.state"] || contact.state) setIfEmpty(`${prefix}.state`, cd["address.state"] || contact.state);
+          if (cd["address.zip"]) setIfEmpty(`${prefix}.address.zip`, cd["address.zip"]);
+          if (cd["mailing.street"]) setIfEmpty(`${prefix}.mailing_address.street`, cd["mailing.street"]);
+          if (cd["mailing.city"]) setIfEmpty(`${prefix}.mailing_address.city`, cd["mailing.city"]);
+          if (cd["mailing.state"]) setIfEmpty(`${prefix}.mailing_address.state`, cd["mailing.state"]);
+          if (cd["mailing.zip"]) setIfEmpty(`${prefix}.mailing_address.zip`, cd["mailing.zip"]);
+          if (cd.tax_id) setIfEmpty(`${prefix}.tax_id`, cd.tax_id);
+          if (cd.dob) setIfEmpty(`${prefix}.dob`, cd.dob);
+          if (cd.capacity) setIfEmpty(`${prefix}.capacity`, cd.capacity);
+          if (cd.vesting) setIfEmpty(`${prefix}.vesting`, cd.vesting);
+          if (cd.borrower_type) setIfEmpty(`${prefix}.borrower_type`, cd.borrower_type);
+          if (cd.license_number) setIfEmpty(`${prefix}.license_number`, cd.license_number);
+        }
+
+        // Short-prefix keys (e.g., br_p_fullName, ld_p_fullName)
+        if (shortPrefix) {
+          setIfEmpty(`${shortPrefix}_fullName`, fullName);
+          setIfEmpty(`${shortPrefix}_firstName`, firstName);
+          setIfEmpty(`${shortPrefix}_lastName`, lastName);
+          setIfEmpty(`${shortPrefix}_middleInitia`, middleName);
+          setIfEmpty(`${shortPrefix}_email`, email);
+          setIfEmpty(`${shortPrefix}_company`, company);
+          setIfEmpty(`${shortPrefix}_phone`, phone);
+          setIfEmpty(`${shortPrefix}_fax`, fax);
+          if (cd.tax_id) setIfEmpty(`${shortPrefix}_taxId`, cd.tax_id);
+          if (cd["address.street"]) setIfEmpty(`${shortPrefix}_street`, cd["address.street"]);
+          if (cd["address.city"] || contact.city) setIfEmpty(`${shortPrefix}_city`, cd["address.city"] || contact.city);
+          if (cd["address.state"] || contact.state) setIfEmpty(`${shortPrefix}_state`, cd["address.state"] || contact.state);
+          if (cd["address.zip"]) setIfEmpty(`${shortPrefix}_zip`, cd["address.zip"]);
+          if (cd.capacity) setIfEmpty(`${shortPrefix}_capacity`, cd.capacity);
+          if (cd.vesting) setIfEmpty(`${shortPrefix}_vesting`, cd.vesting);
+        }
+      };
+
+      // Group participants by role
+      const borrowerParticipants = participantRows.filter((p: any) => p.role === "borrower");
+      const lenderParticipants = participantRows.filter((p: any) => p.role === "lender");
+      const brokerParticipants = participantRows.filter((p: any) => p.role === "broker");
+
+      // Select primary borrower (first one, or one with "Primary" capacity)
+      const primaryBorrower = borrowerParticipants.find((p: any) =>
+        p.capacity && String(p.capacity).toLowerCase().includes("primary")
+      ) || borrowerParticipants[0];
+
+      // Select co-borrower (second borrower, or one with "Co-Borrower" capacity)
+      const coBorrower = borrowerParticipants.find((p: any) =>
+        p.capacity && String(p.capacity).toLowerCase().includes("co-borrower")
+      ) || borrowerParticipants.find((p: any) => p !== primaryBorrower);
+
+      // Inject primary borrower
+      if (primaryBorrower?.contact_id) {
+        const bc = contactRowsByUuid.get(primaryBorrower.contact_id);
+        if (bc) {
+          injectContact(bc, ["borrower1", "borrower"], "br_p");
+          console.log(`[generate-document] Injected borrower contact fields from participant (contact ${bc.contact_id})`);
+        }
+      }
+
+      // Inject co-borrower (only if different from primary)
+      if (coBorrower?.contact_id && coBorrower.contact_id !== primaryBorrower?.contact_id) {
+        const cbc = contactRowsByUuid.get(coBorrower.contact_id);
+        if (cbc) {
+          injectContact(cbc, ["co_borrower1", "coborrower", "co_borrower"], undefined);
+          console.log(`[generate-document] Injected co-borrower contact fields from participant (contact ${cbc.contact_id})`);
+        }
+      }
+
+      // Inject lender
+      const primaryLender = lenderParticipants[0];
+      if (primaryLender?.contact_id) {
+        const lc = contactRowsByUuid.get(primaryLender.contact_id);
+        if (lc) {
+          injectContact(lc, ["lender1", "lender"], "ld_p");
+          console.log(`[generate-document] Injected lender contact fields from participant (contact ${lc.contact_id})`);
+        }
+      }
+
+      // Inject broker (force-override since broker data is authoritative from Contacts)
+      const primaryBroker = brokerParticipants[0];
+      if (primaryBroker?.contact_id) {
+        const cr = contactRowsByUuid.get(primaryBroker.contact_id);
+        if (cr) {
+          const cd = cr.contact_data || {};
+          const firstName = cd.first_name || cr.first_name || "";
+          const middleName = cd.middle_initial || "";
+          const lastName = cd.last_name || cr.last_name || "";
+          const assembledName = [firstName, middleName, lastName].filter(Boolean).join(" ");
+          const fullName = assembledName || cd.full_name || cr.full_name || "";
+          const email = cd.email || cr.email || "";
+          const company = cd.company || cr.company || "";
+          const phone = cd["phone.cell"] || cd["phone.work"] || cd["phone.home"] || cr.phone || "";
+          const fax = cd["phone.fax"] || "";
+          const license = cd.license_number || cd.License || cd.license || cr.license_number || "";
+
+          // Force-set short prefix keys (bk_p_*)
+          forceSet("bk_p_fullName", fullName);
+          forceSet("bk_p_firstName", firstName);
+          forceSet("bk_p_lastName", lastName);
+          forceSet("bk_p_middleInitia", middleName);
+          forceSet("bk_p_email", email);
+          forceSet("bk_p_company", company);
+          forceSet("bk_p_phone", phone);
+          forceSet("bk_p_fax", fax);
+          if (license) {
+            forceSet("bk_p_brokerLicens", String(license));
+            forceSet("broker.License", String(license));
+            forceSet("broker.license_number", String(license));
+            forceSet("broker1.license_number", String(license));
           }
 
-          // Force-set helper: always overrides existing values (broker data comes from Contacts now)
-          const forceSet = (key: string, value: string) => {
-            if (value) {
-              fieldValues.set(key, { rawValue: value, dataType: "text" });
-            }
-          };
-
-          // Inject broker contact data (force-override since broker data lives in Contacts)
-          for (const cr of contactRows) {
-            if ((cr as any).contact_type === "broker") {
-              const cd = (cr as any).contact_data || {};
-              const firstName = cd.first_name || (cr as any).first_name || "";
-              const middleName = cd.middle_initial || "";
-              const lastName = cd.last_name || (cr as any).last_name || "";
-              const assembledName = [firstName, middleName, lastName].filter(Boolean).join(" ");
-              const fullName = assembledName || cd.full_name || (cr as any).full_name || "";
-              const email = cd.email || (cr as any).email || "";
-              const company = cd.company || (cr as any).company || "";
-              const phone = cd["phone.cell"] || cd["phone.work"] || cd["phone.home"] || (cr as any).phone || "";
-              const fax = cd["phone.fax"] || "";
-              const license = cd.license_number || cd.License || cd.license || (cr as any).license_number || "";
-
-              // Force-set short prefix keys (bk_p_*)
-              forceSet("bk_p_fullName", fullName);
-              forceSet("bk_p_firstName", firstName);
-              forceSet("bk_p_lastName", lastName);
-              forceSet("bk_p_middleInitia", middleName);
-              forceSet("bk_p_email", email);
-              forceSet("bk_p_company", company);
-              forceSet("bk_p_phone", phone);
-              forceSet("bk_p_fax", fax);
-              if (license) {
-                forceSet("bk_p_brokerLicens", String(license));
-                forceSet("broker.License", String(license));
-                forceSet("broker.license_number", String(license));
-                forceSet("broker1.license_number", String(license));
-              }
-
-              // Force-set dot-notation keys
-              for (const prefix of ["broker1", "broker"]) {
-                forceSet(`${prefix}.full_name`, fullName);
-                forceSet(`${prefix}.first_name`, firstName);
-                forceSet(`${prefix}.last_name`, lastName);
-                forceSet(`${prefix}.middle_initial`, middleName);
-                forceSet(`${prefix}.email`, email);
-                forceSet(`${prefix}.company`, company);
-                forceSet(`${prefix}.phone`, phone);
-                forceSet(`${prefix}.fax`, fax);
-                if (cd["address.street"]) forceSet(`${prefix}.address.street`, cd["address.street"]);
-                if (cd["address.city"] || (cr as any).city) forceSet(`${prefix}.address.city`, cd["address.city"] || (cr as any).city);
-                if (cd["address.state"] || (cr as any).state) forceSet(`${prefix}.state`, cd["address.state"] || (cr as any).state);
-                if (cd["address.zip"]) forceSet(`${prefix}.address.zip`, cd["address.zip"]);
-                if (cd.tax_id) forceSet(`${prefix}.tax_id`, cd.tax_id);
-                if (license) forceSet(`${prefix}.License`, String(license));
-              }
-
-              console.log(`[generate-document] Force-injected broker contact fields from ${(cr as any).contact_id} (license: ${license || 'n/a'})`);
-              break;
-            }
+          // Force-set dot-notation keys
+          for (const prefix of ["broker1", "broker"]) {
+            forceSet(`${prefix}.full_name`, fullName);
+            forceSet(`${prefix}.first_name`, firstName);
+            forceSet(`${prefix}.last_name`, lastName);
+            forceSet(`${prefix}.middle_initial`, middleName);
+            forceSet(`${prefix}.email`, email);
+            forceSet(`${prefix}.company`, company);
+            forceSet(`${prefix}.phone`, phone);
+            forceSet(`${prefix}.fax`, fax);
+            if (cd["address.street"]) forceSet(`${prefix}.address.street`, cd["address.street"]);
+            if (cd["address.city"] || cr.city) forceSet(`${prefix}.address.city`, cd["address.city"] || cr.city);
+            if (cd["address.state"] || cr.state) forceSet(`${prefix}.state`, cd["address.state"] || cr.state);
+            if (cd["address.zip"]) forceSet(`${prefix}.address.zip`, cd["address.zip"]);
+            if (cd.tax_id) forceSet(`${prefix}.tax_id`, cd.tax_id);
+            if (license) forceSet(`${prefix}.License`, String(license));
           }
+
+          console.log(`[generate-document] Force-injected broker contact fields from participant (contact ${cr.contact_id}, license: ${license || 'n/a'})`);
         }
       }
     }
-
     // Bridge indexed entity keys (e.g., borrower1.full_name) to non-indexed aliases
     // (e.g., borrower.full_name) so legacy merge tag aliases can resolve
     const indexedPattern = /^([a-zA-Z_]+?)(\d+)\.(.+)$/;
