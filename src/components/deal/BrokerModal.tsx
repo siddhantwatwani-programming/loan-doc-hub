@@ -36,6 +36,7 @@ const getEmptyBroker = (): BrokerData => ({
 
 export const BrokerModal: React.FC<BrokerModalProps> = ({ open, onOpenChange, broker, onSave, isEdit = false }) => {
   const [formData, setFormData] = useState<BrokerData>(getEmptyBroker());
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (open) setFormData(broker ? broker : getEmptyBroker());
