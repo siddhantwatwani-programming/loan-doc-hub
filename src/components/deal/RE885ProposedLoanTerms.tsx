@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 
 const FK = {
   proposed_loan_amount: 'origination_fees.re885_proposed_loan_amount',
@@ -279,9 +280,10 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
                 inputMode="decimal"
                 value={getValue(FK.interest_rate)}
                 onChange={(e) => {
-                  const v = e.target.value.replace(/[^0-9.\-]/g, '');
+                  const v = sanitizeInterestInput(e.target.value);
                   setValue(FK.interest_rate, v);
                 }}
+                onBlur={() => { const v = normalizeInterestOnBlur(getValue(FK.interest_rate), 2); if (v !== getValue(FK.interest_rate)) setValue(FK.interest_rate, v); }}
                 disabled={disabled}
                 placeholder="0.00"
                 className="h-8 text-xs text-right pr-5"
@@ -349,7 +351,8 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
             <Input
               inputMode="decimal"
               value={getValue(FK.v_fully_indexed_rate)}
-              onChange={(e) => setValue(FK.v_fully_indexed_rate, e.target.value.replace(/[^0-9.\-]/g, ''))}
+              onChange={(e) => setValue(FK.v_fully_indexed_rate, sanitizeInterestInput(e.target.value))}
+              onBlur={() => { const v = normalizeInterestOnBlur(getValue(FK.v_fully_indexed_rate), 2); if (v !== getValue(FK.v_fully_indexed_rate)) setValue(FK.v_fully_indexed_rate, v); }}
               disabled={adjustableSectionsDisabled}
               placeholder="0.00"
               className="h-8 text-xs text-right pr-5"
@@ -367,7 +370,8 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
             <Input
               inputMode="decimal"
               value={getValue(FK.vi_max_interest_rate)}
-              onChange={(e) => setValue(FK.vi_max_interest_rate, e.target.value.replace(/[^0-9.\-]/g, ''))}
+              onChange={(e) => setValue(FK.vi_max_interest_rate, sanitizeInterestInput(e.target.value))}
+              onBlur={() => { const v = normalizeInterestOnBlur(getValue(FK.vi_max_interest_rate), 2); if (v !== getValue(FK.vi_max_interest_rate)) setValue(FK.vi_max_interest_rate, v); }}
               disabled={adjustableSectionsDisabled}
               placeholder="0.00"
               className="h-8 text-xs text-right pr-5"
@@ -403,7 +407,8 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
               <Input
                 inputMode="decimal"
                 value={getValue(FK.viii_rate_increase_pct)}
-                onChange={(e) => setValue(FK.viii_rate_increase_pct, e.target.value.replace(/[^0-9.\-]/g, ''))}
+                onChange={(e) => setValue(FK.viii_rate_increase_pct, sanitizeInterestInput(e.target.value))}
+                onBlur={() => { const v = normalizeInterestOnBlur(getValue(FK.viii_rate_increase_pct), 2); if (v !== getValue(FK.viii_rate_increase_pct)) setValue(FK.viii_rate_increase_pct, v); }}
                 disabled={adjustableSectionsDisabled}
                 placeholder="0.00"
                 className="h-8 text-xs text-right pr-5"

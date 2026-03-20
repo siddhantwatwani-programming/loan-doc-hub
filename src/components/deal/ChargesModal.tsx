@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign } from 'lucide-react';
+import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -63,7 +64,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
     <div className="flex items-center gap-2">
       <Label className="w-[110px] shrink-0 text-xs font-semibold text-foreground">{label}</Label>
       <div className="relative flex-1">
-        <Input type="number" step="0.01" min="0" value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value.replace(/-/g, ''))} className="h-7 text-xs pr-5" placeholder="0.00" />
+        <Input inputMode="decimal" value={formData[field]} onChange={(e) => handleFieldChange(field, sanitizeInterestInput(e.target.value))} onBlur={() => { const v = normalizeInterestOnBlur(formData[field], 2); if (v !== formData[field]) handleFieldChange(field, v); }} className="h-7 text-xs pr-5" placeholder="0.00" />
         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
       </div>
     </div>

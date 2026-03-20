@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 
 interface LoanTermsPenaltiesFormProps {
   fields: FieldDefinition[];
@@ -253,11 +254,14 @@ const DefaultInterestColumn: React.FC<{
           onCheckboxChange={(checked) => onValueChange(`${prefix}.flat_rate_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
         >
-          <Input
+           <Input
             value={values[`${prefix}.flat_rate`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.flat_rate`, e.target.value)}
+            onChange={(e) => onValueChange(`${prefix}.flat_rate`, sanitizeInterestInput(e.target.value))}
+            onBlur={() => { const v = normalizeInterestOnBlur(values[`${prefix}.flat_rate`] || '', 2); if (v !== (values[`${prefix}.flat_rate`] || '')) onValueChange(`${prefix}.flat_rate`, v); }}
             disabled={disabled || !isEnabled || values[`${prefix}.flat_rate_enabled`] !== 'true'}
             className="h-7 text-sm"
+            inputMode="decimal"
+            placeholder="0.00"
           />
         </FieldRow>
         <FieldRow
@@ -267,11 +271,14 @@ const DefaultInterestColumn: React.FC<{
           onCheckboxChange={(checked) => onValueChange(`${prefix}.modifier_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
         >
-          <Input
+           <Input
             value={values[`${prefix}.modifier`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.modifier`, e.target.value)}
+            onChange={(e) => onValueChange(`${prefix}.modifier`, sanitizeInterestInput(e.target.value))}
+            onBlur={() => { const v = normalizeInterestOnBlur(values[`${prefix}.modifier`] || '', 2); if (v !== (values[`${prefix}.modifier`] || '')) onValueChange(`${prefix}.modifier`, v); }}
             disabled={disabled || !isEnabled || values[`${prefix}.modifier_enabled`] !== 'true'}
             className="h-7 text-sm"
+            inputMode="decimal"
+            placeholder="0.00"
           />
         </FieldRow>
         <FieldRow label="Active Until" fieldKey={`${prefix}.active_until`}>

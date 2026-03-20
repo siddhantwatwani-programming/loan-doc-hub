@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { FieldDefinition } from "@/hooks/useDealFields";
 import type { CalculationResult } from "@/lib/calculationEngine";
 import { DirtyFieldWrapper } from "./DirtyFieldWrapper";
+import { sanitizeInterestInput, normalizeInterestOnBlur } from "@/lib/interestValidation";
 
 
 interface LoanTermsBalancesFormProps {
@@ -117,10 +118,12 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
           <Input
             id={key}
             value={getValue(key)}
-            onChange={(e) => setValue(key, e.target.value)}
+            onChange={(e) => setValue(key, sanitizeInterestInput(e.target.value))}
+            onBlur={() => { const v = normalizeInterestOnBlur(getValue(key), 3); if (v !== getValue(key)) setValue(key, v); }}
             disabled={disabled}
             className="h-8 text-sm pr-7"
             placeholder="0.000"
+            inputMode="decimal"
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
         </div>
@@ -172,7 +175,8 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               <div className="relative flex-1">
                 <Input
                   value={getValue(FIELD_KEYS.soldRate)}
-                  onChange={(e) => setValue(FIELD_KEYS.soldRate, e.target.value)}
+                  onChange={(e) => setValue(FIELD_KEYS.soldRate, sanitizeInterestInput(e.target.value))}
+                  onBlur={() => { const v = normalizeInterestOnBlur(getValue(FIELD_KEYS.soldRate), 3); if (v !== getValue(FIELD_KEYS.soldRate)) setValue(FIELD_KEYS.soldRate, v); }}
                   disabled={disabled || !isChecked(FIELD_KEYS.soldRateEnabled)}
                   className="h-8 text-sm pr-7"
                   placeholder="0.000"
