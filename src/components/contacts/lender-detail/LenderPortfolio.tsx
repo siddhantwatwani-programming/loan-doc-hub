@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { logContactEvent } from '@/hooks/useContactEventJournal';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Filter, Download, Settings2 } from 'lucide-react';
+import { Search, Filter, Download, Settings2, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import SortableTableHead from '@/components/deal/SortableTableHead';
 import { type SortDirection } from '@/hooks/useGridSortFilter';
@@ -12,16 +11,9 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { differenceInDays, differenceInMonths, parseISO, format } from 'date-fns';
 
 interface PortfolioRow {
   id: string;
@@ -54,19 +46,13 @@ const ALL_COLUMNS = [
   { id: 'propertyDescription', label: 'Property Description' },
 ];
 
-const EMPTY_PORTFOLIO: Omit<PortfolioRow, 'id'> = {
-  loanAccount: '',
-  borrowerName: '',
-  noteRate: '',
-  lenderRate: '',
-  regularPayment: '',
-  principalBalance: '',
-  nextPayment: '',
-  maturityDate: '',
-  termLeft: '',
-  daysLate: '',
-  percentOwned: '',
-  propertyDescription: '',
+// Field dictionary UUIDs for loan_terms fields
+const FIELD_IDS = {
+  loanAmount: '163cd0b4-7cc0-4975-bcfb-43aa4be9c5c8',
+  noteRate: '969b2029-d56f-4789-8d77-1f9aecc88f2b',
+  principalBalance: '27c1bee2-05d4-46e5-a16b-e10c1e38cafd',
+  maturityDate: '33fadfcb-b70c-4425-944e-23044f21a06b',
+  nextPaymentDate: '384a8113-5d6d-47fd-9146-b3b1e9f65037',
 };
 
 interface LenderPortfolioProps {
@@ -74,97 +60,214 @@ interface LenderPortfolioProps {
   contactDbId: string;
 }
 
-const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ contactDbId }) => {
+/** Extract value from the field_values JSONB structure */
+function extractFieldValue(fieldValues: Record<string, any>, fieldId: string, valueKey: string): any {
+  const entry = fieldValues[fieldId];
+  if (!entry) return null;
+  if (typeof entry === 'object' && entry !== null) return entry[valueKey] ?? null;
+  return entry;
+}
+
+/** Parse funding records from deal_section_values */
+function parseFundingRecords(fieldValues: Record<string, any>): any[] {
+  const raw = fieldValues['loan_terms.funding_records'];
+  if (!raw) return [];
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (typeof parsed === 'object' && parsed !== null) {
+      const val = parsed.value_json || parsed.value_text;
+      const records = val ? (typeof val === 'string' ? JSON.parse(val) : val) : parsed;
+      if (Array.isArray(records)) return records;
+    }
+  } catch { /* ignore */ }
+  return [];
+}
+
+function formatCurrency(val: number | null | undefined): string {
+  if (val == null || isNaN(val)) return '-';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(val);
+}
+
+function formatPercent(val: number | null | undefined): string {
+  if (val == null || isNaN(val)) return '-';
+  return `${val.toFixed(3)}%`;
+}
+
+function calcTermLeft(maturityDateStr: string | null): string {
+  if (!maturityDateStr) return '-';
+  try {
+    const maturity = parseISO(maturityDateStr);
+    const now = new Date();
+    const months = differenceInMonths(maturity, now);
+    if (months <= 0) return 'Matured';
+    const years = Math.floor(months / 12);
+    const rem = months % 12;
+    return years > 0 ? `${years}y ${rem}m` : `${rem}m`;
+  } catch { return '-'; }
+}
+
+function calcDaysLate(nextPaymentStr: string | null): string {
+  if (!nextPaymentStr) return '-';
+  try {
+    const nextPay = parseISO(nextPaymentStr);
+    const now = new Date();
+    const days = differenceInDays(now, nextPay);
+    return days > 0 ? String(days) : '0';
+  } catch { return '-'; }
+}
+
+const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId }) => {
   const [rows, setRows] = useState<PortfolioRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set(ALL_COLUMNS.map(c => c.id))
   );
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterDaysLate, setFilterDaysLate] = useState<string>('');
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [newRecord, setNewRecord] = useState<Omit<PortfolioRow, 'id'>>(EMPTY_PORTFOLIO);
-  const [isSaving, setIsSaving] = useState(false);
 
-  // Load portfolio from contact_data on mount
-  useEffect(() => {
-    const loadPortfolio = async () => {
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('contact_data')
-        .eq('id', contactDbId)
-        .single();
-      if (!error && data?.contact_data) {
-        const cd = data.contact_data as Record<string, any>;
-        if (Array.isArray(cd._portfolio)) {
-          setRows(cd._portfolio);
+  const loadPortfolio = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // 1. Find all deals where this lender is a participant
+      const { data: participants } = await supabase
+        .from('deal_participants')
+        .select('deal_id')
+        .eq('contact_id', contactDbId)
+        .eq('role', 'lender');
+
+      const participantDealIds = (participants || []).map(p => p.deal_id);
+
+      // 2. Fetch ALL loan_terms sections to scan funding_records for this lender
+      const { data: allSections } = await supabase
+        .from('deal_section_values')
+        .select('deal_id, field_values')
+        .eq('section', 'loan_terms');
+
+      // Find deals where this lender appears in funding_records
+      const fundingDealMap = new Map<string, { fundingRecord: any; fieldValues: Record<string, any> }>();
+
+      (allSections || []).forEach(sv => {
+        const fv = sv.field_values as Record<string, any>;
+        if (!fv) return;
+        const records = parseFundingRecords(fv);
+        for (const rec of records) {
+          if (rec.lenderAccount === lenderId || rec.lenderName === lenderId) {
+            fundingDealMap.set(sv.deal_id, { fundingRecord: rec, fieldValues: fv });
+            break;
+          }
         }
+      });
+
+      // Merge deal IDs from both sources
+      const allDealIds = Array.from(new Set([...participantDealIds, ...Array.from(fundingDealMap.keys())]));
+
+      if (allDealIds.length === 0) {
+        setRows([]);
+        setIsLoading(false);
+        return;
       }
-    };
-    if (contactDbId) loadPortfolio();
-  }, [contactDbId]);
 
-  const persistPortfolio = useCallback(async (updatedRows: PortfolioRow[]) => {
-    setIsSaving(true);
-    try {
-      const { data: current, error: fetchErr } = await supabase
-        .from('contacts')
-        .select('contact_data')
-        .eq('id', contactDbId)
-        .single();
-      if (fetchErr) throw fetchErr;
+      // 3. Fetch deals info
+      const { data: deals } = await supabase
+        .from('deals')
+        .select('id, deal_number, borrower_name, property_address, loan_amount')
+        .in('id', allDealIds);
 
-      const existingData = (current?.contact_data as Record<string, any>) || {};
-      const merged = { ...existingData, _portfolio: updatedRows } as any;
+      const dealsMap = new Map((deals || []).map(d => [d.id, d]));
 
-      const { error } = await supabase
-        .from('contacts')
-        .update({ contact_data: merged as any, updated_at: new Date().toISOString() })
-        .eq('id', contactDbId);
-      if (error) throw error;
-    } catch (err: any) {
-      console.error('Failed to save portfolio:', err);
-      toast.error('Failed to save portfolio record');
-      throw err;
+      // 4. Fetch loan_terms section values for all deals (if not already in fundingDealMap)
+      const missingDealIds = allDealIds.filter(id => !fundingDealMap.has(id));
+      if (missingDealIds.length > 0) {
+        const { data: missingSections } = await supabase
+          .from('deal_section_values')
+          .select('deal_id, field_values')
+          .in('deal_id', missingDealIds)
+          .eq('section', 'loan_terms');
+
+        (missingSections || []).forEach(sv => {
+          const fv = sv.field_values as Record<string, any>;
+          if (!fv) return;
+          const records = parseFundingRecords(fv);
+          for (const rec of records) {
+            if (rec.lenderAccount === lenderId || rec.lenderName === lenderId) {
+              fundingDealMap.set(sv.deal_id, { fundingRecord: rec, fieldValues: fv });
+              break;
+            }
+          }
+          // Even if no matching funding record, store the field values
+          if (!fundingDealMap.has(sv.deal_id)) {
+            fundingDealMap.set(sv.deal_id, { fundingRecord: null, fieldValues: fv });
+          }
+        });
+      }
+
+      // 5. Build portfolio rows
+      const portfolioRows: PortfolioRow[] = [];
+
+      for (const dealId of allDealIds) {
+        const deal = dealsMap.get(dealId);
+        if (!deal) continue;
+
+        const entry = fundingDealMap.get(dealId);
+        const fundingRec = entry?.fundingRecord;
+        const loanTerms = entry?.fieldValues || {};
+
+        // Extract loan-level values
+        const totalLoanAmount = Number(
+          extractFieldValue(loanTerms, FIELD_IDS.loanAmount, 'value_number') || deal.loan_amount || 0
+        );
+        const noteRateVal = Number(
+          extractFieldValue(loanTerms, FIELD_IDS.noteRate, 'value_number') || 0
+        );
+        const principalBalanceFull = Number(
+          extractFieldValue(loanTerms, FIELD_IDS.principalBalance, 'value_number') || totalLoanAmount
+        );
+        const maturityDateVal =
+          extractFieldValue(loanTerms, FIELD_IDS.maturityDate, 'value_date') ||
+          extractFieldValue(loanTerms, FIELD_IDS.maturityDate, 'value_text') || '';
+        const nextPaymentVal =
+          extractFieldValue(loanTerms, FIELD_IDS.nextPaymentDate, 'value_date') ||
+          extractFieldValue(loanTerms, FIELD_IDS.nextPaymentDate, 'value_text') || '';
+
+        // Lender-specific values from funding record
+        const pctOwned = fundingRec ? Number(fundingRec.pctOwned || 0) : 0;
+        const lenderRate = fundingRec ? Number(fundingRec.lenderRate || 0) : 0;
+        const regularPayment = fundingRec ? Number(fundingRec.regularPayment || 0) : 0;
+        const lenderPrincipalBalance = pctOwned > 0
+          ? principalBalanceFull * (pctOwned / 100)
+          : (fundingRec ? Number(fundingRec.principalBalance || 0) : 0);
+
+        portfolioRows.push({
+          id: `${dealId}-${lenderId}`,
+          loanAccount: deal.deal_number || '',
+          borrowerName: deal.borrower_name || '',
+          noteRate: formatPercent(noteRateVal),
+          lenderRate: formatPercent(lenderRate),
+          regularPayment: formatCurrency(regularPayment),
+          principalBalance: formatCurrency(lenderPrincipalBalance),
+          nextPayment: nextPaymentVal ? format(parseISO(nextPaymentVal), 'MM/dd/yyyy') : '-',
+          maturityDate: maturityDateVal ? format(parseISO(maturityDateVal), 'MM/dd/yyyy') : '-',
+          termLeft: calcTermLeft(maturityDateVal),
+          daysLate: calcDaysLate(nextPaymentVal),
+          percentOwned: pctOwned > 0 ? `${pctOwned.toFixed(2)}%` : '-',
+          propertyDescription: deal.property_address || '-',
+        });
+      }
+
+      setRows(portfolioRows);
+    } catch (err) {
+      console.error('Failed to load lender portfolio:', err);
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
-  }, [contactDbId]);
+  }, [lenderId, contactDbId]);
 
-  const handleAddRecord = useCallback(async () => {
-    const recordWithId: PortfolioRow = {
-      ...newRecord,
-      id: crypto.randomUUID(),
-    };
-    const updatedRows = [...rows, recordWithId];
-    try {
-      await persistPortfolio(updatedRows);
-      setRows(updatedRows);
-      setNewRecord(EMPTY_PORTFOLIO);
-      setAddDialogOpen(false);
-      toast.success('Portfolio record added');
-      logContactEvent(contactDbId, 'Portfolio', [{ fieldLabel: 'Portfolio Added', oldValue: '', newValue: recordWithId.loanAccount || 'New record' }]);
-    } catch {
-      // error already toasted
-    }
-  }, [newRecord, rows, persistPortfolio, contactDbId]);
-
-  const handleDeleteSelected = useCallback(async () => {
-    if (selectedRows.size === 0) return;
-    const updatedRows = rows.filter(r => !selectedRows.has(r.id));
-    try {
-      await persistPortfolio(updatedRows);
-      setRows(updatedRows);
-      setSelectedRows(new Set());
-      toast.success(`${selectedRows.size} record(s) deleted`);
-      logContactEvent(contactDbId, 'Portfolio', [{ fieldLabel: 'Portfolio Deleted', oldValue: `${selectedRows.size} record(s)`, newValue: '(deleted)' }]);
-    } catch {
-      // error already toasted
-    }
-  }, [rows, selectedRows, persistPortfolio, contactDbId]);
+  useEffect(() => {
+    if (contactDbId) loadPortfolio();
+  }, [contactDbId, loadPortfolio]);
 
   const handleSort = (col: string) => {
     if (sortCol === col) {
@@ -199,22 +302,6 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ contactDbId }) => {
     }
     return result;
   }, [rows, search, sortCol, sortDir, filterDaysLate]);
-
-  const toggleRow = (id: string) => {
-    setSelectedRows(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
-  const toggleAll = () => {
-    if (selectedRows.size === filtered.length) {
-      setSelectedRows(new Set());
-    } else {
-      setSelectedRows(new Set(filtered.map(r => r.id)));
-    }
-  };
 
   const toggleColumn = (colId: string) => {
     setVisibleColumns(prev => {
@@ -276,14 +363,6 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ contactDbId }) => {
               </div>
             </PopoverContent>
           </Popover>
-          {selectedRows.size > 0 && (
-            <Button size="sm" variant="destructive" className="gap-1 h-8 text-xs" onClick={handleDeleteSelected}>
-              Delete ({selectedRows.size})
-            </Button>
-          )}
-          <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={() => setAddDialogOpen(true)}>
-            <Plus className="h-3.5 w-3.5" /> Add Portfolio
-          </Button>
         </div>
       </div>
 
@@ -330,14 +409,6 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ contactDbId }) => {
         <Table className="min-w-[1400px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="w-10 px-2">
-                <input
-                  type="checkbox"
-                  checked={filtered.length > 0 && selectedRows.size === filtered.length}
-                  onChange={toggleAll}
-                  className="rounded border-input"
-                />
-              </TableHead>
               {activeColumns.map(c => (
                 <SortableTableHead
                   key={c.id}
@@ -352,22 +423,20 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ contactDbId }) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? (
+            {isLoading ? (
               <TableRow>
-                <TableCell colSpan={activeColumns.length + 1} className="text-center py-8 text-muted-foreground text-sm">
-                  No portfolio records found. Click "Add Portfolio" to add one.
+                <TableCell colSpan={activeColumns.length} className="text-center py-8">
+                  <Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" />
+                </TableCell>
+              </TableRow>
+            ) : filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={activeColumns.length} className="text-center py-8 text-muted-foreground text-sm">
+                  No loans found for this lender. Portfolio will automatically populate when this lender is added to the Funding section of a loan.
                 </TableCell>
               </TableRow>
             ) : filtered.map(r => (
-              <TableRow key={r.id} className={selectedRows.has(r.id) ? 'bg-primary/5' : ''}>
-                <TableCell className="w-10 px-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedRows.has(r.id)}
-                    onChange={() => toggleRow(r.id)}
-                    className="rounded border-input"
-                  />
-                </TableCell>
+              <TableRow key={r.id}>
                 {activeColumns.map(c => (
                   <TableCell key={c.id} className="whitespace-nowrap text-xs">
                     {(r as any)[c.id] || '-'}
@@ -378,34 +447,6 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ contactDbId }) => {
           </TableBody>
         </Table>
       </div>
-
-      {/* Add Portfolio Dialog */}
-      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add Portfolio Record</DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-3">
-            {ALL_COLUMNS.map(col => (
-              <div key={col.id} className="space-y-1">
-                <Label className="text-xs">{col.label}</Label>
-                <Input
-                  className="h-8 text-xs"
-                  value={(newRecord as any)[col.id] || ''}
-                  onChange={e => setNewRecord(prev => ({ ...prev, [col.id]: e.target.value }))}
-                  placeholder={col.label}
-                />
-              </div>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleAddRecord} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Add Record'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
