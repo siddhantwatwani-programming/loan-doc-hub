@@ -1064,6 +1064,12 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                 values={values}
                 onValueChange={updateValue}
                 onRemoveValuesByPrefix={removeValuesByPrefix}
+                onPersist={async () => {
+                  computeCalculatedFields();
+                  const success = await saveDraft();
+                  if (success) resetDirty();
+                  return success;
+                }}
                 disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm("liens")}
                 propertyOptions={(() => {
                   // Build property options from values
