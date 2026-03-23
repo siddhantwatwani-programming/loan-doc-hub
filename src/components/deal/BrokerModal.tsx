@@ -5,7 +5,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
-import { hasModalFormData } from '@/lib/modalFormValidation';
+import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { EmailInput } from '@/components/ui/email-input';
@@ -45,6 +45,7 @@ export const BrokerModal: React.FC<BrokerModalProps> = ({ open, onOpenChange, br
   const handleFieldChange = (field: keyof BrokerData, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
 
   const isFormFilled = hasModalFormData(formData, ['id']);
+  const emailsValid = hasValidEmails(formData as any, ['email']);
 
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
@@ -114,7 +115,7 @@ export const BrokerModal: React.FC<BrokerModalProps> = ({ open, onOpenChange, br
 
         <DialogFooter className="mt-4">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>OK</Button>
+          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || !emailsValid}>OK</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -3,7 +3,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
-import { hasModalFormData } from '@/lib/modalFormValidation';
+import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
@@ -65,6 +65,7 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
   };
 
   const isFormFilled = hasModalFormData(formData, ['id'], { isPrimary: false });
+  const emailsValid = hasValidEmails(formData as any, ['email']);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -178,7 +179,7 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
 
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>{isEdit ? 'Save Changes' : 'Add Lender'}</Button>
+          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || !emailsValid}>{isEdit ? 'Save Changes' : 'Add Lender'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

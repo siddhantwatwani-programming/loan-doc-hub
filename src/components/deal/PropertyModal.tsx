@@ -19,7 +19,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
-import { hasModalFormData } from '@/lib/modalFormValidation';
+import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
 import type { PropertyData } from './PropertiesTableView';
 
 interface PropertyModalProps {
@@ -87,6 +87,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   };
 
   const isFormFilled = hasModalFormData(formData, ['id']);
+  const emailsValid = hasValidEmails(formData as any, ['appraiserEmail']);
 
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
@@ -261,7 +262,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
 
           <DialogFooter className="shrink-0 border-t border-border pt-3">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>OK</Button>
+            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || !emailsValid}>OK</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

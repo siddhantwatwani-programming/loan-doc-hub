@@ -15,7 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { PhoneInput } from '@/components/ui/phone-input';
-import { hasAtLeastOneFieldFilled, validatePhoneFields } from '@/lib/contactFormValidation';
+import { hasAtLeastOneFieldFilled, validatePhoneFields, hasValidContactEmails } from '@/lib/contactFormValidation';
 import { toast } from 'sonner';
 import type { ContactBorrower } from '@/pages/contacts/ContactBorrowersPage';
 
@@ -107,7 +107,7 @@ export const ContactBorrowerModal: React.FC<ContactBorrowerModalProps> = ({ open
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={!hasAtLeastOneFieldFilled(form as any, ['preferredPhone', 'type'])}>Create</Button>
+            <Button onClick={handleSubmit} disabled={!hasAtLeastOneFieldFilled(form as any, ['preferredPhone', 'type']) || !hasValidContactEmails(form as any)}>Create</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

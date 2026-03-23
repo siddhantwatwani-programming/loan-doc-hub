@@ -12,7 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
-import { hasModalFormData } from '@/lib/modalFormValidation';
+import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
 import type { LienData } from './LiensTableView';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 
@@ -55,6 +55,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
   const handleChange = (field: keyof LienData, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
 
   const isFormFilled = hasModalFormData(formData, ['id', 'priority'], { anticipated: 'false', existingRemain: 'false', existingPaydown: 'false', existingPayoff: 'false', thisLoan: 'false', estimate: 'false', recordingNumberFlag: 'false', seniorLienTracking: 'false' });
+  const emailsValid = hasValidEmails(formData as any, ['email']);
 
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = async () => {
@@ -283,7 +284,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
 
           <div className="flex justify-end gap-2 pt-3 border-t border-border shrink-0 mt-0">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>OK</Button>
+            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || !emailsValid}>OK</Button>
           </div>
         </DialogContent>
       </Dialog>

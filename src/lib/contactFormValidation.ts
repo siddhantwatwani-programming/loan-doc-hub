@@ -1,3 +1,5 @@
+import { validateEmail } from '@/lib/emailValidation';
+
 /**
  * Checks if a contact form has at least one meaningful (non-default) field filled.
  * Ignores boolean fields set to false and empty strings.
@@ -42,4 +44,20 @@ export const validatePhoneFields = (
     }
   }
   return errors;
+};
+
+/**
+ * Returns true when every email value in the form is either empty or valid.
+ */
+export const hasValidContactEmails = (
+  form: Record<string, any>,
+  emailKeys: string[] = ['email'],
+): boolean => {
+  for (const key of emailKeys) {
+    const value = form[key];
+    if (typeof value === 'string' && value.trim() !== '') {
+      if (validateEmail(value) !== null) return false;
+    }
+  }
+  return true;
 };

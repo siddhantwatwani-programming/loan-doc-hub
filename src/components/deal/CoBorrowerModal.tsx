@@ -3,7 +3,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
-import { hasModalFormData } from '@/lib/modalFormValidation';
+import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
@@ -96,6 +96,7 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
   const handleInputChange = (field: keyof CoBorrowerData, value: string | boolean) => setFormData(prev => ({ ...prev, [field]: value }));
 
   const isFormFilled = hasModalFormData(formData, ['id', 'type', 'parentBorrowerPrefix', 'format'], { isPrimary: false, mailingSameAsPrimary: false, issue1098: false, alternateReporting: false, deliveryOnline: false, deliveryMail: false, preferredHome: false, preferredWork: false, preferredCell: false, preferredFax: false, creditReporting: false, sendBorrowerNotifications: false, deliveryPrint: true, deliveryEmail: false, deliverySms: false, tinVerified: false, sendPaymentNotification: false, sendLateNotice: false, sendBorrowerStatement: false, sendMaturityNotice: false });
+  const emailsValid = hasValidEmails(formData as any, ['email']);
 
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); };
@@ -291,7 +292,7 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
 
         <DialogFooter className="mt-4 shrink-0">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>{isEdit ? 'Save Changes' : 'Add Co-Borrower'}</Button>
+          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || !emailsValid}>{isEdit ? 'Save Changes' : 'Add Co-Borrower'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -13,7 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
-import { hasModalFormData } from '@/lib/modalFormValidation';
+import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
 import type { InsuranceData } from './InsuranceTableView';
 
 interface InsuranceModalProps {
@@ -55,6 +55,7 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
   const handleChange = (field: keyof InsuranceData, value: string | boolean) => setFormData(prev => ({ ...prev, [field]: value }));
 
   const isFormFilled = hasModalFormData(formData, ['id', 'active']);
+  const emailsValid = hasValidEmails(formData as any, ['email']);
 
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
@@ -168,7 +169,7 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
 
           <div className="flex justify-end gap-2 pt-3 border-t border-border shrink-0">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>OK</Button>
+            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || !emailsValid}>OK</Button>
           </div>
         </DialogContent>
       </Dialog>
