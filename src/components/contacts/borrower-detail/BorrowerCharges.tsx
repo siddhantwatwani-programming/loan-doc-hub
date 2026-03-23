@@ -282,15 +282,15 @@ const BorrowerCharges: React.FC<Props> = ({ contactDbId }) => {
         </div>
         <div className="rounded-lg border border-border bg-card p-3">
           <p className="text-xs text-muted-foreground">Total Paid</p>
-          <p className="text-lg font-bold text-emerald-600">{fmt(metrics.paid)}</p>
+          <p className="text-lg font-bold text-primary">{fmt(metrics.paid)}</p>
         </div>
         <div className="rounded-lg border border-border bg-card p-3">
           <p className="text-xs text-muted-foreground">Total Outstanding</p>
-          <p className="text-lg font-bold text-amber-600">{fmt(metrics.outstanding)}</p>
+          <p className="text-lg font-bold text-destructive">{fmt(metrics.outstanding)}</p>
         </div>
         <div className="rounded-lg border border-border bg-card p-3">
           <p className="text-xs text-muted-foreground">Total Waived</p>
-          <p className="text-lg font-bold text-sky-600">{fmt(metrics.waived)}</p>
+          <p className="text-lg font-bold text-secondary-foreground">{fmt(metrics.waived)}</p>
         </div>
       </div>
 
