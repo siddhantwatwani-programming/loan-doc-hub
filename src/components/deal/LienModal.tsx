@@ -55,6 +55,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
   const handleChange = (field: keyof LienData, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
 
   const isFormFilled = hasModalFormData(formData, ['id', 'priority'], { anticipated: 'false', existingRemain: 'false', existingPaydown: 'false', existingPayoff: 'false', thisLoan: 'false', estimate: 'false', recordingNumberFlag: 'false', seniorLienTracking: 'false' });
+  const emailsValid = hasValidEmails(formData as any, ['email']);
 
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = async () => {
