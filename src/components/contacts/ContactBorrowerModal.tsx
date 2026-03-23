@@ -15,7 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { PhoneInput } from '@/components/ui/phone-input';
-import { hasAtLeastOneFieldFilled, validatePhoneFields } from '@/lib/contactFormValidation';
+import { hasAtLeastOneFieldFilled, validatePhoneFields, hasValidContactEmails } from '@/lib/contactFormValidation';
 import { toast } from 'sonner';
 import type { ContactBorrower } from '@/pages/contacts/ContactBorrowersPage';
 
