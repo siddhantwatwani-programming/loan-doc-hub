@@ -129,9 +129,9 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
   const renderPercentageField = (field: keyof LienData, label: string, forceDisabled = false) => (
     <div className="flex items-center gap-2">
       <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
-      <div className="flex items-center gap-1 flex-1">
-        <Input value={formData[field]} onChange={(e) => handleChange(field, sanitizeInterestInput(e.target.value))} onBlur={() => { const v = normalizeInterestOnBlur(formData[field], 3); if (v !== formData[field]) handleChange(field, v); }} className={`h-7 text-xs text-right ${forceDisabled ? 'opacity-50 bg-muted' : ''}`} inputMode="decimal" placeholder="0.000" disabled={forceDisabled} />
-        <span className="text-xs text-muted-foreground">%</span>
+      <div className="relative flex-1">
+        <Input value={formData[field]} onChange={(e) => handleChange(field, sanitizeInterestInput(e.target.value))} onBlur={() => { const v = normalizeInterestOnBlur(formData[field], 3); if (v !== formData[field]) handleChange(field, v); }} className={`h-7 text-xs text-right pr-6 ${forceDisabled ? 'opacity-50 bg-muted' : ''}`} inputMode="decimal" placeholder="0.000" disabled={forceDisabled} />
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
       </div>
     </div>
   );
@@ -155,9 +155,9 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
               <div className="flex items-center gap-2">
                 <Label className="w-[110px] shrink-0 text-xs text-foreground">Related Property</Label>
-                <Select value={formData.property} onValueChange={(val) => handleChange('property', val)}>
-                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select property" /></SelectTrigger>
-                  <SelectContent className="bg-background border border-border z-50">
+                 <Select value={formData.property || undefined} onValueChange={(val) => handleChange('property', val)}>
+                   <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select property" /></SelectTrigger>
+                   <SelectContent className="bg-background border border-border z-[200]">
                     <SelectItem value="unassigned">Unassigned</SelectItem>
                     {propertyOptions.map(opt => (
                       <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
@@ -182,7 +182,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
               {renderInlineField('fax', 'Fax', 'text', isThisLoan)}
               {renderCurrencyField('currentBalance', 'Current Balance', isThisLoan || isAnticipated)}
               <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs text-foreground">Email</Label>
+                <Label className="w-[110px] shrink-0 text-xs text-foreground">Email</Label>
                 <EmailInput value={String(formData.email || '')} onValueChange={(v) => handleChange('email', v)} className="h-7 text-xs" disabled={isThisLoan} />
               </div>
               {renderCurrencyField('balanceAfter', 'Balance After', isThisLoan || isPayoff)}
@@ -190,9 +190,9 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
               {renderCurrencyField('regularPayment', 'Regular Payment', isThisLoan)}
               <div className="flex items-center gap-2">
                 <Label className="w-[110px] shrink-0 text-xs text-foreground">Loan Type</Label>
-                <Select value={formData.loanType} onValueChange={(val) => handleChange('loanType', val)} disabled={isThisLoan}>
-                  <SelectTrigger className={`h-7 text-xs flex-1 ${isThisLoan ? 'opacity-50 bg-muted' : ''}`}><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent className="bg-background border border-border z-50">
+                 <Select value={formData.loanType || undefined} onValueChange={(val) => handleChange('loanType', val)} disabled={isThisLoan}>
+                   <SelectTrigger className={`h-7 text-xs flex-1 ${isThisLoan ? 'opacity-50 bg-muted' : ''}`}><SelectValue placeholder="Select" /></SelectTrigger>
+                   <SelectContent className="bg-background border border-border z-[200]">
                     {LOAN_TYPE_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
                   </SelectContent>
                 </Select>
