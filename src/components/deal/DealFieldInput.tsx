@@ -66,6 +66,15 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
       }
     }
     setCurrencyValidationError(null);
+
+    // Validate negative values for numeric fields
+    if (isNumericType && isNegativeValue(canonicalValue)) {
+      setNegativeValueError(INTEREST_NEGATIVE_MESSAGE);
+      onChange(canonicalValue);
+      return;
+    }
+    setNegativeValueError(null);
+
     onChange(canonicalValue);
   };
 
