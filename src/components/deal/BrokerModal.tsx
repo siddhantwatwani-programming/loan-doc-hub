@@ -45,6 +45,7 @@ export const BrokerModal: React.FC<BrokerModalProps> = ({ open, onOpenChange, br
   const handleFieldChange = (field: keyof BrokerData, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
 
   const isFormFilled = hasModalFormData(formData, ['id']);
+  const emailsValid = hasValidEmails(formData as any, ['email']);
 
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
