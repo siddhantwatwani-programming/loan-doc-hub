@@ -227,7 +227,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
             'transition-colors h-7 text-xs',
             prefix && 'pl-5',
             suffix && 'pr-6',
-            showError && 'border-destructive focus:ring-destructive bg-destructive/5',
+            (showError || negativeValueError) && 'border-destructive focus:ring-destructive bg-destructive/5',
             isDisabled && 'bg-muted cursor-not-allowed'
           )}
           placeholder={field.description || undefined}
