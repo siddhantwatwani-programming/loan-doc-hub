@@ -79,7 +79,7 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
       case 'portfolio':
         return <BorrowerPortfolio borrowerId={contact.contact_id} contactDbId={contact.id} />;
       case 'history':
-        return <BorrowerHistory borrowerId={contact.contact_id} />;
+        return <BorrowerHistory borrowerId={contact.contact_id} contactDbId={contact.id} />;
       case 'charges':
         return <BorrowerCharges borrowerId={contact.contact_id} contactDbId={contact.id} />;
       case 'banking':
