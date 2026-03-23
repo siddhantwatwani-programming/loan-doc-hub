@@ -98,7 +98,7 @@ const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string }>
       if (error) throw error;
 
       // Fetch uploader names
-      const uploaderIds = [...new Set((data || []).map((d: any) => d.uploaded_by))];
+      const uploaderIds: string[] = [...new Set((data || []).map((d: any) => d.uploaded_by as string))];
       let profileMap: Record<string, string> = {};
       if (uploaderIds.length > 0) {
         const { data: profiles } = await supabase.from('profiles').select('user_id, full_name').in('user_id', uploaderIds);
