@@ -1,76 +1,88 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Filter, Download, Settings2, Loader2 } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Search, Download, Settings2, Filter, Loader2 } from 'lucide-react';
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
 import SortableTableHead from '@/components/deal/SortableTableHead';
 import { type SortDirection } from '@/hooks/useGridSortFilter';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { differenceInDays, differenceInMonths, parseISO, format } from 'date-fns';
+import { format, parseISO, differenceInMonths, differenceInDays } from 'date-fns';
 
-interface PortfolioRow {
-  id: string;
-  loanAccount: string;
-  borrowerName: string;
-  noteRate: string;
-  lenderRate: string;
-  regularPayment: string;
-  principalBalance: string;
-  nextPayment: string;
-  maturityDate: string;
-  termLeft: string;
-  daysLate: string;
-  percentOwned: string;
-  propertyDescription: string;
-}
-
-const ALL_COLUMNS = [
-  { id: 'loanAccount', label: 'Loan Account' },
-  { id: 'borrowerName', label: 'Borrower Name' },
-  { id: 'noteRate', label: 'Note Rate' },
-  { id: 'lenderRate', label: 'Lender Rate' },
-  { id: 'regularPayment', label: 'Regular Payment' },
-  { id: 'principalBalance', label: 'Principal Balance' },
-  { id: 'nextPayment', label: 'Next Payment' },
-  { id: 'maturityDate', label: 'Maturity Date' },
-  { id: 'termLeft', label: 'Term Left' },
-  { id: 'daysLate', label: 'Days Late' },
-  { id: 'percentOwned', label: '% Owned' },
-  { id: 'propertyDescription', label: 'Property Description' },
-];
-
-// Field dictionary UUIDs for loan_terms fields
+// Field dictionary UUIDs
 const FIELD_IDS = {
   loanAmount: '163cd0b4-7cc0-4975-bcfb-43aa4be9c5c8',
   noteRate: '969b2029-d56f-4789-8d77-1f9aecc88f2b',
   principalBalance: '27c1bee2-05d4-46e5-a16b-e10c1e38cafd',
   maturityDate: '33fadfcb-b70c-4425-944e-23044f21a06b',
   nextPaymentDate: '384a8113-5d6d-47fd-9146-b3b1e9f65037',
+  closingDate: 'a1b2c3d4-0000-0000-0000-000000000001', // placeholder – will fall back
 };
 
-interface LenderPortfolioProps {
-  lenderId: string;
-  contactDbId: string;
+interface PortfolioRow {
+  id: string;
+  dealId: string;
+  dealNumber: string;
+  borrowerName: string;
+  propertyAddress: string;
+  loanAmount: number;
+  capacity: string;
+  fundingAmount: number;
+  ownershipPct: number;
+  noteRate: number;
+  lenderRate: number;
+  originationDate: string;
+  maturityDate: string;
+  paymentFrequency: string;
+  outstandingBalance: number;
+  accruedInterest: number;
+  lastPaymentDate: string;
+  totalPaymentsReceived: number;
+  loanStatus: string;
+  nextPaymentDate: string;
+  termLeft: string;
+  daysLate: number;
+  regularPayment: number;
 }
 
-/** Extract value from the field_values JSONB structure */
-function extractFieldValue(fieldValues: Record<string, any>, fieldId: string, valueKey: string): any {
-  const entry = fieldValues[fieldId];
+const ALL_COLUMNS = [
+  { id: 'dealNumber', label: 'Deal Number' },
+  { id: 'borrowerName', label: 'Borrower Name' },
+  { id: 'propertyAddress', label: 'Property Address' },
+  { id: 'loanAmount', label: 'Loan Amount' },
+  { id: 'capacity', label: 'Capacity' },
+  { id: 'fundingAmount', label: 'Funding Amount' },
+  { id: 'ownershipPct', label: '% Owned' },
+  { id: 'noteRate', label: 'Note Rate' },
+  { id: 'lenderRate', label: 'Lender Rate' },
+  { id: 'regularPayment', label: 'Regular Payment' },
+  { id: 'outstandingBalance', label: 'Outstanding Balance' },
+  { id: 'maturityDate', label: 'Maturity Date' },
+  { id: 'nextPaymentDate', label: 'Next Payment' },
+  { id: 'termLeft', label: 'Term Left' },
+  { id: 'daysLate', label: 'Days Late' },
+  { id: 'loanStatus', label: 'Loan Status' },
+];
+
+const CAPACITY_OPTIONS = [
+  'Primary Lender', 'Participant Lender', 'Syndicate Lender', 'Authorized Party',
+];
+const STATUS_OPTIONS = ['Active', 'Paid Off', 'Default'];
+
+function extractFieldValue(fv: Record<string, any>, fieldId: string, key: string): any {
+  const entry = fv[fieldId];
   if (!entry) return null;
-  if (typeof entry === 'object' && entry !== null) return entry[valueKey] ?? null;
+  if (typeof entry === 'object' && entry !== null) return entry[key] ?? null;
   return entry;
 }
 
-/** Parse funding records from deal_section_values */
-function parseFundingRecords(fieldValues: Record<string, any>): any[] {
-  const raw = fieldValues['loan_terms.funding_records'];
+function parseFundingRecords(fv: Record<string, any>): any[] {
+  const raw = fv['loan_terms.funding_records'];
   if (!raw) return [];
   try {
     const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -83,40 +95,42 @@ function parseFundingRecords(fieldValues: Record<string, any>): any[] {
   return [];
 }
 
-function formatCurrency(val: number | null | undefined): string {
-  if (val == null || isNaN(val)) return '-';
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(val);
-}
+const fmtCurrency = (v: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(v);
 
-function formatPercent(val: number | null | undefined): string {
-  if (val == null || isNaN(val)) return '-';
-  return `${val.toFixed(3)}%`;
-}
+const fmtPct = (v: number) => (v != null && !isNaN(v) ? `${v.toFixed(2)}%` : '-');
 
-function calcTermLeft(maturityDateStr: string | null): string {
-  if (!maturityDateStr) return '-';
+const fmtDate = (v: string) => {
+  if (!v) return '-';
+  try { return format(parseISO(v), 'MM/dd/yyyy'); } catch { return '-'; }
+};
+
+function calcTermLeft(matStr: string): string {
+  if (!matStr) return '-';
   try {
-    const maturity = parseISO(maturityDateStr);
-    const now = new Date();
-    const months = differenceInMonths(maturity, now);
-    if (months <= 0) return 'Matured';
-    const years = Math.floor(months / 12);
-    const rem = months % 12;
-    return years > 0 ? `${years}y ${rem}m` : `${rem}m`;
+    const m = differenceInMonths(parseISO(matStr), new Date());
+    if (m <= 0) return 'Matured';
+    const y = Math.floor(m / 12);
+    const r = m % 12;
+    return y > 0 ? `${y}y ${r}m` : `${r}m`;
   } catch { return '-'; }
 }
 
-function calcDaysLate(nextPaymentStr: string | null): string {
-  if (!nextPaymentStr) return '-';
+function calcDaysLate(nextStr: string): number {
+  if (!nextStr) return 0;
   try {
-    const nextPay = parseISO(nextPaymentStr);
-    const now = new Date();
-    const days = differenceInDays(now, nextPay);
-    return days > 0 ? String(days) : '0';
-  } catch { return '-'; }
+    const d = differenceInDays(new Date(), parseISO(nextStr));
+    return d > 0 ? d : 0;
+  } catch { return 0; }
+}
+
+interface LenderPortfolioProps {
+  lenderId: string;
+  contactDbId: string;
 }
 
 const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId }) => {
+  const navigate = useNavigate();
   const [rows, setRows] = useState<PortfolioRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -125,135 +139,160 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set(ALL_COLUMNS.map(c => c.id))
   );
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [filterDaysLate, setFilterDaysLate] = useState<string>('');
+  const [capacityFilter, setCapacityFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const loadPortfolio = useCallback(async () => {
     setIsLoading(true);
     try {
-      // 1. Find all deals where this lender is a participant
-      const { data: participants } = await supabase
+      // 1. Find deals where this contact is a lender participant
+      const { data: participants, error: pErr } = await supabase
         .from('deal_participants')
-        .select('deal_id')
+        .select('deal_id, role, name')
         .eq('contact_id', contactDbId)
         .eq('role', 'lender');
 
-      const participantDealIds = (participants || []).map(p => p.deal_id);
-
-      // 2. Fetch ALL loan_terms sections to scan funding_records for this lender
-      const { data: allSections } = await supabase
-        .from('deal_section_values')
-        .select('deal_id, field_values')
-        .eq('section', 'loan_terms');
-
-      // Find deals where this lender appears in funding_records
-      const fundingDealMap = new Map<string, { fundingRecord: any; fieldValues: Record<string, any> }>();
-
-      (allSections || []).forEach(sv => {
-        const fv = sv.field_values as Record<string, any>;
-        if (!fv) return;
-        const records = parseFundingRecords(fv);
-        for (const rec of records) {
-          if (rec.lenderAccount === lenderId || rec.lenderName === lenderId) {
-            fundingDealMap.set(sv.deal_id, { fundingRecord: rec, fieldValues: fv });
-            break;
-          }
-        }
-      });
-
-      // Merge deal IDs from both sources
-      const allDealIds = Array.from(new Set([...participantDealIds, ...Array.from(fundingDealMap.keys())]));
-
-      if (allDealIds.length === 0) {
+      if (pErr) throw pErr;
+      if (!participants || participants.length === 0) {
         setRows([]);
         setIsLoading(false);
         return;
       }
 
-      // 3. Fetch deals info
+      const dealIds = [...new Set(participants.map(p => p.deal_id))];
+
+      // 2. Fetch deals
       const { data: deals } = await supabase
         .from('deals')
-        .select('id, deal_number, borrower_name, property_address, loan_amount')
-        .in('id', allDealIds);
+        .select('id, deal_number, borrower_name, property_address, loan_amount, status')
+        .in('id', dealIds);
 
       const dealsMap = new Map((deals || []).map(d => [d.id, d]));
 
-      // 4. Fetch loan_terms section values for all deals (if not already in fundingDealMap)
-      const missingDealIds = allDealIds.filter(id => !fundingDealMap.has(id));
-      if (missingDealIds.length > 0) {
-        const { data: missingSections } = await supabase
-          .from('deal_section_values')
-          .select('deal_id, field_values')
-          .in('deal_id', missingDealIds)
-          .eq('section', 'loan_terms');
+      // 3. Fetch loan_terms section values
+      const { data: loanTermsSections } = await supabase
+        .from('deal_section_values')
+        .select('deal_id, field_values')
+        .in('deal_id', dealIds)
+        .eq('section', 'loan_terms');
 
-        (missingSections || []).forEach(sv => {
-          const fv = sv.field_values as Record<string, any>;
-          if (!fv) return;
-          const records = parseFundingRecords(fv);
-          for (const rec of records) {
-            if (rec.lenderAccount === lenderId || rec.lenderName === lenderId) {
-              fundingDealMap.set(sv.deal_id, { fundingRecord: rec, fieldValues: fv });
-              break;
+      const loanTermsMap = new Map<string, Record<string, any>>();
+      (loanTermsSections || []).forEach(sv => {
+        loanTermsMap.set(sv.deal_id, sv.field_values as Record<string, any>);
+      });
+
+      // 4. Fetch participants section for capacity info
+      const { data: participantSections } = await supabase
+        .from('deal_section_values')
+        .select('deal_id, field_values')
+        .in('deal_id', dealIds)
+        .eq('section', 'participants');
+
+      const capacityMap = new Map<string, string>();
+      (participantSections || []).forEach(ps => {
+        const fv = ps.field_values as Record<string, any>;
+        if (!fv) return;
+        // Scan for capacity keys associated with this contact
+        Object.entries(fv).forEach(([key, val]) => {
+          if (key.includes('capacity') && typeof val === 'string') {
+            const contactKey = key.replace('capacity', 'contact_id');
+            if (fv[contactKey] === contactDbId) {
+              capacityMap.set(ps.deal_id, val);
             }
           }
-          // Even if no matching funding record, store the field values
-          if (!fundingDealMap.has(sv.deal_id)) {
-            fundingDealMap.set(sv.deal_id, { fundingRecord: null, fieldValues: fv });
-          }
         });
-      }
+      });
 
-      // 5. Build portfolio rows
+      // 5. Build rows
       const portfolioRows: PortfolioRow[] = [];
 
-      for (const dealId of allDealIds) {
+      for (const dealId of dealIds) {
         const deal = dealsMap.get(dealId);
         if (!deal) continue;
 
-        const entry = fundingDealMap.get(dealId);
-        const fundingRec = entry?.fundingRecord;
-        const loanTerms = entry?.fieldValues || {};
+        const lt = loanTermsMap.get(dealId) || {};
+        const fundingRecords = parseFundingRecords(lt);
 
-        // Extract loan-level values
+        // Find the funding record for this lender
+        const fundingRec = fundingRecords.find(
+          r => r.lenderAccount === lenderId || r.lenderName === lenderId
+        ) || null;
+
         const totalLoanAmount = Number(
-          extractFieldValue(loanTerms, FIELD_IDS.loanAmount, 'value_number') || deal.loan_amount || 0
+          extractFieldValue(lt, FIELD_IDS.loanAmount, 'value_number') || deal.loan_amount || 0
         );
         const noteRateVal = Number(
-          extractFieldValue(loanTerms, FIELD_IDS.noteRate, 'value_number') || 0
+          extractFieldValue(lt, FIELD_IDS.noteRate, 'value_number') || 0
         );
         const principalBalanceFull = Number(
-          extractFieldValue(loanTerms, FIELD_IDS.principalBalance, 'value_number') || totalLoanAmount
+          extractFieldValue(lt, FIELD_IDS.principalBalance, 'value_number') || totalLoanAmount
         );
         const maturityDateVal =
-          extractFieldValue(loanTerms, FIELD_IDS.maturityDate, 'value_date') ||
-          extractFieldValue(loanTerms, FIELD_IDS.maturityDate, 'value_text') || '';
+          extractFieldValue(lt, FIELD_IDS.maturityDate, 'value_date') ||
+          extractFieldValue(lt, FIELD_IDS.maturityDate, 'value_text') || '';
         const nextPaymentVal =
-          extractFieldValue(loanTerms, FIELD_IDS.nextPaymentDate, 'value_date') ||
-          extractFieldValue(loanTerms, FIELD_IDS.nextPaymentDate, 'value_text') || '';
+          extractFieldValue(lt, FIELD_IDS.nextPaymentDate, 'value_date') ||
+          extractFieldValue(lt, FIELD_IDS.nextPaymentDate, 'value_text') || '';
 
-        // Lender-specific values from funding record
+        // Lender-specific from funding record
         const pctOwned = fundingRec ? Number(fundingRec.pctOwned || 0) : 0;
         const lenderRate = fundingRec ? Number(fundingRec.lenderRate || 0) : 0;
         const regularPayment = fundingRec ? Number(fundingRec.regularPayment || 0) : 0;
-        const lenderPrincipalBalance = pctOwned > 0
+        const fundingAmount = fundingRec ? Number(fundingRec.originalAmount || 0) : 0;
+        const lenderBalance = pctOwned > 0
           ? principalBalanceFull * (pctOwned / 100)
           : (fundingRec ? Number(fundingRec.principalBalance || 0) : 0);
 
+        // Capacity from participant section or derive from role
+        const rawCapacity = capacityMap.get(dealId) || '';
+        const CAPACITY_MAP: Record<string, string> = {
+          primary_lender: 'Primary Lender',
+          participant_lender: 'Participant Lender',
+          syndicate_lender: 'Syndicate Lender',
+          authorized_party: 'Authorized Party',
+        };
+        const displayCapacity = CAPACITY_MAP[rawCapacity] || 'Primary Lender';
+
+        // Ownership percentage
+        const ownershipPct = totalLoanAmount > 0
+          ? (fundingAmount / totalLoanAmount) * 100
+          : pctOwned;
+
+        // Loan status
+        let loanStatus = 'Active';
+        const lsRaw = lt['loan_status'] || lt['status'] || '';
+        if (typeof lsRaw === 'string') {
+          if (lsRaw.toLowerCase().includes('paid') || lsRaw.toLowerCase().includes('closed')) loanStatus = 'Paid Off';
+          if (lsRaw.toLowerCase().includes('default')) loanStatus = 'Default';
+        }
+        if (deal.status === 'generated') loanStatus = 'Active';
+
+        const daysLate = calcDaysLate(nextPaymentVal);
+
         portfolioRows.push({
           id: `${dealId}-${lenderId}`,
-          loanAccount: deal.deal_number || '',
-          borrowerName: deal.borrower_name || '',
-          noteRate: formatPercent(noteRateVal),
-          lenderRate: formatPercent(lenderRate),
-          regularPayment: formatCurrency(regularPayment),
-          principalBalance: formatCurrency(lenderPrincipalBalance),
-          nextPayment: nextPaymentVal ? format(parseISO(nextPaymentVal), 'MM/dd/yyyy') : '-',
-          maturityDate: maturityDateVal ? format(parseISO(maturityDateVal), 'MM/dd/yyyy') : '-',
+          dealId,
+          dealNumber: deal.deal_number || '-',
+          borrowerName: deal.borrower_name || '-',
+          propertyAddress: deal.property_address || '-',
+          loanAmount: totalLoanAmount,
+          capacity: displayCapacity,
+          fundingAmount,
+          ownershipPct: ownershipPct > 0 ? ownershipPct : pctOwned,
+          noteRate: noteRateVal,
+          lenderRate,
+          originationDate: '',
+          maturityDate: maturityDateVal,
+          paymentFrequency: 'Monthly',
+          outstandingBalance: lenderBalance,
+          accruedInterest: 0,
+          lastPaymentDate: '',
+          totalPaymentsReceived: 0,
+          loanStatus,
+          nextPaymentDate: nextPaymentVal,
           termLeft: calcTermLeft(maturityDateVal),
-          daysLate: calcDaysLate(nextPaymentVal),
-          percentOwned: pctOwned > 0 ? `${pctOwned.toFixed(2)}%` : '-',
-          propertyDescription: deal.property_address || '-',
+          daysLate,
+          regularPayment,
         });
       }
 
@@ -268,6 +307,15 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
   useEffect(() => {
     if (contactDbId) loadPortfolio();
   }, [contactDbId, loadPortfolio]);
+
+  // Summary metrics
+  const summary = useMemo(() => {
+    const totalLoans = rows.length;
+    const totalInvested = rows.reduce((s, r) => s + r.fundingAmount, 0);
+    const totalOutstanding = rows.reduce((s, r) => s + r.outstandingBalance, 0);
+    const activeLoans = rows.filter(r => r.loanStatus === 'Active').length;
+    return { totalLoans, totalInvested, totalOutstanding, activeLoans };
+  }, [rows]);
 
   const handleSort = (col: string) => {
     if (sortCol === col) {
@@ -285,28 +333,37 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
     let result = rows;
     if (search) {
       const q = search.toLowerCase();
-      result = result.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
+      result = result.filter(r =>
+        r.dealNumber.toLowerCase().includes(q) ||
+        r.borrowerName.toLowerCase().includes(q) ||
+        r.propertyAddress.toLowerCase().includes(q)
+      );
     }
-    if (filterDaysLate) {
-      const threshold = parseInt(filterDaysLate, 10);
-      if (!isNaN(threshold)) {
-        result = result.filter(r => parseInt(r.daysLate || '0', 10) >= threshold);
-      }
+    if (capacityFilter !== 'all') {
+      result = result.filter(r => r.capacity === capacityFilter);
+    }
+    if (statusFilter !== 'all') {
+      result = result.filter(r => r.loanStatus === statusFilter);
     }
     if (sortCol && sortDir) {
       result = [...result].sort((a, b) => {
-        const av = (a as any)[sortCol] || '';
-        const bv = (b as any)[sortCol] || '';
-        return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+        const av = (a as any)[sortCol];
+        const bv = (b as any)[sortCol];
+        if (typeof av === 'number' && typeof bv === 'number') {
+          return sortDir === 'asc' ? av - bv : bv - av;
+        }
+        return sortDir === 'asc'
+          ? String(av || '').localeCompare(String(bv || ''))
+          : String(bv || '').localeCompare(String(av || ''));
       });
     }
     return result;
-  }, [rows, search, sortCol, sortDir, filterDaysLate]);
+  }, [rows, search, sortCol, sortDir, capacityFilter, statusFilter]);
 
   const toggleColumn = (colId: string) => {
     setVisibleColumns(prev => {
       const next = new Set(prev);
-      if (next.has(colId)) next.delete(colId); else next.add(colId);
+      next.has(colId) ? next.delete(colId) : next.add(colId);
       return next;
     });
   };
@@ -315,7 +372,7 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
     const headers = activeColumns.map(c => c.label).join(',');
     const csvRows = filtered.map(r =>
       activeColumns.map(c => {
-        const val = (r as any)[c.id] || '';
+        const val = formatCellValue(c.id, r);
         return `"${String(val).replace(/"/g, '""')}"`;
       }).join(',')
     );
@@ -329,84 +386,116 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
     URL.revokeObjectURL(url);
   };
 
-  const clearFilters = () => {
-    setFilterDaysLate('');
+  const handleRowClick = (row: PortfolioRow) => {
+    navigate(`/deals/${row.dealId}`);
   };
 
-  const activeFilterCount = filterDaysLate ? 1 : 0;
+  const formatCellValue = (colId: string, row: PortfolioRow): string => {
+    switch (colId) {
+      case 'loanAmount': return fmtCurrency(row.loanAmount);
+      case 'fundingAmount': return fmtCurrency(row.fundingAmount);
+      case 'ownershipPct': return fmtPct(row.ownershipPct);
+      case 'noteRate': return fmtPct(row.noteRate);
+      case 'lenderRate': return fmtPct(row.lenderRate);
+      case 'regularPayment': return fmtCurrency(row.regularPayment);
+      case 'outstandingBalance': return fmtCurrency(row.outstandingBalance);
+      case 'maturityDate': return fmtDate(row.maturityDate);
+      case 'nextPaymentDate': return fmtDate(row.nextPaymentDate);
+      case 'daysLate': return row.daysLate > 0 ? String(row.daysLate) : '0';
+      default: return String((row as any)[colId] || '-');
+    }
+  };
+
+  const fmtSumCurrency = (v: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
 
   return (
-    <div className="space-y-3">
-      {/* Header row */}
-      <div className="flex items-center justify-between">
-        <h4 className="text-lg font-semibold text-foreground">Portfolio</h4>
-        <div className="flex items-center gap-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button size="sm" variant="outline" className="gap-1 h-8 text-xs">
-                <Settings2 className="h-3.5 w-3.5" /> Columns
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56 p-3" align="end">
-              <div className="space-y-2">
-                <span className="text-sm font-medium">Toggle Columns</span>
-                {ALL_COLUMNS.map(c => (
-                  <div key={c.id} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`lp-col-${c.id}`}
-                      checked={visibleColumns.has(c.id)}
-                      onCheckedChange={() => toggleColumn(c.id)}
-                    />
-                    <label htmlFor={`lp-col-${c.id}`} className="text-xs cursor-pointer">{c.label}</label>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+    <div className="space-y-4">
+      <h4 className="text-lg font-semibold text-foreground">Portfolio</h4>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="border border-border rounded-lg p-3 bg-muted/30">
+          <p className="text-xs text-muted-foreground">Total Loans</p>
+          <p className="text-xl font-semibold text-foreground">{summary.totalLoans}</p>
+        </div>
+        <div className="border border-border rounded-lg p-3 bg-muted/30">
+          <p className="text-xs text-muted-foreground">Active Loans</p>
+          <p className="text-xl font-semibold text-foreground">{summary.activeLoans}</p>
+        </div>
+        <div className="border border-border rounded-lg p-3 bg-muted/30">
+          <p className="text-xs text-muted-foreground">Total Invested</p>
+          <p className="text-xl font-semibold text-foreground">{fmtSumCurrency(summary.totalInvested)}</p>
+        </div>
+        <div className="border border-border rounded-lg p-3 bg-muted/30">
+          <p className="text-xs text-muted-foreground">Total Outstanding</p>
+          <p className="text-xl font-semibold text-foreground">{fmtSumCurrency(summary.totalOutstanding)}</p>
         </div>
       </div>
 
-      {/* Toolbar row */}
+      {/* Toolbar */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-7 h-8 w-[180px] text-xs" />
+          <Input
+            placeholder="Search deals..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-7 h-8 w-[200px] text-xs"
+          />
         </div>
-        <Popover open={filterOpen} onOpenChange={setFilterOpen}>
-          <PopoverTrigger asChild>
-            <Button size="sm" variant="outline" className="gap-1 h-8 text-xs">
-              <Filter className="h-3.5 w-3.5" /> Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-64 p-3" align="start">
-            <div className="space-y-3">
-              <span className="text-sm font-medium">Filter Portfolio</span>
-              <div className="space-y-1">
-                <Label className="text-xs">Min Days Late</Label>
-                <Input
-                  type="number"
-                  placeholder="e.g. 30"
-                  value={filterDaysLate}
-                  onChange={e => setFilterDaysLate(e.target.value)}
-                  className="h-7 text-xs"
-                />
-              </div>
-              {activeFilterCount > 0 && (
-                <Button variant="ghost" size="sm" className="text-xs w-full" onClick={clearFilters}>
-                  Clear Filters
-                </Button>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
+        <Select value={capacityFilter} onValueChange={setCapacityFilter}>
+          <SelectTrigger className="h-8 w-[160px] text-xs">
+            <SelectValue placeholder="Capacity" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Capacities</SelectItem>
+            {CAPACITY_OPTIONS.map(c => (
+              <SelectItem key={c} value={c}>{c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-8 w-[130px] text-xs">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            {STATUS_OPTIONS.map(s => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={handleExport}>
           <Download className="h-3.5 w-3.5" /> Export
         </Button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button size="sm" variant="outline" className="gap-1 h-8 text-xs">
+              <Settings2 className="h-3.5 w-3.5" /> Columns
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-3" align="end">
+            <div className="space-y-2">
+              <span className="text-sm font-medium">Toggle Columns</span>
+              {ALL_COLUMNS.map(c => (
+                <div key={c.id} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`lp-col-${c.id}`}
+                    checked={visibleColumns.has(c.id)}
+                    onCheckedChange={() => toggleColumn(c.id)}
+                  />
+                  <label htmlFor={`lp-col-${c.id}`} className="text-xs cursor-pointer">{c.label}</label>
+                </div>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
-        <Table className="min-w-[1400px]">
+        <Table className="min-w-[1600px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               {activeColumns.map(c => (
@@ -436,10 +525,14 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
                 </TableCell>
               </TableRow>
             ) : filtered.map(r => (
-              <TableRow key={r.id}>
+              <TableRow
+                key={r.id}
+                className="cursor-pointer hover:bg-muted/60"
+                onClick={() => handleRowClick(r)}
+              >
                 {activeColumns.map(c => (
                   <TableCell key={c.id} className="whitespace-nowrap text-xs">
-                    {(r as any)[c.id] || '-'}
+                    {formatCellValue(c.id, r)}
                   </TableCell>
                 ))}
               </TableRow>
