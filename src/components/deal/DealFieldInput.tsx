@@ -43,7 +43,10 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
   
   const [isFocused, setIsFocused] = useState(false);
   const [currencyValidationError, setCurrencyValidationError] = useState<string | null>(null);
+  const [negativeValueError, setNegativeValueError] = useState<string | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+
+  const isNumericType = ['number', 'currency', 'percentage', 'decimal', 'integer'].includes(field.data_type);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const rawValue = e.target.value;
