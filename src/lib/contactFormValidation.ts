@@ -1,3 +1,5 @@
+import { validateEmail } from '@/lib/emailValidation';
+
 /**
  * Checks if a contact form has at least one meaningful (non-default) field filled.
  * Ignores boolean fields set to false and empty strings.
