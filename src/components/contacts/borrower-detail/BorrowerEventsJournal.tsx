@@ -185,12 +185,14 @@ const BorrowerEventsJournal: React.FC<{ borrowerId: string; contactDbId: string 
   };
 
   const handleOpenDeal = async (dealId: string) => {
-    const { data: deal } = await supabase.from('deals').select('deal_number, borrower_name').eq('id', dealId).single();
+    const { data: deal } = await supabase.from('deals').select('deal_number, state, product_type').eq('id', dealId).single();
     if (deal) {
       openFile({
         id: dealId,
-        title: `${deal.deal_number} – ${deal.borrower_name || 'Deal'}`,
-        type: 'deal',
+        dealNumber: deal.deal_number,
+        state: deal.state || 'TBD',
+        productType: deal.product_type || 'TBD',
+        openedAt: Date.now(),
       });
     }
     setDrawerOpen(false);
