@@ -59,7 +59,7 @@ const CurrencyInput: React.FC<{
       inputMode="decimal"
       value={value}
       onChange={(e) => {
-        const v = e.target.value.replace(/[^0-9.\-]/g, '');
+        const v = e.target.value.replace(/[^0-9.]/g, '');
         onChange(v);
       }}
       disabled={disabled}
