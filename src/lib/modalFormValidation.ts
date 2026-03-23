@@ -1,3 +1,5 @@
+import { validateEmail } from '@/lib/emailValidation';
+
 /**
  * Checks if a deal modal form has at least one meaningful field filled.
  * Skips id fields, boolean false values, and known default/empty values.
@@ -34,4 +36,21 @@ export const hasModalFormData = (
     }
   }
   return false;
+};
+
+/**
+ * Returns true when every email field in the form is either empty or valid.
+ * Pass the field keys that hold email addresses (e.g. 'email', 'appraiserEmail').
+ */
+export const hasValidEmails = (
+  form: Record<string, any>,
+  emailKeys: string[],
+): boolean => {
+  for (const key of emailKeys) {
+    const value = form[key];
+    if (typeof value === 'string' && value.trim() !== '') {
+      if (validateEmail(value) !== null) return false;
+    }
+  }
+  return true;
 };
