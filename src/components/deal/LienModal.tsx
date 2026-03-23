@@ -182,7 +182,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
               {renderInlineField('fax', 'Fax', 'text', isThisLoan)}
               {renderCurrencyField('currentBalance', 'Current Balance', isThisLoan || isAnticipated)}
               <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs text-foreground">Email</Label>
+                <Label className="w-[110px] shrink-0 text-xs text-foreground">Email</Label>
                 <EmailInput value={String(formData.email || '')} onValueChange={(v) => handleChange('email', v)} className="h-7 text-xs" disabled={isThisLoan} />
               </div>
               {renderCurrencyField('balanceAfter', 'Balance After', isThisLoan || isPayoff)}
