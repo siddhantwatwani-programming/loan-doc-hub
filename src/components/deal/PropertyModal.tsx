@@ -19,7 +19,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
-import { hasModalFormData } from '@/lib/modalFormValidation';
+import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
 import type { PropertyData } from './PropertiesTableView';
 
 interface PropertyModalProps {
