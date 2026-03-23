@@ -96,6 +96,7 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
   const handleInputChange = (field: keyof CoBorrowerData, value: string | boolean) => setFormData(prev => ({ ...prev, [field]: value }));
 
   const isFormFilled = hasModalFormData(formData, ['id', 'type', 'parentBorrowerPrefix', 'format'], { isPrimary: false, mailingSameAsPrimary: false, issue1098: false, alternateReporting: false, deliveryOnline: false, deliveryMail: false, preferredHome: false, preferredWork: false, preferredCell: false, preferredFax: false, creditReporting: false, sendBorrowerNotifications: false, deliveryPrint: true, deliveryEmail: false, deliverySms: false, tinVerified: false, sendPaymentNotification: false, sendLateNotice: false, sendBorrowerStatement: false, sendMaturityNotice: false });
+  const emailsValid = hasValidEmails(formData as any, ['email']);
 
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); };
