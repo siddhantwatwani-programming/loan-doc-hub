@@ -45,3 +45,19 @@ export const validatePhoneFields = (
   }
   return errors;
 };
+
+/**
+ * Returns true when every email value in the form is either empty or valid.
+ */
+export const hasValidContactEmails = (
+  form: Record<string, any>,
+  emailKeys: string[] = ['email'],
+): boolean => {
+  for (const key of emailKeys) {
+    const value = form[key];
+    if (typeof value === 'string' && value.trim() !== '') {
+      if (validateEmail(value) !== null) return false;
+    }
+  }
+  return true;
+};
