@@ -87,6 +87,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   };
 
   const isFormFilled = hasModalFormData(formData, ['id']);
+  const emailsValid = hasValidEmails(formData as any, ['appraiserEmail']);
 
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
