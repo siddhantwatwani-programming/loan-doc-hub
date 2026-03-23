@@ -309,7 +309,7 @@ const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string }>
   }));
 
   const allColumns = columns.filter(c => c.id !== 'actions').map(c => ({
-    key: (c as any).accessorKey || c.id || '',
+    id: (c as any).accessorKey || c.id || '',
     label: typeof c.header === 'string' ? c.header : '',
   }));
 
