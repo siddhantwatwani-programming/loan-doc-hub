@@ -266,9 +266,9 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
                 {renderInlineField('lastVerified', 'Last Verified', 'date')}
                 <div className="flex items-center gap-2">
                   <Label className="w-[110px] shrink-0 text-xs text-foreground">Status</Label>
-                  <Select value={formData.status} onValueChange={(val) => handleChange('status', val)}>
+                  <Select value={formData.status || undefined} onValueChange={(val) => handleChange('status', val)}>
                     <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select status" /></SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50">
+                    <SelectContent className="bg-background border border-border z-[200]">
                       {STATUS_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
                     </SelectContent>
                   </Select>

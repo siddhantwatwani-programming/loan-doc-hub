@@ -321,9 +321,9 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
               <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.status}>
                 <div className="flex items-center gap-3">
                   <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Status</Label>
-                  <Select value={lien.status} onValueChange={(val) => onChange('status', val)} disabled={disabled}>
+                  <Select value={lien.status || undefined} onValueChange={(val) => onChange('status', val)} disabled={disabled}>
                     <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select status" /></SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50">
+                    <SelectContent className="bg-background border border-border z-[200]">
                       {STATUS_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
                     </SelectContent>
                   </Select>
