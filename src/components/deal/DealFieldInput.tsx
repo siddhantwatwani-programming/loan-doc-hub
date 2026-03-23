@@ -415,6 +415,13 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
         </p>
       )}
 
+      {negativeValueError && (
+        <p className="text-[10px] text-destructive flex items-center gap-0.5 animate-fade-in pl-[148px]">
+          <AlertCircle className="h-2.5 w-2.5 flex-shrink-0" />
+          {negativeValueError}
+        </p>
+      )}
+
       {hasCalculationError && (
         <p className="text-[10px] text-amber-600 flex items-center gap-0.5 pl-[148px]">
           <AlertCircle className="h-2.5 w-2.5 flex-shrink-0" />
