@@ -24,7 +24,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { PhoneInput } from '@/components/ui/phone-input';
-import { hasAtLeastOneFieldFilled, validatePhoneFields } from '@/lib/contactFormValidation';
+import { hasAtLeastOneFieldFilled, validatePhoneFields, hasValidContactEmails } from '@/lib/contactFormValidation';
 import { toast } from 'sonner';
 
 interface CreateContactModalProps {
