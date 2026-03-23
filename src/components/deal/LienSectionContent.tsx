@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { flushSync } from 'react-dom';
 import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ interface LienSectionContentProps {
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   onRemoveValuesByPrefix?: (prefix: string) => void;
+  onPersist?: () => Promise<boolean>;
   disabled?: boolean;
   propertyOptions?: { id: string; label: string }[];
   onBack?: () => void;
@@ -145,6 +147,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   values,
   onValueChange,
   onRemoveValuesByPrefix,
+  onPersist,
   disabled = false,
   propertyOptions = [],
   onBack,
@@ -186,18 +189,27 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   const handleRowClick = useCallback((lien: LienData) => { setSelectedLienPrefix(lien.id); setCurrentView('detail'); }, []);
   const handleBackToTable = useCallback(() => { setCurrentView('table'); }, []);
 
-  const handleSaveLien = useCallback((lienData: LienData) => {
+  const handleSaveLien = useCallback(async (lienData: LienData) => {
     const prefix = editingLien ? editingLien.id : getNextLienPrefix(values);
-    Object.entries(LIEN_FIELD_MAP).forEach(([lienKey, dbField]) => {
-      if (lienKey === 'id') return;
-      const val = (lienData as any)[lienKey] || '';
-      const defaultVal = (DEFAULT_LIEN as any)[lienKey] || '';
-      if (val !== defaultVal || editingLien) {
-        onValueChange(`${prefix}.${dbField}`, val);
-      }
+
+    flushSync(() => {
+      Object.entries(LIEN_FIELD_MAP).forEach(([lienKey, dbField]) => {
+        if (lienKey === 'id') return;
+        const val = (lienData as any)[lienKey] || '';
+        const defaultVal = (DEFAULT_LIEN as any)[lienKey] || '';
+        if (val !== defaultVal || editingLien) {
+          onValueChange(`${prefix}.${dbField}`, val);
+        }
+      });
     });
-    setModalOpen(false);
-  }, [editingLien, values, onValueChange]);
+
+    const success = onPersist ? await onPersist() : true;
+    if (success) {
+      setSelectedLienPrefix(prefix);
+      setModalOpen(false);
+    }
+    return success;
+  }, [editingLien, values, onValueChange, onPersist, setSelectedLienPrefix]);
 
   const handleDeleteLien = useCallback((lien: LienData) => {
     if (onRemoveValuesByPrefix) {
