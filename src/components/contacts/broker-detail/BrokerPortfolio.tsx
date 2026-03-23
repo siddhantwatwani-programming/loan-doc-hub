@@ -1,8 +1,7 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { logContactEvent } from '@/hooks/useContactEventJournal';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, Filter, Download, Settings2 } from 'lucide-react';
+import { Search, Filter, Download, Settings2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import SortableTableHead from '@/components/deal/SortableTableHead';
 import { type SortDirection } from '@/hooks/useGridSortFilter';
@@ -13,37 +12,30 @@ import {
 } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface PortfolioRow {
   id: string;
+  dealId: string;
   loanAccount: string;
   borrowerName: string;
   noteRate: string;
   lenderRate: string;
   regularPayment: string;
   principalBalance: string;
-  nextPayment: string;
+  nextPaymentDate: string;
   maturityDate: string;
-  termLeft: string;
-  daysLate: string;
-  percentOwned: string;
-  propertyDescription: string;
+  loanStatus: string;
 }
 
 const ALL_COLUMNS = [
@@ -53,125 +45,147 @@ const ALL_COLUMNS = [
   { id: 'lenderRate', label: 'Lender Rate' },
   { id: 'regularPayment', label: 'Regular Payment' },
   { id: 'principalBalance', label: 'Principal Balance' },
-  { id: 'nextPayment', label: 'Next Payment' },
+  { id: 'nextPaymentDate', label: 'Next Payment Date' },
   { id: 'maturityDate', label: 'Maturity Date' },
-  { id: 'termLeft', label: 'Term Left' },
-  { id: 'daysLate', label: 'Days Late' },
-  { id: 'percentOwned', label: '% Owned' },
-  { id: 'propertyDescription', label: 'Property Description' },
+  { id: 'loanStatus', label: 'Loan Status' },
 ];
-
-const EMPTY_PORTFOLIO: Omit<PortfolioRow, 'id'> = {
-  loanAccount: '',
-  borrowerName: '',
-  noteRate: '',
-  lenderRate: '',
-  regularPayment: '',
-  principalBalance: '',
-  nextPayment: '',
-  maturityDate: '',
-  termLeft: '',
-  daysLate: '',
-  percentOwned: '',
-  propertyDescription: '',
-};
 
 interface BrokerPortfolioProps {
   brokerId: string;
   contactDbId: string;
 }
 
-const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ contactDbId }) => {
-  const [rows, setRows] = useState<PortfolioRow[]>([]);
+async function fetchBrokerPortfolio(contactDbId: string): Promise<PortfolioRow[]> {
+  // 1. Get all deal_participants where this contact is a broker
+  const { data: participants, error: pErr } = await supabase
+    .from('deal_participants')
+    .select('deal_id, name')
+    .eq('contact_id', contactDbId)
+    .eq('role', 'broker');
+
+  if (pErr) throw pErr;
+  if (!participants || participants.length === 0) return [];
+
+  const dealIds = [...new Set(participants.map(p => p.deal_id))];
+
+  // 2. Fetch deals
+  const { data: deals, error: dErr } = await supabase
+    .from('deals')
+    .select('id, deal_number, borrower_name, loan_amount, status')
+    .in('id', dealIds);
+
+  if (dErr) throw dErr;
+  if (!deals) return [];
+
+  // 3. Fetch deal_section_values for loan_terms + borrower
+  const { data: sections, error: sErr } = await supabase
+    .from('deal_section_values')
+    .select('deal_id, section, field_values')
+    .in('deal_id', dealIds)
+    .in('section', ['loan_terms', 'borrower']);
+
+  if (sErr) throw sErr;
+
+  // Build lookup maps
+  const sectionMap: Record<string, Record<string, any>> = {};
+  (sections || []).forEach(s => {
+    if (!sectionMap[s.deal_id]) sectionMap[s.deal_id] = {};
+    sectionMap[s.deal_id][s.section] = s.field_values;
+  });
+
+  const fmt = (v: any) => v ? String(v) : '';
+  const fmtCurrency = (v: any) => {
+    const n = Number(v);
+    if (isNaN(n) || !v) return '';
+    return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+  };
+  const fmtPct = (v: any) => {
+    if (!v) return '';
+    const n = Number(v);
+    if (isNaN(n)) return String(v);
+    return `${n}%`;
+  };
+
+  // Helper to resolve a field value from section JSONB by searching for matching keys
+  const resolveField = (fv: any, ...keyFragments: string[]): string => {
+    if (!fv || typeof fv !== 'object') return '';
+    // field_values is keyed by UUID or composite keys like "borrower1::{uuid}"
+    for (const [key, val] of Object.entries(fv)) {
+      const valStr = String(val || '');
+      for (const frag of keyFragments) {
+        if (key.toLowerCase().includes(frag.toLowerCase())) return valStr;
+      }
+    }
+    return '';
+  };
+
+  return deals.map(deal => {
+    const loanTerms = sectionMap[deal.id]?.['loan_terms'] || {};
+    const borrowerData = sectionMap[deal.id]?.['borrower'] || {};
+
+    // Try to get borrower name from section data, fall back to deal.borrower_name
+    const borrowerFromSection = resolveField(borrowerData, 'full_name', 'borrower_name', 'name');
+    const borrowerName = borrowerFromSection || deal.borrower_name || '';
+
+    const noteRate = resolveField(loanTerms, 'note_rate', 'interest_rate', 'rate');
+    const lenderRate = resolveField(loanTerms, 'lender_rate', 'investor_rate');
+    const regularPayment = resolveField(loanTerms, 'regular_payment', 'payment_amount', 'monthly_payment');
+    const principalBalance = resolveField(loanTerms, 'principal_balance', 'current_balance', 'outstanding_balance');
+    const nextPaymentDate = resolveField(loanTerms, 'next_payment', 'next_due');
+    const maturityDate = resolveField(loanTerms, 'maturity_date', 'maturity');
+
+    // Derive loan status
+    let loanStatus = 'Active';
+    if (deal.status === 'generated') loanStatus = 'Active';
+    if (deal.status === 'draft') loanStatus = 'Draft';
+
+    return {
+      id: deal.id,
+      dealId: deal.id,
+      loanAccount: deal.deal_number,
+      borrowerName,
+      noteRate: fmtPct(noteRate),
+      lenderRate: fmtPct(lenderRate),
+      regularPayment: fmtCurrency(regularPayment),
+      principalBalance: fmtCurrency(principalBalance || deal.loan_amount),
+      nextPaymentDate: fmt(nextPaymentDate),
+      maturityDate: fmt(maturityDate),
+      loanStatus,
+    };
+  });
+}
+
+const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ brokerId, contactDbId }) => {
   const [search, setSearch] = useState('');
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set(ALL_COLUMNS.map(c => c.id))
   );
   const [filterOpen, setFilterOpen] = useState(false);
-  const [filterDaysLate, setFilterDaysLate] = useState<string>('');
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [newRecord, setNewRecord] = useState<Omit<PortfolioRow, 'id'>>(EMPTY_PORTFOLIO);
-  const [isSaving, setIsSaving] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string>('all');
 
-  // Load portfolio from contact_data on mount
-  useEffect(() => {
-    const loadPortfolio = async () => {
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('contact_data')
-        .eq('id', contactDbId)
-        .single();
-      if (!error && data?.contact_data) {
-        const cd = data.contact_data as Record<string, any>;
-        if (Array.isArray(cd._portfolio)) {
-          setRows(cd._portfolio);
-        }
-      }
-    };
-    if (contactDbId) loadPortfolio();
-  }, [contactDbId]);
+  let workspace: any = null;
+  try {
+    workspace = useWorkspace();
+  } catch {
+    // workspace context not available
+  }
 
-  const persistPortfolio = useCallback(async (updatedRows: PortfolioRow[]) => {
-    setIsSaving(true);
-    try {
-      const { data: current, error: fetchErr } = await supabase
-        .from('contacts')
-        .select('contact_data')
-        .eq('id', contactDbId)
-        .single();
-      if (fetchErr) throw fetchErr;
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ['broker-portfolio', contactDbId],
+    queryFn: () => fetchBrokerPortfolio(contactDbId),
+    enabled: !!contactDbId,
+  });
 
-      const existingData = (current?.contact_data as Record<string, any>) || {};
-      const merged = { ...existingData, _portfolio: updatedRows } as any;
-
-      const { error } = await supabase
-        .from('contacts')
-        .update({ contact_data: merged as any, updated_at: new Date().toISOString() })
-        .eq('id', contactDbId);
-      if (error) throw error;
-    } catch (err: any) {
-      console.error('Failed to save portfolio:', err);
-      toast.error('Failed to save portfolio record');
-      throw err;
-    } finally {
-      setIsSaving(false);
-    }
-  }, [contactDbId]);
-
-  const handleAddRecord = useCallback(async () => {
-    const recordWithId: PortfolioRow = {
-      ...newRecord,
-      id: crypto.randomUUID(),
-    };
-    const updatedRows = [...rows, recordWithId];
-    try {
-      await persistPortfolio(updatedRows);
-      setRows(updatedRows);
-      setNewRecord(EMPTY_PORTFOLIO);
-      setAddDialogOpen(false);
-      toast.success('Portfolio record added');
-      logContactEvent(contactDbId, 'Portfolio', [{ fieldLabel: 'Portfolio Added', oldValue: '', newValue: recordWithId.loanAccount || 'New record' }]);
-    } catch {
-      // error already toasted
-    }
-  }, [newRecord, rows, persistPortfolio, contactDbId]);
-
-  const handleDeleteSelected = useCallback(async () => {
-    if (selectedRows.size === 0) return;
-    const updatedRows = rows.filter(r => !selectedRows.has(r.id));
-    try {
-      await persistPortfolio(updatedRows);
-      setRows(updatedRows);
-      setSelectedRows(new Set());
-      toast.success(`${selectedRows.size} record(s) deleted`);
-      logContactEvent(contactDbId, 'Portfolio', [{ fieldLabel: 'Portfolio Deleted', oldValue: `${selectedRows.size} record(s)`, newValue: '(deleted)' }]);
-    } catch {
-      // error already toasted
-    }
-  }, [rows, selectedRows, persistPortfolio, contactDbId]);
+  // Summary metrics
+  const totalDeals = rows.length;
+  const totalLoanVolume = rows.reduce((sum, r) => {
+    const n = Number(r.principalBalance.replace(/[^0-9.-]/g, ''));
+    return sum + (isNaN(n) ? 0 : n);
+  }, 0);
+  const activeDeals = rows.filter(r => r.loanStatus === 'Active').length;
+  const closedDeals = rows.filter(r => r.loanStatus !== 'Active' && r.loanStatus !== 'Draft').length;
 
   const handleSort = (col: string) => {
     if (sortCol === col) {
@@ -191,11 +205,8 @@ const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ contactDbId }) => {
       const q = search.toLowerCase();
       result = result.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
     }
-    if (filterDaysLate) {
-      const threshold = parseInt(filterDaysLate, 10);
-      if (!isNaN(threshold)) {
-        result = result.filter(r => parseInt(r.daysLate || '0', 10) >= threshold);
-      }
+    if (filterStatus && filterStatus !== 'all') {
+      result = result.filter(r => r.loanStatus === filterStatus);
     }
     if (sortCol && sortDir) {
       result = [...result].sort((a, b) => {
@@ -205,23 +216,7 @@ const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ contactDbId }) => {
       });
     }
     return result;
-  }, [rows, search, sortCol, sortDir, filterDaysLate]);
-
-  const toggleRow = (id: string) => {
-    setSelectedRows(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
-  const toggleAll = () => {
-    if (selectedRows.size === filtered.length) {
-      setSelectedRows(new Set());
-    } else {
-      setSelectedRows(new Set(filtered.map(r => r.id)));
-    }
-  };
+  }, [rows, search, sortCol, sortDir, filterStatus]);
 
   const toggleColumn = (colId: string) => {
     setVisibleColumns(prev => {
@@ -249,14 +244,54 @@ const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ contactDbId }) => {
     URL.revokeObjectURL(url);
   };
 
+  const handleRowClick = useCallback((row: PortfolioRow) => {
+    if (workspace?.openFile) {
+      workspace.openFile({
+        id: row.dealId,
+        type: 'deal',
+        label: row.loanAccount,
+      });
+    }
+  }, [workspace]);
+
   const clearFilters = () => {
-    setFilterDaysLate('');
+    setFilterStatus('all');
   };
 
-  const activeFilterCount = filterDaysLate ? 1 : 0;
+  const activeFilterCount = (filterStatus && filterStatus !== 'all') ? 1 : 0;
 
   return (
     <div className="space-y-3">
+      {/* Summary Metrics */}
+      <div className="grid grid-cols-4 gap-3">
+        <Card>
+          <CardContent className="p-3">
+            <p className="text-xs text-muted-foreground">Total Deals</p>
+            <p className="text-lg font-bold text-foreground">{totalDeals}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <p className="text-xs text-muted-foreground">Total Loan Volume</p>
+            <p className="text-lg font-bold text-foreground">
+              {totalLoanVolume.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <p className="text-xs text-muted-foreground">Active Deals</p>
+            <p className="text-lg font-bold text-foreground">{activeDeals}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <p className="text-xs text-muted-foreground">Closed Deals</p>
+            <p className="text-lg font-bold text-foreground">{closedDeals}</p>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Header row */}
       <div className="flex items-center justify-between">
         <h4 className="text-lg font-semibold text-foreground">Portfolio</h4>
@@ -283,14 +318,6 @@ const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ contactDbId }) => {
               </div>
             </PopoverContent>
           </Popover>
-          {selectedRows.size > 0 && (
-            <Button size="sm" variant="destructive" className="gap-1 h-8 text-xs" onClick={handleDeleteSelected}>
-              Delete ({selectedRows.size})
-            </Button>
-          )}
-          <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={() => setAddDialogOpen(true)}>
-            <Plus className="h-3.5 w-3.5" /> Add Portfolio
-          </Button>
         </div>
       </div>
 
@@ -310,14 +337,18 @@ const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ contactDbId }) => {
             <div className="space-y-3">
               <span className="text-sm font-medium">Filter Portfolio</span>
               <div className="space-y-1">
-                <Label className="text-xs">Min Days Late</Label>
-                <Input
-                  type="number"
-                  placeholder="e.g. 30"
-                  value={filterDaysLate}
-                  onChange={e => setFilterDaysLate(e.target.value)}
-                  className="h-7 text-xs"
-                />
+                <Label className="text-xs">Loan Status</Label>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Draft">Draft</SelectItem>
+                    <SelectItem value="Closed">Closed</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               {activeFilterCount > 0 && (
                 <Button variant="ghost" size="sm" className="text-xs w-full" onClick={clearFilters}>
@@ -334,17 +365,9 @@ const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ contactDbId }) => {
 
       {/* Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
-        <Table className="min-w-[1400px]">
+        <Table className="min-w-[1200px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="w-10 px-2">
-                <input
-                  type="checkbox"
-                  checked={filtered.length > 0 && selectedRows.size === filtered.length}
-                  onChange={toggleAll}
-                  className="rounded border-input"
-                />
-              </TableHead>
               {activeColumns.map(c => (
                 <SortableTableHead
                   key={c.id}
@@ -359,22 +382,24 @@ const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ contactDbId }) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? (
+            {isLoading ? (
               <TableRow>
-                <TableCell colSpan={activeColumns.length + 1} className="text-center py-8 text-muted-foreground text-sm">
-                  No portfolio records found. Click "Add Portfolio" to add one.
+                <TableCell colSpan={activeColumns.length} className="text-center py-8 text-muted-foreground text-sm">
+                  Loading portfolio...
+                </TableCell>
+              </TableRow>
+            ) : filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={activeColumns.length} className="text-center py-8 text-muted-foreground text-sm">
+                  No portfolio records found. Broker has no associated deals.
                 </TableCell>
               </TableRow>
             ) : filtered.map(r => (
-              <TableRow key={r.id} className={selectedRows.has(r.id) ? 'bg-primary/5' : ''}>
-                <TableCell className="w-10 px-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedRows.has(r.id)}
-                    onChange={() => toggleRow(r.id)}
-                    className="rounded border-input"
-                  />
-                </TableCell>
+              <TableRow
+                key={r.id}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleRowClick(r)}
+              >
                 {activeColumns.map(c => (
                   <TableCell key={c.id} className="whitespace-nowrap text-xs">
                     {(r as any)[c.id] || '-'}
@@ -385,34 +410,6 @@ const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ contactDbId }) => {
           </TableBody>
         </Table>
       </div>
-
-      {/* Add Portfolio Dialog */}
-      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add Portfolio Record</DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-3">
-            {ALL_COLUMNS.map(col => (
-              <div key={col.id} className="space-y-1">
-                <Label className="text-xs">{col.label}</Label>
-                <Input
-                  className="h-8 text-xs"
-                  value={(newRecord as any)[col.id] || ''}
-                  onChange={e => setNewRecord(prev => ({ ...prev, [col.id]: e.target.value }))}
-                  placeholder={col.label}
-                />
-              </div>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleAddRecord} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Add Record'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
