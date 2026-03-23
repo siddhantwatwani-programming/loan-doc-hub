@@ -147,6 +147,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   values,
   onValueChange,
   onRemoveValuesByPrefix,
+  onPersist,
   disabled = false,
   propertyOptions = [],
   onBack,
