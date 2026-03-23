@@ -176,7 +176,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
             <RadioGroupItem value="sold_rate" id="detail-rate-sold" />
             <Label htmlFor="detail-rate-sold" className="text-sm">Sold Rate</Label>
             <div className="relative w-28">
-              <Input type="text" inputMode="decimal" value={data.rateSoldValue || ''} onChange={(e) => handleChange('rateSoldValue', e.target.value.replace(/[^0-9.\-]/g, ''))} className={cn("h-7 text-sm pr-6", data.rateSelection !== 'sold_rate' && 'opacity-50 bg-muted')} disabled={data.rateSelection !== 'sold_rate'} placeholder="0.000" />
+              <Input type="text" inputMode="decimal" value={data.rateSoldValue || ''} onChange={(e) => handleChange('rateSoldValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", data.rateSelection !== 'sold_rate' && 'opacity-50 bg-muted')} disabled={data.rateSelection !== 'sold_rate'} placeholder="0.000" />
               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
             </div>
           </div>
