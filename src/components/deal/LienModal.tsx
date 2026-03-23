@@ -155,9 +155,9 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
               <div className="flex items-center gap-2">
                 <Label className="w-[110px] shrink-0 text-xs text-foreground">Related Property</Label>
-                <Select value={formData.property} onValueChange={(val) => handleChange('property', val)}>
-                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select property" /></SelectTrigger>
-                  <SelectContent className="bg-background border border-border z-50">
+                 <Select value={formData.property || undefined} onValueChange={(val) => handleChange('property', val)}>
+                   <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select property" /></SelectTrigger>
+                   <SelectContent className="bg-background border border-border z-[200]">
                     <SelectItem value="unassigned">Unassigned</SelectItem>
                     {propertyOptions.map(opt => (
                       <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
