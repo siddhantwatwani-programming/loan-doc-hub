@@ -80,7 +80,17 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
 
   const handleBlur = () => {
     setIsFocused(false);
-    if (!value) return;
+    if (!value) {
+      setNegativeValueError(null);
+      return;
+    }
+
+    // Validate negative on blur
+    if (isNumericType && isNegativeValue(value)) {
+      setNegativeValueError(INTEREST_NEGATIVE_MESSAGE);
+      return;
+    }
+    setNegativeValueError(null);
 
     let formattedValue = value;
 
