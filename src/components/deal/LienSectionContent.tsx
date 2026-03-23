@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { flushSync } from 'react-dom';
 import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';

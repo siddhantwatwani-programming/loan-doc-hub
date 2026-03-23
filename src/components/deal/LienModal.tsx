@@ -20,7 +20,7 @@ interface LienModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   lien: LienData | null;
-  onSave: (lien: LienData) => void;
+  onSave: (lien: LienData) => Promise<boolean> | boolean | void;
   isEdit: boolean;
   propertyOptions?: { id: string; label: string }[];
   loanValues?: Record<string, string>;
