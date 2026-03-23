@@ -499,7 +499,7 @@ const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string }>
         onOpenChange={setShowExport}
         data={exportData}
         columns={allColumns}
-        defaultFileName="borrower_attachments"
+        fileName="borrower_attachments"
       />
     </div>
   );
