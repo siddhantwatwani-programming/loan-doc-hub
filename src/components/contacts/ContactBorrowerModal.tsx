@@ -107,7 +107,7 @@ export const ContactBorrowerModal: React.FC<ContactBorrowerModalProps> = ({ open
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={!hasAtLeastOneFieldFilled(form as any, ['preferredPhone', 'type'])}>Create</Button>
+            <Button onClick={handleSubmit} disabled={!hasAtLeastOneFieldFilled(form as any, ['preferredPhone', 'type']) || !hasValidContactEmails(form as any)}>Create</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
