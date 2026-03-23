@@ -12,7 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
-import { hasModalFormData } from '@/lib/modalFormValidation';
+import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
 import type { LienData } from './LiensTableView';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 

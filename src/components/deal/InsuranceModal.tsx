@@ -13,7 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
-import { hasModalFormData } from '@/lib/modalFormValidation';
+import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
 import type { InsuranceData } from './InsuranceTableView';
 
 interface InsuranceModalProps {

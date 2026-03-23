@@ -262,7 +262,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
 
           <DialogFooter className="shrink-0 border-t border-border pt-3">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>OK</Button>
+            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || !emailsValid}>OK</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
