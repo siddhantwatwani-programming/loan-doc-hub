@@ -59,7 +59,7 @@ const CurrencyInput: React.FC<{
       inputMode="decimal"
       value={value}
       onChange={(e) => {
-        const v = e.target.value.replace(/[^0-9.\-]/g, '');
+        const v = e.target.value.replace(/[^0-9.]/g, '');
         onChange(v);
       }}
       disabled={disabled}
@@ -449,7 +449,7 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
               <Input
                 inputMode="decimal"
                 value={getValue(FK.ix_payment_end_pct)}
-                onChange={(e) => setValue(FK.ix_payment_end_pct, e.target.value.replace(/[^0-9.\-]/g, ''))}
+                onChange={(e) => setValue(FK.ix_payment_end_pct, e.target.value.replace(/[^0-9.]/g, ''))}
                 disabled={adjustableSectionsDisabled}
                 placeholder="0.00"
                 className="h-8 text-xs text-right pr-5"

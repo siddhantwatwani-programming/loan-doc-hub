@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { AlertCircle, Lock, Calculator, Asterisk, CheckCircle2, CalendarIcon } from 'lucide-react';
 import { format, parseISO, isValid } from 'date-fns';
 import { parseToCanonical, formatForDisplay } from '@/lib/fieldTransforms';
+import { isNegativeValue, INTEREST_NEGATIVE_MESSAGE } from '@/lib/interestValidation';
 import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
@@ -42,7 +43,10 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
   
   const [isFocused, setIsFocused] = useState(false);
   const [currencyValidationError, setCurrencyValidationError] = useState<string | null>(null);
+  const [negativeValueError, setNegativeValueError] = useState<string | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+
+  const isNumericType = ['number', 'currency', 'percentage', 'decimal', 'integer'].includes(field.data_type);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const rawValue = e.target.value;
@@ -62,12 +66,31 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
       }
     }
     setCurrencyValidationError(null);
+
+    // Validate negative values for numeric fields
+    if (isNumericType && isNegativeValue(canonicalValue)) {
+      setNegativeValueError(INTEREST_NEGATIVE_MESSAGE);
+      onChange(canonicalValue);
+      return;
+    }
+    setNegativeValueError(null);
+
     onChange(canonicalValue);
   };
 
   const handleBlur = () => {
     setIsFocused(false);
-    if (!value) return;
+    if (!value) {
+      setNegativeValueError(null);
+      return;
+    }
+
+    // Validate negative on blur
+    if (isNumericType && isNegativeValue(value)) {
+      setNegativeValueError(INTEREST_NEGATIVE_MESSAGE);
+      return;
+    }
+    setNegativeValueError(null);
 
     let formattedValue = value;
 
@@ -214,7 +237,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
             'transition-colors h-7 text-xs',
             prefix && 'pl-5',
             suffix && 'pr-6',
-            showError && 'border-destructive focus:ring-destructive bg-destructive/5',
+            (showError || negativeValueError) && 'border-destructive focus:ring-destructive bg-destructive/5',
             isDisabled && 'bg-muted cursor-not-allowed'
           )}
           placeholder={field.description || undefined}
@@ -399,6 +422,13 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
         <p className="text-[10px] text-destructive flex items-center gap-0.5 animate-fade-in pl-[148px]">
           <AlertCircle className="h-2.5 w-2.5 flex-shrink-0" />
           {currencyValidationError}
+        </p>
+      )}
+
+      {negativeValueError && (
+        <p className="text-[10px] text-destructive flex items-center gap-0.5 animate-fade-in pl-[148px]">
+          <AlertCircle className="h-2.5 w-2.5 flex-shrink-0" />
+          {negativeValueError}
         </p>
       )}
 
