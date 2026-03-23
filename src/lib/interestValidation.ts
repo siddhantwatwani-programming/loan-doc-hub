@@ -85,3 +85,17 @@ export function normalizeInterestOnBlur(value: string, decimals = 2): string {
 
 /** Validation error message */
 export const INTEREST_VALIDATION_MESSAGE = 'Please enter a valid positive number in US format';
+
+/** Negative value error message */
+export const INTEREST_NEGATIVE_MESSAGE = 'Please enter 0 or a value greater than 0.';
+
+/**
+ * Check if a numeric string represents a negative value.
+ * Returns true if the value is negative.
+ */
+export function isNegativeValue(value: string): boolean {
+  if (!value || value.trim() === '') return false;
+  const stripped = value.replace(/,/g, '');
+  const num = parseFloat(stripped);
+  return !isNaN(num) && num < 0;
+}

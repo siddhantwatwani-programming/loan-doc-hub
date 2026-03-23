@@ -65,8 +65,8 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
   }, []);
 
   const handleCurrencyChange = useCallback((key: string, raw: string) => {
-    // Strip everything except digits, decimal, and minus
-    const cleaned = raw.replace(/[^0-9.\-]/g, "");
+    // Strip everything except digits and decimal (no negative values)
+    const cleaned = raw.replace(/[^0-9.]/g, "");
     setValue(key, cleaned);
   }, []);
 
