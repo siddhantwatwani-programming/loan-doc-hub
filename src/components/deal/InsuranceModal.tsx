@@ -169,7 +169,7 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
 
           <div className="flex justify-end gap-2 pt-3 border-t border-border shrink-0">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>OK</Button>
+            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || !emailsValid}>OK</Button>
           </div>
         </DialogContent>
       </Dialog>

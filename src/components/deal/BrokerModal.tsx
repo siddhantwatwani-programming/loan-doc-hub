@@ -115,7 +115,7 @@ export const BrokerModal: React.FC<BrokerModalProps> = ({ open, onOpenChange, br
 
         <DialogFooter className="mt-4">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>OK</Button>
+          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || !emailsValid}>OK</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

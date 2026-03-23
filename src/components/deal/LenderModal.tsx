@@ -179,7 +179,7 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
 
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>{isEdit ? 'Save Changes' : 'Add Lender'}</Button>
+          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || !emailsValid}>{isEdit ? 'Save Changes' : 'Add Lender'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
