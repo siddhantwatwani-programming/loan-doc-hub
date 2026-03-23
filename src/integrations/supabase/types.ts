@@ -49,6 +49,59 @@ export type Database = {
           },
         ]
       }
+      borrower_attachments: {
+        Row: {
+          category: string
+          contact_id: string
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: string | null
+          file_type: string | null
+          id: string
+          status: string
+          uploaded_at: string
+          uploaded_by: string
+          version_number: number
+        }
+        Insert: {
+          category?: string
+          contact_id: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size?: string | null
+          file_type?: string | null
+          id?: string
+          status?: string
+          uploaded_at?: string
+          uploaded_by: string
+          version_number?: number
+        }
+        Update: {
+          category?: string
+          contact_id?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: string | null
+          file_type?: string | null
+          id?: string
+          status?: string
+          uploaded_at?: string
+          uploaded_by?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "borrower_attachments_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           city: string | null
