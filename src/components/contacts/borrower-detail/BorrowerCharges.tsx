@@ -210,8 +210,19 @@ const BorrowerCharges: React.FC<Props> = ({ contactDbId }) => {
   const activeColumns = useMemo(() => ALL_COLUMNS.filter(c => visibleColumns.has(c.id)), [visibleColumns]);
   const toggleColumn = (colId: string) => setVisibleColumns(prev => { const n = new Set(prev); n.has(colId) ? n.delete(colId) : n.add(colId); return n; });
 
-  const handleRowClick = (row: ChargeRecord) => {
-    openFile({ id: row.dealId, type: 'deal' });
+  const handleRowClick = async (row: ChargeRecord) => {
+    // Fetch deal details to open workspace
+    const { data: deal } = await supabase.from('deals').select('deal_number, state, product_type').eq('id', row.dealId).single();
+    if (deal) {
+      openFile({
+        id: row.dealId,
+        dealNumber: deal.deal_number,
+        state: deal.state || '',
+        productType: deal.product_type || '',
+        openedAt: Date.now(),
+      });
+      navigate('/csr/deals');
+    }
   };
 
   const handleExport = () => {
