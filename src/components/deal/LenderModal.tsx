@@ -65,6 +65,7 @@ export const LenderModal: React.FC<LenderModalProps> = ({ open, onOpenChange, le
   };
 
   const isFormFilled = hasModalFormData(formData, ['id'], { isPrimary: false });
+  const emailsValid = hasValidEmails(formData as any, ['email']);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
