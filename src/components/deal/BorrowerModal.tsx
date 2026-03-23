@@ -300,7 +300,7 @@ export const BorrowerModal: React.FC<BorrowerModalProps> = ({
 
         <DialogFooter className="mt-4 shrink-0">
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>OK</Button>
+          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || !emailsValid}>OK</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
