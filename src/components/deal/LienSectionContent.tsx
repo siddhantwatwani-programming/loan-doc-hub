@@ -13,6 +13,7 @@ interface LienSectionContentProps {
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   onRemoveValuesByPrefix?: (prefix: string) => void;
+  onPersist?: () => Promise<boolean>;
   disabled?: boolean;
   propertyOptions?: { id: string; label: string }[];
   onBack?: () => void;
