@@ -21,6 +21,7 @@ const FORM_KEYS = [
   'liens',
   'origination',
   'trust_ledger',
+  'participants',
 ];
 
 export function useFormPermissions() {
