@@ -266,6 +266,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
   const [deletedPrefixes, setDeletedPrefixes] = useState<string[]>([]);
   const isFetchingRef = useRef(false);
   const hasLoadedRef = useRef(false);
+  const valuesRef = useRef<Record<string, string>>({});
   const savedValuesSnapshotRef = useRef<Record<string, string>>({});
   const { logFieldChanges } = useEventJournalLogger();
 
@@ -526,12 +527,14 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
             }
           }
           setValues(mergedValues);
+          valuesRef.current = mergedValues;
           savedValuesSnapshotRef.current = { ...valuesMap }; // snapshot is DB state
           // Restore dirty state
           setDirtyFieldKeys(new Set(cached.dirtyKeys));
           setIsDirty(true);
         } else {
           setValues(valuesMap);
+          valuesRef.current = valuesMap;
           savedValuesSnapshotRef.current = { ...valuesMap };
         }
       }
@@ -552,6 +555,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
   const updateValue = useCallback((fieldKey: string, value: string, isRequiredField?: boolean) => {
     setValues(prev => {
       const next = { ...prev, [fieldKey]: value };
+      valuesRef.current = next;
 
       // Update sessionStorage cache with current unsaved state
       const savedValue = savedValuesSnapshotRef.current[fieldKey] ?? '';
@@ -750,8 +754,15 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Compute calculated fields before saving
-      const finalValues = computeCalculatedFields();
+      // Compute calculated fields before saving using the latest in-memory values
+      const latestValues = valuesRef.current;
+      const finalValues = resolvedFields && calculatedFieldsList.length > 0
+        ? (() => {
+            const results = runCalculations(calculatedFieldsList, latestValues);
+            setCalculationResults(results);
+            return mergeCalculatedValues(latestValues, results);
+          })()
+        : latestValues;
 
       // Get all field keys that have values
       const fieldKeysToSave = Object.keys(finalValues).filter(key => 
