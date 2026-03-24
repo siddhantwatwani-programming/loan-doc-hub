@@ -439,9 +439,16 @@ export const DealOverviewPage: React.FC = () => {
                 {statusConfig[deal.status].label}
               </Badge>
             </div>
-            <p className="text-muted-foreground mt-1">
-              {deal.state} • {deal.product_type} • {modeLabels[deal.mode]}
-            </p>
+            {(() => {
+              const parts = [
+                deal.state && deal.state !== 'TBD' ? deal.state : null,
+                deal.product_type && deal.product_type !== 'TBD' ? deal.product_type : null,
+                modeLabels[deal.mode],
+              ].filter(Boolean);
+              return parts.length > 0 ? (
+                <p className="text-muted-foreground mt-1">{parts.join(' • ')}</p>
+              ) : null;
+            })()}
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline" onClick={() => {
