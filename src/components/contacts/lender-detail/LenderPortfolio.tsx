@@ -85,10 +85,20 @@ function extractFieldValue(fv: Record<string, any>, fieldId: string, key: string
 }
 
 function parseFundingRecords(fv: Record<string, any>): any[] {
-  const raw = fv['loan_terms.funding_records'];
+  // Try UUID key first, then legacy key
+  const raw = fv[FIELD_IDS.fundingRecords] || fv['loan_terms.funding_records'];
   if (!raw) return [];
   try {
+    // Handle the field_values structure: { value_text: "[...]", value_json: ... }
+    if (typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {
+      const textVal = raw.value_text || raw.value_json;
+      if (textVal) {
+        const parsed = typeof textVal === 'string' ? JSON.parse(textVal) : textVal;
+        if (Array.isArray(parsed)) return parsed;
+      }
+    }
     const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (Array.isArray(parsed)) return parsed;
     if (typeof parsed === 'object' && parsed !== null) {
       const val = parsed.value_json || parsed.value_text;
       const records = val ? (typeof val === 'string' ? JSON.parse(val) : val) : parsed;
