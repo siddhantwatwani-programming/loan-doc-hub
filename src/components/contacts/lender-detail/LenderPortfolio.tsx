@@ -22,6 +22,8 @@ const FIELD_IDS = {
   principalBalance: '27c1bee2-05d4-46e5-a16b-e10c1e38cafd',
   maturityDate: '33fadfcb-b70c-4425-944e-23044f21a06b',
   nextPaymentDate: '384a8113-5d6d-47fd-9146-b3b1e9f65037',
+  fundingRecords: 'fe607d1f-3d27-4e37-8d10-326ac34d7a3f',
+  fundingHistory: 'b179de11-dbe6-4e3b-b987-0a155114bc52',
 };
 
 interface PortfolioRow {
@@ -83,10 +85,20 @@ function extractFieldValue(fv: Record<string, any>, fieldId: string, key: string
 }
 
 function parseFundingRecords(fv: Record<string, any>): any[] {
-  const raw = fv['loan_terms.funding_records'];
+  // Try UUID key first, then legacy key
+  const raw = fv[FIELD_IDS.fundingRecords] || fv['loan_terms.funding_records'];
   if (!raw) return [];
   try {
+    // Handle the field_values structure: { value_text: "[...]", value_json: ... }
+    if (typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {
+      const textVal = raw.value_text || raw.value_json;
+      if (textVal) {
+        const parsed = typeof textVal === 'string' ? JSON.parse(textVal) : textVal;
+        if (Array.isArray(parsed)) return parsed;
+      }
+    }
     const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (Array.isArray(parsed)) return parsed;
     if (typeof parsed === 'object' && parsed !== null) {
       const val = parsed.value_json || parsed.value_text;
       const records = val ? (typeof val === 'string' ? JSON.parse(val) : val) : parsed;
