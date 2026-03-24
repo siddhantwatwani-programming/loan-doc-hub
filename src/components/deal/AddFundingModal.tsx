@@ -361,7 +361,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                       <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-[9999]" align="start"><Calendar mode="single" selected={interestFromDate} onSelect={(d) => { setInterestFromDate(d); setInterestFromOpen(false); }} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start"><Calendar mode="single" selected={interestFromDate} onSelect={(d) => { setInterestFromDate(d); setInterestFromOpen(false); }} onClear={() => { setInterestFromDate(undefined); setInterestFromOpen(false); }} onToday={() => { setInterestFromDate(new Date()); setInterestFromOpen(false); }} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
                 </Popover>
               </div>
             </div>

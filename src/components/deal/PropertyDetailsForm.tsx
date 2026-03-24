@@ -258,6 +258,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar mode="single" selected={parseDate(getFieldValue(FIELD_KEYS.yearBuilt))}
                   onSelect={(date) => date && onValueChange(FIELD_KEYS.yearBuilt, format(date, 'yyyy-MM-dd'))}
+                  onClear={() => onValueChange(FIELD_KEYS.yearBuilt, '')}
+                  onToday={() => onValueChange(FIELD_KEYS.yearBuilt, format(new Date(), 'yyyy-MM-dd'))}
                   initialFocus className="p-3 pointer-events-auto" />
               </PopoverContent>
             </Popover>

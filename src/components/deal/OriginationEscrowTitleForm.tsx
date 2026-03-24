@@ -144,6 +144,8 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar mode="single" selected={parseDate(v(key))}
               onSelect={(date) => { if (date) sv(key, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
+              onClear={() => { sv(key, ''); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
+              onToday={() => { sv(key, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
               initialFocus className="p-3 pointer-events-auto" />
           </PopoverContent>
         </Popover>
