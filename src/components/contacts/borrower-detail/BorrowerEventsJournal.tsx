@@ -6,169 +6,128 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
-} from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { BookOpen, X, ExternalLink, Columns, ChevronDown } from 'lucide-react';
+import { BookOpen, Columns, ChevronDown } from 'lucide-react';
 import { GridToolbar, FilterOption } from '@/components/deal/GridToolbar';
 import { GridExportDialog, ExportColumn } from '@/components/deal/GridExportDialog';
 import { SortableTableHead } from '@/components/deal/SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
-import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
+import type { ContactEventJournalEntry, ContactFieldChange } from '@/hooks/useContactEventJournal';
 
-interface AggregatedEvent {
+interface BorrowerEventRow {
   id: string;
   event_number: number;
-  deal_id: string;
-  deal_number: string;
   section: string;
   actor_name: string;
-  actor_user_id: string;
-  details: any[];
+  details: ContactFieldChange[];
   created_at: string;
   ip_address: string | null;
   event_summary: string;
+  event_type: string;
 }
 
-const SEARCH_FIELDS = ['actor_name', 'section', 'event_number', 'deal_number', 'event_summary', 'ip_address'];
+const SEARCH_FIELDS = ['actor_name', 'section', 'event_number', 'event_summary', 'ip_address'];
+
+const SECTION_OPTIONS = [
+  { value: 'borrower_profile', label: 'Borrower Profile' },
+  { value: 'contact_info', label: 'Contact Info' },
+  { value: 'banking', label: 'Banking' },
+  { value: 'authorized_party', label: 'Authorized Party' },
+  { value: 'tax_info', label: 'Tax Info' },
+  { value: 'attachments', label: 'Attachments' },
+  { value: 'notes', label: 'Notes' },
+  { value: 'status', label: 'Status' },
+];
 
 const FILTER_OPTIONS: FilterOption[] = [
-  {
-    id: 'section', label: 'Section', options: [
-      { value: 'borrower', label: 'Borrower' },
-      { value: 'co_borrower', label: 'Co-Borrower' },
-      { value: 'loan_terms', label: 'Loan Terms' },
-      { value: 'property', label: 'Property' },
-      { value: 'lender', label: 'Lender' },
-      { value: 'broker', label: 'Broker' },
-      { value: 'charges', label: 'Charges' },
-      { value: 'notes', label: 'Notes' },
-      { value: 'participants', label: 'Participants' },
-      { value: 'insurance', label: 'Insurance' },
-      { value: 'liens', label: 'Liens' },
-    ],
-  },
+  { id: 'section', label: 'Section', options: SECTION_OPTIONS },
 ];
 
 const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'event_number', label: 'Event #' },
-  { id: 'created_at', label: 'Date / Time' },
-  { id: 'deal_number', label: 'Loan Reference' },
+  { id: 'created_at', label: 'Timestamp' },
   { id: 'section', label: 'Section' },
-  { id: 'actor_name', label: 'Performed By' },
-  { id: 'event_summary', label: 'Event Summary' },
+  { id: 'actor_name', label: 'User' },
+  { id: 'event_summary', label: 'Details' },
   { id: 'ip_address', label: 'IP Address' },
 ];
 
 const ALL_COLUMNS = [
   { id: 'event_number', label: 'Event #', default: true },
-  { id: 'created_at', label: 'Date / Time', default: true },
-  { id: 'deal_number', label: 'Loan Reference', default: true },
+  { id: 'created_at', label: 'Timestamp', default: true },
   { id: 'section', label: 'Section', default: true },
-  { id: 'actor_name', label: 'Performed By', default: true },
-  { id: 'event_summary', label: 'Event Summary', default: true },
+  { id: 'actor_name', label: 'User', default: true },
+  { id: 'event_summary', label: 'Details', default: true },
   { id: 'ip_address', label: 'IP Address', default: true },
 ];
 
-function buildEventSummary(details: any[]): string {
+function buildEventSummary(details: ContactFieldChange[]): string {
   if (!Array.isArray(details) || details.length === 0) return 'No details';
   const text = details
-    .map((d: any) => `${d.fieldLabel || d.field || ''}: ${d.oldValue || '(empty)'} → ${d.newValue || '(empty)'}`)
+    .map((d) => `${d.fieldLabel || 'Field'}: ${d.oldValue || '(empty)'} → ${d.newValue || '(empty)'}`)
     .join('; ');
-  return text.length > 100 ? text.substring(0, 100) + '…' : text;
+  return text.length > 120 ? text.substring(0, 120) + '…' : text;
+}
+
+function inferEventType(details: ContactFieldChange[]): string {
+  if (!details || details.length === 0) return 'update';
+  const hasAllEmpty = details.every(d => !d.oldValue || d.oldValue === '(empty)');
+  const hasAllNew = details.every(d => !d.newValue || d.newValue === '(empty)');
+  if (hasAllEmpty) return 'create';
+  if (hasAllNew) return 'delete';
+  return 'update';
 }
 
 const BorrowerEventsJournal: React.FC<{ borrowerId: string; contactDbId: string }> = ({ contactDbId }) => {
-  const [selectedEvent, setSelectedEvent] = useState<AggregatedEvent | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<BorrowerEventRow | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [visibleCols, setVisibleCols] = useState<Set<string>>(
     new Set(ALL_COLUMNS.filter(c => c.default).map(c => c.id))
   );
-  const { openFile } = useWorkspace();
 
   const { data: events = [], isLoading, refetch } = useQuery({
-    queryKey: ['borrower-events-journal', contactDbId],
+    queryKey: ['borrower-contact-events-journal', contactDbId],
     enabled: !!contactDbId,
     queryFn: async () => {
-      // Step 1: Get all deals where this contact is a borrower participant
-      const { data: participants, error: pErr } = await supabase
-        .from('deal_participants')
-        .select('deal_id')
-        .eq('contact_id', contactDbId)
-        .eq('role', 'borrower');
+      const { data: contact, error } = await supabase
+        .from('contacts')
+        .select('contact_data')
+        .eq('id', contactDbId)
+        .single();
 
-      if (pErr) throw pErr;
-      if (!participants || participants.length === 0) return [];
+      if (error) throw error;
 
-      const dealIds = [...new Set(participants.map(p => p.deal_id))];
+      const contactData = (contact?.contact_data || {}) as Record<string, any>;
+      const journal: ContactEventJournalEntry[] = contactData._events_journal || [];
 
-      // Step 2: Fetch events and deals in parallel
-      const [eventsResult, dealsResult] = await Promise.all([
-        supabase
-          .from('event_journal')
-          .select('*')
-          .in('deal_id', dealIds)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('deals')
-          .select('id, deal_number')
-          .in('id', dealIds),
-      ]);
-
-      if (eventsResult.error) throw eventsResult.error;
-      if (!eventsResult.data || eventsResult.data.length === 0) return [];
-
-      const dealMap: Record<string, string> = {};
-      (dealsResult.data || []).forEach((d: any) => { dealMap[d.id] = d.deal_number; });
-
-      // Step 3: Fetch actor names
-      const actorIds = [...new Set(eventsResult.data.map((e: any) => e.actor_user_id))];
-      let profileMap: Record<string, string> = {};
-      if (actorIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, full_name, email')
-          .in('user_id', actorIds);
-        (profiles || []).forEach((p: any) => {
-          profileMap[p.user_id] = p.full_name || p.email || 'Unknown';
-        });
-      }
-
-      return eventsResult.data.map((e: any): AggregatedEvent => {
-        const details = Array.isArray(e.details) ? e.details : [];
-        return {
-          id: e.id,
-          event_number: e.event_number,
-          deal_id: e.deal_id,
-          deal_number: dealMap[e.deal_id] || 'Unknown',
-          section: e.section,
-          actor_name: profileMap[e.actor_user_id] || 'Unknown',
-          actor_user_id: e.actor_user_id,
-          details,
-          created_at: e.created_at,
-          ip_address: e.ip_address || null,
-          event_summary: buildEventSummary(details),
-        };
-      });
+      return journal
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .map((entry): BorrowerEventRow => ({
+          id: entry.id,
+          event_number: entry.eventNumber,
+          section: entry.section,
+          actor_name: entry.user,
+          details: entry.details || [],
+          created_at: entry.created_at,
+          ip_address: entry.ip_address || null,
+          event_summary: buildEventSummary(entry.details || []),
+          event_type: inferEventType(entry.details || []),
+        }));
     },
   });
 
   const { searchQuery, setSearchQuery, sortState, toggleSort, activeFilters, setFilter, clearFilters, activeFilterCount, filteredData } =
     useGridSortFilter(events, SEARCH_FIELDS);
 
-  // Summary metrics
   const metrics = useMemo(() => {
     const monthStart = startOfMonth(new Date());
     const thisMonth = events.filter(e => new Date(e.created_at) >= monthStart).length;
-    const docEvents = events.filter(e => e.section === 'documents' || e.section === 'notes').length;
-    const servicingEvents = events.filter(e =>
-      ['charges', 'loan_terms', 'insurance', 'liens'].includes(e.section)
-    ).length;
-    return { total: events.length, thisMonth, docEvents, servicingEvents };
+    const profileEvents = events.filter(e => e.section === 'borrower_profile' || e.section === 'contact_info').length;
+    const bankingEvents = events.filter(e => e.section === 'banking' || e.section === 'tax_info').length;
+    return { total: events.length, thisMonth, profileEvents, bankingEvents };
   }, [events]);
 
   const toggleCol = (colId: string) => {
@@ -179,23 +138,9 @@ const BorrowerEventsJournal: React.FC<{ borrowerId: string; contactDbId: string 
     });
   };
 
-  const handleRowClick = (event: AggregatedEvent) => {
+  const handleRowClick = (event: BorrowerEventRow) => {
     setSelectedEvent(event);
     setDrawerOpen(true);
-  };
-
-  const handleOpenDeal = async (dealId: string) => {
-    const { data: deal } = await supabase.from('deals').select('deal_number, state, product_type').eq('id', dealId).single();
-    if (deal) {
-      openFile({
-        id: dealId,
-        dealNumber: deal.deal_number,
-        state: deal.state || 'TBD',
-        productType: deal.product_type || 'TBD',
-        openedAt: Date.now(),
-      });
-    }
-    setDrawerOpen(false);
   };
 
   if (isLoading) {
@@ -212,7 +157,7 @@ const BorrowerEventsJournal: React.FC<{ borrowerId: string; contactDbId: string 
         <div className="text-center">
           <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">Events Journal</h3>
-          <p className="text-muted-foreground">No events recorded for this borrower.</p>
+          <p className="text-muted-foreground">No borrower events recorded.</p>
         </div>
       </div>
     );
@@ -227,8 +172,8 @@ const BorrowerEventsJournal: React.FC<{ borrowerId: string; contactDbId: string 
         {[
           { label: 'Total Events', value: metrics.total },
           { label: 'Events This Month', value: metrics.thisMonth },
-          { label: 'Document Events', value: metrics.docEvents },
-          { label: 'Servicing Events', value: metrics.servicingEvents },
+          { label: 'Profile Events', value: metrics.profileEvents },
+          { label: 'Banking / Tax Events', value: metrics.bankingEvents },
         ].map(m => (
           <div key={m.label} className="bg-card border border-border rounded-lg p-3">
             <p className="text-xs text-muted-foreground">{m.label}</p>
@@ -238,7 +183,7 @@ const BorrowerEventsJournal: React.FC<{ borrowerId: string; contactDbId: string 
       </div>
 
       <div className="flex items-center justify-between">
-        <h4 className="text-lg font-semibold text-foreground">Events Journal</h4>
+        <h4 className="text-lg font-semibold text-foreground">Borrower Events Journal</h4>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1">
@@ -278,19 +223,16 @@ const BorrowerEventsJournal: React.FC<{ borrowerId: string; contactDbId: string 
                 <SortableTableHead columnId="event_number" label="Event #" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[80px] text-xs" />
               )}
               {visibleCols.has('created_at') && (
-                <SortableTableHead columnId="created_at" label="Date / Time" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[160px] text-xs" />
-              )}
-              {visibleCols.has('deal_number') && (
-                <SortableTableHead columnId="deal_number" label="Loan Reference" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[130px] text-xs" />
+                <SortableTableHead columnId="created_at" label="Timestamp" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[160px] text-xs" />
               )}
               {visibleCols.has('section') && (
-                <SortableTableHead columnId="section" label="Section" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[120px] text-xs" />
+                <SortableTableHead columnId="section" label="Section" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[140px] text-xs" />
               )}
               {visibleCols.has('actor_name') && (
-                <SortableTableHead columnId="actor_name" label="Performed By" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[150px] text-xs" />
+                <SortableTableHead columnId="actor_name" label="User" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[150px] text-xs" />
               )}
               {visibleCols.has('event_summary') && (
-                <TableHead className="text-xs">Event Summary</TableHead>
+                <TableHead className="text-xs">Details</TableHead>
               )}
               {visibleCols.has('ip_address') && (
                 <SortableTableHead columnId="ip_address" label="IP Address" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[130px] text-xs" />
@@ -314,9 +256,6 @@ const BorrowerEventsJournal: React.FC<{ borrowerId: string; contactDbId: string 
                     <TableCell className="text-xs text-muted-foreground">
                       {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
                     </TableCell>
-                  )}
-                  {visibleCols.has('deal_number') && (
-                    <TableCell className="text-xs font-medium text-primary">{entry.deal_number}</TableCell>
                   )}
                   {visibleCols.has('section') && (
                     <TableCell className="text-xs capitalize">{entry.section.replace(/_/g, ' ')}</TableCell>
@@ -361,12 +300,12 @@ const BorrowerEventsJournal: React.FC<{ borrowerId: string; contactDbId: string 
             <div className="mt-6 space-y-4">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="text-muted-foreground text-xs">Loan Reference</p>
-                  <p className="font-medium text-foreground">{selectedEvent.deal_number}</p>
-                </div>
-                <div>
                   <p className="text-muted-foreground text-xs">Section</p>
                   <p className="font-medium text-foreground capitalize">{selectedEvent.section.replace(/_/g, ' ')}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Event Type</p>
+                  <p className="font-medium text-foreground capitalize">{selectedEvent.event_type}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs">Performed By</p>
@@ -379,11 +318,11 @@ const BorrowerEventsJournal: React.FC<{ borrowerId: string; contactDbId: string 
               </div>
 
               <div>
-                <p className="text-muted-foreground text-xs mb-2">Event Details</p>
+                <p className="text-muted-foreground text-xs mb-2">Field Changes</p>
                 <div className="space-y-2 bg-muted/30 rounded-lg p-3">
-                  {selectedEvent.details.length > 0 ? selectedEvent.details.map((d: any, i: number) => (
+                  {selectedEvent.details.length > 0 ? selectedEvent.details.map((d, i) => (
                     <div key={i} className="text-sm">
-                      <span className="font-medium text-foreground">{d.fieldLabel || d.field || 'Field'}:</span>{' '}
+                      <span className="font-medium text-foreground">{d.fieldLabel || 'Field'}:</span>{' '}
                       <span className="text-muted-foreground">{d.oldValue || '(empty)'}</span>
                       <span className="mx-1 text-primary">→</span>
                       <span className="text-foreground">{d.newValue || '(empty)'}</span>
@@ -394,10 +333,12 @@ const BorrowerEventsJournal: React.FC<{ borrowerId: string; contactDbId: string 
                 </div>
               </div>
 
-              <Button variant="outline" className="w-full gap-2" onClick={() => handleOpenDeal(selectedEvent.deal_id)}>
-                <ExternalLink className="h-4 w-4" />
-                Open Deal Workspace
-              </Button>
+              <div>
+                <p className="text-muted-foreground text-xs mb-2">Full Event JSON</p>
+                <pre className="bg-muted/30 rounded-lg p-3 text-xs overflow-x-auto max-h-[200px]">
+                  {JSON.stringify(selectedEvent, null, 2)}
+                </pre>
+              </div>
             </div>
           )}
         </SheetContent>

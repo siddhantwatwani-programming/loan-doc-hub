@@ -18,6 +18,7 @@ import BorrowerAttachments from './BorrowerAttachments';
 import BorrowerEventsJournal from './BorrowerEventsJournal';
 import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { ContactRecord } from '@/hooks/useContactsCrud';
+import { logContactEvent, type ContactFieldChange } from '@/hooks/useContactEventJournal';
 
 interface ContactBorrowerDetailLayoutProps {
   contact: ContactRecord;
@@ -57,8 +58,42 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
       const stripped = NON_BORROWER_PREFIXES.some(p => key.startsWith(p)) ? key : key.replace(/^borrower\./, '');
       contactData[stripped] = value;
     });
-    await onSave(contact.id, contactData);
-  }, [values, contact.id, onSave]);
+
+    // Detect changes for event journal logging
+    const oldData = (contact.contact_data || {}) as Record<string, string>;
+    const changes: ContactFieldChange[] = [];
+    const allKeys = new Set([...Object.keys(oldData), ...Object.keys(contactData)]);
+    allKeys.forEach(key => {
+      if (key.startsWith('_')) return; // skip internal keys
+      const oldVal = oldData[key] || '';
+      const newVal = contactData[key] || '';
+      if (oldVal !== newVal) {
+        changes.push({ fieldLabel: key, oldValue: oldVal, newValue: newVal });
+      }
+    });
+
+    const saved = await onSave(contact.id, contactData);
+
+    // Log borrower profile event if changes were detected and save succeeded
+    if (saved && changes.length > 0) {
+      // Determine section based on changed fields
+      let section = 'borrower_profile';
+      const changedKeys = changes.map(c => c.fieldLabel);
+      if (changedKeys.some(k => k.startsWith('ach.') || k.includes('bank') || k.includes('routing'))) {
+        section = 'banking';
+      } else if (changedKeys.some(k => k.includes('tax') || k.includes('tin') || k.startsWith('borrower.1098'))) {
+        section = 'tax_info';
+      } else if (changedKeys.some(k => k.includes('authorized'))) {
+        section = 'authorized_party';
+      } else if (changedKeys.some(k => k.includes('email') || k.includes('phone') || k.includes('address') || k.includes('mailing'))) {
+        section = 'contact_info';
+      }
+
+      logContactEvent(contact.id, section, changes).catch(err =>
+        console.error('Failed to log borrower event:', err)
+      );
+    }
+  }, [values, contact.id, contact.contact_data, onSave]);
 
   const emptyFields: any[] = [];
   const emptyDirty = new Set<string>();
