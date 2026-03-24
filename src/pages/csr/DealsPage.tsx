@@ -410,8 +410,6 @@ export const DealsPage: React.FC = () => {
                     <td className="py-4 px-4 text-foreground">
                       {deal.borrower_name || <span className="text-muted-foreground">—</span>}
                     </td>
-                    <td className="py-4 px-4 text-foreground">{deal.state}</td>
-                    <td className="py-4 px-4 text-foreground text-sm">{deal.product_type}</td>
                     <td className="py-4 px-4">
                       <span className="text-xs text-muted-foreground">
                         {modeLabels[deal.mode]}
