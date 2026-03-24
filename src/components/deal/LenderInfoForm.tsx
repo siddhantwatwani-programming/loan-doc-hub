@@ -11,7 +11,7 @@ const safeParseDateStr = (val: string): Date | undefined => {
   }
 };
 
-const safeFormatDate = (val: string, fmt: string = 'MM/dd/yyyy'): string | undefined => {
+const safeFormatDate = (val: string, fmt: string = 'dd-MM-yyyy'): string | undefined => {
   const d = safeParseDateStr(val);
   return d ? format(d, fmt) : undefined;
 };
