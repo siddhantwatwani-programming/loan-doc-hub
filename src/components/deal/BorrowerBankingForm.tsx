@@ -326,7 +326,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                   >
                     {getValue('nextDebitDate')
                       ? format(parseDate(getValue('nextDebitDate'))!, 'dd-MM-yyyy')
-                      : 'mm/dd/yyyy'}
+                      : 'dd-mm-yyyy'}
                     <CalendarIcon className="ml-auto h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
@@ -335,6 +335,8 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                     mode="single"
                     selected={parseDate(getValue('nextDebitDate'))}
                     onSelect={(date) => { handleChange('nextDebitDate', date ? format(date, 'yyyy-MM-dd') : ''); setNextDebitOpen(false); }}
+                    onClear={() => { handleChange('nextDebitDate', ''); setNextDebitOpen(false); }}
+                    onToday={() => { handleChange('nextDebitDate', format(new Date(), 'yyyy-MM-dd')); setNextDebitOpen(false); }}
                     initialFocus
                     className="p-3 pointer-events-auto"
                   />
