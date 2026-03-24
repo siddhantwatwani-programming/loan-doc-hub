@@ -341,8 +341,7 @@ const BorrowerConversationLog: React.FC<{ borrowerId: string; contactDbId: strin
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0 z-[9999]" align="end">
-            <Calendar mode="single" selected={asOfDateFilter} onSelect={(d) => { setAsOfDateFilter(d); setAsOfFilterOpen(false); }} initialFocus />
-            {asOfDateFilter && <div className="px-3 pb-2"><Button variant="ghost" size="sm" className="text-xs w-full" onClick={() => { setAsOfDateFilter(undefined); setAsOfFilterOpen(false); }}>Clear</Button></div>}
+            <Calendar mode="single" selected={asOfDateFilter} onSelect={(d) => { setAsOfDateFilter(d); setAsOfFilterOpen(false); }} onClear={() => { setAsOfDateFilter(undefined); setAsOfFilterOpen(false); }} onToday={() => { setAsOfDateFilter(new Date()); setAsOfFilterOpen(false); }} initialFocus />
           </PopoverContent>
         </Popover>
 
@@ -506,7 +505,7 @@ const BorrowerConversationLog: React.FC<{ borrowerId: string; contactDbId: strin
             <div className="space-y-1">
               <Label className="text-xs">As Of Date</Label>
               <Popover open={addAsOfOpen} onOpenChange={setAddAsOfOpen}>
-                <PopoverTrigger asChild><Button variant="outline" className="w-full h-8 text-xs justify-start font-normal">{addAsOfDateObj ? format(addAsOfDateObj, 'MM/dd/yyyy') : <span className="text-muted-foreground">Select date</span>}<CalendarIcon className="h-3 w-3 ml-auto" /></Button></PopoverTrigger>
+                <PopoverTrigger asChild><Button variant="outline" className="w-full h-8 text-xs justify-start font-normal">{addAsOfDateObj ? format(addAsOfDateObj, 'dd-MM-yyyy') : <span className="text-muted-foreground">Select date</span>}<CalendarIcon className="h-3 w-3 ml-auto" /></Button></PopoverTrigger>
                 <PopoverContent className="w-auto p-0 z-[9999]" align="start"><Calendar mode="single" selected={addAsOfDateObj} onSelect={d => { setNewLog(p => ({ ...p, asOfDate: d ? d.toISOString() : '' })); setAddAsOfOpen(false); }} initialFocus /></PopoverContent>
               </Popover>
             </div>

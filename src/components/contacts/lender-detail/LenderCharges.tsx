@@ -378,8 +378,10 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
                         mode="single"
                         selected={(newCharge as any).date ? new Date((newCharge as any).date) : undefined}
                         onSelect={(date) => {
-                          setNewCharge(prev => ({ ...prev, date: date ? format(date, 'MM/dd/yyyy') : '' }));
+                          setNewCharge(prev => ({ ...prev, date: date ? format(date, 'dd-MM-yyyy') : '' }));
                         }}
+                        onClear={() => setNewCharge(prev => ({ ...prev, date: '' }))}
+                        onToday={() => setNewCharge(prev => ({ ...prev, date: format(new Date(), 'dd-MM-yyyy') }))}
                         initialFocus
                         className="p-3 pointer-events-auto"
                       />
