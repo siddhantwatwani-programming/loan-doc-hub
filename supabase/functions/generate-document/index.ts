@@ -791,6 +791,15 @@ async function generateSingleDocument(
         "existing_payoff_amount": "li_bp_existingPayoffAmount",
       };
 
+      // Reverse map: property1.lien_* canonical keys -> pr_li_* short keys
+      const canonicalToPrLi: Record<string, string> = {};
+      for (const [field, canonKey] of Object.entries(lienFieldToCanonical)) {
+        const prLiKey = lienFieldToPrLi[field];
+        if (prLiKey) {
+          canonicalToPrLi[canonKey] = prLiKey;
+        }
+      }
+
       for (const [key, val] of [...fieldValues.entries()]) {
         // Match lien1.holder, lien2.holder, lien.holder etc.
         const lienMatch = key.match(/^lien(\d*)\.(.+)$/);
@@ -807,6 +816,16 @@ async function generateSingleDocument(
           const liKey = lienFieldToLiKeys[field];
           if (liKey && !fieldValues.has(liKey)) {
             fieldValues.set(liKey, val);
+          }
+        }
+
+        // Match property1.lien_holder, property.lien_holder etc.
+        const propLienMatch = key.match(/^property\d*\.lien_(.+)$/);
+        if (propLienMatch && val.rawValue) {
+          const mapped = canonicalToPrLi[key];
+          if (mapped && !fieldValues.has(mapped)) {
+            fieldValues.set(mapped, val);
+            console.log(`[generate-document] Bridged ${key} -> ${mapped}`);
           }
         }
       }
