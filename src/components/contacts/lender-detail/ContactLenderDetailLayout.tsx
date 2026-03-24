@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import { SaveConfirmationDialog } from '@/components/workspace/SaveConfirmationDialog';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
