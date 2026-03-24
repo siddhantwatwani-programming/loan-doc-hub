@@ -337,10 +337,8 @@ const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ brokerId, contactDbId
   };
 
   const handleRowClick = useCallback((row: PortfolioRow) => {
-    if (workspace?.openFile) {
-      workspace.openFile({ id: row.dealId, type: 'deal', label: row.loanAccount });
-    }
-  }, [workspace]);
+    navigate(`/deals/${row.dealId}`);
+  }, [navigate]);
 
   const clearFilters = () => {
     setFilterStatus('all');
