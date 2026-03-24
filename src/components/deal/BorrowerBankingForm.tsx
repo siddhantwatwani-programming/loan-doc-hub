@@ -361,7 +361,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                   >
                     {getValue('stopDate')
                       ? format(parseDate(getValue('stopDate'))!, 'dd-MM-yyyy')
-                      : 'mm/dd/yyyy'}
+                      : 'dd-mm-yyyy'}
                     <CalendarIcon className="ml-auto h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
@@ -370,6 +370,8 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                     mode="single"
                     selected={parseDate(getValue('stopDate'))}
                     onSelect={(date) => { handleChange('stopDate', date ? format(date, 'yyyy-MM-dd') : ''); setStopDateOpen(false); }}
+                    onClear={() => { handleChange('stopDate', ''); setStopDateOpen(false); }}
+                    onToday={() => { handleChange('stopDate', format(new Date(), 'yyyy-MM-dd')); setStopDateOpen(false); }}
                     initialFocus
                     className="p-3 pointer-events-auto"
                   />
