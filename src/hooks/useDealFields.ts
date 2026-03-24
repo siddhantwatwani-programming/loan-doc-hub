@@ -754,8 +754,15 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Compute calculated fields before saving
-      const finalValues = computeCalculatedFields();
+      // Compute calculated fields before saving using the latest in-memory values
+      const latestValues = valuesRef.current;
+      const finalValues = resolvedFields && calculatedFieldsList.length > 0
+        ? (() => {
+            const results = runCalculations(calculatedFieldsList, latestValues);
+            setCalculationResults(results);
+            return mergeCalculatedValues(latestValues, results);
+          })()
+        : latestValues;
 
       // Get all field keys that have values
       const fieldKeysToSave = Object.keys(finalValues).filter(key => 
