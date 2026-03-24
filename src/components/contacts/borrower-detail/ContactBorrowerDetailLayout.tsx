@@ -18,6 +18,7 @@ import BorrowerAttachments from './BorrowerAttachments';
 import BorrowerEventsJournal from './BorrowerEventsJournal';
 import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { ContactRecord } from '@/hooks/useContactsCrud';
+import { logContactEvent, type ContactFieldChange } from '@/hooks/useContactEventJournal';
 
 interface ContactBorrowerDetailLayoutProps {
   contact: ContactRecord;
