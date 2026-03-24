@@ -12,6 +12,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { GlobalMessageDialog } from '@/components/messaging/GlobalMessageDialog';
 
 export const AppHeader: React.FC = () => {
@@ -20,8 +29,10 @@ export const AppHeader: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const { isCollapsed } = useSidebar();
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const handleSignOut = async () => {
+    setLogoutDialogOpen(false);
     await signOut();
     navigate('/auth');
   };
@@ -82,7 +93,7 @@ export const AppHeader: React.FC = () => {
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              onClick={handleSignOut}
+              onClick={() => setLogoutDialogOpen(true)}
               className="p-1.5 rounded-md hover:bg-destructive/10 text-destructive transition-colors"
               aria-label="Sign Out"
             >
@@ -99,6 +110,21 @@ export const AppHeader: React.FC = () => {
         open={messageDialogOpen}
         onOpenChange={setMessageDialogOpen}
       />
+
+      <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will be signed out of your account and redirected to the login page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={() => setLogoutDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleSignOut}>Log Out</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 };
