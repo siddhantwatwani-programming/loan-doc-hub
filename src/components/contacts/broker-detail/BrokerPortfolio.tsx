@@ -246,6 +246,7 @@ async function fetchBrokerPortfolio(contactDbId: string): Promise<PortfolioRow[]
   });
 }
 const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ brokerId, contactDbId }) => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
