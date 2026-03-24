@@ -246,6 +246,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
       liens: 'liens',
       origination_fees: 'origination',
       trust_ledger: 'trust_ledger',
+      participants: 'participants',
       funding: 'loan_terms',
       escrow: 'loan_terms',
       other: 'loan_terms',
