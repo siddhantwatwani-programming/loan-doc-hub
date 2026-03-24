@@ -45,6 +45,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
   });
 
   const initialValuesRef = useRef<Record<string, string>>({ ...values });
+  const isDirty = useMemo(() => JSON.stringify(values) !== JSON.stringify(initialValuesRef.current), [values]);
 
   const handleValueChange = useCallback((fieldKey: string, value: string) => {
     setValues(prev => ({ ...prev, [fieldKey]: value }));
