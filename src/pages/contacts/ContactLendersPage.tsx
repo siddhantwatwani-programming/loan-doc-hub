@@ -46,7 +46,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'first_name', label: 'First', visible: true },
   { id: 'middle_name', label: 'Middle', visible: false },
   { id: 'last_name', label: 'Last', visible: true },
-  { id: 'capacity', label: 'Capacity', visible: false },
+  
   { id: 'email', label: 'Email', visible: true },
   { id: 'dob', label: 'DOB', visible: false },
   { id: 'phone.home', label: 'Home Phone', visible: false },
