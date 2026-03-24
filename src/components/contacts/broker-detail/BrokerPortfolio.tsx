@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Filter, Download, Settings2 } from 'lucide-react';
@@ -13,7 +14,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { useWorkspace } from '@/contexts/WorkspaceContext';
 
 interface PortfolioRow {
   id: string;
@@ -64,11 +64,48 @@ interface BrokerPortfolioProps {
   contactDbId: string;
 }
 
+const FIELD_IDS = {
+  loanAmount: '163cd0b4-7cc0-4975-bcfb-43aa4be9c5c8',
+  noteRate: '969b2029-d56f-4789-8d77-1f9aecc88f2b',
+  principalBalance: '27c1bee2-05d4-46e5-a16b-e10c1e38cafd',
+  maturityDate: '33fadfcb-b70c-4425-944e-23044f21a06b',
+  nextPaymentDate: '384a8113-5d6d-47fd-9146-b3b1e9f65037',
+};
+
+function extractFieldValue(fv: Record<string, any>, fieldId: string, key: string): any {
+  const entry = fv[fieldId];
+  if (!entry) return null;
+  if (typeof entry === 'object' && entry !== null) return entry[key] ?? null;
+  return entry;
+}
+
 const fmtCurrency = (v: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(v);
 const fmtCurrencyShort = (v: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
 const fmtPct = (v: number) => (v != null && !isNaN(v) && v > 0 ? `${v.toFixed(2)}%` : '-');
+
+const fmtDate = (v: any) => {
+  if (!v) return '-';
+  try {
+    const d = new Date(String(v));
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleDateString('en-US');
+  } catch { return '-'; }
+};
+
+const resolveFieldByFragment = (fv: any, ...keyFragments: string[]): string => {
+  if (!fv || typeof fv !== 'object') return '';
+  for (const [key, val] of Object.entries(fv)) {
+    const valStr = String(val || '');
+    for (const frag of keyFragments) {
+      if (key.toLowerCase().includes(frag.toLowerCase())) return valStr;
+    }
+  }
+  return '';
+};
+
+const parseNum = (v: string) => { const n = Number(v.replace(/[^0-9.-]/g, '')); return isNaN(n) ? 0 : n; };
 
 async function fetchBrokerPortfolio(contactDbId: string): Promise<PortfolioRow[]> {
   const { data: participants, error: pErr } = await supabase
@@ -118,53 +155,47 @@ async function fetchBrokerPortfolio(contactDbId: string): Promise<PortfolioRow[]
     }
   });
 
-  const resolveField = (fv: any, ...keyFragments: string[]): string => {
-    if (!fv || typeof fv !== 'object') return '';
-    for (const [key, val] of Object.entries(fv)) {
-      const valStr = String(val || '');
-      for (const frag of keyFragments) {
-        if (key.toLowerCase().includes(frag.toLowerCase())) return valStr;
-      }
-    }
-    return '';
-  };
-
-  const parseNum = (v: string) => { const n = Number(v.replace(/[^0-9.-]/g, '')); return isNaN(n) ? 0 : n; };
-
   return deals.map(deal => {
     const loanTerms = sectionMap[deal.id]?.['loan_terms'] || {};
     const brokerData = sectionMap[deal.id]?.['broker'] || {};
     const origFees = sectionMap[deal.id]?.['origination_fees'] || {};
     const borrowerData = sectionMap[deal.id]?.['borrower'] || {};
 
-    const borrowerFromSection = resolveField(borrowerData, 'full_name', 'borrower_name', 'name');
+    // Extract using field dictionary UUIDs first, fall back to fragment matching
+    const loanAmountVal = extractFieldValue(loanTerms, FIELD_IDS.loanAmount, 'value_number');
+    const noteRateVal = extractFieldValue(loanTerms, FIELD_IDS.noteRate, 'value_number');
+    const principalBalanceVal = extractFieldValue(loanTerms, FIELD_IDS.principalBalance, 'value_number');
+    const maturityDateVal = extractFieldValue(loanTerms, FIELD_IDS.maturityDate, 'value_date')
+                         || extractFieldValue(loanTerms, FIELD_IDS.maturityDate, 'value_text');
+    const nextPaymentDateVal = extractFieldValue(loanTerms, FIELD_IDS.nextPaymentDate, 'value_date')
+                            || extractFieldValue(loanTerms, FIELD_IDS.nextPaymentDate, 'value_text');
+
+    const borrowerFromSection = resolveFieldByFragment(borrowerData, 'full_name', 'borrower_name', 'name');
     const borrowerName = borrowerFromSection || deal.borrower_name || '';
 
-    const noteRate = resolveField(loanTerms, 'note_rate', 'interest_rate', 'rate');
-    const regularPayment = resolveField(loanTerms, 'regular_payment', 'payment_amount', 'monthly_payment');
-    const principalBalance = resolveField(loanTerms, 'principal_balance', 'current_balance', 'outstanding_balance');
-    const nextPaymentDate = resolveField(loanTerms, 'next_payment', 'next_due');
-    const maturityDate = resolveField(loanTerms, 'maturity_date', 'maturity');
+    const displayLoanAmount = Number(loanAmountVal ?? deal.loan_amount ?? 0);
+    const displayNoteRate = Number(noteRateVal ?? 0);
+    const displayPrincipalBalance = Number(principalBalanceVal ?? loanAmountVal ?? deal.loan_amount ?? 0);
 
-    // Broker fee / commission
-    const brokerFeeRaw = resolveField(brokerData, 'broker_fee', 'commission', 'fee_amount') ||
-      resolveField(origFees, 'broker_fee', 'broker_commission', 'origination_fee');
+    // Broker fee / commission - use fragment matching on broker/origFees sections
+    const brokerFeeRaw = resolveFieldByFragment(brokerData, 'broker_fee', 'commission', 'fee_amount') ||
+      resolveFieldByFragment(origFees, 'broker_fee', 'broker_commission', 'origination_fee');
     const brokerFee = parseNum(brokerFeeRaw);
 
     // Commission percentage
-    const commissionPctRaw = resolveField(brokerData, 'commission_pct', 'fee_pct', 'broker_pct') ||
-      resolveField(origFees, 'broker_pct', 'commission_rate');
+    const commissionPctRaw = resolveFieldByFragment(brokerData, 'commission_pct', 'fee_pct', 'broker_pct') ||
+      resolveFieldByFragment(origFees, 'broker_pct', 'commission_rate');
     let commissionPct = parseNum(commissionPctRaw);
-    if (commissionPct === 0 && brokerFee > 0 && deal.loan_amount && deal.loan_amount > 0) {
-      commissionPct = (brokerFee / deal.loan_amount) * 100;
+    if (commissionPct === 0 && brokerFee > 0 && displayLoanAmount > 0) {
+      commissionPct = (brokerFee / displayLoanAmount) * 100;
     }
 
     // Funded amount
-    const fundedAmountRaw = resolveField(loanTerms, 'funded_amount', 'total_funded', 'disbursed');
-    const fundedAmount = parseNum(fundedAmountRaw) || deal.loan_amount || 0;
+    const fundedAmountRaw = resolveFieldByFragment(loanTerms, 'funded_amount', 'total_funded', 'disbursed');
+    const fundedAmount = parseNum(fundedAmountRaw) || displayLoanAmount;
 
     // Payment status for broker fee
-    const paymentStatusRaw = resolveField(brokerData, 'payment_status', 'fee_status', 'commission_status');
+    const paymentStatusRaw = resolveFieldByFragment(brokerData, 'payment_status', 'fee_status', 'commission_status');
     let paymentStatus = 'Pending';
     if (paymentStatusRaw.toLowerCase().includes('paid')) paymentStatus = 'Paid';
     else if (paymentStatusRaw.toLowerCase().includes('partial')) paymentStatus = 'Partial';
@@ -176,18 +207,18 @@ async function fetchBrokerPortfolio(contactDbId: string): Promise<PortfolioRow[]
     let dealStage = 'Pipeline';
     if (deal.status === 'generated') dealStage = 'Funded';
     if (deal.status === 'draft') dealStage = 'Pipeline';
-    const stageRaw = resolveField(brokerData, 'deal_stage', 'stage');
+    const stageRaw = resolveFieldByFragment(brokerData, 'deal_stage', 'stage');
     if (stageRaw.toLowerCase().includes('closed')) dealStage = 'Closed';
     if (stageRaw.toLowerCase().includes('cancel')) dealStage = 'Cancelled';
 
     // Lender assigned
-    const lenderAssigned = lenderMap.get(deal.id) || resolveField(loanTerms, 'lender_name', 'lender') || '-';
+    const lenderAssigned = lenderMap.get(deal.id) || resolveFieldByFragment(loanTerms, 'lender_name', 'lender') || '-';
 
     // Loan status
     let loanStatus = 'Active';
     if (deal.status === 'generated') loanStatus = 'Active';
     if (deal.status === 'draft') loanStatus = 'Draft';
-    const lsRaw = resolveField(loanTerms, 'loan_status', 'status');
+    const lsRaw = resolveFieldByFragment(loanTerms, 'loan_status', 'status');
     if (lsRaw.toLowerCase().includes('delinquent')) loanStatus = 'Delinquent';
     if (lsRaw.toLowerCase().includes('default')) loanStatus = 'Default';
     if (lsRaw.toLowerCase().includes('closed') || lsRaw.toLowerCase().includes('paid')) loanStatus = 'Closed';
@@ -198,7 +229,7 @@ async function fetchBrokerPortfolio(contactDbId: string): Promise<PortfolioRow[]
       loanAccount: deal.deal_number,
       borrowerName,
       loanStatus,
-      loanAmount: deal.loan_amount || 0,
+      loanAmount: displayLoanAmount,
       fundedAmount,
       brokerFee,
       commissionPct,
@@ -206,16 +237,16 @@ async function fetchBrokerPortfolio(contactDbId: string): Promise<PortfolioRow[]
       revenueEarned,
       dealStage,
       lenderAssigned,
-      noteRate: noteRate ? `${parseNum(noteRate)}%` : '-',
-      regularPayment: parseNum(regularPayment) > 0 ? fmtCurrency(parseNum(regularPayment)) : '-',
-      principalBalance: parseNum(principalBalance) > 0 ? fmtCurrency(parseNum(principalBalance)) : (deal.loan_amount ? fmtCurrency(deal.loan_amount) : '-'),
-      nextPaymentDate: nextPaymentDate || '-',
-      maturityDate: maturityDate || '-',
+      noteRate: displayNoteRate > 0 ? `${displayNoteRate}%` : '-',
+      regularPayment: displayPrincipalBalance > 0 ? fmtCurrency(displayPrincipalBalance) : '-',
+      principalBalance: displayPrincipalBalance > 0 ? fmtCurrency(displayPrincipalBalance) : (deal.loan_amount ? fmtCurrency(deal.loan_amount) : '-'),
+      nextPaymentDate: fmtDate(nextPaymentDateVal),
+      maturityDate: fmtDate(maturityDateVal),
     };
   });
 }
-
 const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ brokerId, contactDbId }) => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDirection>(null);
@@ -227,12 +258,6 @@ const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ brokerId, contactDbId
   const [filterStage, setFilterStage] = useState<string>('all');
   const [filterPayment, setFilterPayment] = useState<string>('all');
 
-  let workspace: any = null;
-  try {
-    workspace = useWorkspace();
-  } catch {
-    // workspace context not available
-  }
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ['broker-portfolio', contactDbId],
@@ -312,10 +337,8 @@ const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ brokerId, contactDbId
   };
 
   const handleRowClick = useCallback((row: PortfolioRow) => {
-    if (workspace?.openFile) {
-      workspace.openFile({ id: row.dealId, type: 'deal', label: row.loanAccount });
-    }
-  }, [workspace]);
+    navigate(`/deals/${row.dealId}`);
+  }, [navigate]);
 
   const clearFilters = () => {
     setFilterStatus('all');
