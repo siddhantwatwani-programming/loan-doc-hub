@@ -214,7 +214,7 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.tinType}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN Type</Label>
-              <Select value={getValue('tinType')} onValueChange={(value) => handleChange('tinType', value)} disabled={disabled}>
+              <Select value={getValue('tinType') || undefined} onValueChange={(value) => handleChange('tinType', value)} disabled={disabled}>
                 <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent className="bg-background z-50">
                   {TIN_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>))}
