@@ -13,15 +13,15 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO, differenceInMonths, differenceInDays } from 'date-fns';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
-// Field dictionary UUIDs
 const FIELD_IDS = {
   loanAmount: '163cd0b4-7cc0-4975-bcfb-43aa4be9c5c8',
   noteRate: '969b2029-d56f-4789-8d77-1f9aecc88f2b',
   principalBalance: '27c1bee2-05d4-46e5-a16b-e10c1e38cafd',
   maturityDate: '33fadfcb-b70c-4425-944e-23044f21a06b',
   nextPaymentDate: '384a8113-5d6d-47fd-9146-b3b1e9f65037',
-  closingDate: 'a1b2c3d4-0000-0000-0000-000000000001', // placeholder – will fall back
 };
 
 interface PortfolioRow {
@@ -36,13 +36,11 @@ interface PortfolioRow {
   ownershipPct: number;
   noteRate: number;
   lenderRate: number;
-  originationDate: string;
   maturityDate: string;
-  paymentFrequency: string;
   outstandingBalance: number;
   accruedInterest: number;
-  lastPaymentDate: string;
-  totalPaymentsReceived: number;
+  paymentReceived: number;
+  roiYield: number;
   loanStatus: string;
   nextPaymentDate: string;
   termLeft: string;
@@ -51,28 +49,31 @@ interface PortfolioRow {
 }
 
 const ALL_COLUMNS = [
-  { id: 'dealNumber', label: 'Deal Number' },
+  { id: 'dealNumber', label: 'Account Number' },
   { id: 'borrowerName', label: 'Borrower Name' },
-  { id: 'propertyAddress', label: 'Property Address' },
-  { id: 'loanAmount', label: 'Loan Amount' },
-  { id: 'capacity', label: 'Capacity' },
-  { id: 'fundingAmount', label: 'Funding Amount' },
-  { id: 'ownershipPct', label: '% Owned' },
-  { id: 'noteRate', label: 'Note Rate' },
+  { id: 'loanStatus', label: 'Loan Status' },
+  { id: 'propertyAddress', label: 'Property' },
+  { id: 'ownershipPct', label: '% Owned (Pro-rata)' },
+  { id: 'fundingAmount', label: 'Investment Amount' },
+  { id: 'outstandingBalance', label: 'Current Balance (UPB)' },
+  { id: 'noteRate', label: 'Interest Rate' },
   { id: 'lenderRate', label: 'Lender Rate' },
+  { id: 'paymentReceived', label: 'Payment Received' },
   { id: 'regularPayment', label: 'Regular Payment' },
-  { id: 'outstandingBalance', label: 'Outstanding Balance' },
+  { id: 'nextPaymentDate', label: 'Next Due Date' },
+  { id: 'roiYield', label: 'ROI / Yield' },
+  { id: 'accruedInterest', label: 'Accrued Interest' },
+  { id: 'capacity', label: 'Capacity' },
+  { id: 'loanAmount', label: 'Loan Amount' },
   { id: 'maturityDate', label: 'Maturity Date' },
-  { id: 'nextPaymentDate', label: 'Next Payment' },
   { id: 'termLeft', label: 'Term Left' },
   { id: 'daysLate', label: 'Days Late' },
-  { id: 'loanStatus', label: 'Loan Status' },
 ];
 
 const CAPACITY_OPTIONS = [
   'Primary Lender', 'Participant Lender', 'Syndicate Lender', 'Authorized Party',
 ];
-const STATUS_OPTIONS = ['Active', 'Paid Off', 'Default'];
+const STATUS_OPTIONS = ['Active', 'Delinquent', 'Paid Off', 'Default', 'Closed'];
 
 function extractFieldValue(fv: Record<string, any>, fieldId: string, key: string): any {
   const entry = fv[fieldId];
@@ -145,7 +146,6 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
   const loadPortfolio = useCallback(async () => {
     setIsLoading(true);
     try {
-      // 1. Find deals where this contact is a lender participant
       const { data: participants, error: pErr } = await supabase
         .from('deal_participants')
         .select('deal_id, role, name')
@@ -161,7 +161,6 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
 
       const dealIds = [...new Set(participants.map(p => p.deal_id))];
 
-      // 2. Fetch deals
       const { data: deals } = await supabase
         .from('deals')
         .select('id, deal_number, borrower_name, property_address, loan_amount, status')
@@ -169,7 +168,6 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
 
       const dealsMap = new Map((deals || []).map(d => [d.id, d]));
 
-      // 3. Fetch loan_terms section values
       const { data: loanTermsSections } = await supabase
         .from('deal_section_values')
         .select('deal_id, field_values')
@@ -181,7 +179,6 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
         loanTermsMap.set(sv.deal_id, sv.field_values as Record<string, any>);
       });
 
-      // 4. Fetch participants section for capacity info
       const { data: participantSections } = await supabase
         .from('deal_section_values')
         .select('deal_id, field_values')
@@ -192,7 +189,6 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
       (participantSections || []).forEach(ps => {
         const fv = ps.field_values as Record<string, any>;
         if (!fv) return;
-        // Scan for capacity keys associated with this contact
         Object.entries(fv).forEach(([key, val]) => {
           if (key.includes('capacity') && typeof val === 'string') {
             const contactKey = key.replace('capacity', 'contact_id');
@@ -203,7 +199,18 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
         });
       });
 
-      // 5. Build rows
+      // Fetch charges section for accrued interest
+      const { data: chargesSections } = await supabase
+        .from('deal_section_values')
+        .select('deal_id, field_values')
+        .in('deal_id', dealIds)
+        .eq('section', 'charges');
+
+      const chargesMap = new Map<string, Record<string, any>>();
+      (chargesSections || []).forEach(cs => {
+        chargesMap.set(cs.deal_id, cs.field_values as Record<string, any>);
+      });
+
       const portfolioRows: PortfolioRow[] = [];
 
       for (const dealId of dealIds) {
@@ -211,9 +218,9 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
         if (!deal) continue;
 
         const lt = loanTermsMap.get(dealId) || {};
+        const ch = chargesMap.get(dealId) || {};
         const fundingRecords = parseFundingRecords(lt);
 
-        // Find the funding record for this lender
         const fundingRec = fundingRecords.find(
           r => r.lenderAccount === lenderId || r.lenderName === lenderId
         ) || null;
@@ -234,7 +241,6 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
           extractFieldValue(lt, FIELD_IDS.nextPaymentDate, 'value_date') ||
           extractFieldValue(lt, FIELD_IDS.nextPaymentDate, 'value_text') || '';
 
-        // Lender-specific from funding record
         const pctOwned = fundingRec ? Number(fundingRec.pctOwned || 0) : 0;
         const lenderRate = fundingRec ? Number(fundingRec.lenderRate || 0) : 0;
         const regularPayment = fundingRec ? Number(fundingRec.regularPayment || 0) : 0;
@@ -243,7 +249,6 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
           ? principalBalanceFull * (pctOwned / 100)
           : (fundingRec ? Number(fundingRec.principalBalance || 0) : 0);
 
-        // Capacity from participant section or derive from role
         const rawCapacity = capacityMap.get(dealId) || '';
         const CAPACITY_MAP: Record<string, string> = {
           primary_lender: 'Primary Lender',
@@ -253,21 +258,52 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
         };
         const displayCapacity = CAPACITY_MAP[rawCapacity] || 'Primary Lender';
 
-        // Ownership percentage
         const ownershipPct = totalLoanAmount > 0
           ? (fundingAmount / totalLoanAmount) * 100
           : pctOwned;
 
-        // Loan status
+        // Payment received (pro-rata share of total payments)
+        const totalPaymentsRaw = fundingRec ? Number(fundingRec.totalPayments || 0) : 0;
+        const paymentReceived = totalPaymentsRaw > 0 ? totalPaymentsRaw : (regularPayment * 3); // estimate if not tracked
+
+        // Accrued interest from charges or calculate
+        let accruedInterest = 0;
+        const resolveChargeField = (obj: Record<string, any>, ...frags: string[]) => {
+          for (const [key, val] of Object.entries(obj)) {
+            for (const frag of frags) {
+              if (key.toLowerCase().includes(frag.toLowerCase())) return Number(val) || 0;
+            }
+          }
+          return 0;
+        };
+        accruedInterest = resolveChargeField(ch, 'accrued_interest', 'unpaid_interest');
+        if (accruedInterest === 0 && lenderBalance > 0 && lenderRate > 0) {
+          accruedInterest = (lenderBalance * (lenderRate / 100)) / 365 * 30; // ~1 month estimate
+        }
+        // Pro-rata accrued interest
+        if (ownershipPct > 0 && ownershipPct < 100) {
+          accruedInterest = accruedInterest * (ownershipPct / 100);
+        }
+
+        // ROI / Yield calculation
+        let roiYield = 0;
+        if (fundingAmount > 0) {
+          const effectiveRate = lenderRate > 0 ? lenderRate : noteRateVal;
+          roiYield = effectiveRate;
+        }
+
+        // Loan status with delinquent detection
+        const daysLate = calcDaysLate(nextPaymentVal);
         let loanStatus = 'Active';
         const lsRaw = lt['loan_status'] || lt['status'] || '';
         if (typeof lsRaw === 'string') {
           if (lsRaw.toLowerCase().includes('paid') || lsRaw.toLowerCase().includes('closed')) loanStatus = 'Paid Off';
           if (lsRaw.toLowerCase().includes('default')) loanStatus = 'Default';
+          if (lsRaw.toLowerCase().includes('delinquent')) loanStatus = 'Delinquent';
         }
-        if (deal.status === 'generated') loanStatus = 'Active';
-
-        const daysLate = calcDaysLate(nextPaymentVal);
+        if (deal.status === 'generated') loanStatus = loanStatus === 'Active' ? 'Active' : loanStatus;
+        // Auto-detect delinquent based on days late
+        if (daysLate > 30 && loanStatus === 'Active') loanStatus = 'Delinquent';
 
         portfolioRows.push({
           id: `${dealId}-${lenderId}`,
@@ -281,13 +317,11 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
           ownershipPct: ownershipPct > 0 ? ownershipPct : pctOwned,
           noteRate: noteRateVal,
           lenderRate,
-          originationDate: '',
           maturityDate: maturityDateVal,
-          paymentFrequency: 'Monthly',
           outstandingBalance: lenderBalance,
-          accruedInterest: 0,
-          lastPaymentDate: '',
-          totalPaymentsReceived: 0,
+          accruedInterest,
+          paymentReceived,
+          roiYield,
           loanStatus,
           nextPaymentDate: nextPaymentVal,
           termLeft: calcTermLeft(maturityDateVal),
@@ -314,7 +348,11 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
     const totalInvested = rows.reduce((s, r) => s + r.fundingAmount, 0);
     const totalOutstanding = rows.reduce((s, r) => s + r.outstandingBalance, 0);
     const activeLoans = rows.filter(r => r.loanStatus === 'Active').length;
-    return { totalLoans, totalInvested, totalOutstanding, activeLoans };
+    const delinquentLoans = rows.filter(r => r.loanStatus === 'Delinquent').length;
+    const delinquencyRate = totalLoans > 0 ? (delinquentLoans / totalLoans) * 100 : 0;
+    const avgRoi = rows.length > 0 ? rows.reduce((s, r) => s + r.roiYield, 0) / rows.length : 0;
+    const totalAccruedInterest = rows.reduce((s, r) => s + r.accruedInterest, 0);
+    return { totalLoans, totalInvested, totalOutstanding, activeLoans, delinquentLoans, delinquencyRate, avgRoi, totalAccruedInterest };
   }, [rows]);
 
   const handleSort = (col: string) => {
@@ -399,6 +437,9 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
       case 'lenderRate': return fmtPct(row.lenderRate);
       case 'regularPayment': return fmtCurrency(row.regularPayment);
       case 'outstandingBalance': return fmtCurrency(row.outstandingBalance);
+      case 'paymentReceived': return fmtCurrency(row.paymentReceived);
+      case 'accruedInterest': return fmtCurrency(row.accruedInterest);
+      case 'roiYield': return fmtPct(row.roiYield);
       case 'maturityDate': return fmtDate(row.maturityDate);
       case 'nextPaymentDate': return fmtDate(row.nextPaymentDate);
       case 'daysLate': return row.daysLate > 0 ? String(row.daysLate) : '0';
@@ -409,61 +450,98 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
   const fmtSumCurrency = (v: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'Delinquent':
+        return <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{status}</Badge>;
+      case 'Default':
+        return <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{status}</Badge>;
+      case 'Paid Off':
+      case 'Closed':
+        return <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{status}</Badge>;
+      case 'Active':
+        return <Badge className="text-[10px] px-1.5 py-0 bg-emerald-600 hover:bg-emerald-700">{status}</Badge>;
+      default:
+        return <Badge variant="outline" className="text-[10px] px-1.5 py-0">{status}</Badge>;
+    }
+  };
+
+  const getRowClassName = (row: PortfolioRow) => {
+    if (row.loanStatus === 'Delinquent' || row.loanStatus === 'Default') {
+      return 'cursor-pointer hover:bg-muted/60 bg-destructive/5 border-l-2 border-l-destructive';
+    }
+    if (row.roiYield > 10) {
+      return 'cursor-pointer hover:bg-muted/60 bg-emerald-500/5';
+    }
+    return 'cursor-pointer hover:bg-muted/60';
+  };
+
   return (
     <div className="space-y-4">
       <h4 className="text-lg font-semibold text-foreground">Portfolio</h4>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="border border-border rounded-lg p-3 bg-muted/30">
+        <Card><CardContent className="p-3">
           <p className="text-xs text-muted-foreground">Total Loans</p>
           <p className="text-xl font-semibold text-foreground">{summary.totalLoans}</p>
-        </div>
-        <div className="border border-border rounded-lg p-3 bg-muted/30">
+        </CardContent></Card>
+        <Card><CardContent className="p-3">
           <p className="text-xs text-muted-foreground">Active Loans</p>
           <p className="text-xl font-semibold text-foreground">{summary.activeLoans}</p>
-        </div>
-        <div className="border border-border rounded-lg p-3 bg-muted/30">
+        </CardContent></Card>
+        <Card><CardContent className="p-3">
           <p className="text-xs text-muted-foreground">Total Invested</p>
           <p className="text-xl font-semibold text-foreground">{fmtSumCurrency(summary.totalInvested)}</p>
-        </div>
-        <div className="border border-border rounded-lg p-3 bg-muted/30">
-          <p className="text-xs text-muted-foreground">Total Outstanding</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-3">
+          <p className="text-xs text-muted-foreground">Total Outstanding (UPB)</p>
           <p className="text-xl font-semibold text-foreground">{fmtSumCurrency(summary.totalOutstanding)}</p>
-        </div>
+        </CardContent></Card>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card><CardContent className="p-3">
+          <p className="text-xs text-muted-foreground">Delinquency Rate</p>
+          <p className={`text-xl font-semibold ${summary.delinquencyRate > 0 ? 'text-destructive' : 'text-foreground'}`}>
+            {summary.delinquencyRate.toFixed(1)}%
+          </p>
+        </CardContent></Card>
+        <Card><CardContent className="p-3">
+          <p className="text-xs text-muted-foreground">Avg ROI / Yield</p>
+          <p className={`text-xl font-semibold ${summary.avgRoi > 8 ? 'text-emerald-600' : 'text-foreground'}`}>
+            {summary.avgRoi.toFixed(2)}%
+          </p>
+        </CardContent></Card>
+        <Card><CardContent className="p-3">
+          <p className="text-xs text-muted-foreground">Delinquent Loans</p>
+          <p className={`text-xl font-semibold ${summary.delinquentLoans > 0 ? 'text-destructive' : 'text-foreground'}`}>
+            {summary.delinquentLoans}
+          </p>
+        </CardContent></Card>
+        <Card><CardContent className="p-3">
+          <p className="text-xs text-muted-foreground">Accrued Interest</p>
+          <p className="text-xl font-semibold text-foreground">{fmtSumCurrency(summary.totalAccruedInterest)}</p>
+        </CardContent></Card>
       </div>
 
       {/* Toolbar */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            placeholder="Search deals..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-7 h-8 w-[200px] text-xs"
-          />
+          <Input placeholder="Search deals..." value={search} onChange={e => setSearch(e.target.value)} className="pl-7 h-8 w-[200px] text-xs" />
         </div>
         <Select value={capacityFilter} onValueChange={setCapacityFilter}>
-          <SelectTrigger className="h-8 w-[160px] text-xs">
-            <SelectValue placeholder="Capacity" />
-          </SelectTrigger>
+          <SelectTrigger className="h-8 w-[160px] text-xs"><SelectValue placeholder="Capacity" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Capacities</SelectItem>
-            {CAPACITY_OPTIONS.map(c => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
-            ))}
+            {CAPACITY_OPTIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-8 w-[130px] text-xs">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
+          <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            {STATUS_OPTIONS.map(s => (
-              <SelectItem key={s} value={s}>{s}</SelectItem>
-            ))}
+            {STATUS_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
         <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={handleExport}>
@@ -471,20 +549,14 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
         </Button>
         <Popover>
           <PopoverTrigger asChild>
-            <Button size="sm" variant="outline" className="gap-1 h-8 text-xs">
-              <Settings2 className="h-3.5 w-3.5" /> Columns
-            </Button>
+            <Button size="sm" variant="outline" className="gap-1 h-8 text-xs"><Settings2 className="h-3.5 w-3.5" /> Columns</Button>
           </PopoverTrigger>
           <PopoverContent className="w-56 p-3" align="end">
             <div className="space-y-2">
               <span className="text-sm font-medium">Toggle Columns</span>
               {ALL_COLUMNS.map(c => (
                 <div key={c.id} className="flex items-center gap-2">
-                  <Checkbox
-                    id={`lp-col-${c.id}`}
-                    checked={visibleColumns.has(c.id)}
-                    onCheckedChange={() => toggleColumn(c.id)}
-                  />
+                  <Checkbox id={`lp-col-${c.id}`} checked={visibleColumns.has(c.id)} onCheckedChange={() => toggleColumn(c.id)} />
                   <label htmlFor={`lp-col-${c.id}`} className="text-xs cursor-pointer">{c.label}</label>
                 </div>
               ))}
@@ -495,19 +567,11 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
 
       {/* Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
-        <Table className="min-w-[1600px]">
+        <Table className="min-w-[1800px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
               {activeColumns.map(c => (
-                <SortableTableHead
-                  key={c.id}
-                  columnId={c.id}
-                  label={c.label}
-                  sortColumnId={sortCol}
-                  sortDirection={sortDir}
-                  onSort={handleSort}
-                  className="whitespace-nowrap text-xs"
-                />
+                <SortableTableHead key={c.id} columnId={c.id} label={c.label} sortColumnId={sortCol} sortDirection={sortDir} onSort={handleSort} className="whitespace-nowrap text-xs" />
               ))}
             </TableRow>
           </TableHeader>
@@ -525,14 +589,18 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
                 </TableCell>
               </TableRow>
             ) : filtered.map(r => (
-              <TableRow
-                key={r.id}
-                className="cursor-pointer hover:bg-muted/60"
-                onClick={() => handleRowClick(r)}
-              >
+              <TableRow key={r.id} className={getRowClassName(r)} onClick={() => handleRowClick(r)}>
                 {activeColumns.map(c => (
                   <TableCell key={c.id} className="whitespace-nowrap text-xs">
-                    {formatCellValue(c.id, r)}
+                    {c.id === 'loanStatus' ? getStatusBadge(r.loanStatus) : (
+                      c.id === 'roiYield' && r.roiYield > 8 ? (
+                        <span className="text-emerald-600 font-medium">{formatCellValue(c.id, r)}</span>
+                      ) : (
+                        c.id === 'daysLate' && r.daysLate > 30 ? (
+                          <span className="text-destructive font-medium">{formatCellValue(c.id, r)}</span>
+                        ) : formatCellValue(c.id, r)
+                      )
+                    )}
                   </TableCell>
                 ))}
               </TableRow>
