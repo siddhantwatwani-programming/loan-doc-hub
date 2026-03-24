@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ZipInput } from '@/components/ui/zip-input';
@@ -12,6 +12,10 @@ import { toast } from 'sonner';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { ContactBroker } from '@/pages/contacts/ContactBrokersPage';
 
 interface Props {
@@ -22,6 +26,10 @@ interface Props {
 
 export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCancel }) => {
   const [form, setForm] = useState<ContactBroker>({ ...broker });
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const initialSnapshot = useMemo(() => JSON.stringify(broker), [broker]);
+  const isDirty = JSON.stringify(form) !== initialSnapshot;
 
   const set = (field: keyof ContactBroker, value: string | boolean) =>
     setForm((p) => {
@@ -56,9 +64,23 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
         mailingZip: '',
       }));
     }
-    // only on toggle off
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.sameAsPrimary]);
+
+  const handleSaveClick = () => {
+    if (!hasAtLeastOneFieldFilled(form as any, ['brokerId', 'preferredPhone', 'type'])) {
+      toast.error('Please fill at least one field before saving');
+      return;
+    }
+    const phoneErrors = validatePhoneFields([
+      { label: 'Home Phone', value: form.homePhone },
+      { label: 'Work Phone', value: form.workPhone },
+      { label: 'Cell Phone', value: form.cellPhone },
+      { label: 'Fax', value: form.fax },
+    ]);
+    if (phoneErrors.length > 0) { toast.error(phoneErrors[0]); return; }
+    setShowConfirm(true);
+  };
 
   const SectionTitle = ({ children }: { children: React.ReactNode }) => (
     <h4 className="text-sm font-semibold text-foreground border-b border-border pb-1 mb-3 mt-6 first:mt-0">{children}</h4>
@@ -210,23 +232,25 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 pt-6">
-        <Button variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button onClick={() => {
-          if (!hasAtLeastOneFieldFilled(form as any, ['brokerId', 'preferredPhone', 'type'])) {
-            toast.error('Please fill at least one field before saving');
-            return;
-          }
-          const phoneErrors = validatePhoneFields([
-            { label: 'Home Phone', value: form.homePhone },
-            { label: 'Work Phone', value: form.workPhone },
-            { label: 'Cell Phone', value: form.cellPhone },
-            { label: 'Fax', value: form.fax },
-          ]);
-          if (phoneErrors.length > 0) { toast.error(phoneErrors[0]); return; }
-          onSave(form);
-        }}>Save</Button>
-      </div>
+      {isDirty && (
+        <div className="flex justify-end gap-2 pt-6">
+          <Button variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button onClick={handleSaveClick}>Save Changes</Button>
+        </div>
+      )}
+
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save Changes</AlertDialogTitle>
+            <AlertDialogDescription>Do you want to save the data?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => onSave(form)}>Yes, Save</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ZipInput } from '@/components/ui/zip-input';
@@ -13,6 +13,10 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { hasAtLeastOneFieldFilled, validatePhoneFields } from '@/lib/contactFormValidation';
 import { toast } from 'sonner';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { ContactLender } from '@/pages/contacts/ContactLendersPage';
 
 interface Props {
@@ -23,6 +27,10 @@ interface Props {
 
 export const ContactLenderDetailForm: React.FC<Props> = ({ lender, onSave, onCancel }) => {
   const [form, setForm] = useState<ContactLender>({ ...lender });
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const initialSnapshot = useMemo(() => JSON.stringify(lender), [lender]);
+  const isDirty = JSON.stringify(form) !== initialSnapshot;
 
   const set = (field: string, value: any) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -53,6 +61,21 @@ export const ContactLenderDetailForm: React.FC<Props> = ({ lender, onSave, onCan
         mailingZip: '',
       }));
     }
+  };
+
+  const handleSaveClick = () => {
+    if (!hasAtLeastOneFieldFilled(form as any, ['lenderId', 'preferredPhone', 'type'])) {
+      toast.error('Please fill at least one field before saving');
+      return;
+    }
+    const phoneErrors = validatePhoneFields([
+      { label: 'Home Phone', value: form.homePhone },
+      { label: 'Work Phone', value: form.workPhone },
+      { label: 'Cell Phone', value: form.cellPhone },
+      { label: 'Fax', value: form.fax },
+    ]);
+    if (phoneErrors.length > 0) { toast.error(phoneErrors[0]); return; }
+    setShowConfirm(true);
   };
 
   return (
@@ -266,24 +289,26 @@ export const ContactLenderDetailForm: React.FC<Props> = ({ lender, onSave, onCan
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex justify-end gap-2 pt-4">
-        <Button variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button onClick={() => {
-          if (!hasAtLeastOneFieldFilled(form as any, ['lenderId', 'preferredPhone', 'type'])) {
-            toast.error('Please fill at least one field before saving');
-            return;
-          }
-          const phoneErrors = validatePhoneFields([
-            { label: 'Home Phone', value: form.homePhone },
-            { label: 'Work Phone', value: form.workPhone },
-            { label: 'Cell Phone', value: form.cellPhone },
-            { label: 'Fax', value: form.fax },
-          ]);
-          if (phoneErrors.length > 0) { toast.error(phoneErrors[0]); return; }
-          onSave(form);
-        }}>Save</Button>
-      </div>
+      {/* Actions - only visible when dirty */}
+      {isDirty && (
+        <div className="flex justify-end gap-2 pt-4">
+          <Button variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button onClick={handleSaveClick}>Save Changes</Button>
+        </div>
+      )}
+
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save Changes</AlertDialogTitle>
+            <AlertDialogDescription>Do you want to save the data?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => onSave(form)}>Yes, Save</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
