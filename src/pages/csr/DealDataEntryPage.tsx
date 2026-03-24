@@ -677,7 +677,9 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
               )}
             </div>
             <p className="text-muted-foreground mt-1">
-              {deal.deal_number} • {deal.state} • {deal.product_type}
+              {deal.deal_number}
+              {deal.state && deal.state !== 'TBD' ? ` • ${deal.state}` : ''}
+              {deal.product_type && deal.product_type !== 'TBD' ? ` • ${deal.product_type}` : ''}
             </p>
           </div>
 
