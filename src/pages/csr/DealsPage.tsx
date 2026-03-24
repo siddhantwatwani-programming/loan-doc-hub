@@ -390,8 +390,6 @@ export const DealsPage: React.FC = () => {
                 <tr className="border-b border-border">
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">File #</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Borrower</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">State</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Product</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Mode</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Amount</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
