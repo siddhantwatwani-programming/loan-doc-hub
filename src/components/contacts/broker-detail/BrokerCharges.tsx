@@ -48,6 +48,8 @@ const DateFieldPicker: React.FC<{ value: string; onChange: (v: string) => void }
             onChange(date ? format(date, 'dd-MM-yyyy') : '');
             setOpen(false);
           }}
+          onClear={() => { onChange(''); setOpen(false); }}
+          onToday={() => { onChange(format(new Date(), 'dd-MM-yyyy')); setOpen(false); }}
           initialFocus
           className={cn("p-3 pointer-events-auto")}
         />

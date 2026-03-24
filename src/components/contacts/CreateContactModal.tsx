@@ -274,6 +274,8 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                         set('dob', date ? format(date, 'dd-MM-yyyy') : '');
                         setDobOpen(false);
                       }}
+                      onClear={() => { set('dob', ''); setDobOpen(false); }}
+                      onToday={() => { set('dob', format(new Date(), 'dd-MM-yyyy')); setDobOpen(false); }}
                       initialFocus
                       className={cn("p-3 pointer-events-auto")}
                     />
