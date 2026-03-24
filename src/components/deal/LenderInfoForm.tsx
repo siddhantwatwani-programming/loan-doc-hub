@@ -299,7 +299,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                     )}
                     disabled={disabled}
                   >
-                    {safeFormatDate(getValue('dob')) || <span>Pick a date</span>}
+                    {safeFormatDate(getValue('dob')) || <span>dd-mm-yyyy</span>}
                     <CalendarIcon className="ml-auto h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
@@ -308,6 +308,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                     mode="single"
                     selected={safeParseDateStr(getValue('dob'))}
                     onSelect={(date) => { handleChange('dob', date ? format(date, 'yyyy-MM-dd') : ''); setDobOpen(false); }}
+                    onClear={() => { handleChange('dob', ''); setDobOpen(false); }}
+                    onToday={() => { handleChange('dob', format(new Date(), 'yyyy-MM-dd')); setDobOpen(false); }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
                   />
