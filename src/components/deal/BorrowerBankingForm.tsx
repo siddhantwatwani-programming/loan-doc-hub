@@ -325,7 +325,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                     )}
                   >
                     {getValue('nextDebitDate')
-                      ? format(parseDate(getValue('nextDebitDate'))!, 'MM/dd/yyyy')
+                      ? format(parseDate(getValue('nextDebitDate'))!, 'dd-MM-yyyy')
                       : 'mm/dd/yyyy'}
                     <CalendarIcon className="ml-auto h-4 w-4" />
                   </Button>
@@ -358,7 +358,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                     )}
                   >
                     {getValue('stopDate')
-                      ? format(parseDate(getValue('stopDate'))!, 'MM/dd/yyyy')
+                      ? format(parseDate(getValue('stopDate'))!, 'dd-MM-yyyy')
                       : 'mm/dd/yyyy'}
                     <CalendarIcon className="ml-auto h-4 w-4" />
                   </Button>

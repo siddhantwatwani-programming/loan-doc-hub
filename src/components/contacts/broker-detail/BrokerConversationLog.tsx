@@ -66,7 +66,7 @@ const formatDateDisplay = (isoStr: string): string => {
   try {
     const d = new Date(isoStr);
     if (isNaN(d.getTime())) return isoStr;
-    return format(d, 'MM/dd/yyyy');
+    return format(d, 'dd-MM-yyyy');
   } catch { return isoStr; }
 };
 

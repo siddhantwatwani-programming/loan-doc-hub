@@ -251,7 +251,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !getFieldValue(FIELD_KEYS.yearBuilt) && 'text-muted-foreground')} disabled={disabled}>
-                  {getFieldValue(FIELD_KEYS.yearBuilt) ? format(parseDate(getFieldValue(FIELD_KEYS.yearBuilt))!, 'MM/dd/yyyy') : 'Date'}
+                  {getFieldValue(FIELD_KEYS.yearBuilt) ? format(parseDate(getFieldValue(FIELD_KEYS.yearBuilt))!, 'dd-MM-yyyy') : 'Date'}
                   <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                 </Button>
               </PopoverTrigger>

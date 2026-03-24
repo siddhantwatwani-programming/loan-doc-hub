@@ -271,7 +271,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                       mode="single"
                       selected={form['dob'] ? new Date(form['dob']) : undefined}
                       onSelect={(date) => {
-                        set('dob', date ? format(date, 'MM/dd/yyyy') : '');
+                        set('dob', date ? format(date, 'dd-MM-yyyy') : '');
                         setDobOpen(false);
                       }}
                       initialFocus

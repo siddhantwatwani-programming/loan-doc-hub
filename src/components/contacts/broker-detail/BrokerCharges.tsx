@@ -45,7 +45,7 @@ const DateFieldPicker: React.FC<{ value: string; onChange: (v: string) => void }
           mode="single"
           selected={parsed}
           onSelect={(date) => {
-            onChange(date ? format(date, 'MM/dd/yyyy') : '');
+            onChange(date ? format(date, 'dd-MM-yyyy') : '');
             setOpen(false);
           }}
           initialFocus

@@ -115,7 +115,7 @@ const fmtPct = (v: number) => (v != null && !isNaN(v) ? `${v.toFixed(2)}%` : '-'
 
 const fmtDate = (v: string) => {
   if (!v) return '-';
-  try { return format(parseISO(v), 'MM/dd/yyyy'); } catch { return '-'; }
+  try { return format(parseISO(v), 'dd-MM-yyyy'); } catch { return '-'; }
 };
 
 function calcTermLeft(matStr: string): string {

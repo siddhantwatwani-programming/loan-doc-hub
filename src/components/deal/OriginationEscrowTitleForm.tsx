@@ -137,7 +137,7 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
         <Popover open={datePickerStates[key] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [key]: open }))}>
           <PopoverTrigger asChild>
             <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-sm', !v(key) && 'text-muted-foreground')} disabled={disabled}>
-              {v(key) ? format(parseDate(v(key))!, 'MM/dd/yyyy') : 'Date'}
+              {v(key) ? format(parseDate(v(key))!, 'dd-MM-yyyy') : 'Date'}
               <CalendarIcon className="ml-auto h-3.5 w-3.5" />
             </Button>
           </PopoverTrigger>
