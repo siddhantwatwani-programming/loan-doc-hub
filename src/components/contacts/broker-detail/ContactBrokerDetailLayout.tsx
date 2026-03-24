@@ -136,7 +136,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
       case 'history':
         return (
           <div className="p-6">
-            <BrokerHistory brokerId={contact.contact_id} />
+            <BrokerHistory brokerId={contact.contact_id} contactDbId={contact.id} />
           </div>
         );
       case 'charges':
