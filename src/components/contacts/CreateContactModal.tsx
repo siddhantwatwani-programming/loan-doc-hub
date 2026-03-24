@@ -228,6 +228,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   );
 
   const [dobOpen, setDobOpen] = useState(false);
+  const [borrowerDobOpen, setBorrowerDobOpen] = useState(false);
 
   return (
     <>
