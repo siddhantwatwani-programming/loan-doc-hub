@@ -262,8 +262,6 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                       mode="single"
                       selected={asOfDateObj}
                       onSelect={handleAsOfDateSelect}
-                      onClear={() => { setFormData(prev => ({ ...prev, asOfDate: '' })); setAsOfDateOpen(false); }}
-                      onToday={() => { handleAsOfDateSelect(new Date()); }}
                       initialFocus
                       className={cn("p-3 pointer-events-auto")}
                     />

@@ -97,7 +97,7 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
               className={cn('h-7 w-full justify-start text-left font-normal text-sm', !getValue(key) && 'text-muted-foreground')}
               disabled={disabled}
             >
-              {getValue(key) ? format(parseDate(getValue(key))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+              {getValue(key) ? format(parseDate(getValue(key))!, 'MM/dd/yyyy') : 'Date'}
               <CalendarIcon className="ml-auto h-3.5 w-3.5" />
             </Button>
           </PopoverTrigger>
@@ -106,8 +106,6 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
               mode="single"
               selected={parseDate(getValue(key))}
               onSelect={(date) => { if (date) setValue(key, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
-              onClear={() => { setValue(key, ''); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
-              onToday={() => { setValue(key, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
               initialFocus
               className={cn('p-3 pointer-events-auto')}
             />

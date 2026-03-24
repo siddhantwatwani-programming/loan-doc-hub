@@ -344,11 +344,11 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 <Popover open={fundingDateOpen} onOpenChange={setFundingDateOpen} modal={false}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn('h-7 text-sm w-full justify-start text-left font-normal flex-1', !fundingDate && 'text-muted-foreground')}>
-                      {fundingDate ? format(fundingDate, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                      {fundingDate ? format(fundingDate, 'MM/dd/yyyy') : 'Select date'}
                       <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-[9999]" align="start"><Calendar mode="single" selected={fundingDate} onSelect={(d) => { setFundingDate(d); setFundingDateOpen(false); }} onClear={() => { setFundingDate(undefined); setFundingDateOpen(false); }} onToday={() => { setFundingDate(new Date()); setFundingDateOpen(false); }} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start"><Calendar mode="single" selected={fundingDate} onSelect={(d) => { setFundingDate(d); setFundingDateOpen(false); }} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
                 </Popover>
               </div>
 
@@ -357,11 +357,11 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 <Popover open={interestFromOpen} onOpenChange={setInterestFromOpen} modal={false}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn('h-7 text-sm w-full justify-start text-left font-normal flex-1', !interestFromDate && 'text-muted-foreground')}>
-                      {interestFromDate ? format(interestFromDate, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                      {interestFromDate ? format(interestFromDate, 'MM/dd/yyyy') : 'Select date'}
                       <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-[9999]" align="start"><Calendar mode="single" selected={interestFromDate} onSelect={(d) => { setInterestFromDate(d); setInterestFromOpen(false); }} onClear={() => { setInterestFromDate(undefined); setInterestFromOpen(false); }} onToday={() => { setInterestFromDate(new Date()); setInterestFromOpen(false); }} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start"><Calendar mode="single" selected={interestFromDate} onSelect={(d) => { setInterestFromDate(d); setInterestFromOpen(false); }} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
                 </Popover>
               </div>
             </div>

@@ -251,15 +251,13 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !getFieldValue(FIELD_KEYS.yearBuilt) && 'text-muted-foreground')} disabled={disabled}>
-                  {getFieldValue(FIELD_KEYS.yearBuilt) ? format(parseDate(getFieldValue(FIELD_KEYS.yearBuilt))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                  {getFieldValue(FIELD_KEYS.yearBuilt) ? format(parseDate(getFieldValue(FIELD_KEYS.yearBuilt))!, 'MM/dd/yyyy') : 'Date'}
                   <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar mode="single" selected={parseDate(getFieldValue(FIELD_KEYS.yearBuilt))}
                   onSelect={(date) => date && onValueChange(FIELD_KEYS.yearBuilt, format(date, 'yyyy-MM-dd'))}
-                  onClear={() => onValueChange(FIELD_KEYS.yearBuilt, '')}
-                  onToday={() => onValueChange(FIELD_KEYS.yearBuilt, format(new Date(), 'yyyy-MM-dd'))}
                   initialFocus className="p-3 pointer-events-auto" />
               </PopoverContent>
             </Popover>

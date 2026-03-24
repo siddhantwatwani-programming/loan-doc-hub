@@ -263,7 +263,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn("h-7 text-xs flex-1 justify-start font-normal", !form['dob'] && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                      {form['dob'] || 'dd-mm-yyyy'}
+                      {form['dob'] || 'MM/DD/YYYY'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 z-[200]" align="start">
@@ -271,11 +271,9 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                       mode="single"
                       selected={form['dob'] ? new Date(form['dob']) : undefined}
                       onSelect={(date) => {
-                        set('dob', date ? format(date, 'dd-MM-yyyy') : '');
+                        set('dob', date ? format(date, 'MM/dd/yyyy') : '');
                         setDobOpen(false);
                       }}
-                      onClear={() => { set('dob', ''); setDobOpen(false); }}
-                      onToday={() => { set('dob', format(new Date(), 'dd-MM-yyyy')); setDobOpen(false); }}
                       initialFocus
                       className={cn("p-3 pointer-events-auto")}
                     />

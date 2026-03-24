@@ -176,7 +176,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
               isDisabled && 'bg-muted cursor-not-allowed'
             )}
           >
-            {isValidDate ? format(selectedDate, 'dd-MM-yyyy') : <span>dd-mm-yyyy</span>}
+            {isValidDate ? format(selectedDate, 'MM/dd/yyyy') : <span>Pick a date</span>}
             <CalendarIcon className="ml-auto h-3 w-3" />
           </Button>
         </PopoverTrigger>
@@ -185,8 +185,6 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
             mode="single"
             selected={isValidDate ? selectedDate : undefined}
             onSelect={handleDateSelect}
-            onClear={() => handleDateSelect(undefined)}
-            onToday={() => handleDateSelect(new Date())}
             initialFocus
             className="p-3 pointer-events-auto"
           />

@@ -66,7 +66,7 @@ const formatDateDisplay = (isoStr: string): string => {
   try {
     const d = new Date(isoStr);
     if (isNaN(d.getTime())) return isoStr;
-    return format(d, 'dd-MM-yyyy');
+    return format(d, 'MM/dd/yyyy');
   } catch { return isoStr; }
 };
 
@@ -303,7 +303,12 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string }>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 z-[9999]" align="end">
-              <Calendar mode="single" selected={asOfDateFilter} onSelect={(d) => { setAsOfDateFilter(d); setAsOfFilterOpen(false); }} onClear={() => { setAsOfDateFilter(undefined); setAsOfFilterOpen(false); }} onToday={() => { setAsOfDateFilter(new Date()); setAsOfFilterOpen(false); }} initialFocus />
+              <Calendar mode="single" selected={asOfDateFilter} onSelect={(d) => { setAsOfDateFilter(d); setAsOfFilterOpen(false); }} initialFocus />
+              {asOfDateFilter && (
+                <div className="px-3 pb-2">
+                  <Button variant="ghost" size="sm" className="text-xs w-full" onClick={() => { setAsOfDateFilter(undefined); setAsOfFilterOpen(false); }}>Clear</Button>
+                </div>
+              )}
             </PopoverContent>
           </Popover>
           <Popover>

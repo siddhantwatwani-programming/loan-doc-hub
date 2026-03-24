@@ -11,7 +11,7 @@ const safeParseDateStr = (val: string): Date | undefined => {
   }
 };
 
-const safeFormatDate = (val: string, fmt: string = 'dd-MM-yyyy'): string | undefined => {
+const safeFormatDate = (val: string, fmt: string = 'MM/dd/yyyy'): string | undefined => {
   const d = safeParseDateStr(val);
   return d ? format(d, fmt) : undefined;
 };
@@ -299,7 +299,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                     )}
                     disabled={disabled}
                   >
-                    {safeFormatDate(getValue('dob')) || <span>dd-mm-yyyy</span>}
+                    {safeFormatDate(getValue('dob')) || <span>Pick a date</span>}
                     <CalendarIcon className="ml-auto h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
@@ -308,8 +308,6 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                     mode="single"
                     selected={safeParseDateStr(getValue('dob'))}
                     onSelect={(date) => { handleChange('dob', date ? format(date, 'yyyy-MM-dd') : ''); setDobOpen(false); }}
-                    onClear={() => { handleChange('dob', ''); setDobOpen(false); }}
-                    onToday={() => { handleChange('dob', format(new Date(), 'yyyy-MM-dd')); setDobOpen(false); }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
                   />
@@ -469,7 +467,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("h-7 text-xs", !getValue('investorQuestionnaireDueDate') && "text-muted-foreground")} disabled={disabled}>
-                    {safeFormatDate(getValue('investorQuestionnaireDueDate')) || 'dd-mm-yyyy'}
+                    {safeFormatDate(getValue('investorQuestionnaireDueDate')) || 'Date'}
                     <CalendarIcon className="ml-auto h-3 w-3" />
                   </Button>
                 </PopoverTrigger>
@@ -478,8 +476,6 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                     mode="single"
                     selected={safeParseDateStr(getValue('investorQuestionnaireDueDate'))}
                     onSelect={(date) => handleChange('investorQuestionnaireDueDate', date ? format(date, 'yyyy-MM-dd') : '')}
-                    onClear={() => handleChange('investorQuestionnaireDueDate', '')}
-                    onToday={() => handleChange('investorQuestionnaireDueDate', format(new Date(), 'yyyy-MM-dd'))}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
                   />

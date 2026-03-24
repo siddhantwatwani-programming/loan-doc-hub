@@ -137,15 +137,13 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
         <Popover open={datePickerStates[key] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [key]: open }))}>
           <PopoverTrigger asChild>
             <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-sm', !v(key) && 'text-muted-foreground')} disabled={disabled}>
-              {v(key) ? format(parseDate(v(key))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+              {v(key) ? format(parseDate(v(key))!, 'MM/dd/yyyy') : 'Date'}
               <CalendarIcon className="ml-auto h-3.5 w-3.5" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar mode="single" selected={parseDate(v(key))}
               onSelect={(date) => { if (date) sv(key, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
-              onClear={() => { sv(key, ''); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
-              onToday={() => { sv(key, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
               initialFocus className="p-3 pointer-events-auto" />
           </PopoverContent>
         </Popover>
