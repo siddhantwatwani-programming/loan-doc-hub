@@ -527,12 +527,14 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
             }
           }
           setValues(mergedValues);
+          valuesRef.current = mergedValues;
           savedValuesSnapshotRef.current = { ...valuesMap }; // snapshot is DB state
           // Restore dirty state
           setDirtyFieldKeys(new Set(cached.dirtyKeys));
           setIsDirty(true);
         } else {
           setValues(valuesMap);
+          valuesRef.current = valuesMap;
           savedValuesSnapshotRef.current = { ...valuesMap };
         }
       }
