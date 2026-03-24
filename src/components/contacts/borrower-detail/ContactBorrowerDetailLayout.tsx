@@ -173,9 +173,11 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
           Borrower — {contact.contact_id}
           </h3>
         </div>
-        <Button size="sm" onClick={() => setShowSaveConfirm(true)} className="gap-1">
-          <Save className="h-4 w-4" /> Save Draft
-        </Button>
+        {isDirty && (
+          <Button size="sm" onClick={() => setShowSaveConfirm(true)} className="gap-1">
+            <Save className="h-4 w-4" /> Save Changes
+          </Button>
+        )}
       </div>
       <div className="flex flex-1 overflow-hidden">
         <BorrowerDetailSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
