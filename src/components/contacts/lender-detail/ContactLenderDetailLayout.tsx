@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import { SaveConfirmationDialog } from '@/components/workspace/SaveConfirmationDialog';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
   });
 
   const initialValuesRef = useRef<Record<string, string>>({ ...values });
+  const isDirty = useMemo(() => JSON.stringify(values) !== JSON.stringify(initialValuesRef.current), [values]);
 
   const handleValueChange = useCallback((fieldKey: string, value: string) => {
     setValues(prev => ({ ...prev, [fieldKey]: value }));
@@ -181,9 +182,11 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             Lender — {contact.contact_id}
           </h3>
         </div>
-        <Button size="sm" onClick={() => setShowSaveConfirm(true)} className="gap-1">
-          <Save className="h-4 w-4" /> Save Draft
-        </Button>
+        {isDirty && (
+          <Button size="sm" onClick={() => setShowSaveConfirm(true)} className="gap-1">
+            <Save className="h-4 w-4" /> Save Changes
+          </Button>
+        )}
       </div>
       <div className="flex flex-1 overflow-hidden">
         <LenderDetailSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
