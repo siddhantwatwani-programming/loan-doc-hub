@@ -228,6 +228,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   );
 
   const [dobOpen, setDobOpen] = useState(false);
+  const [borrowerDobOpen, setBorrowerDobOpen] = useState(false);
 
   return (
     <>
@@ -478,7 +479,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
         )}
 
         {contactType === 'borrower' && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-x-6 gap-y-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-6 gap-y-0">
             {/* Column 1: Name / Details */}
             <div className="space-y-1.5">
               <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Name</h3>
@@ -492,7 +493,29 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 <Label className="w-[100px] shrink-0 text-xs">Email</Label>
                 <EmailInput value={form['email'] || ''} onValueChange={(v) => set('email', v)} className="h-7 text-xs" />
               </div>
-              {renderInline('DOB', 'dob', 'date')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">DOB</Label>
+                <Popover open={borrowerDobOpen} onOpenChange={setBorrowerDobOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("h-7 text-xs flex-1 justify-start font-normal", !form['dob'] && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                      {form['dob'] || 'dd-mm-yyyy'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-[200]" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={form['dob'] ? new Date(form['dob']) : undefined}
+                      onSelect={(date) => {
+                        set('dob', date ? format(date, 'dd-MM-yyyy') : '');
+                        setBorrowerDobOpen(false);
+                      }}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
               <div className="pt-2 space-y-1">
                 {renderCheckbox('Hold', 'hold')}
                 {renderCheckbox('ACH', 'ach')}
@@ -501,7 +524,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               </div>
             </div>
 
-            {/* Column 2: Address */}
+            {/* Column 2: Primary Address + Mailing */}
             <div className="space-y-1.5">
               <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
               {renderInline('Street', 'address.street')}
@@ -524,7 +547,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               </div>
             </div>
 
-            {/* Column 3: Phone */}
+            {/* Column 3: Phone + Tax Info */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between border-b border-border pb-1 mb-2">
                 <h3 className="font-semibold text-xs text-foreground">Phone</h3>
@@ -549,24 +572,22 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                   />
                 </div>
               ))}
-            </div>
-
-            {/* Column 4: Tax Info */}
-            <div className="space-y-1.5">
-              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Tax Info</h3>
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">Tax ID Type</Label>
-                <Select value={form['tax_id_type'] || ''} onValueChange={(v) => set('tax_id_type', v)}>
-                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent className="bg-background border border-border z-[200]">
-                    {TAX_ID_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="pt-2 space-y-1">
+                <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Tax Info</h3>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs">Tax ID Type</Label>
+                  <Select value={form['tax_id_type'] || ''} onValueChange={(v) => set('tax_id_type', v)}>
+                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent className="bg-background border border-border z-[200]">
+                      {TAX_ID_TYPE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {renderInline('TIN', 'tax_id')}
+                {renderCheckbox('TIN Verified', 'tin_verified')}
               </div>
-              {renderInline('TIN', 'tax_id')}
-              {renderCheckbox('TIN Verified', 'tin_verified')}
             </div>
           </div>
         )}
