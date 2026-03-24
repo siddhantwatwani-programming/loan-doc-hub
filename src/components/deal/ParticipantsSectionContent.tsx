@@ -230,17 +230,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
     fetchParticipants();
   }, [fetchParticipants]);
 
-  useEffect(() => {
-    if (disabled) {
-      clearSelection();
-      setAddModalOpen(false);
-      setDeleteDialogOpen(false);
-    }
-  }, [clearSelection, disabled]);
-
   const handleRowClick = (participant: Participant) => {
-    if (disabled) return;
-
     if (!participant.contact_id) {
       navigateToContactByEmail(participant);
       return;
@@ -365,8 +355,6 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
   };
 
   const handleBulkDelete = async () => {
-    if (disabled || selectedIds.size === 0) return;
-
     setDeleting(true);
     try {
       const ids = Array.from(selectedIds);
@@ -525,7 +513,6 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
                 <Checkbox
                   checked={isAllSelected}
                   onCheckedChange={toggleAll}
-                  disabled={disabled}
                 />
               </TableHead>
               {visibleColumns.map((col) => (
@@ -544,16 +531,13 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             {filteredData.map((participant) => (
               <TableRow
                 key={participant.id}
-                className={cn(
-                  disabled ? 'cursor-default' : 'cursor-pointer hover:bg-muted/50'
-                )}
+                className="cursor-pointer hover:bg-muted/50"
                 onClick={() => handleRowClick(participant)}
               >
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <Checkbox
                     checked={selectedIds.has(participant.id)}
                     onCheckedChange={() => toggleOne(participant.id)}
-                    disabled={disabled}
                   />
                 </TableCell>
                 {visibleColumns.map((col) => (
