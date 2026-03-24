@@ -258,12 +258,6 @@ const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ brokerId, contactDbId
   const [filterStage, setFilterStage] = useState<string>('all');
   const [filterPayment, setFilterPayment] = useState<string>('all');
 
-  let workspace: any = null;
-  try {
-    workspace = useWorkspace();
-  } catch {
-    // workspace context not available
-  }
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ['broker-portfolio', contactDbId],
