@@ -555,6 +555,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
   const updateValue = useCallback((fieldKey: string, value: string, isRequiredField?: boolean) => {
     setValues(prev => {
       const next = { ...prev, [fieldKey]: value };
+      valuesRef.current = next;
 
       // Update sessionStorage cache with current unsaved state
       const savedValue = savedValuesSnapshotRef.current[fieldKey] ?? '';
