@@ -75,7 +75,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'send_pref.late_notice', label: 'Send Late Notice', visible: false },
   { id: 'send_pref.borrower_statement', label: 'Send Borrower Stmt', visible: false },
   { id: 'send_pref.maturity_notice', label: 'Send Maturity Notice', visible: false },
-  { id: 'company', label: 'Company', visible: false },
+  
 ];
 
 const LENDER_FILTER_OPTIONS: FilterOption[] = [
