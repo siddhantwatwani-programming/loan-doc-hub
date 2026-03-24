@@ -229,8 +229,8 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
 
   // Helper: check if a section/form is disabled due to form permissions
   const isSectionDisabledByFormPerm = (section: string): boolean => {
-    // Event_journal is a standalone section not gated by form permissions
-    if (section === 'event_journal') return false;
+    // Standalone sections not gated by form permissions
+    if (section === 'event_journal' || section === 'participants') return false;
 
     // Map section names to form_keys
     const sectionToFormKey: Record<string, string> = {
