@@ -327,7 +327,7 @@ const LenderTrustLedger: React.FC<{ lenderId: string; contactDbId: string }> = (
               <Label className="text-xs">Category</Label>
               <Select value={newEntry.category} onValueChange={v => setNewEntry(prev => ({ ...prev, category: v as any }))}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
+                <SelectContent className="!z-[9999]" position="popper">
                   <SelectItem value="all">All</SelectItem>
                   <SelectItem value="reserve">Reserve</SelectItem>
                   <SelectItem value="impound">Impound</SelectItem>
