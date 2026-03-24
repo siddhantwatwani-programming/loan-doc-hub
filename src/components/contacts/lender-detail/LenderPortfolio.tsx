@@ -22,6 +22,8 @@ const FIELD_IDS = {
   principalBalance: '27c1bee2-05d4-46e5-a16b-e10c1e38cafd',
   maturityDate: '33fadfcb-b70c-4425-944e-23044f21a06b',
   nextPaymentDate: '384a8113-5d6d-47fd-9146-b3b1e9f65037',
+  fundingRecords: 'fe607d1f-3d27-4e37-8d10-326ac34d7a3f',
+  fundingHistory: 'b179de11-dbe6-4e3b-b987-0a155114bc52',
 };
 
 interface PortfolioRow {
