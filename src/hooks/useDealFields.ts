@@ -266,6 +266,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
   const [deletedPrefixes, setDeletedPrefixes] = useState<string[]>([]);
   const isFetchingRef = useRef(false);
   const hasLoadedRef = useRef(false);
+  const valuesRef = useRef<Record<string, string>>({});
   const savedValuesSnapshotRef = useRef<Record<string, string>>({});
   const { logFieldChanges } = useEventJournalLogger();
 
