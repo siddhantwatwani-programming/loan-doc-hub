@@ -99,7 +99,7 @@ const filterByDate = (entries: LedgerEntry[], filter: string): LedgerEntry[] => 
 
 const EMPTY_ENTRY = { date: '', reference: '', fromWhomReceivedPaid: '', memo: '', payment: '', clr: '', deposit: '', balance: '', category: 'all' as const };
 
-const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string }> = ({ contactDbId }) => {
+const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; disabled?: boolean }> = ({ contactDbId, disabled = false }) => {
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [columns, setColumns, resetColumns] = useTableColumnConfig('borrower_trust_ledger', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter(c => c.visible);
@@ -181,13 +181,13 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string }>
         <div className="flex items-center gap-1">
           <TooltipProvider>
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="outline" size="icon" className="h-8 w-8"><Ban className="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" className="h-8 w-8" disabled={disabled}><Ban className="h-4 w-4" /></Button>
             </TooltipTrigger><TooltipContent>Void Transaction</TooltipContent></Tooltip>
 
             <DropdownMenu>
               <Tooltip><TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-8 w-8"><DollarSign className="h-4 w-4" /></Button>
+                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={disabled}><DollarSign className="h-4 w-4" /></Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger><TooltipContent>Transactions</TooltipContent></Tooltip>
               <DropdownMenuContent align="start">
@@ -202,13 +202,13 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string }>
             </DropdownMenu>
 
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="outline" size="icon" className="h-8 w-8"><FileText className="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" className="h-8 w-8" disabled={disabled}><FileText className="h-4 w-4" /></Button>
             </TooltipTrigger><TooltipContent>Info</TooltipContent></Tooltip>
 
             <DropdownMenu>
               <Tooltip><TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-8 w-8"><Building className="h-4 w-4" /></Button>
+                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={disabled}><Building className="h-4 w-4" /></Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger><TooltipContent>Banking</TooltipContent></Tooltip>
               <DropdownMenuContent align="start">
@@ -219,7 +219,7 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string }>
             </DropdownMenu>
 
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="outline" size="icon" className="h-8 w-8"><FileCheck className="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" className="h-8 w-8" disabled={disabled}><FileCheck className="h-4 w-4" /></Button>
             </TooltipTrigger><TooltipContent>Select & Print Checks</TooltipContent></Tooltip>
           </TooltipProvider>
         </div>
@@ -241,7 +241,7 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string }>
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
         selectedCount={selectedCount}
-        onBulkDelete={() => setBulkDeleteOpen(true)}
+        onBulkDelete={disabled ? undefined : () => setBulkDeleteOpen(true)}
         onExport={() => setExportDialogOpen(true)}
       />
 
@@ -255,9 +255,11 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string }>
         </Tabs>
         <div className="flex items-center gap-2">
           <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
-          <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(true)} className="gap-1 text-xs">
-            <Plus className="h-4 w-4" /> Add Entry
-          </Button>
+          {!disabled && (
+            <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(true)} className="gap-1 text-xs">
+              <Plus className="h-4 w-4" /> Add Entry
+            </Button>
+          )}
         </div>
       </div>
 

@@ -157,10 +157,11 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
           <BorrowerTrustLedger
             borrowerId={contact.contact_id}
             contactDbId={contact.id}
+            disabled={isReadOnly}
           />
         );
       case 'conversation-log':
-        return <BorrowerConversationLog borrowerId={contact.contact_id} contactDbId={contact.id} />;
+        return <BorrowerConversationLog borrowerId={contact.contact_id} contactDbId={contact.id} disabled={isReadOnly} />;
       case 'attachments':
         return <BorrowerAttachments borrowerId={contact.contact_id} contactDbId={contact.id} />;
       case 'events-journal':
