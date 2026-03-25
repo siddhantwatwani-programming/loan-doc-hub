@@ -329,7 +329,7 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
   };
 
   const handleRowClick = (row: PortfolioLoan) => {
-    navigate(`/deals/${row.dealId}/data`);
+    navigate(`/deals/${row.dealId}`);
   };
 
   const formatSummaryCurrency = (val: number) =>
