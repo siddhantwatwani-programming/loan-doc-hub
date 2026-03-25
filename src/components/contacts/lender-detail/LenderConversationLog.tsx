@@ -303,7 +303,6 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 z-[9999]" align="end">
               <EnhancedCalendar mode="single" selected={asOfDateFilter} onSelect={(d) => { setAsOfDateFilter(d); setAsOfFilterOpen(false); }} onClear={() => { setAsOfDateFilter(undefined); setAsOfFilterOpen(false); }} onToday={() => { setAsOfDateFilter(new Date()); setAsOfFilterOpen(false); }} initialFocus />
-              )}
             </PopoverContent>
           </Popover>
           <Popover>
