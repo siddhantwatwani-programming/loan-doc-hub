@@ -176,6 +176,24 @@ export async function fetchMergeTagMappings(supabase: any): Promise<MergeTagMapp
  * 4. Merge tag alias mapping
  * 5. Case-insensitive fallback
  */
+// Module-level cache for lowercase valid-key index
+let _lowerValidKeysCache: Map<string, string> | null = null;
+let _lowerValidKeysSource: Set<string> | null = null;
+
+function getLowerValidKeysIndex(validFieldKeys: Set<string>): Map<string, string> {
+  if (_lowerValidKeysCache && _lowerValidKeysSource === validFieldKeys) {
+    return _lowerValidKeysCache;
+  }
+  const m = new Map<string, string>();
+  for (const k of validFieldKeys) {
+    const lower = k.toLowerCase();
+    if (!m.has(lower)) m.set(lower, k);
+  }
+  _lowerValidKeysCache = m;
+  _lowerValidKeysSource = validFieldKeys;
+  return m;
+}
+
 export function resolveFieldKeyWithBackwardCompat(
   tagName: string,
   mergeTagMap: Record<string, string>,
@@ -210,18 +228,17 @@ export function resolveFieldKeyWithBackwardCompat(
   if (mergeTagMap[tagName]) return mergeTagMap[tagName];
   if (mergeTagMap[cleanedTag]) return mergeTagMap[cleanedTag];
   
-  // Priority 5: Case-insensitive lookup against valid field keys
+  // Priority 5: Case-insensitive lookup against valid field keys (O(1) via index)
   if (validFieldKeys) {
-    for (const key of validFieldKeys) {
-      if (key.toLowerCase() === lowerTag) return key;
-    }
+    const lowerIndex = getLowerValidKeysIndex(validFieldKeys);
+    const ciMatch = lowerIndex.get(lowerTag);
+    if (ciMatch) return ciMatch;
     
     // Try with underscores converted to dots (legacy format)
     const dotVersion = cleanedTag.replace(/_/g, ".");
     if (validFieldKeys.has(dotVersion)) return dotVersion;
-    for (const key of validFieldKeys) {
-      if (key.toLowerCase() === dotVersion.toLowerCase()) return key;
-    }
+    const dotMatch = lowerIndex.get(dotVersion.toLowerCase());
+    if (dotMatch) return dotMatch;
   }
   
   // Fallback: return as-is (might not match)
