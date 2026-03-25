@@ -97,7 +97,7 @@ const getEmptyLog = (): Omit<LogRow, 'id'> => {
   };
 };
 
-const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string }> = ({ brokerId, contactDbId }) => {
+const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string; disabled?: boolean }> = ({ brokerId, contactDbId, disabled = false }) => {
   const [rows, setRows] = useState<LogRow[]>([]);
   const [search, setSearch] = useState('');
   const [sortCol, setSortCol] = useState<string | null>(null);
