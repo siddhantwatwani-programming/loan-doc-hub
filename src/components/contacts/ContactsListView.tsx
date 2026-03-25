@@ -39,6 +39,7 @@ interface ContactsListViewProps {
   filterOptions?: FilterOption[];
   renderCellValue?: (contact: ContactRecord, columnId: string) => React.ReactNode;
   searchPlaceholder?: string;
+  createDisabled?: boolean;
 }
 
 export const ContactsListView: React.FC<ContactsListViewProps> = ({
@@ -61,6 +62,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
   filterOptions = [],
   renderCellValue,
   searchPlaceholder,
+  createDisabled = false,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig(tableConfigKey, defaultColumns);
   const visibleColumns = columns.filter((c) => c.visible);
@@ -212,7 +214,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
         <h3 className="font-semibold text-lg text-foreground">{title}</h3>
         <div className="flex items-center gap-2">
           <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
-          <Button variant="outline" size="sm" onClick={onCreateNew} className="gap-1">
+          <Button variant="outline" size="sm" onClick={onCreateNew} className="gap-1" disabled={createDisabled}>
             <Plus className="h-4 w-4" /> {addButtonLabel || 'Create New'}
           </Button>
         </div>

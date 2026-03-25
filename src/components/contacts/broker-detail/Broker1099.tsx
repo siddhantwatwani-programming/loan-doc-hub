@@ -18,9 +18,10 @@ interface Broker1099Props {
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   onSave: () => Promise<void>;
+  disabled?: boolean;
 }
 
-const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave }) => {
+const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave, disabled = false }) => {
   const [form, setForm] = useState<TaxData>({
     tinType: values['broker.1099.tin_type'] || '0',
     tin: values['broker.1099.tin'] || values['broker.tin'] || '',
@@ -41,6 +42,7 @@ const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave }
   };
 
   const handleSave = async () => {
+    if (disabled) return;
     await onSave();
     toast.success('1099 information saved.');
   };
@@ -52,7 +54,7 @@ const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave }
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label>TIN Type</Label>
-          <Select value={form.tinType} onValueChange={v => update('tinType', v)}>
+          <Select value={form.tinType} onValueChange={v => update('tinType', v)} disabled={disabled}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="0">0 - Unknown</SelectItem>
@@ -61,41 +63,41 @@ const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave }
             </SelectContent>
           </Select>
         </div>
-        <div><Label>TIN</Label><Input value={form.tin} onChange={e => update('tin', e.target.value)} /></div>
-        <div className="col-span-2"><Label>Account Number</Label><Input value={form.accountNumber} onChange={e => update('accountNumber', e.target.value)} /></div>
+        <div><Label>TIN</Label><Input value={form.tin} onChange={e => update('tin', e.target.value)} disabled={disabled} /></div>
+        <div className="col-span-2"><Label>Account Number</Label><Input value={form.accountNumber} onChange={e => update('accountNumber', e.target.value)} disabled={disabled} /></div>
       </div>
 
       <div className="space-y-4">
         <h5 className="text-sm font-medium text-foreground border-b border-border pb-1">Address</h5>
         <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2"><Label>Street</Label><Input value={form.street} onChange={e => update('street', e.target.value)} /></div>
-          <div><Label>City</Label><Input value={form.city} onChange={e => update('city', e.target.value)} /></div>
+          <div className="col-span-2"><Label>Street</Label><Input value={form.street} onChange={e => update('street', e.target.value)} disabled={disabled} /></div>
+          <div><Label>City</Label><Input value={form.city} onChange={e => update('city', e.target.value)} disabled={disabled} /></div>
           <div>
             <Label>State</Label>
-            <Select value={form.state} onValueChange={v => update('state', v)}>
+            <Select value={form.state} onValueChange={v => update('state', v)} disabled={disabled}>
               <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>
                 {US_STATES.map(s => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
               </SelectContent>
             </Select>
           </div>
-          <div><Label>ZIP</Label><Input value={form.zip} onChange={e => update('zip', e.target.value)} /></div>
+          <div><Label>ZIP</Label><Input value={form.zip} onChange={e => update('zip', e.target.value)} disabled={disabled} /></div>
         </div>
       </div>
 
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
-          <Checkbox checked={form.send1099} onCheckedChange={v => update('send1099', !!v)} id="send1099" />
+          <Checkbox checked={form.send1099} onCheckedChange={v => update('send1099', !!v)} id="send1099" disabled={disabled} />
           <Label htmlFor="send1099">Send 1099</Label>
         </div>
         <div className="flex items-center gap-2">
-          <Checkbox checked={form.taxExempt} onCheckedChange={v => update('taxExempt', !!v)} id="taxExempt" />
+          <Checkbox checked={form.taxExempt} onCheckedChange={v => update('taxExempt', !!v)} id="taxExempt" disabled={disabled} />
           <Label htmlFor="taxExempt">Tax Exempt</Label>
         </div>
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button onClick={handleSave}>Save 1099</Button>
+        <Button onClick={handleSave} disabled={disabled}>Save 1099</Button>
       </div>
     </div>
   );

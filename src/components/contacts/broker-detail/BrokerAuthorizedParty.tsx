@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 
 interface AuthParty { id: string; name: string; email: string; phone: string; title: string; }
 
-const BrokerAuthorizedParty: React.FC<{ brokerId: string }> = () => {
+const BrokerAuthorizedParty: React.FC<{ brokerId: string; disabled?: boolean }> = ({ disabled = false }) => {
   const [parties, setParties] = useState<AuthParty[]>([]);
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
@@ -22,11 +22,11 @@ const BrokerAuthorizedParty: React.FC<{ brokerId: string }> = () => {
   });
 
   const handleAdd = useCallback(() => {
-    if (!form.name) return;
+    if (disabled || !form.name) return;
     setParties(prev => [...prev, { ...form, id: crypto.randomUUID() }]);
     setForm({ name: '', email: '', phone: '', title: '' });
     setModalOpen(false);
-  }, [form]);
+  }, [disabled, form]);
 
   return (
     <div className="space-y-4">
@@ -37,7 +37,7 @@ const BrokerAuthorizedParty: React.FC<{ brokerId: string }> = () => {
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-8 h-9 w-[200px]" />
           </div>
-          <Button variant="outline" size="sm" onClick={() => setModalOpen(true)} className="gap-1"><Plus className="h-4 w-4" /> Add Party</Button>
+          <Button variant="outline" size="sm" onClick={() => setModalOpen(true)} className="gap-1" disabled={disabled}><Plus className="h-4 w-4" /> Add Party</Button>
         </div>
       </div>
 
@@ -63,16 +63,16 @@ const BrokerAuthorizedParty: React.FC<{ brokerId: string }> = () => {
         </Table>
       </div>
 
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+      <Dialog open={modalOpen} onOpenChange={(open) => { if (!disabled) setModalOpen(open); }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Add Authorized Party</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Name</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
-            <div><Label>Email</Label><EmailInput value={form.email} onValueChange={(v) => setForm(p => ({ ...p, email: v }))} /></div>
-            <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
-            <div><Label>Role / Title</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} /></div>
+            <div><Label>Name</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} disabled={disabled} /></div>
+            <div><Label>Email</Label><EmailInput value={form.email} onValueChange={(v) => setForm(p => ({ ...p, email: v }))} disabled={disabled} /></div>
+            <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} disabled={disabled} /></div>
+            <div><Label>Role / Title</Label><Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} disabled={disabled} /></div>
           </div>
-          <DialogFooter><Button onClick={handleAdd}>Add</Button></DialogFooter>
+          <DialogFooter><Button onClick={handleAdd} disabled={disabled}>Add</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

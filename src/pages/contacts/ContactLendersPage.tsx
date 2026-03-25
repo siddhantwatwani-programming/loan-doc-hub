@@ -97,10 +97,11 @@ const ContactLendersPage: React.FC = () => {
   const { contactId } = useParams<{ contactId?: string }>();
   const navigate = useNavigate();
   const crud = useContactsCrud({ contactType: 'lender' });
-  const { isFormViewOnly } = useFormPermissions();
+  const { loading: permissionsLoading, isFormViewOnly } = useFormPermissions();
   const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const deepLinkLoaded = useRef(false);
+  const isReadOnly = permissionsLoading || isFormViewOnly('lender');
 
   // Deep-link: auto-load contact by URL param
   useEffect(() => {
@@ -149,12 +150,13 @@ const ContactLendersPage: React.FC = () => {
   }, [localSearch]);
 
   const handleCreate = useCallback(async (data: Record<string, string>) => {
+    if (isReadOnly) return;
     await crud.createContact(data);
     setModalOpen(false);
-  }, [crud]);
+  }, [crud, isReadOnly]);
 
   const handleSave = useCallback(async (id: string, contactData: Record<string, string>) => {
-    if (isFormViewOnly('lender')) {
+    if (isReadOnly) {
       return false;
     }
     const result = await crud.updateContact(id, contactData);
@@ -162,11 +164,12 @@ const ContactLendersPage: React.FC = () => {
       setSelectedContact(null);
     }
     return result;
-  }, [crud, isFormViewOnly]);
+  }, [crud, isReadOnly]);
 
   const handleDeleteSelected = useCallback(async (ids: string[]) => {
+    if (isReadOnly) return;
     await crud.deleteContacts(ids);
-  }, [crud]);
+  }, [crud, isReadOnly]);
 
   if (selectedContact) {
     return (
@@ -194,13 +197,14 @@ const ContactLendersPage: React.FC = () => {
         onPageChange={crud.setCurrentPage}
         onRowClick={setSelectedContact}
         onCreateNew={() => setModalOpen(true)}
-        onDeleteSelected={handleDeleteSelected}
+         onDeleteSelected={isReadOnly ? undefined : handleDeleteSelected}
         defaultColumns={DEFAULT_COLUMNS}
         tableConfigKey="contact_lenders_v5"
         addButtonLabel="Add Lender"
         breadcrumbLabel="Lenders"
         filterOptions={LENDER_FILTER_OPTIONS}
         searchPlaceholder="Search by Lender ID, Type, or Name..."
+         createDisabled={isReadOnly}
       />
       <CreateContactModal
         open={modalOpen}
