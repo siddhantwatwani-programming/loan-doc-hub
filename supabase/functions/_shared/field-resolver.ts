@@ -368,4 +368,8 @@ export function clearMergeTagCache(): void {
   cachedFieldKeyMigrations = null;
   cachedCanonicalKeyMap = null;
   cacheTimestamp = 0;
+  _lowerValidKeysCache = null;
+  _lowerValidKeysSource = null;
+  _lowerFieldValuesCache = null;
+  _lowerFieldValuesSource = null;
 }
