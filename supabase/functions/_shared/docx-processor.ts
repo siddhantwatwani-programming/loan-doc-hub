@@ -16,8 +16,10 @@ import { replaceMergeTags } from "./tag-parser.ts";
 const PROCESSED_XML_COMPRESSION_LEVEL = 1;
 const UNCHANGED_XML_COMPRESSION_LEVEL = 0;
 
+const PROCESSED_XML_COMPRESSION_LEVEL = 0;
+const UNCHANGED_XML_COMPRESSION_LEVEL = 0;
+
 export async function processDocx(
-  docxBuffer: Uint8Array,
   fieldValues: Map<string, FieldValueData>,
   fieldTransforms: Map<string, string>,
   mergeTagMap: Record<string, string>,

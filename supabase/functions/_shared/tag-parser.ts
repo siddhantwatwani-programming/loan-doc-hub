@@ -1082,6 +1082,18 @@ export function replaceMergeTags(
   labelMap: Record<string, LabelMapping>,
   validFieldKeys?: Set<string>
 ): string {
+  const contentLower = content.toLowerCase();
+  const hasMergeMarkers = content.includes('{{') || content.includes('}}') || content.includes('«') || content.includes('»') || content.includes('MERGEFIELD') || content.includes('w:fldChar') || content.includes('w:fldSimple') || content.includes('w:instrText');
+  const hasCheckboxes = content.includes('<w14:checkbox') && content.includes('<w:sdt');
+  const hasRelevantLabel = Object.entries(labelMap).some(([label, mapping]) => {
+    const quickNeedle = getLabelQuickNeedle(label, mapping);
+    return quickNeedle ? contentLower.includes(quickNeedle) : false;
+  });
+
+  if (!hasMergeMarkers && !hasCheckboxes && !hasRelevantLabel) {
+    return content;
+  }
+
   // First normalize the XML to handle fragmented merge fields
   let result = normalizeWordXml(content);
 
