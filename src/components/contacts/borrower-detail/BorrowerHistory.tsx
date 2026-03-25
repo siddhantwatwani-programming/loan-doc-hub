@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Download, Filter } from 'lucide-react';
@@ -96,7 +96,7 @@ const formatSummaryCurrency = (val: number) =>
 interface Props { borrowerId: string; contactDbId?: string; }
 
 const BorrowerHistory: React.FC<Props> = ({ borrowerId, contactDbId }) => {
-  const navigate = useNavigate();
+  
   const [rows, setRows] = useState<HistoryLoan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -385,9 +385,6 @@ const BorrowerHistory: React.FC<Props> = ({ borrowerId, contactDbId }) => {
     return result;
   }, [rows, search, statusFilter, stateFilter, productTypeFilter, minAmount, maxAmount, sortCol, sortDir]);
 
-  const handleRowClick = (row: HistoryLoan) => {
-    navigate(`/deals/${row.dealId}`);
-  };
 
   const handleExport = () => {
     const headers = ALL_COLUMNS.map(c => c.label).join(',');
@@ -544,11 +541,7 @@ const BorrowerHistory: React.FC<Props> = ({ borrowerId, contactDbId }) => {
                 </TableCell>
               </TableRow>
             ) : filtered.map(r => (
-              <TableRow
-                key={r.id}
-                className="cursor-pointer hover:bg-muted/60"
-                onClick={() => handleRowClick(r)}
-              >
+              <TableRow key={r.id}>
                 {ALL_COLUMNS.map(c => (
                   <TableCell key={c.id} className="whitespace-nowrap">
                     {c.id === 'loanStatus' ? (
