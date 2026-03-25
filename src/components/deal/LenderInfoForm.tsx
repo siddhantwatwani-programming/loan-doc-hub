@@ -473,12 +473,13 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
+                  <EnhancedCalendar
                     mode="single"
                     selected={safeParseDateStr(getValue('investorQuestionnaireDueDate'))}
                     onSelect={(date) => handleChange('investorQuestionnaireDueDate', date ? format(date, 'yyyy-MM-dd') : '')}
+                    onClear={() => handleChange('investorQuestionnaireDueDate', '')}
+                    onToday={() => handleChange('investorQuestionnaireDueDate', format(new Date(), 'yyyy-MM-dd'))}
                     initialFocus
-                    className={cn("p-3 pointer-events-auto")}
                   />
                 </PopoverContent>
               </Popover>
