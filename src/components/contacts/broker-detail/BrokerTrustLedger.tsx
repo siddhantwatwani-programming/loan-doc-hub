@@ -99,7 +99,7 @@ const filterByDate = (entries: LedgerEntry[], filter: string): LedgerEntry[] => 
 
 const EMPTY_ENTRY = { date: '', reference: '', fromWhomReceivedPaid: '', memo: '', payment: '', clr: '', deposit: '', balance: '', category: '' as const };
 
-const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string }> = ({ contactDbId }) => {
+const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string; disabled?: boolean }> = ({ contactDbId, disabled }) => {
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [columns, setColumns, resetColumns] = useTableColumnConfig('broker_trust_ledger', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter(c => c.visible);
