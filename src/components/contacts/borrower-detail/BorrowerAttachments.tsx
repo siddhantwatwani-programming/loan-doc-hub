@@ -131,6 +131,7 @@ const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string; d
   // Upload mutation
   const uploadMutation = useMutation({
     mutationFn: async (form: UploadFormState) => {
+      if (disabled) throw new Error('You have read-only access to attachments');
       if (!form.file || !user) throw new Error('Missing file or user');
       const storagePath = `borrower/${contactDbId}/${crypto.randomUUID()}_${form.file.name}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(storagePath, form.file);
