@@ -658,14 +658,18 @@ export const DealOverviewPage: React.FC = () => {
                   </Badge>
                 </dd>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">State</dt>
-                <dd className="font-medium text-foreground">{deal.state}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Product Type</dt>
-                <dd className="font-medium text-foreground">{deal.product_type}</dd>
-              </div>
+              {deal.state && deal.state !== 'TBD' && (
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">State</dt>
+                  <dd className="font-medium text-foreground">{deal.state}</dd>
+                </div>
+              )}
+              {deal.product_type && deal.product_type !== 'TBD' && (
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Product Type</dt>
+                  <dd className="font-medium text-foreground">{deal.product_type}</dd>
+                </div>
+              )}
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Mode</dt>
                 <dd className="font-medium text-foreground">{modeLabels[deal.mode]}</dd>
