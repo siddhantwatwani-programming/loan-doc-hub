@@ -734,10 +734,13 @@ function isConditionTruthy(
   }
 
   // Entity-existence check: if fieldKey looks like a prefix (e.g., "co_borrower1"),
-  // check if ANY field starting with that prefix has data
-  const prefixLower = canonicalKey.toLowerCase();
+  // check if ANY field starting with that prefix has data.
+  // Uses pre-built lowercase index for O(n) single-pass instead of O(n) .toLowerCase() per key.
+  const prefixDot = canonicalKey.toLowerCase() + ".";
+  const prefixUnderscore = canonicalKey.toLowerCase() + "_";
   for (const [k, v] of fieldValues.entries()) {
-    if (k.toLowerCase().startsWith(prefixLower + ".") || k.toLowerCase().startsWith(prefixLower + "_")) {
+    const kLower = k.toLowerCase();
+    if (kLower.startsWith(prefixDot) || kLower.startsWith(prefixUnderscore)) {
       if (v.rawValue !== null && v.rawValue !== "") return true;
     }
   }
@@ -969,12 +972,17 @@ export function processEachBlocks(
     const entityIndices = new Set<number>();
     const prefixLower = collectionPrefix.toLowerCase();
 
+    // Use simple string matching instead of RegExp construction per key
     for (const [key] of fieldValues.entries()) {
       const keyLower = key.toLowerCase();
-      // Match patterns like "property1.address", "property2.city", etc.
-      const indexMatch = keyLower.match(new RegExp(`^${prefixLower}(\\d+)\\.`));
-      if (indexMatch) {
-        entityIndices.add(parseInt(indexMatch[1], 10));
+      if (!keyLower.startsWith(prefixLower)) continue;
+      // Extract digits immediately after the prefix, followed by "."
+      const rest = keyLower.substring(prefixLower.length);
+      const dotIdx = rest.indexOf(".");
+      if (dotIdx <= 0) continue;
+      const numPart = rest.substring(0, dotIdx);
+      if (/^\d+$/.test(numPart)) {
+        entityIndices.add(parseInt(numPart, 10));
       }
     }
 

@@ -1248,7 +1248,22 @@ serve(async (req) => {
 
     console.log(`[generate-document] Created job: ${job.id}`);
 
-    const jobResult: JobResult = {
+    // Clean up stale jobs: mark any "running" jobs older than 120 seconds as "failed"
+    const staleThreshold = new Date(Date.now() - 120_000).toISOString();
+    await supabase
+      .from("generation_jobs")
+      .update({
+        status: "failed",
+        completed_at: new Date().toISOString(),
+        error_message: "Generation timed out (CPU limit exceeded)",
+      })
+      .eq("deal_id", dealId)
+      .eq("status", "running")
+      .lt("started_at", staleThreshold)
+      .neq("id", job.id);
+
+    // Return immediately with "running" status — process in background
+    const immediateResponse: JobResult = {
       jobId: job.id,
       dealId,
       requestType,
@@ -1259,78 +1274,23 @@ serve(async (req) => {
       startedAt: job.started_at,
     };
 
-    try {
-      if (requestType === "single_doc" && templateId) {
-        // Single document generation
-        const result = await generateSingleDocument(
-          supabase,
-          dealId,
-          templateId,
-          deal.packet_id,
-          null,
-          outputType,
-          userId,
-          null
-        );
-        jobResult.results.push(result);
-        
-        if (result.success) {
-          jobResult.successCount++;
-        } else {
-          jobResult.failCount++;
-        }
-      } else if (packetId || deal.packet_id) {
-        // Packet generation - iterate all templates in order
-        const effectivePacketId = packetId || deal.packet_id;
-        
-        // Fetch packet name for denormalization
-        const { data: packetRecord } = await supabase
-          .from("packets")
-          .select("name")
-          .eq("id", effectivePacketId)
-          .single();
-        const effectivePacketName = packetRecord?.name || null;
+    // Background processing via EdgeRuntime.waitUntil
+    const backgroundTask = (async () => {
+      const jobResult: JobResult = { ...immediateResponse };
 
-        // Generate a unique batch ID for this packet generation run
-        const batchId = crypto.randomUUID();
-
-        const { data: packetTemplates, error: ptError } = await supabase
-          .from("packet_templates")
-          .select("template_id, templates(id, name, file_path)")
-          .eq("packet_id", effectivePacketId)
-          .order("display_order");
-
-        if (ptError) {
-          throw new Error("Failed to fetch packet templates");
-        }
-
-        console.log(`[generate-document] Processing ${packetTemplates?.length || 0} templates in packet (batch: ${batchId})`);
-
-        for (const pt of (packetTemplates || [])) {
-          const template = (pt as any).templates as Template;
-          
-          if (!template?.file_path) {
-            jobResult.results.push({
-              templateId: pt.template_id,
-              templateName: template?.name || "Unknown",
-              success: false,
-              error: "Template has no DOCX file",
-            });
-            jobResult.failCount++;
-            continue;
-          }
-
+      try {
+        if (requestType === "single_doc" && templateId) {
+          // Single document generation
           const result = await generateSingleDocument(
             supabase,
             dealId,
-            pt.template_id,
-            effectivePacketId,
-            effectivePacketName,
+            templateId,
+            deal.packet_id,
+            null,
             outputType,
             userId,
-            batchId
+            null
           );
-          
           jobResult.results.push(result);
           
           if (result.success) {
@@ -1338,77 +1298,134 @@ serve(async (req) => {
           } else {
             jobResult.failCount++;
           }
+        } else if (packetId || deal.packet_id) {
+          // Packet generation - iterate all templates in order
+          const effectivePacketId = packetId || deal.packet_id;
+          
+          // Fetch packet name for denormalization
+          const { data: packetRecord } = await supabase
+            .from("packets")
+            .select("name")
+            .eq("id", effectivePacketId)
+            .single();
+          const effectivePacketName = packetRecord?.name || null;
+
+          // Generate a unique batch ID for this packet generation run
+          const batchId = crypto.randomUUID();
+
+          const { data: packetTemplates, error: ptError } = await supabase
+            .from("packet_templates")
+            .select("template_id, templates(id, name, file_path)")
+            .eq("packet_id", effectivePacketId)
+            .order("display_order");
+
+          if (ptError) {
+            throw new Error("Failed to fetch packet templates");
+          }
+
+          console.log(`[generate-document] Processing ${packetTemplates?.length || 0} templates in packet (batch: ${batchId})`);
+
+          for (const pt of (packetTemplates || [])) {
+            const template = (pt as any).templates as Template;
+            
+            if (!template?.file_path) {
+              jobResult.results.push({
+                templateId: pt.template_id,
+                templateName: template?.name || "Unknown",
+                success: false,
+                error: "Template has no DOCX file",
+              });
+              jobResult.failCount++;
+              continue;
+            }
+
+            const result = await generateSingleDocument(
+              supabase,
+              dealId,
+              pt.template_id,
+              effectivePacketId,
+              effectivePacketName,
+              outputType,
+              userId,
+              batchId
+            );
+            
+            jobResult.results.push(result);
+            
+            if (result.success) {
+              jobResult.successCount++;
+            } else {
+              jobResult.failCount++;
+            }
+          }
         }
+
+        // Determine final job status
+        const completedAt = new Date().toISOString();
+        let finalStatus: GenerationStatus;
+        let errorMessage: string | null = null;
+
+        if (jobResult.failCount === 0 && jobResult.successCount > 0) {
+          finalStatus = "success";
+        } else if (jobResult.successCount === 0 && jobResult.failCount > 0) {
+          finalStatus = "failed";
+          const failures = jobResult.results.filter(r => !r.success);
+          errorMessage = failures.map(f => `${f.templateName}: ${f.error}`).join("; ");
+        } else {
+          finalStatus = "success";
+          const failures = jobResult.results.filter(r => !r.success);
+          errorMessage = `Partial: ${failures.length} failed - ${failures.map(f => f.templateName).join(", ")}`;
+        }
+
+        // Update job record
+        await supabase
+          .from("generation_jobs")
+          .update({
+            status: finalStatus,
+            completed_at: completedAt,
+            error_message: errorMessage,
+          })
+          .eq("id", job.id);
+
+        // Update deal status to generated if successful
+        if (jobResult.successCount > 0 && deal.status === "ready") {
+          await supabase.from("deals").update({ status: "generated" }).eq("id", dealId);
+          console.log(`[generate-document] Updated deal status to generated`);
+        }
+
+        console.log(`[generate-document] Job ${job.id} completed: ${jobResult.successCount} success, ${jobResult.failCount} failed`);
+
+      } catch (error: any) {
+        // Mark job as failed
+        const completedAt = new Date().toISOString();
+        await supabase
+          .from("generation_jobs")
+          .update({
+            status: "failed",
+            completed_at: completedAt,
+            error_message: error.message || "Unknown error",
+          })
+          .eq("id", job.id);
+
+        console.error("[generate-document] Job failed:", error);
       }
+    })();
 
-      // Determine final job status
-      const completedAt = new Date().toISOString();
-      let finalStatus: GenerationStatus;
-      let errorMessage: string | null = null;
-
-      if (jobResult.failCount === 0 && jobResult.successCount > 0) {
-        finalStatus = "success";
-      } else if (jobResult.successCount === 0 && jobResult.failCount > 0) {
-        finalStatus = "failed";
-        const failures = jobResult.results.filter(r => !r.success);
-        errorMessage = failures.map(f => `${f.templateName}: ${f.error}`).join("; ");
-      } else {
-        finalStatus = "success";
-        const failures = jobResult.results.filter(r => !r.success);
-        errorMessage = `Partial: ${failures.length} failed - ${failures.map(f => f.templateName).join(", ")}`;
-      }
-
-      // Update job record
-      await supabase
-        .from("generation_jobs")
-        .update({
-          status: finalStatus,
-          completed_at: completedAt,
-          error_message: errorMessage,
-        })
-        .eq("id", job.id);
-
-      jobResult.status = finalStatus;
-      jobResult.completedAt = completedAt;
-
-      // Update deal status to generated if successful
-      if (jobResult.successCount > 0 && deal.status === "ready") {
-        await supabase.from("deals").update({ status: "generated" }).eq("id", dealId);
-        console.log(`[generate-document] Updated deal status to generated`);
-      }
-
-      console.log(`[generate-document] Job ${job.id} completed: ${jobResult.successCount} success, ${jobResult.failCount} failed`);
-
-      return new Response(JSON.stringify(jobResult), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-
-    } catch (error: any) {
-      // Mark job as failed
-      const completedAt = new Date().toISOString();
-      await supabase
-        .from("generation_jobs")
-        .update({
-          status: "failed",
-          completed_at: completedAt,
-          error_message: error.message || "Unknown error",
-        })
-        .eq("id", job.id);
-
-      jobResult.status = "failed";
-      jobResult.completedAt = completedAt;
-
-      console.error("[generate-document] Job failed:", error);
-
-      return new Response(JSON.stringify({
-        ...jobResult,
-        error: error.message || "Unknown error",
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Use EdgeRuntime.waitUntil if available (Deno Deploy / Supabase Edge Functions)
+    // This allows the response to be sent immediately while processing continues
+    if (typeof (globalThis as any).EdgeRuntime !== "undefined" && typeof (globalThis as any).EdgeRuntime.waitUntil === "function") {
+      (globalThis as any).EdgeRuntime.waitUntil(backgroundTask);
+      console.log(`[generate-document] Background processing started via EdgeRuntime.waitUntil`);
+    } else {
+      // Fallback: await the task directly (local dev / environments without waitUntil)
+      await backgroundTask;
+      console.log(`[generate-document] Processing completed synchronously (no EdgeRuntime.waitUntil)`);
     }
+
+    return new Response(JSON.stringify(immediateResponse), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
 
   } catch (error: any) {
     console.error("[generate-document] Unexpected error:", error);
