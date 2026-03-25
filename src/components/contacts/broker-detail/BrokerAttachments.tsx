@@ -18,6 +18,7 @@ interface AttachmentMeta {
 interface BrokerAttachmentsProps {
   brokerId: string;
   contactDbId: string;
+  disabled?: boolean;
 }
 
 const BUCKET = 'contact-attachments';
