@@ -538,12 +538,14 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
                 className="cursor-pointer hover:bg-muted/50"
                 onClick={() => handleRowClick(participant)}
               >
+                {!disabled && (
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <Checkbox
                     checked={selectedIds.has(participant.id)}
                     onCheckedChange={() => toggleOne(participant.id)}
                   />
                 </TableCell>
+                )}
                 {visibleColumns.map((col) => (
                   <TableCell key={col.id}>
                     {renderCellValue(participant, col.id)}
