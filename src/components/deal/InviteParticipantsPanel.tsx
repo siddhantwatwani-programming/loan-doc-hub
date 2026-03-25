@@ -125,6 +125,7 @@ const statusConfig: Record<ParticipantStatus, { label: string; color: string; ic
 export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = ({
   dealId,
   dealNumber,
+  disabled = false,
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
