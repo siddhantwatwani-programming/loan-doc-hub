@@ -9,6 +9,13 @@ import * as fflate from "https://esm.sh/fflate@0.8.2";
 import type { FieldValueData, LabelMapping } from "./types.ts";
 import { replaceMergeTags } from "./tag-parser.ts";
 
+const DOC_GEN_DEBUG = Deno.env.get("DOC_GEN_DEBUG") === "true";
+const debugLog = (...args: unknown[]) => {
+  if (DOC_GEN_DEBUG) {
+    console.log(...args);
+  }
+};
+
 /**
  * Process a DOCX file by replacing merge tags with field values.
  * @param docxBuffer - The source DOCX file bytes
@@ -42,7 +49,7 @@ export async function processDocx(
         filename.startsWith("word/endnotes");
 
       if (isContentPart) {
-        console.log(`[docx-processor] Processing content XML: ${filename} (${content.length} bytes)`);
+        debugLog(`[docx-processor] Processing content XML: ${filename} (${content.length} bytes)`);
         const originalXml = decoder.decode(content);
         let processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
 
@@ -140,11 +147,11 @@ function ensureSignaturePageBreak(xml: string): string {
   });
 
   if (!foundSignatureParagraph) {
-    console.log("[docx-processor] No Signature paragraph found; skipping page-break injection.");
+    debugLog("[docx-processor] No Signature paragraph found; skipping page-break injection.");
   } else if (injectedPageBreak) {
-    console.log("[docx-processor] Injected pageBreakBefore into Signature paragraph.");
+    debugLog("[docx-processor] Injected pageBreakBefore into Signature paragraph.");
   } else {
-    console.log("[docx-processor] Signature paragraph already has pageBreakBefore.");
+    debugLog("[docx-processor] Signature paragraph already has pageBreakBefore.");
   }
 
   return updatedXml;
