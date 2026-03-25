@@ -586,7 +586,7 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
               )}
             </div>
           </div>
-          {canAddMore && (
+          {canAddMore && !disabled && (
             <Button 
               size="sm" 
               onClick={() => {
