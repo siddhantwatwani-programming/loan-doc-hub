@@ -177,6 +177,7 @@ const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string; d
   // Edit mutation
   const editMutation = useMutation({
     mutationFn: async () => {
+      if (disabled) throw new Error('You have read-only access to attachments');
       if (!selectedAttachment) return;
       const { error } = await (supabase as any).from('borrower_attachments').update({
         category: editForm.category,
