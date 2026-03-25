@@ -63,7 +63,7 @@ interface UploadFormState {
   version_number: string;
 }
 
-const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string }> = ({ contactDbId }) => {
+const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string; disabled?: boolean }> = ({ contactDbId, disabled }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -269,15 +269,21 @@ const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string }>
           <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDownload(row.original); }} title="Download">
             <Download className="h-4 w-4 text-muted-foreground" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedAttachment(row.original); setEditForm({ category: row.original.category, description: row.original.description || '' }); setShowEditModal(true); }} title="Edit">
-            <Pencil className="h-4 w-4 text-muted-foreground" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleNewVersion(row.original); }} title="Upload New Version">
-            <Upload className="h-4 w-4 text-muted-foreground" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.original); }} title="Delete">
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+          {!disabled && (
+            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedAttachment(row.original); setEditForm({ category: row.original.category, description: row.original.description || '' }); setShowEditModal(true); }} title="Edit">
+              <Pencil className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          )}
+          {!disabled && (
+            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleNewVersion(row.original); }} title="Upload New Version">
+              <Upload className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          )}
+          {!disabled && (
+            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.original); }} title="Delete">
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          )}
         </div>
       ),
     },
@@ -378,9 +384,11 @@ const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string }>
             <FileText className="h-4 w-4" /> Export
           </Button>
 
-          <Button variant="outline" size="sm" onClick={() => setShowUploadModal(true)} className="gap-1">
-            <Plus className="h-4 w-4" /> Upload Attachment
-          </Button>
+          {!disabled && (
+            <Button variant="outline" size="sm" onClick={() => setShowUploadModal(true)} className="gap-1">
+              <Plus className="h-4 w-4" /> Upload Attachment
+            </Button>
+          )}
         </div>
       </div>
 
