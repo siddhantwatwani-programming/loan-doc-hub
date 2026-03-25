@@ -243,8 +243,8 @@ const LenderTrustLedger: React.FC<{ lenderId: string; contactDbId: string; disab
         onFilterChange={setFilter}
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
-        selectedCount={selectedCount}
-        onBulkDelete={() => setBulkDeleteOpen(true)}
+        selectedCount={disabled ? 0 : selectedCount}
+        onBulkDelete={disabled ? undefined : () => setBulkDeleteOpen(true)}
         onExport={() => setExportDialogOpen(true)}
       />
 
