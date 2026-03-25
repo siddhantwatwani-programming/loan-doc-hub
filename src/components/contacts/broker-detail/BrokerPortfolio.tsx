@@ -338,7 +338,7 @@ const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ brokerId, contactDbId
   };
 
   const handleRowClick = useCallback((row: PortfolioRow) => {
-    navigate(`/deals/${row.dealId}`);
+    navigate(`/deals/${row.dealId}/edit`);
   }, [navigate]);
 
   const clearFilters = () => {
