@@ -334,14 +334,16 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
               </TableRow>
             ) : filtered.map(r => (
               <TableRow key={r.id} className={selectedRows.has(r.id) ? 'bg-primary/5' : ''}>
-                <TableCell className="w-10 px-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedRows.has(r.id)}
-                    onChange={() => toggleRow(r.id)}
-                    className="rounded border-input"
-                  />
-                </TableCell>
+                {!disabled && (
+                  <TableCell className="w-10 px-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedRows.has(r.id)}
+                      onChange={() => toggleRow(r.id)}
+                      className="rounded border-input"
+                    />
+                  </TableCell>
+                )}
                 {activeColumns.map(c => {
                   const val = (r as any)[c.id] || '';
                   let display = val || '-';
