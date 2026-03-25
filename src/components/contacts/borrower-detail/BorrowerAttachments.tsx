@@ -196,6 +196,7 @@ const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string; d
   // New version mutation
   const newVersionMutation = useMutation({
     mutationFn: async ({ attachment, file }: { attachment: AttachmentRow; file: File }) => {
+      if (disabled) throw new Error('You have read-only access to attachments');
       if (!user) throw new Error('Not authenticated');
       const storagePath = `borrower/${contactDbId}/${crypto.randomUUID()}_${file.name}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(storagePath, file);
