@@ -292,14 +292,16 @@ const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId, disabled }) 
               </div>
             </PopoverContent>
           </Popover>
-          {selectedRows.size > 0 && (
+          {!disabled && selectedRows.size > 0 && (
             <Button size="sm" variant="destructive" className="gap-1 h-8 text-xs" onClick={handleDeleteSelected}>
               Delete ({selectedRows.size})
             </Button>
           )}
-          <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={() => setAddDialogOpen(true)}>
-            <Plus className="h-3.5 w-3.5" /> Add Charge
-          </Button>
+          {!disabled && (
+            <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={() => setAddDialogOpen(true)}>
+              <Plus className="h-3.5 w-3.5" /> Add Charge
+            </Button>
+          )}
         </div>
       </div>
 
