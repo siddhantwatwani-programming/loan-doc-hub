@@ -507,7 +507,7 @@ const BorrowerConversationLog: React.FC<{ borrowerId: string; contactDbId: strin
               <Label className="text-xs">As Of Date</Label>
               <Popover open={addAsOfOpen} onOpenChange={setAddAsOfOpen}>
                 <PopoverTrigger asChild><Button variant="outline" className="w-full h-8 text-xs justify-start font-normal">{addAsOfDateObj ? format(addAsOfDateObj, 'MM/dd/yyyy') : <span className="text-muted-foreground">Select date</span>}<CalendarIcon className="h-3 w-3 ml-auto" /></Button></PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-[9999]" align="start"><Calendar mode="single" selected={addAsOfDateObj} onSelect={d => { setNewLog(p => ({ ...p, asOfDate: d ? d.toISOString() : '' })); setAddAsOfOpen(false); }} initialFocus /></PopoverContent>
+                <PopoverContent className="w-auto p-0 z-[9999]" align="start"><EnhancedCalendar mode="single" selected={addAsOfDateObj} onSelect={d => { setNewLog(p => ({ ...p, asOfDate: d ? d.toISOString() : '' })); setAddAsOfOpen(false); }} onClear={() => { setNewLog(p => ({ ...p, asOfDate: '' })); setAddAsOfOpen(false); }} onToday={() => { setNewLog(p => ({ ...p, asOfDate: new Date().toISOString() })); setAddAsOfOpen(false); }} initialFocus /></PopoverContent>
               </Popover>
             </div>
           </div>
