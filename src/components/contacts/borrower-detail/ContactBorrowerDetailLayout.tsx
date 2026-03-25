@@ -19,6 +19,7 @@ import BorrowerEventsJournal from './BorrowerEventsJournal';
 import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { ContactRecord } from '@/hooks/useContactsCrud';
 import { logContactEvent, type ContactFieldChange } from '@/hooks/useContactEventJournal';
+import { useFormPermissions } from '@/hooks/useFormPermissions';
 
 interface ContactBorrowerDetailLayoutProps {
   contact: ContactRecord;
@@ -31,9 +32,11 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
   onBack,
   onSave,
 }) => {
+  const { loading: permissionsLoading, isFormViewOnly } = useFormPermissions();
   const [activeSection, setActiveSection] = useState<BorrowerSection>('borrower');
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const NON_BORROWER_PREFIXES = ['ach.', 'coborrower.', 'borrower.guarantor.', 'borrower.authorized_party.', 'borrower.1098.'];
+  const isReadOnly = permissionsLoading || isFormViewOnly('borrower');
 
   const [values, setValues] = useState<Record<string, string>>(() => {
     const result: Record<string, string> = {};
@@ -52,10 +55,12 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
   const isDirty = useMemo(() => JSON.stringify(values) !== JSON.stringify(initialValuesRef.current), [values]);
 
   const handleValueChange = useCallback((fieldKey: string, value: string) => {
+    if (isReadOnly) return;
     setValues(prev => ({ ...prev, [fieldKey]: value }));
-  }, []);
+  }, [isReadOnly]);
 
   const handleSave = useCallback(async () => {
+    if (isReadOnly) return;
     const contactData: Record<string, string> = {};
     Object.entries(values).forEach(([key, value]) => {
       const stripped = NON_BORROWER_PREFIXES.some(p => key.startsWith(p)) ? key : key.replace(/^borrower\./, '');
@@ -96,7 +101,7 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
         console.error('Failed to log borrower event:', err)
       );
     }
-  }, [values, contact.id, contact.contact_data, onSave]);
+  }, [values, contact.id, contact.contact_data, onSave, isReadOnly]);
 
   const emptyFields: any[] = [];
   const emptyDirty = new Set<string>();
@@ -109,7 +114,7 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
             fields={emptyFields}
             values={values}
             onValueChange={handleValueChange}
-            disabled={false}
+              disabled={isReadOnly}
           />
         );
       case 'dashboard':
@@ -126,7 +131,7 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
             fields={emptyFields}
             values={values}
             onValueChange={handleValueChange}
-            disabled={false}
+              disabled={isReadOnly}
           />
         );
       case '1098':
@@ -135,7 +140,7 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
             fields={emptyFields}
             values={values}
             onValueChange={handleValueChange}
-            disabled={false}
+              disabled={isReadOnly}
           />
         );
       case 'authorized-party':
@@ -144,7 +149,7 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
             fields={emptyFields}
             values={values}
             onValueChange={handleValueChange}
-            disabled={false}
+              disabled={isReadOnly}
           />
         );
       case 'trust-ledger':
@@ -176,7 +181,7 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
           Borrower — {contact.contact_id}
           </h3>
         </div>
-        {isDirty && (
+        {!isReadOnly && isDirty && (
           <Button size="sm" onClick={() => setShowSaveConfirm(true)} className="gap-1">
             <Save className="h-4 w-4" /> Save Changes
           </Button>

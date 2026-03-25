@@ -19,6 +19,7 @@ import BrokerEventsJournal from './BrokerEventsJournal';
 import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { ContactRecord } from '@/hooks/useContactsCrud';
 import type { ContactBroker } from '@/pages/contacts/ContactBrokersPage';
+import { useFormPermissions } from '@/hooks/useFormPermissions';
 
 interface ContactBrokerDetailLayoutProps {
   contact: ContactRecord;
@@ -31,8 +32,10 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
   onBack,
   onSave,
 }) => {
+  const { loading: permissionsLoading, isFormViewOnly } = useFormPermissions();
   const [activeSection, setActiveSection] = useState<BrokerSection>('broker');
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const isReadOnly = permissionsLoading || isFormViewOnly('broker');
   const [values, setValues] = useState<Record<string, string>>(() => {
     const result: Record<string, string> = {};
     Object.entries(contact.contact_data || {}).forEach(([key, value]) => {
@@ -48,10 +51,12 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
   const isDirty = useMemo(() => JSON.stringify(values) !== JSON.stringify(initialValuesRef.current), [values]);
 
   const handleValueChange = useCallback((fieldKey: string, value: string) => {
+    if (isReadOnly) return;
     setValues(prev => ({ ...prev, [fieldKey]: value }));
-  }, []);
+  }, [isReadOnly]);
 
   const handleSave = useCallback(async () => {
+    if (isReadOnly) return;
     const contactData: Record<string, string> = {};
     Object.entries(values).forEach(([key, value]) => {
       const stripped = key.replace(/^broker\./, '');
@@ -75,7 +80,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
       await logContactEvent(contact.id, 'Broker Info', changes);
       initialValuesRef.current = { ...values };
     }
-  }, [values, contact.id, onSave]);
+  }, [values, contact.id, onSave, isReadOnly]);
 
   // Build a ContactBroker object from contact_data for components that need it
   const brokerObj: ContactBroker = {
@@ -116,7 +121,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
         return (
           <div className="p-6">
             <BrokerInfoForm
-              disabled={false}
+              disabled={isReadOnly}
               values={values}
               onValueChange={handleValueChange}
             />
@@ -162,7 +167,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
         return (
           <div className="p-6">
             <BrokerBankingForm
-              disabled={false}
+              disabled={isReadOnly}
               values={values}
               onValueChange={handleValueChange}
             />
@@ -175,13 +180,14 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
               values={values}
               onValueChange={handleValueChange}
               onSave={handleSave}
+              disabled={isReadOnly}
             />
           </div>
         );
       case 'authorized-party':
         return (
           <div className="p-6">
-            <BrokerAuthorizedParty brokerId={contact.contact_id} />
+            <BrokerAuthorizedParty brokerId={contact.contact_id} disabled={isReadOnly} />
           </div>
         );
       case 'attachments':
@@ -212,7 +218,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
             Broker — {contact.contact_id}
           </h3>
         </div>
-        {isDirty && (
+        {!isReadOnly && isDirty && (
           <Button size="sm" onClick={() => setShowSaveConfirm(true)} className="gap-1">
             <Save className="h-4 w-4" /> Save Changes
           </Button>

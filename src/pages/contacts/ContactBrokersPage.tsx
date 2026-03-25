@@ -6,6 +6,7 @@ import { CreateContactModal } from '@/components/contacts/CreateContactModal';
 import ContactBrokerDetailLayout from '@/components/contacts/broker-detail/ContactBrokerDetailLayout';
 import type { ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 import type { FilterOption } from '@/components/deal/GridToolbar';
+import { useFormPermissions } from '@/hooks/useFormPermissions';
 
 export interface ContactBroker {
   id: string;
@@ -90,11 +91,13 @@ const ContactBrokersPage: React.FC = () => {
   const { contactId } = useParams<{ contactId?: string }>();
   const navigate = useNavigate();
   const crud = useContactsCrud({ contactType: 'broker' });
+  const { loading: permissionsLoading, isFormViewOnly } = useFormPermissions();
   const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const deepLinkLoaded = useRef(false);
+  const isReadOnly = permissionsLoading || isFormViewOnly('broker');
 
   // Deep-link: auto-load contact by URL param
   useEffect(() => {
@@ -139,21 +142,24 @@ const ContactBrokersPage: React.FC = () => {
   }, [localSearch]);
 
   const handleCreate = useCallback(async (data: Record<string, string>) => {
+    if (isReadOnly) return;
     await crud.createContact(data);
     setModalOpen(false);
-  }, [crud]);
+  }, [crud, isReadOnly]);
 
   const handleSave = useCallback(async (id: string, contactData: Record<string, string>) => {
+    if (isReadOnly) return false;
     const result = await crud.updateContact(id, contactData);
     if (result) {
       setSelectedContact(null);
     }
     return result;
-  }, [crud]);
+  }, [crud, isReadOnly]);
 
   const handleDeleteSelected = useCallback(async (ids: string[]) => {
+    if (isReadOnly) return;
     await crud.deleteContacts(ids);
-  }, [crud]);
+  }, [crud, isReadOnly]);
 
   const renderCellValue = useCallback((contact: ContactRecord, columnId: string): React.ReactNode => {
     const cd = (contact.contact_data || {}) as Record<string, string>;
@@ -219,13 +225,14 @@ const ContactBrokersPage: React.FC = () => {
         onPageChange={crud.setCurrentPage}
         onRowClick={setSelectedContact}
         onCreateNew={() => setModalOpen(true)}
-        onDeleteSelected={handleDeleteSelected}
+        onDeleteSelected={isReadOnly ? undefined : handleDeleteSelected}
         defaultColumns={DEFAULT_COLUMNS}
         tableConfigKey="contact_brokers_v4"
         addButtonLabel="Add Broker"
         breadcrumbLabel="Brokers"
         filterOptions={BROKER_FILTER_OPTIONS}
         renderCellValue={renderCellValue}
+        createDisabled={isReadOnly}
       />
       <CreateContactModal
         open={modalOpen}
