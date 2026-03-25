@@ -734,10 +734,13 @@ function isConditionTruthy(
   }
 
   // Entity-existence check: if fieldKey looks like a prefix (e.g., "co_borrower1"),
-  // check if ANY field starting with that prefix has data
-  const prefixLower = canonicalKey.toLowerCase();
+  // check if ANY field starting with that prefix has data.
+  // Uses pre-built lowercase index for O(n) single-pass instead of O(n) .toLowerCase() per key.
+  const prefixDot = canonicalKey.toLowerCase() + ".";
+  const prefixUnderscore = canonicalKey.toLowerCase() + "_";
   for (const [k, v] of fieldValues.entries()) {
-    if (k.toLowerCase().startsWith(prefixLower + ".") || k.toLowerCase().startsWith(prefixLower + "_")) {
+    const kLower = k.toLowerCase();
+    if (kLower.startsWith(prefixDot) || kLower.startsWith(prefixUnderscore)) {
       if (v.rawValue !== null && v.rawValue !== "") return true;
     }
   }
