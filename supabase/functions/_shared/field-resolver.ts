@@ -176,6 +176,24 @@ export async function fetchMergeTagMappings(supabase: any): Promise<MergeTagMapp
  * 4. Merge tag alias mapping
  * 5. Case-insensitive fallback
  */
+// Module-level cache for lowercase valid-key index
+let _lowerValidKeysCache: Map<string, string> | null = null;
+let _lowerValidKeysSource: Set<string> | null = null;
+
+function getLowerValidKeysIndex(validFieldKeys: Set<string>): Map<string, string> {
+  if (_lowerValidKeysCache && _lowerValidKeysSource === validFieldKeys) {
+    return _lowerValidKeysCache;
+  }
+  const m = new Map<string, string>();
+  for (const k of validFieldKeys) {
+    const lower = k.toLowerCase();
+    if (!m.has(lower)) m.set(lower, k);
+  }
+  _lowerValidKeysCache = m;
+  _lowerValidKeysSource = validFieldKeys;
+  return m;
+}
+
 export function resolveFieldKeyWithBackwardCompat(
   tagName: string,
   mergeTagMap: Record<string, string>,
@@ -210,18 +228,17 @@ export function resolveFieldKeyWithBackwardCompat(
   if (mergeTagMap[tagName]) return mergeTagMap[tagName];
   if (mergeTagMap[cleanedTag]) return mergeTagMap[cleanedTag];
   
-  // Priority 5: Case-insensitive lookup against valid field keys
+  // Priority 5: Case-insensitive lookup against valid field keys (O(1) via index)
   if (validFieldKeys) {
-    for (const key of validFieldKeys) {
-      if (key.toLowerCase() === lowerTag) return key;
-    }
+    const lowerIndex = getLowerValidKeysIndex(validFieldKeys);
+    const ciMatch = lowerIndex.get(lowerTag);
+    if (ciMatch) return ciMatch;
     
     // Try with underscores converted to dots (legacy format)
     const dotVersion = cleanedTag.replace(/_/g, ".");
     if (validFieldKeys.has(dotVersion)) return dotVersion;
-    for (const key of validFieldKeys) {
-      if (key.toLowerCase() === dotVersion.toLowerCase()) return key;
-    }
+    const dotMatch = lowerIndex.get(dotVersion.toLowerCase());
+    if (dotMatch) return dotMatch;
   }
   
   // Fallback: return as-is (might not match)
@@ -250,6 +267,24 @@ export function resolveFieldKeyWithMap(
  * Case-insensitive field value lookup with backward compatibility
  * Tries: exact match, lowercase match, canonical_key resolution, migration resolution
  */
+// Module-level cache for lowercase field-values index
+let _lowerFieldValuesCache: Map<string, string> | null = null;
+let _lowerFieldValuesSource: Map<string, FieldValueData> | null = null;
+
+function getLowerFieldValuesIndex(fieldValues: Map<string, FieldValueData>): Map<string, string> {
+  if (_lowerFieldValuesCache && _lowerFieldValuesSource === fieldValues) {
+    return _lowerFieldValuesCache;
+  }
+  const m = new Map<string, string>();
+  for (const k of fieldValues.keys()) {
+    const lower = k.toLowerCase();
+    if (!m.has(lower)) m.set(lower, k);
+  }
+  _lowerFieldValuesCache = m;
+  _lowerFieldValuesSource = fieldValues;
+  return m;
+}
+
 export function getFieldData(
   canonicalKey: string, 
   fieldValues: Map<string, FieldValueData>
@@ -259,10 +294,13 @@ export function getFieldData(
   if (exact) return { key: canonicalKey, data: exact };
 
   const target = canonicalKey.toLowerCase();
+  const lowerIndex = getLowerFieldValuesIndex(fieldValues);
   
-  // Try case-insensitive match
-  for (const [k, v] of fieldValues.entries()) {
-    if (k.toLowerCase() === target) return { key: k, data: v };
+  // Try case-insensitive match (O(1))
+  const ciKey = lowerIndex.get(target);
+  if (ciKey) {
+    const v = fieldValues.get(ciKey);
+    if (v) return { key: ciKey, data: v };
   }
   
   // Try migration resolution (old_key -> new_key)
@@ -271,9 +309,10 @@ export function getFieldData(
     if (migratedKey) {
       const migrated = fieldValues.get(migratedKey);
       if (migrated) return { key: migratedKey, data: migrated };
-      // Also try case-insensitive on migrated key
-      for (const [k, v] of fieldValues.entries()) {
-        if (k.toLowerCase() === migratedKey.toLowerCase()) return { key: k, data: v };
+      const migratedLower = lowerIndex.get(migratedKey.toLowerCase());
+      if (migratedLower) {
+        const v = fieldValues.get(migratedLower);
+        if (v) return { key: migratedLower, data: v };
       }
     }
   }
@@ -284,9 +323,10 @@ export function getFieldData(
     if (resolved) {
       const resolvedData = fieldValues.get(resolved);
       if (resolvedData) return { key: resolved, data: resolvedData };
-      // Also try case-insensitive on resolved key
-      for (const [k, v] of fieldValues.entries()) {
-        if (k.toLowerCase() === resolved.toLowerCase()) return { key: k, data: v };
+      const resolvedLower = lowerIndex.get(resolved.toLowerCase());
+      if (resolvedLower) {
+        const v = fieldValues.get(resolvedLower);
+        if (v) return { key: resolvedLower, data: v };
       }
     }
   }
@@ -328,4 +368,8 @@ export function clearMergeTagCache(): void {
   cachedFieldKeyMigrations = null;
   cachedCanonicalKeyMap = null;
   cacheTimestamp = 0;
+  _lowerValidKeysCache = null;
+  _lowerValidKeysSource = null;
+  _lowerFieldValuesCache = null;
+  _lowerFieldValuesSource = null;
 }
