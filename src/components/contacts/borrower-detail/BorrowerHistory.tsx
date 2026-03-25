@@ -96,7 +96,7 @@ const formatSummaryCurrency = (val: number) =>
 interface Props { borrowerId: string; contactDbId?: string; }
 
 const BorrowerHistory: React.FC<Props> = ({ borrowerId, contactDbId }) => {
-  const navigate = useNavigate();
+  
   const [rows, setRows] = useState<HistoryLoan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
