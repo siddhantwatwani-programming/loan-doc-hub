@@ -131,6 +131,7 @@ const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string; d
   // Upload mutation
   const uploadMutation = useMutation({
     mutationFn: async (form: UploadFormState) => {
+      if (disabled) throw new Error('You have read-only access to attachments');
       if (!form.file || !user) throw new Error('Missing file or user');
       const storagePath = `borrower/${contactDbId}/${crypto.randomUUID()}_${form.file.name}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(storagePath, form.file);
@@ -161,6 +162,7 @@ const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string; d
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (attachment: AttachmentRow) => {
+      if (disabled) throw new Error('You have read-only access to attachments');
       await supabase.storage.from(BUCKET).remove([attachment.file_path]);
       const { error } = await (supabase as any).from('borrower_attachments').update({ status: 'archived' }).eq('id', attachment.id);
       if (error) throw error;
@@ -175,6 +177,7 @@ const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string; d
   // Edit mutation
   const editMutation = useMutation({
     mutationFn: async () => {
+      if (disabled) throw new Error('You have read-only access to attachments');
       if (!selectedAttachment) return;
       const { error } = await (supabase as any).from('borrower_attachments').update({
         category: editForm.category,
@@ -193,6 +196,7 @@ const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string; d
   // New version mutation
   const newVersionMutation = useMutation({
     mutationFn: async ({ attachment, file }: { attachment: AttachmentRow; file: File }) => {
+      if (disabled) throw new Error('You have read-only access to attachments');
       if (!user) throw new Error('Not authenticated');
       const storagePath = `borrower/${contactDbId}/${crypto.randomUUID()}_${file.name}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(storagePath, file);

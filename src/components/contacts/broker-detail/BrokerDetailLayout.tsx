@@ -15,6 +15,7 @@ import BrokerAttachments from './BrokerAttachments';
 import BrokerEventsJournal from './BrokerEventsJournal';
 import { BrokerInfoForm } from '@/components/deal/BrokerInfoForm';
 import type { ContactBroker } from '@/pages/contacts/ContactBrokersPage';
+import { useFormPermissions } from '@/hooks/useFormPermissions';
 
 interface BrokerDetailLayoutProps {
   broker: ContactBroker;
@@ -23,7 +24,9 @@ interface BrokerDetailLayoutProps {
 }
 
 const BrokerDetailLayout: React.FC<BrokerDetailLayoutProps> = ({ broker, onBack, onUpdate }) => {
+  const { loading: permissionsLoading, isFormViewOnly } = useFormPermissions();
   const [activeSection, setActiveSection] = useState<BrokerSection>('broker');
+  const isReadOnly = permissionsLoading || isFormViewOnly('broker');
 
   const renderContent = () => {
     switch (activeSection) {
@@ -37,7 +40,7 @@ const BrokerDetailLayout: React.FC<BrokerDetailLayoutProps> = ({ broker, onBack,
       case 'banking': return <BrokerBanking broker={broker} onUpdate={onUpdate} />;
       case '1099': return <Broker1099 values={{}} onValueChange={() => {}} onSave={async () => {}} />;
       case 'authorized-party': return <BrokerAuthorizedParty brokerId={broker.brokerId} />;
-      case 'attachments': return <BrokerAttachments brokerId={broker.brokerId} contactDbId={broker.id} />;
+      case 'attachments': return <BrokerAttachments brokerId={broker.brokerId} contactDbId={broker.id} disabled={isReadOnly} />;
       case 'events-journal': return <BrokerEventsJournal brokerId={broker.brokerId} contactDbId="" />;
       default: return null;
     }

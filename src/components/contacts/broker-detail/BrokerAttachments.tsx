@@ -68,6 +68,11 @@ const BrokerAttachments: React.FC<BrokerAttachmentsProps> = ({ brokerId, contact
   });
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) {
+      toast.error('You have read-only access to attachments');
+      if (inputRef.current) inputRef.current.value = '';
+      return;
+    }
     const fileList = e.target.files;
     if (!fileList || fileList.length === 0) return;
     setUploading(true);
@@ -97,6 +102,10 @@ const BrokerAttachments: React.FC<BrokerAttachmentsProps> = ({ brokerId, contact
   };
 
   const handleDelete = async (id: string) => {
+    if (disabled) {
+      toast.error('You have read-only access to attachments');
+      return;
+    }
     const file = files.find(f => f.id === id);
     if (file) {
       await supabase.storage.from(BUCKET).remove([file.storagePath]);
