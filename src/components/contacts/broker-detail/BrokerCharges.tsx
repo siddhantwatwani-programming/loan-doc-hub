@@ -184,7 +184,7 @@ const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId, disabled }) 
   }, [newCharge, rows, persistCharges]);
 
   const handleDeleteSelected = useCallback(async () => {
-    if (selectedRows.size === 0) return;
+    if (disabled || selectedRows.size === 0) return;
     const updatedRows = rows.filter(r => !selectedRows.has(r.id));
     try {
       await persistCharges(updatedRows);
