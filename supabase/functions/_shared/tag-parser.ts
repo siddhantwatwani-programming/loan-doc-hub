@@ -265,28 +265,15 @@ export function normalizeWordXml(xmlContent: string): string {
   const rightChevronFragmented = /((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>\s*<w:t(?:[^>]*)>)+)»/g;
   result = result.replace(rightChevronFragmented, () => "»");
   
-  // Handle underscores that get their own text runs — only inside paragraphs with merge tag delimiters
-  const fragmentedUnderscore = /([A-Za-z0-9]+)(\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:[^>]*)>)_(\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:[^>]*)>)?([A-Za-z0-9]+)/g;
-  result = result.replace(fragmentedUnderscore, (match, before, _xml1, _xml2, after, offset) => {
-    // Only consolidate if the CONTAINING PARAGRAPH has merge tag delimiters
-    const paraStart = result.lastIndexOf('<w:p ', offset);
-    const paraStartAlt = result.lastIndexOf('<w:p>', offset);
-    const pStart = Math.max(paraStart, paraStartAlt);
-    const paraEnd = result.indexOf('</w:p>', offset + match.length);
-    if (pStart === -1 || paraEnd === -1) return match;
-    const paragraph = result.substring(pStart, paraEnd);
-    if (paragraph.includes('\u00AB') || paragraph.includes('\u00BB') || paragraph.includes('{{') || paragraph.includes('}}')) {
-      console.log(`[tag-parser] Consolidated fragmented underscore: ${before}_${after}`);
-      return `${before}_${after}`;
-    }
-    return match; // Paragraph has no merge tag delimiters — leave untouched
-  });
+  // NOTE: Fragmented underscore, dot, and dot-in-run patterns were removed
+  // for performance. They used lastIndexOf() callbacks on the full 600KB+ XML
+  // string, causing CPU timeouts. The paragraph-level safety net
+  // (consolidateFragmentedTagsInParagraphs) handles these cases.
   
   // Handle split opening braces: {</w:t></w:r><w:r><w:t>{ -> {{
   // CRITICAL: Must NOT cross paragraph boundaries (</w:p> or <w:p)
   const splitOpenBraces = /\{((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\{/g;
   result = result.replace(splitOpenBraces, (match, runBreak) => {
-    // Reject matches that cross paragraph boundaries
     if (/<\/w:p>/.test(runBreak) || /<w:p[\s>]/.test(runBreak)) {
       return match;
     }
@@ -298,7 +285,6 @@ export function normalizeWordXml(xmlContent: string): string {
   // CRITICAL: Must NOT cross paragraph boundaries (</w:p> or <w:p)
   const splitCloseBraces = /\}((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\}/g;
   result = result.replace(splitCloseBraces, (match, runBreak) => {
-    // Reject matches that cross paragraph boundaries
     if (/<\/w:p>/.test(runBreak) || /<w:p[\s>]/.test(runBreak)) {
       return match;
     }
@@ -307,46 +293,12 @@ export function normalizeWordXml(xmlContent: string): string {
   });
 
   // Consolidate adjacent <w:instrText> elements so MERGEFIELD instructions aren't split
-  // Word may produce: <w:instrText> MERGE</w:instrText></w:r><w:r><w:instrText>FIELD ...
   const instrTextConsolidate = /(<w:instrText[^>]*>)([\s\S]*?)(<\/w:instrText>)\s*<\/w:r>\s*<w:r[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:instrText[^>]*>([\s\S]*?)(<\/w:instrText>)/g;
   let prevInstr = result;
   do {
     prevInstr = result;
     result = result.replace(instrTextConsolidate, '$1$2$4$3');
   } while (result !== prevInstr);
-
-  // Handle dots fragmented across runs — only inside paragraphs with merge tag delimiters
-  const fragmentedDot = /([A-Za-z0-9_]+)((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\.([A-Za-z0-9_]+)/g;
-  result = result.replace(fragmentedDot, (match, before, xmlTags, after, offset) => {
-    // Only consolidate if the CONTAINING PARAGRAPH has merge tag delimiters
-    const paraStart = result.lastIndexOf('<w:p ', offset);
-    const paraStartAlt = result.lastIndexOf('<w:p>', offset);
-    const pStart = Math.max(paraStart, paraStartAlt);
-    const paraEnd = result.indexOf('</w:p>', offset + match.length);
-    if (pStart === -1 || paraEnd === -1) return match;
-    const paragraph = result.substring(pStart, paraEnd);
-    if (paragraph.includes('\u00AB') || paragraph.includes('\u00BB') || paragraph.includes('{{') || paragraph.includes('}}')) {
-      console.log(`[tag-parser] Consolidated fragmented dot: ${before}.${after}`);
-      return `${before}.${after}`;
-    }
-    return match; // Paragraph has no merge tag delimiters — leave untouched
-  });
-
-  // Also handle dots where the dot character is inside its own XML run — only inside paragraphs with delimiters
-  const fragmentedDotInRun = /([A-Za-z0-9_]+)\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>\.\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>([A-Za-z0-9_]+)/g;
-  result = result.replace(fragmentedDotInRun, (match, before, after, offset) => {
-    const paraStart = result.lastIndexOf('<w:p ', offset);
-    const paraStartAlt = result.lastIndexOf('<w:p>', offset);
-    const pStart = Math.max(paraStart, paraStartAlt);
-    const paraEnd = result.indexOf('</w:p>', offset + match.length);
-    if (pStart === -1 || paraEnd === -1) return match;
-    const paragraph = result.substring(pStart, paraEnd);
-    if (paragraph.includes('\u00AB') || paragraph.includes('\u00BB') || paragraph.includes('{{') || paragraph.includes('}}')) {
-      console.log(`[tag-parser] Consolidated dot-in-run: ${before}.${after}`);
-      return `${before}.${after}`;
-    }
-    return match; // Paragraph has no merge tag delimiters — leave untouched
-  });
 
   // Handle fragmented curly brace patterns {{...}}
   // Word may split field names across multiple XML runs, so we allow XML tags
