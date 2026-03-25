@@ -385,9 +385,6 @@ const BorrowerHistory: React.FC<Props> = ({ borrowerId, contactDbId }) => {
     return result;
   }, [rows, search, statusFilter, stateFilter, productTypeFilter, minAmount, maxAmount, sortCol, sortDir]);
 
-  const handleRowClick = (row: HistoryLoan) => {
-    navigate(`/deals/${row.dealId}`);
-  };
 
   const handleExport = () => {
     const headers = ALL_COLUMNS.map(c => c.label).join(',');
