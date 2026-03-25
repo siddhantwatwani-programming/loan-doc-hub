@@ -9,6 +9,13 @@ import * as fflate from "https://esm.sh/fflate@0.8.2";
 import type { FieldValueData, LabelMapping } from "./types.ts";
 import { replaceMergeTags } from "./tag-parser.ts";
 
+const DOC_GEN_DEBUG = Deno.env.get("DOC_GEN_DEBUG") === "true";
+const debugLog = (...args: unknown[]) => {
+  if (DOC_GEN_DEBUG) {
+    console.log(...args);
+  }
+};
+
 /**
  * Process a DOCX file by replacing merge tags with field values.
  * @param docxBuffer - The source DOCX file bytes
@@ -16,6 +23,36 @@ import { replaceMergeTags } from "./tag-parser.ts";
  */
 const PROCESSED_XML_COMPRESSION_LEVEL = 0;
 const UNCHANGED_XML_COMPRESSION_LEVEL = 0;
+
+function hasLikelyMergeWork(xml: string, labelMap: Record<string, LabelMapping>): boolean {
+  if (
+    xml.includes("{{") ||
+    xml.includes("}}") ||
+    xml.includes("«") ||
+    xml.includes("»") ||
+    xml.includes("MERGEFIELD") ||
+    xml.includes("w:fldChar") ||
+    xml.includes("w:fldSimple") ||
+    xml.includes("w:instrText") ||
+    (xml.includes("<w14:checkbox") && xml.includes("<w:sdt"))
+  ) {
+    return true;
+  }
+
+  if (Object.keys(labelMap).length === 0) {
+    return false;
+  }
+
+  const xmlLower = xml.toLowerCase();
+  return Object.entries(labelMap).some(([label, mapping]) => {
+    const quickNeedle = (mapping.replaceNext || (label === "as of _"
+      ? "as of"
+      : label.endsWith(":")
+        ? label.slice(0, -1)
+        : label)).toLowerCase();
+    return quickNeedle.length > 0 && xmlLower.includes(quickNeedle);
+  });
+}
 
 export async function processDocx(
   docxBuffer: Uint8Array,
@@ -42,8 +79,14 @@ export async function processDocx(
         filename.startsWith("word/endnotes");
 
       if (isContentPart) {
-        console.log(`[docx-processor] Processing content XML: ${filename} (${content.length} bytes)`);
+        debugLog(`[docx-processor] Processing content XML: ${filename} (${content.length} bytes)`);
         const originalXml = decoder.decode(content);
+
+        if (!hasLikelyMergeWork(originalXml, labelMap)) {
+          processedFiles[filename] = [content, { level: UNCHANGED_XML_COMPRESSION_LEVEL }];
+          continue;
+        }
+
         let processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
 
         // Post-process: ensure Signature paragraph has a page break before it
@@ -140,11 +183,11 @@ function ensureSignaturePageBreak(xml: string): string {
   });
 
   if (!foundSignatureParagraph) {
-    console.log("[docx-processor] No Signature paragraph found; skipping page-break injection.");
+    debugLog("[docx-processor] No Signature paragraph found; skipping page-break injection.");
   } else if (injectedPageBreak) {
-    console.log("[docx-processor] Injected pageBreakBefore into Signature paragraph.");
+    debugLog("[docx-processor] Injected pageBreakBefore into Signature paragraph.");
   } else {
-    console.log("[docx-processor] Signature paragraph already has pageBreakBefore.");
+    debugLog("[docx-processor] Signature paragraph already has pageBreakBefore.");
   }
 
   return updatedXml;

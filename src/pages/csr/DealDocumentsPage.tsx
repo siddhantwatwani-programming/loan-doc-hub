@@ -185,6 +185,7 @@ export const DealDocumentsPage: React.FC = () => {
 
   const initialLoadDone = useRef(false);
   const realtimeDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const runningJobsPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -229,6 +230,31 @@ export const DealDocumentsPage: React.FC = () => {
       if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current);
     };
   }, [id]);
+
+  useEffect(() => {
+    const hasRunningJobs = recentJobs.some(job => job.status === 'running');
+
+    if (!hasRunningJobs) {
+      if (runningJobsPollRef.current) {
+        clearInterval(runningJobsPollRef.current);
+        runningJobsPollRef.current = null;
+      }
+      return;
+    }
+
+    if (runningJobsPollRef.current) return;
+
+    runningJobsPollRef.current = setInterval(() => {
+      refreshDataInBackground();
+    }, 4000);
+
+    return () => {
+      if (runningJobsPollRef.current) {
+        clearInterval(runningJobsPollRef.current);
+        runningJobsPollRef.current = null;
+      }
+    };
+  }, [recentJobs]);
 
   const debouncedBackgroundRefresh = useCallback(() => {
     if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current);

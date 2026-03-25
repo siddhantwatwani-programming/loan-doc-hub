@@ -24,6 +24,58 @@ import type {
 import { fetchMergeTagMappings, fetchFieldKeyMappings, extractRawValueFromJsonb } from "../_shared/field-resolver.ts";
 import { processDocx } from "../_shared/docx-processor.ts";
 
+const DOC_GEN_DEBUG = Deno.env.get("DOC_GEN_DEBUG") === "true";
+const debugLog = (...args: unknown[]) => {
+  if (DOC_GEN_DEBUG) {
+    console.log(...args);
+  }
+};
+
+let cachedValidFieldKeys: Set<string> | null = null;
+let validFieldKeysCacheTimestamp = 0;
+const VALID_FIELD_KEYS_TTL_MS = 5 * 60 * 1000;
+
+async function getValidFieldKeys(supabase: any): Promise<Set<string>> {
+  const now = Date.now();
+  if (cachedValidFieldKeys && now - validFieldKeysCacheTimestamp < VALID_FIELD_KEYS_TTL_MS) {
+    debugLog(`[generate-document] Using cached validFieldKeys set with ${cachedValidFieldKeys.size} entries`);
+    return cachedValidFieldKeys;
+  }
+
+  const PAGE_SIZE = 1000;
+  const completeFieldDictionary: Array<{ field_key: string; canonical_key: string | null }> = [];
+  let fdFrom = 0;
+
+  while (true) {
+    const { data: page, error: fdErr } = await supabase
+      .from("field_dictionary")
+      .select("field_key, canonical_key")
+      .range(fdFrom, fdFrom + PAGE_SIZE - 1);
+
+    if (fdErr) {
+      console.error("[generate-document] field_dictionary fetch error:", fdErr.message);
+      break;
+    }
+
+    const rows = page || [];
+    completeFieldDictionary.push(...rows);
+    if (rows.length < PAGE_SIZE) break;
+    fdFrom += PAGE_SIZE;
+  }
+
+  const nextValidFieldKeys = new Set<string>();
+  completeFieldDictionary.forEach((fd) => {
+    nextValidFieldKeys.add(fd.field_key);
+    if (fd.canonical_key) nextValidFieldKeys.add(fd.canonical_key);
+  });
+
+  cachedValidFieldKeys = nextValidFieldKeys;
+  validFieldKeysCacheTimestamp = now;
+  debugLog(`[generate-document] Built validFieldKeys set with ${nextValidFieldKeys.size} entries (including canonical keys)`);
+
+  return nextValidFieldKeys;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -69,7 +121,7 @@ async function generateSingleDocument(
       return result;
     }
 
-    console.log(`[generate-document] Processing template: ${template.name}`);
+    debugLog(`[generate-document] Processing template: ${template.name}`);
 
     // 2. Fetch template field maps
     const { data: fieldMaps, error: fmError } = await supabase
@@ -135,7 +187,7 @@ async function generateSingleDocument(
       });
     });
 
-    console.log(`[generate-document] Found ${allFieldDictIds.length} unique field_dictionary IDs from deal section values`);
+    debugLog(`[generate-document] Found ${allFieldDictIds.length} unique field_dictionary IDs from deal section values`);
     
     // Fetch ALL field dictionary entries for deal values using batched queries
     // to avoid URL length limits with large .in() arrays
@@ -157,7 +209,7 @@ async function generateSingleDocument(
     // Create a complete lookup map for all field dictionary entries
     const allFieldDictMap = new Map<string, FieldDefinition>();
     allFieldDictEntries.forEach((fd: any) => allFieldDictMap.set(fd.id, fd));
-    console.log(`[generate-document] Built allFieldDictMap with ${allFieldDictMap.size} entries from ${allFieldDictIds.length} IDs`);
+    debugLog(`[generate-document] Built allFieldDictMap with ${allFieldDictMap.size} entries from ${allFieldDictIds.length} IDs`);
 
     const fieldValues = new Map<string, FieldValueData>();
     (sectionValues || []).forEach((sv: any) => {
@@ -212,7 +264,7 @@ async function generateSingleDocument(
       }
 
       const participantRows = participants || [];
-      console.log(`[generate-document] Found ${participantRows.length} participant(s) for deal`);
+      debugLog(`[generate-document] Found ${participantRows.length} participant(s) for deal`);
 
       // Collect unique contact_id UUIDs (these are UUID references to contacts.id)
       const contactUuids = [...new Set(
@@ -231,7 +283,7 @@ async function generateSingleDocument(
           for (const cr of contactRows) {
             contactRowsByUuid.set(cr.id, cr);
           }
-          console.log(`[generate-document] Fetched ${contactRows.length} contact(s) via participant lookup`);
+          debugLog(`[generate-document] Fetched ${contactRows.length} contact(s) via participant lookup`);
         }
       }
 
@@ -331,7 +383,7 @@ async function generateSingleDocument(
         const bc = contactRowsByUuid.get(primaryBorrower.contact_id);
         if (bc) {
           injectContact(bc, ["borrower1", "borrower"], "br_p");
-          console.log(`[generate-document] Injected borrower contact fields from participant (contact ${bc.contact_id})`);
+          debugLog(`[generate-document] Injected borrower contact fields from participant (contact ${bc.contact_id})`);
         }
       }
 
@@ -340,7 +392,7 @@ async function generateSingleDocument(
         const cbc = contactRowsByUuid.get(coBorrower.contact_id);
         if (cbc) {
           injectContact(cbc, ["co_borrower1", "coborrower", "co_borrower"], undefined);
-          console.log(`[generate-document] Injected co-borrower contact fields from participant (contact ${cbc.contact_id})`);
+          debugLog(`[generate-document] Injected co-borrower contact fields from participant (contact ${cbc.contact_id})`);
         }
       }
 
@@ -350,7 +402,7 @@ async function generateSingleDocument(
         const lc = contactRowsByUuid.get(primaryLender.contact_id);
         if (lc) {
           injectContact(lc, ["lender1", "lender"], "ld_p");
-          console.log(`[generate-document] Injected lender contact fields from participant (contact ${lc.contact_id})`);
+          debugLog(`[generate-document] Injected lender contact fields from participant (contact ${lc.contact_id})`);
         }
       }
 
@@ -405,7 +457,7 @@ async function generateSingleDocument(
             if (license) forceSet(`${prefix}.License`, String(license));
           }
 
-          console.log(`[generate-document] Force-injected broker contact fields from participant (contact ${cr.contact_id}, license: ${license || 'n/a'})`);
+          debugLog(`[generate-document] Force-injected broker contact fields from participant (contact ${cr.contact_id}, license: ${license || 'n/a'})`);
         }
       }
     }
@@ -427,19 +479,19 @@ async function generateSingleDocument(
       const lk = key.toLowerCase();
       if (lk.includes("loannumber") || lk.includes("loan_number") || lk.includes("accountnumber") || lk.includes("account_number") || lk.includes("licensenumber") || lk.includes("license_number") || lk.includes("brokerlicens") || lk.includes("brokerid")) {
         if (val.dataType !== "text") {
-          console.log(`[generate-document] Overriding dataType for ${key}: ${val.dataType} -> text`);
+          debugLog(`[generate-document] Overriding dataType for ${key}: ${val.dataType} -> text`);
           fieldValues.set(key, { ...val, dataType: "text" });
         }
       }
     }
 
-    console.log(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);
+    debugLog(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);
 
     // Inject systemDate so only templates using {{systemDate}} get the current date
     const systemDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     fieldValues.set("systemDate", { rawValue: systemDate, dataType: "date" });
     fieldValues.set("currentDate", { rawValue: systemDate, dataType: "date" });
-    console.log(`[generate-document] Injected systemDate and currentDate: ${systemDate}`);
+    debugLog(`[generate-document] Injected systemDate and currentDate: ${systemDate}`);
 
     // Auto-compute borrower.borrower_description if not already set
     const existingDesc = fieldValues.get("borrower.borrower_description");
@@ -455,7 +507,7 @@ async function generateSingleDocument(
         borrowerNames.sort((a, b) => a.index - b.index);
         const description = borrowerNames.map(b => b.name).join(" and ");
         fieldValues.set("borrower.borrower_description", { rawValue: description, dataType: "text" });
-        console.log(`[generate-document] Auto-computed borrower.borrower_description = "${description}"`);
+        debugLog(`[generate-document] Auto-computed borrower.borrower_description = "${description}"`);
       }
     }
 
@@ -486,7 +538,7 @@ async function generateSingleDocument(
           const fullAddress = parts.join(", ");
           fieldValues.set(`${prefix}.address`, { rawValue: fullAddress, dataType: "text" });
           fieldValues.set(`Property${idx}.Address`, { rawValue: fullAddress, dataType: "text" });
-          console.log(`[generate-document] Auto-computed ${prefix}.address = "${fullAddress}"`);
+          debugLog(`[generate-document] Auto-computed ${prefix}.address = "${fullAddress}"`);
         }
       }
     }
@@ -504,7 +556,7 @@ async function generateSingleDocument(
       if (parts.length > 0) {
         const fullAddress = parts.join(", ");
         fieldValues.set("pr_p_address", { rawValue: fullAddress, dataType: "text" });
-        console.log(`[generate-document] Auto-computed pr_p_address = "${fullAddress}"`);
+        debugLog(`[generate-document] Auto-computed pr_p_address = "${fullAddress}"`);
       }
     }
 
@@ -515,7 +567,7 @@ async function generateSingleDocument(
       const b1FullName = fieldValues.get("borrower1.full_name") || fieldValues.get("borrower.full_name");
       if (b1FullName && b1FullName.rawValue) {
         fieldValues.set("br_p_fullName", { rawValue: b1FullName.rawValue, dataType: "text" });
-        console.log(`[generate-document] Auto-computed br_p_fullName = "${b1FullName.rawValue}"`);
+        debugLog(`[generate-document] Auto-computed br_p_fullName = "${b1FullName.rawValue}"`);
       } else {
         // Try assembling from borrower name components
         const bFirstName = fieldValues.get("borrower1.first_name")?.rawValue || fieldValues.get("borrower.first_name")?.rawValue || fieldValues.get("br_p_firstName")?.rawValue;
@@ -525,13 +577,13 @@ async function generateSingleDocument(
         if (bNameParts.length > 0) {
           const fullName = bNameParts.join(" ");
           fieldValues.set("br_p_fullName", { rawValue: fullName, dataType: "text" });
-          console.log(`[generate-document] Auto-computed br_p_fullName from components = "${fullName}"`);
+          debugLog(`[generate-document] Auto-computed br_p_fullName from components = "${fullName}"`);
         } else {
           // Final fallback: check Loan Details borrower name field
           const loanDetailsBorrowerName = fieldValues.get("loan_terms.details_borrower_name");
           if (loanDetailsBorrowerName?.rawValue) {
             fieldValues.set("br_p_fullName", { rawValue: loanDetailsBorrowerName.rawValue, dataType: "text" });
-            console.log(`[generate-document] Auto-computed br_p_fullName from loan_terms.details_borrower_name = "${loanDetailsBorrowerName.rawValue}"`);
+            debugLog(`[generate-document] Auto-computed br_p_fullName from loan_terms.details_borrower_name = "${loanDetailsBorrowerName.rawValue}"`);
           }
         }
       }
@@ -561,7 +613,7 @@ async function generateSingleDocument(
       if (brokerName) {
         fieldValues.set("Broker.Name", { rawValue: brokerName, dataType: "text" });
         fieldValues.set("broker.name", { rawValue: brokerName, dataType: "text" });
-        console.log(`[generate-document] Auto-computed Broker.Name = "${brokerName}"`);
+        debugLog(`[generate-document] Auto-computed Broker.Name = "${brokerName}"`);
       }
     }
 
@@ -574,7 +626,7 @@ async function generateSingleDocument(
         || fieldValues.get("broker.license_number")?.rawValue;
       if (license) {
         fieldValues.set("bk_p_brokerLicens", { rawValue: String(license), dataType: "text" });
-        console.log(`[generate-document] Auto-computed bk_p_brokerLicens = "${license}"`);
+        debugLog(`[generate-document] Auto-computed bk_p_brokerLicens = "${license}"`);
       }
     }
 
@@ -591,7 +643,7 @@ async function generateSingleDocument(
         const fullAddress = parts.join(", ");
         fieldValues.set("Borrower.Address", { rawValue: fullAddress, dataType: "text" });
         fieldValues.set("borrower.address", { rawValue: fullAddress, dataType: "text" });
-        console.log(`[generate-document] Auto-computed Borrower.Address = "${fullAddress}"`);
+        debugLog(`[generate-document] Auto-computed Borrower.Address = "${fullAddress}"`);
       }
     }
 
@@ -608,7 +660,7 @@ async function generateSingleDocument(
         const fullAddress = parts.join(", ");
         fieldValues.set("Lender.Address", { rawValue: fullAddress, dataType: "text" });
         fieldValues.set("lender.address", { rawValue: fullAddress, dataType: "text" });
-        console.log(`[generate-document] Auto-computed Lender.Address = "${fullAddress}"`);
+        debugLog(`[generate-document] Auto-computed Lender.Address = "${fullAddress}"`);
       }
     }
 
@@ -625,7 +677,7 @@ async function generateSingleDocument(
       }
     }
     fieldValues.set("has_co_borrower", { rawValue: hasCoBorrowerData ? "true" : "false", dataType: "boolean" });
-    console.log(`[generate-document] Auto-computed has_co_borrower = ${hasCoBorrowerData}`);
+    debugLog(`[generate-document] Auto-computed has_co_borrower = ${hasCoBorrowerData}`);
 
     // Auto-compute co_borrower_section: conditionally rendered content block
     // Check for co-borrower name across common field key patterns
@@ -738,7 +790,7 @@ async function generateSingleDocument(
       fieldValues.set("coborrower.address", { rawValue: coBorrowerAddress, dataType: "text" });
       fieldValues.set("co_borrower.address", { rawValue: coBorrowerAddress, dataType: "text" });
     }
-    console.log(`[generate-document] Auto-computed co_borrower_section = "${coBorrowerSection ? "populated" : "empty"}", name = "${coBorrowerName || "none"}", address = "${coBorrowerAddress || "none"}"`);
+    debugLog(`[generate-document] Auto-computed co_borrower_section = "${coBorrowerSection ? "populated" : "empty"}", name = "${coBorrowerName || "none"}", address = "${coBorrowerAddress || "none"}"`);
 
     // ── Lien field bridging: map lien1.* / lien.* dot-notation to pr_li_* keys ──
     {
@@ -825,44 +877,21 @@ async function generateSingleDocument(
           const mapped = canonicalToPrLi[key];
           if (mapped && !fieldValues.has(mapped)) {
             fieldValues.set(mapped, val);
-            console.log(`[generate-document] Bridged ${key} -> ${mapped}`);
+            debugLog(`[generate-document] Bridged ${key} -> ${mapped}`);
           }
         }
       }
-      console.log(`[generate-document] Lien field bridging complete`);
+      debugLog(`[generate-document] Lien field bridging complete`);
       // Bridge ln_p_lienPosit (template tag) -> ln_p_lienPositi (actual field key)
       const lienPosVal = fieldValues.get("ln_p_lienPositi");
       if (lienPosVal && !fieldValues.has("ln_p_lienPosit")) {
         fieldValues.set("ln_p_lienPosit", lienPosVal);
-        console.log(`[generate-document] Bridged ln_p_lienPositi -> ln_p_lienPosit`);
+        debugLog(`[generate-document] Bridged ln_p_lienPositi -> ln_p_lienPosit`);
       }
     }
 
-    // Build set of ALL valid field keys from the complete field_dictionary (for direct tag matching)
-    // Use pagination to fetch all rows (table has 1700+ entries, default limit is 1000)
-    // Include canonical_key for backward compatibility with old merge tags
-    const PAGE_SIZE = 1000;
-    const completeFieldDictionary: any[] = [];
-    let fdFrom = 0;
-    while (true) {
-      const { data: page, error: fdErr } = await supabase
-        .from("field_dictionary")
-        .select("field_key, canonical_key")
-        .range(fdFrom, fdFrom + PAGE_SIZE - 1);
-      if (fdErr) { console.error("[generate-document] field_dictionary fetch error:", fdErr.message); break; }
-      const rows = page || [];
-      completeFieldDictionary.push(...rows);
-      if (rows.length < PAGE_SIZE) break;
-      fdFrom += PAGE_SIZE;
-    }
-    
-    const validFieldKeys = new Set<string>();
-    completeFieldDictionary.forEach((fd: any) => {
-      validFieldKeys.add(fd.field_key);
-      // Also add canonical_key (old key) so old merge tags in templates resolve directly
-      if (fd.canonical_key) validFieldKeys.add(fd.canonical_key);
-    });
-    console.log(`[generate-document] Built validFieldKeys set with ${validFieldKeys.size} entries (including canonical keys)`);
+    // Build set of all valid field keys once and reuse it across invocations.
+    const validFieldKeys = await getValidFieldKeys(supabase);
 
     // 4. Download template DOCX from storage
     let fileData: Blob | null = null;
@@ -873,10 +902,10 @@ async function generateSingleDocument(
 
     if (!fileError && storageData) {
       fileData = storageData;
-      console.log(`[generate-document] Downloaded template from storage: ${template.file_path}`);
+      debugLog(`[generate-document] Downloaded template from storage: ${template.file_path}`);
     } else {
       // Fallback: Try public URL
-      console.log(`[generate-document] Storage download failed, trying public URL fallback...`);
+      debugLog(`[generate-document] Storage download failed, trying public URL fallback...`);
       const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
       const projectRef = supabaseUrl.replace("https://", "").split(".")[0];
       
@@ -889,11 +918,11 @@ async function generateSingleDocument(
           const response = await fetch(url);
           if (response.ok) {
             fileData = await response.blob();
-            console.log(`[generate-document] Downloaded template from public URL: ${url}`);
+            debugLog(`[generate-document] Downloaded template from public URL: ${url}`);
             break;
           }
         } catch (e) {
-          console.log(`[generate-document] Failed to fetch from ${url}: ${e}`);
+          debugLog(`[generate-document] Failed to fetch from ${url}: ${e}`);
         }
       }
     }
@@ -913,7 +942,7 @@ async function generateSingleDocument(
     const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
     const processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
 
-    console.log(`[generate-document] Processed DOCX: ${processedDocx.length} bytes`);
+    debugLog(`[generate-document] Processed DOCX: ${processedDocx.length} bytes`);
 
     // 6. Calculate version number
     const { data: existingDocs } = await supabase
@@ -943,7 +972,7 @@ async function generateSingleDocument(
       return result;
     }
 
-    console.log(`[generate-document] Uploaded to generated-docs: ${outputFileName}`);
+    debugLog(`[generate-document] Uploaded to generated-docs: ${outputFileName}`);
 
     // 8. Handle PDF conversion using CloudConvert
     let pdfPath: string | null = null;
@@ -978,7 +1007,7 @@ async function generateSingleDocument(
       return result;
     }
 
-    console.log(`[generate-document] Created document record: ${generatedDoc.id}`);
+    debugLog(`[generate-document] Created document record: ${generatedDoc.id}`);
 
     // 10. Log activity
     const actionType = isRegeneration ? "DocumentRegenerated" : "DocumentGenerated";
@@ -995,7 +1024,7 @@ async function generateSingleDocument(
       },
     });
 
-    console.log(`[generate-document] Logged activity: ${actionType}`);
+    debugLog(`[generate-document] Logged activity: ${actionType}`);
 
     result.success = true;
     result.documentId = generatedDoc.id;
@@ -1025,12 +1054,12 @@ async function convertToPdf(
   const cloudConvertApiKey = Deno.env.get("CLOUDCONVERT_API_KEY");
   
   if (!cloudConvertApiKey) {
-    console.log(`[generate-document] PDF conversion requested but CLOUDCONVERT_API_KEY not set`);
+    debugLog(`[generate-document] PDF conversion requested but CLOUDCONVERT_API_KEY not set`);
     return null;
   }
 
   try {
-    console.log(`[generate-document] Starting PDF conversion via CloudConvert...`);
+    debugLog(`[generate-document] Starting PDF conversion via CloudConvert...`);
     
     const jobResponse = await fetch("https://api.cloudconvert.com/v2/jobs", {
       method: "POST",
@@ -1066,7 +1095,7 @@ async function convertToPdf(
 
     const jobData = await jobResponse.json();
     const jobId = jobData.data.id;
-    console.log(`[generate-document] CloudConvert job created: ${jobId}`);
+    debugLog(`[generate-document] CloudConvert job created: ${jobId}`);
 
     // Poll for job completion
     let attempts = 0;
@@ -1116,7 +1145,7 @@ async function convertToPdf(
           });
 
         if (!pdfUploadError) {
-          console.log(`[generate-document] PDF uploaded: ${pdfFileName}`);
+          debugLog(`[generate-document] PDF uploaded: ${pdfFileName}`);
           return pdfFileName;
         } else {
           console.error(`[generate-document] PDF upload failed:`, pdfUploadError);
@@ -1176,7 +1205,7 @@ serve(async (req) => {
       userId = userData.user.id;
     }
 
-    console.log(`[generate-document] User: ${userId}`);
+    debugLog(`[generate-document] User: ${userId}`);
 
     // Parse request
     const { dealId, templateId, packetId, outputType = "docx_only" }: GenerateDocumentRequest = await req.json();
@@ -1196,7 +1225,7 @@ serve(async (req) => {
     }
 
     const requestType: RequestType = templateId ? "single_doc" : "packet";
-    console.log(`[generate-document] Request type: ${requestType}, deal: ${dealId}`);
+    debugLog(`[generate-document] Request type: ${requestType}, deal: ${dealId}`);
 
     // Verify deal exists and is in ready/generated status
     const { data: deal, error: dealError } = await supabase
@@ -1246,7 +1275,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`[generate-document] Created job: ${job.id}`);
+    debugLog(`[generate-document] Created job: ${job.id}`);
 
     // Clean up stale jobs: mark any "running" jobs older than 120 seconds as "failed"
     const staleThreshold = new Date(Date.now() - 120_000).toISOString();
@@ -1323,7 +1352,7 @@ serve(async (req) => {
             throw new Error("Failed to fetch packet templates");
           }
 
-          console.log(`[generate-document] Processing ${packetTemplates?.length || 0} templates in packet (batch: ${batchId})`);
+          debugLog(`[generate-document] Processing ${packetTemplates?.length || 0} templates in packet (batch: ${batchId})`);
 
           for (const pt of (packetTemplates || [])) {
             const template = (pt as any).templates as Template;
@@ -1390,10 +1419,10 @@ serve(async (req) => {
         // Update deal status to generated if successful
         if (jobResult.successCount > 0 && deal.status === "ready") {
           await supabase.from("deals").update({ status: "generated" }).eq("id", dealId);
-          console.log(`[generate-document] Updated deal status to generated`);
+          debugLog(`[generate-document] Updated deal status to generated`);
         }
 
-        console.log(`[generate-document] Job ${job.id} completed: ${jobResult.successCount} success, ${jobResult.failCount} failed`);
+        debugLog(`[generate-document] Job ${job.id} completed: ${jobResult.successCount} success, ${jobResult.failCount} failed`);
 
       } catch (error: any) {
         // Mark job as failed
@@ -1415,11 +1444,11 @@ serve(async (req) => {
     // This allows the response to be sent immediately while processing continues
     if (typeof (globalThis as any).EdgeRuntime !== "undefined" && typeof (globalThis as any).EdgeRuntime.waitUntil === "function") {
       (globalThis as any).EdgeRuntime.waitUntil(backgroundTask);
-      console.log(`[generate-document] Background processing started via EdgeRuntime.waitUntil`);
+      debugLog(`[generate-document] Background processing started via EdgeRuntime.waitUntil`);
     } else {
       // Fallback: await the task directly (local dev / environments without waitUntil)
       await backgroundTask;
-      console.log(`[generate-document] Processing completed synchronously (no EdgeRuntime.waitUntil)`);
+      debugLog(`[generate-document] Processing completed synchronously (no EdgeRuntime.waitUntil)`);
     }
 
     return new Response(JSON.stringify(immediateResponse), {

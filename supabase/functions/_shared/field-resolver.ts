@@ -25,6 +25,13 @@ let cachedCanonicalKeyMap: Map<string, string> | null = null;
 let cacheTimestamp = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
+const DOC_GEN_DEBUG = Deno.env.get("DOC_GEN_DEBUG") === "true";
+const debugLog = (...args: unknown[]) => {
+  if (DOC_GEN_DEBUG) {
+    console.log(...args);
+  }
+};
+
 /**
  * Fetch field key migrations and canonical_key mappings for backward compatibility
  */
@@ -36,14 +43,14 @@ export async function fetchFieldKeyMappings(supabase: any): Promise<{
   
   // Return cached values if still valid
   if (cachedFieldKeyMigrations && cachedCanonicalKeyMap && (now - cacheTimestamp) < CACHE_TTL_MS) {
-    console.log("[field-resolver] Using cached field key mappings");
+    debugLog("[field-resolver] Using cached field key mappings");
     return { 
       migrationsMap: cachedFieldKeyMigrations, 
       canonicalKeyMap: cachedCanonicalKeyMap 
     };
   }
   
-  console.log("[field-resolver] Fetching field key mappings for backward compatibility");
+  debugLog("[field-resolver] Fetching field key mappings for backward compatibility");
   
   // Fetch completed migrations (old_key -> new_key)
   const { data: migrations, error: migError } = await supabase
@@ -63,7 +70,7 @@ export async function fetchFieldKeyMappings(supabase: any): Promise<{
       .not("canonical_key", "is", null)
       .range(fdFrom, fdTo);
     if (fdPageError) {
-      console.log("[field-resolver] Field dictionary page fetch error:", fdPageError.message);
+      debugLog("[field-resolver] Field dictionary page fetch error:", fdPageError.message);
       break;
     }
     const rows = fdPage || [];
@@ -84,9 +91,9 @@ export async function fetchFieldKeyMappings(supabase: any): Promise<{
       // Also map new_key -> new_key for direct lookups
       migrationsMap.set(m.new_key.toLowerCase(), m.new_key);
     }
-    console.log(`[field-resolver] Loaded ${migrations.length} field key migrations`);
+    debugLog(`[field-resolver] Loaded ${migrations.length} field key migrations`);
   } else if (migError) {
-    console.log("[field-resolver] Field key migrations unavailable:", migError.message);
+    debugLog("[field-resolver] Field key migrations unavailable:", migError.message);
   }
   
   // Build canonical_key map: canonical_key -> field_key (current key)
@@ -99,9 +106,9 @@ export async function fetchFieldKeyMappings(supabase: any): Promise<{
         canonicalKeyMap.set(f.field_key.toLowerCase(), f.field_key);
       }
     }
-    console.log(`[field-resolver] Loaded ${fields.length} canonical_key mappings`);
+    debugLog(`[field-resolver] Loaded ${fields.length} canonical_key mappings`);
   } else if (fieldError) {
-    console.log("[field-resolver] Field dictionary lookup failed:", fieldError.message);
+    debugLog("[field-resolver] Field dictionary lookup failed");
   }
   
   // Update cache
@@ -121,11 +128,11 @@ export async function fetchMergeTagMappings(supabase: any): Promise<MergeTagMapp
   
   // Return cached values if still valid
   if (cachedMergeTagMap && cachedLabelMap && (now - cacheTimestamp) < CACHE_TTL_MS) {
-    console.log("[field-resolver] Using cached merge tag mappings");
+    debugLog("[field-resolver] Using cached merge tag mappings");
     return { mergeTagMap: cachedMergeTagMap, labelMap: cachedLabelMap };
   }
   
-  console.log("[field-resolver] Fetching merge tag mappings from database (optional fallback)");
+  debugLog("[field-resolver] Fetching merge tag mappings from database (optional fallback)");
   
   const { data: aliases, error } = await supabase
     .from("merge_tag_aliases")
@@ -134,7 +141,7 @@ export async function fetchMergeTagMappings(supabase: any): Promise<MergeTagMapp
   
   // Gracefully handle missing table or errors - aliases are optional now
   if (error) {
-    console.log("[field-resolver] Merge tag aliases unavailable (this is OK - using direct field_key resolution):", error.message);
+    debugLog("[field-resolver] Merge tag aliases unavailable (this is OK - using direct field_key resolution):", error.message);
     cachedMergeTagMap = {};
     cachedLabelMap = {};
     cacheTimestamp = now;
@@ -160,7 +167,7 @@ export async function fetchMergeTagMappings(supabase: any): Promise<MergeTagMapp
   cachedLabelMap = labelMap;
   cacheTimestamp = now;
   
-  console.log(`[field-resolver] Loaded ${Object.keys(mergeTagMap).length} legacy aliases and ${Object.keys(labelMap).length} labels`);
+  debugLog(`[field-resolver] Loaded ${Object.keys(mergeTagMap).length} legacy aliases and ${Object.keys(labelMap).length} labels`);
   
   return { mergeTagMap, labelMap };
 }
@@ -213,14 +220,14 @@ export function resolveFieldKeyWithBackwardCompat(
   // Priority 2: Migration mapping (handles old_key -> new_key)
   const migratedKey = migrationsMap.get(lowerTag);
   if (migratedKey) {
-    console.log(`[field-resolver] Resolved via migration: ${tagName} -> ${migratedKey}`);
+    debugLog(`[field-resolver] Resolved via migration: ${tagName} -> ${migratedKey}`);
     return migratedKey;
   }
   
   // Priority 3: Canonical key mapping (handles canonical_key -> current field_key)
   const canonicalResolved = canonicalKeyMap.get(lowerTag);
   if (canonicalResolved) {
-    console.log(`[field-resolver] Resolved via canonical_key: ${tagName} -> ${canonicalResolved}`);
+    debugLog(`[field-resolver] Resolved via canonical_key: ${tagName} -> ${canonicalResolved}`);
     return canonicalResolved;
   }
   

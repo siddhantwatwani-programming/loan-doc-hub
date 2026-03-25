@@ -9,6 +9,13 @@ import type { ParsedMergeTag, FieldValueData, LabelMapping } from "./types.ts";
 import { applyTransform, formatByDataType } from "./formatting.ts";
 import { resolveFieldKeyWithMap, getFieldData } from "./field-resolver.ts";
 
+const DOC_GEN_DEBUG = Deno.env.get("DOC_GEN_DEBUG") === "true";
+const debugLog = (...args: unknown[]) => {
+  if (DOC_GEN_DEBUG) {
+    console.log(...args);
+  }
+};
+
 /**
  * Flatten Word MERGEFIELD structures into plain «fieldName» text runs.
  * 
@@ -146,16 +153,16 @@ function flattenMergeFieldStructures(xml: string): string {
   });
 
   if (totalComplexCount > 0 || totalSimpleCount > 0) {
-    console.log(`[tag-parser] Flattened MERGEFIELD structures: ${totalComplexCount} complex, ${totalSimpleCount} simple`);
+    debugLog(`[tag-parser] Flattened MERGEFIELD structures: ${totalComplexCount} complex, ${totalSimpleCount} simple`);
   }
   if (totalNoSeparateCount > 0) {
-    console.log(`[tag-parser] Pattern C flattened ${totalNoSeparateCount} field codes without separate marker`);
+    debugLog(`[tag-parser] Pattern C flattened ${totalNoSeparateCount} field codes without separate marker`);
   }
   if (totalInstrFallbackCount > 0) {
-    console.log(`[tag-parser] instrText fallback converted ${totalInstrFallbackCount} hidden merge tags to visible text`);
+    debugLog(`[tag-parser] instrText fallback converted ${totalInstrFallbackCount} hidden merge tags to visible text`);
   }
   if (totalOrphanedFldCharCount > 0) {
-    console.log(`[tag-parser] Removed ${totalOrphanedFldCharCount} orphaned fldChar begin/end pairs`);
+    debugLog(`[tag-parser] Removed ${totalOrphanedFldCharCount} orphaned fldChar begin/end pairs`);
   }
 
   return result;
@@ -252,7 +259,7 @@ export function normalizeWordXml(xmlContent: string): string {
     const fragmentedPattern = /«((?:<(?!\/w:p>|w:p[\s>\/])[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<(?!\/w:p>|w:p[\s>\/])[^>]*>|\s)*?)»/g;
     p = p.replace(fragmentedPattern, (match, pre, fieldName, post) => {
       if (pre.includes("<") || post.includes("<")) {
-        console.log(`[tag-parser] Found fragmented merge field: ${fieldName}`);
+        debugLog(`[tag-parser] Found fragmented merge field: ${fieldName}`);
       }
       return `«${fieldName}»`;
     });
@@ -303,7 +310,7 @@ export function normalizeWordXml(xmlContent: string): string {
         const transform = cleanText.substring(pipeIdx + 1);
         if (/^[A-Za-z0-9_.]+$/.test(fieldName) && /^[A-Za-z0-9_]+$/.test(transform)) {
           if (innerContent.includes('<')) {
-            console.log(`[tag-parser] Found fragmented curly tag with transform, consolidating: {{${fieldName}|${transform}}}`);
+            debugLog(`[tag-parser] Found fragmented curly tag with transform, consolidating: {{${fieldName}|${transform}}}`);
           }
           return `{{${fieldName}|${transform}}}`;
         }
@@ -311,7 +318,7 @@ export function normalizeWordXml(xmlContent: string): string {
 
       if (/^[A-Za-z0-9_.]+$/.test(cleanText)) {
         if (innerContent.includes('<')) {
-          console.log(`[tag-parser] Found fragmented curly tag, consolidating: {{${cleanText}}}`);
+          debugLog(`[tag-parser] Found fragmented curly tag, consolidating: {{${cleanText}}}`);
         }
         return `{{${cleanText}}}`;
       }
@@ -323,7 +330,7 @@ export function normalizeWordXml(xmlContent: string): string {
     const ifFragmented = /\{\{((?:<[^>]*>|\s)*?)#if\s*((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
     p = p.replace(ifFragmented, (_match, pre, mid, fieldName, post) => {
       if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
-        console.log(`[tag-parser] Consolidated fragmented {{#if ${fieldName}}}`);
+        debugLog(`[tag-parser] Consolidated fragmented {{#if ${fieldName}}}`);
       }
       return `{{#if ${fieldName}}}`;
     });
@@ -331,7 +338,7 @@ export function normalizeWordXml(xmlContent: string): string {
     const unlessFragmented = /\{\{((?:<[^>]*>|\s)*?)#unless\s*((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
     p = p.replace(unlessFragmented, (_match, pre, mid, fieldName, post) => {
       if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
-        console.log(`[tag-parser] Consolidated fragmented {{#unless ${fieldName}}}`);
+        debugLog(`[tag-parser] Consolidated fragmented {{#unless ${fieldName}}}`);
       }
       return `{{#unless ${fieldName}}}`;
     });
@@ -339,7 +346,7 @@ export function normalizeWordXml(xmlContent: string): string {
     const endIfFragmented = /\{\{((?:<[^>]*>|\s)*?)\/((?:<[^>]*>|\s)*?)if((?:<[^>]*>|\s)*?)\}\}/g;
     p = p.replace(endIfFragmented, (_match, pre, mid, post) => {
       if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
-        console.log(`[tag-parser] Consolidated fragmented {{/if}}`);
+        debugLog(`[tag-parser] Consolidated fragmented {{/if}}`);
       }
       return `{{/if}}`;
     });
@@ -347,7 +354,7 @@ export function normalizeWordXml(xmlContent: string): string {
     const endUnlessFragmented = /\{\{((?:<[^>]*>|\s)*?)\/((?:<[^>]*>|\s)*?)unless((?:<[^>]*>|\s)*?)\}\}/g;
     p = p.replace(endUnlessFragmented, (_match, pre, mid, post) => {
       if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
-        console.log(`[tag-parser] Consolidated fragmented {{/unless}}`);
+        debugLog(`[tag-parser] Consolidated fragmented {{/unless}}`);
       }
       return `{{/unless}}`;
     });
@@ -356,7 +363,7 @@ export function normalizeWordXml(xmlContent: string): string {
     const elseFragmented = /\{\{((?:<[^>]*>|\s)*?)else((?:<[^>]*>|\s)*?)\}\}/g;
     p = p.replace(elseFragmented, (_match, pre, post) => {
       if (pre.includes("<") || post.includes("<")) {
-        console.log(`[tag-parser] Consolidated fragmented {{else}}`);
+        debugLog(`[tag-parser] Consolidated fragmented {{else}}`);
       }
       return `{{else}}`;
     });
@@ -365,7 +372,7 @@ export function normalizeWordXml(xmlContent: string): string {
     const eachFragmented = /\{\{((?:<[^>]*>|\s)*?)#each\s*((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
     p = p.replace(eachFragmented, (_match, pre, mid, collectionName, post) => {
       if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
-        console.log(`[tag-parser] Consolidated fragmented {{#each ${collectionName}}}`);
+        debugLog(`[tag-parser] Consolidated fragmented {{#each ${collectionName}}}`);
       }
       return `{{#each ${collectionName}}}`;
     });
@@ -374,7 +381,7 @@ export function normalizeWordXml(xmlContent: string): string {
     const endEachFragmented = /\{\{((?:<[^>]*>|\s)*?)\/((?:<[^>]*>|\s)*?)each((?:<[^>]*>|\s)*?)\}\}/g;
     p = p.replace(endEachFragmented, (_match, pre, mid, post) => {
       if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
-        console.log(`[tag-parser] Consolidated fragmented {{/each}}`);
+        debugLog(`[tag-parser] Consolidated fragmented {{/each}}`);
       }
       return `{{/each}}`;
     });
@@ -385,7 +392,7 @@ export function normalizeWordXml(xmlContent: string): string {
       const cleanText = inner.replace(/<[^>]*>/g, '').replace(/\s+/g, '').trim();
       if (/^[A-Za-z0-9_.]+$/.test(cleanText)) {
         if (inner.includes('<')) {
-          console.log(`[tag-parser] Consolidated fragmented chevron tag: «${cleanText}»`);
+          debugLog(`[tag-parser] Consolidated fragmented chevron tag: «${cleanText}»`);
         }
         return `«${cleanText}»`;
       }
@@ -398,7 +405,7 @@ export function normalizeWordXml(xmlContent: string): string {
   // Diagnostic: count tags BEFORE paragraph-level consolidation
   const preConsolidationCurly = (result.match(/\{\{[A-Za-z0-9_.| ]+\}\}/g) || []).length;
   const preConsolidationChevron = (result.match(/\u00AB[A-Za-z0-9_.]+\u00BB/g) || []).length;
-  console.log(`[tag-parser] Before paragraph consolidation: ${preConsolidationCurly} curly tags, ${preConsolidationChevron} chevron tags`);
+  debugLog(`[tag-parser] Before paragraph consolidation: ${preConsolidationCurly} curly tags, ${preConsolidationChevron} chevron tags`);
 
   // Safety-net: paragraph-level consolidation for tags that span multiple <w:t> runs.
   result = consolidateFragmentedTagsInParagraphs(result);
@@ -457,7 +464,7 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
 
     // Tags are fragmented across runs — proceed to consolidation
     parasConsolidated++;
-    console.log(`[tag-parser] Paragraph-level consolidation: "${joined.substring(0, 120)}${joined.length > 120 ? '...' : ''}"`);
+    debugLog(`[tag-parser] Paragraph-level consolidation: "${joined.substring(0, 120)}${joined.length > 120 ? '...' : ''}"`);
 
     let isFirst = true;
     return para.replace(/<w:t(\s[^>]*)?>([^<]*)<\/w:t>/g, (match, attrs, _text) => {
@@ -469,7 +476,7 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
     });
   });
 
-  console.log(`[tag-parser] Paragraph consolidation stats: ${parasWithBraces} paragraphs with braces, ${parasConsolidated} consolidated, ${parasSkippedComplete} already complete, ${parasSkippedNoTags} no tags in joined text`);
+  debugLog(`[tag-parser] Paragraph consolidation stats: ${parasWithBraces} paragraphs with braces, ${parasConsolidated} consolidated, ${parasSkippedComplete} already complete, ${parasSkippedNoTags} no tags in joined text`);
   return result;
 }
 
@@ -527,7 +534,7 @@ export function parseWordMergeFields(content: string): ParsedMergeTag[] {
     }
   }
 
-  console.log(`[tag-parser] Found ${tags.length} merge tags: ${tags.map(t => t.tagName).join(", ")}`);
+  debugLog(`[tag-parser] Found ${tags.length} merge tags: ${tags.map(t => t.tagName).join(", ")}`);
 
   return tags;
 }
@@ -612,7 +619,7 @@ export function replaceLabelBasedFields(
             });
             resultLower = result.toLowerCase();
             replacementCount++;
-            console.log(`[tag-parser] Label "${label}" -> No data; blanked "${textToReplace}"`);
+            debugLog(`[tag-parser] Label "${label}" -> No data; blanked "${textToReplace}"`);
           }
         } else if (label === "as of _") {
           const asOfPattern = /as of\s*_+/gi;
@@ -620,7 +627,7 @@ export function replaceLabelBasedFields(
             result = result.replace(asOfPattern, "as of ");
             resultLower = result.toLowerCase();
             replacementCount++;
-            console.log(`[tag-parser] Label "${label}" -> No data; blanked "as of ___"`);
+            debugLog(`[tag-parser] Label "${label}" -> No data; blanked "as of ___"`);
           }
         }
         continue;
@@ -640,7 +647,7 @@ export function replaceLabelBasedFields(
           result = result.replace(asOfPattern, `as of ${formattedValue}`);
           resultLower = result.toLowerCase();
           replacementCount++;
-          console.log(`[tag-parser] Label-replaced "as of ___" -> "${formattedValue}"`);
+          debugLog(`[tag-parser] Label-replaced "as of ___" -> "${formattedValue}"`);
         }
         continue;
       }
@@ -676,7 +683,7 @@ export function replaceLabelBasedFields(
 
           resultLower = result.toLowerCase();
           replacementCount++;
-          console.log(`[tag-parser] Label-replaced "${textToReplace}" -> "${formattedValue}"`);
+          debugLog(`[tag-parser] Label-replaced "${textToReplace}" -> "${formattedValue}"`);
         }
         continue;
       }
@@ -688,7 +695,7 @@ export function replaceLabelBasedFields(
         result = result.replace(labelPattern, `$1$2${formattedValue} `);
         resultLower = result.toLowerCase();
         replacementCount++;
-        console.log(`[tag-parser] Label-replaced "${label}" -> "${formattedValue}"`);
+        debugLog(`[tag-parser] Label-replaced "${label}" -> "${formattedValue}"`);
       } else if (label.endsWith(':')) {
         const labelNoColon = label.slice(0, -1);
         const labelNoColonEscaped = labelNoColon.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -698,7 +705,7 @@ export function replaceLabelBasedFields(
           result = result.replace(colonTolerantPattern, `$&${formattedValue} `);
           resultLower = result.toLowerCase();
           replacementCount++;
-          console.log(`[tag-parser] Label-replaced (colon-tolerant) "${label}" -> "${formattedValue}"`);
+          debugLog(`[tag-parser] Label-replaced (colon-tolerant) "${label}" -> "${formattedValue}"`);
         }
       }
     }
@@ -777,7 +784,7 @@ export function processConditionalBlocks(
       const fieldKey = ifMatch[1];
       const blockContent = ifMatch[2];
       const truthy = isConditionTruthy(fieldKey, fieldValues, mergeTagMap, validFieldKeys);
-      console.log(`[tag-parser] Conditional {{#if ${fieldKey}}} = ${truthy}`);
+      debugLog(`[tag-parser] Conditional {{#if ${fieldKey}}} = ${truthy}`);
 
       // Check for {{else}} within the block
       const elseIndex = blockContent.indexOf('{{else}}');
@@ -800,7 +807,7 @@ export function processConditionalBlocks(
       const fieldKey = unlessMatch[1];
       const blockContent = unlessMatch[2];
       const truthy = isConditionTruthy(fieldKey, fieldValues, mergeTagMap, validFieldKeys);
-      console.log(`[tag-parser] Conditional {{#unless ${fieldKey}}} = ${!truthy} (inverted)`);
+      debugLog(`[tag-parser] Conditional {{#unless ${fieldKey}}} = ${!truthy} (inverted)`);
 
       // Check for {{else}} within the block
       const elseIndex = blockContent.indexOf('{{else}}');
@@ -898,7 +905,7 @@ export function processSdtCheckboxes(
     // Extract the tag value (the mapping key)
     const tagMatch = /<w:tag\s+w:val="([^"]+)"/i.exec(sdtBlock);
     if (!tagMatch) {
-      console.log("[tag-parser] SDT checkbox found but no <w:tag> — skipping");
+      debugLog("[tag-parser] SDT checkbox found but no <w:tag> — skipping");
       return sdtBlock;
     }
 
@@ -922,7 +929,7 @@ export function processSdtCheckboxes(
     const checkedVal = isChecked ? "1" : "0";
     const displayChar = isChecked ? "\u2612" : "\u2610"; // ☒ or ☐
 
-    console.log(`[tag-parser] SDT checkbox "${tagName}" -> ${canonicalKey} = ${isChecked} (${displayChar})`);
+    debugLog(`[tag-parser] SDT checkbox "${tagName}" -> ${canonicalKey} = ${isChecked} (${displayChar})`);
 
     // 1. Toggle <w14:checked w14:val="..."/>
     let result = sdtBlock.replace(
@@ -966,7 +973,7 @@ export function processEachBlocks(
     const collectionPrefix = eachMatch[1]; // e.g., "property"
     const blockTemplate = eachMatch[2]; // content between {{#each}} and {{/each}}
 
-    console.log(`[tag-parser] Processing {{#each ${collectionPrefix}}}`);
+    debugLog(`[tag-parser] Processing {{#each ${collectionPrefix}}}`);
 
     // Find all indexed entities matching this prefix (e.g., property1, property2, ...)
     const entityIndices = new Set<number>();
@@ -988,7 +995,7 @@ export function processEachBlocks(
 
     // Sort indices numerically
     const sortedIndices = [...entityIndices].sort((a, b) => a - b);
-    console.log(`[tag-parser] Found ${sortedIndices.length} entities for "${collectionPrefix}": [${sortedIndices.join(', ')}]`);
+    debugLog(`[tag-parser] Found ${sortedIndices.length} entities for "${collectionPrefix}": [${sortedIndices.join(', ')}]`);
 
     if (sortedIndices.length === 0) {
       // No entities found — remove the entire block
@@ -1121,7 +1128,7 @@ export function replaceMergeTags(
     const openBraceCount = (result.match(/\{\{/g) || []).length;
     const closeBraceCount = (result.match(/\}\}/g) || []).length;
     if (openBraceCount > 0 || closeBraceCount > 0) {
-      console.log(`[tag-parser] After normalization: ${openBraceCount} opening {{ and ${closeBraceCount} closing }} detected`);
+      debugLog(`[tag-parser] After normalization: ${openBraceCount} opening {{ and ${closeBraceCount} closing }} detected`);
     }
   }
 
@@ -1155,9 +1162,9 @@ export function replaceMergeTags(
       } else {
         resolvedValue = formatByDataType(fieldData.rawValue, fieldData.dataType);
       }
-      console.log(`[tag-parser] Replacing ${tag.tagName} -> ${transformKey} = "${resolvedValue}"`);
+      debugLog(`[tag-parser] Replacing ${tag.tagName} -> ${transformKey} = "${resolvedValue}"`);
     } else {
-      console.log(`[tag-parser] No data for ${tag.tagName} (canonical: ${canonicalKey})`);
+      debugLog(`[tag-parser] No data for ${tag.tagName} (canonical: ${canonicalKey})`);
     }
     
     // XML-escape the value to prevent corruption from &, <, >, " characters
@@ -1170,10 +1177,10 @@ export function replaceMergeTags(
   }
   
   // Always run label-based replacement after merge tag replacement
-  console.log(`[tag-parser] Running label-based replacement (${tags.length} merge tags were processed, ${replacedFieldKeys.size} fields already resolved)`);
+  debugLog(`[tag-parser] Running label-based replacement (${tags.length} merge tags were processed, ${replacedFieldKeys.size} fields already resolved)`);
   const labelResult = replaceLabelBasedFields(result, fieldValues, fieldTransforms, labelMap, replacedFieldKeys, mergeTagMap, validFieldKeys);
   result = labelResult.content;
-  console.log(`[tag-parser] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
+  debugLog(`[tag-parser] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
 
   // Final safety net: remove only merge tags that were explicitly parsed
   // and had no data. Do NOT globally remove all {{...}} patterns — that can
@@ -1185,7 +1192,7 @@ export function replaceMergeTags(
       return !resolved?.data;
     });
     if (noDataTags.length > 0) {
-      console.log(`[tag-parser] Cleaning ${noDataTags.length} no-data tags: ${noDataTags.map(t => t.tagName).join(', ')}`);
+      debugLog(`[tag-parser] Cleaning ${noDataTags.length} no-data tags: ${noDataTags.map(t => t.tagName).join(', ')}`);
       for (const tag of noDataTags) {
         result = result.split(tag.fullMatch).join('');
       }
@@ -1216,7 +1223,7 @@ export function replaceMergeTags(
       return fullMatch;
     });
     if (orphanCount > 0) {
-      console.log(`[tag-parser] Cleaned ${orphanCount} orphaned {{ from text runs`);
+      debugLog(`[tag-parser] Cleaned ${orphanCount} orphaned {{ from text runs`);
     }
   }
 
@@ -1236,7 +1243,7 @@ export function replaceMergeTags(
       return fullMatch;
     });
     if (orphanCount > 0) {
-      console.log(`[tag-parser] Cleaned ${orphanCount} orphaned }} from text runs`);
+      debugLog(`[tag-parser] Cleaned ${orphanCount} orphaned }} from text runs`);
     }
   }
 
