@@ -72,9 +72,10 @@ const EMPTY_CHARGE: Omit<ChargeRow, 'id'> = {
 interface LenderChargesProps {
   lenderId: string;
   contactDbId: string;
+  disabled?: boolean;
 }
 
-const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
+const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) => {
   const [rows, setRows] = useState<ChargeRow[]>([]);
   const [search, setSearch] = useState('');
   const [sortCol, setSortCol] = useState<string | null>(null);
@@ -135,6 +136,7 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
   }, [contactDbId]);
 
   const handleAddCharge = useCallback(async () => {
+    if (disabled) return;
     const chargeWithId: ChargeRow = {
       ...newCharge,
       id: crypto.randomUUID(),
@@ -153,7 +155,7 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
   }, [newCharge, rows, persistCharges]);
 
   const handleDeleteSelected = useCallback(async () => {
-    if (selectedRows.size === 0) return;
+    if (disabled || selectedRows.size === 0) return;
     const updatedRows = rows.filter(r => !selectedRows.has(r.id));
     try {
       await persistCharges(updatedRows);
@@ -261,14 +263,16 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
               </div>
             </PopoverContent>
           </Popover>
-          {selectedRows.size > 0 && (
+          {!disabled && selectedRows.size > 0 && (
             <Button size="sm" variant="destructive" className="gap-1 h-8 text-xs" onClick={handleDeleteSelected}>
               Delete ({selectedRows.size})
             </Button>
           )}
-          <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={() => setAddDialogOpen(true)}>
-            <Plus className="h-3.5 w-3.5" /> Add Charge
-          </Button>
+          {!disabled && (
+            <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={() => setAddDialogOpen(true)}>
+              <Plus className="h-3.5 w-3.5" /> Add Charge
+            </Button>
+          )}
         </div>
       </div>
 
@@ -298,14 +302,16 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="w-10 px-2">
-                <input
-                  type="checkbox"
-                  checked={filtered.length > 0 && selectedRows.size === filtered.length}
-                  onChange={toggleAll}
-                  className="rounded border-input"
-                />
-              </TableHead>
+              {!disabled && (
+                <TableHead className="w-10 px-2">
+                  <input
+                    type="checkbox"
+                    checked={filtered.length > 0 && selectedRows.size === filtered.length}
+                    onChange={toggleAll}
+                    className="rounded border-input"
+                  />
+                </TableHead>
+              )}
               {activeColumns.map(c => (
                 <SortableTableHead
                   key={c.id}
@@ -322,20 +328,22 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId }) => {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={activeColumns.length + 1} className="text-center py-8 text-muted-foreground text-sm">
+                <TableCell colSpan={activeColumns.length + (disabled ? 0 : 1)} className="text-center py-8 text-muted-foreground text-sm">
                   No charge records found.
                 </TableCell>
               </TableRow>
             ) : filtered.map(r => (
               <TableRow key={r.id} className={selectedRows.has(r.id) ? 'bg-primary/5' : ''}>
-                <TableCell className="w-10 px-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedRows.has(r.id)}
-                    onChange={() => toggleRow(r.id)}
-                    className="rounded border-input"
-                  />
-                </TableCell>
+                {!disabled && (
+                  <TableCell className="w-10 px-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedRows.has(r.id)}
+                      onChange={() => toggleRow(r.id)}
+                      className="rounded border-input"
+                    />
+                  </TableCell>
+                )}
                 {activeColumns.map(c => {
                   const val = (r as any)[c.id] || '';
                   let display = val || '-';
