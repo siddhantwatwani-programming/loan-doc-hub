@@ -267,15 +267,16 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 z-[200]" align="start">
-                    <Calendar
+                    <EnhancedCalendar
                       mode="single"
                       selected={form['dob'] ? new Date(form['dob']) : undefined}
                       onSelect={(date) => {
                         set('dob', date ? format(date, 'MM/dd/yyyy') : '');
                         setDobOpen(false);
                       }}
+                      onClear={() => { set('dob', ''); setDobOpen(false); }}
+                      onToday={() => { set('dob', format(new Date(), 'MM/dd/yyyy')); setDobOpen(false); }}
                       initialFocus
-                      className={cn("p-3 pointer-events-auto")}
                     />
                   </PopoverContent>
                 </Popover>
