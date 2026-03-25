@@ -454,16 +454,17 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             onResetColumns={resetColumns}
             disabled={disabled}
           />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setAddModalOpen(true)}
-            disabled={disabled}
-            className="gap-1"
-          >
-            <Plus className="h-4 w-4" />
-            Add Participant
-          </Button>
+          {!disabled && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAddModalOpen(true)}
+              className="gap-1"
+            >
+              <Plus className="h-4 w-4" />
+              Add Participant
+            </Button>
+          )}
         </div>
       </div>
 
