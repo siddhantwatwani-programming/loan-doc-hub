@@ -138,9 +138,11 @@ export const OriginationPropertyForm: React.FC<OriginationPropertyFormProps> = (
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={parseDate(v(FK.year_built))}
+              <EnhancedCalendar mode="single" selected={parseDate(v(FK.year_built))}
                 onSelect={(date) => date && sv(FK.year_built, format(date, 'yyyy-MM-dd'))}
-                initialFocus className="p-3 pointer-events-auto" />
+                onClear={() => sv(FK.year_built, '')}
+                onToday={() => sv(FK.year_built, format(new Date(), 'yyyy-MM-dd'))}
+                initialFocus />
             </PopoverContent>
           </Popover>
         </div>

@@ -365,12 +365,13 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
-                  <Calendar
+                  <EnhancedCalendar
                     mode="single"
                     selected={parseDate(getValue('stopDate'))}
                     onSelect={(date) => { handleChange('stopDate', date ? format(date, 'yyyy-MM-dd') : ''); setStopDateOpen(false); }}
+                    onClear={() => { handleChange('stopDate', ''); setStopDateOpen(false); }}
+                    onToday={() => { handleChange('stopDate', format(new Date(), 'yyyy-MM-dd')); setStopDateOpen(false); }}
                     initialFocus
-                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
