@@ -37,6 +37,7 @@ import { useContactsCrud, type ContactRecord } from '@/hooks/useContactsCrud';
 import { ContactsListView } from '@/components/contacts/ContactsListView';
 import { CreateContactModal } from '@/components/contacts/CreateContactModal';
 import ContactLenderDetailLayout from '@/components/contacts/lender-detail/ContactLenderDetailLayout';
+import { useFormPermissions } from '@/hooks/useFormPermissions';
 import type { ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -96,6 +97,7 @@ const ContactLendersPage: React.FC = () => {
   const { contactId } = useParams<{ contactId?: string }>();
   const navigate = useNavigate();
   const crud = useContactsCrud({ contactType: 'lender' });
+  const { isFormViewOnly } = useFormPermissions();
   const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const deepLinkLoaded = useRef(false);
@@ -152,12 +154,15 @@ const ContactLendersPage: React.FC = () => {
   }, [crud]);
 
   const handleSave = useCallback(async (id: string, contactData: Record<string, string>) => {
+    if (isFormViewOnly('lender')) {
+      return false;
+    }
     const result = await crud.updateContact(id, contactData);
     if (result) {
       setSelectedContact(null);
     }
     return result;
-  }, [crud]);
+  }, [crud, isFormViewOnly]);
 
   const handleDeleteSelected = useCallback(async (ids: string[]) => {
     await crud.deleteContacts(ids);
