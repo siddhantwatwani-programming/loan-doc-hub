@@ -106,6 +106,7 @@ interface MagicLinkInfo {
 interface InviteParticipantsPanelProps {
   dealId: string;
   dealNumber: string;
+  disabled?: boolean;
 }
 
 const EXTERNAL_ROLES: { value: AppRole; label: string }[] = [
