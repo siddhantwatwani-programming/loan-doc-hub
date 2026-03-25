@@ -154,13 +154,13 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
       case 'trust-ledger':
         return (
           <div className="p-6">
-            <BrokerTrustLedger brokerId={contact.contact_id} contactDbId={contact.id} />
+            <BrokerTrustLedger brokerId={contact.contact_id} contactDbId={contact.id} disabled={isReadOnly} />
           </div>
         );
       case 'conversation-log':
         return (
           <div className="p-6">
-            <BrokerConversationLog brokerId={contact.contact_id} contactDbId={contact.id} />
+            <BrokerConversationLog brokerId={contact.contact_id} contactDbId={contact.id} disabled={isReadOnly} />
           </div>
         );
       case 'banking':
@@ -193,7 +193,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
       case 'attachments':
         return (
           <div className="p-6">
-            <BrokerAttachments brokerId={contact.contact_id} contactDbId={contact.id} />
+            <BrokerAttachments brokerId={contact.contact_id} contactDbId={contact.id} disabled={isReadOnly} />
           </div>
         );
       case 'events-journal':

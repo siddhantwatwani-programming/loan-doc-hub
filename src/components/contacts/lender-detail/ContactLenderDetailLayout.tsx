@@ -115,13 +115,13 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
       case 'trust-ledger':
         return (
           <div className="p-6">
-            <LenderTrustLedger lenderId={contact.contact_id} contactDbId={contact.id} />
+            <LenderTrustLedger lenderId={contact.contact_id} contactDbId={contact.id} disabled={isReadOnly} />
           </div>
         );
       case 'conversation-log':
         return (
           <div className="p-6">
-            <LenderConversationLog lenderId={contact.contact_id} contactDbId={contact.id} />
+            <LenderConversationLog lenderId={contact.contact_id} contactDbId={contact.id} disabled={isReadOnly} />
           </div>
         );
       case 'lender-info':
@@ -163,7 +163,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
       case 'attachments':
         return (
           <div className="p-6">
-            <LenderAttachments lenderId={contact.contact_id} contactDbId={contact.id} />
+            <LenderAttachments lenderId={contact.contact_id} contactDbId={contact.id} disabled={isReadOnly} />
           </div>
         );
       case 'events-journal':

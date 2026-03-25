@@ -97,7 +97,7 @@ const getEmptyLog = (): Omit<LogRow, 'id'> => {
   };
 };
 
-const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string }> = ({ brokerId, contactDbId }) => {
+const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string; disabled?: boolean }> = ({ brokerId, contactDbId, disabled }) => {
   const [rows, setRows] = useState<LogRow[]>([]);
   const [search, setSearch] = useState('');
   const [sortCol, setSortCol] = useState<string | null>(null);
@@ -319,9 +319,11 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string }>
               ))}
             </PopoverContent>
           </Popover>
-          <Button size="sm" className="h-8 text-xs gap-1" onClick={() => { setNewLog(getEmptyLog()); setPendingFiles([]); setAddOpen(true); }}>
-            <Plus className="h-3.5 w-3.5" /> Add Conversation Logs
-          </Button>
+          {!disabled && (
+            <Button size="sm" className="h-8 text-xs gap-1" onClick={() => { setNewLog(getEmptyLog()); setPendingFiles([]); setAddOpen(true); }}>
+              <Plus className="h-3.5 w-3.5" /> Add Conversation Logs
+            </Button>
+          )}
         </div>
       </div>
 
@@ -359,7 +361,7 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string }>
           </PopoverContent>
         </Popover>
         <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={handleExport}><Download className="h-3.5 w-3.5" /> Export</Button>
-        {selectedRows.size > 0 && (
+        {!disabled && selectedRows.size > 0 && (
           <Button variant="destructive" size="sm" className="h-8 text-xs" onClick={handleDeleteSelected}>Delete ({selectedRows.size})</Button>
         )}
       </div>
