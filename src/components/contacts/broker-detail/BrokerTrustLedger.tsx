@@ -255,9 +255,11 @@ const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string; disab
         </Tabs>
         <div className="flex items-center gap-2">
           <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
-          <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(true)} className="gap-1 text-xs">
-            <Plus className="h-4 w-4" /> Add Entry
-          </Button>
+          {!disabled && (
+            <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(true)} className="gap-1 text-xs">
+              <Plus className="h-4 w-4" /> Add Entry
+            </Button>
+          )}
         </div>
       </div>
 
