@@ -213,6 +213,24 @@ export function useContactsCrud({ contactType, pageSize = 25 }: UseContactsCrudO
 
   const deleteContacts = useCallback(async (ids: string[]) => {
     try {
+      // Remove linked deal_participants first to avoid FK constraint violations
+      const { error: dpError } = await supabase
+        .from('deal_participants')
+        .delete()
+        .in('contact_id', ids);
+      if (dpError) {
+        console.warn('Could not remove linked deal participants:', dpError);
+      }
+
+      // Also remove linked borrower_attachments
+      const { error: baError } = await supabase
+        .from('borrower_attachments')
+        .delete()
+        .in('contact_id', ids);
+      if (baError) {
+        console.warn('Could not remove linked borrower attachments:', baError);
+      }
+
       const { error } = await supabase.from('contacts').delete().in('id', ids);
       if (error) throw error;
       toast.success(`${ids.length} contact${ids.length !== 1 ? 's' : ''} deleted`);
