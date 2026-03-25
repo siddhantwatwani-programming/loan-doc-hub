@@ -374,7 +374,6 @@ export const DealOverviewPage: React.FC = () => {
   const isCsr = role === 'csr' || role === 'admin';
 
   // Check if participants section is read-only for this user
-  const { isFormViewOnly } = useFormPermissions();
   const isParticipantsReadOnly = isFormViewOnly('participants');
 
   const handleMarkReady = async () => {
