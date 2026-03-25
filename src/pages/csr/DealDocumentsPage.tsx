@@ -403,12 +403,20 @@ export const DealDocumentsPage: React.FC = () => {
       if (data?.error) throw new Error(data.error);
 
       const result = data as {
+        status?: string;
+        jobId?: string;
         successCount: number;
         failCount: number;
         results: Array<{ templateName: string; success: boolean; error?: string }>;
       };
 
-      if (result.failCount === 0) {
+      // Handle async background processing response
+      if (result.status === 'running' && result.jobId) {
+        toast({
+          title: 'Document Generation Started',
+          description: 'Processing in the background. Documents will appear automatically when ready.',
+        });
+      } else if (result.failCount === 0 && result.successCount > 0) {
         toast({
           title: 'Documents Generated',
           description: `Successfully generated ${result.successCount} document${result.successCount > 1 ? 's' : ''}`,
@@ -419,7 +427,7 @@ export const DealDocumentsPage: React.FC = () => {
           description: `${result.successCount} succeeded, ${result.failCount} failed`,
           variant: 'destructive',
         });
-      } else {
+      } else if (result.results && result.results.length > 0) {
         const firstError = result.results.find(r => !r.success)?.error || 'Unknown error';
         toast({
           title: 'Generation Failed',
