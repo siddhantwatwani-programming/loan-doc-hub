@@ -181,12 +181,13 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
+          <EnhancedCalendar
             mode="single"
             selected={isValidDate ? selectedDate : undefined}
             onSelect={handleDateSelect}
+            onClear={() => { onChange(''); setDatePickerOpen(false); }}
+            onToday={() => { onChange(format(new Date(), 'yyyy-MM-dd')); setDatePickerOpen(false); }}
             initialFocus
-            className="p-3 pointer-events-auto"
           />
         </PopoverContent>
       </Popover>
