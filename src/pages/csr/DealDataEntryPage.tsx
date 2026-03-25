@@ -112,13 +112,21 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
   const params = useParams<{ id: string }>();
   const id = dealIdProp || params.id;
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { isExternalUser, isInternalUser } = useAuth();
   const { activeTab, setActiveTab } = useDealNavigation();
   const workspace = useWorkspaceOptional();
 
+  const isDirectDealRoute = !!id && (
+    location.pathname === `/deals/${id}/data` ||
+    location.pathname === `/deals/${id}/edit`
+  );
+
   // Determine if this tab is active (for deferred loading)
-  const isActive = isActiveTabProp !== undefined ? isActiveTabProp : (!workspace || workspace.activeFileId === id);
+  const isActive = isActiveTabProp !== undefined
+    ? isActiveTabProp
+    : (!workspace || workspace.activeFileId === id || isDirectDealRoute);
 
   const [deal, setDeal] = useState<Deal | null>(null);
   const [dealLoading, setDealLoading] = useState(true);
