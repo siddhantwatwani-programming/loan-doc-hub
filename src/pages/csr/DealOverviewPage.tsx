@@ -82,6 +82,7 @@ export const DealOverviewPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { role } = useAuth();
+  const { isFormViewOnly } = useFormPermissions();
   const workspace = useWorkspaceOptional();
   const [showMaxFilesDialog, setShowMaxFilesDialog] = useState(false);
   const [dealParticipants, setDealParticipants] = useState<any[]>([]);
