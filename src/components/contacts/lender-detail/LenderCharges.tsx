@@ -136,6 +136,7 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
   }, [contactDbId]);
 
   const handleAddCharge = useCallback(async () => {
+    if (disabled) return;
     const chargeWithId: ChargeRow = {
       ...newCharge,
       id: crypto.randomUUID(),
