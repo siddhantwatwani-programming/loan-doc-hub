@@ -202,7 +202,7 @@ const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string; disab
             </DropdownMenu>
 
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="outline" size="icon" className="h-8 w-8"><FileText className="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" className="h-8 w-8" disabled={disabled}><FileText className="h-4 w-4" /></Button>
             </TooltipTrigger><TooltipContent>Info</TooltipContent></Tooltip>
 
             <DropdownMenu>
