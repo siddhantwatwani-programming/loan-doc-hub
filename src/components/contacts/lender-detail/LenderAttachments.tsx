@@ -136,10 +136,12 @@ const LenderAttachments: React.FC<LenderAttachmentsProps> = ({ lenderId, contact
             <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-8 h-9 w-[200px]" />
           </div>
           <input ref={inputRef} type="file" multiple className="hidden" onChange={handleUpload} />
-          <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()} className="gap-1" disabled={uploading}>
-            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            {uploading ? 'Uploading...' : 'Upload'}
-          </Button>
+          {!disabled && (
+            <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()} className="gap-1" disabled={uploading}>
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              {uploading ? 'Uploading...' : 'Upload'}
+            </Button>
+          )}
         </div>
       </div>
 
