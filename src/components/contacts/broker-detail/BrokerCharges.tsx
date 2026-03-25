@@ -357,7 +357,7 @@ const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId, disabled }) 
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={activeColumns.length + 1} className="text-center py-8 text-muted-foreground text-sm">
+                <TableCell colSpan={activeColumns.length + (disabled ? 0 : 1)} className="text-center py-8 text-muted-foreground text-sm">
                   No charge records found.
                 </TableCell>
               </TableRow>
