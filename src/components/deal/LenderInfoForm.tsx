@@ -304,12 +304,13 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
+                  <EnhancedCalendar
                     mode="single"
                     selected={safeParseDateStr(getValue('dob'))}
                     onSelect={(date) => { handleChange('dob', date ? format(date, 'yyyy-MM-dd') : ''); setDobOpen(false); }}
+                    onClear={() => { handleChange('dob', ''); setDobOpen(false); }}
+                    onToday={() => { handleChange('dob', format(new Date(), 'yyyy-MM-dd')); setDobOpen(false); }}
                     initialFocus
-                    className={cn("p-3 pointer-events-auto")}
                   />
                 </PopoverContent>
               </Popover>
