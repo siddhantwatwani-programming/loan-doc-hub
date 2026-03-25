@@ -510,7 +510,7 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
                     </div>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-                    <Calendar mode="single" selected={addAsOfDateObj} onSelect={(d) => { if (d) { const ex = newLog.asOfDate ? new Date(newLog.asOfDate) : new Date(); if (!isNaN(ex.getTime())) { d.setHours(ex.getHours()); d.setMinutes(ex.getMinutes()); d.setSeconds(ex.getSeconds()); } setNewLog(p => ({ ...p, asOfDate: d.toISOString() })); } setAddAsOfOpen(false); }} initialFocus />
+                    <EnhancedCalendar mode="single" selected={addAsOfDateObj} onSelect={(d) => { if (d) { const ex = newLog.asOfDate ? new Date(newLog.asOfDate) : new Date(); if (!isNaN(ex.getTime())) { d.setHours(ex.getHours()); d.setMinutes(ex.getMinutes()); d.setSeconds(ex.getSeconds()); } setNewLog(p => ({ ...p, asOfDate: d.toISOString() })); } setAddAsOfOpen(false); }} onClear={() => { setNewLog(p => ({ ...p, asOfDate: '' })); setAddAsOfOpen(false); }} onToday={() => { setNewLog(p => ({ ...p, asOfDate: new Date().toISOString() })); setAddAsOfOpen(false); }} initialFocus />
                   </PopoverContent>
                 </Popover>
               </div>
