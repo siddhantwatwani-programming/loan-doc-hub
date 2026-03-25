@@ -9,6 +9,7 @@ import { resolvePacketFields, resolveAllFields } from '@/lib/requiredFieldsResol
 import { ActivityLogViewer } from '@/components/deal/ActivityLogViewer';
 import { InviteParticipantsPanel } from '@/components/deal/InviteParticipantsPanel';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFormPermissions } from '@/hooks/useFormPermissions';
 import { logDealMarkedReady } from '@/hooks/useActivityLog';
 import { useWorkspaceOptional } from '@/contexts/WorkspaceContext';
 import { MaxFilesDialog } from '@/components/workspace/MaxFilesDialog';

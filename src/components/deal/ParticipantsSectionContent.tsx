@@ -504,6 +504,9 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
               Add First Participant
             </Button>
           )}
+          {disabled && (
+            <p className="text-xs text-muted-foreground mt-2">View-only mode</p>
+          )}
         </div>
       ) : (
         <div className="border border-border rounded-lg overflow-x-auto">
