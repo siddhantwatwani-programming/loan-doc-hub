@@ -541,152 +541,151 @@ export function replaceLabelBasedFields(
   mergeTagMap?: Record<string, string>,
   validFieldKeys?: Set<string>
 ): { content: string; replacementCount: number } {
-  let result = content;
   let replacementCount = 0;
-  
-  for (const [label, mapping] of Object.entries(labelMap)) {
-    // Skip labels for fields that were already replaced by merge tags
-    const fieldKeyLower = mapping.fieldKey.toLowerCase();
-    const alreadyReplaced = replacedFieldKeys && [...replacedFieldKeys].some(k => k.toLowerCase() === fieldKeyLower);
-    if (alreadyReplaced) {
-      console.log(`[tag-parser] Label "${label}" -> skipped (field ${mapping.fieldKey} already replaced by merge tag)`);
-      continue;
-    }
-    
-    const resolvedKey = mergeTagMap && validFieldKeys
-      ? resolveFieldKeyWithMap(mapping.fieldKey, mergeTagMap, validFieldKeys)
-      : mapping.fieldKey;
-    const resolved = getFieldData(resolvedKey, fieldValues);
-    const fieldData = resolved?.data || null;
-    if (!fieldData || fieldData.rawValue === null) {
-      // If mapped field is empty, leave the document field blank
-      if (mapping.replaceNext) {
-        const textToReplace = mapping.replaceNext;
-        const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        // Use word boundaries to prevent partial word matches (e.g., "Date" matching "Dated")
-        // Also skip if the match is immediately followed by a merge tag {{...}}
-        const replaceNextPattern = new RegExp(`\\b${escapedText}\\b`, "gi");
-        if (replaceNextPattern.test(result)) {
-          result = result.replace(new RegExp(`\\b${escapedText}\\b`, "gi"), (match, offset) => {
-            // Check if this occurrence is followed by a merge tag or by resolved text content
-            // (merge tags may already be replaced at this point, leaving the value inline)
-            const after = result.substring(offset + match.length, offset + match.length + 200);
-            if (/^\s*(?:<[^>]*>\s*)*\{\{/.test(after)) {
-              console.log(`[tag-parser] Label "${label}" -> skipped blanking (adjacent to merge tag)`);
-              return match; // Keep static title
-            }
-            // Also skip if followed by non-whitespace text content (already-resolved merge tag value)
-            // Extract first text content after any XML tags
-            const textAfter = after.replace(/<[^>]*>/g, '').trim();
-            if (textAfter.length > 0) {
-              console.log(`[tag-parser] Label "${label}" -> skipped blanking (followed by text content "${textAfter.substring(0, 30)}")`);
-              return match; // Keep static title
-            }
-            return "";
-          });
-          replacementCount++;
-          console.log(`[tag-parser] Label "${label}" -> No data; blanked "${textToReplace}"`);
+
+  const processedContent = processParaByPara(content, (segment) => {
+    let result = segment;
+    let resultLower = result.toLowerCase();
+
+    for (const [label, mapping] of Object.entries(labelMap)) {
+      const fieldKeyLower = mapping.fieldKey.toLowerCase();
+      const alreadyReplaced = replacedFieldKeys && [...replacedFieldKeys].some(k => k.toLowerCase() === fieldKeyLower);
+      if (alreadyReplaced) {
+        continue;
+      }
+
+      // Fast skip to avoid running regexes against paragraphs that clearly don't contain the label
+      const quickNeedle = mapping.replaceNext
+        ? mapping.replaceNext.toLowerCase()
+        : label === "as of _"
+          ? "as of"
+          : label.endsWith(':')
+            ? label.slice(0, -1).toLowerCase()
+            : label.toLowerCase();
+      if (quickNeedle && !resultLower.includes(quickNeedle)) {
+        continue;
+      }
+
+      const resolvedKey = mergeTagMap && validFieldKeys
+        ? resolveFieldKeyWithMap(mapping.fieldKey, mergeTagMap, validFieldKeys)
+        : mapping.fieldKey;
+      const resolved = getFieldData(resolvedKey, fieldValues);
+      const fieldData = resolved?.data || null;
+
+      if (!fieldData || fieldData.rawValue === null) {
+        if (mapping.replaceNext) {
+          const textToReplace = mapping.replaceNext;
+          const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const replaceNextPattern = new RegExp(`\\b${escapedText}\\b`, "gi");
+          if (replaceNextPattern.test(result)) {
+            result = result.replace(new RegExp(`\\b${escapedText}\\b`, "gi"), (match, offset) => {
+              const after = result.substring(offset + match.length, offset + match.length + 200);
+              if (/^\s*(?:<[^>]*>\s*)*\{\{/.test(after)) {
+                return match;
+              }
+              const textAfter = after.replace(/<[^>]*>/g, '').trim();
+              if (textAfter.length > 0) {
+                return match;
+              }
+              return "";
+            });
+            resultLower = result.toLowerCase();
+            replacementCount++;
+            console.log(`[tag-parser] Label "${label}" -> No data; blanked "${textToReplace}"`);
+          }
+        } else if (label === "as of _") {
+          const asOfPattern = /as of\s*_+/gi;
+          if (asOfPattern.test(result)) {
+            result = result.replace(asOfPattern, "as of ");
+            resultLower = result.toLowerCase();
+            replacementCount++;
+            console.log(`[tag-parser] Label "${label}" -> No data; blanked "as of ___"`);
+          }
         }
-      } else if (label === "as of _") {
+        continue;
+      }
+
+      const transform = fieldTransforms.get(mapping.fieldKey);
+      let formattedValue: string;
+      if (transform) {
+        formattedValue = applyTransform(fieldData.rawValue, transform);
+      } else {
+        formattedValue = formatByDataType(fieldData.rawValue, fieldData.dataType);
+      }
+
+      if (label === "as of _") {
         const asOfPattern = /as of\s*_+/gi;
         if (asOfPattern.test(result)) {
-          result = result.replace(asOfPattern, "as of ");
+          result = result.replace(asOfPattern, `as of ${formattedValue}`);
+          resultLower = result.toLowerCase();
           replacementCount++;
-          console.log(`[tag-parser] Label "${label}" -> No data; blanked "as of ___"`);
+          console.log(`[tag-parser] Label-replaced "as of ___" -> "${formattedValue}"`);
         }
-      } else {
-        console.log(`[tag-parser] Label "${label}" -> No data for ${mapping.fieldKey}`);
+        continue;
       }
-      continue;
-    }
-    
-    const transform = fieldTransforms.get(mapping.fieldKey);
-    let formattedValue: string;
-    if (transform) {
-      formattedValue = applyTransform(fieldData.rawValue, transform);
-    } else {
-      formattedValue = formatByDataType(fieldData.rawValue, fieldData.dataType);
-    }
-    
-    // Handle special case for execution date with underscores
-    if (label === "as of _") {
-      const asOfPattern = /as of\s*_+/gi;
-      if (asOfPattern.test(result)) {
-        result = result.replace(asOfPattern, `as of ${formattedValue}`);
-        replacementCount++;
-        console.log(`[tag-parser] Label-replaced "as of ___" -> "${formattedValue}"`);
-      }
-      continue;
-    }
-    
-    // Handle replaceNext pattern
-    if (mapping.replaceNext) {
-      const textToReplace = mapping.replaceNext;
-      const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      // Use word boundaries to prevent partial word matches
-      const replaceNextPattern = new RegExp(`\\b${escapedText}\\b`, 'gi');
-      
-      if (replaceNextPattern.test(result)) {
-        // Track whether any match was colon-detected so we can do a post-pass replacement
-        let colonDetected = false;
-        
-        result = result.replace(new RegExp(`\\b${escapedText}\\b`, 'gi'), (match, offset) => {
-          const after = result.substring(offset + match.length, offset + match.length + 200);
-          if (/^\s*(?:<[^>]*>\s*)*\{\{/.test(after)) {
-            console.log(`[tag-parser] Label "${label}" -> skipped (adjacent to merge tag)`);
-            return match; // Keep static title
-          }
-          // If the word is followed by a colon (e.g., "Date:"), keep the label word
-          // and flag for post-pass insertion of the value after the colon
-          const immediateAfter = after.replace(/<[^>]*>/g, '').trimStart();
-          if (immediateAfter.startsWith(':')) {
-            console.log(`[tag-parser] Label "${label}" -> colon-detected, will insert value after colon`);
-            colonDetected = true;
-            return match; // Keep the label word as-is
-          }
-          return formattedValue;
-        });
-        
-        // Post-pass: if any match was colon-detected, do a secondary replacement
-        // on the full "Label: ___" or "Label:" pattern to insert the value after the colon
-        if (colonDetected) {
-          const fullPattern = new RegExp(
-            `(\\b${escapedText}\\b(?:\\s|<[^>]*>)*:\\s*)(_+|\\s*)`,
-            'gi'
-          );
-          result = result.replace(fullPattern, `$1${formattedValue} `);
-          console.log(`[tag-parser] Label "${label}" -> inserted value after colon: "${formattedValue}"`);
-        }
-        
-        replacementCount++;
-        console.log(`[tag-parser] Label-replaced "${textToReplace}" -> "${formattedValue}"`);
-      }
-      continue;
-    }
-    
-    // Find the label in the XML content
-    const labelEscaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const labelPattern = new RegExp(`(${labelEscaped})(\\s*)`, 'gi');
-    
-    if (labelPattern.test(result)) {
-      result = result.replace(labelPattern, `$1$2${formattedValue} `);
-      replacementCount++;
-      console.log(`[tag-parser] Label-replaced "${label}" -> "${formattedValue}"`);
-    } else if (label.endsWith(':')) {
-      // Colon-tolerant match
-      const labelNoColon = label.slice(0, -1);
-      const labelNoColonEscaped = labelNoColon.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const colonTolerantPattern = new RegExp(`(${labelNoColonEscaped})(?:\\s|<[^>]+>)*:`, 'gi');
 
-      if (colonTolerantPattern.test(result)) {
-        result = result.replace(colonTolerantPattern, `$&${formattedValue} `);
+      if (mapping.replaceNext) {
+        const textToReplace = mapping.replaceNext;
+        const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const replaceNextPattern = new RegExp(`\\b${escapedText}\\b`, 'gi');
+
+        if (replaceNextPattern.test(result)) {
+          let colonDetected = false;
+
+          result = result.replace(new RegExp(`\\b${escapedText}\\b`, 'gi'), (match, offset) => {
+            const after = result.substring(offset + match.length, offset + match.length + 200);
+            if (/^\s*(?:<[^>]*>\s*)*\{\{/.test(after)) {
+              return match;
+            }
+            const immediateAfter = after.replace(/<[^>]*>/g, '').trimStart();
+            if (immediateAfter.startsWith(':')) {
+              colonDetected = true;
+              return match;
+            }
+            return formattedValue;
+          });
+
+          if (colonDetected) {
+            const fullPattern = new RegExp(
+              `(\\b${escapedText}\\b(?:\\s|<[^>]*>)*:\\s*)(_+|\\s*)`,
+              'gi'
+            );
+            result = result.replace(fullPattern, `$1${formattedValue} `);
+          }
+
+          resultLower = result.toLowerCase();
+          replacementCount++;
+          console.log(`[tag-parser] Label-replaced "${textToReplace}" -> "${formattedValue}"`);
+        }
+        continue;
+      }
+
+      const labelEscaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const labelPattern = new RegExp(`(${labelEscaped})(\\s*)`, 'gi');
+
+      if (labelPattern.test(result)) {
+        result = result.replace(labelPattern, `$1$2${formattedValue} `);
+        resultLower = result.toLowerCase();
         replacementCount++;
-        console.log(`[tag-parser] Label-replaced (colon-tolerant) "${label}" -> "${formattedValue}"`);
+        console.log(`[tag-parser] Label-replaced "${label}" -> "${formattedValue}"`);
+      } else if (label.endsWith(':')) {
+        const labelNoColon = label.slice(0, -1);
+        const labelNoColonEscaped = labelNoColon.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const colonTolerantPattern = new RegExp(`(${labelNoColonEscaped})(?:\\s|<[^>]+>)*:`, 'gi');
+
+        if (colonTolerantPattern.test(result)) {
+          result = result.replace(colonTolerantPattern, `$&${formattedValue} `);
+          resultLower = result.toLowerCase();
+          replacementCount++;
+          console.log(`[tag-parser] Label-replaced (colon-tolerant) "${label}" -> "${formattedValue}"`);
+        }
       }
     }
-  }
-  
-  return { content: result, replacementCount };
+
+    return result;
+  });
+
+  return { content: processedContent, replacementCount };
 }
 
 /**
