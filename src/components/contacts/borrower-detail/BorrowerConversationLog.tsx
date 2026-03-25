@@ -394,7 +394,7 @@ const BorrowerConversationLog: React.FC<{ borrowerId: string; contactDbId: strin
         </Popover>
 
         <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={handleExport}><Download className="h-3.5 w-3.5" /> Export</Button>
-        {selectedRows.size > 0 && <Button variant="destructive" size="sm" className="h-8 text-xs" onClick={handleDeleteSelected}>Delete ({selectedRows.size})</Button>}
+        {selectedRows.size > 0 && !disabled && <Button variant="destructive" size="sm" className="h-8 text-xs" onClick={handleDeleteSelected}>Delete ({selectedRows.size})</Button>}
       </div>
 
       {/* Table */}
