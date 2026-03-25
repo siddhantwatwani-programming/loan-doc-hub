@@ -721,6 +721,35 @@ export function replaceLabelBasedFields(
  * Checks: non-null, non-empty string, boolean true, non-zero number.
  * Also supports checking if any field with a given prefix has data (entity existence).
  */
+// Module-level cache for entity-existence prefix lookups
+let _entityPrefixCache: Map<string, boolean> | null = null;
+let _entityPrefixCacheSource: Map<string, FieldValueData> | null = null;
+
+function buildEntityPrefixCache(fieldValues: Map<string, FieldValueData>): Map<string, boolean> {
+  if (_entityPrefixCache && _entityPrefixCacheSource === fieldValues) {
+    return _entityPrefixCache;
+  }
+  const prefixes = new Map<string, boolean>();
+  for (const [k, v] of fieldValues.entries()) {
+    if (v.rawValue === null || v.rawValue === "") continue;
+    const kLower = k.toLowerCase();
+    // Extract all possible prefixes: e.g. "co_borrower1.first_name" -> "co_borrower1"
+    const dotIdx = kLower.indexOf(".");
+    if (dotIdx > 0) {
+      prefixes.set(kLower.substring(0, dotIdx), true);
+    }
+    const underIdx = kLower.indexOf("_");
+    // For underscore prefixes, try first segment that contains digits
+    const match = kLower.match(/^([a-z_]+\d+)/);
+    if (match) {
+      prefixes.set(match[1], true);
+    }
+  }
+  _entityPrefixCache = prefixes;
+  _entityPrefixCacheSource = fieldValues;
+  return prefixes;
+}
+
 function isConditionTruthy(
   fieldKey: string,
   fieldValues: Map<string, FieldValueData>,
@@ -740,17 +769,10 @@ function isConditionTruthy(
     return Boolean(raw);
   }
 
-  // Entity-existence check: if fieldKey looks like a prefix (e.g., "co_borrower1"),
-  // check if ANY field starting with that prefix has data.
-  // Uses pre-built lowercase index for O(n) single-pass instead of O(n) .toLowerCase() per key.
-  const prefixDot = canonicalKey.toLowerCase() + ".";
-  const prefixUnderscore = canonicalKey.toLowerCase() + "_";
-  for (const [k, v] of fieldValues.entries()) {
-    const kLower = k.toLowerCase();
-    if (kLower.startsWith(prefixDot) || kLower.startsWith(prefixUnderscore)) {
-      if (v.rawValue !== null && v.rawValue !== "") return true;
-    }
-  }
+  // Entity-existence check using pre-built prefix cache (O(1) lookup)
+  const prefixCache = buildEntityPrefixCache(fieldValues);
+  const lowerKey = canonicalKey.toLowerCase();
+  if (prefixCache.has(lowerKey)) return true;
 
   return false;
 }
@@ -1140,6 +1162,8 @@ export function replaceMergeTags(
   // damaging static document titles like "Loan No", "Current Lender", etc.)
   const replacedFieldKeys = new Set<string>();
   
+  // Pre-resolve all tags and build a replacement map for single-pass replacement
+  const tagReplacementMap = new Map<string, string>();
   for (const tag of tags) {
     // Use validFieldKeys for direct field_key resolution
     const canonicalKey = resolveFieldKeyWithMap(tag.tagName, mergeTagMap, validFieldKeys);
@@ -1173,7 +1197,16 @@ export function replaceMergeTags(
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
-    result = result.split(tag.fullMatch).join(xmlSafeValue);
+    tagReplacementMap.set(tag.fullMatch, xmlSafeValue);
+  }
+
+  // Single-pass replacement: build regex from all tag patterns and replace in one go
+  if (tagReplacementMap.size > 0) {
+    const escapedPatterns = [...tagReplacementMap.keys()].map(k =>
+      k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    );
+    const combinedRegex = new RegExp(escapedPatterns.join('|'), 'g');
+    result = result.replace(combinedRegex, (match) => tagReplacementMap.get(match) ?? match);
   }
   
   // Always run label-based replacement after merge tag replacement
@@ -1186,16 +1219,18 @@ export function replaceMergeTags(
   // and had no data. Do NOT globally remove all {{...}} patterns — that can
   // blank tags that normalization failed to consolidate but are still valid.
   if (tags.length > 0) {
-    const noDataTags = tags.filter(tag => {
+    const noDataPatterns: string[] = [];
+    for (const tag of tags) {
       const ck = resolveFieldKeyWithMap(tag.tagName, mergeTagMap, validFieldKeys);
       const resolved = getFieldData(ck, fieldValues);
-      return !resolved?.data;
-    });
-    if (noDataTags.length > 0) {
-      debugLog(`[tag-parser] Cleaning ${noDataTags.length} no-data tags: ${noDataTags.map(t => t.tagName).join(', ')}`);
-      for (const tag of noDataTags) {
-        result = result.split(tag.fullMatch).join('');
+      if (!resolved?.data) {
+        noDataPatterns.push(tag.fullMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
       }
+    }
+    if (noDataPatterns.length > 0) {
+      debugLog(`[tag-parser] Cleaning ${noDataPatterns.length} no-data tags`);
+      const noDataRegex = new RegExp(noDataPatterns.join('|'), 'g');
+      result = result.replace(noDataRegex, '');
     }
   }
 

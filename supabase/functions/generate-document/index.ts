@@ -179,19 +179,20 @@ async function generateSingleDocument(
 
     // Get all field_dictionary_ids from JSONB keys
     // Handle composite keys like "borrower1::uuid" used by multi-entity sections
-    const allFieldDictIds: string[] = [];
+    const allFieldDictIdSet = new Set<string>();
     (sectionValues || []).forEach((sv: any) => {
       Object.keys(sv.field_values || {}).forEach((key: string) => {
         const fieldDictId = key.includes("::") ? key.split("::")[1] : key;
-        if (fieldDictId && !allFieldDictIds.includes(fieldDictId)) allFieldDictIds.push(fieldDictId);
+        if (fieldDictId) allFieldDictIdSet.add(fieldDictId);
       });
     });
+    const allFieldDictIds = [...allFieldDictIdSet];
 
     debugLog(`[generate-document] Found ${allFieldDictIds.length} unique field_dictionary IDs from deal section values`);
     
     // Fetch ALL field dictionary entries for deal values using batched queries
     // to avoid URL length limits with large .in() arrays
-    const FD_BATCH_SIZE = 100;
+    const FD_BATCH_SIZE = 500;
     const allFieldDictEntries: any[] = [];
     for (let i = 0; i < allFieldDictIds.length; i += FD_BATCH_SIZE) {
       const chunk = allFieldDictIds.slice(i, i + FD_BATCH_SIZE);
