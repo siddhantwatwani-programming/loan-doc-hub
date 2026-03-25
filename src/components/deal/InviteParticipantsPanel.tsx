@@ -106,6 +106,7 @@ interface MagicLinkInfo {
 interface InviteParticipantsPanelProps {
   dealId: string;
   dealNumber: string;
+  disabled?: boolean;
 }
 
 const EXTERNAL_ROLES: { value: AppRole; label: string }[] = [
@@ -124,6 +125,7 @@ const statusConfig: Record<ParticipantStatus, { label: string; color: string; ic
 export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = ({
   dealId,
   dealNumber,
+  disabled = false,
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -584,7 +586,7 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
               )}
             </div>
           </div>
-          {canAddMore && (
+          {canAddMore && !disabled && (
             <Button 
               size="sm" 
               onClick={() => {
@@ -614,7 +616,7 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
           <div className="text-center py-8">
             <Users className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
             <p className="text-muted-foreground text-sm">No participants invited yet</p>
-            {canAddMore && (
+            {canAddMore && !disabled && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -749,7 +751,8 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
                       </div>
                     </div>
 
-                    {/* Actions dropdown */}
+                    {/* Actions dropdown - hidden for read-only users */}
+                    {!disabled && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" disabled={isLoading}>
@@ -793,6 +796,7 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    )}
                   </div>
                   
                   {/* Sequential mode: show arrow to next */}

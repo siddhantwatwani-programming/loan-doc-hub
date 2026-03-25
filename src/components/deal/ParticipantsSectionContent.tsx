@@ -454,16 +454,17 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             onResetColumns={resetColumns}
             disabled={disabled}
           />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setAddModalOpen(true)}
-            disabled={disabled}
-            className="gap-1"
-          >
-            <Plus className="h-4 w-4" />
-            Add Participant
-          </Button>
+          {!disabled && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAddModalOpen(true)}
+              className="gap-1"
+            >
+              <Plus className="h-4 w-4" />
+              Add Participant
+            </Button>
+          )}
         </div>
       </div>
 
@@ -480,8 +481,8 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
         disabled={disabled}
-        selectedCount={selectedIds.size}
-        onBulkDelete={() => setDeleteDialogOpen(true)}
+        selectedCount={disabled ? 0 : selectedIds.size}
+        onBulkDelete={disabled ? undefined : () => setDeleteDialogOpen(true)}
         onExport={() => setExportOpen(true)}
         searchPlaceholder="Search participants..."
       />
@@ -503,18 +504,23 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
               Add First Participant
             </Button>
           )}
+          {disabled && (
+            <p className="text-xs text-muted-foreground mt-2">View-only mode</p>
+          )}
         </div>
       ) : (
         <div className="border border-border rounded-lg overflow-x-auto">
         <Table className="min-w-[1400px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
+              {!disabled && (
               <TableHead className="w-[40px]">
                 <Checkbox
                   checked={isAllSelected}
                   onCheckedChange={toggleAll}
                 />
               </TableHead>
+              )}
               {visibleColumns.map((col) => (
                 <SortableTableHead
                   key={col.id}
@@ -534,12 +540,14 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
                 className="cursor-pointer hover:bg-muted/50"
                 onClick={() => handleRowClick(participant)}
               >
+                {!disabled && (
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <Checkbox
                     checked={selectedIds.has(participant.id)}
                     onCheckedChange={() => toggleOne(participant.id)}
                   />
                 </TableCell>
+                )}
                 {visibleColumns.map((col) => (
                   <TableCell key={col.id}>
                     {renderCellValue(participant, col.id)}

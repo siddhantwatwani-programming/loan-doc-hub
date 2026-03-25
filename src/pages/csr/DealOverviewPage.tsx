@@ -9,6 +9,7 @@ import { resolvePacketFields, resolveAllFields } from '@/lib/requiredFieldsResol
 import { ActivityLogViewer } from '@/components/deal/ActivityLogViewer';
 import { InviteParticipantsPanel } from '@/components/deal/InviteParticipantsPanel';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFormPermissions } from '@/hooks/useFormPermissions';
 import { logDealMarkedReady } from '@/hooks/useActivityLog';
 import { useWorkspaceOptional } from '@/contexts/WorkspaceContext';
 import { MaxFilesDialog } from '@/components/workspace/MaxFilesDialog';
@@ -81,6 +82,7 @@ export const DealOverviewPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { role } = useAuth();
+  const { isFormViewOnly } = useFormPermissions();
   const workspace = useWorkspaceOptional();
   const [showMaxFilesDialog, setShowMaxFilesDialog] = useState(false);
   const [dealParticipants, setDealParticipants] = useState<any[]>([]);
@@ -370,6 +372,9 @@ export const DealOverviewPage: React.FC = () => {
   
   // Check if user is CSR
   const isCsr = role === 'csr' || role === 'admin';
+
+  // Check if participants section is read-only for this user
+  const isParticipantsReadOnly = isFormViewOnly('participants');
 
   const handleMarkReady = async () => {
     if (!deal || markingReady) return;
@@ -798,7 +803,7 @@ export const DealOverviewPage: React.FC = () => {
 
           {/* Participants Panel - CSR only */}
           {isCsr && (
-            <InviteParticipantsPanel dealId={deal.id} dealNumber={deal.deal_number} />
+            <InviteParticipantsPanel dealId={deal.id} dealNumber={deal.deal_number} disabled={isParticipantsReadOnly} />
           )}
 
           {/* Activity Log */}
