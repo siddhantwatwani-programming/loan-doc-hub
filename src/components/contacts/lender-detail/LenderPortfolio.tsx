@@ -437,7 +437,7 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
   };
 
   const handleRowClick = (row: PortfolioRow) => {
-    navigate(`/deals/${row.dealId}/edit`);
+    navigate(`/deals/${row.dealId}/data`);
   };
 
   const formatCellValue = (colId: string, row: PortfolioRow): string => {
