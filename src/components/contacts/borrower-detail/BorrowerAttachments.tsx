@@ -162,6 +162,7 @@ const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string; d
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (attachment: AttachmentRow) => {
+      if (disabled) throw new Error('You have read-only access to attachments');
       await supabase.storage.from(BUCKET).remove([attachment.file_path]);
       const { error } = await (supabase as any).from('borrower_attachments').update({ status: 'archived' }).eq('id', attachment.id);
       if (error) throw error;
