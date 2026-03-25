@@ -258,12 +258,12 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                     </div>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 pointer-events-auto z-[9999]" align="start">
-                    <Calendar
+                    <EnhancedCalendar
                       mode="single"
                       selected={asOfDateObj}
                       onSelect={handleAsOfDateSelect}
+                      showClearToday={false}
                       initialFocus
-                      className={cn("p-3 pointer-events-auto")}
                     />
                     <div className="flex items-center gap-1 px-3 pb-3 border-t border-border pt-2">
                       <Label className="text-xs text-muted-foreground mr-1">Time:</Label>

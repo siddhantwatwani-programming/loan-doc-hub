@@ -234,9 +234,11 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0 z-[200]" align="start">
-                        <Calendar mode="single" selected={parseDate(formData.yearBuilt || '')}
+                        <EnhancedCalendar mode="single" selected={parseDate(formData.yearBuilt || '')}
                           onSelect={(date) => { if (date) { handleFieldChange('yearBuilt', format(date, 'yyyy-MM-dd')); setYearBuiltOpen(false); } }}
-                          initialFocus className="p-3 pointer-events-auto" />
+                          onClear={() => { handleFieldChange('yearBuilt', ''); setYearBuiltOpen(false); }}
+                          onToday={() => { handleFieldChange('yearBuilt', format(new Date(), 'yyyy-MM-dd')); setYearBuiltOpen(false); }}
+                          initialFocus />
                       </PopoverContent>
                     </Popover>
                   </div>

@@ -152,7 +152,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-              <Calendar mode="single" selected={interestFromDate} onSelect={handleInterestFromDateChange} initialFocus className="p-3 pointer-events-auto" />
+              <EnhancedCalendar mode="single" selected={interestFromDate} onSelect={handleInterestFromDateChange} onClear={() => handleInterestFromDateChange(undefined)} onToday={() => handleInterestFromDateChange(new Date())} initialFocus />
             </PopoverContent>
           </Popover>
         </div>
