@@ -23,7 +23,7 @@ interface BrokerAttachmentsProps {
 
 const BUCKET = 'contact-attachments';
 
-const BrokerAttachments: React.FC<BrokerAttachmentsProps> = ({ brokerId, contactDbId }) => {
+const BrokerAttachments: React.FC<BrokerAttachmentsProps> = ({ brokerId, contactDbId, disabled }) => {
   const [files, setFiles] = useState<AttachmentMeta[]>([]);
   const [search, setSearch] = useState('');
   const [uploading, setUploading] = useState(false);
