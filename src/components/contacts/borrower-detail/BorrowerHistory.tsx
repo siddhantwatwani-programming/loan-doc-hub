@@ -544,11 +544,7 @@ const BorrowerHistory: React.FC<Props> = ({ borrowerId, contactDbId }) => {
                 </TableCell>
               </TableRow>
             ) : filtered.map(r => (
-              <TableRow
-                key={r.id}
-                className="cursor-pointer hover:bg-muted/60"
-                onClick={() => handleRowClick(r)}
-              >
+              <TableRow key={r.id}>
                 {ALL_COLUMNS.map(c => (
                   <TableCell key={c.id} className="whitespace-nowrap">
                     {c.id === 'loanStatus' ? (
