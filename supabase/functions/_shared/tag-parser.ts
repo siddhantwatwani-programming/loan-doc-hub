@@ -441,7 +441,9 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
   let parasSkippedComplete = 0;
   let parasSkippedNoTags = 0;
 
-  const result = xml.replace(/<w:p[\s>\/][\s\S]*?<\/w:p>/g, (para) => {
+  // Use indexOf-based paragraph scanning instead of regex /<w:p[\s>\/][\s\S]*?<\/w:p>/g
+  // to avoid catastrophic backtracking on large documents (600KB+)
+  const result = processParaByPara(xml, (para) => {
     // Quick check: skip paragraphs without potential merge tags
     if (!para.includes('{') && !para.includes('\u00AB')) return para;
     parasWithBraces++;
@@ -471,10 +473,6 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
     if (allTagsComplete) { parasSkippedComplete++; return para; }
 
     // Tags are fragmented across runs — proceed to consolidation
-
-    // Some tags are fragmented across <w:t> elements — consolidate all text
-    // into the first <w:t> and empty the rest. This preserves the first run's
-    // formatting (font, size, bold, etc.) for the replacement value.
     parasConsolidated++;
     console.log(`[tag-parser] Paragraph-level consolidation: "${joined.substring(0, 120)}${joined.length > 120 ? '...' : ''}"`);
 
@@ -484,7 +482,6 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
         isFirst = false;
         return `<w:t xml:space="preserve">${joined}</w:t>`;
       }
-      // Empty subsequent text runs (keep the element so run structure is preserved)
       return `<w:t${attrs || ''}></w:t>`;
     });
   });
