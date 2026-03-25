@@ -33,6 +33,7 @@ const FORM_LABELS: Record<string, string> = {
   liens: 'Liens',
   origination: 'Origination',
   trust_ledger: 'Trust Ledger',
+  participants: 'Participants',
 };
 
 const PermissionManagementPage: React.FC = () => {

@@ -181,7 +181,31 @@ export function useFormPermissionsAdmin() {
         if (seedErr) throw seedErr;
         setUserPermissions((seeded || []) as any);
       } else {
-        setUserPermissions(data as any);
+        // Check for missing form keys and insert them
+        const existingKeys = new Set(data.map((d: any) => d.form_key));
+        const missingKeys = FORM_KEYS.filter(fk => !existingKeys.has(fk));
+
+        if (missingKeys.length > 0) {
+          const inserts = missingKeys.map(fk => ({
+            user_id: userId,
+            form_key: fk,
+            access_mode: 'view_only',
+          }));
+
+          await supabase.from('user_form_permissions').insert(inserts);
+
+          // Re-fetch after adding missing keys
+          const { data: updated, error: updErr } = await supabase
+            .from('user_form_permissions')
+            .select('id, form_key, access_mode')
+            .eq('user_id', userId)
+            .order('form_key');
+
+          if (updErr) throw updErr;
+          setUserPermissions((updated || []) as any);
+        } else {
+          setUserPermissions(data as any);
+        }
       }
     } catch (err) {
       console.error('Error fetching user permissions:', err);
