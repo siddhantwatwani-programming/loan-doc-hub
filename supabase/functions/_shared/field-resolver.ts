@@ -108,7 +108,7 @@ export async function fetchFieldKeyMappings(supabase: any): Promise<{
     }
     debugLog(`[field-resolver] Loaded ${fields.length} canonical_key mappings`);
   } else if (fieldError) {
-    debugLog("[field-resolver] Field dictionary lookup failed:", fieldError.message);
+    debugLog("[field-resolver] Field dictionary lookup failed");
   }
   
   // Update cache
