@@ -23,7 +23,7 @@ interface LenderAttachmentsProps {
 
 const BUCKET = 'contact-attachments';
 
-const LenderAttachments: React.FC<LenderAttachmentsProps> = ({ lenderId, contactDbId }) => {
+const LenderAttachments: React.FC<LenderAttachmentsProps> = ({ lenderId, contactDbId, disabled }) => {
   const [files, setFiles] = useState<AttachmentMeta[]>([]);
   const [search, setSearch] = useState('');
   const [uploading, setUploading] = useState(false);
