@@ -159,7 +159,7 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
           return;
         }
 
-        const dealIds = [...new Set(participants.map(p => p.deal_id))];
+        const dealIds = [...new Set(allParticipants.map(p => p.deal_id))];
 
         // 2. Fetch deals
         const { data: deals, error: dErr } = await supabase
