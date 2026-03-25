@@ -10,16 +10,15 @@ import type { FieldValueData, LabelMapping } from "./types.ts";
 import { replaceMergeTags } from "./tag-parser.ts";
 
 /**
- * Process a DOCX file by replacing merge tags with field values
+ * Process a DOCX file by replacing merge tags with field values.
+ * @param docxBuffer - The source DOCX file bytes
  * @param validFieldKeys - Set of valid field keys from field_dictionary for direct matching
  */
-const PROCESSED_XML_COMPRESSION_LEVEL = 1;
-const UNCHANGED_XML_COMPRESSION_LEVEL = 0;
-
 const PROCESSED_XML_COMPRESSION_LEVEL = 0;
 const UNCHANGED_XML_COMPRESSION_LEVEL = 0;
 
 export async function processDocx(
+  docxBuffer: Uint8Array,
   fieldValues: Map<string, FieldValueData>,
   fieldTransforms: Map<string, string>,
   mergeTagMap: Record<string, string>,
