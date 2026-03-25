@@ -164,9 +164,9 @@ const LenderAttachments: React.FC<LenderAttachmentsProps> = ({ lenderId, contact
                 <TableCell>{f.date}</TableCell>
                 <TableCell>{f.size}</TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1">
+                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="sm" onClick={() => handleDownload(f)}><Download className="h-4 w-4 text-muted-foreground" /></Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(f.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    {!disabled && <Button variant="ghost" size="sm" onClick={() => handleDelete(f.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                   </div>
                 </TableCell>
               </TableRow>
