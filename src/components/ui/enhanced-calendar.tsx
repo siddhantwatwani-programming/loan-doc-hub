@@ -1,17 +1,23 @@
 import * as React from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { DayPicker } from "react-day-picker";
-import { format, addMonths, subMonths, startOfMonth } from "date-fns";
+import { format, addMonths, subMonths, setMonth, setYear } from "date-fns";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export type EnhancedCalendarProps = React.ComponentProps<typeof DayPicker> & {
   onClear?: () => void;
   onToday?: () => void;
   showClearToday?: boolean;
 };
+
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
 function EnhancedCalendar({
   className,
@@ -27,6 +33,7 @@ function EnhancedCalendar({
   const [internalMonth, setInternalMonth] = React.useState<Date>(
     controlledMonth || (props.selected instanceof Date ? props.selected : new Date())
   );
+  const [pickerView, setPickerView] = React.useState<"calendar" | "year" | "month">("calendar");
 
   const displayMonth = controlledMonth || internalMonth;
 
@@ -37,6 +44,95 @@ function EnhancedCalendar({
 
   const goToPrevMonth = () => handleMonthChange(subMonths(displayMonth, 1));
   const goToNextMonth = () => handleMonthChange(addMonths(displayMonth, 1));
+
+  const currentYear = new Date().getFullYear();
+  const minYear = currentYear - 120;
+  const maxYear = currentYear + 10;
+  const years = React.useMemo(() => {
+    const arr: number[] = [];
+    for (let y = maxYear; y >= minYear; y--) arr.push(y);
+    return arr;
+  }, []);
+
+  const yearScrollRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (pickerView === "year" && yearScrollRef.current) {
+      const activeEl = yearScrollRef.current.querySelector("[data-active='true']");
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: "center" });
+      }
+    }
+  }, [pickerView]);
+
+  const handleYearSelect = (year: number) => {
+    handleMonthChange(setYear(displayMonth, year));
+    setPickerView("month");
+  };
+
+  const handleMonthSelect = (monthIndex: number) => {
+    handleMonthChange(setMonth(displayMonth, monthIndex));
+    setPickerView("calendar");
+  };
+
+  if (pickerView === "year") {
+    return (
+      <div className="flex flex-col p-3 pointer-events-auto" style={{ width: 288 }}>
+        <div className="flex items-center justify-between mb-2 px-1">
+          <span className="text-sm font-medium">Select Year</span>
+          <button type="button" onClick={() => setPickerView("calendar")} className="text-xs text-primary hover:text-primary/80">
+            Cancel
+          </button>
+        </div>
+        <ScrollArea className="h-[260px]">
+          <div ref={yearScrollRef} className="grid grid-cols-4 gap-1 pr-3">
+            {years.map((y) => (
+              <button
+                key={y}
+                type="button"
+                data-active={y === displayMonth.getFullYear()}
+                onClick={() => handleYearSelect(y)}
+                className={cn(
+                  "h-8 rounded text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
+                  y === displayMonth.getFullYear() && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                )}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
+
+  if (pickerView === "month") {
+    return (
+      <div className="flex flex-col p-3 pointer-events-auto" style={{ width: 288 }}>
+        <div className="flex items-center justify-between mb-2 px-1">
+          <span className="text-sm font-medium">{displayMonth.getFullYear()}</span>
+          <button type="button" onClick={() => setPickerView("year")} className="text-xs text-primary hover:text-primary/80">
+            Change Year
+          </button>
+        </div>
+        <div className="grid grid-cols-3 gap-1">
+          {MONTHS.map((m, i) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => handleMonthSelect(i)}
+              className={cn(
+                "h-9 rounded text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
+                i === displayMonth.getMonth() && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+              )}
+            >
+              {m.slice(0, 3)}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col">
@@ -78,10 +174,14 @@ function EnhancedCalendar({
         components={{
           Caption: ({ displayMonth: dm }) => (
             <div className="flex items-center justify-between px-1">
-              <span className="text-sm font-medium">
+              <button
+                type="button"
+                onClick={() => setPickerView("year")}
+                className="text-sm font-medium hover:text-primary transition-colors cursor-pointer"
+              >
                 {format(dm, "MMMM, yyyy")}
                 <span className="ml-1 text-muted-foreground text-xs">▾</span>
-              </span>
+              </button>
               <div className="flex flex-col -space-y-1">
                 <button
                   type="button"
