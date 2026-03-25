@@ -188,7 +188,7 @@ const LenderTrustLedger: React.FC<{ lenderId: string; contactDbId: string; disab
             <DropdownMenu>
               <Tooltip><TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-8 w-8"><DollarSign className="h-4 w-4" /></Button>
+                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={disabled}><DollarSign className="h-4 w-4" /></Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger><TooltipContent>Transactions</TooltipContent></Tooltip>
               <DropdownMenuContent align="start">
