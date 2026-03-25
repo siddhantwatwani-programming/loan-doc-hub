@@ -31,6 +31,51 @@ const debugLog = (...args: unknown[]) => {
   }
 };
 
+let cachedValidFieldKeys: Set<string> | null = null;
+let validFieldKeysCacheTimestamp = 0;
+const VALID_FIELD_KEYS_TTL_MS = 5 * 60 * 1000;
+
+async function getValidFieldKeys(supabase: any): Promise<Set<string>> {
+  const now = Date.now();
+  if (cachedValidFieldKeys && now - validFieldKeysCacheTimestamp < VALID_FIELD_KEYS_TTL_MS) {
+    debugLog(`[generate-document] Using cached validFieldKeys set with ${cachedValidFieldKeys.size} entries`);
+    return cachedValidFieldKeys;
+  }
+
+  const PAGE_SIZE = 1000;
+  const completeFieldDictionary: Array<{ field_key: string; canonical_key: string | null }> = [];
+  let fdFrom = 0;
+
+  while (true) {
+    const { data: page, error: fdErr } = await supabase
+      .from("field_dictionary")
+      .select("field_key, canonical_key")
+      .range(fdFrom, fdFrom + PAGE_SIZE - 1);
+
+    if (fdErr) {
+      console.error("[generate-document] field_dictionary fetch error:", fdErr.message);
+      break;
+    }
+
+    const rows = page || [];
+    completeFieldDictionary.push(...rows);
+    if (rows.length < PAGE_SIZE) break;
+    fdFrom += PAGE_SIZE;
+  }
+
+  const nextValidFieldKeys = new Set<string>();
+  completeFieldDictionary.forEach((fd) => {
+    nextValidFieldKeys.add(fd.field_key);
+    if (fd.canonical_key) nextValidFieldKeys.add(fd.canonical_key);
+  });
+
+  cachedValidFieldKeys = nextValidFieldKeys;
+  validFieldKeysCacheTimestamp = now;
+  debugLog(`[generate-document] Built validFieldKeys set with ${nextValidFieldKeys.size} entries (including canonical keys)`);
+
+  return nextValidFieldKeys;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -845,31 +890,8 @@ async function generateSingleDocument(
       }
     }
 
-    // Build set of ALL valid field keys from the complete field_dictionary (for direct tag matching)
-    // Use pagination to fetch all rows (table has 1700+ entries, default limit is 1000)
-    // Include canonical_key for backward compatibility with old merge tags
-    const PAGE_SIZE = 1000;
-    const completeFieldDictionary: any[] = [];
-    let fdFrom = 0;
-    while (true) {
-      const { data: page, error: fdErr } = await supabase
-        .from("field_dictionary")
-        .select("field_key, canonical_key")
-        .range(fdFrom, fdFrom + PAGE_SIZE - 1);
-      if (fdErr) { console.error("[generate-document] field_dictionary fetch error:", fdErr.message); break; }
-      const rows = page || [];
-      completeFieldDictionary.push(...rows);
-      if (rows.length < PAGE_SIZE) break;
-      fdFrom += PAGE_SIZE;
-    }
-    
-    const validFieldKeys = new Set<string>();
-    completeFieldDictionary.forEach((fd: any) => {
-      validFieldKeys.add(fd.field_key);
-      // Also add canonical_key (old key) so old merge tags in templates resolve directly
-      if (fd.canonical_key) validFieldKeys.add(fd.canonical_key);
-    });
-    debugLog(`[generate-document] Built validFieldKeys set with ${validFieldKeys.size} entries (including canonical keys)`);
+    // Build set of all valid field keys once and reuse it across invocations.
+    const validFieldKeys = await getValidFieldKeys(supabase);
 
     // 4. Download template DOCX from storage
     let fileData: Blob | null = null;

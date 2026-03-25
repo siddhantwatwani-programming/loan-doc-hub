@@ -24,6 +24,36 @@ const debugLog = (...args: unknown[]) => {
 const PROCESSED_XML_COMPRESSION_LEVEL = 0;
 const UNCHANGED_XML_COMPRESSION_LEVEL = 0;
 
+function hasLikelyMergeWork(xml: string, labelMap: Record<string, LabelMapping>): boolean {
+  if (
+    xml.includes("{{") ||
+    xml.includes("}}") ||
+    xml.includes("«") ||
+    xml.includes("»") ||
+    xml.includes("MERGEFIELD") ||
+    xml.includes("w:fldChar") ||
+    xml.includes("w:fldSimple") ||
+    xml.includes("w:instrText") ||
+    (xml.includes("<w14:checkbox") && xml.includes("<w:sdt"))
+  ) {
+    return true;
+  }
+
+  if (Object.keys(labelMap).length === 0) {
+    return false;
+  }
+
+  const xmlLower = xml.toLowerCase();
+  return Object.entries(labelMap).some(([label, mapping]) => {
+    const quickNeedle = (mapping.replaceNext || (label === "as of _"
+      ? "as of"
+      : label.endsWith(":")
+        ? label.slice(0, -1)
+        : label)).toLowerCase();
+    return quickNeedle.length > 0 && xmlLower.includes(quickNeedle);
+  });
+}
+
 export async function processDocx(
   docxBuffer: Uint8Array,
   fieldValues: Map<string, FieldValueData>,
@@ -51,6 +81,12 @@ export async function processDocx(
       if (isContentPart) {
         debugLog(`[docx-processor] Processing content XML: ${filename} (${content.length} bytes)`);
         const originalXml = decoder.decode(content);
+
+        if (!hasLikelyMergeWork(originalXml, labelMap)) {
+          processedFiles[filename] = [content, { level: UNCHANGED_XML_COMPRESSION_LEVEL }];
+          continue;
+        }
+
         let processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
 
         // Post-process: ensure Signature paragraph has a page break before it
