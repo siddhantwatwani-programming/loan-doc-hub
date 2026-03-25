@@ -119,7 +119,41 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
           .eq('role', 'broker');
 
         if (pErr) throw pErr;
-        if (!participants || participants.length === 0) {
+
+        let allParticipants = participants || [];
+
+        // Fallback: search deal_section_values broker section for broker_id match
+        if (allParticipants.length === 0 && brokerId) {
+          const { data: brokerSections } = await supabase
+            .from('deal_section_values')
+            .select('deal_id, field_values')
+            .eq('section', 'broker');
+
+          const matchedDealIds: string[] = [];
+          (brokerSections || []).forEach(bs => {
+            const fv = bs.field_values as Record<string, any>;
+            if (fv) {
+              for (const v of Object.values(fv)) {
+                if (typeof v === 'object' && v !== null) {
+                  if ((v as any).value_text === brokerId) {
+                    matchedDealIds.push(bs.deal_id);
+                    break;
+                  }
+                }
+                if (typeof v === 'string' && v === brokerId) {
+                  matchedDealIds.push(bs.deal_id);
+                  break;
+                }
+              }
+            }
+          });
+
+          if (matchedDealIds.length > 0) {
+            allParticipants = matchedDealIds.map(did => ({ deal_id: did }));
+          }
+        }
+
+        if (allParticipants.length === 0) {
           setRows([]);
           setIsLoading(false);
           return;

@@ -103,7 +103,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
       case 'history':
         return (
           <div className="p-6">
-            <LenderHistory lenderId={contact.contact_id} />
+            <LenderHistory lenderId={contact.contact_id} contactDbId={contact.id} />
           </div>
         );
       case 'charges':
