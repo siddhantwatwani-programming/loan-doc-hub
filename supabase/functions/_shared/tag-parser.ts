@@ -1064,20 +1064,24 @@ export function replaceMergeTags(
   // First normalize the XML to handle fragmented merge fields
   let result = normalizeWordXml(content);
 
-  // Process {{#each}} iteration blocks before conditionals and tag replacement
-  result = processEachBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
+  if (result.includes('{{#each')) {
+    result = processEachBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
+  }
 
-  // Process conditional blocks ({{#if}}/{{/if}}) before any tag replacement
-  result = processConditionalBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
+  if (result.includes('{{#if') || result.includes('{{#unless')) {
+    result = processConditionalBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
+  }
 
-  // Process native Word SDT checkboxes before text-based merge tags
-  result = processSdtCheckboxes(result, fieldValues, mergeTagMap, validFieldKeys);
-  
-  // Diagnostics: count brace pairs after normalization to verify consolidation
-  const openBraceCount = (result.match(/\{\{/g) || []).length;
-  const closeBraceCount = (result.match(/\}\}/g) || []).length;
-  if (openBraceCount > 0 || closeBraceCount > 0) {
-    console.log(`[tag-parser] After normalization: ${openBraceCount} opening {{ and ${closeBraceCount} closing }} detected`);
+  if (result.includes('<w14:checkbox') && result.includes('<w:sdt')) {
+    result = processSdtCheckboxes(result, fieldValues, mergeTagMap, validFieldKeys);
+  }
+
+  if (result.includes('{{') || result.includes('}}')) {
+    const openBraceCount = (result.match(/\{\{/g) || []).length;
+    const closeBraceCount = (result.match(/\}\}/g) || []).length;
+    if (openBraceCount > 0 || closeBraceCount > 0) {
+      console.log(`[tag-parser] After normalization: ${openBraceCount} opening {{ and ${closeBraceCount} closing }} detected`);
+    }
   }
 
   // Parse and replace merge tags

@@ -13,6 +13,9 @@ import { replaceMergeTags } from "./tag-parser.ts";
  * Process a DOCX file by replacing merge tags with field values
  * @param validFieldKeys - Set of valid field keys from field_dictionary for direct matching
  */
+const PROCESSED_XML_COMPRESSION_LEVEL = 1;
+const UNCHANGED_XML_COMPRESSION_LEVEL = 0;
+
 export async function processDocx(
   docxBuffer: Uint8Array,
   fieldValues: Map<string, FieldValueData>,
@@ -48,13 +51,13 @@ export async function processDocx(
         }
 
         if (processedXml === originalXml) {
-          processedFiles[filename] = [content, { level: 6 }];
+          processedFiles[filename] = [content, { level: UNCHANGED_XML_COMPRESSION_LEVEL }];
         } else {
-          processedFiles[filename] = [encoder.encode(processedXml), { level: 6 }];
+          processedFiles[filename] = [encoder.encode(processedXml), { level: PROCESSED_XML_COMPRESSION_LEVEL }];
         }
       } else {
-        // Non-content XML: preserve original bytes untouched
-        processedFiles[filename] = [content, { level: 6 }];
+        // Non-content XML: preserve original bytes with minimal recompression to reduce CPU time
+        processedFiles[filename] = [content, { level: UNCHANGED_XML_COMPRESSION_LEVEL }];
       }
     } else {
       // Binary files: store without recompression to preserve exact bytes
@@ -66,45 +69,84 @@ export async function processDocx(
   return compressed;
 }
 
+function processWordParagraphs(xml: string, fn: (para: string) => string): string {
+  const chunks: string[] = [];
+  let pos = 0;
+
+  while (pos < xml.length) {
+    const pStart = xml.indexOf("<w:p", pos);
+    if (pStart === -1) {
+      chunks.push(xml.substring(pos));
+      break;
+    }
+
+    if (pStart > pos) {
+      chunks.push(xml.substring(pos, pStart));
+    }
+
+    const pEnd = xml.indexOf("</w:p>", pStart);
+    if (pEnd === -1) {
+      chunks.push(xml.substring(pStart));
+      break;
+    }
+
+    const paraEnd = pEnd + 6;
+    const para = xml.substring(pStart, paraEnd);
+    chunks.push(fn(para));
+    pos = paraEnd;
+  }
+
+  return chunks.join("");
+}
+
 /**
  * Ensure the paragraph containing "Signature:" + underscores always starts on a new page.
  * Injects <w:pageBreakBefore w:val="1"/> into its <w:pPr> block if not already present.
  */
 function ensureSignaturePageBreak(xml: string): string {
-  // Match a <w:p> element whose text content contains "Signature:" followed by underscores
-  const signatureParaRegex = /(<w:p\b[^>]*>)([\s\S]*?Signature:\s*_[\s\S]*?)(<\/w:p>)/;
-  const match = xml.match(signatureParaRegex);
-  if (!match) {
+  let foundSignatureParagraph = false;
+  let injectedPageBreak = false;
+
+  const updatedXml = processWordParagraphs(xml, (para) => {
+    if (foundSignatureParagraph) return para;
+    if (!para.includes("Signature") || !para.includes("_")) return para;
+
+    const textOnly = para.replace(/<[^>]*>/g, "");
+    if (!textOnly.includes("Signature:") || !textOnly.includes("_")) {
+      return para;
+    }
+
+    foundSignatureParagraph = true;
+
+    if (para.includes("w:pageBreakBefore")) {
+      return para;
+    }
+
+    injectedPageBreak = true;
+
+    const pPrMatch = para.match(/(<w:pPr\b[^>]*>)/);
+    if (pPrMatch) {
+      return para.replace(
+        pPrMatch[1],
+        pPrMatch[1] + '<w:pageBreakBefore w:val="1"/>'
+      );
+    }
+
+    return para.replace(
+      /(<w:p\b[^>]*>)/,
+      '$1<w:pPr><w:pageBreakBefore w:val="1"/></w:pPr>'
+    );
+  });
+
+  if (!foundSignatureParagraph) {
     console.log("[docx-processor] No Signature paragraph found; skipping page-break injection.");
-    return xml;
-  }
-
-  const fullPara = match[0];
-
-  // Already has pageBreakBefore — nothing to do
-  if (fullPara.includes("w:pageBreakBefore")) {
-    console.log("[docx-processor] Signature paragraph already has pageBreakBefore.");
-    return xml;
-  }
-
-  let updatedPara: string;
-  const pPrMatch = fullPara.match(/(<w:pPr\b[^>]*>)/);
-  if (pPrMatch) {
-    // Insert inside existing <w:pPr>
-    updatedPara = fullPara.replace(
-      pPrMatch[1],
-      pPrMatch[1] + '<w:pageBreakBefore w:val="1"/>'
-    );
+  } else if (injectedPageBreak) {
+    console.log("[docx-processor] Injected pageBreakBefore into Signature paragraph.");
   } else {
-    // No <w:pPr> — create one right after <w:p ...>
-    updatedPara = fullPara.replace(
-      match[1],
-      match[1] + '<w:pPr><w:pageBreakBefore w:val="1"/></w:pPr>'
-    );
+    console.log("[docx-processor] Signature paragraph already has pageBreakBefore.");
   }
 
-  console.log("[docx-processor] Injected pageBreakBefore into Signature paragraph.");
-  return xml.replace(fullPara, updatedPara);
+  return updatedXml;
 }
 
 /**
