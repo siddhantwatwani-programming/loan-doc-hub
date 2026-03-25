@@ -799,7 +799,7 @@ export const DealOverviewPage: React.FC = () => {
 
           {/* Participants Panel - CSR only */}
           {isCsr && (
-            <InviteParticipantsPanel dealId={deal.id} dealNumber={deal.deal_number} />
+            <InviteParticipantsPanel dealId={deal.id} dealNumber={deal.deal_number} disabled={isParticipantsReadOnly} />
           )}
 
           {/* Activity Log */}

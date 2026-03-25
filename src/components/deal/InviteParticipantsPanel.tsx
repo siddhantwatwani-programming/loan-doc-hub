@@ -751,7 +751,8 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
                       </div>
                     </div>
 
-                    {/* Actions dropdown */}
+                    {/* Actions dropdown - hidden for read-only users */}
+                    {!disabled && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" disabled={isLoading}>
@@ -795,6 +796,7 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    )}
                   </div>
                   
                   {/* Sequential mode: show arrow to next */}
