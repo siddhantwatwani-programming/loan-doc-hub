@@ -1140,6 +1140,8 @@ export function replaceMergeTags(
   // damaging static document titles like "Loan No", "Current Lender", etc.)
   const replacedFieldKeys = new Set<string>();
   
+  // Pre-resolve all tags and build a replacement map for single-pass replacement
+  const tagReplacementMap = new Map<string, string>();
   for (const tag of tags) {
     // Use validFieldKeys for direct field_key resolution
     const canonicalKey = resolveFieldKeyWithMap(tag.tagName, mergeTagMap, validFieldKeys);
@@ -1173,7 +1175,16 @@ export function replaceMergeTags(
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
-    result = result.split(tag.fullMatch).join(xmlSafeValue);
+    tagReplacementMap.set(tag.fullMatch, xmlSafeValue);
+  }
+
+  // Single-pass replacement: build regex from all tag patterns and replace in one go
+  if (tagReplacementMap.size > 0) {
+    const escapedPatterns = [...tagReplacementMap.keys()].map(k =>
+      k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    );
+    const combinedRegex = new RegExp(escapedPatterns.join('|'), 'g');
+    result = result.replace(combinedRegex, (match) => tagReplacementMap.get(match) ?? match);
   }
   
   // Always run label-based replacement after merge tag replacement
