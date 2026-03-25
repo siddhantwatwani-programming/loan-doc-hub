@@ -192,7 +192,7 @@ async function generateSingleDocument(
     
     // Fetch ALL field dictionary entries for deal values using batched queries
     // to avoid URL length limits with large .in() arrays
-    const FD_BATCH_SIZE = 100;
+    const FD_BATCH_SIZE = 500;
     const allFieldDictEntries: any[] = [];
     for (let i = 0; i < allFieldDictIds.length; i += FD_BATCH_SIZE) {
       const chunk = allFieldDictIds.slice(i, i + FD_BATCH_SIZE);
