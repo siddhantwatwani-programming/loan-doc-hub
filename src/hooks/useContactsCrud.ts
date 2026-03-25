@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFormPermissions } from '@/hooks/useFormPermissions';
 import { toast } from 'sonner';
 
 export interface ContactRecord {
@@ -27,6 +28,7 @@ interface UseContactsCrudOptions {
 
 export function useContactsCrud({ contactType, pageSize = 25 }: UseContactsCrudOptions) {
   const { user } = useAuth();
+  const { loading: permissionsLoading, isFormViewOnly } = useFormPermissions();
   const [contacts, setContacts] = useState<ContactRecord[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -132,6 +134,11 @@ export function useContactsCrud({ contactType, pageSize = 25 }: UseContactsCrudO
 
   const updateContact = useCallback(async (id: string, contactData: Record<string, string>) => {
     if (!user) return false;
+    if (contactType === 'lender' && (permissionsLoading || isFormViewOnly('lender'))) {
+      toast.error('You have read-only access to Lender Info');
+      return false;
+    }
+
     try {
       const fullName = contactData.full_name || `${contactData.first_name || ''} ${contactData.last_name || ''}`.trim();
 
@@ -195,7 +202,7 @@ export function useContactsCrud({ contactType, pageSize = 25 }: UseContactsCrudO
       toast.error('Failed to save contact');
       return false;
     }
-  }, [user, currentPage, searchQuery, fetchContacts]);
+  }, [user, contactType, permissionsLoading, isFormViewOnly, currentPage, searchQuery, fetchContacts]);
 
   const deleteContact = useCallback(async (id: string) => {
     try {

@@ -82,6 +82,7 @@ export function useFormPermissions() {
   }, [role, userId, fetchPermissions]);
 
   const isFormViewOnly = (formKey: string): boolean => {
+    if (role === 'admin') return false;
     // For CSR: default to view_only if no record exists
     const perm = permissions.find(p => p.form_key === formKey);
     if (!perm) return true; // Default: Read Only
@@ -89,6 +90,7 @@ export function useFormPermissions() {
   };
 
   const isFormEditable = (formKey: string): boolean => {
+    if (role === 'admin') return true;
     const perm = permissions.find(p => p.form_key === formKey);
     // Default to view_only (not editable) if no permission record found
     if (!perm) return false;

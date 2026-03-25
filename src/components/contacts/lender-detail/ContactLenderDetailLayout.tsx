@@ -18,6 +18,7 @@ import LenderAttachments from './LenderAttachments';
 import LenderEventsJournal from './LenderEventsJournal';
 import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { ContactRecord } from '@/hooks/useContactsCrud';
+import { useFormPermissions } from '@/hooks/useFormPermissions';
 
 interface ContactLenderDetailLayoutProps {
   contact: ContactRecord;
@@ -30,6 +31,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
   onBack,
   onSave,
 }) => {
+  const { loading: permissionsLoading, isFormViewOnly } = useFormPermissions();
   const [activeSection, setActiveSection] = useState<LenderSection>('lender-info');
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [values, setValues] = useState<Record<string, string>>(() => {
@@ -46,12 +48,16 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
 
   const initialValuesRef = useRef<Record<string, string>>({ ...values });
   const isDirty = useMemo(() => JSON.stringify(values) !== JSON.stringify(initialValuesRef.current), [values]);
+  const isReadOnly = permissionsLoading || isFormViewOnly('lender');
 
   const handleValueChange = useCallback((fieldKey: string, value: string) => {
+    if (isReadOnly) return;
     setValues(prev => ({ ...prev, [fieldKey]: value }));
-  }, []);
+  }, [isReadOnly]);
 
   const handleSave = useCallback(async () => {
+    if (isReadOnly) return;
+
     const contactData: Record<string, string> = {};
     Object.entries(values).forEach(([key, value]) => {
       const stripped = key.replace(/^lender\./, '');
@@ -75,7 +81,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
       await logContactEvent(contact.id, 'Lender Info', changes);
       initialValuesRef.current = { ...values };
     }
-  }, [values, contact.id, onSave]);
+  }, [isReadOnly, values, contact.id, onSave]);
 
   const emptyFields: any[] = [];
   const emptyDirty = new Set<string>();
@@ -124,7 +130,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             fields={emptyFields}
             values={values}
             onValueChange={handleValueChange}
-            disabled={false}
+            disabled={isReadOnly}
           />
         );
       case 'authorized-party':
@@ -133,7 +139,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             fields={emptyFields}
             values={values}
             onValueChange={handleValueChange}
-            disabled={false}
+            disabled={isReadOnly}
           />
         );
       case 'banking':
@@ -142,7 +148,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             fields={emptyFields}
             values={values}
             onValueChange={handleValueChange}
-            disabled={false}
+            disabled={isReadOnly}
           />
         );
       case '1099':
@@ -151,7 +157,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             fields={emptyFields}
             values={values}
             onValueChange={handleValueChange}
-            disabled={false}
+            disabled={isReadOnly}
           />
         );
       case 'attachments':
@@ -182,7 +188,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             Lender — {contact.contact_id}
           </h3>
         </div>
-        {isDirty && (
+        {!isReadOnly && isDirty && (
           <Button size="sm" onClick={() => setShowSaveConfirm(true)} className="gap-1">
             <Save className="h-4 w-4" /> Save Changes
           </Button>
