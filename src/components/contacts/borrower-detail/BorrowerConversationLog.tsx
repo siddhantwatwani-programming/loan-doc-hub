@@ -70,7 +70,7 @@ const getEmptyLog = (): Omit<LogRow, 'id'> => {
   return { date: now.toISOString(), asOfDate: now.toISOString(), type: '', subject: '', from: '', to: '', status: '', content: '', highPriority: false, reference: '', attachments: [], account: '', name: '' };
 };
 
-const BorrowerConversationLog: React.FC<{ borrowerId: string; contactDbId: string; disabled?: boolean }> = ({ contactDbId, disabled }) => {
+const BorrowerConversationLog: React.FC<{ borrowerId: string; contactDbId: string }> = ({ contactDbId }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -309,22 +309,20 @@ const BorrowerConversationLog: React.FC<{ borrowerId: string; contactDbId: strin
       {/* Header + Quick Actions */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h4 className="text-lg font-semibold text-foreground">Conversation Log</h4>
-          {!disabled && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => openAddModal('email')}>
-                <Mail className="h-3.5 w-3.5" /> Send Email
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => openAddModal('call')}>
-                <Phone className="h-3.5 w-3.5" /> Log Call
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => openAddModal('note')}>
-                <StickyNote className="h-3.5 w-3.5" /> Add Internal Note
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => openAddModal('portal')}>
-                <MessageSquare className="h-3.5 w-3.5" /> Portal Message
-              </Button>
-            </div>
-          )}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => openAddModal('email')}>
+            <Mail className="h-3.5 w-3.5" /> Send Email
+          </Button>
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => openAddModal('call')}>
+            <Phone className="h-3.5 w-3.5" /> Log Call
+          </Button>
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => openAddModal('note')}>
+            <StickyNote className="h-3.5 w-3.5" /> Add Internal Note
+          </Button>
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => openAddModal('portal')}>
+            <MessageSquare className="h-3.5 w-3.5" /> Portal Message
+          </Button>
+        </div>
       </div>
 
       {/* Toolbar */}

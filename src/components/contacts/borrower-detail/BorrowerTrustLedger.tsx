@@ -99,7 +99,7 @@ const filterByDate = (entries: LedgerEntry[], filter: string): LedgerEntry[] => 
 
 const EMPTY_ENTRY = { date: '', reference: '', fromWhomReceivedPaid: '', memo: '', payment: '', clr: '', deposit: '', balance: '', category: 'all' as const };
 
-const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; disabled?: boolean }> = ({ contactDbId, disabled }) => {
+const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string }> = ({ contactDbId }) => {
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [columns, setColumns, resetColumns] = useTableColumnConfig('borrower_trust_ledger', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter(c => c.visible);
@@ -177,7 +177,6 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
     <div className="p-6 space-y-4">
       <h3 className="font-semibold text-lg text-foreground">Trust Ledger</h3>
 
-      {!disabled && (
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-1">
           <TooltipProvider>
@@ -232,7 +231,6 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
           </SelectContent>
         </Select>
       </div>
-      )}
 
       <GridToolbar
         searchQuery={searchQuery}
@@ -242,8 +240,8 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
         onFilterChange={setFilter}
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
-        selectedCount={disabled ? 0 : selectedCount}
-        onBulkDelete={disabled ? undefined : () => setBulkDeleteOpen(true)}
+        selectedCount={selectedCount}
+        onBulkDelete={() => setBulkDeleteOpen(true)}
         onExport={() => setExportDialogOpen(true)}
       />
 
@@ -257,11 +255,9 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
         </Tabs>
         <div className="flex items-center gap-2">
           <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
-          {!disabled && (
-            <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(true)} className="gap-1 text-xs">
-              <Plus className="h-4 w-4" /> Add Entry
-            </Button>
-          )}
+          <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(true)} className="gap-1 text-xs">
+            <Plus className="h-4 w-4" /> Add Entry
+          </Button>
         </div>
       </div>
 

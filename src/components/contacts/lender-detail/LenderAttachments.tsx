@@ -18,12 +18,11 @@ interface AttachmentMeta {
 interface LenderAttachmentsProps {
   lenderId: string;
   contactDbId: string;
-  disabled?: boolean;
 }
 
 const BUCKET = 'contact-attachments';
 
-const LenderAttachments: React.FC<LenderAttachmentsProps> = ({ lenderId, contactDbId, disabled }) => {
+const LenderAttachments: React.FC<LenderAttachmentsProps> = ({ lenderId, contactDbId }) => {
   const [files, setFiles] = useState<AttachmentMeta[]>([]);
   const [search, setSearch] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -136,12 +135,10 @@ const LenderAttachments: React.FC<LenderAttachmentsProps> = ({ lenderId, contact
             <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-8 h-9 w-[200px]" />
           </div>
           <input ref={inputRef} type="file" multiple className="hidden" onChange={handleUpload} />
-          {!disabled && (
-            <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()} className="gap-1" disabled={uploading}>
-              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              {uploading ? 'Uploading...' : 'Upload'}
-            </Button>
-          )}
+          <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()} className="gap-1" disabled={uploading}>
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            {uploading ? 'Uploading...' : 'Upload'}
+          </Button>
         </div>
       </div>
 
@@ -164,7 +161,7 @@ const LenderAttachments: React.FC<LenderAttachmentsProps> = ({ lenderId, contact
                 <TableCell>
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="sm" onClick={() => handleDownload(f)}><Download className="h-4 w-4 text-muted-foreground" /></Button>
-                    {!disabled && <Button variant="ghost" size="sm" onClick={() => handleDelete(f.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(f.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
                 </TableCell>
               </TableRow>
