@@ -1219,16 +1219,18 @@ export function replaceMergeTags(
   // and had no data. Do NOT globally remove all {{...}} patterns — that can
   // blank tags that normalization failed to consolidate but are still valid.
   if (tags.length > 0) {
-    const noDataTags = tags.filter(tag => {
+    const noDataPatterns: string[] = [];
+    for (const tag of tags) {
       const ck = resolveFieldKeyWithMap(tag.tagName, mergeTagMap, validFieldKeys);
       const resolved = getFieldData(ck, fieldValues);
-      return !resolved?.data;
-    });
-    if (noDataTags.length > 0) {
-      debugLog(`[tag-parser] Cleaning ${noDataTags.length} no-data tags: ${noDataTags.map(t => t.tagName).join(', ')}`);
-      for (const tag of noDataTags) {
-        result = result.split(tag.fullMatch).join('');
+      if (!resolved?.data) {
+        noDataPatterns.push(tag.fullMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
       }
+    }
+    if (noDataPatterns.length > 0) {
+      debugLog(`[tag-parser] Cleaning ${noDataPatterns.length} no-data tags`);
+      const noDataRegex = new RegExp(noDataPatterns.join('|'), 'g');
+      result = result.replace(noDataRegex, '');
     }
   }
 
