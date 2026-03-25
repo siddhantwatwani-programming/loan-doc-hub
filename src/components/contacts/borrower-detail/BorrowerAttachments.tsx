@@ -63,7 +63,7 @@ interface UploadFormState {
   version_number: string;
 }
 
-const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string }> = ({ contactDbId }) => {
+const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string; disabled?: boolean }> = ({ contactDbId, disabled }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
