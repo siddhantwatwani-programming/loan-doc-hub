@@ -165,6 +165,7 @@ const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId, disabled }) 
   }, [contactDbId]);
 
   const handleAddCharge = useCallback(async () => {
+    if (disabled) return;
     const chargeWithId: ChargeRow = {
       ...newCharge,
       id: crypto.randomUUID(),
