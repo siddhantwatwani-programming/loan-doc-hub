@@ -1,64 +1,64 @@
 
 
-# Fix: Document Generation "CPU Time exceeded" Error
+# Fix: Document Generation "CPU Time exceeded" for RE885 Template
 
-## Root Cause Analysis
+## Root Cause
 
-The edge function logs show the document **does process** the 628KB `word/document.xml` and even produces the output (750,255 bytes), but then hits the **2-second CPU time limit** before completing the upload/storage step. On subsequent attempts, it times out during tag processing itself.
+The edge function exceeds the **2-second CPU time limit** while processing the 628KB `word/document.xml`. The logs confirm the function boots, fetches data, downloads the template, begins XML processing, and then hits `CPU Time exceeded` during the tag-parser normalization phase. The generation_jobs record stays stuck in "running" status because the function is killed before it can update the record.
 
-The core problem is **O(n) linear scans in hot loops** inside two critical resolution functions that are called for every merge tag, every label, and every conditional check:
+Previous "Success" entries in the job history are likely for smaller templates; this specific RE885 template (7 pages, 628KB XML, multiple complex tables) has always been too CPU-intensive for the synchronous pipeline.
 
-1. **`getFieldData()`** (field-resolver.ts lines 264-292): Performs up to **3 separate linear scans** of all `fieldValues` entries (137+ items) on every call that misses the exact match. Called ~19 times for merge tags + ~48 times for labels + conditionals = **~70+ calls**, each scanning 137+ entries up to 3 times.
+Key CPU bottlenecks identified:
+1. **`isConditionTruthy` entity-existence scan** (tag-parser.ts line 739-743): Calls `.toLowerCase()` on every key in `fieldValues` for EACH conditional check — O(n) per call with no caching
+2. **Synchronous response blocking**: The entire generation must complete within the CPU budget before any response is sent, meaning a CPU kill = HTTP error + stale job record
+3. **`processEachBlocks`** (tag-parser.ts line 972-979): Uses `new RegExp()` per entity scan instead of pre-built index
 
-2. **`resolveFieldKeyWithBackwardCompat()`** (field-resolver.ts lines 214-225): Performs up to **2 separate linear scans** of `validFieldKeys` (3,132 entries!) for case-insensitive matching. Called for every tag resolution. This means up to **6,264 string comparisons per tag** × ~70 calls = **~438,000 string operations**.
+## Solution: Async Generation + CPU Optimization
 
-Combined, these O(n) lookups accumulate massive CPU time that pushes the function past the 2-second limit on large templates.
+### Part 1: Async Background Processing (generate-document/index.ts)
 
-## Solution
+Refactor the main handler to:
+1. Create the generation job record (already done)
+2. **Return immediately** with `{ jobId, status: "running", results: [], successCount: 0, failCount: 0 }`
+3. Use `EdgeRuntime.waitUntil()` to run the actual generation in the background
+4. Background task updates the job record to "success" or "failed" when done
+5. If CPU limit kills the background task, add a **stale job cleanup** — any job "running" for >120 seconds gets marked "failed"
 
-Build **one-time lowercase lookup Maps** for both `fieldValues` and `validFieldKeys`, converting the O(n) linear scans into O(1) Map lookups. This eliminates ~400,000+ unnecessary string comparisons.
+The frontend already has **realtime subscriptions** on both `generation_jobs` and `generated_documents` tables, so it will automatically detect completion.
 
-### Changes (single file: `supabase/functions/_shared/field-resolver.ts`)
+### Part 2: Frontend Adaptation (DealDocumentsPage.tsx)
 
-**1. Add pre-built lowercase index to `getFieldData()`**
+Update `handleGenerate` to:
+1. Accept the immediate "running" response as success (not an error)
+2. Show toast: "Document generation started" instead of waiting for completion
+3. Let the existing realtime subscription handle completion notification
+4. Add a **stale job timeout**: if a job stays "running" for >2 minutes, show a "Generation may have timed out" indicator
 
-Add a module-level index that builds a `Map<lowercaseKey, originalKey>` from the fieldValues map on first call (or when the map reference changes). Replace the 3 linear scans with direct Map lookups.
+### Part 3: CPU Optimization (tag-parser.ts)
 
-```text
-Before (3 × O(n) per call):
-  for (const [k, v] of fieldValues.entries()) {
-    if (k.toLowerCase() === target) return ...
+Fix the remaining O(n) linear scan in `isConditionTruthy`:
+- Reuse the `getLowerFieldValuesIndex()` from field-resolver.ts to build a lowercase key index once
+- Replace the `for (const [k, v] of fieldValues.entries())` loop with a prefix scan against the pre-built index
+- This eliminates thousands of redundant `.toLowerCase()` calls per conditional evaluation
 
-After (O(1) per call):
-  const lowerMap = buildLowerIndex(fieldValues);
-  const found = lowerMap.get(target);
-  if (found) return { key: found, data: fieldValues.get(found)! };
-```
+### Files to Modify
 
-**2. Add pre-built lowercase index to `resolveFieldKeyWithBackwardCompat()`**
-
-Build a `Map<lowercaseKey, originalKey>` from `validFieldKeys` once per generation run. Replace the 2 linear scans with Map lookups.
-
-```text
-Before (2 × O(3132) per call):
-  for (const key of validFieldKeys) {
-    if (key.toLowerCase() === lowerTag) return key;
-  }
-
-After (O(1) per call):
-  const lowerValidKeys = buildValidKeysIndex(validFieldKeys);
-  const match = lowerValidKeys.get(lowerTag);
-  if (match) return match;
-```
+| File | Change |
+|------|--------|
+| `supabase/functions/generate-document/index.ts` | Wrap generation in `EdgeRuntime.waitUntil()`, return immediately, add stale job cleanup |
+| `src/pages/csr/DealDocumentsPage.tsx` | Handle async "running" response, show start toast, add stale job timeout display |
+| `supabase/functions/_shared/tag-parser.ts` | Optimize `isConditionTruthy` entity scan with cached lowercase index |
 
 ### What This Does NOT Change
-- No changes to the document generation flow, UI, database schema, or any other files
-- No changes to tag-parser.ts, docx-processor.ts, or generate-document/index.ts
-- No changes to resolution priority order or backward compatibility behavior
-- The same field keys resolve to the same values; only the lookup mechanism changes from linear scan to hash map
+- No database schema changes
+- No template modifications
+- No changes to field resolution logic, formatting, or DOCX processing pipeline
+- No changes to other edge functions
+- No UI layout changes
 
 ### Expected Impact
-- Eliminates ~400,000+ string comparisons per document generation
-- Reduces CPU time from the critical O(n²) pattern to O(n)
-- Should bring total CPU usage well within the 2-second limit
+- Document generation requests return instantly (no more HTTP timeout errors)
+- Large templates process in the background with full CPU budget available
+- If CPU limit is still hit, the job is cleanly marked "failed" instead of stuck "running"
+- Frontend shows real-time progress via existing realtime subscriptions
 
