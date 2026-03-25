@@ -204,7 +204,26 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           <div className="border-b border-border pb-1 mb-2">
             <span className="font-semibold text-xs text-primary">Appraisal Information</span>
           </div>
-          {renderInlineField(FIELD_KEYS.appraisedDate, 'Appraisal Date', 'date')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.appraisedDate}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Appraisal Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !getFieldValue(FIELD_KEYS.appraisedDate) && 'text-muted-foreground')} disabled={disabled}>
+                    {getFieldValue(FIELD_KEYS.appraisedDate) ? format(parseDate(getFieldValue(FIELD_KEYS.appraisedDate))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                    <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <EnhancedCalendar mode="single" selected={parseDate(getFieldValue(FIELD_KEYS.appraisedDate))}
+                    onSelect={(date) => date && onValueChange(FIELD_KEYS.appraisedDate, format(date, 'yyyy-MM-dd'))}
+                    onClear={() => onValueChange(FIELD_KEYS.appraisedDate, '')}
+                    onToday={() => onValueChange(FIELD_KEYS.appraisedDate, format(new Date(), 'yyyy-MM-dd'))}
+                    initialFocus />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </DirtyFieldWrapper>
           {renderInlineSelect(FIELD_KEYS.performedBy, 'Performed By', PERFORMED_BY_OPTIONS, 'Select...')}
           {renderInlineSelect(FIELD_KEYS.propertyType, 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
           {renderInlineSelect(FIELD_KEYS.occupancy, 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
@@ -251,7 +270,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !getFieldValue(FIELD_KEYS.yearBuilt) && 'text-muted-foreground')} disabled={disabled}>
-                  {getFieldValue(FIELD_KEYS.yearBuilt) ? format(parseDate(getFieldValue(FIELD_KEYS.yearBuilt))!, 'MM/dd/yyyy') : 'Date'}
+                  {getFieldValue(FIELD_KEYS.yearBuilt) ? format(parseDate(getFieldValue(FIELD_KEYS.yearBuilt))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
                   <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                 </Button>
               </PopoverTrigger>
