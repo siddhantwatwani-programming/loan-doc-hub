@@ -360,7 +360,7 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string; d
           </PopoverContent>
         </Popover>
         <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={handleExport}><Download className="h-3.5 w-3.5" /> Export</Button>
-        {selectedRows.size > 0 && (
+        {!disabled && selectedRows.size > 0 && (
           <Button variant="destructive" size="sm" className="h-8 text-xs" onClick={handleDeleteSelected}>Delete ({selectedRows.size})</Button>
         )}
       </div>

@@ -378,9 +378,11 @@ const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string; d
             <FileText className="h-4 w-4" /> Export
           </Button>
 
-          <Button variant="outline" size="sm" onClick={() => setShowUploadModal(true)} className="gap-1">
-            <Plus className="h-4 w-4" /> Upload Attachment
-          </Button>
+          {!disabled && (
+            <Button variant="outline" size="sm" onClick={() => setShowUploadModal(true)} className="gap-1">
+              <Plus className="h-4 w-4" /> Upload Attachment
+            </Button>
+          )}
         </div>
       </div>
 
