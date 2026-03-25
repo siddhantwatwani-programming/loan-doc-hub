@@ -331,12 +331,13 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
-                  <Calendar
+                  <EnhancedCalendar
                     mode="single"
                     selected={parseDate(getValue('nextDebitDate'))}
                     onSelect={(date) => { handleChange('nextDebitDate', date ? format(date, 'yyyy-MM-dd') : ''); setNextDebitOpen(false); }}
+                    onClear={() => { handleChange('nextDebitDate', ''); setNextDebitOpen(false); }}
+                    onToday={() => { handleChange('nextDebitDate', format(new Date(), 'yyyy-MM-dd')); setNextDebitOpen(false); }}
                     initialFocus
-                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
