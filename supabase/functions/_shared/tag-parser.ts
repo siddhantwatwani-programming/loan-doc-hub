@@ -238,165 +238,161 @@ export function normalizeWordXml(xmlContent: string): string {
   // handles skipping over <w:rPr> blocks between adjacent runs.
   
   
-  // Handle fragmented merge fields
-  const fragmentedPattern = /«((?:<(?!\/w:p>|w:p[\s>\/])[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<(?!\/w:p>|w:p[\s>\/])[^>]*>|\s)*?)»/g;
-  result = result.replace(fragmentedPattern, (match, pre, fieldName, post) => {
-    if (pre.includes("<") || post.includes("<")) {
-      console.log(`[tag-parser] Found fragmented merge field: ${fieldName}`);
+  // Handle fragmented merge fields, braces, conditionals — all paragraph-scoped
+  // to avoid catastrophic backtracking on large documents (628KB+).
+  result = processParaByPara(result, (para) => {
+    // Quick skip: only process paragraphs with potential merge tag delimiters
+    if (!para.includes('{') && !para.includes('\u00AB') && !para.includes('\u00BB') && !para.includes('instrText')) {
+      return para;
     }
-    return `«${fieldName}»`;
-  });
-  
-  // Handle XML-fragmented chevron patterns
-  const leftChevronFragmented = /«((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>\s*<w:t(?:[^>]*)>)+)/g;
-  result = result.replace(leftChevronFragmented, () => "«");
-  
-  const rightChevronFragmented = /((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>\s*<w:t(?:[^>]*)>)+)»/g;
-  result = result.replace(rightChevronFragmented, () => "»");
-  
-  // NOTE: Fragmented underscore, dot, and dot-in-run patterns were removed
-  // for performance. They used lastIndexOf() callbacks on the full 600KB+ XML
-  // string, causing CPU timeouts. The paragraph-level safety net
-  // (consolidateFragmentedTagsInParagraphs) handles these cases.
-  
-  // Handle split opening braces: {</w:t></w:r><w:r><w:t>{ -> {{
-  // CRITICAL: Must NOT cross paragraph boundaries (</w:p> or <w:p)
-  const splitOpenBraces = /\{((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\{/g;
-  result = result.replace(splitOpenBraces, (match, runBreak) => {
-    if (/<\/w:p>/.test(runBreak) || /<w:p[\s>]/.test(runBreak)) {
-      return match;
-    }
-    console.log(`[tag-parser] Consolidated fragmented opening braces {{`);
-    return '{{';
-  });
-  
-  // Handle split closing braces: }</w:t></w:r><w:r><w:t>} -> }}
-  // CRITICAL: Must NOT cross paragraph boundaries (</w:p> or <w:p)
-  const splitCloseBraces = /\}((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\}/g;
-  result = result.replace(splitCloseBraces, (match, runBreak) => {
-    if (/<\/w:p>/.test(runBreak) || /<w:p[\s>]/.test(runBreak)) {
-      return match;
-    }
-    console.log(`[tag-parser] Consolidated fragmented closing braces }}`);
-    return '}}';
-  });
 
-  // Consolidate adjacent <w:instrText> elements so MERGEFIELD instructions aren't split
-  const instrTextConsolidate = /(<w:instrText[^>]*>)([\s\S]*?)(<\/w:instrText>)\s*<\/w:r>\s*<w:r[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:instrText[^>]*>([\s\S]*?)(<\/w:instrText>)/g;
-  let prevInstr = result;
-  do {
-    prevInstr = result;
-    result = result.replace(instrTextConsolidate, '$1$2$4$3');
-  } while (result !== prevInstr);
+    let p = para;
 
-  // Handle fragmented curly brace patterns {{...}}
-  // Word may split field names across multiple XML runs, so we allow XML tags
-  // interspersed within the content between {{ and }}, then strip XML to get the field name.
-  const curlyFragmentedPattern = /\{\{((?:[A-Za-z0-9_.| ]|<(?!\/w:p>|w:p[\s>\/])[^>]*>|\s)*?)\}\}/g;
-  result = result.replace(curlyFragmentedPattern, (match, innerContent) => {
-    // Strip XML tags and whitespace to extract the clean text
-    const cleanText = innerContent.replace(/<[^>]*>/g, '').replace(/\s+/g, '').trim();
-    if (!cleanText) return match; // Skip empty
+    // Handle fragmented merge fields
+    const fragmentedPattern = /«((?:<(?!\/w:p>|w:p[\s>\/])[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<(?!\/w:p>|w:p[\s>\/])[^>]*>|\s)*?)»/g;
+    p = p.replace(fragmentedPattern, (match, pre, fieldName, post) => {
+      if (pre.includes("<") || post.includes("<")) {
+        console.log(`[tag-parser] Found fragmented merge field: ${fieldName}`);
+      }
+      return `«${fieldName}»`;
+    });
 
-    // Skip conditional/block tags — they have their own handlers below
-    if (/^[#/]/.test(cleanText) || cleanText === 'else') return match;
+    // Handle XML-fragmented chevron patterns
+    const leftChevronFragmented = /«((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>\s*<w:t(?:[^>]*)>)+)/g;
+    p = p.replace(leftChevronFragmented, () => "«");
 
-    // Check for transform pipe: {{field|transform}}
-    const pipeIdx = cleanText.indexOf('|');
-    if (pipeIdx > 0) {
-      const fieldName = cleanText.substring(0, pipeIdx);
-      const transform = cleanText.substring(pipeIdx + 1);
-      if (/^[A-Za-z0-9_.]+$/.test(fieldName) && /^[A-Za-z0-9_]+$/.test(transform)) {
-        if (innerContent.includes('<')) {
-          console.log(`[tag-parser] Found fragmented curly tag with transform, consolidating: {{${fieldName}|${transform}}}`);
+    const rightChevronFragmented = /((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r(?:[^>]*)>\s*<w:t(?:[^>]*)>)+)»/g;
+    p = p.replace(rightChevronFragmented, () => "»");
+
+    // Handle split opening braces
+    const splitOpenBraces = /\{((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\{/g;
+    p = p.replace(splitOpenBraces, (match, runBreak) => {
+      if (/<\/w:p>/.test(runBreak) || /<w:p[\s>]/.test(runBreak)) {
+        return match;
+      }
+      return '{{';
+    });
+
+    // Handle split closing braces
+    const splitCloseBraces = /\}((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\}/g;
+    p = p.replace(splitCloseBraces, (match, runBreak) => {
+      if (/<\/w:p>/.test(runBreak) || /<w:p[\s>]/.test(runBreak)) {
+        return match;
+      }
+      return '}}';
+    });
+
+    // Consolidate adjacent <w:instrText> elements
+    const instrTextConsolidate = /(<w:instrText[^>]*>)([\s\S]*?)(<\/w:instrText>)\s*<\/w:r>\s*<w:r[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:instrText[^>]*>([\s\S]*?)(<\/w:instrText>)/g;
+    let prevInstr = p;
+    do {
+      prevInstr = p;
+      p = p.replace(instrTextConsolidate, '$1$2$4$3');
+    } while (p !== prevInstr);
+
+    // Handle fragmented curly brace patterns {{...}}
+    const curlyFragmentedPattern = /\{\{((?:[A-Za-z0-9_.| ]|<(?!\/w:p>|w:p[\s>\/])[^>]*>|\s)*?)\}\}/g;
+    p = p.replace(curlyFragmentedPattern, (match, innerContent) => {
+      const cleanText = innerContent.replace(/<[^>]*>/g, '').replace(/\s+/g, '').trim();
+      if (!cleanText) return match;
+      if (/^[#/]/.test(cleanText) || cleanText === 'else') return match;
+
+      const pipeIdx = cleanText.indexOf('|');
+      if (pipeIdx > 0) {
+        const fieldName = cleanText.substring(0, pipeIdx);
+        const transform = cleanText.substring(pipeIdx + 1);
+        if (/^[A-Za-z0-9_.]+$/.test(fieldName) && /^[A-Za-z0-9_]+$/.test(transform)) {
+          if (innerContent.includes('<')) {
+            console.log(`[tag-parser] Found fragmented curly tag with transform, consolidating: {{${fieldName}|${transform}}}`);
+          }
+          return `{{${fieldName}|${transform}}}`;
         }
-        return `{{${fieldName}|${transform}}}`;
       }
-    }
 
-    // Simple field reference
-    if (/^[A-Za-z0-9_.]+$/.test(cleanText)) {
-      if (innerContent.includes('<')) {
-        console.log(`[tag-parser] Found fragmented curly tag, consolidating: {{${cleanText}}}`);
+      if (/^[A-Za-z0-9_.]+$/.test(cleanText)) {
+        if (innerContent.includes('<')) {
+          console.log(`[tag-parser] Found fragmented curly tag, consolidating: {{${cleanText}}}`);
+        }
+        return `{{${cleanText}}}`;
       }
-      return `{{${cleanText}}}`;
-    }
 
-    return match; // Don't modify unrecognized patterns
-  });
+      return match;
+    });
 
-  // Handle fragmented conditional block tags: {{#if ...}} and {{/if}}
-  const ifFragmented = /\{\{((?:<[^>]*>|\s)*?)#if\s*((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
-  result = result.replace(ifFragmented, (match, pre, mid, fieldName, post) => {
-    if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
-      console.log(`[tag-parser] Consolidated fragmented {{#if ${fieldName}}}`);
-    }
-    return `{{#if ${fieldName}}}`;
-  });
-
-  const unlessFragmented = /\{\{((?:<[^>]*>|\s)*?)#unless\s*((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
-  result = result.replace(unlessFragmented, (match, pre, mid, fieldName, post) => {
-    if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
-      console.log(`[tag-parser] Consolidated fragmented {{#unless ${fieldName}}}`);
-    }
-    return `{{#unless ${fieldName}}}`;
-  });
-
-  const endIfFragmented = /\{\{((?:<[^>]*>|\s)*?)\/((?:<[^>]*>|\s)*?)if((?:<[^>]*>|\s)*?)\}\}/g;
-  result = result.replace(endIfFragmented, (match, pre, mid, post) => {
-    if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
-      console.log(`[tag-parser] Consolidated fragmented {{/if}}`);
-    }
-    return `{{/if}}`;
-  });
-
-  const endUnlessFragmented = /\{\{((?:<[^>]*>|\s)*?)\/((?:<[^>]*>|\s)*?)unless((?:<[^>]*>|\s)*?)\}\}/g;
-  result = result.replace(endUnlessFragmented, (match, pre, mid, post) => {
-    if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
-      console.log(`[tag-parser] Consolidated fragmented {{/unless}}`);
-    }
-    return `{{/unless}}`;
-  });
-
-  // Handle fragmented {{else}} tags
-  const elseFragmented = /\{\{((?:<[^>]*>|\s)*?)else((?:<[^>]*>|\s)*?)\}\}/g;
-  result = result.replace(elseFragmented, (match, pre, post) => {
-    if (pre.includes("<") || post.includes("<")) {
-      console.log(`[tag-parser] Consolidated fragmented {{else}}`);
-    }
-    return `{{else}}`;
-  });
-
-  // Handle fragmented {{#each ...}} tags
-  const eachFragmented = /\{\{((?:<[^>]*>|\s)*?)#each\s*((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
-  result = result.replace(eachFragmented, (match, pre, mid, collectionName, post) => {
-    if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
-      console.log(`[tag-parser] Consolidated fragmented {{#each ${collectionName}}}`);
-    }
-    return `{{#each ${collectionName}}}`;
-  });
-
-  // Handle fragmented {{/each}} tags
-  const endEachFragmented = /\{\{((?:<[^>]*>|\s)*?)\/((?:<[^>]*>|\s)*?)each((?:<[^>]*>|\s)*?)\}\}/g;
-  result = result.replace(endEachFragmented, (match, pre, mid, post) => {
-    if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
-      console.log(`[tag-parser] Consolidated fragmented {{/each}}`);
-    }
-    return `{{/each}}`;
-  });
-
-  // Final pass: consolidate any remaining fragmented content within «» chevrons
-  // Similar to curlyFragmentedPattern but for chevron-delimited merge fields
-  const chevronFragmented = /«((?:[^»<]|<(?!\/w:p>|w:p[\s>\/])[^>]*>)*)»/g;
-  result = result.replace(chevronFragmented, (match, inner) => {
-    const cleanText = inner.replace(/<[^>]*>/g, '').replace(/\s+/g, '').trim();
-    if (/^[A-Za-z0-9_.]+$/.test(cleanText)) {
-      if (inner.includes('<')) {
-        console.log(`[tag-parser] Consolidated fragmented chevron tag: «${cleanText}»`);
+    // Handle fragmented conditional block tags
+    const ifFragmented = /\{\{((?:<[^>]*>|\s)*?)#if\s*((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
+    p = p.replace(ifFragmented, (_match, pre, mid, fieldName, post) => {
+      if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
+        console.log(`[tag-parser] Consolidated fragmented {{#if ${fieldName}}}`);
       }
-      return `«${cleanText}»`;
-    }
-    return match;
+      return `{{#if ${fieldName}}}`;
+    });
+
+    const unlessFragmented = /\{\{((?:<[^>]*>|\s)*?)#unless\s*((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
+    p = p.replace(unlessFragmented, (_match, pre, mid, fieldName, post) => {
+      if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
+        console.log(`[tag-parser] Consolidated fragmented {{#unless ${fieldName}}}`);
+      }
+      return `{{#unless ${fieldName}}}`;
+    });
+
+    const endIfFragmented = /\{\{((?:<[^>]*>|\s)*?)\/((?:<[^>]*>|\s)*?)if((?:<[^>]*>|\s)*?)\}\}/g;
+    p = p.replace(endIfFragmented, (_match, pre, mid, post) => {
+      if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
+        console.log(`[tag-parser] Consolidated fragmented {{/if}}`);
+      }
+      return `{{/if}}`;
+    });
+
+    const endUnlessFragmented = /\{\{((?:<[^>]*>|\s)*?)\/((?:<[^>]*>|\s)*?)unless((?:<[^>]*>|\s)*?)\}\}/g;
+    p = p.replace(endUnlessFragmented, (_match, pre, mid, post) => {
+      if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
+        console.log(`[tag-parser] Consolidated fragmented {{/unless}}`);
+      }
+      return `{{/unless}}`;
+    });
+
+    // Handle fragmented {{else}} tags
+    const elseFragmented = /\{\{((?:<[^>]*>|\s)*?)else((?:<[^>]*>|\s)*?)\}\}/g;
+    p = p.replace(elseFragmented, (_match, pre, post) => {
+      if (pre.includes("<") || post.includes("<")) {
+        console.log(`[tag-parser] Consolidated fragmented {{else}}`);
+      }
+      return `{{else}}`;
+    });
+
+    // Handle fragmented {{#each ...}} tags
+    const eachFragmented = /\{\{((?:<[^>]*>|\s)*?)#each\s*((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
+    p = p.replace(eachFragmented, (_match, pre, mid, collectionName, post) => {
+      if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
+        console.log(`[tag-parser] Consolidated fragmented {{#each ${collectionName}}}`);
+      }
+      return `{{#each ${collectionName}}}`;
+    });
+
+    // Handle fragmented {{/each}} tags
+    const endEachFragmented = /\{\{((?:<[^>]*>|\s)*?)\/((?:<[^>]*>|\s)*?)each((?:<[^>]*>|\s)*?)\}\}/g;
+    p = p.replace(endEachFragmented, (_match, pre, mid, post) => {
+      if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
+        console.log(`[tag-parser] Consolidated fragmented {{/each}}`);
+      }
+      return `{{/each}}`;
+    });
+
+    // Final pass: consolidate any remaining fragmented chevron tags
+    const chevronFragmented = /«((?:[^»<]|<(?!\/w:p>|w:p[\s>\/])[^>]*>)*)»/g;
+    p = p.replace(chevronFragmented, (match, inner) => {
+      const cleanText = inner.replace(/<[^>]*>/g, '').replace(/\s+/g, '').trim();
+      if (/^[A-Za-z0-9_.]+$/.test(cleanText)) {
+        if (inner.includes('<')) {
+          console.log(`[tag-parser] Consolidated fragmented chevron tag: «${cleanText}»`);
+        }
+        return `«${cleanText}»`;
+      }
+      return match;
+    });
+
+    return p;
   });
 
   // Diagnostic: count tags BEFORE paragraph-level consolidation
@@ -405,8 +401,6 @@ export function normalizeWordXml(xmlContent: string): string {
   console.log(`[tag-parser] Before paragraph consolidation: ${preConsolidationCurly} curly tags, ${preConsolidationChevron} chevron tags`);
 
   // Safety-net: paragraph-level consolidation for tags that span multiple <w:t> runs.
-  // If regex-based normalization above missed any fragmented tags, this catches them
-  // by examining concatenated text from all <w:t> elements in each paragraph.
   result = consolidateFragmentedTagsInParagraphs(result);
 
   return result;
