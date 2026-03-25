@@ -19,7 +19,7 @@ import {
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -263,19 +263,20 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn("h-7 text-xs flex-1 justify-start font-normal", !form['dob'] && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                      {form['dob'] || 'MM/DD/YYYY'}
+                      {form['dob'] || 'dd-mm-yyyy'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 z-[200]" align="start">
-                    <Calendar
+                    <EnhancedCalendar
                       mode="single"
                       selected={form['dob'] ? new Date(form['dob']) : undefined}
                       onSelect={(date) => {
                         set('dob', date ? format(date, 'MM/dd/yyyy') : '');
                         setDobOpen(false);
                       }}
+                      onClear={() => { set('dob', ''); setDobOpen(false); }}
+                      onToday={() => { set('dob', format(new Date(), 'MM/dd/yyyy')); setDobOpen(false); }}
                       initialFocus
-                      className={cn("p-3 pointer-events-auto")}
                     />
                   </PopoverContent>
                 </Popover>
@@ -503,15 +504,16 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 z-[200]" align="start">
-                    <Calendar
+                    <EnhancedCalendar
                       mode="single"
                       selected={form['dob'] ? new Date(form['dob']) : undefined}
                       onSelect={(date) => {
                         set('dob', date ? format(date, 'dd-MM-yyyy') : '');
                         setBorrowerDobOpen(false);
                       }}
+                      onClear={() => { set('dob', ''); setBorrowerDobOpen(false); }}
+                      onToday={() => { set('dob', format(new Date(), 'dd-MM-yyyy')); setBorrowerDobOpen(false); }}
                       initialFocus
-                      className={cn("p-3 pointer-events-auto")}
                     />
                   </PopoverContent>
                 </Popover>

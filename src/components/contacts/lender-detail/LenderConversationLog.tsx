@@ -8,7 +8,7 @@ import { Search, Plus, Settings2, Filter, Download, CalendarIcon, X, Paperclip, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import SortableTableHead from '@/components/deal/SortableTableHead';
 import { RichTextEditor } from '@/components/deal/RichTextEditor';
@@ -302,12 +302,7 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 z-[9999]" align="end">
-              <Calendar mode="single" selected={asOfDateFilter} onSelect={(d) => { setAsOfDateFilter(d); setAsOfFilterOpen(false); }} initialFocus />
-              {asOfDateFilter && (
-                <div className="px-3 pb-2">
-                  <Button variant="ghost" size="sm" className="text-xs w-full" onClick={() => { setAsOfDateFilter(undefined); setAsOfFilterOpen(false); }}>Clear</Button>
-                </div>
-              )}
+              <EnhancedCalendar mode="single" selected={asOfDateFilter} onSelect={(d) => { setAsOfDateFilter(d); setAsOfFilterOpen(false); }} onClear={() => { setAsOfDateFilter(undefined); setAsOfFilterOpen(false); }} onToday={() => { setAsOfDateFilter(new Date()); setAsOfFilterOpen(false); }} initialFocus />
             </PopoverContent>
           </Popover>
           <Popover>
@@ -514,7 +509,7 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string }>
                     </div>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-                    <Calendar mode="single" selected={addAsOfDateObj} onSelect={(d) => { if (d) { const ex = newLog.asOfDate ? new Date(newLog.asOfDate) : new Date(); if (!isNaN(ex.getTime())) { d.setHours(ex.getHours()); d.setMinutes(ex.getMinutes()); d.setSeconds(ex.getSeconds()); } setNewLog(p => ({ ...p, asOfDate: d.toISOString() })); } setAddAsOfOpen(false); }} initialFocus />
+                    <EnhancedCalendar mode="single" selected={addAsOfDateObj} onSelect={(d) => { if (d) { const ex = newLog.asOfDate ? new Date(newLog.asOfDate) : new Date(); if (!isNaN(ex.getTime())) { d.setHours(ex.getHours()); d.setMinutes(ex.getMinutes()); d.setSeconds(ex.getSeconds()); } setNewLog(p => ({ ...p, asOfDate: d.toISOString() })); } setAddAsOfOpen(false); }} onClear={() => { setNewLog(p => ({ ...p, asOfDate: '' })); setAddAsOfOpen(false); }} onToday={() => { setNewLog(p => ({ ...p, asOfDate: new Date().toISOString() })); setAddAsOfOpen(false); }} initialFocus />
                   </PopoverContent>
                 </Popover>
               </div>

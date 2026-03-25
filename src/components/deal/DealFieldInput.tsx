@@ -4,7 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { AlertCircle, Lock, Calculator, Asterisk, CheckCircle2, CalendarIcon } from 'lucide-react';
@@ -176,17 +176,18 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
               isDisabled && 'bg-muted cursor-not-allowed'
             )}
           >
-            {isValidDate ? format(selectedDate, 'MM/dd/yyyy') : <span>Pick a date</span>}
+            {isValidDate ? format(selectedDate, 'dd-MM-yyyy') : <span>dd-mm-yyyy</span>}
             <CalendarIcon className="ml-auto h-3 w-3" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
+          <EnhancedCalendar
             mode="single"
             selected={isValidDate ? selectedDate : undefined}
             onSelect={handleDateSelect}
+            onClear={() => { onChange(''); setDatePickerOpen(false); }}
+            onToday={() => { onChange(format(new Date(), 'yyyy-MM-dd')); setDatePickerOpen(false); }}
             initialFocus
-            className="p-3 pointer-events-auto"
           />
         </PopoverContent>
       </Popover>

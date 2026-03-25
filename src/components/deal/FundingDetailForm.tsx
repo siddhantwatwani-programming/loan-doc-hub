@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { Button } from '@/components/ui/button';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
@@ -137,7 +137,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-              <Calendar mode="single" selected={fundingDate} onSelect={handleFundingDateChange} initialFocus className="p-3 pointer-events-auto" />
+              <EnhancedCalendar mode="single" selected={fundingDate} onSelect={handleFundingDateChange} onClear={() => handleFundingDateChange(undefined)} onToday={() => handleFundingDateChange(new Date())} initialFocus />
             </PopoverContent>
           </Popover>
         </div>
@@ -152,7 +152,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-              <Calendar mode="single" selected={interestFromDate} onSelect={handleInterestFromDateChange} initialFocus className="p-3 pointer-events-auto" />
+              <EnhancedCalendar mode="single" selected={interestFromDate} onSelect={handleInterestFromDateChange} onClear={() => handleInterestFromDateChange(undefined)} onToday={() => handleInterestFromDateChange(new Date())} initialFocus />
             </PopoverContent>
           </Popover>
         </div>

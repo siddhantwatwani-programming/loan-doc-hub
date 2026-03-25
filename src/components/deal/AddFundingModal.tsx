@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -348,7 +348,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                       <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-[9999]" align="start"><Calendar mode="single" selected={fundingDate} onSelect={(d) => { setFundingDate(d); setFundingDateOpen(false); }} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start"><EnhancedCalendar mode="single" selected={fundingDate} onSelect={(d) => { setFundingDate(d); setFundingDateOpen(false); }} onClear={() => { setFundingDate(undefined); setFundingDateOpen(false); }} onToday={() => { setFundingDate(new Date()); setFundingDateOpen(false); }} initialFocus /></PopoverContent>
                 </Popover>
               </div>
 
@@ -361,7 +361,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                       <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-[9999]" align="start"><Calendar mode="single" selected={interestFromDate} onSelect={(d) => { setInterestFromDate(d); setInterestFromOpen(false); }} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start"><EnhancedCalendar mode="single" selected={interestFromDate} onSelect={(d) => { setInterestFromDate(d); setInterestFromOpen(false); }} onClear={() => { setInterestFromDate(undefined); setInterestFromOpen(false); }} onToday={() => { setInterestFromDate(new Date()); setInterestFromOpen(false); }} initialFocus /></PopoverContent>
                 </Popover>
               </div>
             </div>
