@@ -173,6 +173,53 @@ function flattenMergeFieldStructures(xml: string): string {
 }
 
 /**
+ * Efficiently iterate over <w:p>...</w:p> paragraphs using indexOf
+ * instead of regex to avoid catastrophic backtracking on large documents (600KB+).
+ */
+function processParaByPara(xml: string, fn: (para: string) => string): string {
+  const chunks: string[] = [];
+  let pos = 0;
+
+  while (pos < xml.length) {
+    // Find next <w:p> or <w:p ...> (skip <w:pPr>, <w:proofErr>, etc.)
+    let pStart = -1;
+    let searchFrom = pos;
+    while (searchFrom < xml.length) {
+      const idx = xml.indexOf('<w:p', searchFrom);
+      if (idx === -1) break;
+      const next = xml[idx + 4];
+      if (next === '>' || next === ' ' || next === '/' || next === undefined) {
+        pStart = idx;
+        break;
+      }
+      searchFrom = idx + 4;
+    }
+
+    if (pStart === -1) {
+      chunks.push(xml.substring(pos));
+      break;
+    }
+
+    if (pStart > pos) {
+      chunks.push(xml.substring(pos, pStart));
+    }
+
+    const pEnd = xml.indexOf('</w:p>', pStart);
+    if (pEnd === -1) {
+      chunks.push(xml.substring(pStart));
+      break;
+    }
+
+    const paraEnd = pEnd + 6; // '</w:p>'.length
+    const para = xml.substring(pStart, paraEnd);
+    chunks.push(fn(para));
+    pos = paraEnd;
+  }
+
+  return chunks.join('');
+}
+
+/**
  * Normalize Word XML by consolidating fragmented text runs.
  * Word often splits text across multiple <w:t> elements.
  */
