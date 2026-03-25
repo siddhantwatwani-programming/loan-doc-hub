@@ -331,14 +331,16 @@ const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId, disabled }) 
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="w-10 px-2">
-                <input
-                  type="checkbox"
-                  checked={filtered.length > 0 && selectedRows.size === filtered.length}
-                  onChange={toggleAll}
-                  className="rounded border-input"
-                />
-              </TableHead>
+              {!disabled && (
+                <TableHead className="w-10 px-2">
+                  <input
+                    type="checkbox"
+                    checked={filtered.length > 0 && selectedRows.size === filtered.length}
+                    onChange={toggleAll}
+                    className="rounded border-input"
+                  />
+                </TableHead>
+              )}
               {activeColumns.map(c => (
                 <SortableTableHead
                   key={c.id}
