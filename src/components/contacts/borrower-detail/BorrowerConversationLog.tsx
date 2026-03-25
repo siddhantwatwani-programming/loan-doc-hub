@@ -70,7 +70,7 @@ const getEmptyLog = (): Omit<LogRow, 'id'> => {
   return { date: now.toISOString(), asOfDate: now.toISOString(), type: '', subject: '', from: '', to: '', status: '', content: '', highPriority: false, reference: '', attachments: [], account: '', name: '' };
 };
 
-const BorrowerConversationLog: React.FC<{ borrowerId: string; contactDbId: string }> = ({ contactDbId }) => {
+const BorrowerConversationLog: React.FC<{ borrowerId: string; contactDbId: string; disabled?: boolean }> = ({ contactDbId, disabled = false }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
