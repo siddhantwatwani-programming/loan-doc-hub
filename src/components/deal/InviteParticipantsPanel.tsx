@@ -616,7 +616,7 @@ export const InviteParticipantsPanel: React.FC<InviteParticipantsPanelProps> = (
           <div className="text-center py-8">
             <Users className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
             <p className="text-muted-foreground text-sm">No participants invited yet</p>
-            {canAddMore && (
+            {canAddMore && !disabled && (
               <Button 
                 variant="outline" 
                 size="sm" 
