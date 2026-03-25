@@ -193,7 +193,7 @@ const CSRDashboard: React.FC = () => {
                   >
                     <div>
                       <p className="font-medium text-foreground">{deal.deal_number}</p>
-                      <p className="text-sm text-muted-foreground">{deal.borrower_name || 'No borrower'}</p>
+                      {deal.borrower_name && <p className="text-sm text-muted-foreground">{deal.borrower_name}</p>}
                     </div>
                     <div className="text-right">
                       <p className={cn('text-sm font-medium', statusDisplay.color)}>
