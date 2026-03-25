@@ -269,19 +269,23 @@ const BorrowerAttachments: React.FC<{ borrowerId: string; contactDbId: string; d
           <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDownload(row.original); }} title="Download">
             <Download className="h-4 w-4 text-muted-foreground" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedAttachment(row.original); setEditForm({ category: row.original.category, description: row.original.description || '' }); setShowEditModal(true); }} title="Edit">
-            <Pencil className="h-4 w-4 text-muted-foreground" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleNewVersion(row.original); }} title="Upload New Version">
-            <Upload className="h-4 w-4 text-muted-foreground" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.original); }} title="Delete">
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+          {!disabled && (
+            <>
+              <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedAttachment(row.original); setEditForm({ category: row.original.category, description: row.original.description || '' }); setShowEditModal(true); }} title="Edit">
+                <Pencil className="h-4 w-4 text-muted-foreground" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleNewVersion(row.original); }} title="Upload New Version">
+                <Upload className="h-4 w-4 text-muted-foreground" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(row.original); }} title="Delete">
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </>
+          )}
         </div>
       ),
     },
-  ], [handlePreview, handleDownload, handleNewVersion, deleteMutation]);
+  ], [handlePreview, handleDownload, handleNewVersion, deleteMutation, disabled]);
 
   const table = useReactTable({
     data: filteredData,
