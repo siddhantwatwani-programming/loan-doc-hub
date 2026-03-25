@@ -480,53 +480,63 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
 export function parseWordMergeFields(content: string): ParsedMergeTag[] {
   const tags: ParsedMergeTag[] = [];
   const seenTags = new Set<string>();
-  
-  // Pattern 1: Unicode chevrons «field_name»
-  const unicodePattern = /«([^»<]+)»/g;
   let match;
-  while ((match = unicodePattern.exec(content)) !== null) {
-    const tagName = match[1].trim();
-    if (!seenTags.has(match[0])) {
-      seenTags.add(match[0]);
-      tags.push({
-        fullMatch: match[0],
-        tagName: tagName,
-        inlineTransform: null,
-      });
+
+  if (content.includes('«') && content.includes('»')) {
+    const unicodePattern = /«([^»<]+)»/g;
+    while ((match = unicodePattern.exec(content)) !== null) {
+      const tagName = match[1].trim();
+      if (!seenTags.has(match[0])) {
+        seenTags.add(match[0]);
+        tags.push({
+          fullMatch: match[0],
+          tagName,
+          inlineTransform: null,
+        });
+      }
     }
   }
-  
-  // Pattern 2: Double curly braces {{field_name}} or {{field_name|transform}}
-  const curlyPattern = /\{\{([^{}<|]+)(?:\s*\|\s*([^{}<]+))?\}\}/g;
-  while ((match = curlyPattern.exec(content)) !== null) {
-    if (!seenTags.has(match[0])) {
-      seenTags.add(match[0]);
-      tags.push({
-        fullMatch: match[0],
-        tagName: match[1].trim(),
-        inlineTransform: match[2]?.trim() || null,
-      });
+
+  if (content.includes('{{') && content.includes('}}')) {
+    const curlyPattern = /\{\{([^{}<|]+)(?:\s*\|\s*([^{}<]+))?\}\}/g;
+    while ((match = curlyPattern.exec(content)) !== null) {
+      if (!seenTags.has(match[0])) {
+        seenTags.add(match[0]);
+        tags.push({
+          fullMatch: match[0],
+          tagName: match[1].trim(),
+          inlineTransform: match[2]?.trim() || null,
+        });
+      }
     }
   }
-  
-  // Pattern 3: Word MERGEFIELD in instrText
-  const mergeFieldPattern = /MERGEFIELD\s+"?([A-Za-z0-9_.]+)"?/gi;
-  while ((match = mergeFieldPattern.exec(content)) !== null) {
-    const fieldName = match[1].trim();
-    const syntheticTag = `«${fieldName}»`;
-    if (!seenTags.has(syntheticTag)) {
-      seenTags.add(syntheticTag);
-      tags.push({
-        fullMatch: syntheticTag,
-        tagName: fieldName,
-        inlineTransform: null,
-      });
+
+  if (content.includes('MERGEFIELD')) {
+    const mergeFieldPattern = /MERGEFIELD\s+"?([A-Za-z0-9_.]+)"?/gi;
+    while ((match = mergeFieldPattern.exec(content)) !== null) {
+      const fieldName = match[1].trim();
+      const syntheticTag = `«${fieldName}»`;
+      if (!seenTags.has(syntheticTag)) {
+        seenTags.add(syntheticTag);
+        tags.push({
+          fullMatch: syntheticTag,
+          tagName: fieldName,
+          inlineTransform: null,
+        });
+      }
     }
   }
-  
+
   console.log(`[tag-parser] Found ${tags.length} merge tags: ${tags.map(t => t.tagName).join(", ")}`);
-  
+
   return tags;
+}
+
+function getLabelQuickNeedle(label: string, mapping: LabelMapping): string {
+  if (mapping.replaceNext) return mapping.replaceNext.toLowerCase();
+  if (label === "as of _") return "as of";
+  if (label.endsWith(':')) return label.slice(0, -1).toLowerCase();
+  return label.toLowerCase();
 }
 
 /**
@@ -542,26 +552,37 @@ export function replaceLabelBasedFields(
   validFieldKeys?: Set<string>
 ): { content: string; replacementCount: number } {
   let replacementCount = 0;
+  const labelEntries = Object.entries(labelMap);
+
+  if (labelEntries.length === 0) {
+    return { content, replacementCount };
+  }
+
+  const replacedFieldKeyLowers = replacedFieldKeys
+    ? new Set([...replacedFieldKeys].map((key) => key.toLowerCase()))
+    : null;
+  const contentLower = content.toLowerCase();
+  const candidateLabels = labelEntries
+    .map(([label, mapping]) => ({
+      label,
+      mapping,
+      quickNeedle: getLabelQuickNeedle(label, mapping),
+    }))
+    .filter(({ quickNeedle }) => !quickNeedle || contentLower.includes(quickNeedle));
+
+  if (candidateLabels.length === 0) {
+    return { content, replacementCount };
+  }
 
   const processedContent = processParaByPara(content, (segment) => {
     let result = segment;
     let resultLower = result.toLowerCase();
 
-    for (const [label, mapping] of Object.entries(labelMap)) {
-      const fieldKeyLower = mapping.fieldKey.toLowerCase();
-      const alreadyReplaced = replacedFieldKeys && [...replacedFieldKeys].some(k => k.toLowerCase() === fieldKeyLower);
-      if (alreadyReplaced) {
+    for (const { label, mapping, quickNeedle } of candidateLabels) {
+      if (replacedFieldKeyLowers?.has(mapping.fieldKey.toLowerCase())) {
         continue;
       }
 
-      // Fast skip to avoid running regexes against paragraphs that clearly don't contain the label
-      const quickNeedle = mapping.replaceNext
-        ? mapping.replaceNext.toLowerCase()
-        : label === "as of _"
-          ? "as of"
-          : label.endsWith(':')
-            ? label.slice(0, -1).toLowerCase()
-            : label.toLowerCase();
       if (quickNeedle && !resultLower.includes(quickNeedle)) {
         continue;
       }
@@ -1061,23 +1082,39 @@ export function replaceMergeTags(
   labelMap: Record<string, LabelMapping>,
   validFieldKeys?: Set<string>
 ): string {
+  const contentLower = content.toLowerCase();
+  const hasMergeMarkers = content.includes('{{') || content.includes('}}') || content.includes('«') || content.includes('»') || content.includes('MERGEFIELD') || content.includes('w:fldChar') || content.includes('w:fldSimple') || content.includes('w:instrText');
+  const hasCheckboxes = content.includes('<w14:checkbox') && content.includes('<w:sdt');
+  const hasRelevantLabel = Object.entries(labelMap).some(([label, mapping]) => {
+    const quickNeedle = getLabelQuickNeedle(label, mapping);
+    return quickNeedle ? contentLower.includes(quickNeedle) : false;
+  });
+
+  if (!hasMergeMarkers && !hasCheckboxes && !hasRelevantLabel) {
+    return content;
+  }
+
   // First normalize the XML to handle fragmented merge fields
   let result = normalizeWordXml(content);
 
-  // Process {{#each}} iteration blocks before conditionals and tag replacement
-  result = processEachBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
+  if (result.includes('{{#each')) {
+    result = processEachBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
+  }
 
-  // Process conditional blocks ({{#if}}/{{/if}}) before any tag replacement
-  result = processConditionalBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
+  if (result.includes('{{#if') || result.includes('{{#unless')) {
+    result = processConditionalBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
+  }
 
-  // Process native Word SDT checkboxes before text-based merge tags
-  result = processSdtCheckboxes(result, fieldValues, mergeTagMap, validFieldKeys);
-  
-  // Diagnostics: count brace pairs after normalization to verify consolidation
-  const openBraceCount = (result.match(/\{\{/g) || []).length;
-  const closeBraceCount = (result.match(/\}\}/g) || []).length;
-  if (openBraceCount > 0 || closeBraceCount > 0) {
-    console.log(`[tag-parser] After normalization: ${openBraceCount} opening {{ and ${closeBraceCount} closing }} detected`);
+  if (result.includes('<w14:checkbox') && result.includes('<w:sdt')) {
+    result = processSdtCheckboxes(result, fieldValues, mergeTagMap, validFieldKeys);
+  }
+
+  if (result.includes('{{') || result.includes('}}')) {
+    const openBraceCount = (result.match(/\{\{/g) || []).length;
+    const closeBraceCount = (result.match(/\}\}/g) || []).length;
+    if (openBraceCount > 0 || closeBraceCount > 0) {
+      console.log(`[tag-parser] After normalization: ${openBraceCount} opening {{ and ${closeBraceCount} closing }} detected`);
+    }
   }
 
   // Parse and replace merge tags
