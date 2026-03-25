@@ -102,9 +102,10 @@ const EMPTY_CHARGE: Omit<ChargeRow, 'id'> = {
 interface BrokerChargesProps {
   brokerId: string;
   contactDbId: string;
+  disabled?: boolean;
 }
 
-const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId }) => {
+const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId, disabled }) => {
   const [rows, setRows] = useState<ChargeRow[]>([]);
   const [search, setSearch] = useState('');
   const [sortCol, setSortCol] = useState<string | null>(null);
