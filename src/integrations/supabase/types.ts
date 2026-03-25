@@ -1236,6 +1236,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      can_edit_contact: {
+        Args: { _contact_type: string; _user_id: string }
+        Returns: boolean
+      }
       can_edit_field: {
         Args: { _field_key: string; _user_id: string }
         Returns: boolean
