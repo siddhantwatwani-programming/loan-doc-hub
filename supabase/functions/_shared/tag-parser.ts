@@ -230,7 +230,7 @@ export function normalizeWordXml(xmlContent: string): string {
   // Strip proofErr, lastRenderedPageBreak, and bookmark elements ONLY inside
   // paragraphs that contain merge-tag delimiters. This preserves page layout,
   // bookmarks, and structural XML in all non-tag paragraphs.
-  result = result.replace(/<w:p[\s>][\s\S]*?<\/w:p>/g, (para) => {
+  result = processParaByPara(result, (para) => {
     // Only strip in paragraphs that contain merge tag delimiters
     if (!para.includes('{') && !para.includes('\u00AB') && !para.includes('\u00BB')) {
       return para;
