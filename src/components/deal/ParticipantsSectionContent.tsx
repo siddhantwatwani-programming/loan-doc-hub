@@ -510,11 +510,14 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         <Table className="min-w-[1400px]">
           <TableHeader>
             <TableRow className="bg-muted/50">
+              {!disabled && (
               <TableHead className="w-[40px]">
                 <Checkbox
                   checked={isAllSelected}
                   onCheckedChange={toggleAll}
                 />
+              </TableHead>
+              )}
               </TableHead>
               {visibleColumns.map((col) => (
                 <SortableTableHead
