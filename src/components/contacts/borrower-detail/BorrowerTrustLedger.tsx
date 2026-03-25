@@ -219,7 +219,7 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
             </DropdownMenu>
 
             <Tooltip><TooltipTrigger asChild>
-              <Button variant="outline" size="icon" className="h-8 w-8"><FileCheck className="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" className="h-8 w-8" disabled={disabled}><FileCheck className="h-4 w-4" /></Button>
             </TooltipTrigger><TooltipContent>Select & Print Checks</TooltipContent></Tooltip>
           </TooltipProvider>
         </div>
