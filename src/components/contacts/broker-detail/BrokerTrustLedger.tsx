@@ -241,7 +241,7 @@ const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string; disab
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
         selectedCount={selectedCount}
-        onBulkDelete={() => setBulkDeleteOpen(true)}
+        onBulkDelete={disabled ? undefined : () => setBulkDeleteOpen(true)}
         onExport={() => setExportDialogOpen(true)}
       />
 
