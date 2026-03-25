@@ -178,6 +178,7 @@ const LenderTrustLedger: React.FC<{ lenderId: string; contactDbId: string; disab
     <div className="space-y-4">
       <h3 className="font-semibold text-lg text-foreground">Trust Ledger</h3>
 
+      {!disabled && (
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-1">
           <TooltipProvider>
@@ -232,6 +233,7 @@ const LenderTrustLedger: React.FC<{ lenderId: string; contactDbId: string; disab
           </SelectContent>
         </Select>
       </div>
+      )}
 
       <GridToolbar
         searchQuery={searchQuery}
