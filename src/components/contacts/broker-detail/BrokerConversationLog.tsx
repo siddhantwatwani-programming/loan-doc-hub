@@ -319,9 +319,11 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string; d
               ))}
             </PopoverContent>
           </Popover>
-          <Button size="sm" className="h-8 text-xs gap-1" onClick={() => { setNewLog(getEmptyLog()); setPendingFiles([]); setAddOpen(true); }}>
-            <Plus className="h-3.5 w-3.5" /> Add Conversation Logs
-          </Button>
+          {!disabled && (
+            <Button size="sm" className="h-8 text-xs gap-1" onClick={() => { setNewLog(getEmptyLog()); setPendingFiles([]); setAddOpen(true); }}>
+              <Plus className="h-3.5 w-3.5" /> Add Conversation Logs
+            </Button>
+          )}
         </div>
       </div>
 
