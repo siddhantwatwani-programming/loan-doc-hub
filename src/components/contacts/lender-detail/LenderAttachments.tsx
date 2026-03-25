@@ -18,6 +18,7 @@ interface AttachmentMeta {
 interface LenderAttachmentsProps {
   lenderId: string;
   contactDbId: string;
+  disabled?: boolean;
 }
 
 const BUCKET = 'contact-attachments';
