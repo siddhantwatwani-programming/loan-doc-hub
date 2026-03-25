@@ -13,7 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { RichTextEditor } from './RichTextEditor';
-import { Calendar } from '@/components/ui/calendar';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
