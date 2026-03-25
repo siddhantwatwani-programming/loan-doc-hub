@@ -521,7 +521,6 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
                 />
               </TableHead>
               )}
-              </TableHead>
               {visibleColumns.map((col) => (
                 <SortableTableHead
                   key={col.id}
