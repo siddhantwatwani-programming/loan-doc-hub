@@ -203,7 +203,7 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
         const historyRows: HistoryRow[] = [];
         const seenDeals = new Set<string>();
 
-        for (const p of participants) {
+        for (const p of allParticipants) {
           if (seenDeals.has(p.deal_id)) continue;
           seenDeals.add(p.deal_id);
 
