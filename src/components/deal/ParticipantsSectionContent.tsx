@@ -481,8 +481,8 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
         disabled={disabled}
-        selectedCount={selectedIds.size}
-        onBulkDelete={() => setDeleteDialogOpen(true)}
+        selectedCount={disabled ? 0 : selectedIds.size}
+        onBulkDelete={disabled ? undefined : () => setDeleteDialogOpen(true)}
         onExport={() => setExportOpen(true)}
         searchPlaceholder="Search participants..."
       />
