@@ -126,7 +126,19 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
     filteredData,
   } = useGridSortFilter<Participant>(participants, SEARCHABLE_FIELDS);
 
-  const {
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, currentPage, pageSize]);
+
+  // Reset to page 1 when filters/search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeFilterCount]);
+
+
     selectedIds,
     isAllSelected,
     toggleOne,
