@@ -3,6 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Plus, Loader2, Users } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -101,6 +108,8 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
   const [exportOpen, setExportOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const [columns, setColumns, resetColumns] = useTableColumnConfig('participants_v3', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((c) => c.visible);
@@ -117,13 +126,25 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
     filteredData,
   } = useGridSortFilter<Participant>(participants, SEARCHABLE_FIELDS);
 
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, currentPage, pageSize]);
+
+  // Reset to page 1 when filters/search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeFilterCount]);
+
   const {
     selectedIds,
     isAllSelected,
     toggleOne,
     toggleAll,
     clearSelection,
-  } = useGridSelection(filteredData);
+  } = useGridSelection(paginatedData);
 
   const fetchParticipants = useCallback(async () => {
     if (!dealId) return;
@@ -534,7 +555,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredData.map((participant) => (
+            {paginatedData.map((participant) => (
               <TableRow
                 key={participant.id}
                 className="cursor-pointer hover:bg-muted/50"
@@ -560,7 +581,49 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         </div>
       )}
 
-      {/* Footer with totals */}
+      {/* Pagination + Footer */}
+      {participants.length > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Show</span>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => {
+                setPageSize(Number(value));
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[70px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+            <span>entries</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
+              First
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => p - 1)} disabled={currentPage === 1}>
+              Previous
+            </Button>
+            <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">
+              {currentPage}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => p + 1)} disabled={currentPage >= totalPages}>
+              Next
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(totalPages)} disabled={currentPage >= totalPages}>
+              Last
+            </Button>
+          </div>
+        </div>
+      )}
       {participants.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
