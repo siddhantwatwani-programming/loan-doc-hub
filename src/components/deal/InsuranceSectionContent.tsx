@@ -232,12 +232,10 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
       { key: 'trackingStatus', dbField: 'tracking_status', defaultVal: '' },
     ];
 
-    fieldEntries.forEach(({ key, dbField, defaultVal }) => {
+    fieldEntries.forEach(({ key, dbField }) => {
       const val = String(insuranceData[key] ?? '');
-      // Only write fields that differ from defaults to avoid false dirty flags
-      if (val !== defaultVal || isEdit) {
-        onValueChange(`${prefix}.${dbField}`, val);
-      }
+      // Always write all fields for both new and edit to ensure the record appears in the grid
+      onValueChange(`${prefix}.${dbField}`, val);
     });
     
     setModalOpen(false);
