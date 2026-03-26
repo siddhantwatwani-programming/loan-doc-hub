@@ -393,6 +393,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
                   values={values}
                   onValueChange={onValueChange}
                   onRemoveValuesByPrefix={onRemoveValuesByPrefix}
+                  onPersist={onPersist}
                   disabled={disabled}
                   propertyOptions={propertyOptions}
                   onBack={handleBackToTable}
