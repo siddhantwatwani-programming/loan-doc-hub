@@ -288,12 +288,10 @@ const DefaultInterestColumn: React.FC<{
           />
         </FieldRow>
         <FieldRow label="Active Until" fieldKey={`${prefix}.active_until`}>
-          <Input
-            type="date"
+          <ActiveUntilDatePicker
             value={values[`${prefix}.active_until`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.active_until`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.active_until`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm w-full max-w-full overflow-hidden"
           />
         </FieldRow>
         <FieldRow label="Additional Daily Charge" fieldKey={`${prefix}.additional_daily_charge`}>
