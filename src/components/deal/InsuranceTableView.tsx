@@ -95,6 +95,15 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
     activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
   } = useGridSortFilter(insurances, SEARCH_FIELDS);
 
+  // Clear search when insurance list changes (e.g., after modal save)
+  const prevCountRef = React.useRef(insurances.length);
+  React.useEffect(() => {
+    if (insurances.length !== prevCountRef.current) {
+      setSearchQuery('');
+      prevCountRef.current = insurances.length;
+    }
+  }, [insurances.length, setSearchQuery]);
+
   const {
     selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
     isAllSelected, isSomeSelected, selectedCount,
