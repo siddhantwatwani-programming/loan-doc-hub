@@ -205,6 +205,53 @@ const LateFeeColumn: React.FC<{
   );
 };
 
+// Active Until date picker component
+const ActiveUntilDatePicker: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}> = ({ value, onChange, disabled }) => {
+  const [open, setOpen] = useState(false);
+  const selectedDate = value ? parseISO(value) : undefined;
+  const isValidDate = selectedDate && isValid(selectedDate);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          disabled={disabled}
+          className={cn(
+            'w-full justify-start text-left font-normal h-7 text-sm',
+            !value && 'text-muted-foreground',
+            disabled && 'bg-muted cursor-not-allowed'
+          )}
+        >
+          {isValidDate ? format(selectedDate, 'dd-MM-yyyy') : <span>dd-mm-yyyy</span>}
+          <CalendarIcon className="ml-auto h-3 w-3" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <EnhancedCalendar
+          mode="single"
+          selected={isValidDate ? selectedDate : undefined}
+          onSelect={(date: Date | undefined) => {
+            if (date) {
+              onChange(format(date, 'yyyy-MM-dd'));
+            } else {
+              onChange('');
+            }
+            setOpen(false);
+          }}
+          onClear={() => { onChange(''); setOpen(false); }}
+          onToday={() => { onChange(format(new Date(), 'yyyy-MM-dd')); setOpen(false); }}
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
+  );
+};
+
 // Default Interest Column
 const DefaultInterestColumn: React.FC<{
   values: Record<string, string>;
