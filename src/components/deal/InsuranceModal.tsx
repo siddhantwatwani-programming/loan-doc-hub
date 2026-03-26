@@ -109,9 +109,9 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
                 {renderInlineField('expiration', 'Expiration', { type: 'date' })}
                 <div className="flex items-center gap-2">
                   <Label className="w-[100px] shrink-0 text-xs text-foreground">Coverage</Label>
-                  <div className="flex items-center gap-1 flex-1">
-                    <span className="text-xs text-muted-foreground">$</span>
-                    <Input value={String(formData.coverage || '')} onChange={(e) => handleChange('coverage', e.target.value)} className="h-7 text-xs text-right" inputMode="decimal" placeholder="0.00" />
+                  <div className="relative flex-1">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                    <Input value={String(formData.coverage || '')} onChange={(e) => handleChange('coverage', e.target.value)} className="h-7 text-xs text-right pl-5" inputMode="decimal" placeholder="0.00" />
                   </div>
                 </div>
 
