@@ -49,6 +49,48 @@ export interface FundingRecord {
   rateNoteValue?: string;
   rateSoldValue?: string;
   rateLenderValue?: string;
+  brokerParticipates?: boolean;
+  interestFrom?: string;
+  // Servicing fees
+  overrideServicingFees?: boolean;
+  companyServicingFee?: string;
+  companyServicingFeePct?: string;
+  companyMaxFee?: string;
+  companyMaxFeePct?: string;
+  companyMinFee?: string;
+  companyMinFeePct?: string;
+  brokerServicingFee?: string;
+  brokerServicingFeePct?: string;
+  brokerMaxFee?: string;
+  brokerMaxFeePct?: string;
+  brokerMinFee?: string;
+  brokerMinFeePct?: string;
+  // Default fees
+  overrideDefaultFees?: boolean;
+  lateFee1Lender?: string;
+  lateFee1Company?: string;
+  lateFee1Broker?: string;
+  lateFee1Total?: string;
+  lateFee2Lender?: string;
+  lateFee2Company?: string;
+  lateFee2Broker?: string;
+  lateFee2Total?: string;
+  defaultInterestLender?: string;
+  defaultInterestCompany?: string;
+  defaultInterestBroker?: string;
+  defaultInterestTotal?: string;
+  interestGuaranteeLender?: string;
+  interestGuaranteeCompany?: string;
+  interestGuaranteeBroker?: string;
+  interestGuaranteeTotal?: string;
+  prepaymentLender?: string;
+  prepaymentCompany?: string;
+  prepaymentBroker?: string;
+  prepaymentTotal?: string;
+  maturityLender?: string;
+  maturityCompany?: string;
+  maturityBroker?: string;
+  maturityTotal?: string;
 }
 
 interface LoanFundingGridProps {
@@ -174,27 +216,30 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       lenderRate: String(record.lenderRate),
       fundingAmount: String(record.originalAmount),
       fundingDate: record.fundingDate || '',
-      interestFrom: '',
+      interestFrom: record.interestFrom || '',
       notes: '',
-      brokerParticipates: false,
+      brokerParticipates: record.brokerParticipates || false,
       percentOwned: String(record.pctOwned),
       regularPayment: String(record.regularPayment),
-      lenderShare: '',
+      lenderShare: String(record.lenderShare || ''),
       rateSelection: record.rateSelection || 'note_rate',
       rateNoteValue: record.rateNoteValue || noteRate,
       rateSoldValue: record.rateSoldValue || soldRate,
       rateLenderValue: record.rateLenderValue || '',
-      overrideServicingFees: false,
-      companyServicingFee: '', companyServicingFeePct: '', companyMaxFee: '', companyMaxFeePct: '',
-      companyMinFee: '', companyMinFeePct: '', brokerServicingFee: '', brokerServicingFeePct: '',
-      brokerMaxFee: '', brokerMaxFeePct: '', brokerMinFee: '', brokerMinFeePct: '',
-      overrideDefaultFees: false,
-      lateFee1Lender: '', lateFee1Company: '', lateFee1Broker: '', lateFee1Total: '',
-      lateFee2Lender: '', lateFee2Company: '', lateFee2Broker: '', lateFee2Total: '',
-      defaultInterestLender: '', defaultInterestCompany: '', defaultInterestBroker: '', defaultInterestTotal: '',
-      interestGuaranteeLender: '', interestGuaranteeCompany: '', interestGuaranteeBroker: '', interestGuaranteeTotal: '',
-      prepaymentLender: '', prepaymentCompany: '', prepaymentBroker: '', prepaymentTotal: '',
-      maturityLender: '', maturityCompany: '', maturityBroker: '', maturityTotal: '',
+      overrideServicingFees: record.overrideServicingFees || false,
+      companyServicingFee: record.companyServicingFee || '', companyServicingFeePct: record.companyServicingFeePct || '',
+      companyMaxFee: record.companyMaxFee || '', companyMaxFeePct: record.companyMaxFeePct || '',
+      companyMinFee: record.companyMinFee || '', companyMinFeePct: record.companyMinFeePct || '',
+      brokerServicingFee: record.brokerServicingFee || '', brokerServicingFeePct: record.brokerServicingFeePct || '',
+      brokerMaxFee: record.brokerMaxFee || '', brokerMaxFeePct: record.brokerMaxFeePct || '',
+      brokerMinFee: record.brokerMinFee || '', brokerMinFeePct: record.brokerMinFeePct || '',
+      overrideDefaultFees: record.overrideDefaultFees || false,
+      lateFee1Lender: record.lateFee1Lender || '', lateFee1Company: record.lateFee1Company || '', lateFee1Broker: record.lateFee1Broker || '', lateFee1Total: record.lateFee1Total || '',
+      lateFee2Lender: record.lateFee2Lender || '', lateFee2Company: record.lateFee2Company || '', lateFee2Broker: record.lateFee2Broker || '', lateFee2Total: record.lateFee2Total || '',
+      defaultInterestLender: record.defaultInterestLender || '', defaultInterestCompany: record.defaultInterestCompany || '', defaultInterestBroker: record.defaultInterestBroker || '', defaultInterestTotal: record.defaultInterestTotal || '',
+      interestGuaranteeLender: record.interestGuaranteeLender || '', interestGuaranteeCompany: record.interestGuaranteeCompany || '', interestGuaranteeBroker: record.interestGuaranteeBroker || '', interestGuaranteeTotal: record.interestGuaranteeTotal || '',
+      prepaymentLender: record.prepaymentLender || '', prepaymentCompany: record.prepaymentCompany || '', prepaymentBroker: record.prepaymentBroker || '', prepaymentTotal: record.prepaymentTotal || '',
+      maturityLender: record.maturityLender || '', maturityCompany: record.maturityCompany || '', maturityBroker: record.maturityBroker || '', maturityTotal: record.maturityTotal || '',
     });
     setSelectedRecord(record);
     setIsAddModalOpen(true);
@@ -435,6 +480,22 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               rateNoteValue: data.rateNoteValue,
               rateSoldValue: data.rateSoldValue,
               rateLenderValue: data.rateLenderValue,
+              brokerParticipates: data.brokerParticipates,
+              interestFrom: data.interestFrom,
+              overrideServicingFees: data.overrideServicingFees,
+              companyServicingFee: data.companyServicingFee, companyServicingFeePct: data.companyServicingFeePct,
+              companyMaxFee: data.companyMaxFee, companyMaxFeePct: data.companyMaxFeePct,
+              companyMinFee: data.companyMinFee, companyMinFeePct: data.companyMinFeePct,
+              brokerServicingFee: data.brokerServicingFee, brokerServicingFeePct: data.brokerServicingFeePct,
+              brokerMaxFee: data.brokerMaxFee, brokerMaxFeePct: data.brokerMaxFeePct,
+              brokerMinFee: data.brokerMinFee, brokerMinFeePct: data.brokerMinFeePct,
+              overrideDefaultFees: data.overrideDefaultFees,
+              lateFee1Lender: data.lateFee1Lender, lateFee1Company: data.lateFee1Company, lateFee1Broker: data.lateFee1Broker, lateFee1Total: data.lateFee1Total,
+              lateFee2Lender: data.lateFee2Lender, lateFee2Company: data.lateFee2Company, lateFee2Broker: data.lateFee2Broker, lateFee2Total: data.lateFee2Total,
+              defaultInterestLender: data.defaultInterestLender, defaultInterestCompany: data.defaultInterestCompany, defaultInterestBroker: data.defaultInterestBroker, defaultInterestTotal: data.defaultInterestTotal,
+              interestGuaranteeLender: data.interestGuaranteeLender, interestGuaranteeCompany: data.interestGuaranteeCompany, interestGuaranteeBroker: data.interestGuaranteeBroker, interestGuaranteeTotal: data.interestGuaranteeTotal,
+              prepaymentLender: data.prepaymentLender, prepaymentCompany: data.prepaymentCompany, prepaymentBroker: data.prepaymentBroker, prepaymentTotal: data.prepaymentTotal,
+              maturityLender: data.maturityLender, maturityCompany: data.maturityCompany, maturityBroker: data.maturityBroker, maturityTotal: data.maturityTotal,
             });
           } else {
             onAddFunding(data);
