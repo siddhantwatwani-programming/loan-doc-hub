@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import type { InsuranceData } from './InsuranceTableView';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { US_STATES } from '@/lib/usStates';
 
 interface InsuranceDetailFormProps {
   insurance: InsuranceData;
