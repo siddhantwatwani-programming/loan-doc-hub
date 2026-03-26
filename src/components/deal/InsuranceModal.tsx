@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
 import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
+import { US_STATES } from '@/lib/usStates';
 import type { InsuranceData } from './InsuranceTableView';
 
 interface InsuranceModalProps {
