@@ -49,6 +49,48 @@ export interface FundingRecord {
   rateNoteValue?: string;
   rateSoldValue?: string;
   rateLenderValue?: string;
+  brokerParticipates?: boolean;
+  interestFrom?: string;
+  // Servicing fees
+  overrideServicingFees?: boolean;
+  companyServicingFee?: string;
+  companyServicingFeePct?: string;
+  companyMaxFee?: string;
+  companyMaxFeePct?: string;
+  companyMinFee?: string;
+  companyMinFeePct?: string;
+  brokerServicingFee?: string;
+  brokerServicingFeePct?: string;
+  brokerMaxFee?: string;
+  brokerMaxFeePct?: string;
+  brokerMinFee?: string;
+  brokerMinFeePct?: string;
+  // Default fees
+  overrideDefaultFees?: boolean;
+  lateFee1Lender?: string;
+  lateFee1Company?: string;
+  lateFee1Broker?: string;
+  lateFee1Total?: string;
+  lateFee2Lender?: string;
+  lateFee2Company?: string;
+  lateFee2Broker?: string;
+  lateFee2Total?: string;
+  defaultInterestLender?: string;
+  defaultInterestCompany?: string;
+  defaultInterestBroker?: string;
+  defaultInterestTotal?: string;
+  interestGuaranteeLender?: string;
+  interestGuaranteeCompany?: string;
+  interestGuaranteeBroker?: string;
+  interestGuaranteeTotal?: string;
+  prepaymentLender?: string;
+  prepaymentCompany?: string;
+  prepaymentBroker?: string;
+  prepaymentTotal?: string;
+  maturityLender?: string;
+  maturityCompany?: string;
+  maturityBroker?: string;
+  maturityTotal?: string;
 }
 
 interface LoanFundingGridProps {
