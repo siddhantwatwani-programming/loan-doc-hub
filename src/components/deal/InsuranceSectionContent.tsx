@@ -104,6 +104,7 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
   values,
   onValueChange,
   onRemoveValuesByPrefix,
+  onPersist,
   disabled = false,
   propertyOptions = [],
   onBack,
