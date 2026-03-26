@@ -108,6 +108,8 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
   const [exportOpen, setExportOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const [columns, setColumns, resetColumns] = useTableColumnConfig('participants_v3', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((c) => c.visible);
