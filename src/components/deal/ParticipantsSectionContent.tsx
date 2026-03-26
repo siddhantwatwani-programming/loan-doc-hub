@@ -138,13 +138,13 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
     setCurrentPage(1);
   }, [searchQuery, activeFilterCount]);
 
-
+  const {
     selectedIds,
     isAllSelected,
     toggleOne,
     toggleAll,
     clearSelection,
-  } = useGridSelection(filteredData);
+  } = useGridSelection(paginatedData);
 
   const fetchParticipants = useCallback(async () => {
     if (!dealId) return;
