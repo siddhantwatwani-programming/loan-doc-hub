@@ -218,18 +218,19 @@ const ActiveUntilDatePicker: React.FC<{
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          disabled={disabled}
-          className={cn(
-            'w-full justify-start text-left font-normal h-7 text-sm',
-            !value && 'text-muted-foreground',
-            disabled && 'bg-muted cursor-not-allowed'
-          )}
-        >
-          {isValidDate ? format(selectedDate, 'dd-MM-yyyy') : <span>dd-mm-yyyy</span>}
-          <CalendarIcon className="ml-auto h-3 w-3" />
-        </Button>
+        <div className="relative w-full">
+          <Input
+            readOnly
+            disabled={disabled}
+            value={isValidDate ? format(selectedDate, 'dd-MM-yyyy') : ''}
+            placeholder="dd-mm-yyyy"
+            className={cn(
+              'h-7 text-sm pr-8 cursor-pointer',
+              disabled && 'bg-muted cursor-not-allowed'
+            )}
+          />
+          <CalendarIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+        </div>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <EnhancedCalendar
