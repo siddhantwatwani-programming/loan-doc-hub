@@ -287,7 +287,11 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         }
       });
     }
-  }, [values, onValueChange, onRemoveValuesByPrefix]);
+    // Immediately persist deletion to backend
+    if (onPersist) {
+      setTimeout(() => { onPersist(); }, 50);
+    }
+  }, [values, onValueChange, onRemoveValuesByPrefix, onPersist]);
 
   // Create property-specific values for the detail forms
   const getPropertySpecificValues = (): Record<string, string> => {
