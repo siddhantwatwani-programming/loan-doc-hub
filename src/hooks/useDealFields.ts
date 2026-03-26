@@ -316,6 +316,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
         'notes',
         'seller',
         'title',
+        'other',
       ];
 
       // Sections whose fields should be merged into nearest appropriate tab
