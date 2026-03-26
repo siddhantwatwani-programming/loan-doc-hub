@@ -13,6 +13,7 @@ interface InsuranceSectionContentProps {
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   onRemoveValuesByPrefix?: (prefix: string) => void;
+  onPersist?: () => Promise<boolean>;
   disabled?: boolean;
   propertyOptions?: { id: string; label: string }[];
   onBack?: () => void;
@@ -103,6 +104,7 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
   values,
   onValueChange,
   onRemoveValuesByPrefix,
+  onPersist,
   disabled = false,
   propertyOptions = [],
   onBack,
@@ -239,7 +241,11 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
     });
     
     setModalOpen(false);
-  }, [editingInsurance, values, onValueChange]);
+    // Trigger immediate backend persistence
+    if (onPersist) {
+      setTimeout(() => { onPersist(); }, 50);
+    }
+  }, [editingInsurance, values, onValueChange, onPersist]);
 
   const handleDeleteInsurance = useCallback((insurance: InsuranceData) => {
     if (onRemoveValuesByPrefix) {
@@ -249,7 +255,10 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
         if (key.startsWith(`${insurance.id}.`)) onValueChange(key, '');
       });
     }
-  }, [values, onValueChange, onRemoveValuesByPrefix]);
+    if (onPersist) {
+      setTimeout(() => { onPersist(); }, 50);
+    }
+  }, [values, onValueChange, onRemoveValuesByPrefix, onPersist]);
 
   // Handle insurance field change in detail view
   const handleInsuranceFieldChange = useCallback((field: keyof InsuranceData, value: string | boolean) => {
