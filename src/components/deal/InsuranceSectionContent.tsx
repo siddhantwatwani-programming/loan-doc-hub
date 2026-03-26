@@ -255,7 +255,10 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
         if (key.startsWith(`${insurance.id}.`)) onValueChange(key, '');
       });
     }
-  }, [values, onValueChange, onRemoveValuesByPrefix]);
+    if (onPersist) {
+      setTimeout(() => { onPersist(); }, 50);
+    }
+  }, [values, onValueChange, onRemoveValuesByPrefix, onPersist]);
 
   // Handle insurance field change in detail view
   const handleInsuranceFieldChange = useCallback((field: keyof InsuranceData, value: string | boolean) => {
