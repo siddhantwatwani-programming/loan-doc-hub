@@ -71,9 +71,9 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
   const renderInlineSelect = (field: keyof InsuranceData, label: string, options: string[] | { id: string; label: string }[], placeholder: string) => (
     <div className="flex items-center gap-2">
       <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
-      <Select value={String(formData[field] || '')} onValueChange={(val) => handleChange(field, val)}>
+      <Select value={String(formData[field] || '') || undefined} onValueChange={(val) => handleChange(field, val === '__none__' ? '' : val)}>
         <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder={placeholder} /></SelectTrigger>
-        <SelectContent className="bg-background border border-border z-50">
+        <SelectContent className="bg-background border border-border !z-[9999]" position="popper" sideOffset={4}>
           {options.map(opt => {
             const v = typeof opt === 'string' ? opt : opt.id;
             const l = typeof opt === 'string' ? opt : opt.label;
