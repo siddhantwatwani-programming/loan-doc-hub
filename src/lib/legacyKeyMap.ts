@@ -474,12 +474,17 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'loan_terms.calculation_period': 'ln_p_calculatPeriod',
   'loan_terms.seller_carry': 'ln_p_sellerCarry',
   'loan_terms.aitd_wrap': 'ln_p_aitdWrap',
+  'loan_terms.rehab_construction': 'ln_p_rehabConstr',
+  'loan_terms.variable_arm': 'ln_p_variableArm',
   'loan_terms.cross_collateral': 'ln_p_crossCollat',
   'loan_terms.unsecured': 'ln_p_unsecure',
+  'loan_terms.limited_no_doc': 'ln_p_limitedNoDoc',
   'loan_terms.respa': 'ln_p_respa',
   'loan_terms.balloon_payment': 'ln_p_balloonPaymen',
   'loan_terms.parent_account': 'ln_p_parentAccoun',
+  'loan_terms.parent_account_value': 'ln_p_parentAccounValue',
   'loan_terms.child_account': 'ln_p_childAccoun',
+  'loan_terms.child_account_value': 'ln_p_childAccounValue',
 
   // LOAN TERMS PENALTIES
   'loan_terms.prepayment_penalty': 'ln_pn_prepaymePenalt',
