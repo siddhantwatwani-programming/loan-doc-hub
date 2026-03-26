@@ -1,0 +1,1 @@
+DELETE FROM field_dictionary WHERE field_key IN ('li_pp_lienPriorityNow', 'li_pp_lienPriorityAfter');
