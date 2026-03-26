@@ -272,27 +272,32 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
       .maybeSingle();
 
     if (data) {
-      // Sync participant data back to contact — always overwrite with participant values
+      // Sync participant data back to contact — preserve existing contact detail fields
       const updates: Record<string, any> = {};
       const existingData = (data.contact_data || {}) as Record<string, string>;
       const mergedContactData = { ...existingData };
 
       if (participant.name) {
-        updates.full_name = participant.name;
-        const parts = participant.name.split(' ');
-        const firstName = parts[0] || '';
-        const lastName = parts.slice(1).join(' ') || '';
-        updates.first_name = firstName;
-        updates.last_name = lastName;
-        mergedContactData['full_name'] = participant.name;
-        mergedContactData['first_name'] = firstName;
-        mergedContactData['last_name'] = lastName;
+        const existingLastName = existingData['last_name'] || '';
+        const existingFirstName = data.full_name || '';
+
+        if (!existingFirstName && !existingLastName) {
+          updates.full_name = participant.name;
+          const parts = participant.name.split(' ');
+          const firstName = parts[0] || '';
+          const lastName = parts.slice(1).join(' ') || '';
+          updates.first_name = firstName;
+          updates.last_name = lastName;
+          mergedContactData['full_name'] = participant.name;
+          mergedContactData['first_name'] = firstName;
+          mergedContactData['last_name'] = lastName;
+        }
       }
-      if (participant.email) {
+      if (participant.email && !data.email) {
         updates.email = participant.email;
         mergedContactData['email'] = participant.email;
       }
-      if (participant.phone) {
+      if (participant.phone && !(data.phone)) {
         updates.phone = participant.phone;
         mergedContactData['phone.home'] = participant.phone;
       }
