@@ -20,6 +20,7 @@ interface PropertySectionContentProps {
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   onRemoveValuesByPrefix?: (prefix: string) => void;
+  onPersist?: () => Promise<boolean>;
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
@@ -119,6 +120,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   values,
   onValueChange,
   onRemoveValuesByPrefix,
+  onPersist,
   showValidation = false,
   disabled = false,
   calculationResults = {},
@@ -212,7 +214,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   }, [properties, onValueChange]);
 
   // Handle saving property from modal
-  const handleSaveProperty = useCallback((propertyData: PropertyData) => {
+  const handleSaveProperty = useCallback(async (propertyData: PropertyData) => {
     const prefix = editingProperty ? editingProperty.id : getNextPropertyPrefix(values);
     
     // Save all property fields
@@ -267,7 +269,12 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     }
     
     setModalOpen(false);
-  }, [editingProperty, values, onValueChange, properties]);
+
+    // Immediately persist to backend
+    if (onPersist) {
+      setTimeout(() => { onPersist(); }, 50);
+    }
+  }, [editingProperty, values, onValueChange, properties, onPersist]);
 
   // Handle deleting a property
   const handleDeleteProperty = useCallback((property: PropertyData) => {
@@ -280,7 +287,11 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         }
       });
     }
-  }, [values, onValueChange, onRemoveValuesByPrefix]);
+    // Immediately persist deletion to backend
+    if (onPersist) {
+      setTimeout(() => { onPersist(); }, 50);
+    }
+  }, [values, onValueChange, onRemoveValuesByPrefix, onPersist]);
 
   // Create property-specific values for the detail forms
   const getPropertySpecificValues = (): Record<string, string> => {
