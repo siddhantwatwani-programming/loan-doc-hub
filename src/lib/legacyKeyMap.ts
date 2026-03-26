@@ -500,7 +500,7 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'loan_terms.penalties.late_charge_2.grace_period': 'ln_p_graceper2',
   'loan_terms.penalties.default_interest.enabled': 'ln_p_defaultEnable',
   'loan_terms.penalties.default_interest.grace_period': 'ln_p_graceper3',
-  'loan_terms.penalties.default_interest.flat_rate': 'ln_p_defaultIntere',
+  'loan_terms.penalties.default_interest.flat_rate': 'ln_p_penFlatRate',
   'loan_terms.penalties.default_interest.distribution.lenders': 'ln_p_defaultLenderSplit',
   'loan_terms.penalties.default_interest.distribution.company': 'ln_p_defaultCost',
   'loan_terms.penalties.default_interest.distribution.origination_vendors': 'ln_p_defaultBroker',
