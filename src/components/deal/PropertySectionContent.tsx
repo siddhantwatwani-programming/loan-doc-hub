@@ -20,6 +20,7 @@ interface PropertySectionContentProps {
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   onRemoveValuesByPrefix?: (prefix: string) => void;
+  onPersist?: () => Promise<boolean>;
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
