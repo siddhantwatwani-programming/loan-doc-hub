@@ -125,7 +125,12 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
           </DirtyFieldWrapper>
 
           {renderField('insuredName', "Insured's Name")}
-          {renderField('companyName', 'Insurance Company')}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.companyName}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Insurance Company</Label>
+              <Input value={String(insurance.companyName || '')} onChange={(e) => onChange('companyName', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+            </div>
+          </DirtyFieldWrapper>
           {renderField('policyNumber', 'Policy Number')}
           {renderField('expiration', 'Expiration', { type: 'date' })}
 
