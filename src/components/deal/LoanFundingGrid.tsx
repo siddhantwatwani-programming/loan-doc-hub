@@ -480,6 +480,22 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               rateNoteValue: data.rateNoteValue,
               rateSoldValue: data.rateSoldValue,
               rateLenderValue: data.rateLenderValue,
+              brokerParticipates: data.brokerParticipates,
+              interestFrom: data.interestFrom,
+              overrideServicingFees: data.overrideServicingFees,
+              companyServicingFee: data.companyServicingFee, companyServicingFeePct: data.companyServicingFeePct,
+              companyMaxFee: data.companyMaxFee, companyMaxFeePct: data.companyMaxFeePct,
+              companyMinFee: data.companyMinFee, companyMinFeePct: data.companyMinFeePct,
+              brokerServicingFee: data.brokerServicingFee, brokerServicingFeePct: data.brokerServicingFeePct,
+              brokerMaxFee: data.brokerMaxFee, brokerMaxFeePct: data.brokerMaxFeePct,
+              brokerMinFee: data.brokerMinFee, brokerMinFeePct: data.brokerMinFeePct,
+              overrideDefaultFees: data.overrideDefaultFees,
+              lateFee1Lender: data.lateFee1Lender, lateFee1Company: data.lateFee1Company, lateFee1Broker: data.lateFee1Broker, lateFee1Total: data.lateFee1Total,
+              lateFee2Lender: data.lateFee2Lender, lateFee2Company: data.lateFee2Company, lateFee2Broker: data.lateFee2Broker, lateFee2Total: data.lateFee2Total,
+              defaultInterestLender: data.defaultInterestLender, defaultInterestCompany: data.defaultInterestCompany, defaultInterestBroker: data.defaultInterestBroker, defaultInterestTotal: data.defaultInterestTotal,
+              interestGuaranteeLender: data.interestGuaranteeLender, interestGuaranteeCompany: data.interestGuaranteeCompany, interestGuaranteeBroker: data.interestGuaranteeBroker, interestGuaranteeTotal: data.interestGuaranteeTotal,
+              prepaymentLender: data.prepaymentLender, prepaymentCompany: data.prepaymentCompany, prepaymentBroker: data.prepaymentBroker, prepaymentTotal: data.prepaymentTotal,
+              maturityLender: data.maturityLender, maturityCompany: data.maturityCompany, maturityBroker: data.maturityBroker, maturityTotal: data.maturityTotal,
             });
           } else {
             onAddFunding(data);
