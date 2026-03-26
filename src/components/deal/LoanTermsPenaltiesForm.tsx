@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
+import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { format, parseISO, isValid } from 'date-fns';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
@@ -199,6 +205,53 @@ const LateFeeColumn: React.FC<{
   );
 };
 
+// Active Until date picker component
+const ActiveUntilDatePicker: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}> = ({ value, onChange, disabled }) => {
+  const [open, setOpen] = useState(false);
+  const selectedDate = value ? parseISO(value) : undefined;
+  const isValidDate = selectedDate && isValid(selectedDate);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          disabled={disabled}
+          className={cn(
+            'w-full justify-start text-left font-normal h-7 text-sm',
+            !value && 'text-muted-foreground',
+            disabled && 'bg-muted cursor-not-allowed'
+          )}
+        >
+          {isValidDate ? format(selectedDate, 'dd-MM-yyyy') : <span>dd-mm-yyyy</span>}
+          <CalendarIcon className="ml-auto h-3 w-3" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <EnhancedCalendar
+          mode="single"
+          selected={isValidDate ? selectedDate : undefined}
+          onSelect={(date: Date | undefined) => {
+            if (date) {
+              onChange(format(date, 'yyyy-MM-dd'));
+            } else {
+              onChange('');
+            }
+            setOpen(false);
+          }}
+          onClear={() => { onChange(''); setOpen(false); }}
+          onToday={() => { onChange(format(new Date(), 'yyyy-MM-dd')); setOpen(false); }}
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
+  );
+};
+
 // Default Interest Column
 const DefaultInterestColumn: React.FC<{
   values: Record<string, string>;
@@ -282,12 +335,10 @@ const DefaultInterestColumn: React.FC<{
           />
         </FieldRow>
         <FieldRow label="Active Until" fieldKey={`${prefix}.active_until`}>
-          <Input
-            type="date"
+          <ActiveUntilDatePicker
             value={values[`${prefix}.active_until`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.active_until`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.active_until`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm w-full max-w-full overflow-hidden"
           />
         </FieldRow>
         <FieldRow label="Additional Daily Charge" fieldKey={`${prefix}.additional_daily_charge`}>
