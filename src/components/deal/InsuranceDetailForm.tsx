@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import type { InsuranceData } from './InsuranceTableView';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { US_STATES } from '@/lib/usStates';
 
 interface InsuranceDetailFormProps {
   insurance: InsuranceData;
@@ -145,7 +146,17 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
           </div>
           {renderField('paymentMailingStreet', 'Street')}
           {renderField('paymentMailingCity', 'City')}
-          {renderField('paymentMailingState', 'State')}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.paymentMailingState}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">State</Label>
+              <Select value={insurance.paymentMailingState || undefined} onValueChange={(val) => onChange('paymentMailingState', val)} disabled={disabled}>
+                <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select state" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  {US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.paymentMailingZip}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">ZIP</Label>
@@ -170,7 +181,17 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
           {renderField('agentName', "Agent's Name")}
           {renderField('businessAddress', 'Bus. Address')}
           {renderField('businessAddressCity', 'City')}
-          {renderField('businessAddressState', 'State')}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.businessAddressState}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">State</Label>
+              <Select value={insurance.businessAddressState || undefined} onValueChange={(val) => onChange('businessAddressState', val)} disabled={disabled}>
+                <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select state" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  {US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.businessAddressZip}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">ZIP</Label>
