@@ -555,7 +555,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredData.map((participant) => (
+            {paginatedData.map((participant) => (
               <TableRow
                 key={participant.id}
                 className="cursor-pointer hover:bg-muted/50"
