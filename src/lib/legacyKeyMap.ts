@@ -1192,6 +1192,40 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'origination_fees.existing_lien_3_d': 'of_fe_existingLien3D',
 
   // ──────────────────────────────────────────────────
+  // RE 885 PROPOSED LOAN TERMS
+  // ──────────────────────────────────────────────────
+  'origination_fees.re885_proposed_loan_amount': 'of_re_proposedLoanAmount',
+  'origination_fees.re885_initial_fees_page1': 'of_re_initialFeesPage1',
+  'origination_fees.re885_other_obligations': 'of_re_otherObligations',
+  'origination_fees.re885_credit_life_insurance': 'of_re_creditLifeInsurance',
+  'origination_fees.re885_additional_obligation_1': 'of_re_additionalObligation1',
+  'origination_fees.re885_additional_obligation_2': 'of_re_additionalObligation2',
+  'origination_fees.re885_subtotal_deductions': 'of_re_subtotalDeductions',
+  'origination_fees.re885_cash_at_closing_option': 'of_re_cashAtClosingOption',
+  'origination_fees.re885_cash_at_closing_amount': 'of_re_cashAtClosingAmount',
+  'origination_fees.re885_loan_term_value': 'of_re_loanTermValue',
+  'origination_fees.re885_loan_term_unit': 'of_re_loanTermUnit',
+  'origination_fees.re885_interest_rate': 'of_re_interestRate',
+  'origination_fees.re885_rate_type_fixed': 'of_re_rateTypeFixed',
+  'origination_fees.re885_rate_type_adjustable': 'of_re_rateTypeAdjustable',
+  'origination_fees.re885_iv_adj_rate_months': 'of_re_ivAdjRateMonths',
+  'origination_fees.re885_v_fully_indexed_rate': 'of_re_vFullyIndexedRate',
+  'origination_fees.re885_vi_max_interest_rate': 'of_re_viMaxInterestRate',
+  'origination_fees.re885_vii_payment_amount': 'of_re_viiPaymentAmount',
+  'origination_fees.re885_viii_rate_increase_pct': 'of_re_viiiRateIncreasePct',
+  'origination_fees.re885_viii_rate_increase_months': 'of_re_viiiRateIncreaseMonths',
+  'origination_fees.re885_ix_payment_end_months': 'of_re_ixPaymentEndMonths',
+  'origination_fees.re885_ix_payment_end_pct': 'of_re_ixPaymentEndPct',
+  'origination_fees.re885_xi_neg_amort_balance': 'of_re_xiNegAmortBalance',
+  'origination_fees.re885_impound_county_taxes': 'of_re_impoundCountyTaxes',
+  'origination_fees.re885_impound_hazard_ins': 'of_re_impoundHazardIns',
+  'origination_fees.re885_impound_mortgage_ins': 'of_re_impoundMortgageIns',
+  'origination_fees.re885_impound_flood_ins': 'of_re_impoundFloodIns',
+  'origination_fees.re885_impound_other': 'of_re_impoundOther',
+  'origination_fees.re885_impound_other_desc': 'of_re_impoundOtherDesc',
+  'origination_fees.re885_impound_approx_amount': 'of_re_impoundApproxAmount',
+
+  // ──────────────────────────────────────────────────
   // INSURANCE
   // ──────────────────────────────────────────────────
   'insurance1.property': 'in_d_property',
