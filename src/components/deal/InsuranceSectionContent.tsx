@@ -241,7 +241,11 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
     });
     
     setModalOpen(false);
-  }, [editingInsurance, values, onValueChange]);
+    // Trigger immediate backend persistence
+    if (onPersist) {
+      setTimeout(() => { onPersist(); }, 50);
+    }
+  }, [editingInsurance, values, onValueChange, onPersist]);
 
   const handleDeleteInsurance = useCallback((insurance: InsuranceData) => {
     if (onRemoveValuesByPrefix) {
