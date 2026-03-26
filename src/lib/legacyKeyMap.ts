@@ -479,7 +479,12 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'loan_terms.respa': 'ln_p_respa',
   'loan_terms.balloon_payment': 'ln_p_balloonPaymen',
   'loan_terms.parent_account': 'ln_p_parentAccoun',
+  'loan_terms.parent_account_value': 'ln_p_parentAccounValue',
   'loan_terms.child_account': 'ln_p_childAccoun',
+  'loan_terms.child_account_value': 'ln_p_childAccounValue',
+  'loan_terms.limited_no_doc': 'ln_p_limitedNoDoc',
+  'loan_terms.rehab_construction': 'ln_p_rehabConstr',
+  'loan_terms.variable_arm': 'ln_p_variableArm',
 
   // LOAN TERMS PENALTIES
   'loan_terms.prepayment_penalty': 'ln_pn_prepaymePenalt',
