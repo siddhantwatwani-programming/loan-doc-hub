@@ -120,6 +120,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   values,
   onValueChange,
   onRemoveValuesByPrefix,
+  onPersist,
   showValidation = false,
   disabled = false,
   calculationResults = {},
