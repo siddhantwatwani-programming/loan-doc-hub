@@ -214,7 +214,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   }, [properties, onValueChange]);
 
   // Handle saving property from modal
-  const handleSaveProperty = useCallback((propertyData: PropertyData) => {
+  const handleSaveProperty = useCallback(async (propertyData: PropertyData) => {
     const prefix = editingProperty ? editingProperty.id : getNextPropertyPrefix(values);
     
     // Save all property fields
@@ -269,7 +269,12 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     }
     
     setModalOpen(false);
-  }, [editingProperty, values, onValueChange, properties]);
+
+    // Immediately persist to backend
+    if (onPersist) {
+      setTimeout(() => { onPersist(); }, 50);
+    }
+  }, [editingProperty, values, onValueChange, properties, onPersist]);
 
   // Handle deleting a property
   const handleDeleteProperty = useCallback((property: PropertyData) => {
