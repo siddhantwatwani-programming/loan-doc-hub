@@ -492,6 +492,23 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'loan_terms.prepayment_penalty_and_privilege': 'ln_pn_prepaymePenaltAndPrivil',
 
   // ──────────────────────────────────────────────────
+  // PENALTIES – map UI keys to existing DB keys
+  // ──────────────────────────────────────────────────
+  'loan_terms.penalties.late_charge_1.grace_period': 'ln_p_graceper',
+  'loan_terms.penalties.late_charge_1.type': 'ln_p_lateChargeMethod',
+  'loan_terms.penalties.late_charge_2.enabled': 'ln_p_lateNoticeEnable',
+  'loan_terms.penalties.late_charge_2.grace_period': 'ln_p_graceper2',
+  'loan_terms.penalties.default_interest.enabled': 'ln_p_defaultEnable',
+  'loan_terms.penalties.default_interest.grace_period': 'ln_p_graceper3',
+  'loan_terms.penalties.default_interest.flat_rate': 'ln_p_defaultIntere',
+  'loan_terms.penalties.default_interest.distribution.lenders': 'ln_p_defaultLenderSplit',
+  'loan_terms.penalties.default_interest.distribution.company': 'ln_p_defaultCost',
+  'loan_terms.penalties.default_interest.distribution.origination_vendors': 'ln_p_defaultBroker',
+  'loan_terms.penalties.prepayment.penalty_months': 'ln_p_penaltym',
+  'loan_terms.penalties.prepayment.of_the': 'ln_p_penaltyBasedOn',
+  'loan_terms.penalties.maturity.grace_period_days': 'ln_p_graceper4',
+
+  // ──────────────────────────────────────────────────
   // PROPERTY
   // ──────────────────────────────────────────────────
   'property1.description': 'pr_p_descript',
