@@ -581,6 +581,9 @@ export function replaceLabelBasedFields(
     return { content, replacementCount };
   }
 
+  // Track resolved keys that have already been replaced by labels in this pass
+  const labelResolvedKeys = new Set<string>();
+
   const processedContent = processParaByPara(content, (segment) => {
     let result = segment;
     let resultLower = result.toLowerCase();
@@ -600,6 +603,11 @@ export function replaceLabelBasedFields(
 
       // Dedup: skip if the resolved canonical key was already replaced by a merge tag
       if (resolvedKey !== mapping.fieldKey && replacedFieldKeyLowers?.has(resolvedKey.toLowerCase())) {
+        continue;
+      }
+
+      // Dedup: skip if another label already replaced this same resolved key in this pass
+      if (labelResolvedKeys.has(resolvedKey.toLowerCase())) {
         continue;
       }
 
@@ -661,6 +669,7 @@ export function replaceLabelBasedFields(
           result = result.replace(asOfPattern, `as of ${formattedValue}`);
           resultLower = result.toLowerCase();
           replacementCount++;
+          labelResolvedKeys.add(resolvedKey.toLowerCase());
           debugLog(`[tag-parser] Label-replaced "as of ___" -> "${formattedValue}"`);
         }
         continue;
@@ -697,6 +706,7 @@ export function replaceLabelBasedFields(
 
           resultLower = result.toLowerCase();
           replacementCount++;
+          labelResolvedKeys.add(resolvedKey.toLowerCase());
           debugLog(`[tag-parser] Label-replaced "${textToReplace}" -> "${formattedValue}"`);
         }
         continue;
@@ -709,6 +719,7 @@ export function replaceLabelBasedFields(
         result = result.replace(labelPattern, `$1$2${formattedValue} `);
         resultLower = result.toLowerCase();
         replacementCount++;
+        labelResolvedKeys.add(resolvedKey.toLowerCase());
         debugLog(`[tag-parser] Label-replaced "${label}" -> "${formattedValue}"`);
       } else if (label.endsWith(':')) {
         const labelNoColon = label.slice(0, -1);
@@ -719,6 +730,7 @@ export function replaceLabelBasedFields(
           result = result.replace(colonTolerantPattern, `$&${formattedValue} `);
           resultLower = result.toLowerCase();
           replacementCount++;
+          labelResolvedKeys.add(resolvedKey.toLowerCase());
           debugLog(`[tag-parser] Label-replaced (colon-tolerant) "${label}" -> "${formattedValue}"`);
         }
       }
