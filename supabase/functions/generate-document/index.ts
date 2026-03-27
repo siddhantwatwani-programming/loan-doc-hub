@@ -241,7 +241,7 @@ async function generateSingleDocument(
           // e.g., don't overwrite property1.street (canonical) with property2's data
           if (indexedKey && indexedKey !== fieldDict.field_key) {
             const canonicalHasIndex = /^[a-zA-Z_]+\d+\./.test(fieldDict.field_key);
-            if (!canonicalHasIndex) {
+            if (!canonicalHasIndex && !fieldValues.has(fieldDict.field_key)) {
               fieldValues.set(fieldDict.field_key, { rawValue, dataType });
             }
           }
