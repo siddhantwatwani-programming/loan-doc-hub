@@ -556,8 +556,9 @@ async function generateSingleDocument(
         const state = fieldValues.get(`${prefix}.state`)?.rawValue;
         const zip = fieldValues.get(`${prefix}.zip`)?.rawValue;
         const county = fieldValues.get(`${prefix}.county`)?.rawValue;
+        const country = fieldValues.get(`${prefix}.country`)?.rawValue;
 
-        const parts = [street, city, county, state, zip].filter(Boolean).map(String);
+        const parts = [street, city, state, country, zip].filter(Boolean).map(String);
         if (parts.length > 0) {
           const fullAddress = parts.join(", ");
           fieldValues.set(`${prefix}.address`, { rawValue: fullAddress, dataType: "text" });
@@ -588,10 +589,15 @@ async function generateSingleDocument(
     if (propertyIndices.size > 0) {
       const sortedIndices = [...propertyIndices].sort((a, b) => a - b);
       const propertyLines: string[] = [];
+      const seenAddresses = new Set<string>();
       for (const idx of sortedIndices) {
         const addr = fieldValues.get(`property${idx}.address`)?.rawValue || fieldValues.get(`Property${idx}.Address`)?.rawValue;
         if (addr) {
-          propertyLines.push(String(addr));
+          const addrStr = String(addr);
+          if (!seenAddresses.has(addrStr)) {
+            seenAddresses.add(addrStr);
+            propertyLines.push(addrStr);
+          }
         }
       }
       if (propertyLines.length > 0) {
