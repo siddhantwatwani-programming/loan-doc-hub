@@ -584,7 +584,24 @@ async function generateSingleDocument(
       }
     }
 
-    // Auto-compute br_p_fullName from borrower name fields if not already set
+    // Build all_properties_list for multi-property templates
+    if (propertyIndices.size > 0) {
+      const sortedIndices = [...propertyIndices].sort((a, b) => a - b);
+      const propertyLines: string[] = [];
+      for (const idx of sortedIndices) {
+        const addr = fieldValues.get(`property${idx}.address`)?.rawValue || fieldValues.get(`Property${idx}.Address`)?.rawValue;
+        if (addr) {
+          propertyLines.push(`Property ${idx}: ${addr}`);
+        }
+      }
+      if (propertyLines.length > 0) {
+        const allPropertiesText = propertyLines.join("\n");
+        fieldValues.set("all_properties_list", { rawValue: allPropertiesText, dataType: "text" });
+        debugLog(`[generate-document] Built all_properties_list with ${propertyLines.length} properties`);
+      }
+    }
+
+
     const existingBrPFullName = fieldValues.get("br_p_fullName");
     if (!existingBrPFullName || !existingBrPFullName.rawValue) {
       // Check indexed borrower keys first
