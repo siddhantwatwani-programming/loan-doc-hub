@@ -426,6 +426,15 @@ async function generateSingleDocument(
         const c = contactRowsByUuid.get(p.contact_id);
         const cap = c?.contact_data?.capacity;
         return cap && String(cap).toLowerCase().includes("additional guarantor");
+      }) || borrowerParticipants.find((p: any) => {
+        // Fallback: any borrower participant that is NOT primary and NOT co-borrower
+        if (!p.contact_id) return false;
+        if (p === primaryBorrower || p === coBorrower) return false;
+        const c = contactRowsByUuid.get(p.contact_id);
+        const cap = c?.contact_data?.capacity;
+        const capLower = cap ? String(cap).toLowerCase() : "";
+        return !capLower.includes("primary") && !capLower.includes("co-borrower")
+          && !capLower.includes("co-trustee") && !capLower.includes("trustee");
       });
 
       if (guarantorParticipant?.contact_id) {
