@@ -1,83 +1,37 @@
 
 
-## Problem Analysis
+## Problem
 
-After tracing the full document generation pipeline, I found **two root causes** for the incorrect property address output:
+The template placeholder `{{br_ag_fullName}}` is not populating because:
 
-### Root Cause 1: Missing `country` in per-property address auto-compute
+1. `br_ag_fullName` exists in `field_dictionary` (id: `041611a1-28a6-41f2-bd8c-19ccf106f768`) but has **no `canonical_key`** set
+2. The actual guarantor data is stored under field key `br_p_guarantoFullName` (id: `b092c126-af2e-40d3-b8f9-1ffa15ac49e8`)
+3. No `field_key_migrations` or `merge_tag_aliases` entry bridges these two keys
+4. During document generation, the field resolver cannot find any data for `br_ag_fullName` because there's no mapping to the actual data key
 
-At line 560 of `generate-document/index.ts`, each property's address is auto-computed as:
-```typescript
-const parts = [street, city, county, state, zip]
+## Fix
+
+**Set the `canonical_key`** on the `br_ag_fullName` field dictionary entry to point to `br_p_guarantoFullName`. This is the standard mechanism the field resolver already uses to resolve alternative keys to the correct data source.
+
+### Database Migration
+
+```sql
+UPDATE field_dictionary
+SET canonical_key = 'br_p_guarantoFullName'
+WHERE field_key = 'br_ag_fullName';
 ```
 
-But `country` is not included. When the multi-property rebuild (line 587-607) aggregates `propertyN.address` values into `pr_p_address`, the country field is missing from each property's address string.
+This single update enables the existing resolution chain in `field-resolver.ts` (`resolveFieldKeyWithBackwardCompat` → canonical key lookup) to automatically resolve `{{br_ag_fullName}}` to `br_p_guarantoFullName` during document generation.
 
-The canonical `pr_p_address` auto-compute (line 579) correctly includes country:
-```typescript
-const parts = [street, city, state, country, zip]
-```
+### No code changes required
+The field resolver already handles canonical_key resolution. Only the data mapping is missing.
 
-This inconsistency means the aggregated multi-property output loses the country field.
+### Files Changed
+- Database migration only (1 SQL statement)
 
-### Root Cause 2: No deduplication of identical addresses in `propertyLines`
-
-At line 590-596, the `propertyLines` array collects addresses from all property indices but never deduplicates. If the same address string exists for multiple properties (e.g., due to data duplication), it appears multiple times in the output.
-
-## Fix — 2 minimal changes in 1 file
-
-**File**: `supabase/functions/generate-document/index.ts`
-
-### Change 1: Add `country` to per-property address auto-compute (line 560)
-
-```typescript
-// Current (line 554-562):
-const street = fieldValues.get(`${prefix}.street`)?.rawValue;
-const city = fieldValues.get(`${prefix}.city`)?.rawValue;
-const state = fieldValues.get(`${prefix}.state`)?.rawValue;
-const zip = fieldValues.get(`${prefix}.zip`)?.rawValue;
-const county = fieldValues.get(`${prefix}.county`)?.rawValue;
-const parts = [street, city, county, state, zip].filter(Boolean).map(String);
-
-// Fixed:
-const street = fieldValues.get(`${prefix}.street`)?.rawValue;
-const city = fieldValues.get(`${prefix}.city`)?.rawValue;
-const state = fieldValues.get(`${prefix}.state`)?.rawValue;
-const zip = fieldValues.get(`${prefix}.zip`)?.rawValue;
-const county = fieldValues.get(`${prefix}.county`)?.rawValue;
-const country = fieldValues.get(`${prefix}.country`)?.rawValue;
-const parts = [street, city, state, country, zip].filter(Boolean).map(String);
-```
-
-This matches the canonical `pr_p_address` format: street, city, state, country, zip.
-
-### Change 2: Deduplicate `propertyLines` before joining (line 590-604)
-
-```typescript
-// Current:
-const propertyLines: string[] = [];
-for (const idx of sortedIndices) { ... propertyLines.push(String(addr)); }
-
-// Fixed — deduplicate identical addresses:
-const propertyLines: string[] = [];
-const seenAddresses = new Set<string>();
-for (const idx of sortedIndices) {
-  const addr = fieldValues.get(`property${idx}.address`)?.rawValue || fieldValues.get(`Property${idx}.Address`)?.rawValue;
-  if (addr) {
-    const addrStr = String(addr);
-    if (!seenAddresses.has(addrStr)) {
-      seenAddresses.add(addrStr);
-      propertyLines.push(addrStr);
-    }
-  }
-}
-```
-
-### No changes to
-- Database schema
+### No Changes To
+- Edge function code
 - Frontend code
 - Template files
-- tag-parser.ts (dedup logic already working correctly)
-- Label-based or merge-tag replacement logic
-- Any other files
+- Any other field mappings
 
