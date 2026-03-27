@@ -706,6 +706,7 @@ export function replaceLabelBasedFields(
 
           resultLower = result.toLowerCase();
           replacementCount++;
+          labelResolvedKeys.add(resolvedKey.toLowerCase());
           debugLog(`[tag-parser] Label-replaced "${textToReplace}" -> "${formattedValue}"`);
         }
         continue;
