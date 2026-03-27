@@ -581,6 +581,9 @@ export function replaceLabelBasedFields(
     return { content, replacementCount };
   }
 
+  // Track resolved keys that have already been replaced by labels in this pass
+  const labelResolvedKeys = new Set<string>();
+
   const processedContent = processParaByPara(content, (segment) => {
     let result = segment;
     let resultLower = result.toLowerCase();
@@ -600,6 +603,11 @@ export function replaceLabelBasedFields(
 
       // Dedup: skip if the resolved canonical key was already replaced by a merge tag
       if (resolvedKey !== mapping.fieldKey && replacedFieldKeyLowers?.has(resolvedKey.toLowerCase())) {
+        continue;
+      }
+
+      // Dedup: skip if another label already replaced this same resolved key in this pass
+      if (labelResolvedKeys.has(resolvedKey.toLowerCase())) {
         continue;
       }
 
