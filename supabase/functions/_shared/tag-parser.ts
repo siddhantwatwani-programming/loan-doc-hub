@@ -730,6 +730,7 @@ export function replaceLabelBasedFields(
           result = result.replace(colonTolerantPattern, `$&${formattedValue} `);
           resultLower = result.toLowerCase();
           replacementCount++;
+          labelResolvedKeys.add(resolvedKey.toLowerCase());
           debugLog(`[tag-parser] Label-replaced (colon-tolerant) "${label}" -> "${formattedValue}"`);
         }
       }
