@@ -719,6 +719,7 @@ export function replaceLabelBasedFields(
         result = result.replace(labelPattern, `$1$2${formattedValue} `);
         resultLower = result.toLowerCase();
         replacementCount++;
+        labelResolvedKeys.add(resolvedKey.toLowerCase());
         debugLog(`[tag-parser] Label-replaced "${label}" -> "${formattedValue}"`);
       } else if (label.endsWith(':')) {
         const labelNoColon = label.slice(0, -1);
