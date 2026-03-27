@@ -597,6 +597,12 @@ export function replaceLabelBasedFields(
       const resolvedKey = mergeTagMap && validFieldKeys
         ? resolveFieldKeyWithMap(mapping.fieldKey, mergeTagMap, validFieldKeys)
         : mapping.fieldKey;
+
+      // Dedup: skip if the resolved canonical key was already replaced by a merge tag
+      if (resolvedKey !== mapping.fieldKey && replacedFieldKeyLowers?.has(resolvedKey.toLowerCase())) {
+        continue;
+      }
+
       const resolved = getFieldData(resolvedKey, fieldValues);
       const fieldData = resolved?.data || null;
 
@@ -640,6 +646,14 @@ export function replaceLabelBasedFields(
       } else {
         formattedValue = formatByDataType(fieldData.rawValue, fieldData.dataType);
       }
+
+      // XML-escape and convert newlines to DOCX line breaks for label-based values
+      formattedValue = formattedValue
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
 
       if (label === "as of _") {
         const asOfPattern = /as of\s*_+/gi;
