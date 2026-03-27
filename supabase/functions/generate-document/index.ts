@@ -212,6 +212,17 @@ async function generateSingleDocument(
     allFieldDictEntries.forEach((fd: any) => allFieldDictMap.set(fd.id, fd));
     debugLog(`[generate-document] Built allFieldDictMap with ${allFieldDictMap.size} entries from ${allFieldDictIds.length} IDs`);
 
+    // Property field_key to short suffix mapping for bridging propertyN.* keys
+    const prKeyToSuffix: Record<string, string> = {
+      'pr_p_street': 'street', 'pr_p_city': 'city', 'pr_p_state': 'state',
+      'pr_p_zip': 'zip', 'pr_p_county': 'county', 'pr_p_address': 'address',
+      'pr_p_apn': 'apn', 'pr_p_marketValue': 'marketValue',
+      'pr_p_legalDescri': 'legalDescription', 'pr_p_propertyTyp': 'propertyType',
+      'pr_p_occupancySt': 'occupancyStatus', 'pr_p_yearBuilt': 'yearBuilt',
+      'pr_p_lotSize': 'lotSize', 'pr_p_squareFeet': 'squareFeet',
+      'pr_p_numberOfUni': 'numberOfUnits', 'pr_p_country': 'country',
+    };
+
     const fieldValues = new Map<string, FieldValueData>();
     (sectionValues || []).forEach((sv: any) => {
       Object.entries(sv.field_values || {}).forEach(([key, data]: [string, any]) => {
@@ -229,11 +240,23 @@ async function generateSingleDocument(
           // BUT only if the canonical key doesn't already belong to a different indexed entity
           // e.g., don't overwrite property1.street (canonical) with property2's data
           if (indexedKey && indexedKey !== fieldDict.field_key) {
-            // Check if the canonical key looks like it belongs to a specific indexed entity
-            // (e.g., "property1.street") — if so, only set it if no indexed entry has already claimed it
             const canonicalHasIndex = /^[a-zA-Z_]+\d+\./.test(fieldDict.field_key);
             if (!canonicalHasIndex) {
               fieldValues.set(fieldDict.field_key, { rawValue, dataType });
+            }
+          }
+
+          // Bridge property composite keys (e.g., "property2::uuid") to propertyN.suffix format
+          // so multi-property auto-compute works correctly
+          if (key.includes("::")) {
+            const entityPrefix = key.split("::")[0]; // e.g., "property1", "property2"
+            if (/^property\d+$/i.test(entityPrefix)) {
+              const suffix = prKeyToSuffix[fieldDict.field_key];
+              if (suffix) {
+                const bridgedKey = `${entityPrefix}.${suffix}`;
+                fieldValues.set(bridgedKey, { rawValue, dataType });
+                debugLog(`[generate-document] Bridged ${key} -> ${bridgedKey} = "${rawValue}"`);
+              }
             }
           }
         }
