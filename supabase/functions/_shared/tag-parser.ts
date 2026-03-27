@@ -669,6 +669,7 @@ export function replaceLabelBasedFields(
           result = result.replace(asOfPattern, `as of ${formattedValue}`);
           resultLower = result.toLowerCase();
           replacementCount++;
+          labelResolvedKeys.add(resolvedKey.toLowerCase());
           debugLog(`[tag-parser] Label-replaced "as of ___" -> "${formattedValue}"`);
         }
         continue;
