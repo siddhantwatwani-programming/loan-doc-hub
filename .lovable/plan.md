@@ -2,36 +2,70 @@
 
 ## Problem
 
-The template placeholder `{{br_ag_fullName}}` is not populating because:
+The document generation engine (`generate-document/index.ts`) injects participant contact data for **Primary Borrower**, **Co-Borrower**, **Lender**, and **Broker** — but has **no injection logic for "Additional Guarantor"** participants.
 
-1. `br_ag_fullName` exists in `field_dictionary` (id: `041611a1-28a6-41f2-bd8c-19ccf106f768`) but has **no `canonical_key`** set
-2. The actual guarantor data is stored under field key `br_p_guarantoFullName` (id: `b092c126-af2e-40d3-b8f9-1ffa15ac49e8`)
-3. No `field_key_migrations` or `merge_tag_aliases` entry bridges these two keys
-4. During document generation, the field resolver cannot find any data for `br_ag_fullName` because there's no mapping to the actual data key
+The screenshot confirms participant "xyz" (B-00007) exists with capacity "Borrower - Additional Guarantor". However, the engine never reads this participant's contact data into `br_ag_fullName` or `br_p_guaranto*` field keys, so `{{br_ag_fullName}}` always resolves to blank.
+
+The `canonical_key` mapping (`br_ag_fullName` → `br_p_guarantoFullName`) set previously is correct but useless because neither key ever gets populated.
 
 ## Fix
 
-**Set the `canonical_key`** on the `br_ag_fullName` field dictionary entry to point to `br_p_guarantoFullName`. This is the standard mechanism the field resolver already uses to resolve alternative keys to the correct data source.
+**Single change in `supabase/functions/generate-document/index.ts`** — add ~20 lines after the co-borrower injection block (after line 421) to find and inject the Additional Guarantor participant.
 
-### Database Migration
+### What the new code does
 
-```sql
-UPDATE field_dictionary
-SET canonical_key = 'br_p_guarantoFullName'
-WHERE field_key = 'br_ag_fullName';
+1. Searches `borrowerParticipants` for one whose contact `capacity` includes "additional guarantor" (case-insensitive)
+2. If found, extracts the contact's name fields (first, middle, last → full name)
+3. Injects values into both `br_p_guaranto*` keys (for canonical resolution) and `br_ag_fullName` directly (for direct tag match)
+4. Uses the existing `setIfEmpty` helper — no new helpers needed
+
+### Exact insertion point
+
+After line 421 (after co-borrower injection, before lender injection):
+
+```typescript
+// Inject additional guarantor
+const guarantorParticipant = borrowerParticipants.find((p: any) => {
+  if (!p.contact_id) return false;
+  const c = contactRowsByUuid.get(p.contact_id);
+  const cap = c?.contact_data?.capacity;
+  return cap && String(cap).toLowerCase().includes("additional guarantor");
+});
+
+if (guarantorParticipant?.contact_id) {
+  const gc = contactRowsByUuid.get(guarantorParticipant.contact_id);
+  if (gc) {
+    const cd = gc.contact_data || {};
+    const firstName = cd.first_name || gc.first_name || "";
+    const middleName = cd.middle_initial || "";
+    const lastName = cd.last_name || gc.last_name || "";
+    const assembledName = [firstName, middleName, lastName].filter(Boolean).join(" ");
+    const fullName = assembledName || cd.full_name || gc.full_name || "";
+    const email = cd.email || gc.email || "";
+    const phone = cd["phone.cell"] || cd["phone.work"] || cd["phone.home"] || gc.phone || "";
+
+    setIfEmpty("br_p_guarantoFullName", fullName);
+    setIfEmpty("br_p_guarantoFirstName", firstName);
+    setIfEmpty("br_p_guarantoLastName", lastName);
+    setIfEmpty("br_p_guarantoMiddleInitia", middleName);
+    setIfEmpty("br_ag_fullName", fullName);
+    setIfEmpty("br_ag_firstName", firstName);
+    setIfEmpty("br_ag_lastName", lastName);
+    setIfEmpty("br_ag_email", email);
+    setIfEmpty("br_ag_phone", phone);
+
+    debugLog(`[generate-document] Injected guarantor contact fields from participant (contact ${gc.contact_id})`);
+  }
+}
 ```
 
-This single update enables the existing resolution chain in `field-resolver.ts` (`resolveFieldKeyWithBackwardCompat` → canonical key lookup) to automatically resolve `{{br_ag_fullName}}` to `br_p_guarantoFullName` during document generation.
+### Files changed
+- `supabase/functions/generate-document/index.ts` — ~20 lines added after line 421
 
-### No code changes required
-The field resolver already handles canonical_key resolution. Only the data mapping is missing.
-
-### Files Changed
-- Database migration only (1 SQL statement)
-
-### No Changes To
-- Edge function code
-- Frontend code
+### No changes to
+- Database schema
+- Frontend code / UI
 - Template files
-- Any other field mappings
+- tag-parser.ts, field-resolver.ts, docx-processor.ts
+- Any other edge functions
 
