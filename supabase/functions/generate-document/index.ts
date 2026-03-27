@@ -420,6 +420,40 @@ async function generateSingleDocument(
         }
       }
 
+      // Inject additional guarantor
+      const guarantorParticipant = borrowerParticipants.find((p: any) => {
+        if (!p.contact_id) return false;
+        const c = contactRowsByUuid.get(p.contact_id);
+        const cap = c?.contact_data?.capacity;
+        return cap && String(cap).toLowerCase().includes("additional guarantor");
+      });
+
+      if (guarantorParticipant?.contact_id) {
+        const gc = contactRowsByUuid.get(guarantorParticipant.contact_id);
+        if (gc) {
+          const cd = gc.contact_data || {};
+          const firstName = cd.first_name || gc.first_name || "";
+          const middleName = cd.middle_initial || "";
+          const lastName = cd.last_name || gc.last_name || "";
+          const assembledName = [firstName, middleName, lastName].filter(Boolean).join(" ");
+          const fullName = assembledName || cd.full_name || gc.full_name || "";
+          const email = cd.email || gc.email || "";
+          const phone = cd["phone.cell"] || cd["phone.work"] || cd["phone.home"] || gc.phone || "";
+
+          setIfEmpty("br_p_guarantoFullName", fullName);
+          setIfEmpty("br_p_guarantoFirstName", firstName);
+          setIfEmpty("br_p_guarantoLastName", lastName);
+          setIfEmpty("br_p_guarantoMiddleInitia", middleName);
+          setIfEmpty("br_ag_fullName", fullName);
+          setIfEmpty("br_ag_firstName", firstName);
+          setIfEmpty("br_ag_lastName", lastName);
+          setIfEmpty("br_ag_email", email);
+          setIfEmpty("br_ag_phone", phone);
+
+          debugLog(`[generate-document] Injected guarantor contact fields from participant (contact ${gc.contact_id})`);
+        }
+      }
+
       // Inject lender
       const primaryLender = lenderParticipants[0];
       if (primaryLender?.contact_id) {
