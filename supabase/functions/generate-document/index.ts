@@ -589,10 +589,15 @@ async function generateSingleDocument(
     if (propertyIndices.size > 0) {
       const sortedIndices = [...propertyIndices].sort((a, b) => a - b);
       const propertyLines: string[] = [];
+      const seenAddresses = new Set<string>();
       for (const idx of sortedIndices) {
         const addr = fieldValues.get(`property${idx}.address`)?.rawValue || fieldValues.get(`Property${idx}.Address`)?.rawValue;
         if (addr) {
-          propertyLines.push(String(addr));
+          const addrStr = String(addr);
+          if (!seenAddresses.has(addrStr)) {
+            seenAddresses.add(addrStr);
+            propertyLines.push(addrStr);
+          }
         }
       }
       if (propertyLines.length > 0) {
