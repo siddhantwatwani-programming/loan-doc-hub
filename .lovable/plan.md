@@ -1,24 +1,41 @@
 
 
-## Problem
+## Problem Root Cause
 
-When multiple properties exist, the property address fields (`pr_p_address`, `Property1.Address`) concatenate all addresses into a single unformatted line. The `all_properties_list` merge tag uses `\n` which Word XML ignores — it needs proper DOCX line breaks (`<w:br/>`).
+The property address appears 3 times because **three separate replacement mechanisms** all resolve to the same `pr_p_address` combined value:
 
-## Root Cause
+1. **Merge tag** `{{pr_p_address}}` → resolves directly → combined "addr1\naddr2" (with proper `w:br` conversion)
+2. **Label** `PROPERTY ADDRESS:` → mapping.fieldKey = `Property1.Address` → migrates to `pr_p_address` → combined value inserted **without XML escaping or line breaks**
+3. **Label** `Property Address` (replaceNext) → same chain → combined value inserted **again**
 
-1. **`pr_p_address`** is computed only from `pr_p_*` component fields (property 1). When multiple properties exist, only the first property's address populates this key.
-2. **`all_properties_list`** joins addresses with `"\n"`, but the tag replacement at line 1195 of `tag-parser.ts` XML-escapes the value and inserts it as plain text inside `<w:t>`. Word XML ignores plain newlines — they must be `<w:br/>` elements.
+The `replacedFieldKeys` dedup check at line 589 of `tag-parser.ts` only checks if `mapping.fieldKey` ("Property1.Address") is in the set — but the merge tag added `pr_p_address` to the set. Different keys, same data → no dedup.
 
-## Fix (2 changes, 1 file each)
+Additionally, label-based replacement inserts raw values without XML escaping or `\n→<w:br/>` conversion, so even if only labels fired, newlines wouldn't render.
 
-### Change 1: Convert `\n` to DOCX line breaks during tag replacement
-**File**: `supabase/functions/_shared/tag-parser.ts` (~line 1195-1200)
+## Fix — 2 changes in 1 file
 
-After XML-escaping the value, convert any `\n` characters to the DOCX line break sequence `</w:t><w:br/><w:t xml:space="preserve">`. This ensures multi-line values render as separate lines in Word.
+**File**: `supabase/functions/_shared/tag-parser.ts`
+
+### Change 1: Dedup labels against resolved keys (not just mapping keys)
+
+In `replaceLabelBasedFields` (~line 588-601), after the existing `replacedFieldKeyLowers` check, also resolve the label's `mapping.fieldKey` through migration/canonical resolution and check if the **resolved** key is already in `replacedFieldKeys`. This prevents labels from re-inserting data that a merge tag already handled.
 
 ```typescript
-// After XML escaping (line 1199), add:
-const xmlSafeValue = resolvedValue
+// After line 589 check, add:
+const resolvedKey = mergeTagMap && validFieldKeys
+  ? resolveFieldKeyWithMap(mapping.fieldKey, mergeTagMap, validFieldKeys)
+  : mapping.fieldKey;
+if (resolvedKey !== mapping.fieldKey && replacedFieldKeyLowers?.has(resolvedKey.toLowerCase())) {
+  continue;
+}
+```
+
+### Change 2: XML-escape and convert \n in label-based replacement values
+
+In `replaceLabelBasedFields`, after computing `formattedValue` (~line 641), apply the same XML escaping and `\n→<w:br/>` conversion that merge tag replacement uses:
+
+```typescript
+formattedValue = formattedValue
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;')
@@ -26,35 +43,12 @@ const xmlSafeValue = resolvedValue
   .replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
 ```
 
-### Change 2: Build `pr_p_address` as multi-property when multiple exist
-**File**: `supabase/functions/generate-document/index.ts` (~line 570-585)
-
-After auto-computing `pr_p_address` for property 1, if multiple properties exist, rebuild `pr_p_address` to include all property addresses joined with `\n` (which Change 1 will convert to `<w:br/>`).
-
-```typescript
-// After the existing pr_p_address auto-compute block (line 585), add:
-if (propertyIndices.size > 1) {
-  const sortedIndices = [...propertyIndices].sort((a, b) => a - b);
-  const allAddresses: string[] = [];
-  for (const idx of sortedIndices) {
-    const addr = fieldValues.get(`property${idx}.address`)?.rawValue 
-              || fieldValues.get(`Property${idx}.Address`)?.rawValue;
-    if (addr) allAddresses.push(String(addr));
-  }
-  if (allAddresses.length > 1) {
-    fieldValues.set("pr_p_address", { rawValue: allAddresses.join("\n"), dataType: "text" });
-  }
-}
-```
-
-Also update `all_properties_list` to omit the "Property N:" prefix since the user expects just addresses:
-```typescript
-propertyLines.push(String(addr));  // instead of `Property ${idx}: ${addr}`
-```
+This ensures that even when labels DO fire for multi-line values, the output renders correctly in Word.
 
 ### No changes to
+- `generate-document/index.ts`
 - Database schema
 - Frontend code
 - Template files
-- Document formatting logic (beyond newline handling)
+- Any other files
 
