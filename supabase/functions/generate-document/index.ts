@@ -556,8 +556,9 @@ async function generateSingleDocument(
         const state = fieldValues.get(`${prefix}.state`)?.rawValue;
         const zip = fieldValues.get(`${prefix}.zip`)?.rawValue;
         const county = fieldValues.get(`${prefix}.county`)?.rawValue;
+        const country = fieldValues.get(`${prefix}.country`)?.rawValue;
 
-        const parts = [street, city, county, state, zip].filter(Boolean).map(String);
+        const parts = [street, city, state, country, zip].filter(Boolean).map(String);
         if (parts.length > 0) {
           const fullAddress = parts.join(", ");
           fieldValues.set(`${prefix}.address`, { rawValue: fullAddress, dataType: "text" });
