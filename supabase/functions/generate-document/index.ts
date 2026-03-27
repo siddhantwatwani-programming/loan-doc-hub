@@ -584,20 +584,25 @@ async function generateSingleDocument(
       }
     }
 
-    // Build all_properties_list for multi-property templates
+    // Build all_properties_list and multi-property pr_p_address
     if (propertyIndices.size > 0) {
       const sortedIndices = [...propertyIndices].sort((a, b) => a - b);
       const propertyLines: string[] = [];
       for (const idx of sortedIndices) {
         const addr = fieldValues.get(`property${idx}.address`)?.rawValue || fieldValues.get(`Property${idx}.Address`)?.rawValue;
         if (addr) {
-          propertyLines.push(`Property ${idx}: ${addr}`);
+          propertyLines.push(String(addr));
         }
       }
       if (propertyLines.length > 0) {
         const allPropertiesText = propertyLines.join("\n");
         fieldValues.set("all_properties_list", { rawValue: allPropertiesText, dataType: "text" });
         debugLog(`[generate-document] Built all_properties_list with ${propertyLines.length} properties`);
+      }
+      // When multiple properties exist, rebuild pr_p_address with all addresses separated by line breaks
+      if (propertyLines.length > 1) {
+        fieldValues.set("pr_p_address", { rawValue: propertyLines.join("\n"), dataType: "text" });
+        debugLog(`[generate-document] Rebuilt pr_p_address with ${propertyLines.length} properties (multi-line)`);
       }
     }
 

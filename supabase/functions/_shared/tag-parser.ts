@@ -1196,7 +1196,8 @@ export function replaceMergeTags(
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/"/g, '&quot;')
+      .replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
     tagReplacementMap.set(tag.fullMatch, xmlSafeValue);
   }
 
