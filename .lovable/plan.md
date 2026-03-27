@@ -2,53 +2,65 @@
 
 ## Problem Root Cause
 
-The property address appears 3 times because **three separate replacement mechanisms** all resolve to the same `pr_p_address` combined value:
+The template has **multiple merge tags** (`{{Property_Address}}`, `{{pr_p_address}}`, and individual `{{pr_p_street}}` etc.) that ALL resolve to property address data. Currently there is **no dedup between merge tags themselves** — only merge-tag-to-label dedup exists.
 
-1. **Merge tag** `{{pr_p_address}}` → resolves directly → combined "addr1\naddr2" (with proper `w:br` conversion)
-2. **Label** `PROPERTY ADDRESS:` → mapping.fieldKey = `Property1.Address` → migrates to `pr_p_address` → combined value inserted **without XML escaping or line breaks**
-3. **Label** `Property Address` (replaceNext) → same chain → combined value inserted **again**
+**Three sources of duplication:**
+1. `{{pr_p_address}}` → resolves directly to `pr_p_address` → outputs multi-property combined value (2 addresses)
+2. `{{Property_Address}}` → resolves via alias to `Property1.Address` → outputs single-property value
+3. Individual `{{pr_p_street}}` `{{pr_p_city}}` etc. → these canonical keys get **overwritten** by property2's data (last-write-wins at line 245 of index.ts), showing property2's components without commas
 
-The `replacedFieldKeys` dedup check at line 589 of `tag-parser.ts` only checks if `mapping.fieldKey` ("Property1.Address") is in the set — but the merge tag added `pr_p_address` to the set. Different keys, same data → no dedup.
+The label dedup works correctly (labels ARE skipped), but merge tags never dedup against each other.
 
-Additionally, label-based replacement inserts raw values without XML escaping or `\n→<w:br/>` conversion, so even if only labels fired, newlines wouldn't render.
+## Fix — 2 changes in 2 files
 
-## Fix — 2 changes in 1 file
+### Change 1: `supabase/functions/_shared/tag-parser.ts` — Merge tag dedup
 
-**File**: `supabase/functions/_shared/tag-parser.ts`
-
-### Change 1: Dedup labels against resolved keys (not just mapping keys)
-
-In `replaceLabelBasedFields` (~line 588-601), after the existing `replacedFieldKeyLowers` check, also resolve the label's `mapping.fieldKey` through migration/canonical resolution and check if the **resolved** key is already in `replacedFieldKeys`. This prevents labels from re-inserting data that a merge tag already handled.
+In the merge tag processing loop (~line 1189-1228), add an "ultimate key" resolution step. For each tag, resolve its `canonicalKey` a second time through migration to find the ultimate data source key. Track these ultimate keys; if two merge tags share the same ultimate key, only the first one outputs data and subsequent ones output empty string. Also use the ultimate key for data lookup so the first tag gets the best (multi-property) value, and add it to `replacedFieldKeys` for label dedup.
 
 ```typescript
-// After line 589 check, add:
-const resolvedKey = mergeTagMap && validFieldKeys
-  ? resolveFieldKeyWithMap(mapping.fieldKey, mergeTagMap, validFieldKeys)
-  : mapping.fieldKey;
-if (resolvedKey !== mapping.fieldKey && replacedFieldKeyLowers?.has(resolvedKey.toLowerCase())) {
-  continue;
+const resolvedDataKeys = new Set<string>(); // NEW
+
+for (const tag of tags) {
+  const canonicalKey = resolveFieldKeyWithMap(tag.tagName, mergeTagMap, validFieldKeys);
+  // Resolve further through migration to find the "ultimate" field key
+  const ultimateKey = resolveFieldKeyWithMap(canonicalKey, mergeTagMap, validFieldKeys);
+  const ultimateKeyLower = ultimateKey.toLowerCase();
+
+  replacedFieldKeys.add(canonicalKey);
+  replacedFieldKeys.add(ultimateKey); // Also track ultimate key for label dedup
+
+  // Dedup: if another merge tag already resolved to same ultimate key, blank this one
+  if (resolvedDataKeys.has(ultimateKeyLower)) {
+    tagReplacementMap.set(tag.fullMatch, "");
+    continue;
+  }
+  resolvedDataKeys.add(ultimateKeyLower);
+
+  // Use ultimateKey for data lookup (gets multi-property value)
+  const resolved = getFieldData(ultimateKey, fieldValues);
+  // ... rest of existing value formatting logic unchanged
 }
 ```
 
-### Change 2: XML-escape and convert \n in label-based replacement values
+### Change 2: `supabase/functions/generate-document/index.ts` — Prevent pr_p_* overwrite
 
-In `replaceLabelBasedFields`, after computing `formattedValue` (~line 641), apply the same XML escaping and `\n→<w:br/>` conversion that merge tag replacement uses:
+At line 244-246, add a guard so that canonical `pr_p_*` keys are not overwritten by subsequent property entities. This prevents property2's individual field values from replacing property1's.
 
 ```typescript
-formattedValue = formattedValue
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
+// Line 244-246: change from
+if (!canonicalHasIndex) {
+  fieldValues.set(fieldDict.field_key, { rawValue, dataType });
+}
+// to
+if (!canonicalHasIndex && !fieldValues.has(fieldDict.field_key)) {
+  fieldValues.set(fieldDict.field_key, { rawValue, dataType });
+}
 ```
 
-This ensures that even when labels DO fire for multi-line values, the output renders correctly in Word.
-
 ### No changes to
-- `generate-document/index.ts`
 - Database schema
 - Frontend code
 - Template files
+- Label-based replacement logic
 - Any other files
 
