@@ -1,85 +1,60 @@
 
 
-## Problem Analysis
+## Problem
 
-### Root Cause: Field Dictionary Batch Fetch Failure
+When multiple properties exist, the property address fields (`pr_p_address`, `Property1.Address`) concatenate all addresses into a single unformatted line. The `all_properties_list` merge tag uses `\n` which Word XML ignores — it needs proper DOCX line breaks (`<w:br/>`).
 
-The edge function logs show repeated `TypeError: error sending request` errors when fetching field_dictionary entries. The current batch size of 500 UUIDs creates an HTTP URL that is approximately 18,000+ characters long (500 UUIDs x ~37 chars each), exceeding the practical URL length limit for Supabase REST API requests.
+## Root Cause
 
-**Why Borrower Name and Property Address still populate**: These values are injected from the `deal_participants` → `contacts` table lookup (lines 257-463 of index.ts), which doesn't depend on the field_dictionary fetch. All other values from `deal_section_values` (loan number, property details, etc.) fail because the field dictionary ID-to-key mapping can't be built.
+1. **`pr_p_address`** is computed only from `pr_p_*` component fields (property 1). When multiple properties exist, only the first property's address populates this key.
+2. **`all_properties_list`** joins addresses with `"\n"`, but the tag replacement at line 1195 of `tag-parser.ts` XML-escapes the value and inserts it as plain text inside `<w:t>`. Word XML ignores plain newlines — they must be `<w:br/>` elements.
 
-### Secondary Issue: Multi-Property Population
+## Fix (2 changes, 1 file each)
 
-Property data stored with `property1::` and `property2::` composite keys needs to populate indexed keys (`property1.street`, `property2.street` etc.) for multi-property auto-computation. Currently, property1 fields without `indexed_key` resolve only to bare `pr_p_*` keys, not to `property1.*` format needed for multi-property templates.
+### Change 1: Convert `\n` to DOCX line breaks during tag replacement
+**File**: `supabase/functions/_shared/tag-parser.ts` (~line 1195-1200)
 
-### ln_p_loanNumber
+After XML-escaping the value, convert any `\n` characters to the DOCX line break sequence `</w:t><w:br/><w:t xml:space="preserve">`. This ensures multi-line values render as separate lines in Word.
 
-The loan number value ("745") IS stored correctly in the database. The field dictionary entry exists. The failure is solely due to the batch fetch network error preventing resolution.
-
----
-
-## Plan
-
-### Step 1: Reduce Batch Size to Fix Network Errors
-
-**File**: `supabase/functions/generate-document/index.ts`
-
-Change `FD_BATCH_SIZE` from 500 to **100**. This reduces the URL length from ~18,500 chars to ~3,700 chars, well within limits. The tradeoff is more HTTP requests (9 instead of 2 for 853 fields), but each request will succeed reliably.
-
-```
-Line ~195: const FD_BATCH_SIZE = 100;
-```
-
-### Step 2: Bridge Property Data to Indexed Keys
-
-**File**: `supabase/functions/generate-document/index.ts`
-
-After field values are built from deal_section_values (around line 253), add bridging logic: when a field resolves to `pr_p_*` (bare property key) AND the composite key started with `propertyN::`, also set `propertyN.fieldname` so the existing auto-compute for `Property1.Address`, `Property2.Address` etc. works correctly.
-
-This is done by:
-1. During the field_values population loop, if the composite key is `propertyN::uuid` and there's no `indexed_key`, also set `propertyN.{mapped_suffix}` alongside the `pr_p_*` key
-2. Add a property field key mapping (`pr_p_street` → `street`, `pr_p_city` → `city`, etc.) used during this bridging
-
-### Step 3: Multi-Property All-Properties Merge Tag
-
-**File**: `supabase/functions/generate-document/index.ts`
-
-After the existing per-property auto-compute (lines 515-545), add logic to build an `all_properties` composite value. If multiple property indices exist, concatenate them:
-```
-Property 1: [Address, City, State, Zip]
-Property 2: [Address, City, State, Zip]
-```
-Set this as `all_properties_list` field value for templates that use `{{all_properties_list}}`.
-
----
-
-## Technical Details
-
-### Batch Size Calculation
-- 100 UUIDs × 37 chars = 3,700 chars for IDs
-- Plus URL base (~200 chars) and column selectors (~80 chars)
-- Total ~4,000 chars — safely within limits
-
-### Property Field Bridging Map
 ```typescript
-const prPrefixToSuffix: Record<string, string> = {
-  'pr_p_street': 'street',
-  'pr_p_city': 'city',
-  'pr_p_state': 'state',
-  'pr_p_zip': 'zip',
-  'pr_p_county': 'county',
-  'pr_p_address': 'address',
-  // ... other pr_p_ fields
-};
+// After XML escaping (line 1199), add:
+const xmlSafeValue = resolvedValue
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
 ```
 
-### Files Changed
-1. `supabase/functions/generate-document/index.ts` — batch size reduction, property bridging, multi-property composite
+### Change 2: Build `pr_p_address` as multi-property when multiple exist
+**File**: `supabase/functions/generate-document/index.ts` (~line 570-585)
 
-### No Changes To
+After auto-computing `pr_p_address` for property 1, if multiple properties exist, rebuild `pr_p_address` to include all property addresses joined with `\n` (which Change 1 will convert to `<w:br/>`).
+
+```typescript
+// After the existing pr_p_address auto-compute block (line 585), add:
+if (propertyIndices.size > 1) {
+  const sortedIndices = [...propertyIndices].sort((a, b) => a - b);
+  const allAddresses: string[] = [];
+  for (const idx of sortedIndices) {
+    const addr = fieldValues.get(`property${idx}.address`)?.rawValue 
+              || fieldValues.get(`Property${idx}.Address`)?.rawValue;
+    if (addr) allAddresses.push(String(addr));
+  }
+  if (allAddresses.length > 1) {
+    fieldValues.set("pr_p_address", { rawValue: allAddresses.join("\n"), dataType: "text" });
+  }
+}
+```
+
+Also update `all_properties_list` to omit the "Property N:" prefix since the user expects just addresses:
+```typescript
+propertyLines.push(String(addr));  // instead of `Property ${idx}: ${addr}`
+```
+
+### No changes to
 - Database schema
 - Frontend code
 - Template files
-- Other edge functions
-- Formatting/layout logic
+- Document formatting logic (beyond newline handling)
 
