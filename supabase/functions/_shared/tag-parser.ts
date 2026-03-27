@@ -1190,15 +1190,34 @@ export function replaceMergeTags(
   
   // Pre-resolve all tags and build a replacement map for single-pass replacement
   const tagReplacementMap = new Map<string, string>();
+  const resolvedDataKeys = new Set<string>();
   for (const tag of tags) {
     // Use validFieldKeys for direct field_key resolution
     const canonicalKey = resolveFieldKeyWithMap(tag.tagName, mergeTagMap, validFieldKeys);
-    const resolved = getFieldData(canonicalKey, fieldValues);
-    const fieldData = resolved?.data;
-    let resolvedValue = "";
+    // Resolve further through migration to find the "ultimate" field key
+    const ultimateKey = resolveFieldKeyWithMap(canonicalKey, mergeTagMap, validFieldKeys);
+    const ultimateKeyLower = ultimateKey.toLowerCase();
     
     // Always track merge tag fields so labels don't overwrite static titles
     replacedFieldKeys.add(canonicalKey);
+    replacedFieldKeys.add(ultimateKey);
+    if (canonicalKey !== ultimateKey) {
+      debugLog(`[tag-parser] Tag ${tag.tagName}: canonical=${canonicalKey}, ultimate=${ultimateKey}`);
+    }
+
+    // Dedup: if another merge tag already resolved to same ultimate key, blank this one
+    if (resolvedDataKeys.has(ultimateKeyLower)) {
+      debugLog(`[tag-parser] Dedup: skipping ${tag.tagName} (ultimate ${ultimateKey} already resolved)`);
+      tagReplacementMap.set(tag.fullMatch, "");
+      continue;
+    }
+    resolvedDataKeys.add(ultimateKeyLower);
+
+    // Use ultimateKey for data lookup (gets multi-property value when available)
+    const resolved = getFieldData(ultimateKey, fieldValues) || getFieldData(canonicalKey, fieldValues);
+    const fieldData = resolved?.data;
+    let resolvedValue = "";
+    
     if (resolved?.key && resolved.key !== canonicalKey) {
       replacedFieldKeys.add(resolved.key);
     }
