@@ -394,13 +394,30 @@ async function generateSingleDocument(
         return cap && String(cap).toLowerCase().includes("primary");
       }) || borrowerParticipants[0];
 
-      // Select co-borrower (check contact_data.capacity, or fall back to second borrower)
+      // Select additional guarantor BEFORE co-borrower to prevent fallback collision
+      const guarantorParticipant = borrowerParticipants.find((p: any) => {
+        if (!p.contact_id) return false;
+        const c = contactRowsByUuid.get(p.contact_id);
+        const cap = c?.contact_data?.capacity;
+        return cap && String(cap).toLowerCase().includes("additional guarantor");
+      }) || borrowerParticipants.find((p: any) => {
+        // Fallback: any borrower participant that is NOT primary and not trustee
+        if (!p.contact_id) return false;
+        if (p === primaryBorrower) return false;
+        const c = contactRowsByUuid.get(p.contact_id);
+        const cap = c?.contact_data?.capacity;
+        const capLower = cap ? String(cap).toLowerCase() : "";
+        return !capLower.includes("primary") && !capLower.includes("co-borrower")
+          && !capLower.includes("co-trustee") && !capLower.includes("trustee");
+      });
+
+      // Select co-borrower (check contact_data.capacity, or fall back to second borrower excluding guarantor)
       const coBorrower = borrowerParticipants.find((p: any) => {
         if (!p.contact_id) return false;
         const c = contactRowsByUuid.get(p.contact_id);
         const cap = c?.contact_data?.capacity;
         return cap && String(cap).toLowerCase().includes("co-borrower");
-      }) || borrowerParticipants.find((p: any) => p !== primaryBorrower);
+      }) || borrowerParticipants.find((p: any) => p !== primaryBorrower && p !== guarantorParticipant);
 
       // Inject primary borrower
       if (primaryBorrower?.contact_id) {
@@ -419,23 +436,6 @@ async function generateSingleDocument(
           debugLog(`[generate-document] Injected co-borrower contact fields from participant (contact ${cbc.contact_id})`);
         }
       }
-
-      // Inject additional guarantor
-      const guarantorParticipant = borrowerParticipants.find((p: any) => {
-        if (!p.contact_id) return false;
-        const c = contactRowsByUuid.get(p.contact_id);
-        const cap = c?.contact_data?.capacity;
-        return cap && String(cap).toLowerCase().includes("additional guarantor");
-      }) || borrowerParticipants.find((p: any) => {
-        // Fallback: any borrower participant that is NOT primary and NOT co-borrower
-        if (!p.contact_id) return false;
-        if (p === primaryBorrower || p === coBorrower) return false;
-        const c = contactRowsByUuid.get(p.contact_id);
-        const cap = c?.contact_data?.capacity;
-        const capLower = cap ? String(cap).toLowerCase() : "";
-        return !capLower.includes("primary") && !capLower.includes("co-borrower")
-          && !capLower.includes("co-trustee") && !capLower.includes("trustee");
-      });
 
       if (guarantorParticipant?.contact_id) {
         const gc = contactRowsByUuid.get(guarantorParticipant.contact_id);
