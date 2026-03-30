@@ -1,10 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
+import { CalendarIcon } from 'lucide-react';
+import { format, parse, isValid } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface ChargesDetailFormProps {
   values: Record<string, string>;
