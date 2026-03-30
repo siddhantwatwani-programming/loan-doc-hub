@@ -145,7 +145,24 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.expiration}>
             <div>
               <Label className="text-sm text-foreground">Expiration</Label>
-              <Input type="date" value={getFieldValue(FIELD_KEYS.expiration)} onChange={(e) => onValueChange(FIELD_KEYS.expiration, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+              <Popover open={expirationOpen} onOpenChange={setExpirationOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn('h-8 text-sm mt-1 w-full justify-start text-left font-normal', !getFieldValue(FIELD_KEYS.expiration) && 'text-muted-foreground')} disabled={disabled}>
+                    {getFieldValue(FIELD_KEYS.expiration) && safeParseDateStr(getFieldValue(FIELD_KEYS.expiration)) ? format(safeParseDateStr(getFieldValue(FIELD_KEYS.expiration))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                    <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                  <EnhancedCalendar
+                    mode="single"
+                    selected={safeParseDateStr(getFieldValue(FIELD_KEYS.expiration))}
+                    onSelect={(date) => { if (date) onValueChange(FIELD_KEYS.expiration, format(date, 'yyyy-MM-dd')); setExpirationOpen(false); }}
+                    onClear={() => { onValueChange(FIELD_KEYS.expiration, ''); setExpirationOpen(false); }}
+                    onToday={() => { onValueChange(FIELD_KEYS.expiration, format(new Date(), 'yyyy-MM-dd')); setExpirationOpen(false); }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </DirtyFieldWrapper>
 
