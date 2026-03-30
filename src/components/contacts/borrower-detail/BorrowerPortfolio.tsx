@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Download, Settings2, Filter } from 'lucide-react';
+import { Search, Download, Settings2, Filter, Users } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import SortableTableHead from '@/components/deal/SortableTableHead';
 import { type SortDirection } from '@/hooks/useGridSortFilter';
@@ -10,6 +10,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+
+interface ParticipantInfo {
+  name: string;
+  capacity: string;
+}
 
 interface PortfolioLoan {
   id: string;
@@ -22,6 +27,7 @@ interface PortfolioLoan {
   principalBalance: string;
   interestRate: string;
   maturityDate: string;
+  participants: ParticipantInfo[];
 }
 
 const ALL_COLUMNS = [
@@ -35,7 +41,7 @@ const ALL_COLUMNS = [
   { id: 'maturityDate', label: 'Maturity Date' },
 ];
 
-const ROLE_FILTER_OPTIONS = ['Borrower (Primary)', 'Co-Borrower', 'Additional Guarantor', 'Trustee', 'Co-Trustee', 'Managing Member', 'Authorized Signer'];
+const ROLE_FILTER_OPTIONS = ['Borrower (Primary)', 'Co-Borrower', 'Additional Guarantor', 'Trustee', 'Co-Trustee', 'Managing Member', 'Authorized Signer', 'Lender', 'Broker'];
 const STATUS_FILTER_OPTIONS = ['Active', 'Closed', 'Default'];
 
 // Map capacity values from deal_section_values to display roles
@@ -47,6 +53,18 @@ const CAPACITY_TO_ROLE: Record<string, string> = {
   'co_trustee': 'Co-Trustee',
   'managing_member': 'Managing Member',
   'authorized_signer': 'Authorized Signer',
+  'primary_lender': 'Primary Lender',
+  'participant_lender': 'Participant Lender',
+  'syndicate_lender': 'Syndicate Lender',
+  'authorized_party': 'Authorized Party',
+};
+
+// Fallback: map deal_participants.role to a display label
+const ROLE_FALLBACK: Record<string, string> = {
+  'borrower': 'Borrower (Primary)',
+  'lender': 'Lender',
+  'broker': 'Broker',
+  'other': 'Other',
 };
 
 const VALID_CAPACITIES = new Set(Object.keys(CAPACITY_TO_ROLE));
@@ -70,12 +88,11 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
     const load = async () => {
       setIsLoading(true);
       try {
-        // 1. Get all deal_participants for this contact with borrower role
+        // 1. Get all deal_participants for this contact (any role/capacity)
         const { data: participants, error: pErr } = await supabase
           .from('deal_participants')
-          .select('deal_id, role, name')
-          .eq('contact_id', contactDbId)
-          .eq('role', 'borrower');
+          .select('deal_id, role, name, contact_id')
+          .eq('contact_id', contactDbId);
 
         if (pErr) throw pErr;
         if (!participants || participants.length === 0) {
@@ -147,6 +164,74 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           }
         });
 
+        // 5b. Fetch ALL participants across all linked deals for the info popover
+        const { data: allDealParticipants } = await supabase
+          .from('deal_participants')
+          .select('deal_id, role, name, contact_id')
+          .in('deal_id', dealIds);
+
+        // 5c. Fetch contact records for those participants to get contact_data.capacity
+        const allContactIds = [...new Set((allDealParticipants || []).map(p => p.contact_id).filter(Boolean))] as string[];
+        const contactCapacityMap = new Map<string, string>();
+        if (allContactIds.length > 0) {
+          const { data: contactRecords } = await supabase
+            .from('contacts')
+            .select('id, contact_data')
+            .in('id', allContactIds);
+          (contactRecords || []).forEach(c => {
+            const cd = c.contact_data as Record<string, any> | null;
+            if (cd?.capacity && typeof cd.capacity === 'string') {
+              contactCapacityMap.set(c.id, cd.capacity);
+            }
+          });
+        }
+
+        // Build per-deal participants map with resolved capacities
+        // Also build a capacity map per contact_id per deal from participant section values
+        const perDealContactCapacity = new Map<string, Map<string, string>>();
+        (participantSections || []).forEach(ps => {
+          const fv = ps.field_values as Record<string, any>;
+          if (!fv) return;
+          const dealCapMap = perDealContactCapacity.get(ps.deal_id) || new Map<string, string>();
+          Object.entries(fv).forEach(([key, val]) => {
+            if (key.includes('capacity') && typeof val === 'string') {
+              const contactKey = key.replace('capacity', 'contact_id');
+              const cid = fv[contactKey];
+              if (cid && typeof cid === 'string') {
+                dealCapMap.set(cid, val);
+              }
+            }
+          });
+          perDealContactCapacity.set(ps.deal_id, dealCapMap);
+        });
+
+        // Helper: resolve display capacity for a participant
+        const resolveCapacity = (dealId: string, contactId: string | null, role: string): string => {
+          // Priority 1: section values
+          if (contactId) {
+            const sectionCap = perDealContactCapacity.get(dealId)?.get(contactId);
+            if (sectionCap && CAPACITY_TO_ROLE[sectionCap]) return CAPACITY_TO_ROLE[sectionCap];
+          }
+          // Priority 2: contact_data.capacity
+          if (contactId) {
+            const contactCap = contactCapacityMap.get(contactId);
+            if (contactCap && CAPACITY_TO_ROLE[contactCap]) return CAPACITY_TO_ROLE[contactCap];
+          }
+          // Priority 3: role fallback
+          return ROLE_FALLBACK[role] || role || 'Other';
+        };
+
+        // Build allParticipantsMap: dealId -> ParticipantInfo[]
+        const allParticipantsMap = new Map<string, ParticipantInfo[]>();
+        (allDealParticipants || []).forEach(dp => {
+          const list = allParticipantsMap.get(dp.deal_id) || [];
+          list.push({
+            name: dp.name || 'Unknown',
+            capacity: resolveCapacity(dp.deal_id, dp.contact_id, dp.role),
+          });
+          allParticipantsMap.set(dp.deal_id, list);
+        });
+
         // 6. Also fetch funding section for lender funding data
         const { data: fundingSections } = await supabase
           .from('deal_section_values')
@@ -190,8 +275,7 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           if (!deal) continue;
 
           const loanTerms = sectionMap.get(p.deal_id) || {};
-          const capacity = participantCapacityMap.get(p.deal_id) || '';
-          const displayRole = CAPACITY_TO_ROLE[capacity] || 'Borrower (Primary)';
+          const displayRole = resolveCapacity(p.deal_id, contactDbId, p.role);
 
           // Map deal status to portfolio status
           let displayStatus = 'Active';
@@ -248,6 +332,7 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
             principalBalance: formatCurrency(displayPrincipalBalance),
             interestRate: formatPercent(noteRateVal),
             maturityDate: formatDate(maturityDateVal),
+            participants: allParticipantsMap.get(p.deal_id) || [],
           });
         }
 
@@ -435,41 +520,76 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
                   className="whitespace-nowrap text-xs"
                 />
               ))}
+              <TableHead className="whitespace-nowrap text-xs w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={activeColumns.length} className="text-center py-8 text-muted-foreground text-sm">
+                <TableCell colSpan={activeColumns.length + 1} className="text-center py-8 text-muted-foreground text-sm">
                   Loading portfolio...
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={activeColumns.length} className="text-center py-8 text-muted-foreground text-sm">
+                <TableCell colSpan={activeColumns.length + 1} className="text-center py-8 text-muted-foreground text-sm">
                   No loans found for this borrower
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map(r => (
-                <TableRow key={r.id} onClick={() => handleRowClick(r)} className="cursor-pointer hover:bg-muted/50">
-                  {activeColumns.map(c => (
-                    <TableCell key={c.id} className="whitespace-nowrap text-xs">
-                      {c.id === 'status' ? (
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          r.status === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                          r.status === 'Closed' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400' :
-                          'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                        }`}>
-                          {r.status}
-                        </span>
-                      ) : (
-                        (r as any)[c.id] || '-'
-                      )}
+              filtered.map(r => {
+                const grouped = new Map<string, string[]>();
+                r.participants.forEach(pt => {
+                  const list = grouped.get(pt.capacity) || [];
+                  list.push(pt.name);
+                  grouped.set(pt.capacity, list);
+                });
+                return (
+                  <TableRow key={r.id} onClick={() => handleRowClick(r)} className="cursor-pointer hover:bg-muted/50">
+                    {activeColumns.map(c => (
+                      <TableCell key={c.id} className="whitespace-nowrap text-xs">
+                        {c.id === 'status' ? (
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                            r.status === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                            r.status === 'Closed' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400' :
+                            'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                          }`}>
+                            {r.status}
+                          </span>
+                        ) : (
+                          (r as any)[c.id] || '-'
+                        )}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-center w-10" onClick={e => e.stopPropagation()}>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                            <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-64 p-3" align="end">
+                          <p className="text-xs font-semibold text-foreground mb-2">Loan Participants</p>
+                          {grouped.size === 0 ? (
+                            <p className="text-xs text-muted-foreground">No participants.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {[...grouped.entries()].map(([cap, names]) => (
+                                <div key={cap}>
+                                  <p className="text-xs font-medium text-muted-foreground">{cap}</p>
+                                  {names.map((n, i) => (
+                                    <p key={i} className="text-xs text-foreground pl-2">{n}</p>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </PopoverContent>
+                      </Popover>
                     </TableCell>
-                  ))}
-                </TableRow>
-              ))
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
