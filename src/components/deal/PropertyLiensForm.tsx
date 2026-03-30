@@ -175,10 +175,7 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
         </DirtyFieldWrapper>
 
         <DirtyFieldWrapper fieldKey={FIELD_KEYS.lastChecked}>
-          <div>
-            <Label className="text-sm text-foreground">Last Checked</Label>
-            <Input type="date" value={getFieldValue(FIELD_KEYS.lastChecked)} onChange={(e) => onValueChange(FIELD_KEYS.lastChecked, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
-          </div>
+          {renderDatePicker(FIELD_KEYS.lastChecked, 'Last Checked')}
         </DirtyFieldWrapper>
 
         <div>
