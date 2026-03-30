@@ -168,6 +168,18 @@ const ContactBorrowersPage: React.FC = () => {
       return '-';
     }
 
+    // Cell phone: stored as phone.mobile or phone.cell
+    if (columnId === 'phone.cell') {
+      const val = cd['phone.cell'] || cd['phone.mobile'] || '';
+      return val || '-';
+    }
+
+    // TIN: stored as tin or tax_id
+    if (columnId === 'tax_id') {
+      const val = cd['tax_id'] || cd['tin'] || '';
+      return val || '-';
+    }
+
     // Boolean columns
     if (BOOLEAN_COLUMNS.has(columnId)) {
       const val = cd[columnId];
