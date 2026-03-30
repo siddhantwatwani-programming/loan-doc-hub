@@ -25,7 +25,7 @@ interface UseContactsCrudOptions {
   pageSize?: number;
 }
 
-export function useContactsCrud({ contactType, pageSize = 25 }: UseContactsCrudOptions) {
+export function useContactsCrud({ contactType, pageSize = 10 }: UseContactsCrudOptions) {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<ContactRecord[]>([]);
   const [totalCount, setTotalCount] = useState(0);
