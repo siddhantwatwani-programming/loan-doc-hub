@@ -137,18 +137,38 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
     </DirtyFieldWrapper>
   );
 
+  const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
+
+  const safeParseDateStr = (val: string): Date | undefined => {
+    if (!val) return undefined;
+    try {
+      const d = parse(val, 'yyyy-MM-dd', new Date());
+      return isValid(d) ? d : undefined;
+    } catch { return undefined; }
+  };
+
   const renderDateField = (key: string, label: string) => (
     <DirtyFieldWrapper fieldKey={key}>
       <div className="flex items-center gap-3">
         <Label className={LABEL_CLASS}>{label}</Label>
-        <Input
-          id={key}
-          type="date"
-          value={getValue(key)}
-          onChange={(e) => setValue(key, e.target.value)}
-          disabled={disabled}
-          className="h-8 text-sm flex-1"
-        />
+        <Popover open={datePickerStates[key] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [key]: open }))}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn('h-8 text-sm flex-1 justify-start text-left font-normal', !getValue(key) && 'text-muted-foreground')} disabled={disabled}>
+              {getValue(key) && safeParseDateStr(getValue(key)) ? format(safeParseDateStr(getValue(key))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+              <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+            <EnhancedCalendar
+              mode="single"
+              selected={safeParseDateStr(getValue(key))}
+              onSelect={(date) => { if (date) setValue(key, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
+              onClear={() => { setValue(key, ''); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
+              onToday={() => { setValue(key, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
       </div>
     </DirtyFieldWrapper>
   );
