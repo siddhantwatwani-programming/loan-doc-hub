@@ -41,7 +41,7 @@ const ALL_COLUMNS = [
   { id: 'maturityDate', label: 'Maturity Date' },
 ];
 
-const ROLE_FILTER_OPTIONS = ['Borrower (Primary)', 'Co-Borrower', 'Additional Guarantor', 'Trustee', 'Co-Trustee', 'Managing Member', 'Authorized Signer'];
+const ROLE_FILTER_OPTIONS = ['Borrower (Primary)', 'Co-Borrower', 'Additional Guarantor', 'Trustee', 'Co-Trustee', 'Managing Member', 'Authorized Signer', 'Lender', 'Broker'];
 const STATUS_FILTER_OPTIONS = ['Active', 'Closed', 'Default'];
 
 // Map capacity values from deal_section_values to display roles
@@ -53,6 +53,18 @@ const CAPACITY_TO_ROLE: Record<string, string> = {
   'co_trustee': 'Co-Trustee',
   'managing_member': 'Managing Member',
   'authorized_signer': 'Authorized Signer',
+  'primary_lender': 'Primary Lender',
+  'participant_lender': 'Participant Lender',
+  'syndicate_lender': 'Syndicate Lender',
+  'authorized_party': 'Authorized Party',
+};
+
+// Fallback: map deal_participants.role to a display label
+const ROLE_FALLBACK: Record<string, string> = {
+  'borrower': 'Borrower (Primary)',
+  'lender': 'Lender',
+  'broker': 'Broker',
+  'other': 'Other',
 };
 
 const VALID_CAPACITIES = new Set(Object.keys(CAPACITY_TO_ROLE));
