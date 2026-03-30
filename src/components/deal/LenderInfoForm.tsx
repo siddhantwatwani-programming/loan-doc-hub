@@ -303,16 +303,16 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                     <CalendarIcon className="ml-auto h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <EnhancedCalendar
-                    mode="single"
-                    selected={safeParseDateStr(getValue('dob'))}
-                    onSelect={(date) => { handleChange('dob', date ? format(date, 'yyyy-MM-dd') : ''); setDobOpen(false); }}
-                    onClear={() => { handleChange('dob', ''); setDobOpen(false); }}
-                    onToday={() => { handleChange('dob', format(new Date(), 'yyyy-MM-dd')); setDobOpen(false); }}
-                    initialFocus
-                  />
-                </PopoverContent>
+                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                   <EnhancedCalendar
+                     mode="single"
+                     selected={safeParseDateStr(getValue('dob'))}
+                     onSelect={(date) => { handleChange('dob', date ? format(date, 'yyyy-MM-dd') : ''); setDobOpen(false); }}
+                     onClear={() => { handleChange('dob', ''); setDobOpen(false); }}
+                     onToday={() => { handleChange('dob', format(new Date(), 'yyyy-MM-dd')); setDobOpen(false); }}
+                     initialFocus
+                   />
+                 </PopoverContent>
               </Popover>
             </div>)}
 
