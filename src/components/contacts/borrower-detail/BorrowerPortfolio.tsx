@@ -520,41 +520,76 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
                   className="whitespace-nowrap text-xs"
                 />
               ))}
+              <TableHead className="whitespace-nowrap text-xs w-10" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={activeColumns.length} className="text-center py-8 text-muted-foreground text-sm">
+                <TableCell colSpan={activeColumns.length + 1} className="text-center py-8 text-muted-foreground text-sm">
                   Loading portfolio...
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={activeColumns.length} className="text-center py-8 text-muted-foreground text-sm">
+                <TableCell colSpan={activeColumns.length + 1} className="text-center py-8 text-muted-foreground text-sm">
                   No loans found for this borrower
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map(r => (
-                <TableRow key={r.id} onClick={() => handleRowClick(r)} className="cursor-pointer hover:bg-muted/50">
-                  {activeColumns.map(c => (
-                    <TableCell key={c.id} className="whitespace-nowrap text-xs">
-                      {c.id === 'status' ? (
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          r.status === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                          r.status === 'Closed' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400' :
-                          'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                        }`}>
-                          {r.status}
-                        </span>
-                      ) : (
-                        (r as any)[c.id] || '-'
-                      )}
+              filtered.map(r => {
+                const grouped = new Map<string, string[]>();
+                r.participants.forEach(pt => {
+                  const list = grouped.get(pt.capacity) || [];
+                  list.push(pt.name);
+                  grouped.set(pt.capacity, list);
+                });
+                return (
+                  <TableRow key={r.id} onClick={() => handleRowClick(r)} className="cursor-pointer hover:bg-muted/50">
+                    {activeColumns.map(c => (
+                      <TableCell key={c.id} className="whitespace-nowrap text-xs">
+                        {c.id === 'status' ? (
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                            r.status === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                            r.status === 'Closed' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400' :
+                            'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                          }`}>
+                            {r.status}
+                          </span>
+                        ) : (
+                          (r as any)[c.id] || '-'
+                        )}
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-center w-10" onClick={e => e.stopPropagation()}>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                            <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-64 p-3" align="end">
+                          <p className="text-xs font-semibold text-foreground mb-2">Loan Participants</p>
+                          {grouped.size === 0 ? (
+                            <p className="text-xs text-muted-foreground">No participants.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {[...grouped.entries()].map(([cap, names]) => (
+                                <div key={cap}>
+                                  <p className="text-xs font-medium text-muted-foreground">{cap}</p>
+                                  {names.map((n, i) => (
+                                    <p key={i} className="text-xs text-foreground pl-2">{n}</p>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </PopoverContent>
+                      </Popover>
                     </TableCell>
-                  ))}
-                </TableRow>
-              ))
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
