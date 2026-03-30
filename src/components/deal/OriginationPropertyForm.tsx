@@ -55,6 +55,7 @@ export const OriginationPropertyForm: React.FC<OriginationPropertyFormProps> = (
   onValueChange,
   disabled = false,
 }) => {
+  const [yearBuiltOpen, setYearBuiltOpen] = React.useState(false);
   const v = (key: string) => values[key] || '';
   const sv = (key: string, val: string) => onValueChange(key, val);
   const bv = (key: string) => values[key] === 'true';
