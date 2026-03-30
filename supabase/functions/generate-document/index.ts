@@ -395,6 +395,12 @@ async function generateSingleDocument(
       }) || borrowerParticipants[0];
 
       // Select additional guarantor BEFORE co-borrower to prevent fallback collision
+      console.log(`[generate-document] Borrower participants: ${borrowerParticipants.length}, primary: ${primaryBorrower?.name || 'none'}`);
+      for (const bp of borrowerParticipants) {
+        const bpc = bp.contact_id ? contactRowsByUuid.get(bp.contact_id) : null;
+        const bpCap = bpc?.contact_data?.capacity;
+        console.log(`[generate-document]   participant: name=${bp.name}, contact_id=${bp.contact_id}, capacity=${bpCap}, isPrimary=${bp === primaryBorrower}`);
+      }
       const guarantorParticipant = borrowerParticipants.find((p: any) => {
         if (!p.contact_id) return false;
         const c = contactRowsByUuid.get(p.contact_id);
@@ -410,6 +416,8 @@ async function generateSingleDocument(
         return !capLower.includes("primary") && !capLower.includes("co-borrower")
           && !capLower.includes("co-trustee") && !capLower.includes("trustee");
       });
+
+      console.log(`[generate-document] Guarantor selected: ${guarantorParticipant?.name || 'NONE'}, contact_id=${guarantorParticipant?.contact_id || 'NONE'}`);
 
       // Select co-borrower (check contact_data.capacity, or fall back to second borrower excluding guarantor)
       const coBorrower = borrowerParticipants.find((p: any) => {
@@ -449,6 +457,8 @@ async function generateSingleDocument(
           const email = cd.email || gc.email || "";
           const phone = cd["phone.cell"] || cd["phone.work"] || cd["phone.home"] || gc.phone || "";
 
+          console.log(`[generate-document] Guarantor injection: fullName="${fullName}", firstName="${firstName}", lastName="${lastName}"`);
+
           setIfEmpty("br_p_guarantoFullName", fullName);
           setIfEmpty("br_p_guarantoFirstName", firstName);
           setIfEmpty("br_p_guarantoLastName", lastName);
@@ -459,8 +469,11 @@ async function generateSingleDocument(
           setIfEmpty("br_ag_email", email);
           setIfEmpty("br_ag_phone", phone);
 
+          console.log(`[generate-document] After setIfEmpty, br_ag_fullName = "${fieldValues.get("br_ag_fullName")?.rawValue}"`);
           debugLog(`[generate-document] Injected guarantor contact fields from participant (contact ${gc.contact_id})`);
         }
+      } else {
+        console.log(`[generate-document] WARNING: No guarantor participant found!`);
       }
 
       // Inject lender
