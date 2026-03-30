@@ -565,7 +565,31 @@ async function generateSingleDocument(
       }
     }
 
-    debugLog(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);
+    // Bridge dot-notation origination keys to short-form aliases
+    // e.g., origination_esc.escrow_number -> escrow_number
+    // This ensures legacy template tags can resolve origination fields
+    for (const [key, val] of [...fieldValues.entries()]) {
+      if (key.startsWith("origination_")) {
+        const dotIdx = key.indexOf(".");
+        if (dotIdx > 0) {
+          const shortKey = key.substring(dotIdx + 1);
+          if (shortKey && !fieldValues.has(shortKey)) {
+            fieldValues.set(shortKey, val);
+          }
+        }
+      }
+    }
+
+    console.log(`[generate-document] Resolved ${fieldValues.size} field values for ${template.name}`);
+    // Log a sample of field values for debugging
+    const sampleKeys = [...fieldValues.keys()].slice(0, 30);
+    console.log(`[generate-document] Sample field keys: ${sampleKeys.join(", ")}`);
+    // Log specific fields we expect to find
+    const debugFields = ["ln_p_loanAmount", "of_fe_801LenderLoanOrigin", "pr_p_street", "br_p_fullName", "of_re_interestRate", "of_re_impoundHazardIns"];
+    for (const df of debugFields) {
+      const val = fieldValues.get(df);
+      console.log(`[generate-document] Field "${df}" = ${val ? JSON.stringify(val) : "NOT FOUND"}`);
+    }
 
     // Inject systemDate so only templates using {{systemDate}} get the current date
     const systemDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
