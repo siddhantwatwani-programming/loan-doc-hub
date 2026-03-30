@@ -73,6 +73,7 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
   onValueChange,
   disabled = false,
 }) => {
+  const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
   return (
     <div className="space-y-4">
       {/* Loan Information */}
