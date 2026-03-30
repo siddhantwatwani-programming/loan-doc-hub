@@ -43,6 +43,15 @@ export const TrustLedgerModal: React.FC<TrustLedgerModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<TrustLedgerEntry>(getEmptyEntry());
   const [showConfirm, setShowConfirm] = useState(false);
+  const [dateOpen, setDateOpen] = useState(false);
+
+  const safeParseDateStr = (val: string): Date | undefined => {
+    if (!val) return undefined;
+    try {
+      const d = parse(val, 'yyyy-MM-dd', new Date());
+      return isValid(d) ? d : undefined;
+    } catch { return undefined; }
+  };
 
   useEffect(() => {
     if (open) setFormData(entry ? { ...entry } : getEmptyEntry());
