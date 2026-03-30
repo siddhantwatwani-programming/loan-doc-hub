@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Download, Paperclip, FileDown } from 'lucide-react';
+import { Plus, Download, Paperclip, FileDown, CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -18,6 +18,10 @@ import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
+import { format, parse, isValid } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export interface AttachmentMeta {
   name: string;

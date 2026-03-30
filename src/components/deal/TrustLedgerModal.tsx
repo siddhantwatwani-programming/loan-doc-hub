@@ -85,7 +85,24 @@ export const TrustLedgerModal: React.FC<TrustLedgerModalProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs text-foreground">Date</Label>
-                <Input type="date" value={formData.date} onChange={e => handleChange('date', e.target.value)} className="h-8 text-xs" />
+                <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn('h-8 text-xs w-full justify-start text-left font-normal', !formData.date && 'text-muted-foreground')}>
+                      {formData.date && safeParseDateStr(formData.date) ? format(safeParseDateStr(formData.date)!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                      <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                    <EnhancedCalendar
+                      mode="single"
+                      selected={safeParseDateStr(formData.date)}
+                      onSelect={(date) => { if (date) handleChange('date', format(date, 'yyyy-MM-dd')); setDateOpen(false); }}
+                      onClear={() => { handleChange('date', ''); setDateOpen(false); }}
+                      onToday={() => { handleChange('date', format(new Date(), 'yyyy-MM-dd')); setDateOpen(false); }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-foreground">Reference</Label>
