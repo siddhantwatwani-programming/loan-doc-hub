@@ -132,21 +132,29 @@ export const GridExportDialog: React.FC<GridExportDialogProps> = ({
           <div className="space-y-2">
             <Label className="text-sm font-medium">Date Range (optional)</Label>
             <div className="flex items-center gap-2">
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="h-8 text-xs"
-                placeholder="From"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn('h-8 text-xs flex-1 justify-start text-left font-normal', !dateFrom && 'text-muted-foreground')}>
+                    {dateFrom ? (() => { try { const d = parse(dateFrom, 'yyyy-MM-dd', new Date()); return isValid(d) ? format(d, 'dd-MM-yyyy') : dateFrom; } catch { return dateFrom; } })() : 'From'}
+                    <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                  <EnhancedCalendar mode="single" selected={dateFrom ? (() => { try { const d = parse(dateFrom, 'yyyy-MM-dd', new Date()); return isValid(d) ? d : undefined; } catch { return undefined; } })() : undefined} onSelect={(d) => setDateFrom(d ? format(d, 'yyyy-MM-dd') : '')} onClear={() => setDateFrom('')} onToday={() => setDateFrom(format(new Date(), 'yyyy-MM-dd'))} initialFocus />
+                </PopoverContent>
+              </Popover>
               <span className="text-xs text-muted-foreground">to</span>
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="h-8 text-xs"
-                placeholder="To"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn('h-8 text-xs flex-1 justify-start text-left font-normal', !dateTo && 'text-muted-foreground')}>
+                    {dateTo ? (() => { try { const d = parse(dateTo, 'yyyy-MM-dd', new Date()); return isValid(d) ? format(d, 'dd-MM-yyyy') : dateTo; } catch { return dateTo; } })() : 'To'}
+                    <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                  <EnhancedCalendar mode="single" selected={dateTo ? (() => { try { const d = parse(dateTo, 'yyyy-MM-dd', new Date()); return isValid(d) ? d : undefined; } catch { return undefined; } })() : undefined} onSelect={(d) => setDateTo(d ? format(d, 'yyyy-MM-dd') : '')} onClear={() => setDateTo('')} onToday={() => setDateTo(format(new Date(), 'yyyy-MM-dd'))} initialFocus />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
