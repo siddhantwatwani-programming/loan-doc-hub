@@ -96,6 +96,15 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
   const isPayoff = lien.existingPayoff === 'true';
   const isPaydown = lien.existingPaydown === 'true';
   const isSeniorTracking = lien.seniorLienTracking === 'true';
+  const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
+
+  const safeParseDateStr = (val: string): Date | undefined => {
+    if (!val) return undefined;
+    try {
+      const d = parse(val, 'yyyy-MM-dd', new Date());
+      return isValid(d) ? d : undefined;
+    } catch { return undefined; }
+  };
 
   // Handle "This Loan" checkbox — auto-populate from Loan data
   const handleThisLoanChange = (checked: boolean) => {
