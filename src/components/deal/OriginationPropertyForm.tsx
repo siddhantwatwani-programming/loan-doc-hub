@@ -55,6 +55,7 @@ export const OriginationPropertyForm: React.FC<OriginationPropertyFormProps> = (
   onValueChange,
   disabled = false,
 }) => {
+  const [yearBuiltOpen, setYearBuiltOpen] = React.useState(false);
   const v = (key: string) => values[key] || '';
   const sv = (key: string, val: string) => onValueChange(key, val);
   const bv = (key: string) => values[key] === 'true';
@@ -130,18 +131,18 @@ export const OriginationPropertyForm: React.FC<OriginationPropertyFormProps> = (
       <DirtyFieldWrapper fieldKey={FK.year_built}>
         <div className="flex items-center gap-2">
           <Label className="w-[180px] text-sm shrink-0">Year Built</Label>
-          <Popover>
+          <Popover open={yearBuiltOpen} onOpenChange={setYearBuiltOpen}>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-sm', !v(FK.year_built) && 'text-muted-foreground')} disabled={disabled}>
-                {v(FK.year_built) ? format(parseDate(v(FK.year_built))!, 'MM/dd/yyyy') : 'Date'}
+                {v(FK.year_built) ? format(parseDate(v(FK.year_built))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
                 <CalendarIcon className="ml-auto h-3.5 w-3.5" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 z-[9999]" align="start">
               <EnhancedCalendar mode="single" selected={parseDate(v(FK.year_built))}
-                onSelect={(date) => date && sv(FK.year_built, format(date, 'yyyy-MM-dd'))}
-                onClear={() => sv(FK.year_built, '')}
-                onToday={() => sv(FK.year_built, format(new Date(), 'yyyy-MM-dd'))}
+                onSelect={(date) => { if (date) sv(FK.year_built, format(date, 'yyyy-MM-dd')); setYearBuiltOpen(false); }}
+                onClear={() => { sv(FK.year_built, ''); setYearBuiltOpen(false); }}
+                onToday={() => { sv(FK.year_built, format(new Date(), 'yyyy-MM-dd')); setYearBuiltOpen(false); }}
                 initialFocus />
             </PopoverContent>
           </Popover>

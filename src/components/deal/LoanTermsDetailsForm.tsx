@@ -3,6 +3,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
+import { CalendarIcon } from 'lucide-react';
+import { format, parse, isValid } from 'date-fns';
+import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
@@ -125,11 +131,47 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
     );
   };
 
-  const renderInlineField = (fieldKey: string, label: string, type: 'text' | 'date' = 'text') => (
+  const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
+
+  const safeParseDateStr = (val: string): Date | undefined => {
+    if (!val) return undefined;
+    try {
+      const d = parse(val, 'yyyy-MM-dd', new Date());
+      return isValid(d) ? d : undefined;
+    } catch { return undefined; }
+  };
+
+  const renderInlineDateField = (fieldKey: string, label: string) => (
     <DirtyFieldWrapper fieldKey={fieldKey}>
       <div className="flex items-center gap-2">
         <Label className="w-[130px] shrink-0 text-xs">{label}</Label>
-        <Input id={fieldKey} value={getValue(fieldKey)} onChange={(e) => setValue(fieldKey, e.target.value)} disabled={disabled} type={type} className={`h-8 text-xs ${type === 'date' ? 'w-[220px] 3xl:w-[280px]' : 'flex-1'}`} />
+        <Popover open={datePickerStates[fieldKey] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [fieldKey]: open }))}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn('h-8 text-xs w-[220px] 3xl:w-[280px] justify-start text-left font-normal', !getValue(fieldKey) && 'text-muted-foreground')} disabled={disabled}>
+              {getValue(fieldKey) ? format(safeParseDateStr(getValue(fieldKey))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+              <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+            <EnhancedCalendar
+              mode="single"
+              selected={safeParseDateStr(getValue(fieldKey))}
+              onSelect={(date) => { if (date) setValue(fieldKey, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [fieldKey]: false })); }}
+              onClear={() => { setValue(fieldKey, ''); setDatePickerStates(prev => ({ ...prev, [fieldKey]: false })); }}
+              onToday={() => { setValue(fieldKey, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [fieldKey]: false })); }}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </DirtyFieldWrapper>
+  );
+
+  const renderInlineField = (fieldKey: string, label: string) => (
+    <DirtyFieldWrapper fieldKey={fieldKey}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[130px] shrink-0 text-xs">{label}</Label>
+        <Input id={fieldKey} value={getValue(fieldKey)} onChange={(e) => setValue(fieldKey, e.target.value)} disabled={disabled} className="h-8 text-xs flex-1" />
       </div>
     </DirtyFieldWrapper>
   );
@@ -160,9 +202,9 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
           {renderInlineField(FIELD_KEYS.company, 'Company')}
           {renderInlineField(FIELD_KEYS.loanNumber, 'Loan Number')}
           {renderInlineField(FIELD_KEYS.assignedCsr, 'Assigned CSR')}
-          {renderInlineField(FIELD_KEYS.origination, 'Origination', 'date')}
-          {renderInlineField(FIELD_KEYS.boarding, 'Boarding', 'date')}
-          {renderInlineField(FIELD_KEYS.maturityDate, 'Maturity Date', 'date')}
+          {renderInlineDateField(FIELD_KEYS.origination, 'Origination')}
+          {renderInlineDateField(FIELD_KEYS.boarding, 'Boarding')}
+          {renderInlineDateField(FIELD_KEYS.maturityDate, 'Maturity Date')}
         </div>
 
         {/* Middle Column */}

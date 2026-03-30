@@ -180,7 +180,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
             <CalendarIcon className="ml-auto h-3 w-3" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent className="w-auto p-0 z-[9999]" align="start">
           <EnhancedCalendar
             mode="single"
             selected={isValidDate ? selectedDate : undefined}

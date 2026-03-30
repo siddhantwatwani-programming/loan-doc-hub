@@ -59,6 +59,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   showValidation = false,
   disabled = false,
 }) => {
+  const [datePickerStates, setDatePickerStates] = React.useState<Record<string, boolean>>({});
   const getFieldValue = (key: string) => values[key] || '';
   const sanitizeNumericValue = (value: string): string => value.replace(/[^0-9.-]/g, '');
   const handleCurrencyChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value));
@@ -207,18 +208,18 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.appraisedDate}>
             <div className="flex items-center gap-2">
               <Label className="w-[110px] shrink-0 text-xs text-foreground">Appraisal Date</Label>
-              <Popover>
+              <Popover open={datePickerStates[FIELD_KEYS.appraisedDate] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.appraisedDate]: open }))}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !getFieldValue(FIELD_KEYS.appraisedDate) && 'text-muted-foreground')} disabled={disabled}>
                     {getFieldValue(FIELD_KEYS.appraisedDate) ? format(parseDate(getFieldValue(FIELD_KEYS.appraisedDate))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
                     <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
                   <EnhancedCalendar mode="single" selected={parseDate(getFieldValue(FIELD_KEYS.appraisedDate))}
-                    onSelect={(date) => date && onValueChange(FIELD_KEYS.appraisedDate, format(date, 'yyyy-MM-dd'))}
-                    onClear={() => onValueChange(FIELD_KEYS.appraisedDate, '')}
-                    onToday={() => onValueChange(FIELD_KEYS.appraisedDate, format(new Date(), 'yyyy-MM-dd'))}
+                    onSelect={(date) => { if (date) onValueChange(FIELD_KEYS.appraisedDate, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.appraisedDate]: false })); }}
+                    onClear={() => { onValueChange(FIELD_KEYS.appraisedDate, ''); setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.appraisedDate]: false })); }}
+                    onToday={() => { onValueChange(FIELD_KEYS.appraisedDate, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.appraisedDate]: false })); }}
                     initialFocus />
                 </PopoverContent>
               </Popover>
@@ -267,18 +268,18 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <Label className="w-[110px] shrink-0 text-xs text-foreground">Year Built</Label>
-            <Popover>
+            <Popover open={datePickerStates[FIELD_KEYS.yearBuilt] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.yearBuilt]: open }))}>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !getFieldValue(FIELD_KEYS.yearBuilt) && 'text-muted-foreground')} disabled={disabled}>
                   {getFieldValue(FIELD_KEYS.yearBuilt) ? format(parseDate(getFieldValue(FIELD_KEYS.yearBuilt))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
                   <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0 z-[9999]" align="start">
                 <EnhancedCalendar mode="single" selected={parseDate(getFieldValue(FIELD_KEYS.yearBuilt))}
-                  onSelect={(date) => date && onValueChange(FIELD_KEYS.yearBuilt, format(date, 'yyyy-MM-dd'))}
-                  onClear={() => onValueChange(FIELD_KEYS.yearBuilt, '')}
-                  onToday={() => onValueChange(FIELD_KEYS.yearBuilt, format(new Date(), 'yyyy-MM-dd'))}
+                  onSelect={(date) => { if (date) onValueChange(FIELD_KEYS.yearBuilt, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.yearBuilt]: false })); }}
+                  onClear={() => { onValueChange(FIELD_KEYS.yearBuilt, ''); setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.yearBuilt]: false })); }}
+                  onToday={() => { onValueChange(FIELD_KEYS.yearBuilt, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.yearBuilt]: false })); }}
                   initialFocus />
               </PopoverContent>
             </Popover>
