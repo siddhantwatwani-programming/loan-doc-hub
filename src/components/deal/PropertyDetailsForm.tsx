@@ -268,18 +268,18 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <Label className="w-[110px] shrink-0 text-xs text-foreground">Year Built</Label>
-            <Popover>
+            <Popover open={datePickerStates[FIELD_KEYS.yearBuilt] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.yearBuilt]: open }))}>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !getFieldValue(FIELD_KEYS.yearBuilt) && 'text-muted-foreground')} disabled={disabled}>
                   {getFieldValue(FIELD_KEYS.yearBuilt) ? format(parseDate(getFieldValue(FIELD_KEYS.yearBuilt))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
                   <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0 z-[9999]" align="start">
                 <EnhancedCalendar mode="single" selected={parseDate(getFieldValue(FIELD_KEYS.yearBuilt))}
-                  onSelect={(date) => date && onValueChange(FIELD_KEYS.yearBuilt, format(date, 'yyyy-MM-dd'))}
-                  onClear={() => onValueChange(FIELD_KEYS.yearBuilt, '')}
-                  onToday={() => onValueChange(FIELD_KEYS.yearBuilt, format(new Date(), 'yyyy-MM-dd'))}
+                  onSelect={(date) => { if (date) onValueChange(FIELD_KEYS.yearBuilt, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.yearBuilt]: false })); }}
+                  onClear={() => { onValueChange(FIELD_KEYS.yearBuilt, ''); setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.yearBuilt]: false })); }}
+                  onToday={() => { onValueChange(FIELD_KEYS.yearBuilt, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.yearBuilt]: false })); }}
                   initialFocus />
               </PopoverContent>
             </Popover>

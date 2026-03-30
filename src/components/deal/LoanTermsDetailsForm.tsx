@@ -202,9 +202,9 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
           {renderInlineField(FIELD_KEYS.company, 'Company')}
           {renderInlineField(FIELD_KEYS.loanNumber, 'Loan Number')}
           {renderInlineField(FIELD_KEYS.assignedCsr, 'Assigned CSR')}
-          {renderInlineField(FIELD_KEYS.origination, 'Origination', 'date')}
-          {renderInlineField(FIELD_KEYS.boarding, 'Boarding', 'date')}
-          {renderInlineField(FIELD_KEYS.maturityDate, 'Maturity Date', 'date')}
+          {renderInlineDateField(FIELD_KEYS.origination, 'Origination')}
+          {renderInlineDateField(FIELD_KEYS.boarding, 'Boarding')}
+          {renderInlineDateField(FIELD_KEYS.maturityDate, 'Maturity Date')}
         </div>
 
         {/* Middle Column */}

@@ -471,20 +471,20 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 disabled={disabled}
               />
               <Label className="text-sm text-muted-foreground mr-2">Investor Questionaire Due</Label>
-              <Popover>
+              <Popover open={investorDateOpen} onOpenChange={setInvestorDateOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("h-7 text-xs", !getValue('investorQuestionnaireDueDate') && "text-muted-foreground")} disabled={disabled || !getBoolValue('investorQuestionnaireDue')}>
-                    {safeFormatDate(getValue('investorQuestionnaireDueDate')) || 'Date'}
+                    {safeFormatDate(getValue('investorQuestionnaireDueDate'), 'dd-MM-yyyy') || 'dd-mm-yyyy'}
                     <CalendarIcon className="ml-auto h-3 w-3" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
                   <EnhancedCalendar
                     mode="single"
                     selected={safeParseDateStr(getValue('investorQuestionnaireDueDate'))}
-                    onSelect={(date) => handleChange('investorQuestionnaireDueDate', date ? format(date, 'yyyy-MM-dd') : '')}
-                    onClear={() => handleChange('investorQuestionnaireDueDate', '')}
-                    onToday={() => handleChange('investorQuestionnaireDueDate', format(new Date(), 'yyyy-MM-dd'))}
+                    onSelect={(date) => { handleChange('investorQuestionnaireDueDate', date ? format(date, 'yyyy-MM-dd') : ''); setInvestorDateOpen(false); }}
+                    onClear={() => { handleChange('investorQuestionnaireDueDate', ''); setInvestorDateOpen(false); }}
+                    onToday={() => { handleChange('investorQuestionnaireDueDate', format(new Date(), 'yyyy-MM-dd')); setInvestorDateOpen(false); }}
                     initialFocus
                   />
                 </PopoverContent>
