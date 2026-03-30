@@ -164,6 +164,74 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           }
         });
 
+        // 5b. Fetch ALL participants across all linked deals for the info popover
+        const { data: allDealParticipants } = await supabase
+          .from('deal_participants')
+          .select('deal_id, role, name, contact_id')
+          .in('deal_id', dealIds);
+
+        // 5c. Fetch contact records for those participants to get contact_data.capacity
+        const allContactIds = [...new Set((allDealParticipants || []).map(p => p.contact_id).filter(Boolean))] as string[];
+        const contactCapacityMap = new Map<string, string>();
+        if (allContactIds.length > 0) {
+          const { data: contactRecords } = await supabase
+            .from('contacts')
+            .select('id, contact_data')
+            .in('id', allContactIds);
+          (contactRecords || []).forEach(c => {
+            const cd = c.contact_data as Record<string, any> | null;
+            if (cd?.capacity && typeof cd.capacity === 'string') {
+              contactCapacityMap.set(c.id, cd.capacity);
+            }
+          });
+        }
+
+        // Build per-deal participants map with resolved capacities
+        // Also build a capacity map per contact_id per deal from participant section values
+        const perDealContactCapacity = new Map<string, Map<string, string>>();
+        (participantSections || []).forEach(ps => {
+          const fv = ps.field_values as Record<string, any>;
+          if (!fv) return;
+          const dealCapMap = perDealContactCapacity.get(ps.deal_id) || new Map<string, string>();
+          Object.entries(fv).forEach(([key, val]) => {
+            if (key.includes('capacity') && typeof val === 'string') {
+              const contactKey = key.replace('capacity', 'contact_id');
+              const cid = fv[contactKey];
+              if (cid && typeof cid === 'string') {
+                dealCapMap.set(cid, val);
+              }
+            }
+          });
+          perDealContactCapacity.set(ps.deal_id, dealCapMap);
+        });
+
+        // Helper: resolve display capacity for a participant
+        const resolveCapacity = (dealId: string, contactId: string | null, role: string): string => {
+          // Priority 1: section values
+          if (contactId) {
+            const sectionCap = perDealContactCapacity.get(dealId)?.get(contactId);
+            if (sectionCap && CAPACITY_TO_ROLE[sectionCap]) return CAPACITY_TO_ROLE[sectionCap];
+          }
+          // Priority 2: contact_data.capacity
+          if (contactId) {
+            const contactCap = contactCapacityMap.get(contactId);
+            if (contactCap && CAPACITY_TO_ROLE[contactCap]) return CAPACITY_TO_ROLE[contactCap];
+          }
+          // Priority 3: role fallback
+          return ROLE_FALLBACK[role] || role || 'Other';
+        };
+
+        // Build allParticipantsMap: dealId -> ParticipantInfo[]
+        const allParticipantsMap = new Map<string, ParticipantInfo[]>();
+        (allDealParticipants || []).forEach(dp => {
+          const list = allParticipantsMap.get(dp.deal_id) || [];
+          list.push({
+            name: dp.name || 'Unknown',
+            capacity: resolveCapacity(dp.deal_id, dp.contact_id, dp.role),
+          });
+          allParticipantsMap.set(dp.deal_id, list);
+        });
+
         // 6. Also fetch funding section for lender funding data
         const { data: fundingSections } = await supabase
           .from('deal_section_values')
@@ -207,8 +275,7 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           if (!deal) continue;
 
           const loanTerms = sectionMap.get(p.deal_id) || {};
-          const capacity = participantCapacityMap.get(p.deal_id) || '';
-          const displayRole = CAPACITY_TO_ROLE[capacity] || 'Borrower (Primary)';
+          const displayRole = resolveCapacity(p.deal_id, contactDbId, p.role);
 
           // Map deal status to portfolio status
           let displayStatus = 'Active';
@@ -265,6 +332,7 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
             principalBalance: formatCurrency(displayPrincipalBalance),
             interestRate: formatPercent(noteRateVal),
             maturityDate: formatDate(maturityDateVal),
+            participants: allParticipantsMap.get(p.deal_id) || [],
           });
         }
 
