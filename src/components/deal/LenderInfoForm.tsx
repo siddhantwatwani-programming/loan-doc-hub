@@ -461,13 +461,18 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             {wrapField('investorQuestionnaireDue', <div className="flex items-center gap-2">
               <Checkbox
                 checked={getBoolValue('investorQuestionnaireDue')}
-                onCheckedChange={(checked) => handleChange('investorQuestionnaireDue', !!checked)}
+                onCheckedChange={(checked) => {
+                  handleChange('investorQuestionnaireDue', !!checked);
+                  if (!checked) {
+                    handleChange('investorQuestionnaireDueDate', '');
+                  }
+                }}
                 disabled={disabled}
               />
               <Label className="text-sm text-muted-foreground mr-2">Investor Questionaire Due</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("h-7 text-xs", !getValue('investorQuestionnaireDueDate') && "text-muted-foreground")} disabled={disabled}>
+                  <Button variant="outline" className={cn("h-7 text-xs", !getValue('investorQuestionnaireDueDate') && "text-muted-foreground")} disabled={disabled || !getBoolValue('investorQuestionnaireDue')}>
                     {safeFormatDate(getValue('investorQuestionnaireDueDate')) || 'Date'}
                     <CalendarIcon className="ml-auto h-3 w-3" />
                   </Button>
