@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Home } from 'lucide-react';
+import { Home, CalendarIcon } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -11,6 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
+import { format, parse, isValid } from 'date-fns';
+import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
@@ -48,6 +53,15 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
   disabled = false,
 }) => {
   const getFieldValue = (key: string) => values[key] || '';
+  const [expirationOpen, setExpirationOpen] = useState(false);
+
+  const safeParseDateStr = (val: string): Date | undefined => {
+    if (!val) return undefined;
+    try {
+      const d = parse(val, 'yyyy-MM-dd', new Date());
+      return isValid(d) ? d : undefined;
+    } catch { return undefined; }
+  };
 
   // Pulls in property addresses for the dropdown
   const propertyAddress = values['property1.street'] || 'Unassigned';
@@ -131,7 +145,24 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.expiration}>
             <div>
               <Label className="text-sm text-foreground">Expiration</Label>
-              <Input type="date" value={getFieldValue(FIELD_KEYS.expiration)} onChange={(e) => onValueChange(FIELD_KEYS.expiration, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+              <Popover open={expirationOpen} onOpenChange={setExpirationOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn('h-8 text-sm mt-1 w-full justify-start text-left font-normal', !getFieldValue(FIELD_KEYS.expiration) && 'text-muted-foreground')} disabled={disabled}>
+                    {getFieldValue(FIELD_KEYS.expiration) && safeParseDateStr(getFieldValue(FIELD_KEYS.expiration)) ? format(safeParseDateStr(getFieldValue(FIELD_KEYS.expiration))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                    <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                  <EnhancedCalendar
+                    mode="single"
+                    selected={safeParseDateStr(getFieldValue(FIELD_KEYS.expiration))}
+                    onSelect={(date) => { if (date) onValueChange(FIELD_KEYS.expiration, format(date, 'yyyy-MM-dd')); setExpirationOpen(false); }}
+                    onClear={() => { onValueChange(FIELD_KEYS.expiration, ''); setExpirationOpen(false); }}
+                    onToday={() => { onValueChange(FIELD_KEYS.expiration, format(new Date(), 'yyyy-MM-dd')); setExpirationOpen(false); }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </DirtyFieldWrapper>
 

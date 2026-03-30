@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Download, Paperclip, FileDown } from 'lucide-react';
+import { Plus, Download, Paperclip, FileDown, CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -18,6 +18,10 @@ import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
+import { format, parse, isValid } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export interface AttachmentMeta {
   name: string;
@@ -210,18 +214,17 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
             <label className="text-xs text-muted-foreground whitespace-nowrap">As Of:</label>
-            <input
-              type="date"
-              value={asOfFilter || ''}
-              onChange={(e) => onAsOfFilterChange?.(e.target.value)}
-              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-              disabled={disabled}
-            />
-            {asOfFilter && !disabled && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onAsOfFilterChange?.('')}>
-                <span className="text-xs">✕</span>
-              </Button>
-            )}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn('h-8 text-xs gap-1 w-[130px] justify-start', !asOfFilter && 'text-muted-foreground')} disabled={disabled}>
+                  {asOfFilter ? (() => { try { const d = parse(asOfFilter, 'yyyy-MM-dd', new Date()); return isValid(d) ? format(d, 'dd-MM-yyyy') : asOfFilter; } catch { return asOfFilter; } })() : 'dd-mm-yyyy'}
+                  <CalendarIcon className="h-3 w-3 ml-auto" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 z-[9999]" align="end">
+                <EnhancedCalendar mode="single" selected={asOfFilter ? (() => { try { const d = parse(asOfFilter, 'yyyy-MM-dd', new Date()); return isValid(d) ? d : undefined; } catch { return undefined; } })() : undefined} onSelect={(d) => { onAsOfFilterChange?.(d ? format(d, 'yyyy-MM-dd') : ''); }} onClear={() => { onAsOfFilterChange?.(''); }} onToday={() => { onAsOfFilterChange?.(format(new Date(), 'yyyy-MM-dd')); }} initialFocus />
+              </PopoverContent>
+            </Popover>
           </div>
           <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} disabled={disabled} />
           <Button variant="outline" size="sm" onClick={onAddNote} disabled={disabled} className="gap-1">

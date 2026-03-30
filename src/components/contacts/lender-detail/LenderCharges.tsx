@@ -23,7 +23,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Calendar } from '@/components/ui/calendar';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { format } from 'date-fns';
 
 interface ChargeRow {
@@ -382,14 +382,15 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0 !z-[9999]" align="start">
-                      <Calendar
+                      <EnhancedCalendar
                         mode="single"
                         selected={(newCharge as any).date ? new Date((newCharge as any).date) : undefined}
                         onSelect={(date) => {
                           setNewCharge(prev => ({ ...prev, date: date ? format(date, 'MM/dd/yyyy') : '' }));
                         }}
+                        onClear={() => setNewCharge(prev => ({ ...prev, date: '' }))}
+                        onToday={() => setNewCharge(prev => ({ ...prev, date: format(new Date(), 'MM/dd/yyyy') }))}
                         initialFocus
-                        className="p-3 pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>

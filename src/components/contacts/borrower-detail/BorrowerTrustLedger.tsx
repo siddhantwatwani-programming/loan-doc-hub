@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { logContactEvent } from '@/hooks/useContactEventJournal';
-import { Plus, DollarSign, FileText, ArrowRightLeft, Ban, CheckSquare, Building, RefreshCw, FileCheck } from 'lucide-react';
+import { Plus, DollarSign, FileText, ArrowRightLeft, Ban, CheckSquare, Building, RefreshCw, FileCheck, CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -319,8 +321,22 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
             ].map(f => (
               <div key={f.key} className="space-y-1">
                 <Label className="text-xs">{f.label}</Label>
-                <Input type={f.type || 'text'} value={(newEntry as any)[f.key]}
-                  onChange={e => setNewEntry(prev => ({ ...prev, [f.key]: e.target.value }))} className="h-8 text-xs" />
+                {f.type === 'date' ? (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full h-8 text-xs justify-start font-normal">
+                        {(newEntry as any)[f.key] || <span className="text-muted-foreground">dd-mm-yyyy</span>}
+                        <CalendarIcon className="ml-auto h-3 w-3" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                      <EnhancedCalendar mode="single" selected={(newEntry as any)[f.key] ? new Date((newEntry as any)[f.key]) : undefined} onSelect={(date) => setNewEntry(prev => ({ ...prev, [f.key]: date ? date.toISOString().split('T')[0] : '' }))} onClear={() => setNewEntry(prev => ({ ...prev, [f.key]: '' }))} onToday={() => setNewEntry(prev => ({ ...prev, [f.key]: new Date().toISOString().split('T')[0] }))} initialFocus />
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  <Input type="text" value={(newEntry as any)[f.key]}
+                    onChange={e => setNewEntry(prev => ({ ...prev, [f.key]: e.target.value }))} className="h-8 text-xs" />
+                )}
               </div>
             ))}
             <div className="space-y-1">

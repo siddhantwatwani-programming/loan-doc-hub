@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield } from 'lucide-react';
+import { Shield, CalendarIcon } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -12,6 +12,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
+import { format, parse, isValid } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
 import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
 import { US_STATES } from '@/lib/usStates';
@@ -48,6 +52,15 @@ const getDefaultInsurance = (): InsuranceData => ({
 export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChange, insurance, onSave, isEdit, propertyOptions = [] }) => {
   const [formData, setFormData] = useState<InsuranceData>(getDefaultInsurance());
   const [showConfirm, setShowConfirm] = useState(false);
+  const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
+
+  const safeParseDateStr = (val: string): Date | undefined => {
+    if (!val) return undefined;
+    try {
+      const d = parse(val, 'yyyy-MM-dd', new Date());
+      return isValid(d) ? d : undefined;
+    } catch { return undefined; }
+  };
 
   useEffect(() => {
     if (open) setFormData(insurance ? insurance : getDefaultInsurance());
@@ -61,12 +74,33 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
 
-  const renderInlineField = (field: keyof InsuranceData, label: string, props: Record<string, any> = {}) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
-      <Input value={String(formData[field] || '')} onChange={(e) => handleChange(field, e.target.value)} className="h-7 text-xs flex-1" {...props} />
-    </div>
-  );
+  const renderInlineField = (field: keyof InsuranceData, label: string, props: Record<string, any> = {}) => {
+    if (props.type === 'date') {
+      const val = String(formData[field] || '');
+      return (
+        <div className="flex items-center gap-2">
+          <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+          <Popover open={datePickerStates[field] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [field]: open }))}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn('h-7 text-xs flex-1 justify-start text-left font-normal', !val && 'text-muted-foreground')}>
+                {val && safeParseDateStr(val) ? format(safeParseDateStr(val)!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+              <EnhancedCalendar mode="single" selected={safeParseDateStr(val)} onSelect={(date) => { if (date) handleChange(field, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [field]: false })); }} onClear={() => { handleChange(field, ''); setDatePickerStates(prev => ({ ...prev, [field]: false })); }} onToday={() => { handleChange(field, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [field]: false })); }} initialFocus />
+            </PopoverContent>
+          </Popover>
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center gap-2">
+        <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+        <Input value={String(formData[field] || '')} onChange={(e) => handleChange(field, e.target.value)} className="h-7 text-xs flex-1" {...props} />
+      </div>
+    );
+  };
 
   const renderInlineSelect = (field: keyof InsuranceData, label: string, options: string[] | { id: string; label: string }[], placeholder: string) => (
     <div className="flex items-center gap-2">

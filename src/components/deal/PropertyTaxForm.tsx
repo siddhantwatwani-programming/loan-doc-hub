@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -10,6 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
+import { CalendarIcon } from 'lucide-react';
+import { format, parse, isValid } from 'date-fns';
+import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
@@ -55,6 +61,16 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
 
   const handleChange = (key: keyof typeof FIELD_KEYS, value: string) => {
     onValueChange(FIELD_KEYS[key], value);
+  };
+
+  const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
+
+  const safeParseDateStr = (val: string): Date | undefined => {
+    if (!val) return undefined;
+    try {
+      const d = parse(val, 'yyyy-MM-dd', new Date());
+      return isValid(d) ? d : undefined;
+    } catch { return undefined; }
   };
 
   // Auto-populate Ref from APN (Legal Description tab)
@@ -130,13 +146,24 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
             {/* Next Due Date */}
             <div className="flex items-center gap-3">
               <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Next Due</Label>
-              <Input
-                type="date"
-                value={getValue('nextDueDate')}
-                onChange={(e) => handleChange('nextDueDate', e.target.value)}
-                disabled={disabled}
-                className="h-7 text-sm flex-1"
-              />
+              <Popover open={datePickerStates['nextDueDate'] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, nextDueDate: open }))}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn('h-7 text-sm flex-1 justify-start text-left font-normal', !getValue('nextDueDate') && 'text-muted-foreground')} disabled={disabled}>
+                    {getValue('nextDueDate') && safeParseDateStr(getValue('nextDueDate')) ? format(safeParseDateStr(getValue('nextDueDate'))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                    <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                  <EnhancedCalendar
+                    mode="single"
+                    selected={safeParseDateStr(getValue('nextDueDate'))}
+                    onSelect={(date) => { if (date) handleChange('nextDueDate', format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, nextDueDate: false })); }}
+                    onClear={() => { handleChange('nextDueDate', ''); setDatePickerStates(prev => ({ ...prev, nextDueDate: false })); }}
+                    onToday={() => { handleChange('nextDueDate', format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, nextDueDate: false })); }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Frequency */}
@@ -177,13 +204,24 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
                 {/* Last Verified */}
                 <div className="flex items-center gap-3">
                   <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Last Verified</Label>
-                  <Input
-                    type="date"
-                    value={getValue('lastVerified')}
-                    onChange={(e) => handleChange('lastVerified', e.target.value)}
-                    disabled={disabled}
-                    className="h-7 text-sm flex-1"
-                  />
+                  <Popover open={datePickerStates['lastVerified'] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, lastVerified: open }))}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn('h-7 text-sm flex-1 justify-start text-left font-normal', !getValue('lastVerified') && 'text-muted-foreground')} disabled={disabled}>
+                        {getValue('lastVerified') && safeParseDateStr(getValue('lastVerified')) ? format(safeParseDateStr(getValue('lastVerified'))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                        <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                      <EnhancedCalendar
+                        mode="single"
+                        selected={safeParseDateStr(getValue('lastVerified'))}
+                        onSelect={(date) => { if (date) handleChange('lastVerified', format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, lastVerified: false })); }}
+                        onClear={() => { handleChange('lastVerified', ''); setDatePickerStates(prev => ({ ...prev, lastVerified: false })); }}
+                        onToday={() => { handleChange('lastVerified', format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, lastVerified: false })); }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 {/* Status */}

@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Home } from 'lucide-react';
+import { Home, CalendarIcon } from 'lucide-react';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 import {
   Select,
@@ -12,6 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
+import { format, parse, isValid } from 'date-fns';
+import { cn } from '@/lib/utils';
 import type { LienData } from './LiensTableView';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
@@ -91,6 +96,15 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
   const isPayoff = lien.existingPayoff === 'true';
   const isPaydown = lien.existingPaydown === 'true';
   const isSeniorTracking = lien.seniorLienTracking === 'true';
+  const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
+
+  const safeParseDateStr = (val: string): Date | undefined => {
+    if (!val) return undefined;
+    try {
+      const d = parse(val, 'yyyy-MM-dd', new Date());
+      return isValid(d) ? d : undefined;
+    } catch { return undefined; }
+  };
 
   // Handle "This Loan" checkbox — auto-populate from Loan data
   const handleThisLoanChange = (checked: boolean) => {
@@ -139,14 +153,37 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
     }
   };
 
-  const renderField = (field: keyof LienData, label: string, props: Record<string, any> = {}, forceDisabled = false) => (
-    <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP[field] || `lien1.${field}`}>
-      <div className="flex items-center gap-3">
-        <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">{label}</Label>
-        <Input value={lien[field]} onChange={(e) => onChange(field, e.target.value)} disabled={disabled || forceDisabled} className={`h-7 text-sm flex-1 ${forceDisabled ? 'opacity-50 bg-muted cursor-not-allowed' : ''}`} {...props} />
-      </div>
-    </DirtyFieldWrapper>
-  );
+  const renderField = (field: keyof LienData, label: string, props: Record<string, any> = {}, forceDisabled = false) => {
+    if (props.type === 'date') {
+      const val = lien[field] || '';
+      return (
+        <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP[field] || `lien1.${field}`}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">{label}</Label>
+            <Popover open={datePickerStates[field] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [field]: open }))}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn('h-7 text-sm flex-1 justify-start text-left font-normal', !val && 'text-muted-foreground', forceDisabled && 'opacity-50 cursor-not-allowed')} disabled={disabled || forceDisabled}>
+                  {val && safeParseDateStr(val) ? format(safeParseDateStr(val)!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                  <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                <EnhancedCalendar mode="single" selected={safeParseDateStr(val)} onSelect={(date) => { if (date) onChange(field, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [field]: false })); }} onClear={() => { onChange(field, ''); setDatePickerStates(prev => ({ ...prev, [field]: false })); }} onToday={() => { onChange(field, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [field]: false })); }} initialFocus />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </DirtyFieldWrapper>
+      );
+    }
+    return (
+      <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP[field] || `lien1.${field}`}>
+        <div className="flex items-center gap-3">
+          <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">{label}</Label>
+          <Input value={lien[field]} onChange={(e) => onChange(field, e.target.value)} disabled={disabled || forceDisabled} className={`h-7 text-sm flex-1 ${forceDisabled ? 'opacity-50 bg-muted cursor-not-allowed' : ''}`} {...props} />
+        </div>
+      </DirtyFieldWrapper>
+    );
+  };
 
   const renderCurrency = (field: keyof LienData, label: string, forceDisabled = false) => (
     <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP[field] || `lien1.${field}`}>
