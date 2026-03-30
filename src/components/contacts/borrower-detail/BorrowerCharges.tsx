@@ -346,11 +346,31 @@ const BorrowerCharges: React.FC<Props> = ({ contactDbId }) => {
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label className="text-xs">Date From</Label>
-                  <Input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="h-8 text-xs" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn('h-8 text-xs w-full justify-start font-normal', !filterDateFrom && 'text-muted-foreground')}>
+                        {filterDateFrom ? (() => { try { const d = parse(filterDateFrom, 'yyyy-MM-dd', new Date()); return isValid(d) ? format(d, 'dd-MM-yyyy') : filterDateFrom; } catch { return filterDateFrom; } })() : 'dd-mm-yyyy'}
+                        <CalendarIcon className="ml-auto h-3 w-3" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                      <EnhancedCalendar mode="single" selected={filterDateFrom ? (() => { try { const d = parse(filterDateFrom, 'yyyy-MM-dd', new Date()); return isValid(d) ? d : undefined; } catch { return undefined; } })() : undefined} onSelect={(d) => setFilterDateFrom(d ? format(d, 'yyyy-MM-dd') : '')} onClear={() => setFilterDateFrom('')} onToday={() => setFilterDateFrom(format(new Date(), 'yyyy-MM-dd'))} initialFocus />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Date To</Label>
-                  <Input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="h-8 text-xs" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn('h-8 text-xs w-full justify-start font-normal', !filterDateTo && 'text-muted-foreground')}>
+                        {filterDateTo ? (() => { try { const d = parse(filterDateTo, 'yyyy-MM-dd', new Date()); return isValid(d) ? format(d, 'dd-MM-yyyy') : filterDateTo; } catch { return filterDateTo; } })() : 'dd-mm-yyyy'}
+                        <CalendarIcon className="ml-auto h-3 w-3" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                      <EnhancedCalendar mode="single" selected={filterDateTo ? (() => { try { const d = parse(filterDateTo, 'yyyy-MM-dd', new Date()); return isValid(d) ? d : undefined; } catch { return undefined; } })() : undefined} onSelect={(d) => setFilterDateTo(d ? format(d, 'yyyy-MM-dd') : '')} onClear={() => setFilterDateTo('')} onToday={() => setFilterDateTo(format(new Date(), 'yyyy-MM-dd'))} initialFocus />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </div>
