@@ -6,7 +6,7 @@
  */
 
 import type { ParsedMergeTag, FieldValueData, LabelMapping } from "./types.ts";
-import { applyTransform, formatByDataType } from "./formatting.ts";
+import { applyTransform, formatByDataType, formatCheckbox } from "./formatting.ts";
 import { resolveFieldKeyWithMap, getFieldData } from "./field-resolver.ts";
 
 const DOC_GEN_DEBUG = Deno.env.get("DOC_GEN_DEBUG") === "true";
@@ -546,6 +546,26 @@ function getLabelQuickNeedle(label: string, mapping: LabelMapping): string {
   return label.toLowerCase();
 }
 
+function replaceStaticCheckboxLabel(
+  content: string,
+  label: string,
+  checkboxValue: string,
+): { content: string; replaced: boolean } {
+  const labelEscaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const checkboxPattern = new RegExp(`([☐☑☒])((?:\\s|<[^>]+>)*)(${labelEscaped})`, 'gi');
+
+  if (!checkboxPattern.test(content)) {
+    return { content, replaced: false };
+  }
+
+  return {
+    content: content.replace(checkboxPattern, (_match, _glyph, spacing, labelText) => {
+      return `${checkboxValue}${spacing}${labelText}`;
+    }),
+    replaced: true,
+  };
+}
+
 /**
  * Perform label-based replacement for templates without explicit merge tags.
  */
@@ -613,6 +633,23 @@ export function replaceLabelBasedFields(
 
       const resolved = getFieldData(resolvedKey, fieldValues);
       const fieldData = resolved?.data || null;
+
+      if (fieldData && fieldData.dataType === 'boolean') {
+        const checkboxResult = replaceStaticCheckboxLabel(
+          result,
+          label,
+          formatCheckbox(fieldData.rawValue),
+        );
+
+        if (checkboxResult.replaced) {
+          result = checkboxResult.content;
+          resultLower = result.toLowerCase();
+          replacementCount++;
+          labelResolvedKeys.add(resolvedKey.toLowerCase());
+          debugLog(`[tag-parser] Checkbox label-replaced "${label}" -> "${formatCheckbox(fieldData.rawValue)}"`);
+          continue;
+        }
+      }
 
       if (!fieldData || fieldData.rawValue === null) {
         if (mapping.replaceNext) {
