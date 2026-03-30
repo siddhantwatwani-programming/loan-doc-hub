@@ -53,6 +53,15 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
   disabled = false,
 }) => {
   const getFieldValue = (key: string) => values[key] || '';
+  const [expirationOpen, setExpirationOpen] = useState(false);
+
+  const safeParseDateStr = (val: string): Date | undefined => {
+    if (!val) return undefined;
+    try {
+      const d = parse(val, 'yyyy-MM-dd', new Date());
+      return isValid(d) ? d : undefined;
+    } catch { return undefined; }
+  };
 
   // Pulls in property addresses for the dropdown
   const propertyAddress = values['property1.street'] || 'Unassigned';
