@@ -1231,9 +1231,9 @@ export function replaceMergeTags(
       } else {
         resolvedValue = formatByDataType(fieldData.rawValue, fieldData.dataType);
       }
-      debugLog(`[tag-parser] Replacing ${tag.tagName} -> ${transformKey} = "${resolvedValue}"`);
+      console.log(`[tag-parser] Replacing ${tag.tagName} -> ${transformKey} = "${resolvedValue.substring(0, 50)}"`);
     } else {
-      debugLog(`[tag-parser] No data for ${tag.tagName} (canonical: ${canonicalKey})`);
+      console.log(`[tag-parser] No data for ${tag.tagName} (canonical: ${canonicalKey}, ultimate: ${ultimateKey})`);
     }
     
     // XML-escape the value to prevent corruption from &, <, >, " characters
