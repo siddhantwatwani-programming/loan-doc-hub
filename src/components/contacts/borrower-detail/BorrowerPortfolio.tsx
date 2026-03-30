@@ -88,12 +88,11 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
     const load = async () => {
       setIsLoading(true);
       try {
-        // 1. Get all deal_participants for this contact with borrower role
+        // 1. Get all deal_participants for this contact (any role/capacity)
         const { data: participants, error: pErr } = await supabase
           .from('deal_participants')
-          .select('deal_id, role, name')
-          .eq('contact_id', contactDbId)
-          .eq('role', 'borrower');
+          .select('deal_id, role, name, contact_id')
+          .eq('contact_id', contactDbId);
 
         if (pErr) throw pErr;
         if (!participants || participants.length === 0) {
