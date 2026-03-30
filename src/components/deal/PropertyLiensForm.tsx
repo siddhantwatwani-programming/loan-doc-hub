@@ -42,6 +42,39 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
   disabled = false,
 }) => {
   const getFieldValue = (key: string) => values[key] || '';
+  const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
+
+  const safeParseDateStr = (val: string): Date | undefined => {
+    if (!val) return undefined;
+    try {
+      const d = parse(val, 'yyyy-MM-dd', new Date());
+      return isValid(d) ? d : undefined;
+    } catch { return undefined; }
+  };
+
+  const renderDatePicker = (fieldKey: string, label: string) => (
+    <div>
+      <Label className="text-sm text-foreground">{label}</Label>
+      <Popover open={datePickerStates[fieldKey] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [fieldKey]: open }))}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className={cn('h-8 text-sm mt-1 w-full justify-start text-left font-normal', !getFieldValue(fieldKey) && 'text-muted-foreground')} disabled={disabled}>
+            {getFieldValue(fieldKey) && safeParseDateStr(getFieldValue(fieldKey)) ? format(safeParseDateStr(getFieldValue(fieldKey))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+            <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+          <EnhancedCalendar
+            mode="single"
+            selected={safeParseDateStr(getFieldValue(fieldKey))}
+            onSelect={(date) => { if (date) onValueChange(fieldKey, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [fieldKey]: false })); }}
+            onClear={() => { onValueChange(fieldKey, ''); setDatePickerStates(prev => ({ ...prev, [fieldKey]: false })); }}
+            onToday={() => { onValueChange(fieldKey, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [fieldKey]: false })); }}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
 
   return (
     <div className="p-6 space-y-6">
