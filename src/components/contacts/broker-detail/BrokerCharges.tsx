@@ -40,16 +40,17 @@ const DateFieldPicker: React.FC<{ value: string; onChange: (v: string) => void }
           {value || 'MM/DD/YYYY'}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 z-[70]" align="start">
-        <Calendar
+      <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+        <EnhancedCalendar
           mode="single"
           selected={parsed}
           onSelect={(date) => {
             onChange(date ? format(date, 'MM/dd/yyyy') : '');
             setOpen(false);
           }}
+          onClear={() => { onChange(''); setOpen(false); }}
+          onToday={() => { onChange(format(new Date(), 'MM/dd/yyyy')); setOpen(false); }}
           initialFocus
-          className={cn("p-3 pointer-events-auto")}
         />
       </PopoverContent>
     </Popover>
