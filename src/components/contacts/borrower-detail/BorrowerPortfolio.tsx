@@ -11,6 +11,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 
+interface ParticipantInfo {
+  name: string;
+  capacity: string;
+}
+
 interface PortfolioLoan {
   id: string;
   dealId: string;
@@ -22,6 +27,7 @@ interface PortfolioLoan {
   principalBalance: string;
   interestRate: string;
   maturityDate: string;
+  participants: ParticipantInfo[];
 }
 
 const ALL_COLUMNS = [
