@@ -93,8 +93,8 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
           <span className="font-semibold text-sm text-primary">Charge Information</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 px-1">
-          {renderInlineField(FIELD_KEYS.dateOfCharge, 'Date of Charge', values, onValueChange, disabled, { type: 'date' })}
-          {renderInlineField(FIELD_KEYS.interestFrom, 'Interest From', values, onValueChange, disabled, { type: 'date' })}
+          {renderInlineField(FIELD_KEYS.dateOfCharge, 'Date of Charge', values, onValueChange, disabled, { type: 'date' }, datePickerStates, setDatePickerStates)}
+          {renderInlineField(FIELD_KEYS.interestFrom, 'Interest From', values, onValueChange, disabled, { type: 'date' }, datePickerStates, setDatePickerStates)}
           {renderInlineField(FIELD_KEYS.reference, 'Reference', values, onValueChange, disabled, { placeholder: 'Enter reference' })}
           {renderInlineField(FIELD_KEYS.chargeType, 'Charge Type', values, onValueChange, disabled, { placeholder: 'Enter type' })}
           {renderCurrencyField(FIELD_KEYS.originalAmount, 'Original Amount', values, onValueChange, disabled)}
