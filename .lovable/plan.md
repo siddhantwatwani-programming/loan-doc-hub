@@ -1,69 +1,59 @@
 
 
-# Document Generation: Mapped Fields Not Populating
+# Multi-Capacity Loan Display in Borrower Portfolio
 
-## Root Cause Analysis
+## Problem
 
-After investigating the full document generation pipeline, I identified **two distinct root causes**:
+Line 78 of `BorrowerPortfolio.tsx` filters participants with `.eq('role', 'borrower')`, so loans where the contact is linked as a lender or broker are invisible. Additionally, capacity resolution relies only on `deal_section_values` participant data, missing the capacity stored in `contact_data` during the Add Participant flow. There is no way to see who else is on a loan.
 
-### Problem 1: Template has no field mappings in `template_field_maps`
+## Solution
 
-The template "MORTGAGE LOAN DISCLOSURE STATEMENT/ GOOD FAITH ESTIMATE" (ID: `cd143d34-...`) has **zero rows** in `template_field_maps`. The Field Map Editor page allows admins to map field_dictionary entries to templates, but this template has none configured.
+Two changes to `BorrowerPortfolio.tsx` only:
 
-However, this is **not the primary blocker** — the generate-document function fetches ALL deal field values regardless of field maps. Field maps are only used for transform rules.
+### 1. Remove the role filter to show all linked loans
 
-### Problem 2: Merge tag names in the DOCX don't match field_key values (PRIMARY CAUSE)
+Change line 78 from:
+```
+.eq('role', 'borrower')
+```
+to fetching ALL participants for this `contact_id` (remove the `.eq('role', 'borrower')` call). This ensures loans where the contact is an Additional Guarantor, Trustee, etc., all appear.
 
-The document generation engine resolves merge tags (e.g., `{{Escrow_Number}}`, `«Loan_Amount»`) to field values by:
-1. Looking up the tag name in `merge_tag_aliases` 
-2. Trying direct match against `field_dictionary.field_key`
-3. Trying canonical_key and migration lookups
-4. Case-insensitive fallback
+Update capacity resolution to also check `contact_data.capacity` from the `contacts` table via `deal_participants` data, and fall back to the participant's `role` field when no capacity is found in section values.
 
-**Borrower Name and Property Address work** because they have explicit `merge_tag_aliases` entries (e.g., `Borrower_Name` → `Borrower.Name`, `Property Address` label alias → `Property1.Address`).
+### 2. Add info icon per row showing all parties on that loan
 
-**All other fields fail** because:
-- The template uses legacy tag names (e.g., `Loan_Amount`, `Interest_Rate`, `Escrow_Number`, etc.)
-- The field_dictionary stores keys like `origination_esc.escrow_number`, `ln_p_noteRate`, etc.
-- There are **no merge_tag_aliases** bridging the template's tag names to these field_key values
-- The case-insensitive fallback cannot match `Escrow_Number` to `origination_esc.escrow_number` since they are fundamentally different strings
+After fetching the contact's own participant rows, collect all `deal_id`s, then make one additional query to `deal_participants` for ALL participants across those deals. For each loan row, group participants by their capacity/role into a structured map.
 
-### Data Verification
-The deal DL-2026-0170 has data in ALL sections including `origination_fees` (79KB of field values). The `origination_esc.*` fields (escrow number, company, street, city, etc.) are all populated. The data exists — it just cannot be resolved during tag replacement.
+Add a non-sortable utility column at the end of each row with a `Users` icon. Clicking it opens a `Popover` (already imported) showing participants grouped by capacity:
 
-## Proposed Fix
+```
+Borrower(s): Rakesh Kumar
+Additional Guarantor(s): Mohan Singh
+Lender(s): ABC Lending
+```
 
-### Step 1: Extract template merge tags
-Use the `validate-template` edge function to extract all merge tag names from the uploaded DOCX template.
+If no other participants exist, the popover shows "No other participants."
 
-### Step 2: Create merge_tag_aliases for unmapped tags
-For each unresolved tag found in the template, create a `merge_tag_aliases` entry mapping the template's tag name to the corresponding `field_dictionary.field_key`. This bridges the gap between legacy template tag naming and the current field key schema.
+### Technical Details
 
-### Step 3: Enhance the generate-document engine with broader key matching
-Add a fallback resolution pass in the tag-parser that attempts fuzzy/suffix matching when exact, migration, canonical, and alias lookups all fail. This makes the system more robust for future templates:
+**File**: `src/components/contacts/borrower-detail/BorrowerPortfolio.tsx`
 
-- **File**: `supabase/functions/_shared/field-resolver.ts`
-- **Change**: In `resolveFieldKeyWithBackwardCompat`, after all existing priority lookups fail, add a suffix-based fallback that strips common prefixes and tries to match the tag against field_key suffixes. For example, `Escrow_Number` would match `origination_esc.escrow_number` by normalizing underscores and comparing the trailing segment.
+1. **Extend `PortfolioLoan` interface** — add `participants: { name: string; capacity: string }[]`
 
-### Step 4: Add dot-notation field value bridging for origination fields
-In `supabase/functions/generate-document/index.ts`, after building the `fieldValues` map, add bridging logic that creates short-form aliases for origination fields. For example:
-- `origination_esc.escrow_number` → also set `escrow_number`
-- `origination_esc.escrow_company` → also set `escrow_company`
+2. **Remove `.eq('role', 'borrower')` on line 78** — fetch all deal_participants for this contact_id regardless of role
 
-This mirrors the existing pattern used for property fields (`pr_p_street` → `property1.street`).
+3. **Capacity resolution enhancement** — after getting participant section values, also check the contact's `contact_data.capacity` field from the contacts table for each deal's participant record. Priority: section values capacity > contact_data capacity > role name fallback.
 
-### Step 5: Redeploy and test
-Deploy the updated edge functions and regenerate the document for DL-2026-0170 to verify all mapped fields populate correctly.
+4. **Fetch all participants per deal** — one additional query: `deal_participants` where `deal_id in dealIds`, selecting `deal_id, name, role, contact_id`. Also fetch their contact records to get `contact_data.capacity`. Group by deal_id into a map.
 
-## Files to Modify
+5. **Add info column** — append a `Users` icon `TableCell` after the last column in each row. Not part of `ALL_COLUMNS` (non-toggleable, non-sortable). Clicking opens a `Popover` with participants grouped by capacity label.
 
-1. **`supabase/functions/_shared/field-resolver.ts`** — Add suffix-based fallback resolution
-2. **`supabase/functions/generate-document/index.ts`** — Add origination field bridging in the fieldValues map building section
-3. **Database**: Insert `merge_tag_aliases` rows for the specific template tags (via migration)
+6. **Import `Users` from lucide-react** (already available in the project).
 
-## What Will NOT Change
-- No UI layout changes
-- No database schema changes
-- No existing functionality modifications
-- No template or document generation logic rewrites — only additive resolution fallbacks
+### What Will NOT Change
+- No database schema changes or migrations
+- No changes to existing columns, summary cards, filters, sorting, or export logic
+- No changes to the Add Participant modal or participant assignment flow
+- No layout or sidebar changes
+- No changes to other portfolio components (Lender, Broker)
 
