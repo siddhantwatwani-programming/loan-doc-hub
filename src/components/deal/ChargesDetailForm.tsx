@@ -23,14 +23,38 @@ import { CHARGES_DETAIL_KEYS } from '@/lib/fieldKeyMap';
 // Use central field key map
 const FIELD_KEYS = CHARGES_DETAIL_KEYS;
 
-const renderInlineField = (key: string, label: string, values: Record<string, string>, onValueChange: (k: string, v: string) => void, disabled: boolean, props: Record<string, any> = {}) => (
-  <DirtyFieldWrapper fieldKey={key}>
-    <div className="flex items-center gap-3">
-      <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
-      <Input value={values[key] || ''} onChange={(e) => onValueChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" {...props} />
-    </div>
-  </DirtyFieldWrapper>
-);
+const renderInlineField = (key: string, label: string, values: Record<string, string>, onValueChange: (k: string, v: string) => void, disabled: boolean, props: Record<string, any> = {}, datePickerStates?: Record<string, boolean>, setDatePickerStates?: React.Dispatch<React.SetStateAction<Record<string, boolean>>>) => {
+  if (props.type === 'date' && setDatePickerStates && datePickerStates) {
+    const val = values[key] || '';
+    const safeParse = (v: string): Date | undefined => { if (!v) return undefined; try { const d = parse(v, 'yyyy-MM-dd', new Date()); return isValid(d) ? d : undefined; } catch { return undefined; } };
+    return (
+      <DirtyFieldWrapper fieldKey={key}>
+        <div className="flex items-center gap-3">
+          <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
+          <Popover open={datePickerStates[key] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [key]: open }))}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn('h-7 text-sm flex-1 justify-start text-left font-normal', !val && 'text-muted-foreground')} disabled={disabled}>
+                {val && safeParse(val) ? format(safeParse(val)!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+              <EnhancedCalendar mode="single" selected={safeParse(val)} onSelect={(date) => { if (date) onValueChange(key, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }} onClear={() => { onValueChange(key, ''); setDatePickerStates(prev => ({ ...prev, [key]: false })); }} onToday={() => { onValueChange(key, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }} initialFocus />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </DirtyFieldWrapper>
+    );
+  }
+  return (
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-3">
+        <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
+        <Input value={values[key] || ''} onChange={(e) => onValueChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" {...props} />
+      </div>
+    </DirtyFieldWrapper>
+  );
+};
 
 const renderCurrencyField = (key: string, label: string, values: Record<string, string>, onValueChange: (k: string, v: string) => void, disabled: boolean) => (
   <DirtyFieldWrapper fieldKey={key}>
