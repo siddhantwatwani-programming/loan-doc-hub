@@ -1,123 +1,69 @@
 
-## Deep analysis
 
-I traced the full path for `{{br_ag_fullName}}` and found the current fix is still failing because of **selection order**, not tag resolution.
+# Document Generation: Mapped Fields Not Populating
 
-### What is confirmed working
-- The generated document being produced is the template record:
-  - `Personal Guaranty by Third Party`
-  - template id `72ee9d10-e592-4389-b0ed-aaa0eeda6952`
-- The tag mapping is valid:
-  - `br_ag_fullName` exists in `field_dictionary`
-  - `canonical_key = br_p_guarantoFullName`
-- The document parser shows the final generated DOCX still has:
-  - `Guarantor:` blank on page 4
-- The deal has these participants:
-  - borrower 1: `Adwait` with capacity `Borrower (Primary)`
-  - borrower 2: `xyz abc` with capacity `Borrower`
-- There is still no saved borrower-section field value for:
-  - `br_ag_fullName`
-  - `br_p_guarantoFullName`
+## Root Cause Analysis
 
-## Root cause
+After investigating the full document generation pipeline, I identified **two distinct root causes**:
 
-The current fallback logic for guarantor is blocked by the **co-borrower fallback**.
+### Problem 1: Template has no field mappings in `template_field_maps`
 
-Current flow in `generate-document/index.ts`:
-1. `primaryBorrower` = participant with capacity containing `"primary"` or first borrower
-2. `coBorrower` = participant with capacity containing `"co-borrower"` **or any non-primary borrower**
-3. `guarantorParticipant` = participant with capacity containing `"additional guarantor"` **or any borrower that is not primary and not co-borrower**
+The template "MORTGAGE LOAN DISCLOSURE STATEMENT/ GOOD FAITH ESTIMATE" (ID: `cd143d34-...`) has **zero rows** in `template_field_maps`. The Field Map Editor page allows admins to map field_dictionary entries to templates, but this template has none configured.
 
-For `DL-2026-0170`:
-- no participant has capacity `"additional guarantor"`
-- second borrower (`xyz abc`) gets picked as `coBorrower` by fallback
-- guarantor fallback then excludes that same participant
-- result: no guarantor participant remains, so `br_ag_fullName` is never injected
+However, this is **not the primary blocker** — the generate-document function fetches ALL deal field values regardless of field maps. Field maps are only used for transform rules.
 
-So the bug is not:
-- template issue
-- canonical key issue
-- merge tag alias issue
-- database schema issue
+### Problem 2: Merge tag names in the DOCX don't match field_key values (PRIMARY CAUSE)
 
-It is specifically this fallback collision:
-```text
-second borrower participant
-  -> consumed by coBorrower fallback
-  -> unavailable for guarantor fallback
-  -> br_ag_fullName stays blank
-```
+The document generation engine resolves merge tags (e.g., `{{Escrow_Number}}`, `«Loan_Amount»`) to field values by:
+1. Looking up the tag name in `merge_tag_aliases` 
+2. Trying direct match against `field_dictionary.field_key`
+3. Trying canonical_key and migration lookups
+4. Case-insensitive fallback
 
-## Minimal fix
+**Borrower Name and Property Address work** because they have explicit `merge_tag_aliases` entries (e.g., `Borrower_Name` → `Borrower.Name`, `Property Address` label alias → `Property1.Address`).
 
-Update only `supabase/functions/generate-document/index.ts` so that **Additional Guarantor selection happens before / independently from co-borrower fallback**.
+**All other fields fail** because:
+- The template uses legacy tag names (e.g., `Loan_Amount`, `Interest_Rate`, `Escrow_Number`, etc.)
+- The field_dictionary stores keys like `origination_esc.escrow_number`, `ln_p_noteRate`, etc.
+- There are **no merge_tag_aliases** bridging the template's tag names to these field_key values
+- The case-insensitive fallback cannot match `Escrow_Number` to `origination_esc.escrow_number` since they are fundamentally different strings
 
-### Targeted implementation
-Use this precedence:
+### Data Verification
+The deal DL-2026-0170 has data in ALL sections including `origination_fees` (79KB of field values). The `origination_esc.*` fields (escrow number, company, street, city, etc.) are all populated. The data exists — it just cannot be resolved during tag replacement.
 
-1. `primaryBorrower`
-2. `guarantorParticipant`
-   - explicit capacity contains `"additional guarantor"`
-   - otherwise fallback to a non-primary borrower who is not trustee/co-trustee
-3. `coBorrower`
-   - explicit capacity contains `"co-borrower"`
-   - otherwise fallback to a borrower who is not primary **and not the chosen guarantor**
+## Proposed Fix
 
-## Exact change scope
+### Step 1: Extract template merge tags
+Use the `validate-template` edge function to extract all merge tag names from the uploaded DOCX template.
 
-### File
-- `supabase/functions/generate-document/index.ts`
+### Step 2: Create merge_tag_aliases for unmapped tags
+For each unresolved tag found in the template, create a `merge_tag_aliases` entry mapping the template's tag name to the corresponding `field_dictionary.field_key`. This bridges the gap between legacy template tag naming and the current field key schema.
 
-### Change
-Reorder and tighten only the participant selection logic around:
-- `primaryBorrower`
-- `coBorrower`
-- `guarantorParticipant`
+### Step 3: Enhance the generate-document engine with broader key matching
+Add a fallback resolution pass in the tag-parser that attempts fuzzy/suffix matching when exact, migration, canonical, and alias lookups all fail. This makes the system more robust for future templates:
 
-### Result
-For this deal:
-- `Adwait` stays primary borrower
-- `xyz abc` becomes guarantor
-- `br_ag_fullName` / `br_p_guarantoFullName` get injected
-- no template, UI, DB, or other document logic changes
+- **File**: `supabase/functions/_shared/field-resolver.ts`
+- **Change**: In `resolveFieldKeyWithBackwardCompat`, after all existing priority lookups fail, add a suffix-based fallback that strips common prefixes and tries to match the tag against field_key suffixes. For example, `Escrow_Number` would match `origination_esc.escrow_number` by normalizing underscores and comparing the trailing segment.
 
-## Why this is the safest fix
-- It is isolated to one edge-function file
-- It changes only borrower participant role assignment for document generation
-- It preserves existing direct-capacity matches
-- It only affects fallback behavior when capacities are incomplete/mislabeled
-- It satisfies your requirement to avoid unrelated changes
+### Step 4: Add dot-notation field value bridging for origination fields
+In `supabase/functions/generate-document/index.ts`, after building the `fieldValues` map, add bridging logic that creates short-form aliases for origination fields. For example:
+- `origination_esc.escrow_number` → also set `escrow_number`
+- `origination_esc.escrow_company` → also set `escrow_company`
 
-## Validation plan
-After implementation, verify:
-1. Generate `Personal Guaranty by Third Party` again for `DL-2026-0170`
-2. Confirm page 4 shows:
-   - `Guarantor: xyz abc`
-3. Confirm borrower fields still resolve to `Adwait`
-4. Confirm no other templates are changed unless they rely on this same fallback path
+This mirrors the existing pattern used for property fields (`pr_p_street` → `property1.street`).
 
-## Technical details
-Proposed logic shape:
-```typescript
-const primaryBorrower = ...;
+### Step 5: Redeploy and test
+Deploy the updated edge functions and regenerate the document for DL-2026-0170 to verify all mapped fields populate correctly.
 
-const guarantorParticipant =
-  explicitAdditionalGuarantor
-  || borrowerParticipants.find(p => {
-       if (!p.contact_id || p === primaryBorrower) return false;
-       const capLower = ...;
-       return !capLower.includes("primary")
-         && !capLower.includes("co-borrower")
-         && !capLower.includes("trustee")
-         && !capLower.includes("co-trustee");
-     });
+## Files to Modify
 
-const coBorrower =
-  explicitCoBorrower
-  || borrowerParticipants.find(p => {
-       if (!p.contact_id || p === primaryBorrower || p === guarantorParticipant) return false;
-       ...
-     });
-```
+1. **`supabase/functions/_shared/field-resolver.ts`** — Add suffix-based fallback resolution
+2. **`supabase/functions/generate-document/index.ts`** — Add origination field bridging in the fieldValues map building section
+3. **Database**: Insert `merge_tag_aliases` rows for the specific template tags (via migration)
 
-This is the minimal correction needed to make `{{br_ag_fullName}}` populate for the current deal.
+## What Will NOT Change
+- No UI layout changes
+- No database schema changes
+- No existing functionality modifications
+- No template or document generation logic rewrites — only additive resolution fallbacks
+
