@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
 import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Shield } from 'lucide-react';
+import { Shield, CalendarIcon } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -12,6 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
+import { format, parse, isValid } from 'date-fns';
+import { cn } from '@/lib/utils';
 import type { InsuranceData } from './InsuranceTableView';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 import { US_STATES } from '@/lib/usStates';
