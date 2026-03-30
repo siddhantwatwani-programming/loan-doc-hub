@@ -63,6 +63,16 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
     onValueChange(FIELD_KEYS[key], value);
   };
 
+  const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
+
+  const safeParseDateStr = (val: string): Date | undefined => {
+    if (!val) return undefined;
+    try {
+      const d = parse(val, 'yyyy-MM-dd', new Date());
+      return isValid(d) ? d : undefined;
+    } catch { return undefined; }
+  };
+
   // Auto-populate Ref from APN (Legal Description tab)
   const apnValue = values['property1.apn'] || '';
 
