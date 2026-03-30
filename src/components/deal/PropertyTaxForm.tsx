@@ -204,13 +204,24 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
                 {/* Last Verified */}
                 <div className="flex items-center gap-3">
                   <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Last Verified</Label>
-                  <Input
-                    type="date"
-                    value={getValue('lastVerified')}
-                    onChange={(e) => handleChange('lastVerified', e.target.value)}
-                    disabled={disabled}
-                    className="h-7 text-sm flex-1"
-                  />
+                  <Popover open={datePickerStates['lastVerified'] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, lastVerified: open }))}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn('h-7 text-sm flex-1 justify-start text-left font-normal', !getValue('lastVerified') && 'text-muted-foreground')} disabled={disabled}>
+                        {getValue('lastVerified') && safeParseDateStr(getValue('lastVerified')) ? format(safeParseDateStr(getValue('lastVerified'))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                        <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                      <EnhancedCalendar
+                        mode="single"
+                        selected={safeParseDateStr(getValue('lastVerified'))}
+                        onSelect={(date) => { if (date) handleChange('lastVerified', format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, lastVerified: false })); }}
+                        onClear={() => { handleChange('lastVerified', ''); setDatePickerStates(prev => ({ ...prev, lastVerified: false })); }}
+                        onToday={() => { handleChange('lastVerified', format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, lastVerified: false })); }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 {/* Status */}
