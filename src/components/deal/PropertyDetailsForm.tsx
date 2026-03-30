@@ -59,6 +59,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   showValidation = false,
   disabled = false,
 }) => {
+  const [datePickerStates, setDatePickerStates] = React.useState<Record<string, boolean>>({});
   const getFieldValue = (key: string) => values[key] || '';
   const sanitizeNumericValue = (value: string): string => value.replace(/[^0-9.-]/g, '');
   const handleCurrencyChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value));
