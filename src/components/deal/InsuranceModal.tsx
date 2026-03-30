@@ -74,12 +74,33 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
 
-  const renderInlineField = (field: keyof InsuranceData, label: string, props: Record<string, any> = {}) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
-      <Input value={String(formData[field] || '')} onChange={(e) => handleChange(field, e.target.value)} className="h-7 text-xs flex-1" {...props} />
-    </div>
-  );
+  const renderInlineField = (field: keyof InsuranceData, label: string, props: Record<string, any> = {}) => {
+    if (props.type === 'date') {
+      const val = String(formData[field] || '');
+      return (
+        <div className="flex items-center gap-2">
+          <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+          <Popover open={datePickerStates[field] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [field]: open }))}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn('h-7 text-xs flex-1 justify-start text-left font-normal', !val && 'text-muted-foreground')}>
+                {val && safeParseDateStr(val) ? format(safeParseDateStr(val)!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+              <EnhancedCalendar mode="single" selected={safeParseDateStr(val)} onSelect={(date) => { if (date) handleChange(field, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [field]: false })); }} onClear={() => { handleChange(field, ''); setDatePickerStates(prev => ({ ...prev, [field]: false })); }} onToday={() => { handleChange(field, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [field]: false })); }} initialFocus />
+            </PopoverContent>
+          </Popover>
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center gap-2">
+        <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+        <Input value={String(formData[field] || '')} onChange={(e) => handleChange(field, e.target.value)} className="h-7 text-xs flex-1" {...props} />
+      </div>
+    );
+  };
 
   const renderInlineSelect = (field: keyof InsuranceData, label: string, options: string[] | { id: string; label: string }[], placeholder: string) => (
     <div className="flex items-center gap-2">
