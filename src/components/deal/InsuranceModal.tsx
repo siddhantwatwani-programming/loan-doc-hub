@@ -52,6 +52,15 @@ const getDefaultInsurance = (): InsuranceData => ({
 export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChange, insurance, onSave, isEdit, propertyOptions = [] }) => {
   const [formData, setFormData] = useState<InsuranceData>(getDefaultInsurance());
   const [showConfirm, setShowConfirm] = useState(false);
+  const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
+
+  const safeParseDateStr = (val: string): Date | undefined => {
+    if (!val) return undefined;
+    try {
+      const d = parse(val, 'yyyy-MM-dd', new Date());
+      return isValid(d) ? d : undefined;
+    } catch { return undefined; }
+  };
 
   useEffect(() => {
     if (open) setFormData(insurance ? insurance : getDefaultInsurance());
