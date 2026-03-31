@@ -83,7 +83,6 @@ export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceCo
         onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => sv(key, val))}
         disabled={disabled} placeholder={placeholder || '0.00'} className="h-7 text-sm pl-6 text-right"
       />
-      />
     </div>
   );
 
