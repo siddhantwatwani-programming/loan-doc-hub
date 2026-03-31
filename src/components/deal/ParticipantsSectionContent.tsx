@@ -217,11 +217,31 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         }
       }
 
+      // Fetch deal-specific participant capacities from deal_section_values
+      let dealCapacityMap: Record<string, string> = {};
+      const { data: participantSection } = await supabase
+        .from('deal_section_values')
+        .select('field_values')
+        .eq('deal_id', dealId)
+        .eq('section', 'participants')
+        .maybeSingle();
+
+      if (participantSection?.field_values) {
+        const pValues = participantSection.field_values as Record<string, any>;
+        Object.entries(pValues).forEach(([key, val]) => {
+          const match = key.match(/^participant_(.+)_capacity$/);
+          if (match && val) {
+            dealCapacityMap[match[1]] = String(val);
+          }
+        });
+      }
+
       setParticipants(
         rows.map((p: any) => {
           const contact = p.contact_id ? contactMap[p.contact_id] : null;
           const roleLabel = ROLE_LABELS[p.role] || p.role || '';
-          const capacityVal = contact?.capacity || '';
+          // Priority: deal-specific capacity > global contact capacity
+          const capacityVal = (p.contact_id && dealCapacityMap[p.contact_id]) || contact?.capacity || '';
           const mergedTypeCapacity = capacityVal && capacityVal !== roleLabel
             ? `${roleLabel} - ${capacityVal}`
             : roleLabel;

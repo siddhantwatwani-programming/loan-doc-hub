@@ -212,7 +212,17 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           if (!fv) return;
           const dealCapMap = perDealContactCapacity.get(ps.deal_id) || new Map<string, string>();
           Object.entries(fv).forEach(([key, val]) => {
-            if (key.includes('capacity')) {
+            // Check for new participant_{contactId}_capacity key pattern
+            const participantMatch = key.match(/^participant_(.+)_capacity$/);
+            if (participantMatch) {
+              const cid = participantMatch[1];
+              const parsedCapacity = parseCapacityValue(val);
+              if (parsedCapacity) {
+                const label = resolveCapacityLabel(parsedCapacity);
+                if (label) dealCapMap.set(cid, label);
+              }
+            } else if (key.includes('capacity')) {
+              // Legacy key pattern fallback
               const parsedCapacity = parseCapacityValue(val);
               if (!parsedCapacity) return;
               const contactKey = key.replace('capacity', 'contact_id');
