@@ -1,59 +1,50 @@
 
 
-# Multi-Capacity Loan Display in Borrower Portfolio
+# Create Currency Fields for Origination Fee Others/Broker
 
-## Problem
+## Analysis
 
-Line 78 of `BorrowerPortfolio.tsx` filters participants with `.eq('role', 'borrower')`, so loans where the contact is linked as a lender or broker are invisible. Additionally, capacity resolution relies only on `deal_section_values` participant data, missing the capacity stored in `contact_data` during the Add Participant flow. There is no way to see who else is on a loan.
+The field dictionary already has **boolean** (checkbox) fields for "Others" and "Broker" for each fee item, plus a **currency** "(D)" field. What's missing are **currency amount** fields for the Others and Broker columns. These 20 new fields need to be inserted.
 
-## Solution
+## Existing Pattern (per fee item)
+- `of_fe_*Broker` → boolean (checkbox)
+- `of_fe_*Others` → boolean (checkbox)  
+- `of_fe_*D` → currency (dollar amount)
+- **Missing**: currency fields for Others amount and Broker amount
 
-Two changes to `BorrowerPortfolio.tsx` only:
+## Fields to Create (20 total)
 
-### 1. Remove the role filter to show all linked loans
+| # | Label | Field Key (Others) | Field Key (Broker) |
+|---|-------|-------------------|-------------------|
+| 1 | 801 Lender's Loan Origination Fee | `of_801_lenderLoanOriginationFee_others` | `of_801_lenderLoanOriginationFee_broker` |
+| 2 | 802 Lender's Loan Discount Fee | `of_802_lenderLoanDiscountFee_others` | `of_802_lenderLoanDiscountFee_broker` |
+| 3 | 803 Appraisal Fee | `of_803_appraisalFee_others` | `of_803_appraisalFee_broker` |
+| 4 | 804 Credit Report Fee | `of_804_creditReportFee_others` | `of_804_creditReportFee_broker` |
+| 5 | 805 Lender's Inspection Fee | `of_805_lenderInspectionFee_others` | `of_805_lenderInspectionFee_broker` |
+| 6 | 808 Mortgage Broker Commission/Fee | `of_808_mortgageBrokerCommissionFee_others` | `of_808_mortgageBrokerCommissionFee_broker` |
+| 7 | 809 Tax Service Fee | `of_809_taxServiceFee_others` | `of_809_taxServiceFee_broker` |
+| 8 | 810 Processing Fee | `of_810_processingFee_others` | `of_810_processingFee_broker` |
+| 9 | 811 Underwriting Fee | `of_811_underwritingFee_others` | `of_811_underwritingFee_broker` |
+| 10 | 812 Wire Transfer Fee | `of_812_wireTransferFee_others` | `of_812_wireTransferFee_broker` |
 
-Change line 78 from:
-```
-.eq('role', 'borrower')
-```
-to fetching ALL participants for this `contact_id` (remove the `.eq('role', 'borrower')` call). This ensures loans where the contact is an Additional Guarantor, Trustee, etc., all appear.
+## Implementation
 
-Update capacity resolution to also check `contact_data.capacity` from the `contacts` table via `deal_participants` data, and fall back to the participant's `role` field when no capacity is found in section values.
+**Single database migration** inserting 20 rows into `field_dictionary`:
 
-### 2. Add info icon per row showing all parties on that loan
+- **section**: `origination_fees`
+- **form_type**: `fees`
+- **data_type**: `currency`
+- **is_calculated**: false
+- **is_repeatable**: false
+- **is_mandatory**: false
+- **allowed_roles**: `{admin, csr}`
+- **read_only_roles**: `{}`
 
-After fetching the contact's own participant rows, collect all `deal_id`s, then make one additional query to `deal_participants` for ALL participants across those deals. For each loan row, group participants by their capacity/role into a structured map.
+Each INSERT will use `ON CONFLICT (field_key) DO NOTHING` to prevent duplicates (since `field_key` has a unique-like usage pattern, we'll use a check query before insert to be safe).
 
-Add a non-sortable utility column at the end of each row with a `Users` icon. Clicking it opens a `Popover` (already imported) showing participants grouped by capacity:
-
-```
-Borrower(s): Rakesh Kumar
-Additional Guarantor(s): Mohan Singh
-Lender(s): ABC Lending
-```
-
-If no other participants exist, the popover shows "No other participants."
-
-### Technical Details
-
-**File**: `src/components/contacts/borrower-detail/BorrowerPortfolio.tsx`
-
-1. **Extend `PortfolioLoan` interface** — add `participants: { name: string; capacity: string }[]`
-
-2. **Remove `.eq('role', 'borrower')` on line 78** — fetch all deal_participants for this contact_id regardless of role
-
-3. **Capacity resolution enhancement** — after getting participant section values, also check the contact's `contact_data.capacity` field from the contacts table for each deal's participant record. Priority: section values capacity > contact_data capacity > role name fallback.
-
-4. **Fetch all participants per deal** — one additional query: `deal_participants` where `deal_id in dealIds`, selecting `deal_id, name, role, contact_id`. Also fetch their contact records to get `contact_data.capacity`. Group by deal_id into a map.
-
-5. **Add info column** — append a `Users` icon `TableCell` after the last column in each row. Not part of `ALL_COLUMNS` (non-toggleable, non-sortable). Clicking opens a `Popover` with participants grouped by capacity label.
-
-6. **Import `Users` from lucide-react** (already available in the project).
-
-### What Will NOT Change
-- No database schema changes or migrations
-- No changes to existing columns, summary cards, filters, sorting, or export logic
-- No changes to the Add Participant modal or participant assignment flow
-- No layout or sidebar changes
-- No changes to other portfolio components (Lender, Broker)
+## What Will NOT Change
+- No UI, component, or layout changes
+- No changes to existing fields or their data types
+- No changes to document generation, templates, or APIs
+- No schema alterations beyond inserting new dictionary rows
 
