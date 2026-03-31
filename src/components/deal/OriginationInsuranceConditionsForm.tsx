@@ -182,7 +182,8 @@ export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceCo
                 {renderCurrencyInline(FK.coverage_earthquake_amount)}
                 <Label className="text-sm shrink-0">or</Label>
                 <Input value={v(FK.coverage_earthquake_percent)} onChange={(e) => sv(FK.coverage_earthquake_percent, e.target.value)}
-                  disabled={disabled} placeholder="0" className="h-7 text-sm w-[60px] text-right" />
+                  onKeyDown={integerKeyDown} onPaste={(e) => integerPaste(e, (val) => sv(FK.coverage_earthquake_percent, val))}
+                  disabled={disabled} placeholder="0" inputMode="numeric" className="h-7 text-sm w-[60px] text-right" />
                 <Label className="text-sm shrink-0">% of value</Label>
               </div>
             </DirtyFieldWrapper>
