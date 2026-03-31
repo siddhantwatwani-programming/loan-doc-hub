@@ -41,33 +41,55 @@ const ALL_COLUMNS = [
   { id: 'maturityDate', label: 'Maturity Date' },
 ];
 
-const ROLE_FILTER_OPTIONS = ['Borrower (Primary)', 'Co-Borrower', 'Additional Guarantor', 'Trustee', 'Co-Trustee', 'Managing Member', 'Authorized Signer', 'Lender', 'Broker'];
+const ROLE_FILTER_OPTIONS = ['Borrower (Primary)', 'Borrower', 'Co-Borrower', 'Additional Guarantor', 'Trustee', 'Co-Trustee', 'Managing Member', 'Authorized Signer', 'Lender', 'Broker'];
 const STATUS_FILTER_OPTIONS = ['Active', 'Closed', 'Default'];
 
-// Map capacity values from deal_section_values to display roles
+// Map canonical capacity values to display roles
 const CAPACITY_TO_ROLE: Record<string, string> = {
-  'borrower_primary': 'Borrower (Primary)',
-  'co_borrower': 'Co-Borrower',
-  'additional_guarantor': 'Additional Guarantor',
-  'trustee': 'Trustee',
-  'co_trustee': 'Co-Trustee',
-  'managing_member': 'Managing Member',
-  'authorized_signer': 'Authorized Signer',
-  'primary_lender': 'Primary Lender',
-  'participant_lender': 'Participant Lender',
-  'syndicate_lender': 'Syndicate Lender',
-  'authorized_party': 'Authorized Party',
+  borrower_primary: 'Borrower (Primary)',
+  borrower: 'Borrower',
+  co_borrower: 'Co-Borrower',
+  additional_guarantor: 'Additional Guarantor',
+  trustee: 'Trustee',
+  co_trustee: 'Co-Trustee',
+  managing_member: 'Managing Member',
+  authorized_signer: 'Authorized Signer',
+  primary_lender: 'Primary Lender',
+  participant_lender: 'Participant Lender',
+  syndicate_lender: 'Syndicate Lender',
+  authorized_party: 'Authorized Party',
 };
 
 // Fallback: map deal_participants.role to a display label
 const ROLE_FALLBACK: Record<string, string> = {
-  'borrower': 'Borrower (Primary)',
-  'lender': 'Lender',
-  'broker': 'Broker',
-  'other': 'Other',
+  borrower: 'Borrower (Primary)',
+  lender: 'Lender',
+  broker: 'Broker',
+  other: 'Other',
 };
 
-const VALID_CAPACITIES = new Set(Object.keys(CAPACITY_TO_ROLE));
+const normalizeCapacityKey = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[()]/g, '')
+    .replace(/[\s-]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+
+const resolveCapacityLabel = (value: string): string => {
+  const raw = value.trim();
+  if (!raw) return '';
+
+  const direct = CAPACITY_TO_ROLE[raw];
+  if (direct) return direct;
+
+  const normalized = CAPACITY_TO_ROLE[normalizeCapacityKey(raw)];
+  if (normalized) return normalized;
+
+  // If it's already a human-readable capacity label, preserve it.
+  return raw;
+};
 
 interface Props { borrowerId: string; contactDbId: string; }
 
@@ -149,20 +171,15 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           .in('deal_id', dealIds)
           .eq('section', 'participants');
 
-        const participantCapacityMap = new Map<string, string>();
-        (participantSections || []).forEach(ps => {
-          const fv = ps.field_values as Record<string, any>;
-          if (fv) {
-            Object.entries(fv).forEach(([key, val]) => {
-              if (key.includes('capacity') && typeof val === 'string') {
-                const contactKey = key.replace('capacity', 'contact_id');
-                if (fv[contactKey] === contactDbId) {
-                  participantCapacityMap.set(ps.deal_id, val);
-                }
-              }
-            });
+        const parseCapacityValue = (value: unknown): string => {
+          if (typeof value === 'string') return value;
+          if (value && typeof value === 'object') {
+            const obj = value as Record<string, unknown>;
+            if (typeof obj.value_text === 'string') return obj.value_text;
+            if (typeof obj.value_json === 'string') return obj.value_json;
           }
-        });
+          return '';
+        };
 
         // 5b. Fetch ALL participants across all linked deals for the info popover
         const { data: allDealParticipants } = await supabase
@@ -181,7 +198,8 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           (contactRecords || []).forEach(c => {
             const cd = c.contact_data as Record<string, any> | null;
             if (cd?.capacity && typeof cd.capacity === 'string') {
-              contactCapacityMap.set(c.id, cd.capacity);
+              const label = resolveCapacityLabel(cd.capacity);
+              if (label) contactCapacityMap.set(c.id, label);
             }
           });
         }
@@ -194,11 +212,14 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           if (!fv) return;
           const dealCapMap = perDealContactCapacity.get(ps.deal_id) || new Map<string, string>();
           Object.entries(fv).forEach(([key, val]) => {
-            if (key.includes('capacity') && typeof val === 'string') {
+            if (key.includes('capacity')) {
+              const parsedCapacity = parseCapacityValue(val);
+              if (!parsedCapacity) return;
               const contactKey = key.replace('capacity', 'contact_id');
               const cid = fv[contactKey];
               if (cid && typeof cid === 'string') {
-                dealCapMap.set(cid, val);
+                const label = resolveCapacityLabel(parsedCapacity);
+                if (label) dealCapMap.set(cid, label);
               }
             }
           });
@@ -210,12 +231,12 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           // Priority 1: section values
           if (contactId) {
             const sectionCap = perDealContactCapacity.get(dealId)?.get(contactId);
-            if (sectionCap && CAPACITY_TO_ROLE[sectionCap]) return CAPACITY_TO_ROLE[sectionCap];
+            if (sectionCap) return sectionCap;
           }
           // Priority 2: contact_data.capacity
           if (contactId) {
             const contactCap = contactCapacityMap.get(contactId);
-            if (contactCap && CAPACITY_TO_ROLE[contactCap]) return CAPACITY_TO_ROLE[contactCap];
+            if (contactCap) return contactCap;
           }
           // Priority 3: role fallback
           return ROLE_FALLBACK[role] || role || 'Other';
