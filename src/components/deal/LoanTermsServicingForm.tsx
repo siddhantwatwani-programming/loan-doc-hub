@@ -145,6 +145,9 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
                             <Input
                               value={values[getFieldKey(row.key, col.key)] || ''}
                               onChange={(e) => onValueChange(getFieldKey(row.key, col.key), e.target.value)}
+                              onKeyDown={numericKeyDown}
+                              onPaste={(e) => numericPaste(e, (v) => onValueChange(getFieldKey(row.key, col.key), v))}
+                              inputMode="decimal"
                               disabled={disabled}
                               className="h-7 text-xs border-border"
                             />
