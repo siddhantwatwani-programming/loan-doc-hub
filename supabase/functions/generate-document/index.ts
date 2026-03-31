@@ -179,11 +179,12 @@ async function generateSingleDocument(
 
     // Get all field_dictionary_ids from JSONB keys
     // Handle composite keys like "borrower1::uuid" used by multi-entity sections
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const allFieldDictIdSet = new Set<string>();
     (sectionValues || []).forEach((sv: any) => {
       Object.keys(sv.field_values || {}).forEach((key: string) => {
         const fieldDictId = key.includes("::") ? key.split("::")[1] : key;
-        if (fieldDictId) allFieldDictIdSet.add(fieldDictId);
+        if (fieldDictId && UUID_RE.test(fieldDictId)) allFieldDictIdSet.add(fieldDictId);
       });
     });
     const allFieldDictIds = [...allFieldDictIdSet];
