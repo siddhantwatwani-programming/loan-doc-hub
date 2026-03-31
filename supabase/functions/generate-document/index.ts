@@ -514,10 +514,13 @@ async function generateSingleDocument(
           forceSet("bk_p_fax", fax);
           if (license) {
             forceSet("bk_p_brokerLicens", String(license));
+            forceSet("bk_p_license", String(license));
             forceSet("broker.License", String(license));
             forceSet("broker.license_number", String(license));
             forceSet("broker1.license_number", String(license));
           }
+          if (cd["address.street"]) forceSet("bk_p_brokerAddres", cd["address.street"]);
+          if (cd.broker_representative || cd.representative) forceSet("bk_p_brokerRepres", cd.broker_representative || cd.representative);
 
           // Force-set dot-notation keys
           for (const prefix of ["broker1", "broker"]) {
