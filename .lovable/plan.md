@@ -1,52 +1,57 @@
 
 
-# Fix: Portfolio Capacity Column Showing Wrong Values
+# Fix: Participant Capacity Keys Breaking Document Generation (Regression)
 
-## Root Cause (Verified via Database Query)
+## Root Cause
 
-The capacity resolution in `BorrowerPortfolio.tsx` has an **unreliable fallback chain**:
+The recent fix to store per-deal participant capacity in `deal_section_values` (section='participants') introduced keys like:
+```
+participant_5771ad96-a6e4-492d-b9c8-15f36383a224_capacity
+```
 
-1. **Priority 1**: Deal-specific capacity from `deal_section_values` (section='participants', key=`participant_{contactId}_capacity`) — **correct but only exists for participants added after the recent fix**
-2. **Priority 2**: Global `contacts.contact_data.capacity` — **UNRELIABLE: shared across all deals, overwritten every time the contact is added to any deal**
-3. **Priority 3**: `ROLE_FALLBACK[role]` — role-based default
+In `generate-document/index.ts` (lines 182-188), ALL keys from `deal_section_values.field_values` are extracted and treated as UUID field_dictionary IDs:
+```typescript
+const fieldDictId = key.includes("::") ? key.split("::")[1] : key;
+allFieldDictIdSet.add(fieldDictId);
+```
 
-**Database evidence**: For contact Abhijit Ghadge (ca71fac9...):
-- DL-2026-0173: deal-specific capacity = "Co-Borrower" ✓
-- DL-2026-0174: **NO deal-specific capacity** → falls back to global `contact_data.capacity` = "Co-Borrower" (wrong — could be anything)
-- DL-2026-0175: deal-specific capacity = "Additional Guarantor" ✓
+The `participant_..._capacity` key does NOT contain `::`, so the entire string is treated as a UUID. When passed to `.in("id", chunk)` (line 202), PostgreSQL throws:
+```
+invalid input syntax for type uuid: "participant_5771ad96-a6e4-492d-b9c8-15f36383a224_capacity"
+```
 
-Any deal where the participant was added before the `deal_section_values` fix will show whatever the global value happens to be at the time of viewing — not what was originally selected.
+This crashes the **entire batch** of 100 IDs. Legitimate field dictionary entries in the same batch are lost, causing their placeholders to appear blank in the generated document.
 
 ## Fix
 
-**File: `src/components/contacts/borrower-detail/BorrowerPortfolio.tsx`**
-
-Change the `resolveCapacity` function (lines 240-253) to **remove the global `contact_data.capacity` fallback** from the resolution chain. When no deal-specific capacity exists, fall back directly to the role-based label:
+**File: `supabase/functions/generate-document/index.ts`** — Add a UUID validation filter before adding keys to `allFieldDictIdSet` (line 186).
 
 ```typescript
-const resolveCapacity = (dealId: string, contactId: string | null, role: string): string => {
-  // Priority 1: deal-specific section values (reliable, per-deal)
-  if (contactId) {
-    const sectionCap = perDealContactCapacity.get(dealId)?.get(contactId);
-    if (sectionCap) return sectionCap;
-  }
-  // Priority 2: role-based fallback (skip unreliable global contact_data.capacity)
-  return ROLE_FALLBACK[role] || role || 'Other';
-};
+// Line 182-188: Filter out non-UUID keys (e.g., participant capacity keys)
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const allFieldDictIdSet = new Set<string>();
+(sectionValues || []).forEach((sv: any) => {
+  Object.keys(sv.field_values || {}).forEach((key: string) => {
+    const fieldDictId = key.includes("::") ? key.split("::")[1] : key;
+    if (fieldDictId && UUID_RE.test(fieldDictId)) {
+      allFieldDictIdSet.add(fieldDictId);
+    }
+  });
+});
 ```
 
-Also remove the now-unused `contactCapacityMap` fetch (lines 191-205) and the `allContactIds` variable to clean up dead code.
+This single-line addition (`UUID_RE.test(fieldDictId)`) skips any non-UUID key, preventing the batch query from failing and restoring all placeholder resolution.
 
 ## Files Modified
 
 | File | Change |
 |---|---|
-| `src/components/contacts/borrower-detail/BorrowerPortfolio.tsx` | Remove global `contact_data.capacity` from fallback chain; remove unused contact capacity fetch |
+| `supabase/functions/generate-document/index.ts` | Add UUID validation filter when collecting field_dictionary IDs from section value keys (line 186) |
 
 ## What Will NOT Change
 - No database schema changes
-- No changes to AddParticipantModal (deal-specific save is correct)
-- No changes to ParticipantsSectionContent
-- No UI layout changes
-- Deal-specific capacity from `deal_section_values` continues to be the primary source
+- No UI changes
+- No template changes
+- No changes to participant capacity storage logic
+- No changes to tag-parser or formatting
 
