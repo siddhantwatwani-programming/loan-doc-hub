@@ -289,6 +289,29 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
 
       if (insertError) throw insertError;
 
+      // Persist capacity per-deal in deal_section_values (section='participants')
+      if (contactId && capacity) {
+        const capacityKey = `participant_${contactId}_capacity`;
+        const { data: existingSection } = await supabase
+          .from('deal_section_values')
+          .select('id, field_values')
+          .eq('deal_id', dealId)
+          .eq('section', 'participants')
+          .maybeSingle();
+
+        const existingValues = (existingSection?.field_values as Record<string, any>) || {};
+        const updatedValues = { ...existingValues, [capacityKey]: capacity };
+
+        if (existingSection) {
+          await supabase.from('deal_section_values')
+            .update({ field_values: updatedValues })
+            .eq('id', existingSection.id);
+        } else {
+          await supabase.from('deal_section_values')
+            .insert({ deal_id: dealId, section: 'participants' as any, field_values: updatedValues });
+        }
+      }
+
       toast.success('Participant added successfully');
       onParticipantAdded();
       onOpenChange(false);
