@@ -1,57 +1,39 @@
 
 
-# Fix: Participant Capacity Keys Breaking Document Generation (Regression)
+# Fix: State Dropdowns Missing in Lender Contact Forms
 
-## Root Cause
-
-The recent fix to store per-deal participant capacity in `deal_section_values` (section='participants') introduced keys like:
-```
-participant_5771ad96-a6e4-492d-b9c8-15f36383a224_capacity
-```
-
-In `generate-document/index.ts` (lines 182-188), ALL keys from `deal_section_values.field_values` are extracted and treated as UUID field_dictionary IDs:
-```typescript
-const fieldDictId = key.includes("::") ? key.split("::")[1] : key;
-allFieldDictIdSet.add(fieldDictId);
-```
-
-The `participant_..._capacity` key does NOT contain `::`, so the entire string is treated as a UUID. When passed to `.in("id", chunk)` (line 202), PostgreSQL throws:
-```
-invalid input syntax for type uuid: "participant_5771ad96-a6e4-492d-b9c8-15f36383a224_capacity"
-```
-
-This crashes the **entire batch** of 100 IDs. Legitimate field dictionary entries in the same batch are lost, causing their placeholders to appear blank in the generated document.
+## Problem
+In both the **Create Lender** modal (`CreateContactModal.tsx`) and the **Lender Detail** form (`ContactLenderDetailForm.tsx`), the State fields for Primary Address and Mailing Address are plain text `Input` fields instead of `Select` dropdowns using `US_STATES`.
 
 ## Fix
 
-**File: `supabase/functions/generate-document/index.ts`** — Add a UUID validation filter before adding keys to `allFieldDictIdSet` (line 186).
+### File 1: `src/components/contacts/CreateContactModal.tsx`
+- **Lines 307 and 317**: Replace `renderInline('State', 'primary_address.state')` and `renderInline('State', 'mailing.state', 'text', isSameAsPrimary)` with `Select` dropdowns using `US_STATES`, matching the existing `renderSelect` pattern but with disabled support for the mailing field when `isSameAsPrimary` is true.
 
-```typescript
-// Line 182-188: Filter out non-UUID keys (e.g., participant capacity keys)
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const allFieldDictIdSet = new Set<string>();
-(sectionValues || []).forEach((sv: any) => {
-  Object.keys(sv.field_values || {}).forEach((key: string) => {
-    const fieldDictId = key.includes("::") ? key.split("::")[1] : key;
-    if (fieldDictId && UUID_RE.test(fieldDictId)) {
-      allFieldDictIdSet.add(fieldDictId);
-    }
-  });
-});
+### File 2: `src/components/contacts/ContactLenderDetailForm.tsx`
+- **Line 227**: Replace the Primary Address State `Input` with a `Select` dropdown using `US_STATES`.
+- **Lines 272-277**: Replace the Mailing Address State `Input` with a `Select` dropdown using `US_STATES`, with disabled state when `sameAsPrimary` is true.
+- Add import for `US_STATES` from `@/lib/usStates`.
+
+### Pattern (from existing codebase)
+```tsx
+import { US_STATES } from '@/lib/usStates';
+
+<Select value={form.state} onValueChange={(v) => set('state', v)} disabled={isDisabled}>
+  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+  <SelectContent>
+    {US_STATES.map(s => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+  </SelectContent>
+</Select>
 ```
 
-This single-line addition (`UUID_RE.test(fieldDictId)`) skips any non-UUID key, preventing the batch query from failing and restoring all placeholder resolution.
-
 ## Files Modified
-
 | File | Change |
 |---|---|
-| `supabase/functions/generate-document/index.ts` | Add UUID validation filter when collecting field_dictionary IDs from section value keys (line 186) |
+| `src/components/contacts/CreateContactModal.tsx` | Replace 2 State text inputs with Select dropdowns |
+| `src/components/contacts/ContactLenderDetailForm.tsx` | Replace 2 State text inputs with Select dropdowns, add US_STATES import |
 
 ## What Will NOT Change
-- No database schema changes
-- No UI changes
-- No template changes
-- No changes to participant capacity storage logic
-- No changes to tag-parser or formatting
+- No database, API, layout, or other component changes
+- Borrower and Broker forms are unaffected
 
