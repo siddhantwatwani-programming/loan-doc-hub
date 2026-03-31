@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { numericKeyDown, numericPaste } from '@/lib/numericInputFilter';
 
 interface LoanTermsServicingFormProps {
   fields: FieldDefinition[];
@@ -144,6 +145,9 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
                             <Input
                               value={values[getFieldKey(row.key, col.key)] || ''}
                               onChange={(e) => onValueChange(getFieldKey(row.key, col.key), e.target.value)}
+                              onKeyDown={numericKeyDown}
+                              onPaste={(e) => numericPaste(e, (v) => onValueChange(getFieldKey(row.key, col.key), v))}
+                              inputMode="decimal"
                               disabled={disabled}
                               className="h-7 text-xs border-border"
                             />
@@ -199,6 +203,9 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
                         <Input
                           value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
                           onChange={(e) => onValueChange(`loan_terms.servicing.custom.${col.key}`, e.target.value)}
+                          onKeyDown={numericKeyDown}
+                          onPaste={(e) => numericPaste(e, (v) => onValueChange(`loan_terms.servicing.custom.${col.key}`, v))}
+                          inputMode="decimal"
                           disabled={disabled}
                           className="h-7 text-xs border-border"
                         />
