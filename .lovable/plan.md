@@ -1,75 +1,51 @@
 
 
-# Fix: Origination Fee Currency Fields Treated as Checkboxes in Document Generation
+# Fix: Duplicate Dollar Sign in Generated Document Output
 
 ## Root Cause
 
-A **data type collision** causes these fields to render as checkboxes (☐/☑) instead of currency values.
-
-The chain of failure:
-1. UI saves currency values (e.g., "$250.00") to **boolean-typed** field dictionary entries like `of_fe_interestForDaysOthers` (data_type = `boolean`) via `legacyKeyMap.ts`
-2. During document generation, the `fieldValues` map stores this data with `dataType: "boolean"`
-3. Template tag `{{of_901_int_o}}` resolves via `field_key_migrations` → `of_fe_interestForDaysOthers` → finds boolean data → checkbox rendering logic kicks in (line 637 of tag-parser.ts)
-4. Currency-typed entries `of_901_int_o` (data_type = `currency`) exist in field_dictionary but are never populated because `legacyKeyMap` routes data to the old boolean keys
-
-The previous fix (adding `_checkbox` suffix to `canonical_key` of boolean fields) was **never applied** — all 30 boolean fields still have their original canonical_keys.
-
-## Fix (2 changes)
-
-### Change 1: Update `legacyKeyMap.ts` — Route currency columns to currency-typed keys
-
-Redirect the 30 `_broker` and `_others` entries for sections 900-1300 from old boolean keys to the new currency-typed keys.
-
-Example change:
+The document template contains a literal `$` character before each currency placeholder:
 ```
-// Before:
-'origination_fees.901_interest_for_days_broker': 'of_fe_interestForDaysBroker',
-'origination_fees.901_interest_for_days_others': 'of_fe_interestForDaysOthers',
-
-// After:
-'origination_fees.901_interest_for_days_broker': 'of_901_int_b',
-'origination_fees.901_interest_for_days_others': 'of_901_int_o',
+$ {{of_901_int_o}}
 ```
 
-All 30 mappings across 901-905, 1001-1004, 1101-1108, 1201-1202, 1302.
+When the engine resolves the tag, `formatByDataType("currency")` calls `formatCurrency()` which uses `Intl.NumberFormat` with `style: "currency"` — producing `$95.00`.
 
-### Change 2: Database migration — Delete incorrect `field_key_migrations` rows
+The final output becomes: `$ $95.00` (double dollar sign).
 
-Delete the 30 migration rows that map template tags (e.g., `of_901_int_o`) to boolean fields (e.g., `of_fe_interestForDaysOthers`). After Change 1, the template tags will match the field_key directly in `fieldValues` with the correct `currency` data type — no migration bridge needed.
+This affects ALL currency-typed fields in the document (800, 900, 1000, 1100, 1200, 1300 series).
 
-```sql
-DELETE FROM field_key_migrations
-WHERE old_key IN (
-  'of_901_int_o','of_901_int_b','of_902_mi_o','of_902_mi_b',
-  'of_903_hi_o','of_903_hi_b','of_904_tax_o','of_904_tax_b',
-  'of_905_va_o','of_905_va_b','of_1001_hi_o','of_1001_hi_b',
-  'of_1002_mi_o','of_1002_mi_b','of_1004_tax_o','of_1004_tax_b',
-  'of_1101_set_o','of_1101_set_b','of_1105_doc_o','of_1105_doc_b',
-  'of_1106_not_o','of_1106_not_b','of_1108_ti_o','of_1108_ti_b',
-  'of_1201_rec_o','of_1201_rec_b','of_1202_ts_o','of_1202_ts_b',
-  'of_1302_pest_o','of_1302_pest_b'
-);
+## Fix
+
+**File: `supabase/functions/_shared/tag-parser.ts`** — In the merge tag replacement logic (~line 1262-1283), after formatting a currency value, check if the template XML immediately preceding the tag contains a literal `$` character. If so, strip the `$` from the formatted value to avoid duplication.
+
+Specifically, after `resolvedValue` is computed (line 1269), add a currency-prefix-aware step:
+
+```typescript
+// If the value is currency-formatted (starts with "$"), strip the "$" because
+// the template already contains a literal "$" before the placeholder.
+if (fieldData.dataType === 'currency' && resolvedValue.startsWith('$')) {
+  resolvedValue = resolvedValue.substring(1);
+}
 ```
 
-## Resolution Flow After Fix
+This is the simplest and most correct fix because:
+1. The template is designed with `$` prefixes — this is intentional formatting by the template author
+2. The `formatCurrency` function should continue to produce `$150.00` for other consumers
+3. Only currency-typed fields in document generation need the prefix stripped
 
-1. UI saves `$250.00` → legacyKeyMap routes to `of_901_int_o` (currency field)
-2. `deal_section_values` stores data under `of_901_int_o` field_dictionary entry (data_type = `currency`)
-3. `fieldValues` map contains `of_901_int_o` → `{ rawValue: 250, dataType: "currency" }`
-4. Template tag `{{of_901_int_o}}` → exact match in `fieldValues` → formatted as currency → `$250.00`
+The same logic applies in the label-based replacement path (~line 688-693) — add the same strip there for consistency.
 
 ## Files Modified
 
 | File | Change |
 |---|---|
-| `src/lib/legacyKeyMap.ts` | Update 30 broker/others mappings to currency-typed keys |
-| Database migration | DELETE 30 incorrect `field_key_migrations` rows |
+| `supabase/functions/_shared/tag-parser.ts` | Strip leading `$` from currency-formatted values before inserting into template (2 locations) |
 
 ## What Will NOT Change
-- No UI layout changes
 - No template modifications
-- No edge function changes
-- No tag-parser or formatting changes
-- Boolean checkbox fields continue to exist (their checkbox behavior in the template is still correct for the SDT/glyph-based checkbox rendering)
-- All other origination fee columns (D, charge, APR, etc.) remain unchanged
+- No `formatting.ts` changes
+- No UI or database changes
+- No changes to non-currency fields
+- `formatCurrency()` continues to return `$150.00` for all other uses
 
