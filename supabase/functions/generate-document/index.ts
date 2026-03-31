@@ -514,10 +514,13 @@ async function generateSingleDocument(
           forceSet("bk_p_fax", fax);
           if (license) {
             forceSet("bk_p_brokerLicens", String(license));
+            forceSet("bk_p_license", String(license));
             forceSet("broker.License", String(license));
             forceSet("broker.license_number", String(license));
             forceSet("broker1.license_number", String(license));
           }
+          if (cd["address.street"]) forceSet("bk_p_brokerAddres", cd["address.street"]);
+          if (cd.broker_representative || cd.representative) forceSet("bk_p_brokerRepres", cd.broker_representative || cd.representative);
 
           // Force-set dot-notation keys
           for (const prefix of ["broker1", "broker"]) {
@@ -975,6 +978,13 @@ async function generateSingleDocument(
         "existing_payoff_amount": "li_bp_existingPayoffAmount",
       };
 
+      // Additional lien bridging: pr_li_* and li_bp_* variants for template tags
+      const lienFieldToAltKeys: Record<string, string> = {
+        "lien_priority_now": "pr_li_lienPrioriNow",
+        "lien_priority_after": "pr_li_lienPrioriAfter",
+        "balance_after": "li_bp_balanceAfter",
+      };
+
       // Reverse map: property1.lien_* canonical keys -> pr_li_* short keys
       const canonicalToPrLi: Record<string, string> = {};
       for (const [field, canonKey] of Object.entries(lienFieldToCanonical)) {
@@ -1000,6 +1010,10 @@ async function generateSingleDocument(
           const liKey = lienFieldToLiKeys[field];
           if (liKey && !fieldValues.has(liKey)) {
             fieldValues.set(liKey, val);
+          }
+          const altKey = lienFieldToAltKeys[field];
+          if (altKey && !fieldValues.has(altKey)) {
+            fieldValues.set(altKey, val);
           }
         }
 
