@@ -205,9 +205,11 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
                         <Input
                           value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
                           onChange={(e) => onValueChange(`loan_terms.servicing.custom.${col.key}`, e.target.value)}
-                          onKeyDown={numericKeyDown}
-                          onPaste={(e) => numericPaste(e, (v) => onValueChange(`loan_terms.servicing.custom.${col.key}`, v))}
-                          inputMode="decimal"
+                          {...(col.key !== 'broker' ? {
+                            onKeyDown: numericKeyDown,
+                            onPaste: (e: React.ClipboardEvent<HTMLInputElement>) => numericPaste(e, (v) => onValueChange(`loan_terms.servicing.custom.${col.key}`, v)),
+                            inputMode: 'decimal' as const,
+                          } : {})}
                           disabled={disabled}
                           className="h-7 text-xs border-border"
                         />
