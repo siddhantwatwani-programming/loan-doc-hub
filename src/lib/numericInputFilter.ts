@@ -1,0 +1,61 @@
+/**
+ * Shared numeric input filter utilities for currency, percentage, and numeric fields.
+ * Blocks non-numeric characters while allowing navigation and editing keys.
+ */
+
+const ALLOWED_KEYS = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
+
+/**
+ * onKeyDown handler for currency/decimal fields.
+ * Allows digits, one decimal point, and navigation keys.
+ */
+export const numericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  if (ALLOWED_KEYS.includes(e.key) || e.ctrlKey || e.metaKey) return;
+  if (!/[\d.]/.test(e.key)) {
+    e.preventDefault();
+    return;
+  }
+  // Prevent second decimal point
+  if (e.key === '.' && e.currentTarget.value.includes('.')) {
+    e.preventDefault();
+  }
+};
+
+/**
+ * onPaste handler for currency/decimal fields.
+ * Strips non-numeric characters (except decimal) from pasted content.
+ */
+export const numericPaste = (
+  e: React.ClipboardEvent<HTMLInputElement>,
+  setter: (val: string) => void
+) => {
+  e.preventDefault();
+  const cleaned = e.clipboardData.getData('text').replace(/[^\d.]/g, '');
+  // Ensure only one decimal point
+  const parts = cleaned.split('.');
+  const result = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : cleaned;
+  setter(result);
+};
+
+/**
+ * onKeyDown handler for integer-only fields (e.g., credit score, months).
+ * Allows digits only plus navigation keys.
+ */
+export const integerKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  if (ALLOWED_KEYS.includes(e.key) || e.ctrlKey || e.metaKey) return;
+  if (!/\d/.test(e.key)) {
+    e.preventDefault();
+  }
+};
+
+/**
+ * onPaste handler for integer-only fields.
+ * Strips all non-digit characters.
+ */
+export const integerPaste = (
+  e: React.ClipboardEvent<HTMLInputElement>,
+  setter: (val: string) => void
+) => {
+  e.preventDefault();
+  setter(e.clipboardData.getData('text').replace(/\D/g, ''));
+};

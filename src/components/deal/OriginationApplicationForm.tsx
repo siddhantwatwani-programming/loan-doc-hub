@@ -258,7 +258,21 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
             {renderCheckboxField('Filed for Bankruptcy (12 Months)', FIELD_KEYS.filed_bankruptcy)}
             {renderCheckboxField('Discharged?', FIELD_KEYS.discharged)}
           </div>
-          {renderTextField('Credit Score', FIELD_KEYS.credit_score)}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.credit_score}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[140px] text-sm shrink-0">Credit Score</Label>
+              <Input
+                value={getValue(FIELD_KEYS.credit_score)}
+                onChange={(e) => setValue(FIELD_KEYS.credit_score, e.target.value)}
+                onKeyDown={integerKeyDown}
+                onPaste={(e) => integerPaste(e, (val) => setValue(FIELD_KEYS.credit_score, val))}
+                disabled={disabled}
+                inputMode="numeric"
+                maxLength={3}
+                className="h-7 text-sm"
+              />
+            </div>
+          </DirtyFieldWrapper>
           {renderLabelInputPair(FIELD_KEYS.extra_label_1, FIELD_KEYS.extra_value_1)}
           {renderLabelInputPair(FIELD_KEYS.extra_label_2, FIELD_KEYS.extra_value_2)}
         </div>
