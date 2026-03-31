@@ -691,6 +691,10 @@ export function replaceLabelBasedFields(
       } else {
         formattedValue = formatByDataType(fieldData.rawValue, fieldData.dataType);
       }
+      // Strip leading "$" from currency values — the template already contains a literal "$" prefix
+      if (fieldData.dataType === 'currency' && formattedValue.startsWith('$')) {
+        formattedValue = formattedValue.substring(1);
+      }
 
       // XML-escape and convert newlines to DOCX line breaks for label-based values
       formattedValue = formattedValue
