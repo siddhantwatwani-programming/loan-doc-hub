@@ -1,50 +1,41 @@
 
 
-# Create Currency Fields for Origination Fee Others/Broker
+# Fix Document Generation for New Origination Fee Currency Fields
 
-## Analysis
+## Root Cause Analysis
 
-The field dictionary already has **boolean** (checkbox) fields for "Others" and "Broker" for each fee item, plus a **currency** "(D)" field. What's missing are **currency amount** fields for the Others and Broker columns. These 20 new fields need to be inserted.
+The investigation reveals a **multi-layer issue**:
 
-## Existing Pattern (per fee item)
-- `of_fe_*Broker` → boolean (checkbox)
-- `of_fe_*Others` → boolean (checkbox)  
-- `of_fe_*D` → currency (dollar amount)
-- **Missing**: currency fields for Others amount and Broker amount
+### 1. Build Deployment Failure (Primary Blocker)
+The previous code change to `src/lib/legacyKeyMap.ts` (mapping UI broker/others columns to new currency field keys) was **never deployed** due to a transient AWS S3 upload failure (`exit 127`). The old legacyKeyMap is still active in production, routing broker/others currency data to old **boolean** field dictionary entries.
 
-## Fields to Create (20 total)
+### 2. No Data Under New Field UUIDs
+Query confirmed zero rows in `deal_section_values` stored under the new currency field UUIDs (e.g., `48835fa9-...` for `of_801_lenderLoanOriginationFee_broker`). This means no user has entered and saved data through the updated code path.
 
-| # | Label | Field Key (Others) | Field Key (Broker) |
-|---|-------|-------------------|-------------------|
-| 1 | 801 Lender's Loan Origination Fee | `of_801_lenderLoanOriginationFee_others` | `of_801_lenderLoanOriginationFee_broker` |
-| 2 | 802 Lender's Loan Discount Fee | `of_802_lenderLoanDiscountFee_others` | `of_802_lenderLoanDiscountFee_broker` |
-| 3 | 803 Appraisal Fee | `of_803_appraisalFee_others` | `of_803_appraisalFee_broker` |
-| 4 | 804 Credit Report Fee | `of_804_creditReportFee_others` | `of_804_creditReportFee_broker` |
-| 5 | 805 Lender's Inspection Fee | `of_805_lenderInspectionFee_others` | `of_805_lenderInspectionFee_broker` |
-| 6 | 808 Mortgage Broker Commission/Fee | `of_808_mortgageBrokerCommissionFee_others` | `of_808_mortgageBrokerCommissionFee_broker` |
-| 7 | 809 Tax Service Fee | `of_809_taxServiceFee_others` | `of_809_taxServiceFee_broker` |
-| 8 | 810 Processing Fee | `of_810_processingFee_others` | `of_810_processingFee_broker` |
-| 9 | 811 Underwriting Fee | `of_811_underwritingFee_others` | `of_811_underwritingFee_broker` |
-| 10 | 812 Wire Transfer Fee | `of_812_wireTransferFee_others` | `of_812_wireTransferFee_broker` |
+### 3. Template-to-Data Alignment
+The template DOCX uses tags like `{{of_801_lenderLoanOriginationFee_broker}}`. These match the new `field_dictionary` entries exactly. Once data is saved under the correct UUIDs, the document generation engine will resolve them correctly — no edge function changes needed.
 
-## Implementation
+## What Needs to Happen
 
-**Single database migration** inserting 20 rows into `field_dictionary`:
+### Step 1: Retry the Build
+The legacyKeyMap code change is already correct. The build just needs to succeed. The AWS S3 error is transient infrastructure — a rebuild should resolve it.
 
-- **section**: `origination_fees`
-- **form_type**: `fees`
-- **data_type**: `currency`
-- **is_calculated**: false
-- **is_repeatable**: false
-- **is_mandatory**: false
-- **allowed_roles**: `{admin, csr}`
-- **read_only_roles**: `{}`
+### Step 2: Re-enter and Save Data
+After deployment, users need to enter values in the Origination Fees form broker/others currency columns and save. This will persist data under the correct new currency field UUIDs.
 
-Each INSERT will use `ON CONFLICT (field_key) DO NOTHING` to prevent duplicates (since `field_key` has a unique-like usage pattern, we'll use a check query before insert to be safe).
+### Step 3: Regenerate the Document
+With data now stored under the correct field keys, the document generation engine will:
+- Read `deal_section_values` → find UUID `48835fa9-...`
+- Look up `field_dictionary` → resolve to `of_801_lenderLoanOriginationFee_broker`
+- Match template tag `{{of_801_lenderLoanOriginationFee_broker}}` → replace with the currency value
+
+## Code Changes Required
+
+**None.** The existing code in `src/lib/legacyKeyMap.ts` is already correct. The edge function (`generate-document`) already handles this flow. The only issue is the failed deployment.
 
 ## What Will NOT Change
-- No UI, component, or layout changes
-- No changes to existing fields or their data types
-- No changes to document generation, templates, or APIs
-- No schema alterations beyond inserting new dictionary rows
+- No edge function modifications
+- No database schema changes
+- No template modifications
+- No UI layout changes
 
