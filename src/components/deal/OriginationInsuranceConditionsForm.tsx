@@ -194,7 +194,8 @@ export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceCo
                 {renderCurrencyInline(FK.coverage_loss_rents_per_month)}
                 <Label className="text-sm shrink-0">per month for</Label>
                 <Input value={v(FK.coverage_loss_rents_months)} onChange={(e) => sv(FK.coverage_loss_rents_months, e.target.value)}
-                  disabled={disabled} placeholder="0" className="h-7 text-sm w-[50px] text-right" />
+                  onKeyDown={integerKeyDown} onPaste={(e) => integerPaste(e, (val) => sv(FK.coverage_loss_rents_months, val))}
+                  disabled={disabled} placeholder="0" inputMode="numeric" className="h-7 text-sm w-[50px] text-right" />
                 <Label className="text-sm shrink-0">months or</Label>
                 {renderCurrencyInline(FK.coverage_loss_rents_total)}
                 <Label className="text-sm shrink-0">total</Label>
