@@ -201,7 +201,16 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
               </div>
               <div className="flex items-center gap-2">
                 <Label className="w-[80px] text-sm shrink-0">State</Label>
-                <Input value={v(otherKeys.state)} onChange={(e) => sv(otherKeys.state, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+                <Select value={v(otherKeys.state)} onValueChange={(val) => sv(otherKeys.state, val)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {US_STATES.map((st) => (
+                      <SelectItem key={st} value={st}>{st}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex items-center gap-2">
                 <Label className="w-[80px] text-sm shrink-0">ZIP</Label>
