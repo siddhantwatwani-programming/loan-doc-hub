@@ -1,99 +1,52 @@
 
 
-# Fix: Participant Capacity Overwritten to Last-Saved Value Across All Deals
+# Fix: Portfolio Capacity Column Showing Wrong Values
 
-## Root Cause
+## Root Cause (Verified via Database Query)
 
-**Capacity is stored globally, not per-deal.** The `deal_participants` table has no `capacity` column. When a participant is added to a deal via `AddParticipantModal`, the selected capacity (e.g., "Co-Borrower") is written to `contacts.contact_data.capacity` — a **global** field on the contact record.
+The capacity resolution in `BorrowerPortfolio.tsx` has an **unreliable fallback chain**:
 
-When the same contact (Abhijit Ghadge) is added to 3 different deals with 3 different capacities:
-1. DL-2026-0173 as "Borrower" → `contact_data.capacity` = "Borrower"
-2. DL-2026-0174 as "Additional Guarantor" → overwrites to "Additional Guarantor"
-3. DL-2026-0175 as "Authorized Signer" → overwrites to "Authorized Signer"
+1. **Priority 1**: Deal-specific capacity from `deal_section_values` (section='participants', key=`participant_{contactId}_capacity`) — **correct but only exists for participants added after the recent fix**
+2. **Priority 2**: Global `contacts.contact_data.capacity` — **UNRELIABLE: shared across all deals, overwritten every time the contact is added to any deal**
+3. **Priority 3**: `ROLE_FALLBACK[role]` — role-based default
 
-Then `ParticipantsSectionContent` reads capacity from `contact_data.capacity` (line 183/224), so ALL deals show "Authorized Signer" (the last value written).
+**Database evidence**: For contact Abhijit Ghadge (ca71fac9...):
+- DL-2026-0173: deal-specific capacity = "Co-Borrower" ✓
+- DL-2026-0174: **NO deal-specific capacity** → falls back to global `contact_data.capacity` = "Co-Borrower" (wrong — could be anything)
+- DL-2026-0175: deal-specific capacity = "Additional Guarantor" ✓
 
-The same global value flows to `BorrowerPortfolio`, which tries deal-specific resolution from `deal_section_values` (section='participants') first, but that data is **never written** — so it falls back to the same global value.
+Any deal where the participant was added before the `deal_section_values` fix will show whatever the global value happens to be at the time of viewing — not what was originally selected.
 
-## Fix (2 changes, 1 file each)
+## Fix
 
-### Change 1: `AddParticipantModal.tsx` — Save capacity to `deal_section_values`
+**File: `src/components/contacts/borrower-detail/BorrowerPortfolio.tsx`**
 
-After inserting the `deal_participants` row (line 288), also upsert a `deal_section_values` row with `section='participants'` containing the capacity keyed by contact ID. This creates deal-specific capacity storage.
+Change the `resolveCapacity` function (lines 240-253) to **remove the global `contact_data.capacity` fallback** from the resolution chain. When no deal-specific capacity exists, fall back directly to the role-based label:
 
 ```typescript
-// After participant insert succeeds, persist capacity per-deal
-if (contactId && capacity) {
-  const capacityKey = `participant_${contactId}_capacity`;
-  const { data: existingSection } = await supabase
-    .from('deal_section_values')
-    .select('id, field_values')
-    .eq('deal_id', dealId)
-    .eq('section', 'participants')
-    .maybeSingle();
-
-  const existingValues = (existingSection?.field_values as Record<string, any>) || {};
-  const updatedValues = { ...existingValues, [capacityKey]: capacity };
-
-  if (existingSection) {
-    await supabase.from('deal_section_values')
-      .update({ field_values: updatedValues })
-      .eq('id', existingSection.id);
-  } else {
-    await supabase.from('deal_section_values')
-      .insert({ deal_id: dealId, section: 'participants', field_values: updatedValues });
+const resolveCapacity = (dealId: string, contactId: string | null, role: string): string => {
+  // Priority 1: deal-specific section values (reliable, per-deal)
+  if (contactId) {
+    const sectionCap = perDealContactCapacity.get(dealId)?.get(contactId);
+    if (sectionCap) return sectionCap;
   }
-}
+  // Priority 2: role-based fallback (skip unreliable global contact_data.capacity)
+  return ROLE_FALLBACK[role] || role || 'Other';
+};
 ```
 
-### Change 2: `ParticipantsSectionContent.tsx` — Read capacity from deal-specific storage
-
-In `fetchParticipants`, after fetching participants and contacts, also fetch `deal_section_values` where `section='participants'` for this deal. Read capacity from `participant_{contact_id}_capacity` key. Fall back to `contact_data.capacity` only if deal-specific value is missing.
-
-```typescript
-// Fetch deal-specific participant section values
-const { data: participantSection } = await supabase
-  .from('deal_section_values')
-  .select('field_values')
-  .eq('deal_id', dealId)
-  .eq('section', 'participants')
-  .maybeSingle();
-
-const pSectionValues = (participantSection?.field_values || {}) as Record<string, any>;
-
-// In the mapping (line 224), use deal-specific capacity first:
-const dealCapacity = contactId ? pSectionValues[`participant_${contactId}_capacity`] : '';
-const capacityVal = dealCapacity || contact?.capacity || '';
-```
-
-### Change 3: `BorrowerPortfolio.tsx` — Fix capacity resolution to match new key pattern
-
-Update the `perDealContactCapacity` builder (lines 210-227) to also check for `participant_{contactId}_capacity` keys in the participants section values, not just keys containing the substring "capacity" with adjacent "contact_id" keys.
-
-```typescript
-// In addition to existing key scanning, check explicit participant_*_capacity keys
-Object.entries(fv).forEach(([key, val]) => {
-  const match = key.match(/^participant_(.+)_capacity$/);
-  if (match) {
-    const cid = match[1];
-    const label = resolveCapacityLabel(parseCapacityValue(val));
-    if (label) dealCapMap.set(cid, label);
-  }
-});
-```
+Also remove the now-unused `contactCapacityMap` fetch (lines 191-205) and the `allContactIds` variable to clean up dead code.
 
 ## Files Modified
 
 | File | Change |
 |---|---|
-| `src/components/deal/AddParticipantModal.tsx` | After participant insert, save capacity to `deal_section_values` (section='participants') keyed by contact ID |
-| `src/components/deal/ParticipantsSectionContent.tsx` | Read deal-specific capacity from `deal_section_values` before falling back to global `contact_data.capacity` |
-| `src/components/contacts/borrower-detail/BorrowerPortfolio.tsx` | Recognize `participant_{contactId}_capacity` key pattern in section values |
+| `src/components/contacts/borrower-detail/BorrowerPortfolio.tsx` | Remove global `contact_data.capacity` from fallback chain; remove unused contact capacity fetch |
 
 ## What Will NOT Change
 - No database schema changes
-- No API changes
-- No template or document generation changes
+- No changes to AddParticipantModal (deal-specific save is correct)
+- No changes to ParticipantsSectionContent
 - No UI layout changes
-- Global `contact_data.capacity` continues to be written (backward compat) but is no longer the primary source for deal-specific display
+- Deal-specific capacity from `deal_section_values` continues to be the primary source
 
