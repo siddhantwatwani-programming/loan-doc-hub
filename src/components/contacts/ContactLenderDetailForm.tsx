@@ -275,12 +275,12 @@ export const ContactLenderDetailForm: React.FC<Props> = ({ lender, onSave, onCan
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label>Mailing State</Label>
-              <Input
-                value={form.mailingState}
-                onChange={(e) => set('mailingState', e.target.value)}
-                readOnly={form.sameAsPrimary}
-                className={form.sameAsPrimary ? 'bg-muted/50' : ''}
-              />
+              <Select value={form.mailingState} onValueChange={(v) => set('mailingState', v)} disabled={form.sameAsPrimary}>
+                <SelectTrigger className={form.sameAsPrimary ? 'bg-muted/50' : ''}><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map(s => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Mailing ZIP</Label>
