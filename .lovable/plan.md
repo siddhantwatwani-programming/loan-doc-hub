@@ -1,51 +1,99 @@
 
 
-# Fix: Duplicate Dollar Sign in Generated Document Output
+# Fix: Participant Capacity Overwritten to Last-Saved Value Across All Deals
 
 ## Root Cause
 
-The document template contains a literal `$` character before each currency placeholder:
-```
-$ {{of_901_int_o}}
-```
+**Capacity is stored globally, not per-deal.** The `deal_participants` table has no `capacity` column. When a participant is added to a deal via `AddParticipantModal`, the selected capacity (e.g., "Co-Borrower") is written to `contacts.contact_data.capacity` — a **global** field on the contact record.
 
-When the engine resolves the tag, `formatByDataType("currency")` calls `formatCurrency()` which uses `Intl.NumberFormat` with `style: "currency"` — producing `$95.00`.
+When the same contact (Abhijit Ghadge) is added to 3 different deals with 3 different capacities:
+1. DL-2026-0173 as "Borrower" → `contact_data.capacity` = "Borrower"
+2. DL-2026-0174 as "Additional Guarantor" → overwrites to "Additional Guarantor"
+3. DL-2026-0175 as "Authorized Signer" → overwrites to "Authorized Signer"
 
-The final output becomes: `$ $95.00` (double dollar sign).
+Then `ParticipantsSectionContent` reads capacity from `contact_data.capacity` (line 183/224), so ALL deals show "Authorized Signer" (the last value written).
 
-This affects ALL currency-typed fields in the document (800, 900, 1000, 1100, 1200, 1300 series).
+The same global value flows to `BorrowerPortfolio`, which tries deal-specific resolution from `deal_section_values` (section='participants') first, but that data is **never written** — so it falls back to the same global value.
 
-## Fix
+## Fix (2 changes, 1 file each)
 
-**File: `supabase/functions/_shared/tag-parser.ts`** — In the merge tag replacement logic (~line 1262-1283), after formatting a currency value, check if the template XML immediately preceding the tag contains a literal `$` character. If so, strip the `$` from the formatted value to avoid duplication.
+### Change 1: `AddParticipantModal.tsx` — Save capacity to `deal_section_values`
 
-Specifically, after `resolvedValue` is computed (line 1269), add a currency-prefix-aware step:
+After inserting the `deal_participants` row (line 288), also upsert a `deal_section_values` row with `section='participants'` containing the capacity keyed by contact ID. This creates deal-specific capacity storage.
 
 ```typescript
-// If the value is currency-formatted (starts with "$"), strip the "$" because
-// the template already contains a literal "$" before the placeholder.
-if (fieldData.dataType === 'currency' && resolvedValue.startsWith('$')) {
-  resolvedValue = resolvedValue.substring(1);
+// After participant insert succeeds, persist capacity per-deal
+if (contactId && capacity) {
+  const capacityKey = `participant_${contactId}_capacity`;
+  const { data: existingSection } = await supabase
+    .from('deal_section_values')
+    .select('id, field_values')
+    .eq('deal_id', dealId)
+    .eq('section', 'participants')
+    .maybeSingle();
+
+  const existingValues = (existingSection?.field_values as Record<string, any>) || {};
+  const updatedValues = { ...existingValues, [capacityKey]: capacity };
+
+  if (existingSection) {
+    await supabase.from('deal_section_values')
+      .update({ field_values: updatedValues })
+      .eq('id', existingSection.id);
+  } else {
+    await supabase.from('deal_section_values')
+      .insert({ deal_id: dealId, section: 'participants', field_values: updatedValues });
+  }
 }
 ```
 
-This is the simplest and most correct fix because:
-1. The template is designed with `$` prefixes — this is intentional formatting by the template author
-2. The `formatCurrency` function should continue to produce `$150.00` for other consumers
-3. Only currency-typed fields in document generation need the prefix stripped
+### Change 2: `ParticipantsSectionContent.tsx` — Read capacity from deal-specific storage
 
-The same logic applies in the label-based replacement path (~line 688-693) — add the same strip there for consistency.
+In `fetchParticipants`, after fetching participants and contacts, also fetch `deal_section_values` where `section='participants'` for this deal. Read capacity from `participant_{contact_id}_capacity` key. Fall back to `contact_data.capacity` only if deal-specific value is missing.
+
+```typescript
+// Fetch deal-specific participant section values
+const { data: participantSection } = await supabase
+  .from('deal_section_values')
+  .select('field_values')
+  .eq('deal_id', dealId)
+  .eq('section', 'participants')
+  .maybeSingle();
+
+const pSectionValues = (participantSection?.field_values || {}) as Record<string, any>;
+
+// In the mapping (line 224), use deal-specific capacity first:
+const dealCapacity = contactId ? pSectionValues[`participant_${contactId}_capacity`] : '';
+const capacityVal = dealCapacity || contact?.capacity || '';
+```
+
+### Change 3: `BorrowerPortfolio.tsx` — Fix capacity resolution to match new key pattern
+
+Update the `perDealContactCapacity` builder (lines 210-227) to also check for `participant_{contactId}_capacity` keys in the participants section values, not just keys containing the substring "capacity" with adjacent "contact_id" keys.
+
+```typescript
+// In addition to existing key scanning, check explicit participant_*_capacity keys
+Object.entries(fv).forEach(([key, val]) => {
+  const match = key.match(/^participant_(.+)_capacity$/);
+  if (match) {
+    const cid = match[1];
+    const label = resolveCapacityLabel(parseCapacityValue(val));
+    if (label) dealCapMap.set(cid, label);
+  }
+});
+```
 
 ## Files Modified
 
 | File | Change |
 |---|---|
-| `supabase/functions/_shared/tag-parser.ts` | Strip leading `$` from currency-formatted values before inserting into template (2 locations) |
+| `src/components/deal/AddParticipantModal.tsx` | After participant insert, save capacity to `deal_section_values` (section='participants') keyed by contact ID |
+| `src/components/deal/ParticipantsSectionContent.tsx` | Read deal-specific capacity from `deal_section_values` before falling back to global `contact_data.capacity` |
+| `src/components/contacts/borrower-detail/BorrowerPortfolio.tsx` | Recognize `participant_{contactId}_capacity` key pattern in section values |
 
 ## What Will NOT Change
-- No template modifications
-- No `formatting.ts` changes
-- No UI or database changes
-- No changes to non-currency fields
-- `formatCurrency()` continues to return `$150.00` for all other uses
+- No database schema changes
+- No API changes
+- No template or document generation changes
+- No UI layout changes
+- Global `contact_data.capacity` continues to be written (backward compat) but is no longer the primary source for deal-specific display
 
