@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { numericKeyDown, numericPaste, integerKeyDown, integerPaste } from '@/lib/numericInputFilter';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationInsuranceConditionsFormProps {
