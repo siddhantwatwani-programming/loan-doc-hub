@@ -236,7 +236,12 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
           {renderTextField('Occupation', FIELD_KEYS.occupation)}
           {renderTextField('Employer', FIELD_KEYS.employer)}
           {renderDatePicker('Employed Since', FIELD_KEYS.employed_since)}
-          {renderTextField('Contact', FIELD_KEYS.contact)}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.contact}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[140px] text-sm shrink-0">Contact</Label>
+              <PhoneInput value={getValue(FIELD_KEYS.contact)} onValueChange={(val) => setValue(FIELD_KEYS.contact, val)} disabled={disabled} className="h-7 text-sm" />
+            </div>
+          </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.phone}>
             <div className="flex items-center gap-2">
               <Label className="w-[140px] text-sm shrink-0">Phone</Label>
