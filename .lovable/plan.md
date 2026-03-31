@@ -1,69 +1,96 @@
 
 
-# Fix: Participant Capacity Incorrectly Overwritten to "Borrower"
+# Fix Template Placeholders Not Populating in Document Generation
 
 ## Root Cause
 
-There are **two interconnected bugs**:
+Three distinct resolution gaps prevent template tags from finding their stored values:
 
-### Bug 1: Row-click overwrites `contact_data.capacity` with role label (Primary)
+### 1. Origination Fee 900-1300 Series (30 fields)
+Template tags like `{{of_901_int_o}}` resolve to `of_901_int_o` (exists in field_dictionary). But the actual data is stored under the **old** field_key `of_fe_interestForDaysOthers` (also in field_dictionary). The `fieldValues` map is keyed by the old field_key. There is no bridge between them.
 
-In `ParticipantsSectionContent.tsx`, both `navigateToContactByEmail` (line 305-306) and `navigateToContactById` (line 371-372) execute this code when a user clicks a participant row:
+### 2. Broker Fields (5 fields)
+- `bk_p_brokerRepres`, `bk_p_brokerAddres` — stored via deal_section_values under broker section, so they SHOULD be in fieldValues already. But the participant injection force-overrides broker keys, and these specific keys are not in the force-set list. If no data was entered in the deal's broker form, these remain empty.
+- `bk_p_license` — exists in field_dictionary but the participant injection sets `bk_p_brokerLicens` (different key). `bk_p_license` is never populated.
 
+### 3. Lien Fields (5 fields)
+- `pr_li_lienPrioriNow`, `pr_li_lienPrioriAfter` — lien bridging maps `lien_priority_now` → `li_gd_lienPriorityNow`, NOT to `pr_li_lienPrioriNow`.
+- `li_bp_balanceAfter` — lien bridging maps `balance_after` → `pr_li_lienCurrenBalanc2`, NOT to `li_bp_balanceAfter`.
+- `pr_li_lienCurrenBalanc2` — already bridged correctly (should work).
+- `pr_li_lienHolder` — already bridged correctly (should work).
+
+## Fix
+
+### Change 1: Add `field_key_migrations` entries (database migration)
+
+Insert migration records mapping each new short template tag to the old `of_fe_*` field_key. This uses the existing Priority 2 resolution path in `resolveFieldKeyWithBackwardCompat` and Priority 3 in `getFieldData`.
+
+30 rows for origination fees:
+| old_key (template tag) | new_key (stored field_key) |
+|---|---|
+| `of_901_int_o` | `of_fe_interestForDaysOthers` |
+| `of_901_int_b` | `of_fe_interestForDaysBroker` |
+| `of_902_mi_o` | `of_fe_mortgageInsuraPremiuOthers` |
+| `of_902_mi_b` | `of_fe_mortgageInsuraPremiuBroker` |
+| `of_903_hi_o` | `of_fe_hazardInsuraPremiuOthers` |
+| `of_903_hi_b` | `of_fe_hazardInsuraPremiuBroker` |
+| `of_904_tax_o` | `of_fe_countyProperTaxesOthers` |
+| `of_904_tax_b` | `of_fe_countyProperTaxesBroker` |
+| `of_905_va_o` | `of_fe_vaFundinFeeOthers` |
+| `of_905_va_b` | `of_fe_vaFundinFeeBroker` |
+| `of_1001_hi_o` | `of_fe_hazardInsuraOthers` |
+| `of_1001_hi_b` | `of_fe_hazardInsuraBroker` |
+| `of_1002_mi_o` | `of_fe_mortgageInsuraOthers` |
+| `of_1002_mi_b` | `of_fe_mortgageInsuraBroker` |
+| `of_1004_tax_o` | `of_fe_coProperTaxesOthers` |
+| `of_1004_tax_b` | `of_fe_coProperTaxesBroker` |
+| `of_1101_set_o` | `of_fe_settlemeFeeOthers` |
+| `of_1101_set_b` | `of_fe_settlemeFeeBroker` |
+| `of_1105_doc_o` | `of_fe_docPreparFeeOthers` |
+| `of_1105_doc_b` | `of_fe_docPreparFeeBroker` |
+| `of_1106_not_o` | `of_fe_notaryFeeOthers` |
+| `of_1106_not_b` | `of_fe_notaryFeeBroker` |
+| `of_1108_ti_o` | `of_fe_titleInsuraOthers` |
+| `of_1108_ti_b` | `of_fe_titleInsuraBroker` |
+| `of_1201_rec_o` | `of_fe_recordinFeesOthers` |
+| `of_1201_rec_b` | `of_fe_recordinFeesBroker` |
+| `of_1202_ts_o` | `of_fe_citycounTaxStampsOthers` |
+| `of_1202_ts_b` | `of_fe_citycounTaxStampsBroker` |
+| `of_1302_pest_o` | `of_fe_pestInspecOthers` |
+| `of_1302_pest_b` | `of_fe_pestInspecBroker` |
+
+All with `status = 'migrated'`.
+
+### Change 2: Add lien field bridging (generate-document/index.ts)
+
+In the lien bridging block (~line 962-976), add three missing mappings to `lienFieldToLiKeys`:
+- `"lien_priority_now": "pr_li_lienPrioriNow"` — add second bridge
+- `"lien_priority_after": "pr_li_lienPrioriAfter"` — add second bridge  
+- `"balance_after": "li_bp_balanceAfter"` — add second bridge
+
+These are in addition to the existing mappings (not replacing them). After the existing bridging loop that sets `li_gd_*` keys, add a second pass that also sets the `pr_li_*` / `li_bp_*` variants.
+
+### Change 3: Add broker field bridging (generate-document/index.ts)
+
+In the broker participant injection block (~line 506-541), add:
 ```typescript
-const capacityLabel = ROLE_LABELS[participant.role] || participant.role;
-mergedContactData['capacity'] = capacityLabel;
+if (cd["address.street"]) forceSet("bk_p_brokerAddres", cd["address.street"]);
+if (cd.broker_representative || cd.representative) forceSet("bk_p_brokerRepres", cd.broker_representative || cd.representative);
+if (license) forceSet("bk_p_license", String(license));
 ```
 
-`participant.role` is always `"borrower"` for all borrower-type participants (Co-Borrower, Additional Guarantor, etc.), so `ROLE_LABELS["borrower"]` = `"Borrower"`. This overwrites the correctly saved capacity (e.g., "Co-Borrower", "Additional Guarantor") to "Borrower" every time a row is clicked.
-
-### Bug 2: `contact_data.capacity` is a shared global field
-
-The AddParticipantModal saves capacity to `contacts.contact_data.capacity` — a single shared field on the contact record. When the same contact is added to multiple deals with different capacities, each addition overwrites the previous value. The last write wins.
-
-### Bug 3: Portfolio reads from shared field as fallback
-
-`BorrowerPortfolio.tsx` line 216-218 uses `contactCapacityMap` (from `contact_data.capacity`) as priority 2 fallback. Since this field is corrupted by Bug 1, the portfolio also shows wrong data.
-
-## Fix (3 changes in 1 file)
-
-**File: `src/components/deal/ParticipantsSectionContent.tsx`**
-
-### Change 1: Stop overwriting capacity on row click
-
-In `navigateToContactByEmail` (line ~305-306) and `navigateToContactById` (line ~371-372), **remove** the two lines that overwrite capacity:
-
-```typescript
-// REMOVE these lines:
-const capacityLabel = ROLE_LABELS[participant.role] || participant.role;
-mergedContactData['capacity'] = capacityLabel;
-```
-
-The capacity is already correctly set during participant creation (AddParticipantModal). Row-click navigation should never modify it.
-
-### Change 2: Display capacity from the correct source
-
-In `fetchParticipants` (line ~220-242), the capacity is currently sourced only from `contact_data.capacity` (shared/global). Instead, also check `deal_section_values` for the participants section, similar to how BorrowerPortfolio does it.
-
-However, the simpler and more correct fix: since the AddParticipantModal already writes the capacity to `contact_data.capacity` at creation time, and this bug is caused by the row-click overwrite, fixing Change 1 alone will prevent future corruption. The existing data for the 3 affected deals can be corrected by re-adding participants or by a one-time data fix.
-
-### Change 3: Use participant's own capacity, not role label
-
-In `fetchParticipants`, the `participant_type_capacity` display (line 225-226) reads `contact?.capacity`. This is correct IF the contact_data isn't corrupted. After Change 1 prevents corruption, this will work correctly for new participants.
-
-For the BorrowerPortfolio, the resolution chain (deal_section_values → contact_data.capacity → role fallback) is already correct — it just reads corrupted data. Fixing the write side (Change 1) fixes the read side.
-
-## Summary of Code Changes
+## Files Modified
 
 | File | Change |
 |---|---|
-| `ParticipantsSectionContent.tsx` | Remove 4 lines (2 in `navigateToContactByEmail`, 2 in `navigateToContactById`) that overwrite `contact_data.capacity` with `ROLE_LABELS[role]` |
+| Database migration | INSERT 30 `field_key_migrations` rows |
+| `supabase/functions/generate-document/index.ts` | Add lien bridging for 3 keys, broker injection for 3 keys |
 
 ## What Will NOT Change
-- No database schema changes
-- No API changes
-- No UI layout changes
-- No changes to AddParticipantModal (it correctly saves capacity)
-- No changes to BorrowerPortfolio (it correctly reads capacity)
-- No changes to document generation
+- No UI layout or component changes
+- No field dictionary schema changes
+- No template modifications
+- No changes to tag-parser, field-resolver, or docx-processor
+- No changes to legacyKeyMap.ts
+- Existing document generation logic preserved
 
