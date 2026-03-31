@@ -1008,6 +1008,10 @@ async function generateSingleDocument(
           if (liKey && !fieldValues.has(liKey)) {
             fieldValues.set(liKey, val);
           }
+          const altKey = lienFieldToAltKeys[field];
+          if (altKey && !fieldValues.has(altKey)) {
+            fieldValues.set(altKey, val);
+          }
         }
 
         // Match property1.lien_holder, property.lien_holder etc.
