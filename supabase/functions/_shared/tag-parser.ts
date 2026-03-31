@@ -1268,6 +1268,10 @@ export function replaceMergeTags(
       } else {
         resolvedValue = formatByDataType(fieldData.rawValue, fieldData.dataType);
       }
+      // Strip leading "$" from currency values — the template already contains a literal "$" prefix
+      if (fieldData.dataType === 'currency' && resolvedValue.startsWith('$')) {
+        resolvedValue = resolvedValue.substring(1);
+      }
       console.log(`[tag-parser] Replacing ${tag.tagName} -> ${transformKey} = "${resolvedValue.substring(0, 50)}"`);
     } else {
       console.log(`[tag-parser] No data for ${tag.tagName} (canonical: ${canonicalKey}, ultimate: ${ultimateKey})`);
