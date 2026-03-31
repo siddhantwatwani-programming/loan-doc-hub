@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { hasAtLeastOneFieldFilled, validatePhoneFields, hasValidContactEmails } from '@/lib/contactFormValidation';
 import { toast } from 'sonner';
+import { US_STATES } from '@/lib/usStates';
 
 interface CreateContactModalProps {
   open: boolean;
@@ -304,7 +305,15 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
               {renderInline('Street', 'primary_address.street')}
               {renderInline('City', 'primary_address.city')}
-              {renderInline('State', 'primary_address.state')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">State</Label>
+                <Select value={form['primary_address.state'] || ''} onValueChange={(v) => set('primary_address.state', v)}>
+                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-[200]">
+                    {US_STATES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
                 <ZipInput value={form['primary_address.zip'] || ''} onValueChange={(val) => set('primary_address.zip', val)} className="h-7 text-xs" />
@@ -314,7 +323,15 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
                 {renderInline('Street', 'mailing.street', 'text', isSameAsPrimary)}
                 {renderInline('City', 'mailing.city', 'text', isSameAsPrimary)}
-                {renderInline('State', 'mailing.state', 'text', isSameAsPrimary)}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs">State</Label>
+                  <Select value={form['mailing.state'] || ''} onValueChange={(v) => set('mailing.state', v)} disabled={isSameAsPrimary}>
+                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent className="bg-background border border-border z-[200]">
+                      {US_STATES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="flex items-center gap-2">
                   <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
                   <ZipInput value={form['mailing.zip'] || ''} onValueChange={(val) => set('mailing.zip', val)} disabled={isSameAsPrimary} className="h-7 text-xs" />

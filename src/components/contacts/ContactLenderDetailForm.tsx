@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { US_STATES } from '@/lib/usStates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ZipInput } from '@/components/ui/zip-input';
@@ -224,7 +225,12 @@ export const ContactLenderDetailForm: React.FC<Props> = ({ lender, onSave, onCan
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label>State</Label>
-              <Input value={form.state} onChange={(e) => set('state', e.target.value)} />
+              <Select value={form.state} onValueChange={(v) => set('state', v)}>
+                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map(s => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>ZIP</Label>
@@ -269,12 +275,12 @@ export const ContactLenderDetailForm: React.FC<Props> = ({ lender, onSave, onCan
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label>Mailing State</Label>
-              <Input
-                value={form.mailingState}
-                onChange={(e) => set('mailingState', e.target.value)}
-                readOnly={form.sameAsPrimary}
-                className={form.sameAsPrimary ? 'bg-muted/50' : ''}
-              />
+              <Select value={form.mailingState} onValueChange={(v) => set('mailingState', v)} disabled={form.sameAsPrimary}>
+                <SelectTrigger className={form.sameAsPrimary ? 'bg-muted/50' : ''}><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map(s => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Mailing ZIP</Label>
