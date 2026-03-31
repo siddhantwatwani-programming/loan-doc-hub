@@ -80,7 +80,9 @@ export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceCo
       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
       <Input
         type="text" inputMode="decimal" value={v(key)} onChange={(e) => sv(key, e.target.value)}
+        onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => sv(key, val))}
         disabled={disabled} placeholder={placeholder || '0.00'} className="h-7 text-sm pl-6 text-right"
+      />
       />
     </div>
   );
