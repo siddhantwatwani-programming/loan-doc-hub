@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Home } from 'lucide-react';
+import { Home, CalendarIcon } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -11,6 +11,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
+import { format, parse, isValid } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
 import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
 import type { LienData } from './LiensTableView';
@@ -114,12 +118,50 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
     setFormData(prev => ({ ...prev, thisLoan: 'false' }));
   };
 
-  const renderInlineField = (field: keyof LienData, label: string, type = 'text', forceDisabled = false) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
-      <Input value={formData[field]} onChange={(e) => handleChange(field, e.target.value)} className={`h-7 text-xs flex-1 ${forceDisabled ? 'opacity-50 bg-muted' : ''}`} type={type} disabled={forceDisabled} />
-    </div>
-  );
+  const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
+
+  const safeParseDateStr = (val: string): Date | undefined => {
+    if (!val) return undefined;
+    try {
+      const d = parse(val, 'yyyy-MM-dd', new Date());
+      return isValid(d) ? d : undefined;
+    } catch { return undefined; }
+  };
+
+  const renderInlineField = (field: keyof LienData, label: string, type = 'text', forceDisabled = false) => {
+    if (type === 'date') {
+      const val = formData[field] || '';
+      return (
+        <div className="flex items-center gap-2">
+          <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
+          <Popover open={datePickerStates[field] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [field]: open }))}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn('h-7 text-xs flex-1 justify-start text-left font-normal', !val && 'text-muted-foreground', forceDisabled && 'opacity-50 cursor-not-allowed')} disabled={forceDisabled}>
+                {val && safeParseDateStr(val) ? format(safeParseDateStr(val)!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+              <EnhancedCalendar
+                mode="single"
+                selected={safeParseDateStr(val)}
+                onSelect={(date) => { if (date) handleChange(field, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [field]: false })); }}
+                onClear={() => { handleChange(field, ''); setDatePickerStates(prev => ({ ...prev, [field]: false })); }}
+                onToday={() => { handleChange(field, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [field]: false })); }}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center gap-2">
+        <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
+        <Input value={formData[field]} onChange={(e) => handleChange(field, e.target.value)} className={`h-7 text-xs flex-1 ${forceDisabled ? 'opacity-50 bg-muted' : ''}`} type={type} disabled={forceDisabled} />
+      </div>
+    );
+  };
 
   const renderCurrencyField = (field: keyof LienData, label: string, forceDisabled = false) => (
     <div className="flex items-center gap-2">
