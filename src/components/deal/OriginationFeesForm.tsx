@@ -547,7 +547,7 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
           </div>
           <div className="relative">
             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
-            <Input inputMode="decimal" value={getValue(keys.others)} onChange={(e) => setValue(keys.others, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+            <Input inputMode="decimal" value={getValue(keys.others)} onChange={(e) => setValue(keys.others, e.target.value)} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(keys.others, val))} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
           </div>
           <div className="relative">
             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
