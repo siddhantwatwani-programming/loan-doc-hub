@@ -225,7 +225,12 @@ export const ContactLenderDetailForm: React.FC<Props> = ({ lender, onSave, onCan
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label>State</Label>
-              <Input value={form.state} onChange={(e) => set('state', e.target.value)} />
+              <Select value={form.state} onValueChange={(v) => set('state', v)}>
+                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map(s => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>ZIP</Label>
