@@ -187,23 +187,6 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           .select('deal_id, role, name, contact_id')
           .in('deal_id', dealIds);
 
-        // 5c. Fetch contact records for those participants to get contact_data.capacity
-        const allContactIds = [...new Set((allDealParticipants || []).map(p => p.contact_id).filter(Boolean))] as string[];
-        const contactCapacityMap = new Map<string, string>();
-        if (allContactIds.length > 0) {
-          const { data: contactRecords } = await supabase
-            .from('contacts')
-            .select('id, contact_data')
-            .in('id', allContactIds);
-          (contactRecords || []).forEach(c => {
-            const cd = c.contact_data as Record<string, any> | null;
-            if (cd?.capacity && typeof cd.capacity === 'string') {
-              const label = resolveCapacityLabel(cd.capacity);
-              if (label) contactCapacityMap.set(c.id, label);
-            }
-          });
-        }
-
         // Build per-deal participants map with resolved capacities
         // Also build a capacity map per contact_id per deal from participant section values
         const perDealContactCapacity = new Map<string, Map<string, string>>();
@@ -238,17 +221,12 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
 
         // Helper: resolve display capacity for a participant
         const resolveCapacity = (dealId: string, contactId: string | null, role: string): string => {
-          // Priority 1: section values
+          // Priority 1: deal-specific section values (reliable, per-deal)
           if (contactId) {
             const sectionCap = perDealContactCapacity.get(dealId)?.get(contactId);
             if (sectionCap) return sectionCap;
           }
-          // Priority 2: contact_data.capacity
-          if (contactId) {
-            const contactCap = contactCapacityMap.get(contactId);
-            if (contactCap) return contactCap;
-          }
-          // Priority 3: role fallback
+          // Priority 2: role-based fallback (skip unreliable global contact_data.capacity)
           return ROLE_FALLBACK[role] || role || 'Other';
         };
 
