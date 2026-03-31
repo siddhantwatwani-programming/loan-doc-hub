@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { US_STATES } from '@/lib/usStates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ZipInput } from '@/components/ui/zip-input';
