@@ -171,20 +171,15 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           .in('deal_id', dealIds)
           .eq('section', 'participants');
 
-        const participantCapacityMap = new Map<string, string>();
-        (participantSections || []).forEach(ps => {
-          const fv = ps.field_values as Record<string, any>;
-          if (fv) {
-            Object.entries(fv).forEach(([key, val]) => {
-              if (key.includes('capacity') && typeof val === 'string') {
-                const contactKey = key.replace('capacity', 'contact_id');
-                if (fv[contactKey] === contactDbId) {
-                  participantCapacityMap.set(ps.deal_id, val);
-                }
-              }
-            });
+        const parseCapacityValue = (value: unknown): string => {
+          if (typeof value === 'string') return value;
+          if (value && typeof value === 'object') {
+            const obj = value as Record<string, unknown>;
+            if (typeof obj.value_text === 'string') return obj.value_text;
+            if (typeof obj.value_json === 'string') return obj.value_json;
           }
-        });
+          return '';
+        };
 
         // 5b. Fetch ALL participants across all linked deals for the info popover
         const { data: allDealParticipants } = await supabase
@@ -203,7 +198,8 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           (contactRecords || []).forEach(c => {
             const cd = c.contact_data as Record<string, any> | null;
             if (cd?.capacity && typeof cd.capacity === 'string') {
-              contactCapacityMap.set(c.id, cd.capacity);
+              const label = resolveCapacityLabel(cd.capacity);
+              if (label) contactCapacityMap.set(c.id, label);
             }
           });
         }
@@ -216,11 +212,14 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           if (!fv) return;
           const dealCapMap = perDealContactCapacity.get(ps.deal_id) || new Map<string, string>();
           Object.entries(fv).forEach(([key, val]) => {
-            if (key.includes('capacity') && typeof val === 'string') {
+            if (key.includes('capacity')) {
+              const parsedCapacity = parseCapacityValue(val);
+              if (!parsedCapacity) return;
               const contactKey = key.replace('capacity', 'contact_id');
               const cid = fv[contactKey];
               if (cid && typeof cid === 'string') {
-                dealCapMap.set(cid, val);
+                const label = resolveCapacityLabel(parsedCapacity);
+                if (label) dealCapMap.set(cid, label);
               }
             }
           });
@@ -232,12 +231,12 @@ const BorrowerPortfolio: React.FC<Props> = ({ contactDbId }) => {
           // Priority 1: section values
           if (contactId) {
             const sectionCap = perDealContactCapacity.get(dealId)?.get(contactId);
-            if (sectionCap && CAPACITY_TO_ROLE[sectionCap]) return CAPACITY_TO_ROLE[sectionCap];
+            if (sectionCap) return sectionCap;
           }
           // Priority 2: contact_data.capacity
           if (contactId) {
             const contactCap = contactCapacityMap.get(contactId);
-            if (contactCap && CAPACITY_TO_ROLE[contactCap]) return CAPACITY_TO_ROLE[contactCap];
+            if (contactCap) return contactCap;
           }
           // Priority 3: role fallback
           return ROLE_FALLBACK[role] || role || 'Other';
