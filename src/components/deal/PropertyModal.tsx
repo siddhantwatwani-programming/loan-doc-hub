@@ -263,7 +263,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                           <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-[200]" align="start">
+                      <PopoverContent className="w-auto p-0 z-[9999]" align="start">
                         <EnhancedCalendar mode="single" selected={parseDate(formData.yearBuilt || '')}
                           onSelect={(date) => { if (date) { handleFieldChange('yearBuilt', format(date, 'yyyy-MM-dd')); setYearBuiltOpen(false); } }}
                           onClear={() => { handleFieldChange('yearBuilt', ''); setYearBuiltOpen(false); }}
