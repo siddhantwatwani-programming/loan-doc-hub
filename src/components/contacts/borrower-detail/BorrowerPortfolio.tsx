@@ -41,33 +41,55 @@ const ALL_COLUMNS = [
   { id: 'maturityDate', label: 'Maturity Date' },
 ];
 
-const ROLE_FILTER_OPTIONS = ['Borrower (Primary)', 'Co-Borrower', 'Additional Guarantor', 'Trustee', 'Co-Trustee', 'Managing Member', 'Authorized Signer', 'Lender', 'Broker'];
+const ROLE_FILTER_OPTIONS = ['Borrower (Primary)', 'Borrower', 'Co-Borrower', 'Additional Guarantor', 'Trustee', 'Co-Trustee', 'Managing Member', 'Authorized Signer', 'Lender', 'Broker'];
 const STATUS_FILTER_OPTIONS = ['Active', 'Closed', 'Default'];
 
-// Map capacity values from deal_section_values to display roles
+// Map canonical capacity values to display roles
 const CAPACITY_TO_ROLE: Record<string, string> = {
-  'borrower_primary': 'Borrower (Primary)',
-  'co_borrower': 'Co-Borrower',
-  'additional_guarantor': 'Additional Guarantor',
-  'trustee': 'Trustee',
-  'co_trustee': 'Co-Trustee',
-  'managing_member': 'Managing Member',
-  'authorized_signer': 'Authorized Signer',
-  'primary_lender': 'Primary Lender',
-  'participant_lender': 'Participant Lender',
-  'syndicate_lender': 'Syndicate Lender',
-  'authorized_party': 'Authorized Party',
+  borrower_primary: 'Borrower (Primary)',
+  borrower: 'Borrower',
+  co_borrower: 'Co-Borrower',
+  additional_guarantor: 'Additional Guarantor',
+  trustee: 'Trustee',
+  co_trustee: 'Co-Trustee',
+  managing_member: 'Managing Member',
+  authorized_signer: 'Authorized Signer',
+  primary_lender: 'Primary Lender',
+  participant_lender: 'Participant Lender',
+  syndicate_lender: 'Syndicate Lender',
+  authorized_party: 'Authorized Party',
 };
 
 // Fallback: map deal_participants.role to a display label
 const ROLE_FALLBACK: Record<string, string> = {
-  'borrower': 'Borrower (Primary)',
-  'lender': 'Lender',
-  'broker': 'Broker',
-  'other': 'Other',
+  borrower: 'Borrower (Primary)',
+  lender: 'Lender',
+  broker: 'Broker',
+  other: 'Other',
 };
 
-const VALID_CAPACITIES = new Set(Object.keys(CAPACITY_TO_ROLE));
+const normalizeCapacityKey = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[()]/g, '')
+    .replace(/[\s-]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+
+const resolveCapacityLabel = (value: string): string => {
+  const raw = value.trim();
+  if (!raw) return '';
+
+  const direct = CAPACITY_TO_ROLE[raw];
+  if (direct) return direct;
+
+  const normalized = CAPACITY_TO_ROLE[normalizeCapacityKey(raw)];
+  if (normalized) return normalized;
+
+  // If it's already a human-readable capacity label, preserve it.
+  return raw;
+};
 
 interface Props { borrowerId: string; contactDbId: string; }
 
