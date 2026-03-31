@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { hasAtLeastOneFieldFilled, validatePhoneFields, hasValidContactEmails } from '@/lib/contactFormValidation';
 import { toast } from 'sonner';
+import { US_STATES } from '@/lib/usStates';
 
 interface CreateContactModalProps {
   open: boolean;
