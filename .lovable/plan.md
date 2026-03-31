@@ -1,96 +1,75 @@
 
 
-# Fix Template Placeholders Not Populating in Document Generation
+# Fix: Origination Fee Currency Fields Treated as Checkboxes in Document Generation
 
 ## Root Cause
 
-Three distinct resolution gaps prevent template tags from finding their stored values:
+A **data type collision** causes these fields to render as checkboxes (☐/☑) instead of currency values.
 
-### 1. Origination Fee 900-1300 Series (30 fields)
-Template tags like `{{of_901_int_o}}` resolve to `of_901_int_o` (exists in field_dictionary). But the actual data is stored under the **old** field_key `of_fe_interestForDaysOthers` (also in field_dictionary). The `fieldValues` map is keyed by the old field_key. There is no bridge between them.
+The chain of failure:
+1. UI saves currency values (e.g., "$250.00") to **boolean-typed** field dictionary entries like `of_fe_interestForDaysOthers` (data_type = `boolean`) via `legacyKeyMap.ts`
+2. During document generation, the `fieldValues` map stores this data with `dataType: "boolean"`
+3. Template tag `{{of_901_int_o}}` resolves via `field_key_migrations` → `of_fe_interestForDaysOthers` → finds boolean data → checkbox rendering logic kicks in (line 637 of tag-parser.ts)
+4. Currency-typed entries `of_901_int_o` (data_type = `currency`) exist in field_dictionary but are never populated because `legacyKeyMap` routes data to the old boolean keys
 
-### 2. Broker Fields (5 fields)
-- `bk_p_brokerRepres`, `bk_p_brokerAddres` — stored via deal_section_values under broker section, so they SHOULD be in fieldValues already. But the participant injection force-overrides broker keys, and these specific keys are not in the force-set list. If no data was entered in the deal's broker form, these remain empty.
-- `bk_p_license` — exists in field_dictionary but the participant injection sets `bk_p_brokerLicens` (different key). `bk_p_license` is never populated.
+The previous fix (adding `_checkbox` suffix to `canonical_key` of boolean fields) was **never applied** — all 30 boolean fields still have their original canonical_keys.
 
-### 3. Lien Fields (5 fields)
-- `pr_li_lienPrioriNow`, `pr_li_lienPrioriAfter` — lien bridging maps `lien_priority_now` → `li_gd_lienPriorityNow`, NOT to `pr_li_lienPrioriNow`.
-- `li_bp_balanceAfter` — lien bridging maps `balance_after` → `pr_li_lienCurrenBalanc2`, NOT to `li_bp_balanceAfter`.
-- `pr_li_lienCurrenBalanc2` — already bridged correctly (should work).
-- `pr_li_lienHolder` — already bridged correctly (should work).
+## Fix (2 changes)
 
-## Fix
+### Change 1: Update `legacyKeyMap.ts` — Route currency columns to currency-typed keys
 
-### Change 1: Add `field_key_migrations` entries (database migration)
+Redirect the 30 `_broker` and `_others` entries for sections 900-1300 from old boolean keys to the new currency-typed keys.
 
-Insert migration records mapping each new short template tag to the old `of_fe_*` field_key. This uses the existing Priority 2 resolution path in `resolveFieldKeyWithBackwardCompat` and Priority 3 in `getFieldData`.
-
-30 rows for origination fees:
-| old_key (template tag) | new_key (stored field_key) |
-|---|---|
-| `of_901_int_o` | `of_fe_interestForDaysOthers` |
-| `of_901_int_b` | `of_fe_interestForDaysBroker` |
-| `of_902_mi_o` | `of_fe_mortgageInsuraPremiuOthers` |
-| `of_902_mi_b` | `of_fe_mortgageInsuraPremiuBroker` |
-| `of_903_hi_o` | `of_fe_hazardInsuraPremiuOthers` |
-| `of_903_hi_b` | `of_fe_hazardInsuraPremiuBroker` |
-| `of_904_tax_o` | `of_fe_countyProperTaxesOthers` |
-| `of_904_tax_b` | `of_fe_countyProperTaxesBroker` |
-| `of_905_va_o` | `of_fe_vaFundinFeeOthers` |
-| `of_905_va_b` | `of_fe_vaFundinFeeBroker` |
-| `of_1001_hi_o` | `of_fe_hazardInsuraOthers` |
-| `of_1001_hi_b` | `of_fe_hazardInsuraBroker` |
-| `of_1002_mi_o` | `of_fe_mortgageInsuraOthers` |
-| `of_1002_mi_b` | `of_fe_mortgageInsuraBroker` |
-| `of_1004_tax_o` | `of_fe_coProperTaxesOthers` |
-| `of_1004_tax_b` | `of_fe_coProperTaxesBroker` |
-| `of_1101_set_o` | `of_fe_settlemeFeeOthers` |
-| `of_1101_set_b` | `of_fe_settlemeFeeBroker` |
-| `of_1105_doc_o` | `of_fe_docPreparFeeOthers` |
-| `of_1105_doc_b` | `of_fe_docPreparFeeBroker` |
-| `of_1106_not_o` | `of_fe_notaryFeeOthers` |
-| `of_1106_not_b` | `of_fe_notaryFeeBroker` |
-| `of_1108_ti_o` | `of_fe_titleInsuraOthers` |
-| `of_1108_ti_b` | `of_fe_titleInsuraBroker` |
-| `of_1201_rec_o` | `of_fe_recordinFeesOthers` |
-| `of_1201_rec_b` | `of_fe_recordinFeesBroker` |
-| `of_1202_ts_o` | `of_fe_citycounTaxStampsOthers` |
-| `of_1202_ts_b` | `of_fe_citycounTaxStampsBroker` |
-| `of_1302_pest_o` | `of_fe_pestInspecOthers` |
-| `of_1302_pest_b` | `of_fe_pestInspecBroker` |
-
-All with `status = 'migrated'`.
-
-### Change 2: Add lien field bridging (generate-document/index.ts)
-
-In the lien bridging block (~line 962-976), add three missing mappings to `lienFieldToLiKeys`:
-- `"lien_priority_now": "pr_li_lienPrioriNow"` — add second bridge
-- `"lien_priority_after": "pr_li_lienPrioriAfter"` — add second bridge  
-- `"balance_after": "li_bp_balanceAfter"` — add second bridge
-
-These are in addition to the existing mappings (not replacing them). After the existing bridging loop that sets `li_gd_*` keys, add a second pass that also sets the `pr_li_*` / `li_bp_*` variants.
-
-### Change 3: Add broker field bridging (generate-document/index.ts)
-
-In the broker participant injection block (~line 506-541), add:
-```typescript
-if (cd["address.street"]) forceSet("bk_p_brokerAddres", cd["address.street"]);
-if (cd.broker_representative || cd.representative) forceSet("bk_p_brokerRepres", cd.broker_representative || cd.representative);
-if (license) forceSet("bk_p_license", String(license));
+Example change:
 ```
+// Before:
+'origination_fees.901_interest_for_days_broker': 'of_fe_interestForDaysBroker',
+'origination_fees.901_interest_for_days_others': 'of_fe_interestForDaysOthers',
+
+// After:
+'origination_fees.901_interest_for_days_broker': 'of_901_int_b',
+'origination_fees.901_interest_for_days_others': 'of_901_int_o',
+```
+
+All 30 mappings across 901-905, 1001-1004, 1101-1108, 1201-1202, 1302.
+
+### Change 2: Database migration — Delete incorrect `field_key_migrations` rows
+
+Delete the 30 migration rows that map template tags (e.g., `of_901_int_o`) to boolean fields (e.g., `of_fe_interestForDaysOthers`). After Change 1, the template tags will match the field_key directly in `fieldValues` with the correct `currency` data type — no migration bridge needed.
+
+```sql
+DELETE FROM field_key_migrations
+WHERE old_key IN (
+  'of_901_int_o','of_901_int_b','of_902_mi_o','of_902_mi_b',
+  'of_903_hi_o','of_903_hi_b','of_904_tax_o','of_904_tax_b',
+  'of_905_va_o','of_905_va_b','of_1001_hi_o','of_1001_hi_b',
+  'of_1002_mi_o','of_1002_mi_b','of_1004_tax_o','of_1004_tax_b',
+  'of_1101_set_o','of_1101_set_b','of_1105_doc_o','of_1105_doc_b',
+  'of_1106_not_o','of_1106_not_b','of_1108_ti_o','of_1108_ti_b',
+  'of_1201_rec_o','of_1201_rec_b','of_1202_ts_o','of_1202_ts_b',
+  'of_1302_pest_o','of_1302_pest_b'
+);
+```
+
+## Resolution Flow After Fix
+
+1. UI saves `$250.00` → legacyKeyMap routes to `of_901_int_o` (currency field)
+2. `deal_section_values` stores data under `of_901_int_o` field_dictionary entry (data_type = `currency`)
+3. `fieldValues` map contains `of_901_int_o` → `{ rawValue: 250, dataType: "currency" }`
+4. Template tag `{{of_901_int_o}}` → exact match in `fieldValues` → formatted as currency → `$250.00`
 
 ## Files Modified
 
 | File | Change |
 |---|---|
-| Database migration | INSERT 30 `field_key_migrations` rows |
-| `supabase/functions/generate-document/index.ts` | Add lien bridging for 3 keys, broker injection for 3 keys |
+| `src/lib/legacyKeyMap.ts` | Update 30 broker/others mappings to currency-typed keys |
+| Database migration | DELETE 30 incorrect `field_key_migrations` rows |
 
 ## What Will NOT Change
-- No UI layout or component changes
-- No field dictionary schema changes
+- No UI layout changes
 - No template modifications
-- No changes to tag-parser, field-resolver, or docx-processor
-- No changes to legacyKeyMap.ts
-- Existing document generation logic preserved
+- No edge function changes
+- No tag-parser or formatting changes
+- Boolean checkbox fields continue to exist (their checkbox behavior in the template is still correct for the SDT/glyph-based checkbox rendering)
+- All other origination fee columns (D, charge, APR, etc.) remain unchanged
 
