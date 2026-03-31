@@ -1,5 +1,5 @@
 /**
- * Legacy Key Map
+ * Legacy Key Map – includes origination fee currency field mappings
  * 
  * Maps legacy dot-notation field keys (used in fieldKeyMap.ts and SectionContent files)
  * to actual DB field_dictionary field_key values (br_p_firstName convention).
