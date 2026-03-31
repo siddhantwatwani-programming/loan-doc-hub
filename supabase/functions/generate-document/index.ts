@@ -975,6 +975,13 @@ async function generateSingleDocument(
         "existing_payoff_amount": "li_bp_existingPayoffAmount",
       };
 
+      // Additional lien bridging: pr_li_* and li_bp_* variants for template tags
+      const lienFieldToAltKeys: Record<string, string> = {
+        "lien_priority_now": "pr_li_lienPrioriNow",
+        "lien_priority_after": "pr_li_lienPrioriAfter",
+        "balance_after": "li_bp_balanceAfter",
+      };
+
       // Reverse map: property1.lien_* canonical keys -> pr_li_* short keys
       const canonicalToPrLi: Record<string, string> = {};
       for (const [field, canonKey] of Object.entries(lienFieldToCanonical)) {
