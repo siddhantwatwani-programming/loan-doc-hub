@@ -301,9 +301,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         updates.phone = participant.phone;
         mergedContactData['phone.home'] = participant.phone;
       }
-      // Map role to capacity
-      const capacityLabel = ROLE_LABELS[participant.role] || participant.role;
-      mergedContactData['capacity'] = capacityLabel;
+      // Capacity is set during participant creation — do not overwrite here
 
       updates.contact_data = mergedContactData;
 
