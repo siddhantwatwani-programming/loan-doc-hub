@@ -11,6 +11,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { numericKeyDown, numericPaste, integerKeyDown, integerPaste } from '@/lib/numericInputFilter';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationApplicationFormProps {
@@ -141,6 +142,8 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
             inputMode="decimal"
             value={getValue(key)}
             onChange={(e) => setValue(key, e.target.value)}
+            onKeyDown={numericKeyDown}
+            onPaste={(e) => numericPaste(e, (val) => setValue(key, val))}
             disabled={disabled}
             placeholder="0.00"
             className="h-7 text-sm pl-6 text-left"
@@ -233,7 +236,12 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
           {renderTextField('Occupation', FIELD_KEYS.occupation)}
           {renderTextField('Employer', FIELD_KEYS.employer)}
           {renderDatePicker('Employed Since', FIELD_KEYS.employed_since)}
-          {renderTextField('Contact', FIELD_KEYS.contact)}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.contact}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[140px] text-sm shrink-0">Contact</Label>
+              <PhoneInput value={getValue(FIELD_KEYS.contact)} onValueChange={(val) => setValue(FIELD_KEYS.contact, val)} disabled={disabled} className="h-7 text-sm" />
+            </div>
+          </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.phone}>
             <div className="flex items-center gap-2">
               <Label className="w-[140px] text-sm shrink-0">Phone</Label>
@@ -250,7 +258,21 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
             {renderCheckboxField('Filed for Bankruptcy (12 Months)', FIELD_KEYS.filed_bankruptcy)}
             {renderCheckboxField('Discharged?', FIELD_KEYS.discharged)}
           </div>
-          {renderTextField('Credit Score', FIELD_KEYS.credit_score)}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.credit_score}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[140px] text-sm shrink-0">Credit Score</Label>
+              <Input
+                value={getValue(FIELD_KEYS.credit_score)}
+                onChange={(e) => setValue(FIELD_KEYS.credit_score, e.target.value)}
+                onKeyDown={integerKeyDown}
+                onPaste={(e) => integerPaste(e, (val) => setValue(FIELD_KEYS.credit_score, val))}
+                disabled={disabled}
+                inputMode="numeric"
+                maxLength={3}
+                className="h-7 text-sm"
+              />
+            </div>
+          </DirtyFieldWrapper>
           {renderLabelInputPair(FIELD_KEYS.extra_label_1, FIELD_KEYS.extra_value_1)}
           {renderLabelInputPair(FIELD_KEYS.extra_label_2, FIELD_KEYS.extra_value_2)}
         </div>

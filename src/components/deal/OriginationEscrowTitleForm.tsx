@@ -13,6 +13,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { US_STATES } from '@/lib/usStates';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationEscrowTitleFormProps {
@@ -200,7 +201,16 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
               </div>
               <div className="flex items-center gap-2">
                 <Label className="w-[80px] text-sm shrink-0">State</Label>
-                <Input value={v(otherKeys.state)} onChange={(e) => sv(otherKeys.state, e.target.value)} disabled={disabled} className="h-7 text-sm" />
+                <Select value={v(otherKeys.state)} onValueChange={(val) => sv(otherKeys.state, val)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {US_STATES.map((st) => (
+                      <SelectItem key={st} value={st}>{st}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex items-center gap-2">
                 <Label className="w-[80px] text-sm shrink-0">ZIP</Label>
@@ -232,7 +242,21 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             {renderTextField('Escrow Company', FK.escrow_company)}
             {renderTextField('Street', FK.escrow_street)}
             {renderTextField('City', FK.escrow_city)}
-            {renderTextField('State', FK.escrow_state)}
+            <DirtyFieldWrapper fieldKey={FK.escrow_state}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] text-sm shrink-0">State</Label>
+                <Select value={v(FK.escrow_state)} onValueChange={(val) => sv(FK.escrow_state, val)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {US_STATES.map((st) => (
+                      <SelectItem key={st} value={st}>{st}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </DirtyFieldWrapper>
             <DirtyFieldWrapper fieldKey={FK.escrow_zip}>
               <div className="flex items-center gap-2">
                 <Label className="w-[120px] text-sm shrink-0">ZIP</Label>
@@ -264,7 +288,21 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             {renderTextField('Title Company', FK.title_company)}
             {renderTextField('Street', FK.title_street)}
             {renderTextField('City', FK.title_city)}
-            {renderTextField('State', FK.title_state)}
+            <DirtyFieldWrapper fieldKey={FK.title_state}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] text-sm shrink-0">State</Label>
+                <Select value={v(FK.title_state)} onValueChange={(val) => sv(FK.title_state, val)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {US_STATES.map((st) => (
+                      <SelectItem key={st} value={st}>{st}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </DirtyFieldWrapper>
             <DirtyFieldWrapper fieldKey={FK.title_zip}>
               <div className="flex items-center gap-2">
                 <Label className="w-[120px] text-sm shrink-0">ZIP</Label>
@@ -318,7 +356,21 @@ export const OriginationEscrowTitleForm: React.FC<OriginationEscrowTitleFormProp
             {renderTextField('Company', FK.trustee_company)}
             {renderTextField('Street', FK.trustee_street)}
             {renderTextField('City', FK.trustee_city)}
-            {renderTextField('State', FK.trustee_state)}
+            <DirtyFieldWrapper fieldKey={FK.trustee_state}>
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] text-sm shrink-0">State</Label>
+                <Select value={v(FK.trustee_state)} onValueChange={(val) => sv(FK.trustee_state, val)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {US_STATES.map((st) => (
+                      <SelectItem key={st} value={st}>{st}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </DirtyFieldWrapper>
             <DirtyFieldWrapper fieldKey={FK.trustee_zip}>
               <div className="flex items-center gap-2">
                 <Label className="w-[120px] text-sm shrink-0">ZIP</Label>

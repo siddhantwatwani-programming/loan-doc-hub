@@ -4,6 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 import { RE885ProposedLoanTerms } from './RE885ProposedLoanTerms';
+import { numericKeyDown, numericPaste } from '@/lib/numericInputFilter';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationFeesFormProps {
@@ -510,11 +511,11 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
         )}
         <div className="relative">
           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
-          <Input inputMode="decimal" value={getValue(keys.others)} onChange={(e) => setValue(keys.others, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+          <Input inputMode="decimal" value={getValue(keys.others)} onChange={(e) => setValue(keys.others, e.target.value)} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(keys.others, val))} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
         </div>
         <div className="relative">
           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
-          <Input inputMode="decimal" value={getValue(keys.broker)} onChange={(e) => setValue(keys.broker, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+          <Input inputMode="decimal" value={getValue(keys.broker)} onChange={(e) => setValue(keys.broker, e.target.value)} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(keys.broker, val))} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
         </div>
         <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
         <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.paidToCompany)} onCheckedChange={(c) => setBoolValue(keys.paidToCompany, !!c)} disabled={disabled} /></div>
@@ -540,17 +541,17 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
             <span>{baseName}:</span>
             <Input type="number" inputMode="numeric" value={getValue(monthsKey)} onChange={(e) => setValue(monthsKey, e.target.value)} disabled={disabled} placeholder="0" className="h-6 text-xs text-right w-12 inline-flex" />
             <span>months at $</span>
-            <Input inputMode="decimal" value={getValue(perMonthKey)} onChange={(e) => setValue(perMonthKey, e.target.value)} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-16 inline-flex" />
+            <Input inputMode="decimal" value={getValue(perMonthKey)} onChange={(e) => setValue(perMonthKey, e.target.value)} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(perMonthKey, val))} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-16 inline-flex" />
             <span>/mo</span>
             {totalVal && <span className="text-muted-foreground ml-1">= ${totalVal}</span>}
           </div>
           <div className="relative">
             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
-            <Input inputMode="decimal" value={getValue(keys.others)} onChange={(e) => setValue(keys.others, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+            <Input inputMode="decimal" value={getValue(keys.others)} onChange={(e) => setValue(keys.others, e.target.value)} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(keys.others, val))} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
           </div>
           <div className="relative">
             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
-            <Input inputMode="decimal" value={getValue(keys.broker)} onChange={(e) => setValue(keys.broker, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+            <Input inputMode="decimal" value={getValue(keys.broker)} onChange={(e) => setValue(keys.broker, e.target.value)} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(keys.broker, val))} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
           </div>
           <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
           <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.paidToCompany)} onCheckedChange={(c) => setBoolValue(keys.paidToCompany, !!c)} disabled={disabled} /></div>
@@ -570,7 +571,7 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
         )}
         <div className="relative w-28">
           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
-          <Input inputMode="decimal" value={getValue(dKey)} onChange={(e) => setValue(dKey, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+          <Input inputMode="decimal" value={getValue(dKey)} onChange={(e) => setValue(dKey, e.target.value)} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(dKey, val))} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
         </div>
       </div>
     </DirtyFieldWrapper>
@@ -582,7 +583,7 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
       <span>Interest for</span>
       <Input type="number" inputMode="numeric" value={getValue(FIELD_KEYS.interestForDays_days)} onChange={(e) => setValue(FIELD_KEYS.interestForDays_days, e.target.value)} disabled={disabled} placeholder="0" className="h-6 text-xs text-right w-12 inline-flex" />
       <span>days at $</span>
-      <Input inputMode="decimal" value={getValue(FIELD_KEYS.interestForDays_perDay)} onChange={(e) => setValue(FIELD_KEYS.interestForDays_perDay, e.target.value)} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-16 inline-flex" />
+      <Input inputMode="decimal" value={getValue(FIELD_KEYS.interestForDays_perDay)} onChange={(e) => setValue(FIELD_KEYS.interestForDays_perDay, e.target.value)} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(FIELD_KEYS.interestForDays_perDay, val))} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-16 inline-flex" />
       <span>per day</span>
     </div>
   );

@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { numericKeyDown, numericPaste, integerKeyDown, integerPaste } from '@/lib/numericInputFilter';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationInsuranceConditionsFormProps {
@@ -79,6 +80,7 @@ export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceCo
       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
       <Input
         type="text" inputMode="decimal" value={v(key)} onChange={(e) => sv(key, e.target.value)}
+        onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => sv(key, val))}
         disabled={disabled} placeholder={placeholder || '0.00'} className="h-7 text-sm pl-6 text-right"
       />
     </div>
@@ -179,7 +181,8 @@ export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceCo
                 {renderCurrencyInline(FK.coverage_earthquake_amount)}
                 <Label className="text-sm shrink-0">or</Label>
                 <Input value={v(FK.coverage_earthquake_percent)} onChange={(e) => sv(FK.coverage_earthquake_percent, e.target.value)}
-                  disabled={disabled} placeholder="0" className="h-7 text-sm w-[60px] text-right" />
+                  onKeyDown={integerKeyDown} onPaste={(e) => integerPaste(e, (val) => sv(FK.coverage_earthquake_percent, val))}
+                  disabled={disabled} placeholder="0" inputMode="numeric" className="h-7 text-sm w-[60px] text-right" />
                 <Label className="text-sm shrink-0">% of value</Label>
               </div>
             </DirtyFieldWrapper>
@@ -190,7 +193,8 @@ export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceCo
                 {renderCurrencyInline(FK.coverage_loss_rents_per_month)}
                 <Label className="text-sm shrink-0">per month for</Label>
                 <Input value={v(FK.coverage_loss_rents_months)} onChange={(e) => sv(FK.coverage_loss_rents_months, e.target.value)}
-                  disabled={disabled} placeholder="0" className="h-7 text-sm w-[50px] text-right" />
+                  onKeyDown={integerKeyDown} onPaste={(e) => integerPaste(e, (val) => sv(FK.coverage_loss_rents_months, val))}
+                  disabled={disabled} placeholder="0" inputMode="numeric" className="h-7 text-sm w-[50px] text-right" />
                 <Label className="text-sm shrink-0">months or</Label>
                 {renderCurrencyInline(FK.coverage_loss_rents_total)}
                 <Label className="text-sm shrink-0">total</Label>
