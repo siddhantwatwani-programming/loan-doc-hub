@@ -205,7 +205,7 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
             <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Name <span className="text-destructive">*</span></Label>
             <Input
               value={getValue('name')}
-              onChange={(e) => handleChange('name', e.target.value)}
+              onChange={(e) => handleChange('name', e.target.value.replace(/[^a-zA-Z\s.,'-]/g, ''))}
               disabled={disabled}
               maxLength={150}
               className="h-7 text-sm flex-1"

@@ -156,7 +156,7 @@ const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave, 
             <Label>Name <span className="text-destructive">*</span></Label>
             <Input
               value={name}
-              onChange={e => { setName(e.target.value); sync('name', e.target.value); }}
+              onChange={e => { const v = e.target.value.replace(/[^a-zA-Z\s.,'-]/g, ''); setName(v); sync('name', v); }}
               onBlur={() => markTouched('name')}
               maxLength={150}
               disabled={disabled}
