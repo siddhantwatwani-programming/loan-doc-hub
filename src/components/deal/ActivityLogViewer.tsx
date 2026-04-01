@@ -353,7 +353,7 @@ export const ActivityLogViewer: React.FC<ActivityLogViewerProps> = ({
           );
         })}
       </div>
-    </ScrollArea>
+    </div>
   );
 };
 
