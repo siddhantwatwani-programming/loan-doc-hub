@@ -67,6 +67,50 @@ const CALCULATION_PERIOD_OPTIONS = [
   { value: 'actual_days_received_date', label: 'Actual Days (Received Date to Received Date)' },
 ];
 
+// Validation configs
+type ValidationConfig = {
+  allowedPattern: RegExp;
+  validate: (val: string, mandatory?: boolean) => string | null;
+};
+
+const VALIDATION_CONFIGS: Record<string, ValidationConfig> = {
+  company: {
+    allowedPattern: /^[A-Za-z0-9 &.,\-]$/,
+    validate: (val) => {
+      if (!val) return null;
+      if (val.length < 2) return 'Enter a valid company name';
+      if (/[@#$%]/.test(val)) return 'Enter a valid company name';
+      return null;
+    },
+  },
+  loanNumber: {
+    allowedPattern: /^[A-Za-z0-9\-]$/,
+    validate: (val) => {
+      if (!val) return null;
+      if (/\s/.test(val) || !/^[A-Za-z0-9\-]+$/.test(val))
+        return 'Enter a valid loan number (alphanumeric, no spaces)';
+      return null;
+    },
+  },
+  assignedCsr: {
+    allowedPattern: /^[A-Za-z ]$/,
+    validate: (val) => {
+      if (!val) return null;
+      if (!/^[A-Za-z ]+$/.test(val)) return 'Enter a valid name (alphabets only)';
+      return null;
+    },
+  },
+  accountNumber: {
+    allowedPattern: /^[A-Za-z0-9\-]$/,
+    validate: (val, mandatory) => {
+      if (!val) return mandatory ? 'Enter a valid account number' : null;
+      if (!/^[A-Za-z0-9\-]+$/.test(val)) return 'Enter a valid account number';
+      if (val.length < 6 || val.length > 15) return 'Enter a valid account number (6–15 characters)';
+      return null;
+    },
+  },
+};
+
 export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
   values,
   onValueChange,
@@ -77,6 +121,8 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
   const setValue = (key: string, value: string) => onValueChange(key, value);
   const getBoolValue = (key: string) => values[key] === 'true';
   const setBoolValue = (key: string, value: boolean) => onValueChange(key, String(value));
+
+  const [validationErrors, setValidationErrors] = useState<Record<string, string | null>>({});
 
   const [focusedCurrencyField, setFocusedCurrencyField] = useState<string | null>(null);
 
