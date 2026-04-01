@@ -237,9 +237,15 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
               {renderPercentageField('interestRate', 'Interest Rate', isThisLoan)}
               {renderInlineField('account', 'Account Number', 'text', isThisLoan)}
               {renderInlineField('maturityDate', 'Maturity Date', 'date', isThisLoan)}
-              {renderInlineField('phone', 'Phone', 'text', isThisLoan)}
+              <div className="flex items-center gap-2">
+                <Label className="w-[110px] shrink-0 text-xs text-foreground">Phone</Label>
+                <PhoneInput value={formData.phone} onValueChange={(v) => handleChange('phone', v)} disabled={isThisLoan} className={`h-7 text-xs flex-1 ${isThisLoan ? 'opacity-50 bg-muted' : ''}`} />
+              </div>
               {renderCurrencyField('originalBalance', 'Original Balance', isThisLoan || isAnticipated)}
-              {renderInlineField('fax', 'Fax', 'text', isThisLoan)}
+              <div className="flex items-center gap-2">
+                <Label className="w-[110px] shrink-0 text-xs text-foreground">Fax</Label>
+                <PhoneInput value={formData.fax} onValueChange={(v) => handleChange('fax', v)} disabled={isThisLoan} className={`h-7 text-xs flex-1 ${isThisLoan ? 'opacity-50 bg-muted' : ''}`} />
+              </div>
               {renderCurrencyField('currentBalance', 'Current Balance', isThisLoan || isAnticipated)}
               <div className="flex items-center gap-2">
                 <Label className="w-[110px] shrink-0 text-xs text-foreground">Email</Label>
