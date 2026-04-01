@@ -11,7 +11,7 @@ const ALLOWED_KEYS = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', '
  */
 export const numericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
   if (ALLOWED_KEYS.includes(e.key) || e.ctrlKey || e.metaKey) return;
-  if (!/[\d.]/.test(e.key)) {
+  if (!/[\d.,]/.test(e.key)) {
     e.preventDefault();
     return;
   }
@@ -58,4 +58,23 @@ export const integerPaste = (
 ) => {
   e.preventDefault();
   setter(e.clipboardData.getData('text').replace(/\D/g, ''));
+};
+
+/**
+ * Format a raw numeric string as US currency display (comma-separated, 2 decimal places).
+ * e.g. "3423" → "3,423.00", "50.5" → "50.50", "" → ""
+ */
+export const formatCurrencyDisplay = (value: string): string => {
+  if (!value) return '';
+  const num = parseFloat(value.replace(/,/g, ''));
+  if (isNaN(num)) return '';
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+/**
+ * Strip commas from a formatted currency string for editing/storage.
+ * e.g. "3,423.00" → "3423.00"
+ */
+export const unformatCurrencyDisplay = (value: string): string => {
+  return value.replace(/,/g, '');
 };

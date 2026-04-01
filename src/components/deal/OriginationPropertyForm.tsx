@@ -13,6 +13,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationPropertyFormProps {
@@ -81,7 +82,12 @@ export const OriginationPropertyForm: React.FC<OriginationPropertyFormProps> = (
         <Label className="w-[180px] text-sm shrink-0">{label}</Label>
         <div className="relative flex-1">
           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-          <Input type="text" inputMode="decimal" value={v(key)} onChange={(e) => sv(key, e.target.value)}
+          <Input type="text" inputMode="decimal" value={v(key)}
+            onChange={(e) => sv(key, unformatCurrencyDisplay(e.target.value))}
+            onKeyDown={numericKeyDown}
+            onPaste={(e) => numericPaste(e, (val) => sv(key, val))}
+            onBlur={() => { const raw = v(key); if (raw) sv(key, formatCurrencyDisplay(raw)); }}
+            onFocus={() => { const raw = v(key); if (raw) sv(key, unformatCurrencyDisplay(raw)); }}
             disabled={disabled} placeholder="0.00" className="h-7 text-sm pl-6 text-right" />
         </div>
       </div>

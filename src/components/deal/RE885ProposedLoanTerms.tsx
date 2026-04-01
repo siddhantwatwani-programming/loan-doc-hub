@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
+import { formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 
 const FK = {
   proposed_loan_amount: 'origination_fees.re885_proposed_loan_amount',
@@ -62,6 +63,8 @@ const CurrencyInput: React.FC<{
         const v = e.target.value.replace(/[^0-9.]/g, '');
         onChange(v);
       }}
+      onBlur={() => { if (!readOnly && value) { const formatted = formatCurrencyDisplay(value); if (formatted) onChange(formatted); } }}
+      onFocus={() => { if (!readOnly && value) { onChange(unformatCurrencyDisplay(value)); } }}
       disabled={disabled}
       readOnly={readOnly}
       placeholder="0.00"

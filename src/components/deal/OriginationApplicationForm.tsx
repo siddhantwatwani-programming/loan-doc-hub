@@ -11,7 +11,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
-import { numericKeyDown, numericPaste, integerKeyDown, integerPaste } from '@/lib/numericInputFilter';
+import { numericKeyDown, numericPaste, integerKeyDown, integerPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationApplicationFormProps {
@@ -141,9 +141,11 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
             type="text"
             inputMode="decimal"
             value={getValue(key)}
-            onChange={(e) => setValue(key, e.target.value)}
+            onChange={(e) => setValue(key, unformatCurrencyDisplay(e.target.value))}
             onKeyDown={numericKeyDown}
             onPaste={(e) => numericPaste(e, (val) => setValue(key, val))}
+            onBlur={() => { const raw = getValue(key); if (raw) setValue(key, formatCurrencyDisplay(raw)); }}
+            onFocus={() => { const raw = getValue(key); if (raw) setValue(key, unformatCurrencyDisplay(raw)); }}
             disabled={disabled}
             placeholder="0.00"
             className="h-7 text-sm pl-6 text-left"
