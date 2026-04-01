@@ -291,9 +291,9 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
         {/* Details Column */}
         <div className="space-y-1.5">
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Details</h3>
-          {renderInlineField(FIELD_KEYS.company, 'Company')}
-          {renderInlineField(FIELD_KEYS.loanNumber, 'Loan Number')}
-          {renderInlineField(FIELD_KEYS.assignedCsr, 'Assigned CSR')}
+          {renderValidatedField(FIELD_KEYS.company, 'Company', 'company')}
+          {renderValidatedField(FIELD_KEYS.loanNumber, 'Loan Number', 'loanNumber')}
+          {renderValidatedField(FIELD_KEYS.assignedCsr, 'Assigned CSR', 'assignedCsr')}
           {renderInlineDateField(FIELD_KEYS.origination, 'Origination')}
           {renderInlineDateField(FIELD_KEYS.boarding, 'Boarding')}
           {renderInlineDateField(FIELD_KEYS.maturityDate, 'Maturity Date')}
