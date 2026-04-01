@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Search, Plus, Settings2, Filter, Download, CalendarIcon, X, Paperclip, FileDown, Eye } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -457,9 +458,18 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string; d
                 ) : (
                   <div className="space-y-1">
                     {viewingRow.attachments.map((att, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-3 py-2 border border-border">
+                      <div key={idx} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-3 py-2 border border-border overflow-hidden">
                         <Paperclip className="h-3.5 w-3.5 shrink-0 text-primary" />
-                        <span className="flex-1 truncate font-medium">{getAttachmentName(att)}</span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="flex-1 min-w-0 truncate font-medium">{getAttachmentName(att)}</span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-sm break-all">
+                              <p>{getAttachmentName(att)}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                         {typeof att === 'object' && att.uploadedAt && (
                           <span className="text-muted-foreground shrink-0">{formatDateDisplay(att.uploadedAt)}</span>
                         )}
