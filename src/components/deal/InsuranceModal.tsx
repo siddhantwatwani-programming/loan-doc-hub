@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, CalendarIcon } from 'lucide-react';
+import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
