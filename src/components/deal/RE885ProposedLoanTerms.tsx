@@ -189,7 +189,7 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
         <div className="flex items-center justify-between gap-4 py-2 border-t border-foreground/30 border-b border-border/30">
           <span className="text-xs font-bold text-foreground flex-1">Subtotal of All Deductions</span>
           <div className={FIELD_W}>
-            <CurrencyInput value={subtotal > 0 ? subtotal.toFixed(2) : ''} onChange={() => {}} readOnly disabled />
+            <CurrencyInput value={subtotal > 0 ? formatCurrencyDisplay(subtotal.toFixed(2)) : ''} onChange={() => {}} readOnly disabled />
           </div>
         </div>
 
