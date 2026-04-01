@@ -515,7 +515,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                   />
                   <Checkbox
                     checked={form[p.prefKey] === 'true'}
-                    onCheckedChange={(checked) => set(p.prefKey, String(!!checked))}
+                    onCheckedChange={(checked) => handleLenderPref(p.prefKey, !!checked)}
                   />
                 </div>
               ))}
