@@ -485,11 +485,10 @@ const InterestGuaranteeSection: React.FC<{
           onCheckboxChange={(checked) => onValueChange(`${prefix}.months_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
         >
-          <Input
+          <PenaltyIntegerInput
             value={values[`${prefix}.months`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.months`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.months`, val)}
             disabled={disabled || !isEnabled || values[`${prefix}.months_enabled`] !== 'true'}
-            className="h-7 text-sm"
           />
         </FieldRow>
         <FieldRow
