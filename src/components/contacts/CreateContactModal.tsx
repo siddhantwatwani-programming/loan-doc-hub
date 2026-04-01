@@ -210,6 +210,34 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
       setLenderErrors({});
     }
 
+    // Broker-specific required field validation
+    if (contactType === 'broker') {
+      const errs: Record<string, string> = {};
+      if (!(form['License'] || '').trim()) errs['License'] = 'Enter valid license number';
+      else if ((form['License'] || '').length > 50) errs['License'] = 'Max 50 characters';
+      if (!(form['company'] || '').trim()) errs['company'] = 'Company name is required';
+      else if ((form['company'] || '').length > 100) errs['company'] = 'Max 100 characters';
+      if (!(form['full_name'] || '').trim()) errs['full_name'] = 'Full Name is required';
+      else if ((form['full_name'] || '').length > 100) errs['full_name'] = 'Max 100 characters';
+      if (!(form['first_name'] || '').trim()) errs['first_name'] = 'Enter valid first name';
+      if (!(form['last_name'] || '').trim()) errs['last_name'] = 'Enter valid last name';
+      if (!(form['email'] || '').trim()) errs['email'] = 'Enter a valid email address';
+      if (!(form['address.street'] || '').trim()) errs['address.street'] = 'Street is required';
+      if (!(form['address.city'] || '').trim()) errs['address.city'] = 'City is required';
+      if (!form['address.state']) errs['address.state'] = 'State is required';
+      if (!(form['address.zip'] || '').trim()) errs['address.zip'] = 'ZIP is required';
+      if (!form['tax_id_type']) errs['tax_id_type'] = 'Please select Tax ID Type';
+      const tinDigits = (form['tax_id'] || '').replace(/\D/g, '');
+      if (!tinDigits) errs['tax_id'] = 'Enter valid TIN (9 digits)';
+      else if (tinDigits.length !== 9) errs['tax_id'] = 'Enter valid TIN (9 digits)';
+      if (Object.keys(errs).length > 0) {
+        setBrokerErrors(errs);
+        toast.error(Object.values(errs)[0]);
+        return;
+      }
+      setBrokerErrors({});
+    }
+
     // Borrower-specific required field validation
     if (contactType === 'borrower') {
       const errs: Record<string, string> = {};
@@ -258,6 +286,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
     setForm(getInitialForm(contactType));
     setLenderErrors({});
     setBorrowerErrors({});
+    setBrokerErrors({});
   };
 
   const typeLabel = contactType.charAt(0).toUpperCase() + contactType.slice(1);
