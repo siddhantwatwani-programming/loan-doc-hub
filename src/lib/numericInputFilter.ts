@@ -11,7 +11,7 @@ const ALLOWED_KEYS = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', '
  */
 export const numericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
   if (ALLOWED_KEYS.includes(e.key) || e.ctrlKey || e.metaKey) return;
-  if (!/[\d.]/.test(e.key)) {
+  if (!/[\d.,]/.test(e.key)) {
     e.preventDefault();
     return;
   }
