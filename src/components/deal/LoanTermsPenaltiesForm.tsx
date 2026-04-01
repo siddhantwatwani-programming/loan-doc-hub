@@ -267,11 +267,10 @@ const LateFeeColumn: React.FC<{
           />
         </FieldRow>
         <FieldRow label="Minimum Late Fee" fieldKey={`${prefix}.minimum_late_fee`}>
-          <Input
+          <PenaltyCurrencyInput
             value={values[`${prefix}.minimum_late_fee`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.minimum_late_fee`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.minimum_late_fee`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
         <FieldRow label={percentageLabel} fieldKey={`${prefix}.percentage_of_payment`}>
