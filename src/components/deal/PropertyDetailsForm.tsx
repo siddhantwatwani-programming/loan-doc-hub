@@ -261,7 +261,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           <p className="text-xs italic text-foreground pt-3 pb-1">Appraiser Contact</p>
           {renderInlineField(FIELD_KEYS.appraiserStreet, 'Street')}
           {renderInlineField(FIELD_KEYS.appraiserCity, 'City')}
-          {renderInlineField(FIELD_KEYS.appraiserState, 'State')}
+          {renderInlineSelect(FIELD_KEYS.appraiserState, 'State', US_STATES, 'Select state')}
           {renderInlineField(FIELD_KEYS.appraiserZip, 'ZIP')}
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.appraiserPhone}>
             <div className="flex items-center gap-2">
