@@ -164,7 +164,17 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
       <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
       <div className="relative flex-1">
         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-        <Input value={String(formData[field] || '')} onChange={(e) => handleCurrencyChange(field, e.target.value)} className="h-7 text-xs pl-6" inputMode="decimal" placeholder="0.00" />
+        <Input
+          value={String(formData[field] || '')}
+          onChange={(e) => handleCurrencyChange(field, e.target.value)}
+          onBlur={() => handleCurrencyBlur(field)}
+          onFocus={() => handleCurrencyFocus(field)}
+          onKeyDown={numericKeyDown}
+          onPaste={(e) => numericPaste(e, (val) => setFormData(prev => ({ ...prev, [field]: val })))}
+          className="h-7 text-xs pl-6"
+          inputMode="decimal"
+          placeholder="0.00"
+        />
       </div>
     </div>
   );
