@@ -981,6 +981,7 @@ async function generateSingleDocument(
         "recording_date": "li_rt_recordingDate",
         "existing_paydown_amount": "li_bp_existingPaydownAmount",
         "existing_payoff_amount": "li_bp_existingPayoffAmount",
+        "existing_remain": "li_lt_existingRemain",
       };
 
       // Additional lien bridging: pr_li_* and li_bp_* variants for template tags
