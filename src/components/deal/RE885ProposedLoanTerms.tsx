@@ -109,13 +109,13 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
 
   // Write computed values
   React.useEffect(() => {
-    if (subtotal > 0) setValue(FK.subtotal_deductions, subtotal.toFixed(2));
+    if (subtotal > 0) setValue(FK.subtotal_deductions, formatCurrencyDisplay(subtotal.toFixed(2)));
   }, [subtotal]);
 
   React.useEffect(() => {
     const abs = Math.abs(cashAtClosing);
     if (abs > 0) {
-      setValue(FK.cash_at_closing_amount, abs.toFixed(2));
+      setValue(FK.cash_at_closing_amount, formatCurrencyDisplay(abs.toFixed(2)));
       setValue(FK.cash_at_closing_option, cashAtClosing >= 0 ? 'payable_to_you' : 'you_must_pay');
     }
   }, [cashAtClosing]);
@@ -189,7 +189,7 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
         <div className="flex items-center justify-between gap-4 py-2 border-t border-foreground/30 border-b border-border/30">
           <span className="text-xs font-bold text-foreground flex-1">Subtotal of All Deductions</span>
           <div className={FIELD_W}>
-            <CurrencyInput value={subtotal > 0 ? subtotal.toFixed(2) : ''} onChange={() => {}} readOnly disabled />
+            <CurrencyInput value={subtotal > 0 ? formatCurrencyDisplay(subtotal.toFixed(2)) : ''} onChange={() => {}} readOnly disabled />
           </div>
         </div>
 
@@ -223,7 +223,7 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
             </div>
           </div>
           <div className={FIELD_W}>
-            <CurrencyInput value={Math.abs(cashAtClosing) > 0 ? Math.abs(cashAtClosing).toFixed(2) : ''} onChange={() => {}} readOnly disabled />
+            <CurrencyInput value={Math.abs(cashAtClosing) > 0 ? formatCurrencyDisplay(Math.abs(cashAtClosing).toFixed(2)) : ''} onChange={() => {}} readOnly disabled />
           </div>
         </div>
       </div>
