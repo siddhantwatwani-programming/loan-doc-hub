@@ -564,9 +564,9 @@ const PrepaymentPenaltySection: React.FC<{
 
           <DirtyFieldWrapper fieldKey={`${prefix}.greater_than`}>
             <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
-              <Input
+              <PenaltyIntegerInput
                 value={values[`${prefix}.greater_than`] || ''}
-                onChange={(e) => onValueChange(`${prefix}.greater_than`, e.target.value)}
+                onChange={(val) => onValueChange(`${prefix}.greater_than`, val)}
                 disabled={disabled || !isEnabled}
                 className="h-7 text-sm w-16 shrink-0"
               />
