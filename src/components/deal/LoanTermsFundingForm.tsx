@@ -7,6 +7,13 @@ import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import type { FundingFormData } from './AddFundingModal';
 import { resolveLegacyKey } from '@/lib/legacyKeyMap';
+import { unformatCurrencyDisplay } from '@/lib/numericInputFilter';
+
+/** Strip commas/$ from a string before parseFloat so formatted values like "3,423.00" parse correctly */
+const safeParseFloat = (v: string | undefined): number => {
+  if (!v) return 0;
+  return parseFloat(unformatCurrencyDisplay(v.replace(/\$/g, ''))) || 0;
+};
 
 // Field key mapping for funding data stored in loan_terms section
 const FIELD_KEYS = {
