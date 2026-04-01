@@ -109,7 +109,7 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
 
   // Write computed values
   React.useEffect(() => {
-    if (subtotal > 0) setValue(FK.subtotal_deductions, subtotal.toFixed(2));
+    if (subtotal > 0) setValue(FK.subtotal_deductions, formatCurrencyDisplay(subtotal.toFixed(2)));
   }, [subtotal]);
 
   React.useEffect(() => {
