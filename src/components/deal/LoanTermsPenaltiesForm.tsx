@@ -436,11 +436,10 @@ const DefaultInterestColumn: React.FC<{
           />
         </FieldRow>
         <FieldRow label="Additional Daily Charge" fieldKey={`${prefix}.additional_daily_charge`}>
-          <Input
+          <PenaltyCurrencyInput
             value={values[`${prefix}.additional_daily_charge`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.additional_daily_charge`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.additional_daily_charge`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
       </div>
