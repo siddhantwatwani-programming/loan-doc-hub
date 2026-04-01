@@ -1038,36 +1038,34 @@ async function generateSingleDocument(
         }
       }
 
-      // Now set pr_li_* keys: if multiple liens exist, join values with newlines
+      // Now set pr_li_*, li_*, and alt keys: if multiple liens exist, join values with newlines
       // so each lien's data appears on its own line within the table cell.
       for (const [field, entries] of Object.entries(lienFieldCollector)) {
-        const prLiKey = lienFieldToPrLi[field];
-        if (!prLiKey) continue;
-
         // Sort by lien index for consistent ordering
         entries.sort((a, b) => a.index - b.index);
         const aggregated = entries.map(e => e.value).join("\n");
         const dataType = (field === "current_balance" || field === "original_balance" || 
                           field === "regular_payment" || field === "balance_after") ? "currency" : "text";
-        fieldValues.set(prLiKey, { rawValue: aggregated, dataType });
-        debugLog(`[generate-document] Multi-lien bridged ${field} -> ${prLiKey} (${entries.length} liens)`);
 
-        // Also set alt keys with aggregated values
+        // Set pr_li_* key with aggregated value
+        const prLiKey = lienFieldToPrLi[field];
+        if (prLiKey) {
+          fieldValues.set(prLiKey, { rawValue: aggregated, dataType });
+          debugLog(`[generate-document] Multi-lien bridged ${field} -> ${prLiKey} (${entries.length} liens)`);
+        }
+
+        // Set li_* key with aggregated value
+        const liKey = lienFieldToLiKeys[field];
+        if (liKey) {
+          fieldValues.set(liKey, { rawValue: aggregated, dataType });
+          debugLog(`[generate-document] Multi-lien li bridged ${field} -> ${liKey} (${entries.length} liens)`);
+        }
+
+        // Set alt key (pr_li_lienPrioriNow, pr_li_lienPrioriAfter, li_bp_balanceAfter)
         const altKey = lienFieldToAltKeys[field];
         if (altKey) {
           fieldValues.set(altKey, { rawValue: aggregated, dataType });
-          debugLog(`[generate-document] Multi-lien alt bridged ${field} -> ${altKey}`);
-        }
-      }
-
-      // Also aggregate li_bp_balanceAfter and priority fields from lienFieldToAltKeys
-      // that may come from different source fields
-      for (const [field, entries] of Object.entries(lienFieldCollector)) {
-        const altKey = lienFieldToAltKeys[field];
-        if (altKey && !fieldValues.has(altKey)) {
-          entries.sort((a, b) => a.index - b.index);
-          const aggregated = entries.map(e => e.value).join("\n");
-          fieldValues.set(altKey, { rawValue: aggregated, dataType: "text" });
+          debugLog(`[generate-document] Multi-lien alt bridged ${field} -> ${altKey} (${entries.length} liens)`);
         }
       }
       debugLog(`[generate-document] Lien field bridging complete`);
