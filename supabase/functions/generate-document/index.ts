@@ -999,15 +999,23 @@ async function generateSingleDocument(
         }
       }
 
+      // ── Multi-lien aggregation: collect indexed lien values per field ──
+      // Group values by (field, lienIndex) so we can aggregate multi-lien data
+      // into newline-separated strings for template fields that sit inside table cells.
+      const lienFieldCollector: Record<string, { index: number; value: string }[]> = {};
+
       for (const [key, val] of [...fieldValues.entries()]) {
         // Match lien1.holder, lien2.holder, lien.holder etc.
         const lienMatch = key.match(/^lien(\d*)\.(.+)$/);
         if (lienMatch && val.rawValue) {
+          const lienIndex = lienMatch[1] ? parseInt(lienMatch[1], 10) : 0;
           const field = lienMatch[2];
-          const prLiKey = lienFieldToPrLi[field];
-          if (prLiKey && !fieldValues.has(prLiKey)) {
-            fieldValues.set(prLiKey, val);
-          }
+
+          // Collect values for multi-lien aggregation
+          if (!lienFieldCollector[field]) lienFieldCollector[field] = [];
+          lienFieldCollector[field].push({ index: lienIndex, value: String(val.rawValue) });
+
+          // Still bridge canonical and li_* keys for single-lien compatibility
           const canonKey = lienFieldToCanonical[field];
           if (canonKey && !fieldValues.has(canonKey)) {
             fieldValues.set(canonKey, val);
@@ -1015,10 +1023,6 @@ async function generateSingleDocument(
           const liKey = lienFieldToLiKeys[field];
           if (liKey && !fieldValues.has(liKey)) {
             fieldValues.set(liKey, val);
-          }
-          const altKey = lienFieldToAltKeys[field];
-          if (altKey && !fieldValues.has(altKey)) {
-            fieldValues.set(altKey, val);
           }
         }
 
@@ -1030,6 +1034,39 @@ async function generateSingleDocument(
             fieldValues.set(mapped, val);
             debugLog(`[generate-document] Bridged ${key} -> ${mapped}`);
           }
+        }
+      }
+
+      // Now set pr_li_* keys: if multiple liens exist, join values with newlines
+      // so each lien's data appears on its own line within the table cell.
+      for (const [field, entries] of Object.entries(lienFieldCollector)) {
+        const prLiKey = lienFieldToPrLi[field];
+        if (!prLiKey) continue;
+
+        // Sort by lien index for consistent ordering
+        entries.sort((a, b) => a.index - b.index);
+        const aggregated = entries.map(e => e.value).join("\n");
+        const dataType = (field === "current_balance" || field === "original_balance" || 
+                          field === "regular_payment" || field === "balance_after") ? "currency" : "text";
+        fieldValues.set(prLiKey, { rawValue: aggregated, dataType });
+        debugLog(`[generate-document] Multi-lien bridged ${field} -> ${prLiKey} (${entries.length} liens)`);
+
+        // Also set alt keys with aggregated values
+        const altKey = lienFieldToAltKeys[field];
+        if (altKey) {
+          fieldValues.set(altKey, { rawValue: aggregated, dataType });
+          debugLog(`[generate-document] Multi-lien alt bridged ${field} -> ${altKey}`);
+        }
+      }
+
+      // Also aggregate li_bp_balanceAfter and priority fields from lienFieldToAltKeys
+      // that may come from different source fields
+      for (const [field, entries] of Object.entries(lienFieldCollector)) {
+        const altKey = lienFieldToAltKeys[field];
+        if (altKey && !fieldValues.has(altKey)) {
+          entries.sort((a, b) => a.index - b.index);
+          const aggregated = entries.map(e => e.value).join("\n");
+          fieldValues.set(altKey, { rawValue: aggregated, dataType: "text" });
         }
       }
       debugLog(`[generate-document] Lien field bridging complete`);
