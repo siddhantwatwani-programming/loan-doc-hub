@@ -19,6 +19,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { LenderIdSearch } from './LenderIdSearch';
+import { formatCurrencyDisplay, unformatCurrencyDisplay, numericKeyDown, numericPaste } from '@/lib/numericInputFilter';
 
 interface AddFundingModalProps {
   open: boolean;
