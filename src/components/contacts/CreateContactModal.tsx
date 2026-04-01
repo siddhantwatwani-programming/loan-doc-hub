@@ -551,6 +551,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               value={form['vesting'] || ''}
               onChange={(e) => set('vesting', e.target.value)}
               rows={3}
+              maxLength={500}
               className="resize-none w-full text-xs"
             />
           </div>
