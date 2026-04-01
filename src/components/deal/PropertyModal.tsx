@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Home, CalendarIcon } from 'lucide-react';
 import { EmailInput } from '@/components/ui/email-input';
+import { formatCurrencyDisplay, unformatCurrencyDisplay, numericKeyDown, numericPaste } from '@/lib/numericInputFilter';
 import { ZipInput } from '@/components/ui/zip-input';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -66,9 +67,16 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   const [yearBuiltOpen, setYearBuiltOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const CURRENCY_MODAL_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'pledgedEquity', 'monthlyIncome', 'lienProtectiveEquity'];
   useEffect(() => {
     if (open) {
-      setFormData(property ? { ...getEmptyProperty(), ...property } : getEmptyProperty());
+      const base = property ? { ...getEmptyProperty(), ...property } : getEmptyProperty();
+      // Format currency fields for display on load
+      CURRENCY_MODAL_FIELDS.forEach(f => {
+        const v = String(base[f] || '');
+        if (v) (base as any)[f] = formatCurrencyDisplay(v);
+      });
+      setFormData(base);
       setActiveTab('general');
     }
   }, [open, property]);
@@ -77,8 +85,16 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
     const resolved = value === '__none__' ? '' : value;
     setFormData(prev => ({ ...prev, [field]: resolved }));
   };
-  const sanitizeNumericValue = (value: string): string => value.replace(/[^0-9.-]/g, '');
+  const sanitizeNumericValue = (value: string): string => value.replace(/[^0-9.]/g, '');
   const handleCurrencyChange = (field: keyof PropertyData, value: string) => setFormData(prev => ({ ...prev, [field]: sanitizeNumericValue(value) }));
+  const handleCurrencyBlur = (field: keyof PropertyData) => {
+    const raw = String(formData[field] || '');
+    if (raw) setFormData(prev => ({ ...prev, [field]: formatCurrencyDisplay(raw) }));
+  };
+  const handleCurrencyFocus = (field: keyof PropertyData) => {
+    const raw = String(formData[field] || '');
+    if (raw) setFormData(prev => ({ ...prev, [field]: unformatCurrencyDisplay(raw) }));
+  };
   const handlePercentageChange = (field: keyof PropertyData, value: string) => setFormData(prev => ({ ...prev, [field]: sanitizeNumericValue(value).replace(/-/g, '') }));
 
   const parseDate = (val: string): Date | undefined => {
@@ -90,7 +106,18 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   const emailsValid = hasValidEmails(formData as any, ['appraiserEmail']);
 
   const handleSaveClick = () => setShowConfirm(true);
-  const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
+  const CURRENCY_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'pledgedEquity', 'monthlyIncome', 'lienProtectiveEquity'];
+  const handleConfirmSave = () => {
+    setShowConfirm(false);
+    // Strip commas from currency fields before persisting
+    const cleaned = { ...formData };
+    CURRENCY_FIELDS.forEach(f => {
+      const v = String(cleaned[f] || '');
+      if (v) (cleaned as any)[f] = v.replace(/,/g, '');
+    });
+    onSave(cleaned);
+    onOpenChange(false);
+  };
 
   const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
 
@@ -155,7 +182,17 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
       <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
       <div className="relative flex-1">
         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-        <Input value={String(formData[field] || '')} onChange={(e) => handleCurrencyChange(field, e.target.value)} className="h-7 text-xs pl-6" inputMode="decimal" placeholder="0.00" />
+        <Input
+          value={String(formData[field] || '')}
+          onChange={(e) => handleCurrencyChange(field, e.target.value)}
+          onBlur={() => handleCurrencyBlur(field)}
+          onFocus={() => handleCurrencyFocus(field)}
+          onKeyDown={numericKeyDown}
+          onPaste={(e) => numericPaste(e, (val) => setFormData(prev => ({ ...prev, [field]: val })))}
+          className="h-7 text-xs pl-6"
+          inputMode="decimal"
+          placeholder="0.00"
+        />
       </div>
     </div>
   );
