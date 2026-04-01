@@ -4,7 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 import { RE885ProposedLoanTerms } from './RE885ProposedLoanTerms';
-import { numericKeyDown, numericPaste } from '@/lib/numericInputFilter';
+import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationFeesFormProps {
