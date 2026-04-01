@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
+import { PhoneInput } from '@/components/ui/phone-input';
 
 interface PropertyLiensFormProps {
   fields: FieldDefinition[];
