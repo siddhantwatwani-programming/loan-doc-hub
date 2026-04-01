@@ -7,52 +7,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { US_STATES } from '@/lib/usStates';
 import { ZipInput } from '@/components/ui/zip-input';
-import { MaskedInput } from '@/components/ui/masked-input';
 import {
   formatTIN, maskTIN, validateTIN, stripTINInput,
-  formatSSN, formatEIN,
 } from '@/lib/tinValidation';
 import { maskAccountNumber } from '@/lib/bankingValidation';
 
-interface Broker1099Props {
+interface Lender1099Props {
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   onSave: () => Promise<void>;
   disabled?: boolean;
 }
 
-const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave, disabled = false }) => {
-  // ── Local state from parent values ──
-  const [designatedRecipient, setDesignatedRecipient] = useState(values['broker.1099.designated_recipient'] || '');
-  const [name, setName] = useState(values['broker.1099.name'] || '');
-  const [address, setAddress] = useState(values['broker.1099.address'] || '');
-  const [city, setCity] = useState(values['broker.1099.city'] || values['broker.city'] || '');
-  const [state, setState] = useState(values['broker.1099.state'] || values['broker.state'] || '');
-  const [zip, setZip] = useState(values['broker.1099.zip'] || values['broker.primary_address.zip'] || '');
-  const [accountNumber, setAccountNumber] = useState(values['broker.1099.account_number'] || '');
-  const [tinType, setTinType] = useState<'SSN' | 'EIN'>((values['broker.1099.tin_type'] as any) || 'SSN');
-  const [tinRaw, setTinRaw] = useState(values['broker.1099.tin'] || values['broker.tin'] || '');
-  const [send1099, setSend1099] = useState(values['broker.1099.send_1099'] === 'true');
+const Lender1099: React.FC<Lender1099Props> = ({ values, onValueChange, onSave, disabled = false }) => {
+  const [designatedRecipient, setDesignatedRecipient] = useState(values['lender.1099.designated_recipient'] || '');
+  const [name, setName] = useState(values['lender.1099.name'] || '');
+  const [address, setAddress] = useState(values['lender.1099.address'] || '');
+  const [city, setCity] = useState(values['lender.1099.city'] || values['lender.city'] || '');
+  const [state, setState] = useState(values['lender.1099.state'] || values['lender.state'] || '');
+  const [zip, setZip] = useState(values['lender.1099.zip'] || values['lender.primary_address.zip'] || '');
+  const [accountNumber, setAccountNumber] = useState(values['lender.1099.account_number'] || '');
+  const [tinType, setTinType] = useState<'SSN' | 'EIN'>((values['lender.1099.tin_type'] as any) || 'SSN');
+  const [tinRaw, setTinRaw] = useState(values['lender.1099.tin'] || values['lender.tin'] || '');
+  const [send1099, setSend1099] = useState(values['lender.1099.send_1099'] === 'true');
 
-  // ── Masking state ──
   const [tinFocused, setTinFocused] = useState(false);
   const [acctFocused, setAcctFocused] = useState(false);
-
-  // ── Validation state ──
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const markTouched = (f: string) => setTouched(p => ({ ...p, [f]: true }));
 
-  // ── Sync to parent ──
-  const sync = (key: string, value: string) => onValueChange(`broker.1099.${key}`, value);
+  const sync = (key: string, value: string) => onValueChange(`lender.1099.${key}`, value);
 
-  // ── Auto-populate on designated recipient change ──
   useEffect(() => {
-    if (designatedRecipient === 'Broker') {
-      const n = values['broker.full_name'] || values['broker.company'] || '';
-      const a = values['broker.primary_address.street'] || '';
-      const c = values['broker.city'] || '';
-      const s = values['broker.state'] || '';
-      const z = values['broker.primary_address.zip'] || '';
+    if (designatedRecipient === 'Lender') {
+      const n = values['lender.full_name'] || values['lender.company'] || '';
+      const a = values['lender.primary_address.street'] || '';
+      const c = values['lender.city'] || '';
+      const s = values['lender.state'] || '';
+      const z = values['lender.primary_address.zip'] || '';
       setName(n); sync('name', n);
       setAddress(a); sync('address', a);
       setCity(c); sync('city', c);
@@ -62,7 +54,6 @@ const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [designatedRecipient]);
 
-  // ── Validation checks ──
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
     if (touched.designatedRecipient && !designatedRecipient) e.designatedRecipient = 'Required';
@@ -80,16 +71,12 @@ const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave, 
     return e;
   }, [touched, designatedRecipient, name, address, city, state, zip, tinType, tinRaw]);
 
-  const hasErrors = Object.keys(errors).length > 0;
-
-  // ── TIN display value ──
   const tinDisplay = useMemo(() => {
     if (!tinRaw) return '';
     if (tinFocused) return formatTIN(tinRaw, tinType);
     return maskTIN(tinRaw, tinType);
   }, [tinRaw, tinType, tinFocused]);
 
-  // ── Account display ──
   const acctDisplay = useMemo(() => {
     if (!accountNumber) return '';
     if (acctFocused) return accountNumber;
@@ -98,13 +85,11 @@ const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave, 
 
   const handleSave = async () => {
     if (disabled) return;
-    // Touch all required fields
     const allFields = ['designatedRecipient', 'name', 'address', 'city', 'state', 'zip', 'tinType', 'tin'];
     const allTouched: Record<string, boolean> = {};
     allFields.forEach(f => allTouched[f] = true);
     setTouched(allTouched);
 
-    // Re-check validation
     if (!designatedRecipient || !name.trim() || !address.trim() || !city.trim() || !state || !zip || !tinType) {
       toast.error('Please fill all required fields.');
       return;
@@ -204,11 +189,7 @@ const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave, 
           </div>
           <div>
             <Label>ZIP <span className="text-destructive">*</span></Label>
-            <ZipInput
-              value={zip}
-              onValueChange={v => { setZip(v); sync('zip', v); }}
-              disabled={disabled}
-            />
+            <ZipInput value={zip} onValueChange={v => { setZip(v); sync('zip', v); }} disabled={disabled} />
           </div>
         </div>
       </div>
@@ -276,10 +257,10 @@ const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave, 
         <Checkbox
           checked={send1099}
           onCheckedChange={v => { setSend1099(!!v); sync('send_1099', String(!!v)); }}
-          id="broker-send1099"
+          id="lender-send1099"
           disabled={disabled}
         />
-        <Label htmlFor="broker-send1099">Send 1099</Label>
+        <Label htmlFor="lender-send1099">Send 1099</Label>
       </div>
 
       <div className="flex justify-end gap-2">
@@ -289,4 +270,4 @@ const Broker1099: React.FC<Broker1099Props> = ({ values, onValueChange, onSave, 
   );
 };
 
-export default Broker1099;
+export default Lender1099;
