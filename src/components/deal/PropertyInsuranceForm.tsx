@@ -172,7 +172,18 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
               <Label className="text-sm text-foreground">Coverage</Label>
               <div className="flex items-center gap-1 mt-1">
                 <span className="text-sm text-muted-foreground">$</span>
-                <Input value={getFieldValue(FIELD_KEYS.coverage)} onChange={(e) => onValueChange(FIELD_KEYS.coverage, e.target.value)} disabled={disabled} className="h-8 text-sm text-right" inputMode="decimal" placeholder="0.00" />
+                <Input
+                  value={getFieldValue(FIELD_KEYS.coverage)}
+                  onChange={(e) => onValueChange(FIELD_KEYS.coverage, e.target.value)}
+                  onFocus={(e) => { const raw = unformatCurrencyDisplay(e.target.value); e.target.value = raw; onValueChange(FIELD_KEYS.coverage, raw); }}
+                  onBlur={(e) => { const formatted = formatCurrencyDisplay(unformatCurrencyDisplay(e.target.value)); onValueChange(FIELD_KEYS.coverage, formatted); }}
+                  onKeyDown={numericKeyDown}
+                  onPaste={(e) => numericPaste(e, (v) => onValueChange(FIELD_KEYS.coverage, v))}
+                  disabled={disabled}
+                  className="h-8 text-sm text-right"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                />
               </div>
             </div>
           </DirtyFieldWrapper>
