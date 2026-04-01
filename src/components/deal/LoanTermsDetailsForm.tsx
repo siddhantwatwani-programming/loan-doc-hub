@@ -154,7 +154,7 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
   const renderInlineCurrencyField = (fieldKey: string, label: string) => {
     const isFocused = focusedCurrencyField === fieldKey;
     const rawValue = getValue(fieldKey);
-    const displayValue = isFocused ? rawValue : formatCurrencyDisplay(rawValue);
+    const displayValue = isFocused ? rawValue.replace(/,/g, '') : formatCurrencyDisplay(rawValue);
     return (
       <DirtyFieldWrapper fieldKey={fieldKey}>
         <div className="flex items-center gap-2">
