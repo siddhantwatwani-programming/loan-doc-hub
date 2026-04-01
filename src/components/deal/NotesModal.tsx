@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { format, parse } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { StickyNote, Paperclip, X, CalendarIcon } from 'lucide-react';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
