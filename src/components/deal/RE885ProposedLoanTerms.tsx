@@ -223,7 +223,7 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
             </div>
           </div>
           <div className={FIELD_W}>
-            <CurrencyInput value={Math.abs(cashAtClosing) > 0 ? Math.abs(cashAtClosing).toFixed(2) : ''} onChange={() => {}} readOnly disabled />
+            <CurrencyInput value={Math.abs(cashAtClosing) > 0 ? formatCurrencyDisplay(Math.abs(cashAtClosing).toFixed(2)) : ''} onChange={() => {}} readOnly disabled />
           </div>
         </div>
       </div>
