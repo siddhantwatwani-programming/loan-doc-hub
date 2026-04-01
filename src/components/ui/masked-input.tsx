@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 interface MaskedInputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: () => void;
   disabled?: boolean;
   className?: string;
   placeholder?: string;
@@ -20,6 +21,7 @@ interface MaskedInputProps {
 export const MaskedInput: React.FC<MaskedInputProps> = ({
   value,
   onChange,
+  onBlur,
   disabled = false,
   className,
   placeholder,
@@ -35,6 +37,7 @@ export const MaskedInput: React.FC<MaskedInputProps> = ({
   return (
     <div className="relative flex-1">
       <Input
+        onBlur={onBlur}
         value={maskedValue}
         onChange={onChange}
         disabled={disabled}
