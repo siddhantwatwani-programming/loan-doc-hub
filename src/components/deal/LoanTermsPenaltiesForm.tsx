@@ -253,11 +253,10 @@ const LateFeeColumn: React.FC<{
           />
         </FieldRow>
         <FieldRow label="Grace Period" fieldKey={`${prefix}.grace_period`}>
-          <Input
+          <PenaltyIntegerInput
             value={values[`${prefix}.grace_period`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.grace_period`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.grace_period`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
         <FieldRow label="Calendar / Actual" fieldKey={`${prefix}.calendar_actual`}>
