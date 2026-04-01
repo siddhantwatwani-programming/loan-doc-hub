@@ -80,7 +80,15 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
   const emailsValid = hasValidEmails(formData as any, ['email']);
 
   const handleSaveClick = () => setShowConfirm(true);
-  const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
+  const handleConfirmSave = () => {
+    setShowConfirm(false);
+    const cleaned = { ...formData };
+    if (cleaned.coverage) {
+      cleaned.coverage = unformatCurrencyDisplay(String(cleaned.coverage));
+    }
+    onSave(cleaned);
+    onOpenChange(false);
+  };
 
   const renderInlineField = (field: keyof InsuranceData, label: string, props: Record<string, any> = {}) => {
     if (props.type === 'date') {
