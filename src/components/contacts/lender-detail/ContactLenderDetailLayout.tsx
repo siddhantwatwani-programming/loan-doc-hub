@@ -7,7 +7,7 @@ import LenderDetailSidebar, { type LenderSection } from './LenderDetailSidebar';
 import { LenderInfoForm } from '@/components/deal/LenderInfoForm';
 import { LenderAuthorizedPartyForm } from '@/components/deal/LenderAuthorizedPartyForm';
 import { LenderBankingForm } from '@/components/deal/LenderBankingForm';
-import { LenderTaxInfoForm } from '@/components/deal/LenderTaxInfoForm';
+import Lender1099 from './Lender1099';
 import LenderDashboard from './LenderDashboard';
 import LenderPortfolio from './LenderPortfolio';
 import LenderHistory from './LenderHistory';
@@ -153,12 +153,14 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
         );
       case '1099':
         return (
-          <LenderTaxInfoForm
-            fields={emptyFields}
-            values={values}
-            onValueChange={handleValueChange}
-            disabled={isReadOnly}
-          />
+          <div className="p-6">
+            <Lender1099
+              values={values}
+              onValueChange={handleValueChange}
+              onSave={handleSave}
+              disabled={isReadOnly}
+            />
+          </div>
         );
       case 'attachments':
         return (
