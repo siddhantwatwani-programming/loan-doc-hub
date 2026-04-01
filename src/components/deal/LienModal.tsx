@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Home, CalendarIcon } from 'lucide-react';
+import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
+import { PhoneInput } from '@/components/ui/phone-input';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -168,7 +170,18 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
       <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
       <div className="relative flex-1">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-        <Input value={formData[field]} onChange={(e) => handleChange(field, e.target.value)} className={`h-7 text-xs pl-7 ${forceDisabled ? 'opacity-50 bg-muted' : ''}`} inputMode="decimal" placeholder="0.00" disabled={forceDisabled} />
+        <Input
+          value={formData[field]}
+          onChange={(e) => handleChange(field, unformatCurrencyDisplay(e.target.value))}
+          onKeyDown={numericKeyDown}
+          onPaste={(e) => numericPaste(e, (val) => handleChange(field, val))}
+          onBlur={() => { const raw = formData[field]; if (raw) handleChange(field, formatCurrencyDisplay(raw)); }}
+          onFocus={() => { const raw = formData[field]; if (raw) handleChange(field, unformatCurrencyDisplay(raw)); }}
+          className={`h-7 text-xs pl-7 ${forceDisabled ? 'opacity-50 bg-muted' : ''}`}
+          inputMode="decimal"
+          placeholder="0.00"
+          disabled={forceDisabled}
+        />
       </div>
     </div>
   );
@@ -224,9 +237,15 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
               {renderPercentageField('interestRate', 'Interest Rate', isThisLoan)}
               {renderInlineField('account', 'Account Number', 'text', isThisLoan)}
               {renderInlineField('maturityDate', 'Maturity Date', 'date', isThisLoan)}
-              {renderInlineField('phone', 'Phone', 'text', isThisLoan)}
+              <div className="flex items-center gap-2">
+                <Label className="w-[110px] shrink-0 text-xs text-foreground">Phone</Label>
+                <PhoneInput value={formData.phone} onValueChange={(v) => handleChange('phone', v)} disabled={isThisLoan} className={`h-7 text-xs flex-1 ${isThisLoan ? 'opacity-50 bg-muted' : ''}`} />
+              </div>
               {renderCurrencyField('originalBalance', 'Original Balance', isThisLoan || isAnticipated)}
-              {renderInlineField('fax', 'Fax', 'text', isThisLoan)}
+              <div className="flex items-center gap-2">
+                <Label className="w-[110px] shrink-0 text-xs text-foreground">Fax</Label>
+                <PhoneInput value={formData.fax} onValueChange={(v) => handleChange('fax', v)} disabled={isThisLoan} className={`h-7 text-xs flex-1 ${isThisLoan ? 'opacity-50 bg-muted' : ''}`} />
+              </div>
               {renderCurrencyField('currentBalance', 'Current Balance', isThisLoan || isAnticipated)}
               <div className="flex items-center gap-2">
                 <Label className="w-[110px] shrink-0 text-xs text-foreground">Email</Label>
@@ -271,7 +290,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
                 <Label className="w-[110px] shrink-0 text-xs text-foreground">Paydown Amount</Label>
                 <div className="relative flex-1 max-w-[160px]">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-                  <Input value={formData.existingPaydownAmount} onChange={(e) => handleChange('existingPaydownAmount', e.target.value)} className="h-7 text-xs pl-7" inputMode="decimal" placeholder="0.00" />
+                  <Input value={formData.existingPaydownAmount} onChange={(e) => handleChange('existingPaydownAmount', unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => handleChange('existingPaydownAmount', val))} onBlur={() => { const raw = formData.existingPaydownAmount; if (raw) handleChange('existingPaydownAmount', formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = formData.existingPaydownAmount; if (raw) handleChange('existingPaydownAmount', unformatCurrencyDisplay(raw)); }} className="h-7 text-xs pl-7" inputMode="decimal" placeholder="0.00" />
                 </div>
               </div>
             )}
@@ -281,7 +300,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
                   <Label className="w-[110px] shrink-0 text-xs text-foreground">Payoff Amount</Label>
                   <div className="relative max-w-[160px]">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-                    <Input value={formData.existingPayoffAmount} onChange={(e) => handleChange('existingPayoffAmount', e.target.value)} className="h-7 text-xs pl-7" inputMode="decimal" placeholder="0.00" />
+                    <Input value={formData.existingPayoffAmount} onChange={(e) => handleChange('existingPayoffAmount', unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => handleChange('existingPayoffAmount', val))} onBlur={() => { const raw = formData.existingPayoffAmount; if (raw) handleChange('existingPayoffAmount', formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = formData.existingPayoffAmount; if (raw) handleChange('existingPayoffAmount', unformatCurrencyDisplay(raw)); }} className="h-7 text-xs pl-7" inputMode="decimal" placeholder="0.00" />
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
