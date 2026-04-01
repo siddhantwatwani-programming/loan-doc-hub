@@ -212,9 +212,9 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
 
         <div>
           <Label className="text-sm text-foreground">Phone</Label>
-          <Input
+          <PhoneInput
             value={getFieldValue(FIELD_KEYS.phone)}
-            onChange={(e) => onValueChange(FIELD_KEYS.phone, e.target.value)}
+            onValueChange={(val) => onValueChange(FIELD_KEYS.phone, val)}
             disabled={disabled}
             className="h-8 text-sm mt-1"
           />
