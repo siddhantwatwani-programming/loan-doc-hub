@@ -378,9 +378,9 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                 />
               </div>
               {formData.attachments.length > 0 ? (
-                <div className="space-y-1 pl-[100px]">
+                <div className="space-y-1 pl-[100px] overflow-hidden">
                   {formData.attachments.map((att, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1 overflow-hidden">
+                    <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1 overflow-hidden max-w-full">
                       <Paperclip className="h-3 w-3 shrink-0" />
                       <TooltipProvider>
                         <Tooltip>
@@ -396,7 +396,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-5 w-5"
+                        className="h-5 w-5 shrink-0"
                         onClick={() => removeAttachment(idx)}
                       >
                         <X className="h-3 w-3" />
