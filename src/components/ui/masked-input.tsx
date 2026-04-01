@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 interface MaskedInputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: () => void;
   disabled?: boolean;
   className?: string;
   placeholder?: string;
