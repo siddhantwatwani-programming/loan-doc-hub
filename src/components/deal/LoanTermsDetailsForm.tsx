@@ -148,7 +148,7 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
         <Popover open={datePickerStates[fieldKey] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [fieldKey]: open }))}>
           <PopoverTrigger asChild>
             <Button variant="outline" className={cn('h-8 text-xs w-[220px] 3xl:w-[280px] justify-start text-left font-normal', !getValue(fieldKey) && 'text-muted-foreground')} disabled={disabled}>
-              {getValue(fieldKey) ? format(safeParseDateStr(getValue(fieldKey))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+              {getValue(fieldKey) ? format(safeParseDateStr(getValue(fieldKey))!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
               <CalendarIcon className="ml-auto h-3.5 w-3.5" />
             </Button>
           </PopoverTrigger>

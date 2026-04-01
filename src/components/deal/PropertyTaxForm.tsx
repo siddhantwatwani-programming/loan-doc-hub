@@ -149,7 +149,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               <Popover open={datePickerStates['nextDueDate'] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, nextDueDate: open }))}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn('h-7 text-sm flex-1 justify-start text-left font-normal', !getValue('nextDueDate') && 'text-muted-foreground')} disabled={disabled}>
-                    {getValue('nextDueDate') && safeParseDateStr(getValue('nextDueDate')) ? format(safeParseDateStr(getValue('nextDueDate'))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                    {getValue('nextDueDate') && safeParseDateStr(getValue('nextDueDate')) ? format(safeParseDateStr(getValue('nextDueDate'))!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
                     <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                   </Button>
                 </PopoverTrigger>
@@ -207,7 +207,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
                   <Popover open={datePickerStates['lastVerified'] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, lastVerified: open }))}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className={cn('h-7 text-sm flex-1 justify-start text-left font-normal', !getValue('lastVerified') && 'text-muted-foreground')} disabled={disabled}>
-                        {getValue('lastVerified') && safeParseDateStr(getValue('lastVerified')) ? format(safeParseDateStr(getValue('lastVerified'))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                        {getValue('lastVerified') && safeParseDateStr(getValue('lastVerified')) ? format(safeParseDateStr(getValue('lastVerified'))!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
                         <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                       </Button>
                     </PopoverTrigger>

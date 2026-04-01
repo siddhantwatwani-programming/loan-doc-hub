@@ -103,7 +103,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
           <Popover open={datePickerStates[field] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [field]: open }))}>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn('h-7 text-xs flex-1 justify-start text-left font-normal', !val && 'text-muted-foreground')}>
-                {val && parseDate(val) ? format(parseDate(val)!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                {val && parseDate(val) ? format(parseDate(val)!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
                 <CalendarIcon className="ml-auto h-3.5 w-3.5" />
               </Button>
             </PopoverTrigger>
@@ -259,7 +259,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                     <Popover open={yearBuiltOpen} onOpenChange={setYearBuiltOpen}>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !formData.yearBuilt && 'text-muted-foreground')}>
-                          {formData.yearBuilt ? format(parseDate(formData.yearBuilt)!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                          {formData.yearBuilt ? format(parseDate(formData.yearBuilt)!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
                           <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                         </Button>
                       </PopoverTrigger>

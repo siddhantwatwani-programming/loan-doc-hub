@@ -345,7 +345,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 <Popover open={fundingDateOpen} onOpenChange={setFundingDateOpen} modal={false}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn('h-7 text-sm w-full justify-start text-left font-normal flex-1', !fundingDate && 'text-muted-foreground')}>
-                      {fundingDate ? format(fundingDate, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                      {fundingDate ? format(fundingDate, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
                       <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                     </Button>
                   </PopoverTrigger>
@@ -358,7 +358,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 <Popover open={interestFromOpen} onOpenChange={setInterestFromOpen} modal={false}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn('h-7 text-sm w-full justify-start text-left font-normal flex-1', !interestFromDate && 'text-muted-foreground')}>
-                      {interestFromDate ? format(interestFromDate, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                      {interestFromDate ? format(interestFromDate, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
                       <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                     </Button>
                   </PopoverTrigger>

@@ -83,7 +83,7 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
           <Popover open={datePickerStates[field] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [field]: open }))}>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn('h-7 text-xs flex-1 justify-start text-left font-normal', !val && 'text-muted-foreground')}>
-                {val && safeParseDateStr(val) ? format(safeParseDateStr(val)!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                {val && safeParseDateStr(val) ? format(safeParseDateStr(val)!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
                 <CalendarIcon className="ml-auto h-3.5 w-3.5" />
               </Button>
             </PopoverTrigger>
