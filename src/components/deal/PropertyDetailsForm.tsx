@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { formatCurrencyDisplay, unformatCurrencyDisplay, numericKeyDown, numericPaste } from '@/lib/numericInputFilter';
+import { US_STATES } from '@/lib/usStates';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
@@ -194,7 +195,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
               <Select value={getFieldValue(FIELD_KEYS.state)} onValueChange={(val) => onValueChange(FIELD_KEYS.state, val)} disabled={disabled || isCopyBorrower}>
                 <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select state" /></SelectTrigger>
                 <SelectContent className="bg-background border border-border z-50 max-h-60">
-                  {['CA', 'TX', 'FL', 'NY', 'WA'].map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                  {US_STATES.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
@@ -260,7 +261,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           <p className="text-xs italic text-foreground pt-3 pb-1">Appraiser Contact</p>
           {renderInlineField(FIELD_KEYS.appraiserStreet, 'Street')}
           {renderInlineField(FIELD_KEYS.appraiserCity, 'City')}
-          {renderInlineField(FIELD_KEYS.appraiserState, 'State')}
+          {renderInlineSelect(FIELD_KEYS.appraiserState, 'State', US_STATES, 'Select state')}
           {renderInlineField(FIELD_KEYS.appraiserZip, 'ZIP')}
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.appraiserPhone}>
             <div className="flex items-center gap-2">
