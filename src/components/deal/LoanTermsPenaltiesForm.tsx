@@ -274,11 +274,10 @@ const LateFeeColumn: React.FC<{
           />
         </FieldRow>
         <FieldRow label={percentageLabel} fieldKey={`${prefix}.percentage_of_payment`}>
-          <Input
+          <PenaltyPercentInput
             value={values[`${prefix}.percentage_of_payment`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.percentage_of_payment`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.percentage_of_payment`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
         <FieldRow label="Additional Daily Charge" fieldKey={`${prefix}.additional_daily_charge`}>
