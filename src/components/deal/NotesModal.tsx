@@ -355,7 +355,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 overflow-hidden min-w-0">
               <div className="flex items-center gap-2">
                 <Label className="text-xs text-foreground">Attachments</Label>
                 <Button
