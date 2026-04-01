@@ -165,8 +165,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
    // Auto-compute Percent Owned = Funding Amount / Loan Amount * 100 (NO cap – show error instead)
   React.useEffect(() => {
-    const fa = parseFloat(formData.fundingAmount) || 0;
-    const la = parseFloat(loanAmount) || 0;
+    const fa = parseFloat((formData.fundingAmount || '').replace(/[$,]/g, '')) || 0;
+    const la = parseFloat((loanAmount || '').replace(/[$,]/g, '')) || 0;
     if (la > 0 && fa > 0) {
       const computed = (fa / la * 100).toFixed(3);
       if (computed !== formData.percentOwned) {

@@ -59,8 +59,8 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
 
   // Auto-compute Percent Owned = Funding Amount / Loan Amount * 100 (no cap – show error)
   React.useEffect(() => {
-    const fa = parseFloat(data.fundingAmount) || 0;
-    const la = parseFloat(loanAmount) || 0;
+    const fa = safeParseFloat(data.fundingAmount);
+    const la = safeParseFloat(loanAmount);
     if (la > 0 && fa > 0) {
       const computed = (fa / la * 100).toFixed(3);
       if (computed !== data.percentOwned) {
