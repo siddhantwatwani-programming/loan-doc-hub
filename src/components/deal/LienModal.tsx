@@ -290,7 +290,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
                 <Label className="w-[110px] shrink-0 text-xs text-foreground">Paydown Amount</Label>
                 <div className="relative flex-1 max-w-[160px]">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-                  <Input value={formData.existingPaydownAmount} onChange={(e) => handleChange('existingPaydownAmount', e.target.value)} className="h-7 text-xs pl-7" inputMode="decimal" placeholder="0.00" />
+                  <Input value={formData.existingPaydownAmount} onChange={(e) => handleChange('existingPaydownAmount', unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => handleChange('existingPaydownAmount', val))} onBlur={() => { const raw = formData.existingPaydownAmount; if (raw) handleChange('existingPaydownAmount', formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = formData.existingPaydownAmount; if (raw) handleChange('existingPaydownAmount', unformatCurrencyDisplay(raw)); }} className="h-7 text-xs pl-7" inputMode="decimal" placeholder="0.00" />
                 </div>
               </div>
             )}
