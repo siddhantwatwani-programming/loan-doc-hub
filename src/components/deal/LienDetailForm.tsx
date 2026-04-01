@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Home, CalendarIcon } from 'lucide-react';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
+import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import {
   Select,
   SelectContent,
@@ -191,7 +192,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
         <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">{label}</Label>
         <div className="relative flex-1">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-          <Input value={lien[field]} onChange={(e) => onChange(field, e.target.value)} disabled={disabled || forceDisabled} className={`h-7 text-sm pl-7 ${forceDisabled ? 'opacity-50 bg-muted cursor-not-allowed' : ''}`} inputMode="decimal" placeholder="0.00" />
+          <Input value={lien[field]} onChange={(e) => onChange(field, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => onChange(field, val))} onBlur={() => { const raw = lien[field]; if (raw) onChange(field, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = lien[field]; if (raw) onChange(field, unformatCurrencyDisplay(raw)); }} disabled={disabled || forceDisabled} className={`h-7 text-sm pl-7 ${forceDisabled ? 'opacity-50 bg-muted cursor-not-allowed' : ''}`} inputMode="decimal" placeholder="0.00" />
         </div>
       </div>
     </DirtyFieldWrapper>
