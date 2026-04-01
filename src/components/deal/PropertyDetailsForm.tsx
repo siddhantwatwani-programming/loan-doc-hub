@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { formatCurrencyDisplay, unformatCurrencyDisplay, numericKeyDown, numericPaste } from '@/lib/numericInputFilter';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
