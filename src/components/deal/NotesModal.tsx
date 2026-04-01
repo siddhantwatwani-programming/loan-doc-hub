@@ -396,7 +396,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-5 w-5"
+                        className="h-5 w-5 shrink-0"
                         onClick={() => removeAttachment(idx)}
                       >
                         <X className="h-3 w-3" />
