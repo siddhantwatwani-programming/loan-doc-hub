@@ -78,8 +78,16 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
     const resolved = value === '__none__' ? '' : value;
     setFormData(prev => ({ ...prev, [field]: resolved }));
   };
-  const sanitizeNumericValue = (value: string): string => value.replace(/[^0-9.-]/g, '');
+  const sanitizeNumericValue = (value: string): string => value.replace(/[^0-9.]/g, '');
   const handleCurrencyChange = (field: keyof PropertyData, value: string) => setFormData(prev => ({ ...prev, [field]: sanitizeNumericValue(value) }));
+  const handleCurrencyBlur = (field: keyof PropertyData) => {
+    const raw = String(formData[field] || '');
+    if (raw) setFormData(prev => ({ ...prev, [field]: formatCurrencyDisplay(raw) }));
+  };
+  const handleCurrencyFocus = (field: keyof PropertyData) => {
+    const raw = String(formData[field] || '');
+    if (raw) setFormData(prev => ({ ...prev, [field]: unformatCurrencyDisplay(raw) }));
+  };
   const handlePercentageChange = (field: keyof PropertyData, value: string) => setFormData(prev => ({ ...prev, [field]: sanitizeNumericValue(value).replace(/-/g, '') }));
 
   const parseDate = (val: string): Date | undefined => {
