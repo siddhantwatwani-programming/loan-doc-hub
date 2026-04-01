@@ -463,8 +463,14 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               <div className="pt-2 space-y-1.5">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
                 {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
-                {renderInline('Street', 'mailing.street', 'text', isSameAsPrimary)}
-                {renderInline('City', 'mailing.city', 'text', isSameAsPrimary)}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs">Street</Label>
+                  <Input value={form['mailing.street'] || ''} onChange={(e) => set('mailing.street', e.target.value)} onBlur={() => set('mailing.street', (form['mailing.street'] || '').trim())} disabled={isSameAsPrimary} maxLength={150} className="h-7 text-xs flex-1" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs">City</Label>
+                  <Input value={form['mailing.city'] || ''} onChange={(e) => set('mailing.city', e.target.value)} onKeyDown={alphaSpaceKD} onPaste={(e) => { e.preventDefault(); set('mailing.city', e.clipboardData.getData('text').replace(/[^A-Za-z ]/g, '')); }} onBlur={() => set('mailing.city', (form['mailing.city'] || '').trim())} disabled={isSameAsPrimary} className="h-7 text-xs flex-1" />
+                </div>
                 <div className="flex items-center gap-2">
                   <Label className="w-[100px] shrink-0 text-xs">State</Label>
                   <Select value={form['mailing.state'] || ''} onValueChange={(v) => set('mailing.state', v)} disabled={isSameAsPrimary}>
