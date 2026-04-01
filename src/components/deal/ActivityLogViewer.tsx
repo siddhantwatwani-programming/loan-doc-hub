@@ -292,7 +292,7 @@ export const ActivityLogViewer: React.FC<ActivityLogViewerProps> = ({
   }
 
   return (
-    <ScrollArea style={{ maxHeight }} className="pr-4">
+    <ScrollArea style={{ maxHeight }} className="pr-4 overflow-hidden">
       <div className="space-y-4">
         {activities.map((activity, index) => {
           const config = getActionConfig(activity.action_type);
