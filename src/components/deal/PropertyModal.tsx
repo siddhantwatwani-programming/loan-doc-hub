@@ -67,9 +67,16 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   const [yearBuiltOpen, setYearBuiltOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const CURRENCY_MODAL_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'pledgedEquity', 'monthlyIncome', 'lienProtectiveEquity'];
   useEffect(() => {
     if (open) {
-      setFormData(property ? { ...getEmptyProperty(), ...property } : getEmptyProperty());
+      const base = property ? { ...getEmptyProperty(), ...property } : getEmptyProperty();
+      // Format currency fields for display on load
+      CURRENCY_MODAL_FIELDS.forEach(f => {
+        const v = String(base[f] || '');
+        if (v) (base as any)[f] = formatCurrencyDisplay(v);
+      });
+      setFormData(base);
       setActiveTab('general');
     }
   }, [open, property]);
