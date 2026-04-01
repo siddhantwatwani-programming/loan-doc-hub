@@ -520,12 +520,19 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 </div>
               ))}
               <div className="pt-2 space-y-1">
-                <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Delivery Options</h3>
+                <h3 className={cn("font-semibold text-xs border-b pb-1 mb-1", lenderErrors['delivery'] ? "text-destructive border-destructive" : "text-foreground border-border")}>Delivery Options</h3>
                 <div className="flex items-center gap-3">
-                  {renderCheckbox('Print', 'delivery.print')}
-                  {renderCheckbox('Email', 'delivery.email')}
-                  {renderCheckbox('SMS', 'delivery.sms')}
+                  <div className="flex items-center gap-2" onClick={() => clrLErr('delivery')}>
+                    {renderCheckbox('Print', 'delivery.print')}
+                  </div>
+                  <div className="flex items-center gap-2" onClick={() => clrLErr('delivery')}>
+                    {renderCheckbox('Email', 'delivery.email')}
+                  </div>
+                  <div className="flex items-center gap-2" onClick={() => clrLErr('delivery')}>
+                    {renderCheckbox('SMS', 'delivery.sms')}
+                  </div>
                 </div>
+                {lenderErrors['delivery'] && <p className="text-[10px] text-destructive">{lenderErrors['delivery']}</p>}
               </div>
               <div className="pt-2 space-y-1">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Send</h3>
