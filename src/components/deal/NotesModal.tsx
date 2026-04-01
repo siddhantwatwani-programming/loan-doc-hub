@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { format, parse } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { StickyNote, Paperclip, X, CalendarIcon } from 'lucide-react';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -379,9 +380,18 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               {formData.attachments.length > 0 ? (
                 <div className="space-y-1 pl-[100px]">
                   {formData.attachments.map((att, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
+                    <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1 overflow-hidden">
                       <Paperclip className="h-3 w-3 shrink-0" />
-                      <span className="flex-1 truncate">{getAttachmentName(att)}</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="flex-1 min-w-0 truncate">{getAttachmentName(att)}</span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-sm break-all">
+                            <p>{getAttachmentName(att)}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       <Button
                         type="button"
                         variant="ghost"
