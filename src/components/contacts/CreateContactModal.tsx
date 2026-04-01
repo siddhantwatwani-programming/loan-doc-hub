@@ -439,8 +439,14 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
             {/* Column 2: Primary Address + Mailing + Options */}
             <div className="space-y-1.5">
               <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
-              {renderInline('Street', 'primary_address.street')}
-              {renderInline('City', 'primary_address.city')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Street</Label>
+                <Input value={form['primary_address.street'] || ''} onChange={(e) => { set('primary_address.street', e.target.value); clrLErr('primary_address.street'); }} onBlur={() => set('primary_address.street', (form['primary_address.street'] || '').trim())} maxLength={150} className={cn("h-7 text-xs flex-1", lenderErrors['primary_address.street'] && "border-destructive")} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">City</Label>
+                <Input value={form['primary_address.city'] || ''} onChange={(e) => { set('primary_address.city', e.target.value); clrLErr('primary_address.city'); }} onKeyDown={alphaSpaceKD} onPaste={(e) => { e.preventDefault(); set('primary_address.city', e.clipboardData.getData('text').replace(/[^A-Za-z ]/g, '')); }} onBlur={() => set('primary_address.city', (form['primary_address.city'] || '').trim())} className={cn("h-7 text-xs flex-1", lenderErrors['primary_address.city'] && "border-destructive")} />
+              </div>
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">State</Label>
                 <Select value={form['primary_address.state'] || ''} onValueChange={(v) => set('primary_address.state', v)}>
