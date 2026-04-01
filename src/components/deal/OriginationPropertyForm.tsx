@@ -13,6 +13,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationPropertyFormProps {
