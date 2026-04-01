@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
+import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
@@ -62,7 +63,7 @@ const renderCurrencyField = (key: string, label: string, values: Record<string, 
       <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
       <div className="relative flex-1">
         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-        <Input type="number" step="0.01" value={values[key] || ''} onChange={(e) => onValueChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" />
+        <Input type="text" inputMode="decimal" value={values[key] || ''} onChange={(e) => onValueChange(key, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => onValueChange(key, val))} onBlur={() => { const raw = values[key] || ''; if (raw) onValueChange(key, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = values[key] || ''; if (raw) onValueChange(key, unformatCurrencyDisplay(raw)); }} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" />
       </div>
     </div>
   </DirtyFieldWrapper>
@@ -147,13 +148,13 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
               <div className="px-3 py-2 text-sm font-medium text-foreground">Advanced By</div>
               <DirtyFieldWrapper fieldKey={FIELD_KEYS.advancedByAccount}><div className="px-2 py-1.5"><Input value={values[FIELD_KEYS.advancedByAccount] || ''} onChange={(e) => onValueChange(FIELD_KEYS.advancedByAccount, e.target.value)} disabled={disabled} className="h-7 text-sm" /></div></DirtyFieldWrapper>
               <DirtyFieldWrapper fieldKey={FIELD_KEYS.advancedByLenderName}><div className="px-2 py-1.5"><Input value={values[FIELD_KEYS.advancedByLenderName] || ''} onChange={(e) => onValueChange(FIELD_KEYS.advancedByLenderName, e.target.value)} disabled={disabled} className="h-7 text-sm" /></div></DirtyFieldWrapper>
-              <DirtyFieldWrapper fieldKey={FIELD_KEYS.advancedByAmount}><div className="px-2 py-1.5"><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span><Input type="number" step="0.01" value={values[FIELD_KEYS.advancedByAmount] || ''} onChange={(e) => onValueChange(FIELD_KEYS.advancedByAmount, e.target.value)} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" /></div></div></DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.advancedByAmount}><div className="px-2 py-1.5"><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span><Input type="text" inputMode="decimal" value={values[FIELD_KEYS.advancedByAmount] || ''} onChange={(e) => onValueChange(FIELD_KEYS.advancedByAmount, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => onValueChange(FIELD_KEYS.advancedByAmount, val))} onBlur={() => { const raw = values[FIELD_KEYS.advancedByAmount] || ''; if (raw) onValueChange(FIELD_KEYS.advancedByAmount, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = values[FIELD_KEYS.advancedByAmount] || ''; if (raw) onValueChange(FIELD_KEYS.advancedByAmount, unformatCurrencyDisplay(raw)); }} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" /></div></div></DirtyFieldWrapper>
             </div>
             <div className="grid grid-cols-[140px_1fr_1fr_1fr] border-b border-border items-center">
               <div className="px-3 py-2 text-sm font-medium text-foreground">On Behalf Of</div>
               <DirtyFieldWrapper fieldKey={FIELD_KEYS.onBehalfOfAccount}><div className="px-2 py-1.5"><Input value={values[FIELD_KEYS.onBehalfOfAccount] || ''} onChange={(e) => onValueChange(FIELD_KEYS.onBehalfOfAccount, e.target.value)} disabled={disabled} className="h-7 text-sm" /></div></DirtyFieldWrapper>
               <DirtyFieldWrapper fieldKey={FIELD_KEYS.onBehalfOfLenderName}><div className="px-2 py-1.5"><Input value={values[FIELD_KEYS.onBehalfOfLenderName] || ''} onChange={(e) => onValueChange(FIELD_KEYS.onBehalfOfLenderName, e.target.value)} disabled={disabled} className="h-7 text-sm" /></div></DirtyFieldWrapper>
-              <DirtyFieldWrapper fieldKey={FIELD_KEYS.onBehalfOfAmount}><div className="px-2 py-1.5"><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span><Input type="number" step="0.01" value={values[FIELD_KEYS.onBehalfOfAmount] || ''} onChange={(e) => onValueChange(FIELD_KEYS.onBehalfOfAmount, e.target.value)} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" /></div></div></DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.onBehalfOfAmount}><div className="px-2 py-1.5"><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span><Input type="text" inputMode="decimal" value={values[FIELD_KEYS.onBehalfOfAmount] || ''} onChange={(e) => onValueChange(FIELD_KEYS.onBehalfOfAmount, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => onValueChange(FIELD_KEYS.onBehalfOfAmount, val))} onBlur={() => { const raw = values[FIELD_KEYS.onBehalfOfAmount] || ''; if (raw) onValueChange(FIELD_KEYS.onBehalfOfAmount, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = values[FIELD_KEYS.onBehalfOfAmount] || ''; if (raw) onValueChange(FIELD_KEYS.onBehalfOfAmount, unformatCurrencyDisplay(raw)); }} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" /></div></div></DirtyFieldWrapper>
             </div>
             <div className="grid grid-cols-[140px_1fr_1fr_1fr] items-center">
               <DirtyFieldWrapper fieldKey={FIELD_KEYS.distributeBetweenAllLenders}>
@@ -165,7 +166,7 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
                 </div>
               </DirtyFieldWrapper>
               <div className="px-3 py-2 text-sm font-medium text-foreground col-span-2 text-right pr-4">Amount Advanced:</div>
-              <DirtyFieldWrapper fieldKey={FIELD_KEYS.amountOwedByBorrower}><div className="px-2 py-1.5"><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span><Input type="number" step="0.01" value={values[FIELD_KEYS.amountOwedByBorrower] || ''} onChange={(e) => onValueChange(FIELD_KEYS.amountOwedByBorrower, e.target.value)} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" /></div></div></DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.amountOwedByBorrower}><div className="px-2 py-1.5"><div className="relative"><span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span><Input type="text" inputMode="decimal" value={values[FIELD_KEYS.amountOwedByBorrower] || ''} onChange={(e) => onValueChange(FIELD_KEYS.amountOwedByBorrower, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => onValueChange(FIELD_KEYS.amountOwedByBorrower, val))} onBlur={() => { const raw = values[FIELD_KEYS.amountOwedByBorrower] || ''; if (raw) onValueChange(FIELD_KEYS.amountOwedByBorrower, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = values[FIELD_KEYS.amountOwedByBorrower] || ''; if (raw) onValueChange(FIELD_KEYS.amountOwedByBorrower, unformatCurrencyDisplay(raw)); }} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" /></div></div></DirtyFieldWrapper>
             </div>
           </div>
         </div>
