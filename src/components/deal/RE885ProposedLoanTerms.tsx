@@ -115,7 +115,7 @@ export const RE885ProposedLoanTerms: React.FC<RE885Props> = ({
   React.useEffect(() => {
     const abs = Math.abs(cashAtClosing);
     if (abs > 0) {
-      setValue(FK.cash_at_closing_amount, abs.toFixed(2));
+      setValue(FK.cash_at_closing_amount, formatCurrencyDisplay(abs.toFixed(2)));
       setValue(FK.cash_at_closing_option, cashAtClosing >= 0 ? 'payable_to_you' : 'you_must_pay');
     }
   }, [cashAtClosing]);
