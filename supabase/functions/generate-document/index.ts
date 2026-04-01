@@ -1118,6 +1118,10 @@ async function generateSingleDocument(
       fieldValues.set('of_tot_oth', { rawValue: totalOthers.toFixed(2), dataType: 'currency' });
       fieldValues.set('of_tot_brk', { rawValue: totalBroker.toFixed(2), dataType: 'currency' });
       fieldValues.set('of_tot_all', { rawValue: grandTotal.toFixed(2), dataType: 'currency' });
+      // Also set the display-field aliases so templates using either tag name resolve correctly
+      fieldValues.set('of_fe_subtotalOthers', { rawValue: totalOthers.toFixed(2), dataType: 'currency' });
+      fieldValues.set('of_fe_subtotalJ', { rawValue: totalBroker.toFixed(2), dataType: 'currency' });
+      fieldValues.set('of_fe_totalJ', { rawValue: grandTotal.toFixed(2), dataType: 'currency' });
       console.log(`[generate-document] Auto-computed HUD totals: Others=${totalOthers.toFixed(2)} (${dynamicOthersKeys.size} keys), Broker=${totalBroker.toFixed(2)} (${dynamicBrokerKeys.size} keys), Grand=${grandTotal.toFixed(2)}`);
     }
 

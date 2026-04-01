@@ -272,18 +272,30 @@ export function normalizeWordXml(xmlContent: string): string {
     p = p.replace(rightChevronFragmented, () => "»");
 
     // Handle split opening braces
+    // Guard: reject if intermediate runs contain meaningful text (letters/digits),
+    // which indicates two separate tags rather than a single fragmented brace pair.
     const splitOpenBraces = /\{((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\{/g;
     p = p.replace(splitOpenBraces, (match, runBreak) => {
       if (/<\/w:p>/.test(runBreak) || /<w:p[\s>]/.test(runBreak)) {
+        return match;
+      }
+      // Reject if any intermediate <w:t> contains actual text content (not just whitespace/braces)
+      if (/<w:t[^>]*>[^<]*[A-Za-z0-9$#@!%^&*][^<]*<\/w:t>/.test(runBreak)) {
         return match;
       }
       return '{{';
     });
 
     // Handle split closing braces
+    // Guard: reject if intermediate runs contain meaningful text content,
+    // preventing cross-tag matching in paragraphs with multiple merge tags.
     const splitCloseBraces = /\}((?:\s*<\/w:t>\s*<\/w:r>\s*<w:r[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>)+)\}/g;
     p = p.replace(splitCloseBraces, (match, runBreak) => {
       if (/<\/w:p>/.test(runBreak) || /<w:p[\s>]/.test(runBreak)) {
+        return match;
+      }
+      // Reject if any intermediate <w:t> contains actual text content (not just whitespace/braces)
+      if (/<w:t[^>]*>[^<]*[A-Za-z0-9$#@!%^&*][^<]*<\/w:t>/.test(runBreak)) {
         return match;
       }
       return '}}';
