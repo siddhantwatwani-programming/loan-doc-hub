@@ -552,9 +552,9 @@ const PrepaymentPenaltySection: React.FC<{
           <DirtyFieldWrapper fieldKey={`${prefix}.first_years`}>
             <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
               <span className="whitespace-nowrap">A Principal paydown in the first</span>
-              <Input
+              <PenaltyIntegerInput
                 value={values[`${prefix}.first_years`] || ''}
-                onChange={(e) => onValueChange(`${prefix}.first_years`, e.target.value)}
+                onChange={(val) => onValueChange(`${prefix}.first_years`, val)}
                 disabled={disabled || !isEnabled}
                 className="h-7 text-sm w-16 shrink-0"
               />
