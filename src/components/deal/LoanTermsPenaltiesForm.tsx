@@ -637,11 +637,10 @@ const MaturitySection: React.FC<{
 
       <div className="space-y-2">
         <FieldRow label="Grace Period (Days)" fieldKey={`${prefix}.grace_period_days`}>
-          <Input
+          <PenaltyIntegerInput
             value={values[`${prefix}.grace_period_days`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.grace_period_days`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.grace_period_days`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
         <FieldRow
