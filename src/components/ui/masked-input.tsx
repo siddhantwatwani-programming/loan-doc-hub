@@ -37,6 +37,7 @@ export const MaskedInput: React.FC<MaskedInputProps> = ({
   return (
     <div className="relative flex-1">
       <Input
+        onBlur={onBlur}
         value={maskedValue}
         onChange={onChange}
         disabled={disabled}
