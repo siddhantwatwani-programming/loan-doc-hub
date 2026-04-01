@@ -215,7 +215,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       lenderId: record.lenderAccount,
       lenderFullName: record.lenderName,
       lenderRate: String(record.lenderRate),
-      fundingAmount: String(record.originalAmount),
+      fundingAmount: formatCurrencyDisplay(String(record.originalAmount)),
       fundingDate: record.fundingDate || '',
       interestFrom: record.interestFrom || '',
       notes: '',
