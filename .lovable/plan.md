@@ -1,24 +1,56 @@
 
 
-# Create 8 New Field Dictionary Entries for Other Origination
+# US Currency & Percentage Formatting in Loan → Servicing Grid
 
 ## Summary
-Insert 8 new rows into `field_dictionary` under section `origination_fees` with the specified keys, types, and labels. No code changes needed — only a database migration.
+Add onBlur/onFocus formatting to the Cost, Lender %, Borrower $, and Borrower % columns in `LoanTermsServicingForm.tsx`. No changes to the Broker column or any other file.
 
-## Database Migration
+## Approach
+Use the existing `formatCurrencyDisplay` / `unformatCurrencyDisplay` from `numericInputFilter.ts`, and add a new `formatPercentageDisplay` / `unformatPercentageDisplay` helper pair to that same utility file.
 
-A single SQL `INSERT` into `field_dictionary` with these rows:
+## Changes
 
-| field_key | label | section | data_type | form_type |
-|---|---|---|---|---|
-| of_int_days | Interest Days | origination_fees | number | fees |
-| of_int_pd | Interest Per Day | origination_fees | currency | fees |
-| of_haz_mon | Hazard Insurance Months | origination_fees | number | fees |
-| of_haz_amt | Hazard Insurance Monthly Amount | origination_fees | currency | fees |
-| of_mi_mon | Mortgage Insurance Months | origination_fees | number | fees |
-| of_mi_amt | Mortgage Insurance Monthly Amount | origination_fees | currency | fees |
-| of_tax_mon | Property Taxes Months | origination_fees | number | fees |
-| of_tax_amt | Property Taxes Monthly Amount | origination_fees | currency | fees |
+### 1. `src/lib/numericInputFilter.ts` — Add percentage formatting helpers
 
-All fields will have `is_required = false`, `is_calculated = false`, and standard defaults. No UI, API, or schema changes required.
+```typescript
+export const formatPercentageDisplay = (value: string): string => {
+  if (!value) return '';
+  const num = parseFloat(value.replace(/,/g, ''));
+  if (isNaN(num)) return '';
+  return num.toFixed(2);
+};
+
+export const unformatPercentageDisplay = (value: string): string => {
+  return value.replace(/%/g, '').trim();
+};
+```
+
+### 2. `src/components/deal/LoanTermsServicingForm.tsx` — Add formatting behavior
+
+**Imports**: Add `formatCurrencyDisplay`, `unformatCurrencyDisplay`, `formatPercentageDisplay`, `unformatPercentageDisplay`.
+
+**Column classification**: Define which columns are currency (`cost`, `borrower_amount`) and which are percentage (`lender_percent`, `borrower_percent`).
+
+**Input changes** (for both the main rows and the custom row):
+- Currency columns (`cost`, `borrower_amount`):
+  - Display: prefix `$` via absolute-positioned span, add `pl-4` padding
+  - `onFocus`: unformat (strip commas) for editing
+  - `onBlur`: format with commas + 2 decimals
+  - `text-right` alignment
+  - Empty stays empty (no auto-fill)
+
+- Percentage columns (`lender_percent`, `borrower_percent`):
+  - Display: suffix `%` via absolute-positioned span, add `pr-5` padding
+  - `onFocus`: unformat (strip %)
+  - `onBlur`: format to 2 decimal places
+  - `text-right` alignment
+  - Empty stays empty
+
+- Broker column: no changes whatsoever
+- Lenders Split column: no changes (remains Select dropdown)
+
+### What Will NOT Change
+- No API, database, or schema changes
+- No changes to Broker column
+- No changes to any other component or file beyond the two listed
 
