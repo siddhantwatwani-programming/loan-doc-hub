@@ -88,7 +88,7 @@ export const TrustLedgerModal: React.FC<TrustLedgerModalProps> = ({
                 <Popover open={dateOpen} onOpenChange={setDateOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn('h-8 text-xs w-full justify-start text-left font-normal', !formData.date && 'text-muted-foreground')}>
-                      {formData.date && safeParseDateStr(formData.date) ? format(safeParseDateStr(formData.date)!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                      {formData.date && safeParseDateStr(formData.date) ? format(safeParseDateStr(formData.date)!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
                       <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                     </Button>
                   </PopoverTrigger>

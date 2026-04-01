@@ -35,7 +35,7 @@ const renderInlineField = (key: string, label: string, values: Record<string, st
           <Popover open={datePickerStates[key] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [key]: open }))}>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn('h-7 text-sm flex-1 justify-start text-left font-normal', !val && 'text-muted-foreground')} disabled={disabled}>
-                {val && safeParse(val) ? format(safeParse(val)!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                {val && safeParse(val) ? format(safeParse(val)!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
                 <CalendarIcon className="ml-auto h-3.5 w-3.5" />
               </Button>
             </PopoverTrigger>

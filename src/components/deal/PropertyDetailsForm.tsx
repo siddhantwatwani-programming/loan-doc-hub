@@ -223,7 +223,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
               <Popover open={datePickerStates[FIELD_KEYS.appraisedDate] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.appraisedDate]: open }))}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !getFieldValue(FIELD_KEYS.appraisedDate) && 'text-muted-foreground')} disabled={disabled}>
-                    {getFieldValue(FIELD_KEYS.appraisedDate) ? format(parseDate(getFieldValue(FIELD_KEYS.appraisedDate))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                    {getFieldValue(FIELD_KEYS.appraisedDate) ? format(parseDate(getFieldValue(FIELD_KEYS.appraisedDate))!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
                     <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                   </Button>
                 </PopoverTrigger>
@@ -283,7 +283,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             <Popover open={datePickerStates[FIELD_KEYS.yearBuilt] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.yearBuilt]: open }))}>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !getFieldValue(FIELD_KEYS.yearBuilt) && 'text-muted-foreground')} disabled={disabled}>
-                  {getFieldValue(FIELD_KEYS.yearBuilt) ? format(parseDate(getFieldValue(FIELD_KEYS.yearBuilt))!, 'dd-MM-yyyy') : 'dd-mm-yyyy'}
+                  {getFieldValue(FIELD_KEYS.yearBuilt) ? format(parseDate(getFieldValue(FIELD_KEYS.yearBuilt))!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
                   <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                 </Button>
               </PopoverTrigger>

@@ -217,7 +217,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className={cn('h-8 text-xs gap-1 w-[130px] justify-start', !asOfFilter && 'text-muted-foreground')} disabled={disabled}>
-                  {asOfFilter ? (() => { try { const d = parse(asOfFilter, 'yyyy-MM-dd', new Date()); return isValid(d) ? format(d, 'dd-MM-yyyy') : asOfFilter; } catch { return asOfFilter; } })() : 'dd-mm-yyyy'}
+                  {asOfFilter ? (() => { try { const d = parse(asOfFilter, 'yyyy-MM-dd', new Date()); return isValid(d) ? format(d, 'MM/dd/yyyy') : asOfFilter; } catch { return asOfFilter; } })() : 'mm/dd/yyyy'}
                   <CalendarIcon className="h-3 w-3 ml-auto" />
                 </Button>
               </PopoverTrigger>
