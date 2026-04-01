@@ -334,15 +334,43 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
             <Checkbox id={FIELD_KEYS.balloonPayment} checked={getBoolValue(FIELD_KEYS.balloonPayment)} onCheckedChange={(checked) => setBoolValue(FIELD_KEYS.balloonPayment, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
             <Label htmlFor={FIELD_KEYS.balloonPayment} className="font-normal cursor-pointer text-xs">Balloon Payment</Label>
           </div>
-          <div className="flex items-center gap-2">
-            <Checkbox id={FIELD_KEYS.parentAccount} checked={getBoolValue(FIELD_KEYS.parentAccount)} onCheckedChange={(checked) => setBoolValue(FIELD_KEYS.parentAccount, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
-            <Label htmlFor={FIELD_KEYS.parentAccount} className="font-normal cursor-pointer text-xs min-w-[90px] shrink-0">Parent Account</Label>
-            <Input value={getValue(FIELD_KEYS.parentAccountValue)} onChange={(e) => setValue(FIELD_KEYS.parentAccountValue, e.target.value)} disabled={disabled} className="h-8 text-xs w-[120px]" />
+          <div className="flex items-start gap-2">
+            <Checkbox id={FIELD_KEYS.parentAccount} checked={getBoolValue(FIELD_KEYS.parentAccount)} onCheckedChange={(checked) => {
+              setBoolValue(FIELD_KEYS.parentAccount, !!checked);
+              if (!checked) setValidationErrors(prev => ({ ...prev, [FIELD_KEYS.parentAccountValue]: null }));
+            }} disabled={disabled} className="h-3.5 w-3.5 mt-2" />
+            <Label htmlFor={FIELD_KEYS.parentAccount} className="font-normal cursor-pointer text-xs min-w-[90px] shrink-0 mt-1.5">Parent Account</Label>
+            <div>
+              <Input
+                value={getValue(FIELD_KEYS.parentAccountValue)}
+                onChange={(e) => setValue(FIELD_KEYS.parentAccountValue, e.target.value)}
+                onKeyDown={(e) => handleValidatedKeyDown(e, VALIDATION_CONFIGS.accountNumber)}
+                onPaste={(e) => handleValidatedPaste(e, FIELD_KEYS.parentAccountValue, VALIDATION_CONFIGS.accountNumber)}
+                onBlur={() => handleValidatedBlur(FIELD_KEYS.parentAccountValue, VALIDATION_CONFIGS.accountNumber, getBoolValue(FIELD_KEYS.parentAccount))}
+                disabled={disabled || !getBoolValue(FIELD_KEYS.parentAccount)}
+                className={cn('h-8 text-xs w-[120px]', validationErrors[FIELD_KEYS.parentAccountValue] && 'border-destructive')}
+              />
+              {validationErrors[FIELD_KEYS.parentAccountValue] && <p className="text-destructive text-[10px] mt-0.5">{validationErrors[FIELD_KEYS.parentAccountValue]}</p>}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Checkbox id={FIELD_KEYS.childAccount} checked={getBoolValue(FIELD_KEYS.childAccount)} onCheckedChange={(checked) => setBoolValue(FIELD_KEYS.childAccount, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
-            <Label htmlFor={FIELD_KEYS.childAccount} className="font-normal cursor-pointer text-xs min-w-[90px] shrink-0">Child Account</Label>
-            <Input value={getValue(FIELD_KEYS.childAccountValue)} onChange={(e) => setValue(FIELD_KEYS.childAccountValue, e.target.value)} disabled={disabled} className="h-8 text-xs w-[120px]" />
+          <div className="flex items-start gap-2">
+            <Checkbox id={FIELD_KEYS.childAccount} checked={getBoolValue(FIELD_KEYS.childAccount)} onCheckedChange={(checked) => {
+              setBoolValue(FIELD_KEYS.childAccount, !!checked);
+              if (!checked) setValidationErrors(prev => ({ ...prev, [FIELD_KEYS.childAccountValue]: null }));
+            }} disabled={disabled} className="h-3.5 w-3.5 mt-2" />
+            <Label htmlFor={FIELD_KEYS.childAccount} className="font-normal cursor-pointer text-xs min-w-[90px] shrink-0 mt-1.5">Child Account</Label>
+            <div>
+              <Input
+                value={getValue(FIELD_KEYS.childAccountValue)}
+                onChange={(e) => setValue(FIELD_KEYS.childAccountValue, e.target.value)}
+                onKeyDown={(e) => handleValidatedKeyDown(e, VALIDATION_CONFIGS.accountNumber)}
+                onPaste={(e) => handleValidatedPaste(e, FIELD_KEYS.childAccountValue, VALIDATION_CONFIGS.accountNumber)}
+                onBlur={() => handleValidatedBlur(FIELD_KEYS.childAccountValue, VALIDATION_CONFIGS.accountNumber, getBoolValue(FIELD_KEYS.childAccount))}
+                disabled={disabled || !getBoolValue(FIELD_KEYS.childAccount)}
+                className={cn('h-8 text-xs w-[120px]', validationErrors[FIELD_KEYS.childAccountValue] && 'border-destructive')}
+              />
+              {validationErrors[FIELD_KEYS.childAccountValue] && <p className="text-destructive text-[10px] mt-0.5">{validationErrors[FIELD_KEYS.childAccountValue]}</p>}
+            </div>
           </div>
         </div>
       </div>
