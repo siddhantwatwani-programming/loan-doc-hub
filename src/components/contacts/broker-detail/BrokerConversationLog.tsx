@@ -569,9 +569,19 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string; d
               {newLog.attachments.length > 0 && (
                 <div className="space-y-1">
                   {newLog.attachments.map((att, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
-                      <Paperclip className="h-3 w-3 shrink-0" /><span className="flex-1 truncate">{getAttachmentName(att)}</span>
-                      <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={() => removeAttachment(idx)}><X className="h-3 w-3" /></Button>
+                    <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1 overflow-hidden min-w-0">
+                      <Paperclip className="h-3 w-3 shrink-0" />
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="flex-1 min-w-0 truncate">{getAttachmentName(att)}</span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-sm break-all">
+                            <p>{getAttachmentName(att)}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <Button type="button" variant="ghost" size="icon" className="h-5 w-5 shrink-0" onClick={() => removeAttachment(idx)}><X className="h-3 w-3" /></Button>
                     </div>
                   ))}
                 </div>
