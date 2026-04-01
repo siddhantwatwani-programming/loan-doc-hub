@@ -35,7 +35,7 @@ export interface TrustLedgerEntry {
   clr: string;
   deposit: string;
   balance: string;
-  category: 'all' | 'reserve' | 'impound';
+  category: 'all' | 'reserve' | 'impound' | 'fee' | 'interest' | 'payment' | 'adjustment';
 }
 
 interface TrustLedgerTableViewProps {
