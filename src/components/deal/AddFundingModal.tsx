@@ -19,6 +19,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { LenderIdSearch } from './LenderIdSearch';
+import { formatCurrencyDisplay, unformatCurrencyDisplay, numericKeyDown, numericPaste } from '@/lib/numericInputFilter';
 
 interface AddFundingModalProps {
   open: boolean;
@@ -259,7 +260,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
       <Label className="text-xs text-foreground font-medium min-w-[140px] shrink-0">{label}</Label>
       <div className="relative w-24">
         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
-        <Input value={formData[feeField] as string} onChange={(e) => handleChange(feeField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs pl-5" inputMode="decimal" placeholder="-" />
+        <Input value={formData[feeField] as string} onChange={(e) => handleChange(feeField, e.target.value.replace(/[^0-9.]/g, ''))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => handleChange(feeField, val))} onBlur={() => { const raw = formData[feeField] as string; if (raw) handleChange(feeField, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = formData[feeField] as string; if (raw) handleChange(feeField, unformatCurrencyDisplay(raw)); }} className="h-7 text-xs pl-5" inputMode="decimal" placeholder="-" />
       </div>
       <span className="text-xs text-muted-foreground">Plus</span>
       <div className="relative w-20">
@@ -332,7 +333,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Funding Amount</Label>
                 <div className="relative flex-1">
                   <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-                  <Input type="text" inputMode="decimal" value={formData.fundingAmount} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('fundingAmount', v); }} placeholder="0.00" className="h-7 text-sm pl-6" />
+                  <Input type="text" inputMode="decimal" value={formData.fundingAmount} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('fundingAmount', v); }} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => handleChange('fundingAmount', val))} onBlur={() => { const raw = formData.fundingAmount; if (raw) handleChange('fundingAmount', formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = formData.fundingAmount; if (raw) handleChange('fundingAmount', unformatCurrencyDisplay(raw)); }} placeholder="0.00" className="h-7 text-sm pl-6" />
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -417,7 +418,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 <Label className="text-sm text-muted-foreground shrink-0">Regular Payment</Label>
                 <div className="relative w-28">
                   <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-                  <Input type="text" inputMode="decimal" value={formData.regularPayment} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
+                  <Input type="text" inputMode="decimal" value={formData.regularPayment ? formatCurrencyDisplay(formData.regularPayment) : ''} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
                 </div>
               </div>
             </div>
