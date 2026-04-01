@@ -272,6 +272,11 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   const setLErr = (f: string, m: string) => setLenderErrors(p => ({ ...p, [f]: m }));
   const clrLErr = (f: string) => setLenderErrors(p => { const n = { ...p }; delete n[f]; return n; });
 
+  // --- Borrower validation helpers ---
+  const [borrowerErrors, setBorrowerErrors] = useState<Record<string, string>>({});
+  const setBErr = (f: string, m: string) => setBorrowerErrors(p => ({ ...p, [f]: m }));
+  const clrBErr = (f: string) => setBorrowerErrors(p => { const n = { ...p }; delete n[f]; return n; });
+
   const NAV_KEYS = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
   const alphaSpaceKD = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (NAV_KEYS.includes(e.key) || e.ctrlKey || e.metaKey) return;
@@ -301,6 +306,15 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   };
 
   const handleLenderPref = (prefKey: string, checked: boolean) => {
+    const allPrefs = ['preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax'];
+    setForm(prev => {
+      const u = { ...prev };
+      allPrefs.forEach(k => { u[k] = (k === prefKey && checked) ? 'true' : 'false'; });
+      return u;
+    });
+  };
+
+  const handleBorrowerPref = (prefKey: string, checked: boolean) => {
     const allPrefs = ['preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax'];
     setForm(prev => {
       const u = { ...prev };
