@@ -6,7 +6,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
-import { numericKeyDown, numericPaste } from '@/lib/numericInputFilter';
+import {
+  numericKeyDown,
+  numericPaste,
+  formatCurrencyDisplay,
+  unformatCurrencyDisplay,
+  formatPercentageDisplay,
+  unformatPercentageDisplay,
+} from '@/lib/numericInputFilter';
 
 interface LoanTermsServicingFormProps {
   fields: FieldDefinition[];
@@ -48,6 +55,73 @@ const GRID_COLUMNS = [
   { key: 'borrower_percent', label: 'Borrower %' },
   { key: 'broker', label: 'Broker' },
 ];
+
+const CURRENCY_COLS = new Set(['cost', 'borrower_amount']);
+const PERCENT_COLS = new Set(['lender_percent', 'borrower_percent']);
+
+const ServicingInput: React.FC<{
+  colKey: string;
+  fieldKey: string;
+  value: string;
+  onValueChange: (fieldKey: string, value: string) => void;
+  disabled: boolean;
+}> = ({ colKey, fieldKey, value, onValueChange, disabled }) => {
+  const isCurrency = CURRENCY_COLS.has(colKey);
+  const isPercent = PERCENT_COLS.has(colKey);
+  const [focused, setFocused] = React.useState(false);
+
+  const displayValue = React.useMemo(() => {
+    if (focused) return value;
+    if (isCurrency) return formatCurrencyDisplay(value);
+    if (isPercent) return formatPercentageDisplay(value);
+    return value;
+  }, [value, focused, isCurrency, isPercent]);
+
+  const handleFocus = () => {
+    setFocused(true);
+    if (isCurrency) {
+      onValueChange(fieldKey, unformatCurrencyDisplay(value));
+    } else if (isPercent) {
+      onValueChange(fieldKey, unformatPercentageDisplay(value));
+    }
+  };
+
+  const handleBlur = () => {
+    setFocused(false);
+    if (isCurrency && value) {
+      onValueChange(fieldKey, formatCurrencyDisplay(value));
+    } else if (isPercent && value) {
+      onValueChange(fieldKey, formatPercentageDisplay(value));
+    }
+  };
+
+  const showDollar = isCurrency && !!displayValue;
+  const showPercent = isPercent && !!displayValue && !focused;
+
+  return (
+    <div className="relative">
+      {showDollar && (
+        <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none z-10">$</span>
+      )}
+      <Input
+        value={displayValue}
+        onChange={(e) => onValueChange(fieldKey, e.target.value)}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        {...(colKey !== 'broker' ? {
+          onKeyDown: numericKeyDown,
+          onPaste: (e: React.ClipboardEvent<HTMLInputElement>) => numericPaste(e, (v) => onValueChange(fieldKey, v)),
+          inputMode: 'decimal' as const,
+        } : {})}
+        disabled={disabled}
+        className={`h-7 text-xs border-border ${isCurrency || isPercent ? 'text-right' : ''} ${showDollar ? 'pl-4' : ''} ${isPercent ? 'pr-5' : ''}`}
+      />
+      {showPercent && (
+        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none z-10">%</span>
+      )}
+    </div>
+  );
+};
 
 export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
   fields,
@@ -142,16 +216,12 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
                               </SelectContent>
                             </Select>
                           ) : (
-                            <Input
+                            <ServicingInput
+                              colKey={col.key}
+                              fieldKey={getFieldKey(row.key, col.key)}
                               value={values[getFieldKey(row.key, col.key)] || ''}
-                              onChange={(e) => onValueChange(getFieldKey(row.key, col.key), e.target.value)}
-                              {...(col.key !== 'broker' ? {
-                                onKeyDown: numericKeyDown,
-                                onPaste: (e: React.ClipboardEvent<HTMLInputElement>) => numericPaste(e, (v) => onValueChange(getFieldKey(row.key, col.key), v)),
-                                inputMode: 'decimal' as const,
-                              } : {})}
+                              onValueChange={onValueChange}
                               disabled={disabled}
-                              className="h-7 text-xs border-border"
                             />
                           )}
                         </DirtyFieldWrapper>
@@ -202,16 +272,12 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
                           </SelectContent>
                         </Select>
                       ) : (
-                        <Input
+                        <ServicingInput
+                          colKey={col.key}
+                          fieldKey={`loan_terms.servicing.custom.${col.key}`}
                           value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
-                          onChange={(e) => onValueChange(`loan_terms.servicing.custom.${col.key}`, e.target.value)}
-                          {...(col.key !== 'broker' ? {
-                            onKeyDown: numericKeyDown,
-                            onPaste: (e: React.ClipboardEvent<HTMLInputElement>) => numericPaste(e, (v) => onValueChange(`loan_terms.servicing.custom.${col.key}`, v)),
-                            inputMode: 'decimal' as const,
-                          } : {})}
+                          onValueChange={onValueChange}
                           disabled={disabled}
-                          className="h-7 text-xs border-border"
                         />
                       )}
                     </DirtyFieldWrapper>
