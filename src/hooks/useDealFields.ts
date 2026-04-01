@@ -878,7 +878,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
             case 'number':
             case 'currency':
             case 'percentage': {
-              const numValue = parseFloat(stringValue);
+              const numValue = parseFloat(stringValue.replace(/[,$]/g, ''));
               fieldValueObj.value_number = isNaN(numValue) ? null : numValue;
               break;
             }
