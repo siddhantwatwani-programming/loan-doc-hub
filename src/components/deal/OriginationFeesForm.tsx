@@ -543,7 +543,7 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
             <span>months at $</span>
             <Input inputMode="decimal" value={getValue(perMonthKey)} onChange={(e) => setValue(perMonthKey, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(perMonthKey, val))} onBlur={() => { const raw = getValue(perMonthKey); if (raw) setValue(perMonthKey, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = getValue(perMonthKey); if (raw) setValue(perMonthKey, unformatCurrencyDisplay(raw)); }} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-20 inline-flex" />
             <span>/mo</span>
-            {totalVal && <span className="text-muted-foreground ml-1">= ${totalVal}</span>}
+            {totalVal && <span className="text-muted-foreground ml-1">= ${formatCurrencyDisplay(totalVal)}</span>}
           </div>
           <div className="relative">
             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
