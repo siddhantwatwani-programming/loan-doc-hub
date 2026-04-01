@@ -246,11 +246,10 @@ const LateFeeColumn: React.FC<{
 
       <div className="space-y-2">
         <FieldRow label="Type" fieldKey={`${prefix}.type`}>
-          <Input
+          <PenaltyCurrencyInput
             value={values[`${prefix}.type`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.type`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.type`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
         <FieldRow label="Grace Period" fieldKey={`${prefix}.grace_period`}>
