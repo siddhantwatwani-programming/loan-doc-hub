@@ -222,6 +222,52 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
     </DirtyFieldWrapper>
   );
 
+  const handleValidatedKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, config: ValidationConfig) => {
+    if (e.ctrlKey || e.metaKey || e.altKey || ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    if (e.key.length === 1 && !config.allowedPattern.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  const handleValidatedPaste = (e: React.ClipboardEvent<HTMLInputElement>, fieldKey: string, config: ValidationConfig) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text');
+    const cleaned = pasted.split('').filter(ch => config.allowedPattern.test(ch)).join('');
+    setValue(fieldKey, cleaned);
+  };
+
+  const handleValidatedBlur = (fieldKey: string, config: ValidationConfig, mandatory?: boolean) => {
+    const trimmed = getValue(fieldKey).trim();
+    if (trimmed !== getValue(fieldKey)) setValue(fieldKey, trimmed);
+    const error = config.validate(trimmed, mandatory);
+    setValidationErrors(prev => ({ ...prev, [fieldKey]: error }));
+  };
+
+  const renderValidatedField = (fieldKey: string, label: string, configKey: string) => {
+    const config = VALIDATION_CONFIGS[configKey];
+    const error = validationErrors[fieldKey];
+    return (
+      <DirtyFieldWrapper fieldKey={fieldKey}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[130px] shrink-0 text-xs">{label}</Label>
+          <div className="flex-1">
+            <Input
+              id={fieldKey}
+              value={getValue(fieldKey)}
+              onChange={(e) => setValue(fieldKey, e.target.value)}
+              onKeyDown={(e) => handleValidatedKeyDown(e, config)}
+              onPaste={(e) => handleValidatedPaste(e, fieldKey, config)}
+              onBlur={() => handleValidatedBlur(fieldKey, config)}
+              disabled={disabled}
+              className={cn('h-8 text-xs w-full', error && 'border-destructive')}
+            />
+            {error && <p className="text-destructive text-[10px] mt-0.5">{error}</p>}
+          </div>
+        </div>
+      </DirtyFieldWrapper>
+    );
+  };
+
   const renderInlineSelect = (fieldKey: string, label: string, options: { value: string; label: string }[], placeholder: string) => (
     <DirtyFieldWrapper fieldKey={fieldKey}>
       <div className="flex items-center gap-2">
