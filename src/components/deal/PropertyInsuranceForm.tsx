@@ -18,6 +18,7 @@ import { format, parse, isValid } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
+import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 interface PropertyInsuranceFormProps {
