@@ -222,6 +222,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
     }
     onSubmit(data);
     setForm(getInitialForm(contactType));
+    setLenderErrors({});
   };
 
   const typeLabel = contactType.charAt(0).toUpperCase() + contactType.slice(1);
