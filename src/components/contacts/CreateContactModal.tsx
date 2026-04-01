@@ -341,6 +341,11 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   const setBErr = (f: string, m: string) => setBorrowerErrors(p => ({ ...p, [f]: m }));
   const clrBErr = (f: string) => setBorrowerErrors(p => { const n = { ...p }; delete n[f]; return n; });
 
+  // --- Broker validation helpers ---
+  const [brokerErrors, setBrokerErrors] = useState<Record<string, string>>({});
+  const setKErr = (f: string, m: string) => setBrokerErrors(p => ({ ...p, [f]: m }));
+  const clrKErr = (f: string) => setBrokerErrors(p => { const n = { ...p }; delete n[f]; return n; });
+
   const NAV_KEYS = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
   const alphaSpaceKD = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (NAV_KEYS.includes(e.key) || e.ctrlKey || e.metaKey) return;
