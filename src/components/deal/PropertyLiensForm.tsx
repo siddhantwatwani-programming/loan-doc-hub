@@ -226,7 +226,11 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
             <Input
               value={getFieldValue(FIELD_KEYS.originalBalance)}
-              onChange={(e) => onValueChange(FIELD_KEYS.originalBalance, e.target.value)}
+              onChange={(e) => onValueChange(FIELD_KEYS.originalBalance, unformatCurrencyDisplay(e.target.value))}
+              onKeyDown={numericKeyDown}
+              onPaste={(e) => numericPaste(e, (val) => onValueChange(FIELD_KEYS.originalBalance, val))}
+              onBlur={() => { const raw = getFieldValue(FIELD_KEYS.originalBalance); if (raw) onValueChange(FIELD_KEYS.originalBalance, formatCurrencyDisplay(raw)); }}
+              onFocus={() => { const raw = getFieldValue(FIELD_KEYS.originalBalance); if (raw) onValueChange(FIELD_KEYS.originalBalance, unformatCurrencyDisplay(raw)); }}
               disabled={disabled}
               className="h-8 text-sm pl-7"
               inputMode="decimal"
@@ -241,7 +245,11 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
             <Input
               value={getFieldValue(FIELD_KEYS.currentBalance)}
-              onChange={(e) => onValueChange(FIELD_KEYS.currentBalance, e.target.value)}
+              onChange={(e) => onValueChange(FIELD_KEYS.currentBalance, unformatCurrencyDisplay(e.target.value))}
+              onKeyDown={numericKeyDown}
+              onPaste={(e) => numericPaste(e, (val) => onValueChange(FIELD_KEYS.currentBalance, val))}
+              onBlur={() => { const raw = getFieldValue(FIELD_KEYS.currentBalance); if (raw) onValueChange(FIELD_KEYS.currentBalance, formatCurrencyDisplay(raw)); }}
+              onFocus={() => { const raw = getFieldValue(FIELD_KEYS.currentBalance); if (raw) onValueChange(FIELD_KEYS.currentBalance, unformatCurrencyDisplay(raw)); }}
               disabled={disabled}
               className="h-8 text-sm pl-7"
               inputMode="decimal"
@@ -256,7 +264,11 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
             <Input
               value={getFieldValue(FIELD_KEYS.regularPayment)}
-              onChange={(e) => onValueChange(FIELD_KEYS.regularPayment, e.target.value)}
+              onChange={(e) => onValueChange(FIELD_KEYS.regularPayment, unformatCurrencyDisplay(e.target.value))}
+              onKeyDown={numericKeyDown}
+              onPaste={(e) => numericPaste(e, (val) => onValueChange(FIELD_KEYS.regularPayment, val))}
+              onBlur={() => { const raw = getFieldValue(FIELD_KEYS.regularPayment); if (raw) onValueChange(FIELD_KEYS.regularPayment, formatCurrencyDisplay(raw)); }}
+              onFocus={() => { const raw = getFieldValue(FIELD_KEYS.regularPayment); if (raw) onValueChange(FIELD_KEYS.regularPayment, unformatCurrencyDisplay(raw)); }}
               disabled={disabled}
               className="h-8 text-sm pl-7"
               inputMode="decimal"

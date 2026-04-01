@@ -118,7 +118,11 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
               type="text"
               inputMode="decimal"
               value={data.fundingAmount}
-              onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('fundingAmount', v); }}
+              onChange={(e) => { const v = unformatCurrencyDisplay(e.target.value).replace(/[^0-9.]/g, ''); handleChange('fundingAmount', v); }}
+              onKeyDown={numericKeyDown}
+              onPaste={(e) => numericPaste(e, (val) => handleChange('fundingAmount', val))}
+              onBlur={() => { if (data.fundingAmount) handleChange('fundingAmount', formatCurrencyDisplay(data.fundingAmount)); }}
+              onFocus={() => { if (data.fundingAmount) handleChange('fundingAmount', unformatCurrencyDisplay(data.fundingAmount)); }}
               placeholder="0.00"
               className="h-7 text-sm pl-6"
             />
