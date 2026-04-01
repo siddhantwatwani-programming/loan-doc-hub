@@ -63,6 +63,8 @@ const CurrencyInput: React.FC<{
         const v = e.target.value.replace(/[^0-9.]/g, '');
         onChange(v);
       }}
+      onBlur={() => { if (!readOnly && value) { const formatted = formatCurrencyDisplay(value); if (formatted) onChange(formatted); } }}
+      onFocus={() => { if (!readOnly && value) { onChange(unformatCurrencyDisplay(value)); } }}
       disabled={disabled}
       readOnly={readOnly}
       placeholder="0.00"
