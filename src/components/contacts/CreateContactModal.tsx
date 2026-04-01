@@ -231,6 +231,48 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   const [dobOpen, setDobOpen] = useState(false);
   const [borrowerDobOpen, setBorrowerDobOpen] = useState(false);
 
+  // --- Lender validation helpers ---
+  const [lenderErrors, setLenderErrors] = useState<Record<string, string>>({});
+  const setLErr = (f: string, m: string) => setLenderErrors(p => ({ ...p, [f]: m }));
+  const clrLErr = (f: string) => setLenderErrors(p => { const n = { ...p }; delete n[f]; return n; });
+
+  const NAV_KEYS = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
+  const alphaSpaceKD = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (NAV_KEYS.includes(e.key) || e.ctrlKey || e.metaKey) return;
+    if (!/^[A-Za-z ]$/.test(e.key)) e.preventDefault();
+  };
+  const alphaOnlyKD = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (NAV_KEYS.includes(e.key) || e.ctrlKey || e.metaKey) return;
+    if (!/^[A-Za-z]$/.test(e.key)) e.preventDefault();
+  };
+  const digitOnlyKD = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (NAV_KEYS.includes(e.key) || e.ctrlKey || e.metaKey) return;
+    if (!/^\d$/.test(e.key)) e.preventDefault();
+  };
+
+  const fmtTIN = (raw: string, idType: string): string => {
+    const d = raw.replace(/\D/g, '').slice(0, 9);
+    if (idType === '2') { // SSN: XXX-XX-XXXX
+      if (d.length <= 3) return d;
+      if (d.length <= 5) return `${d.slice(0, 3)}-${d.slice(3)}`;
+      return `${d.slice(0, 3)}-${d.slice(3, 5)}-${d.slice(5)}`;
+    }
+    if (idType === '1') { // EIN: XX-XXXXXXX
+      if (d.length <= 2) return d;
+      return `${d.slice(0, 2)}-${d.slice(2)}`;
+    }
+    return d;
+  };
+
+  const handleLenderPref = (prefKey: string, checked: boolean) => {
+    const allPrefs = ['preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax'];
+    setForm(prev => {
+      const u = { ...prev };
+      allPrefs.forEach(k => { u[k] = (k === prefKey && checked) ? 'true' : 'false'; });
+      return u;
+    });
+  };
+
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
