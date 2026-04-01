@@ -22,6 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { format, parse, isValid } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 
 export interface AttachmentMeta {
   name: string;
