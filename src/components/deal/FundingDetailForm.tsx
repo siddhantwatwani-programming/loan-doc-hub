@@ -1,6 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
+
+/** Strip commas/$ before parseFloat so formatted values parse correctly */
+const safeParseFloat = (v: string | undefined): number => {
+  if (!v) return 0;
+  return parseFloat((v || '').replace(/[$,]/g, '')) || 0;
+};
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
