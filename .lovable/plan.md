@@ -1,39 +1,74 @@
 
 
-# Fix: State Dropdowns Missing in Lender Contact Forms
+# Fix: Enforce US Currency Formatting in Other Origination Sections
 
-## Problem
-In both the **Create Lender** modal (`CreateContactModal.tsx`) and the **Lender Detail** form (`ContactLenderDetailForm.tsx`), the State fields for Primary Address and Mailing Address are plain text `Input` fields instead of `Select` dropdowns using `US_STATES`.
+## Summary
 
-## Fix
+Add a shared utility to format/unformat currency values with comma-separated thousands and 2 decimal places. Apply `onBlur` formatting and `onFocus` unformatting to all currency input fields across the origination forms. Values are stored as plain decimals (e.g., `3423.00`) and displayed as `3,423.00`.
 
-### File 1: `src/components/contacts/CreateContactModal.tsx`
-- **Lines 307 and 317**: Replace `renderInline('State', 'primary_address.state')` and `renderInline('State', 'mailing.state', 'text', isSameAsPrimary)` with `Select` dropdowns using `US_STATES`, matching the existing `renderSelect` pattern but with disabled support for the mailing field when `isSameAsPrimary` is true.
+## Approach
 
-### File 2: `src/components/contacts/ContactLenderDetailForm.tsx`
-- **Line 227**: Replace the Primary Address State `Input` with a `Select` dropdown using `US_STATES`.
-- **Lines 272-277**: Replace the Mailing Address State `Input` with a `Select` dropdown using `US_STATES`, with disabled state when `sameAsPrimary` is true.
-- Add import for `US_STATES` from `@/lib/usStates`.
+### Step 1: Add formatting utilities to `numericInputFilter.ts`
 
-### Pattern (from existing codebase)
-```tsx
-import { US_STATES } from '@/lib/usStates';
+Add two new exported functions:
 
-<Select value={form.state} onValueChange={(v) => set('state', v)} disabled={isDisabled}>
-  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-  <SelectContent>
-    {US_STATES.map(s => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
-  </SelectContent>
-</Select>
-```
+- **`formatCurrencyDisplay(value: string): string`** — Takes a raw numeric string, returns comma-formatted with 2 decimal places (e.g., `"3423"` → `"3,423.00"`, `"50.5"` → `"50.50"`). Returns empty string for empty/invalid input.
+- **`unformatCurrencyDisplay(value: string): string`** — Strips commas, returns raw decimal string for editing (e.g., `"3,423.00"` → `"3423.00"`).
 
-## Files Modified
-| File | Change |
-|---|---|
-| `src/components/contacts/CreateContactModal.tsx` | Replace 2 State text inputs with Select dropdowns |
-| `src/components/contacts/ContactLenderDetailForm.tsx` | Replace 2 State text inputs with Select dropdowns, add US_STATES import |
+### Step 2: Add `onBlur`/`onFocus` handlers to currency inputs in each form
+
+For each form, add `onBlur` to format the value and `onFocus` to strip commas for editing. Also update `numericKeyDown` to allow commas (since formatted values may contain them when the field gains focus before the unformat fires).
+
+**Files to modify:**
+
+| File | Currency helper | Fields affected |
+|---|---|---|
+| `src/lib/numericInputFilter.ts` | Add `formatCurrencyDisplay`, `unformatCurrencyDisplay` | N/A — utility only |
+| `src/components/deal/OriginationApplicationForm.tsx` | Update `renderCurrencyField` | 11 income/expense fields |
+| `src/components/deal/OriginationFeesForm.tsx` | Update `renderFeeRow`, `renderInsuranceRow` | All `_others` and `_broker` fee columns |
+| `src/components/deal/RE885ProposedLoanTerms.tsx` | Update `CurrencyInput` component | ~10 currency fields |
+| `src/components/deal/OriginationInsuranceConditionsForm.tsx` | Update `renderCurrencyInline` | ~6 coverage/deductible fields |
+| `src/components/deal/OriginationPropertyForm.tsx` | Update `renderCurrencyField` | 5 currency fields (purchase price, down payment, etc.) |
+
+### Step 3: Handle paste with comma stripping
+
+Update `numericPaste` (or create a variant) to strip commas from pasted values before cleaning, so pasting `"3,423.00"` works correctly.
 
 ## What Will NOT Change
-- No database, API, layout, or other component changes
-- Borrower and Broker forms are unaffected
+- No field keys modified
+- No database schema changes
+- No document generation changes
+- No layout or UI structure changes
+- Non-currency fields (text, checkbox, date, phone, email, ZIP) untouched
+- Stored values remain plain decimals — commas are display-only
+
+## Technical Detail
+
+```typescript
+// numericInputFilter.ts additions
+export const formatCurrencyDisplay = (value: string): string => {
+  if (!value) return '';
+  const num = parseFloat(value.replace(/,/g, ''));
+  if (isNaN(num)) return '';
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+export const unformatCurrencyDisplay = (value: string): string => {
+  return value.replace(/,/g, '');
+};
+```
+
+Usage pattern in each currency input:
+```tsx
+<Input
+  value={getValue(key)}
+  onChange={(e) => setValue(key, e.target.value.replace(/,/g, ''))}
+  onBlur={() => { const raw = getValue(key); if (raw) setValue(key, formatCurrencyDisplay(raw)); }}
+  onFocus={() => { const raw = getValue(key); if (raw) setValue(key, unformatCurrencyDisplay(raw)); }}
+  onKeyDown={numericKeyDown}
+  ...
+/>
+```
+
+The `onChange` strips commas before storing, so the backend always receives clean decimals. `onBlur` adds formatting for display. `onFocus` strips formatting for easy editing.
 
