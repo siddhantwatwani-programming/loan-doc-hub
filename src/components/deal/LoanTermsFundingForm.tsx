@@ -345,7 +345,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       reference: `REF-${Date.now()}`,
       lenderAccount: data.lenderId,
       lenderName: data.lenderFullName,
-      amountFunded: parseFloat(data.fundingAmount) || 0,
+      amountFunded: safeParseFloat(data.fundingAmount),
     });
     const updatedHistoryJson = JSON.stringify(history);
     onValueChange(FIELD_KEYS.fundingHistory, updatedHistoryJson);
