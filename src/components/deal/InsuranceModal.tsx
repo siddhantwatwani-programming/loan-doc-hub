@@ -64,7 +64,14 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
   };
 
   useEffect(() => {
-    if (open) setFormData(insurance ? insurance : getDefaultInsurance());
+    if (open) {
+      const data = insurance ? { ...insurance } : getDefaultInsurance();
+      // Format coverage for display
+      if (data.coverage) {
+        data.coverage = formatCurrencyDisplay(String(data.coverage));
+      }
+      setFormData(data);
+    }
   }, [open, insurance]);
 
   const handleChange = (field: keyof InsuranceData, value: string | boolean) => setFormData(prev => ({ ...prev, [field]: value }));
