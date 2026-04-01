@@ -13,6 +13,106 @@ import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
+import {
+  numericKeyDown, numericPaste,
+  integerKeyDown, integerPaste,
+  formatCurrencyDisplay, unformatCurrencyDisplay,
+  formatPercentageDisplay
+} from '@/lib/numericInputFilter';
+
+// --- Reusable typed input wrappers ---
+
+const PenaltyCurrencyInput: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  className?: string;
+}> = ({ value, onChange, disabled, className }) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const displayValue = isFocused ? unformatCurrencyDisplay(value || '') : formatCurrencyDisplay(value || '');
+
+  return (
+    <div className="relative">
+      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
+      <Input
+        value={displayValue}
+        onChange={(e) => onChange(e.target.value.replace(/,/g, ''))}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => {
+          setIsFocused(false);
+          if (value) {
+            const num = parseFloat(value.replace(/,/g, ''));
+            if (!isNaN(num)) onChange(num.toFixed(2));
+          }
+        }}
+        onKeyDown={numericKeyDown}
+        onPaste={(e) => numericPaste(e, onChange)}
+        disabled={disabled}
+        inputMode="decimal"
+        placeholder="$0.00"
+        className={cn('h-7 text-sm pl-5 text-right', className)}
+      />
+    </div>
+  );
+};
+
+const PenaltyPercentInput: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  className?: string;
+}> = ({ value, onChange, disabled, className }) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const displayValue = isFocused ? (value || '') : formatPercentageDisplay(value || '');
+
+  return (
+    <div className="relative">
+      <Input
+        value={displayValue}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/%/g, '').trim();
+          onChange(raw);
+        }}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => {
+          setIsFocused(false);
+          if (value) {
+            const num = parseFloat(value);
+            if (!isNaN(num)) {
+              const clamped = Math.min(100, Math.max(0, num));
+              onChange(clamped.toFixed(2));
+            }
+          }
+        }}
+        onKeyDown={numericKeyDown}
+        onPaste={(e) => numericPaste(e, onChange)}
+        disabled={disabled}
+        inputMode="decimal"
+        placeholder="0%"
+        className={cn('h-7 text-sm pr-6 text-right', className)}
+      />
+      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">%</span>
+    </div>
+  );
+};
+
+const PenaltyIntegerInput: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  className?: string;
+}> = ({ value, onChange, disabled, className }) => (
+  <Input
+    value={value || ''}
+    onChange={(e) => onChange(e.target.value)}
+    onKeyDown={integerKeyDown}
+    onPaste={(e) => integerPaste(e, onChange)}
+    disabled={disabled}
+    inputMode="numeric"
+    placeholder="0"
+    className={cn('h-7 text-sm', className)}
+  />
+);
 
 interface LoanTermsPenaltiesFormProps {
   fields: FieldDefinition[];
