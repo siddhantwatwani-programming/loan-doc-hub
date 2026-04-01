@@ -689,10 +689,14 @@ async function generateSingleDocument(
         fieldValues.set("all_properties_list", { rawValue: allPropertiesText, dataType: "text" });
         debugLog(`[generate-document] Built all_properties_list with ${propertyLines.length} properties`);
       }
-      // When multiple properties exist, rebuild pr_p_address with all addresses separated by line breaks
+      // When multiple properties exist, rebuild all address keys with all addresses separated by line breaks
       if (propertyLines.length > 1) {
-        fieldValues.set("pr_p_address", { rawValue: propertyLines.join("\n"), dataType: "text" });
-        debugLog(`[generate-document] Rebuilt pr_p_address with ${propertyLines.length} properties (multi-line)`);
+        const multiLineAddr = propertyLines.join("\n");
+        fieldValues.set("pr_p_address", { rawValue: multiLineAddr, dataType: "text" });
+        // Also update Property1.Address / property1.address so merge tags like {{Property_Address}} resolve correctly
+        fieldValues.set("Property1.Address", { rawValue: multiLineAddr, dataType: "text" });
+        fieldValues.set("property1.address", { rawValue: multiLineAddr, dataType: "text" });
+        debugLog(`[generate-document] Rebuilt pr_p_address / Property1.Address with ${propertyLines.length} properties (multi-line)`);
       }
     }
 
