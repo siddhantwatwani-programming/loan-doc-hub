@@ -7,6 +7,13 @@ import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import type { FundingFormData } from './AddFundingModal';
 import { resolveLegacyKey } from '@/lib/legacyKeyMap';
+import { unformatCurrencyDisplay } from '@/lib/numericInputFilter';
+
+/** Strip commas/$ from a string before parseFloat so formatted values like "3,423.00" parse correctly */
+const safeParseFloat = (v: string | undefined): number => {
+  if (!v) return 0;
+  return parseFloat(unformatCurrencyDisplay(v.replace(/\$/g, ''))) || 0;
+};
 
 // Field key mapping for funding data stored in loan_terms section
 const FIELD_KEYS = {
@@ -291,12 +298,12 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       fundingDate: data.fundingDate || '',
       lenderAccount: data.lenderId || '',
       lenderName: data.lenderFullName || '',
-      pctOwned: parseFloat(data.percentOwned) || 0,
+      pctOwned: safeParseFloat(data.percentOwned),
       lenderRate,
-      principalBalance: parseFloat(data.fundingAmount) || 0,
-      originalAmount: parseFloat(data.fundingAmount) || 0,
-      regularPayment: parseFloat(data.regularPayment) || 0,
-      lenderShare: parseFloat(data.lenderShare) || 0,
+      principalBalance: safeParseFloat(data.fundingAmount),
+      originalAmount: safeParseFloat(data.fundingAmount),
+      regularPayment: safeParseFloat(data.regularPayment),
+      lenderShare: safeParseFloat(data.lenderShare),
       roundingError: false,
       rateSelection: data.rateSelection,
       rateNoteValue: data.rateNoteValue,
@@ -338,7 +345,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       reference: `REF-${Date.now()}`,
       lenderAccount: data.lenderId,
       lenderName: data.lenderFullName,
-      amountFunded: parseFloat(data.fundingAmount) || 0,
+      amountFunded: safeParseFloat(data.fundingAmount),
     });
     const updatedHistoryJson = JSON.stringify(history);
     onValueChange(FIELD_KEYS.fundingHistory, updatedHistoryJson);

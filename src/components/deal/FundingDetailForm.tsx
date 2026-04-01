@@ -1,6 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
+
+/** Strip commas/$ before parseFloat so formatted values parse correctly */
+const safeParseFloat = (v: string | undefined): number => {
+  if (!v) return 0;
+  return parseFloat((v || '').replace(/[$,]/g, '')) || 0;
+};
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -53,8 +59,8 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
 
   // Auto-compute Percent Owned = Funding Amount / Loan Amount * 100 (no cap – show error)
   React.useEffect(() => {
-    const fa = parseFloat(data.fundingAmount) || 0;
-    const la = parseFloat(loanAmount) || 0;
+    const fa = safeParseFloat(data.fundingAmount);
+    const la = safeParseFloat(loanAmount);
     if (la > 0 && fa > 0) {
       const computed = (fa / la * 100).toFixed(3);
       if (computed !== data.percentOwned) {

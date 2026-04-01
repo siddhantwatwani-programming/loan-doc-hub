@@ -19,6 +19,7 @@ import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
+import { formatCurrencyDisplay } from '@/lib/numericInputFilter';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'fundingDate', label: 'Funding Date', visible: true },
@@ -214,7 +215,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       lenderId: record.lenderAccount,
       lenderFullName: record.lenderName,
       lenderRate: String(record.lenderRate),
-      fundingAmount: String(record.originalAmount),
+      fundingAmount: formatCurrencyDisplay(String(record.originalAmount)),
       fundingDate: record.fundingDate || '',
       interestFrom: record.interestFrom || '',
       notes: '',
