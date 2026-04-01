@@ -13,6 +13,106 @@ import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
+import {
+  numericKeyDown, numericPaste,
+  integerKeyDown, integerPaste,
+  formatCurrencyDisplay, unformatCurrencyDisplay,
+  formatPercentageDisplay
+} from '@/lib/numericInputFilter';
+
+// --- Reusable typed input wrappers ---
+
+const PenaltyCurrencyInput: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  className?: string;
+}> = ({ value, onChange, disabled, className }) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const displayValue = isFocused ? unformatCurrencyDisplay(value || '') : formatCurrencyDisplay(value || '');
+
+  return (
+    <div className="relative">
+      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
+      <Input
+        value={displayValue}
+        onChange={(e) => onChange(e.target.value.replace(/,/g, ''))}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => {
+          setIsFocused(false);
+          if (value) {
+            const num = parseFloat(value.replace(/,/g, ''));
+            if (!isNaN(num)) onChange(num.toFixed(2));
+          }
+        }}
+        onKeyDown={numericKeyDown}
+        onPaste={(e) => numericPaste(e, onChange)}
+        disabled={disabled}
+        inputMode="decimal"
+        placeholder="$0.00"
+        className={cn('h-7 text-sm pl-5 text-right', className)}
+      />
+    </div>
+  );
+};
+
+const PenaltyPercentInput: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  className?: string;
+}> = ({ value, onChange, disabled, className }) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const displayValue = isFocused ? (value || '') : formatPercentageDisplay(value || '');
+
+  return (
+    <div className="relative">
+      <Input
+        value={displayValue}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/%/g, '').trim();
+          onChange(raw);
+        }}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => {
+          setIsFocused(false);
+          if (value) {
+            const num = parseFloat(value);
+            if (!isNaN(num)) {
+              const clamped = Math.min(100, Math.max(0, num));
+              onChange(clamped.toFixed(2));
+            }
+          }
+        }}
+        onKeyDown={numericKeyDown}
+        onPaste={(e) => numericPaste(e, onChange)}
+        disabled={disabled}
+        inputMode="decimal"
+        placeholder="0%"
+        className={cn('h-7 text-sm pr-6 text-right', className)}
+      />
+      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">%</span>
+    </div>
+  );
+};
+
+const PenaltyIntegerInput: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  className?: string;
+}> = ({ value, onChange, disabled, className }) => (
+  <Input
+    value={value || ''}
+    onChange={(e) => onChange(e.target.value)}
+    onKeyDown={integerKeyDown}
+    onPaste={(e) => integerPaste(e, onChange)}
+    disabled={disabled}
+    inputMode="numeric"
+    placeholder="0"
+    className={cn('h-7 text-sm', className)}
+  />
+);
 
 interface LoanTermsPenaltiesFormProps {
   fields: FieldDefinition[];
@@ -146,51 +246,45 @@ const LateFeeColumn: React.FC<{
 
       <div className="space-y-2">
         <FieldRow label="Type" fieldKey={`${prefix}.type`}>
-          <Input
+          <PenaltyCurrencyInput
             value={values[`${prefix}.type`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.type`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.type`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
         <FieldRow label="Grace Period" fieldKey={`${prefix}.grace_period`}>
-          <Input
+          <PenaltyIntegerInput
             value={values[`${prefix}.grace_period`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.grace_period`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.grace_period`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
         <FieldRow label="Calendar / Actual" fieldKey={`${prefix}.calendar_actual`}>
-          <Input
+          <PenaltyIntegerInput
             value={values[`${prefix}.calendar_actual`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.calendar_actual`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.calendar_actual`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
         <FieldRow label="Minimum Late Fee" fieldKey={`${prefix}.minimum_late_fee`}>
-          <Input
+          <PenaltyCurrencyInput
             value={values[`${prefix}.minimum_late_fee`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.minimum_late_fee`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.minimum_late_fee`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
         <FieldRow label={percentageLabel} fieldKey={`${prefix}.percentage_of_payment`}>
-          <Input
+          <PenaltyPercentInput
             value={values[`${prefix}.percentage_of_payment`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.percentage_of_payment`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.percentage_of_payment`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
         <FieldRow label="Additional Daily Charge" fieldKey={`${prefix}.additional_daily_charge`}>
-          <Input
+          <PenaltyCurrencyInput
             value={values[`${prefix}.additional_daily_charge`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.additional_daily_charge`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.additional_daily_charge`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
       </div>
@@ -294,11 +388,10 @@ const DefaultInterestColumn: React.FC<{
           </Select>
         </FieldRow>
         <FieldRow label="Grace Period" fieldKey={`${prefix}.grace_period`}>
-          <Input
+          <PenaltyIntegerInput
             value={values[`${prefix}.grace_period`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.grace_period`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.grace_period`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
         <FieldRow
@@ -343,11 +436,10 @@ const DefaultInterestColumn: React.FC<{
           />
         </FieldRow>
         <FieldRow label="Additional Daily Charge" fieldKey={`${prefix}.additional_daily_charge`}>
-          <Input
+          <PenaltyCurrencyInput
             value={values[`${prefix}.additional_daily_charge`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.additional_daily_charge`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.additional_daily_charge`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
       </div>
@@ -393,11 +485,10 @@ const InterestGuaranteeSection: React.FC<{
           onCheckboxChange={(checked) => onValueChange(`${prefix}.months_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
         >
-          <Input
+          <PenaltyIntegerInput
             value={values[`${prefix}.months`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.months`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.months`, val)}
             disabled={disabled || !isEnabled || values[`${prefix}.months_enabled`] !== 'true'}
-            className="h-7 text-sm"
           />
         </FieldRow>
         <FieldRow
@@ -416,11 +507,10 @@ const InterestGuaranteeSection: React.FC<{
           onCheckboxChange={(checked) => onValueChange(`${prefix}.amount_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
         >
-          <Input
+          <PenaltyCurrencyInput
             value={values[`${prefix}.amount`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.amount`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.amount`, val)}
             disabled={disabled || !isEnabled || values[`${prefix}.amount_enabled`] !== 'true'}
-            className="h-7 text-sm"
           />
         </FieldRow>
       </div>
@@ -462,9 +552,9 @@ const PrepaymentPenaltySection: React.FC<{
           <DirtyFieldWrapper fieldKey={`${prefix}.first_years`}>
             <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
               <span className="whitespace-nowrap">A Principal paydown in the first</span>
-              <Input
+              <PenaltyIntegerInput
                 value={values[`${prefix}.first_years`] || ''}
-                onChange={(e) => onValueChange(`${prefix}.first_years`, e.target.value)}
+                onChange={(val) => onValueChange(`${prefix}.first_years`, val)}
                 disabled={disabled || !isEnabled}
                 className="h-7 text-sm w-16 shrink-0"
               />
@@ -474,9 +564,9 @@ const PrepaymentPenaltySection: React.FC<{
 
           <DirtyFieldWrapper fieldKey={`${prefix}.greater_than`}>
             <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
-              <Input
+              <PenaltyIntegerInput
                 value={values[`${prefix}.greater_than`] || ''}
-                onChange={(e) => onValueChange(`${prefix}.greater_than`, e.target.value)}
+                onChange={(val) => onValueChange(`${prefix}.greater_than`, val)}
                 disabled={disabled || !isEnabled}
                 className="h-7 text-sm w-16 shrink-0"
               />
@@ -500,9 +590,9 @@ const PrepaymentPenaltySection: React.FC<{
           <DirtyFieldWrapper fieldKey={`${prefix}.penalty_months`}>
             <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
               <span className="whitespace-nowrap">will result in a penalty of</span>
-              <Input
+              <PenaltyIntegerInput
                 value={values[`${prefix}.penalty_months`] || ''}
-                onChange={(e) => onValueChange(`${prefix}.penalty_months`, e.target.value)}
+                onChange={(val) => onValueChange(`${prefix}.penalty_months`, val)}
                 disabled={disabled || !isEnabled}
                 className="h-7 text-sm w-16 shrink-0"
               />
@@ -547,11 +637,10 @@ const MaturitySection: React.FC<{
 
       <div className="space-y-2">
         <FieldRow label="Grace Period (Days)" fieldKey={`${prefix}.grace_period_days`}>
-          <Input
+          <PenaltyIntegerInput
             value={values[`${prefix}.grace_period_days`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.grace_period_days`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.grace_period_days`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
         <FieldRow
@@ -570,11 +659,10 @@ const MaturitySection: React.FC<{
           onCheckboxChange={(checked) => onValueChange(`${prefix}.additional_flat_fee_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
         >
-          <Input
+          <PenaltyCurrencyInput
             value={values[`${prefix}.additional_flat_fee`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.additional_flat_fee`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.additional_flat_fee`, val)}
             disabled={disabled || !isEnabled || values[`${prefix}.additional_flat_fee_enabled`] !== 'true'}
-            className="h-7 text-sm"
           />
         </FieldRow>
       </div>
