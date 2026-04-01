@@ -642,42 +642,21 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {/* Section 6: Total Balance Due & Estimated Balloon Payment */}
             <div className="pt-2 space-y-2">
               <div>
-                <div className="flex items-center gap-3">
-                  <Label className="text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0">
-                    Total Balance Due
-                  </Label>
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-                    <Input
-                      value={getValue(FIELD_KEYS.totalBalanceDue)}
-                      onChange={(e) => setValue(FIELD_KEYS.totalBalanceDue, e.target.value)}
-                      disabled={disabled}
-                      className="h-8 text-sm pl-7"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
+                {renderCurrencyField(
+                  FIELD_KEYS.totalBalanceDue,
+                  "Total Balance Due",
+                  "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0",
+                )}
                 <p className="text-xs text-muted-foreground mt-0.5" style={{ paddingLeft: "0px" }}>
                   * Does not include Close-out Fees
                 </p>
               </div>
               <div>
-                <div className="flex items-center gap-3">
-                  <div className="min-w-[140px] max-w-[140px] text-left shrink-0">
-                    <Label className="text-sm text-primary font-medium">Estimated Balloon</Label>
-                    <p className="text-xs text-primary font-medium">Payment</p>
-                  </div>
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-                    <Input
-                      value={getValue(FIELD_KEYS.estimatedBalloonPayment)}
-                      onChange={(e) => setValue(FIELD_KEYS.estimatedBalloonPayment, e.target.value)}
-                      disabled={disabled}
-                      className="h-8 text-sm pl-7"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
+                {renderCurrencyField(
+                  FIELD_KEYS.estimatedBalloonPayment,
+                  "Estimated Balloon Payment",
+                  "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0",
+                )}
                 <p className="text-xs text-muted-foreground mt-0.5" style={{ paddingLeft: "0px" }}>
                   * Does not include Close-out Fees
                 </p>
