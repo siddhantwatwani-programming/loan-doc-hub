@@ -12,14 +12,14 @@ interface ZipInputProps {
 }
 
 /**
- * ZIP Code input – accepts only digits (0-9), max 9 characters (ZIP+4).
- * Blocks alphabets, special characters, and spaces on typing and pasting.
+ * ZIP Code input – accepts digits and hyphen, max 10 characters (ZIP+4 with dash).
+ * Validates US ZIP: 5 digits or 5+4 with hyphen (e.g., 10001 or 10001-1234).
  */
 export const ZipInput = React.forwardRef<HTMLInputElement, ZipInputProps>(
   ({ value, onValueChange, disabled = false, readOnly = false, className, placeholder = '' }, ref) => {
     const [touched, setTouched] = React.useState(false);
 
-    const sanitize = (raw: string): string => raw.replace(/[^0-9]/g, '').slice(0, 9);
+    const sanitize = (raw: string): string => raw.replace(/[^0-9-]/g, '').slice(0, 10);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       onValueChange(sanitize(e.target.value));
@@ -35,7 +35,7 @@ export const ZipInput = React.forwardRef<HTMLInputElement, ZipInputProps>(
       setTouched(true);
     };
 
-    const isValid = !value || /^\d{5}(\d{4})?$/.test(value);
+    const isValid = !value || /^\d{5}(-\d{4})?$/.test(value);
     const showError = touched && value.length > 0 && !isValid;
 
     return (
@@ -55,7 +55,7 @@ export const ZipInput = React.forwardRef<HTMLInputElement, ZipInputProps>(
         />
         {showError && (
           <span className="text-[10px] text-destructive mt-0.5">
-            ZIP Code must be 5 or 9 digits
+            Please enter a valid US ZIP code (e.g., 10001 or 10001-1234).
           </span>
         )}
       </div>
