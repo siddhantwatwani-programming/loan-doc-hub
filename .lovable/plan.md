@@ -1,74 +1,53 @@
 
 
-# Fix: Enforce US Currency Formatting in Other Origination Sections
+# Fix: Long Attachment File Names Breaking Layout in Conversation Log Details Modal
 
-## Summary
+## Problem
+In the Conversation Log Details modal, long attachment file names overflow the container, pushing the Download button and other elements out of view. Although `truncate` is on the filename `<span>`, it doesn't work because the flex parent lacks `overflow-hidden` and `min-w-0`.
 
-Add a shared utility to format/unformat currency values with comma-separated thousands and 2 decimal places. Apply `onBlur` formatting and `onFocus` unformatting to all currency input fields across the origination forms. Values are stored as plain decimals (e.g., `3423.00`) and displayed as `3,423.00`.
+## Fix (4 files, same pattern in each)
 
-## Approach
+### Changes per file
+1. Add `overflow-hidden` to the attachment row `<div>` container
+2. Add `min-w-0` to the filename `<span>` so `truncate` works inside flex
+3. Wrap the filename `<span>` in a `Tooltip` showing the full name on hover
+4. Add `Tooltip`, `TooltipTrigger`, `TooltipContent`, `TooltipProvider` imports
 
-### Step 1: Add formatting utilities to `numericInputFilter.ts`
+### Files
+| File | Lines (approx) |
+|---|---|
+| `src/components/deal/NotesTableView.tsx` | ~378-380 |
+| `src/components/contacts/borrower-detail/BorrowerConversationLog.tsx` | ~460-462 |
+| `src/components/contacts/broker-detail/BrokerConversationLog.tsx` | ~461-463 |
+| `src/components/contacts/lender-detail/LenderConversationLog.tsx` | ~460-462 |
 
-Add two new exported functions:
+### Code Change (same in all 4 files)
 
-- **`formatCurrencyDisplay(value: string): string`** — Takes a raw numeric string, returns comma-formatted with 2 decimal places (e.g., `"3423"` → `"3,423.00"`, `"50.5"` → `"50.50"`). Returns empty string for empty/invalid input.
-- **`unformatCurrencyDisplay(value: string): string`** — Strips commas, returns raw decimal string for editing (e.g., `"3,423.00"` → `"3423.00"`).
-
-### Step 2: Add `onBlur`/`onFocus` handlers to currency inputs in each form
-
-For each form, add `onBlur` to format the value and `onFocus` to strip commas for editing. Also update `numericKeyDown` to allow commas (since formatted values may contain them when the field gains focus before the unformat fires).
-
-**Files to modify:**
-
-| File | Currency helper | Fields affected |
-|---|---|---|
-| `src/lib/numericInputFilter.ts` | Add `formatCurrencyDisplay`, `unformatCurrencyDisplay` | N/A — utility only |
-| `src/components/deal/OriginationApplicationForm.tsx` | Update `renderCurrencyField` | 11 income/expense fields |
-| `src/components/deal/OriginationFeesForm.tsx` | Update `renderFeeRow`, `renderInsuranceRow` | All `_others` and `_broker` fee columns |
-| `src/components/deal/RE885ProposedLoanTerms.tsx` | Update `CurrencyInput` component | ~10 currency fields |
-| `src/components/deal/OriginationInsuranceConditionsForm.tsx` | Update `renderCurrencyInline` | ~6 coverage/deductible fields |
-| `src/components/deal/OriginationPropertyForm.tsx` | Update `renderCurrencyField` | 5 currency fields (purchase price, down payment, etc.) |
-
-### Step 3: Handle paste with comma stripping
-
-Update `numericPaste` (or create a variant) to strip commas from pasted values before cleaning, so pasting `"3,423.00"` works correctly.
-
-## What Will NOT Change
-- No field keys modified
-- No database schema changes
-- No document generation changes
-- No layout or UI structure changes
-- Non-currency fields (text, checkbox, date, phone, email, ZIP) untouched
-- Stored values remain plain decimals — commas are display-only
-
-## Technical Detail
-
-```typescript
-// numericInputFilter.ts additions
-export const formatCurrencyDisplay = (value: string): string => {
-  if (!value) return '';
-  const num = parseFloat(value.replace(/,/g, ''));
-  if (isNaN(num)) return '';
-  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-};
-
-export const unformatCurrencyDisplay = (value: string): string => {
-  return value.replace(/,/g, '');
-};
-```
-
-Usage pattern in each currency input:
+**Before:**
 ```tsx
-<Input
-  value={getValue(key)}
-  onChange={(e) => setValue(key, e.target.value.replace(/,/g, ''))}
-  onBlur={() => { const raw = getValue(key); if (raw) setValue(key, formatCurrencyDisplay(raw)); }}
-  onFocus={() => { const raw = getValue(key); if (raw) setValue(key, unformatCurrencyDisplay(raw)); }}
-  onKeyDown={numericKeyDown}
-  ...
-/>
+<div key={idx} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-3 py-2 border border-border">
+  <Paperclip className="h-3.5 w-3.5 shrink-0 text-primary" />
+  <span className="flex-1 truncate font-medium">{getAttachmentName(att)}</span>
 ```
 
-The `onChange` strips commas before storing, so the backend always receives clean decimals. `onBlur` adds formatting for display. `onFocus` strips formatting for easy editing.
+**After:**
+```tsx
+<div key={idx} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-3 py-2 border border-border overflow-hidden">
+  <Paperclip className="h-3.5 w-3.5 shrink-0 text-primary" />
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="flex-1 min-w-0 truncate font-medium">{getAttachmentName(att)}</span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-sm break-all">
+        <p>{getAttachmentName(att)}</p>
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
+```
+
+### What Will NOT Change
+- No attachment functionality (upload, download, preview) modified
+- No APIs, database schema, or document generation logic touched
+- No layout changes outside the attachment rows in these modals
 
