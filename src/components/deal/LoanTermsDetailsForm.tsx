@@ -67,6 +67,50 @@ const CALCULATION_PERIOD_OPTIONS = [
   { value: 'actual_days_received_date', label: 'Actual Days (Received Date to Received Date)' },
 ];
 
+// Validation configs
+type ValidationConfig = {
+  allowedPattern: RegExp;
+  validate: (val: string, mandatory?: boolean) => string | null;
+};
+
+const VALIDATION_CONFIGS: Record<string, ValidationConfig> = {
+  company: {
+    allowedPattern: /^[A-Za-z0-9 &.,\-]$/,
+    validate: (val) => {
+      if (!val) return null;
+      if (val.length < 2) return 'Enter a valid company name';
+      if (/[@#$%]/.test(val)) return 'Enter a valid company name';
+      return null;
+    },
+  },
+  loanNumber: {
+    allowedPattern: /^[A-Za-z0-9\-]$/,
+    validate: (val) => {
+      if (!val) return null;
+      if (/\s/.test(val) || !/^[A-Za-z0-9\-]+$/.test(val))
+        return 'Enter a valid loan number (alphanumeric, no spaces)';
+      return null;
+    },
+  },
+  assignedCsr: {
+    allowedPattern: /^[A-Za-z ]$/,
+    validate: (val) => {
+      if (!val) return null;
+      if (!/^[A-Za-z ]+$/.test(val)) return 'Enter a valid name (alphabets only)';
+      return null;
+    },
+  },
+  accountNumber: {
+    allowedPattern: /^[A-Za-z0-9\-]$/,
+    validate: (val, mandatory) => {
+      if (!val) return mandatory ? 'Enter a valid account number' : null;
+      if (!/^[A-Za-z0-9\-]+$/.test(val)) return 'Enter a valid account number';
+      if (val.length < 6 || val.length > 15) return 'Enter a valid account number (6–15 characters)';
+      return null;
+    },
+  },
+};
+
 export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
   values,
   onValueChange,
@@ -77,6 +121,8 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
   const setValue = (key: string, value: string) => onValueChange(key, value);
   const getBoolValue = (key: string) => values[key] === 'true';
   const setBoolValue = (key: string, value: boolean) => onValueChange(key, String(value));
+
+  const [validationErrors, setValidationErrors] = useState<Record<string, string | null>>({});
 
   const [focusedCurrencyField, setFocusedCurrencyField] = useState<string | null>(null);
 
@@ -176,6 +222,52 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
     </DirtyFieldWrapper>
   );
 
+  const handleValidatedKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, config: ValidationConfig) => {
+    if (e.ctrlKey || e.metaKey || e.altKey || ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    if (e.key.length === 1 && !config.allowedPattern.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  const handleValidatedPaste = (e: React.ClipboardEvent<HTMLInputElement>, fieldKey: string, config: ValidationConfig) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text');
+    const cleaned = pasted.split('').filter(ch => config.allowedPattern.test(ch)).join('');
+    setValue(fieldKey, cleaned);
+  };
+
+  const handleValidatedBlur = (fieldKey: string, config: ValidationConfig, mandatory?: boolean) => {
+    const trimmed = getValue(fieldKey).trim();
+    if (trimmed !== getValue(fieldKey)) setValue(fieldKey, trimmed);
+    const error = config.validate(trimmed, mandatory);
+    setValidationErrors(prev => ({ ...prev, [fieldKey]: error }));
+  };
+
+  const renderValidatedField = (fieldKey: string, label: string, configKey: string) => {
+    const config = VALIDATION_CONFIGS[configKey];
+    const error = validationErrors[fieldKey];
+    return (
+      <DirtyFieldWrapper fieldKey={fieldKey}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[130px] shrink-0 text-xs">{label}</Label>
+          <div className="flex-1">
+            <Input
+              id={fieldKey}
+              value={getValue(fieldKey)}
+              onChange={(e) => setValue(fieldKey, e.target.value)}
+              onKeyDown={(e) => handleValidatedKeyDown(e, config)}
+              onPaste={(e) => handleValidatedPaste(e, fieldKey, config)}
+              onBlur={() => handleValidatedBlur(fieldKey, config)}
+              disabled={disabled}
+              className={cn('h-8 text-xs w-full', error && 'border-destructive')}
+            />
+            {error && <p className="text-destructive text-[10px] mt-0.5">{error}</p>}
+          </div>
+        </div>
+      </DirtyFieldWrapper>
+    );
+  };
+
   const renderInlineSelect = (fieldKey: string, label: string, options: { value: string; label: string }[], placeholder: string) => (
     <DirtyFieldWrapper fieldKey={fieldKey}>
       <div className="flex items-center gap-2">
@@ -199,9 +291,9 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
         {/* Details Column */}
         <div className="space-y-1.5">
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Details</h3>
-          {renderInlineField(FIELD_KEYS.company, 'Company')}
-          {renderInlineField(FIELD_KEYS.loanNumber, 'Loan Number')}
-          {renderInlineField(FIELD_KEYS.assignedCsr, 'Assigned CSR')}
+          {renderValidatedField(FIELD_KEYS.company, 'Company', 'company')}
+          {renderValidatedField(FIELD_KEYS.loanNumber, 'Loan Number', 'loanNumber')}
+          {renderValidatedField(FIELD_KEYS.assignedCsr, 'Assigned CSR', 'assignedCsr')}
           {renderInlineDateField(FIELD_KEYS.origination, 'Origination')}
           {renderInlineDateField(FIELD_KEYS.boarding, 'Boarding')}
           {renderInlineDateField(FIELD_KEYS.maturityDate, 'Maturity Date')}
@@ -242,15 +334,43 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
             <Checkbox id={FIELD_KEYS.balloonPayment} checked={getBoolValue(FIELD_KEYS.balloonPayment)} onCheckedChange={(checked) => setBoolValue(FIELD_KEYS.balloonPayment, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
             <Label htmlFor={FIELD_KEYS.balloonPayment} className="font-normal cursor-pointer text-xs">Balloon Payment</Label>
           </div>
-          <div className="flex items-center gap-2">
-            <Checkbox id={FIELD_KEYS.parentAccount} checked={getBoolValue(FIELD_KEYS.parentAccount)} onCheckedChange={(checked) => setBoolValue(FIELD_KEYS.parentAccount, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
-            <Label htmlFor={FIELD_KEYS.parentAccount} className="font-normal cursor-pointer text-xs min-w-[90px] shrink-0">Parent Account</Label>
-            <Input value={getValue(FIELD_KEYS.parentAccountValue)} onChange={(e) => setValue(FIELD_KEYS.parentAccountValue, e.target.value)} disabled={disabled} className="h-8 text-xs w-[120px]" />
+          <div className="flex items-start gap-2">
+            <Checkbox id={FIELD_KEYS.parentAccount} checked={getBoolValue(FIELD_KEYS.parentAccount)} onCheckedChange={(checked) => {
+              setBoolValue(FIELD_KEYS.parentAccount, !!checked);
+              if (!checked) setValidationErrors(prev => ({ ...prev, [FIELD_KEYS.parentAccountValue]: null }));
+            }} disabled={disabled} className="h-3.5 w-3.5 mt-2" />
+            <Label htmlFor={FIELD_KEYS.parentAccount} className="font-normal cursor-pointer text-xs min-w-[90px] shrink-0 mt-1.5">Parent Account</Label>
+            <div>
+              <Input
+                value={getValue(FIELD_KEYS.parentAccountValue)}
+                onChange={(e) => setValue(FIELD_KEYS.parentAccountValue, e.target.value)}
+                onKeyDown={(e) => handleValidatedKeyDown(e, VALIDATION_CONFIGS.accountNumber)}
+                onPaste={(e) => handleValidatedPaste(e, FIELD_KEYS.parentAccountValue, VALIDATION_CONFIGS.accountNumber)}
+                onBlur={() => handleValidatedBlur(FIELD_KEYS.parentAccountValue, VALIDATION_CONFIGS.accountNumber, getBoolValue(FIELD_KEYS.parentAccount))}
+                disabled={disabled || !getBoolValue(FIELD_KEYS.parentAccount)}
+                className={cn('h-8 text-xs w-[120px]', validationErrors[FIELD_KEYS.parentAccountValue] && 'border-destructive')}
+              />
+              {validationErrors[FIELD_KEYS.parentAccountValue] && <p className="text-destructive text-[10px] mt-0.5">{validationErrors[FIELD_KEYS.parentAccountValue]}</p>}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Checkbox id={FIELD_KEYS.childAccount} checked={getBoolValue(FIELD_KEYS.childAccount)} onCheckedChange={(checked) => setBoolValue(FIELD_KEYS.childAccount, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
-            <Label htmlFor={FIELD_KEYS.childAccount} className="font-normal cursor-pointer text-xs min-w-[90px] shrink-0">Child Account</Label>
-            <Input value={getValue(FIELD_KEYS.childAccountValue)} onChange={(e) => setValue(FIELD_KEYS.childAccountValue, e.target.value)} disabled={disabled} className="h-8 text-xs w-[120px]" />
+          <div className="flex items-start gap-2">
+            <Checkbox id={FIELD_KEYS.childAccount} checked={getBoolValue(FIELD_KEYS.childAccount)} onCheckedChange={(checked) => {
+              setBoolValue(FIELD_KEYS.childAccount, !!checked);
+              if (!checked) setValidationErrors(prev => ({ ...prev, [FIELD_KEYS.childAccountValue]: null }));
+            }} disabled={disabled} className="h-3.5 w-3.5 mt-2" />
+            <Label htmlFor={FIELD_KEYS.childAccount} className="font-normal cursor-pointer text-xs min-w-[90px] shrink-0 mt-1.5">Child Account</Label>
+            <div>
+              <Input
+                value={getValue(FIELD_KEYS.childAccountValue)}
+                onChange={(e) => setValue(FIELD_KEYS.childAccountValue, e.target.value)}
+                onKeyDown={(e) => handleValidatedKeyDown(e, VALIDATION_CONFIGS.accountNumber)}
+                onPaste={(e) => handleValidatedPaste(e, FIELD_KEYS.childAccountValue, VALIDATION_CONFIGS.accountNumber)}
+                onBlur={() => handleValidatedBlur(FIELD_KEYS.childAccountValue, VALIDATION_CONFIGS.accountNumber, getBoolValue(FIELD_KEYS.childAccount))}
+                disabled={disabled || !getBoolValue(FIELD_KEYS.childAccount)}
+                className={cn('h-8 text-xs w-[120px]', validationErrors[FIELD_KEYS.childAccountValue] && 'border-destructive')}
+              />
+              {validationErrors[FIELD_KEYS.childAccountValue] && <p className="text-destructive text-[10px] mt-0.5">{validationErrors[FIELD_KEYS.childAccountValue]}</p>}
+            </div>
           </div>
         </div>
       </div>
