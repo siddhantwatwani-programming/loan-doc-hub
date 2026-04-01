@@ -76,7 +76,7 @@ export const TrustLedgerModal: React.FC<TrustLedgerModalProps> = ({
   }, [formData.payment, formData.deposit]);
 
   const isFormValid = useCallback(() => {
-    if (!formData.date || !formData.fromWhomReceivedPaid?.trim() || !formData.category || formData.category === '') return false;
+    if (!formData.date || !formData.fromWhomReceivedPaid?.trim() || !formData.category) return false;
     if (mutualError) return false;
     return hasModalFormData(formData, ['id', 'date', 'category']);
   }, [formData, mutualError]);
