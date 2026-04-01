@@ -1,56 +1,44 @@
 
 
-# US Currency & Percentage Formatting in Loan → Servicing Grid
+# Fix: Long Attachment Filenames Breaking Layout in Conversation Log Modal
 
-## Summary
-Add onBlur/onFocus formatting to the Cost, Lender %, Borrower $, and Borrower % columns in `LoanTermsServicingForm.tsx`. No changes to the Broker column or any other file.
+## Problem
+The attachment list container at line 381 has `pl-[100px]` padding, and the parent div lacks `overflow-hidden`. Although the individual attachment row has `truncate` and `min-w-0`, the container itself can expand beyond the modal width because there's no overflow constraint on the wrapper `div.space-y-2` (the attachments section parent).
 
-## Approach
-Use the existing `formatCurrencyDisplay` / `unformatCurrencyDisplay` from `numericInputFilter.ts`, and add a new `formatPercentageDisplay` / `unformatPercentageDisplay` helper pair to that same utility file.
+## Root Cause
+The `div.space-y-1.pl-[100px]` container (line 381) is not width-constrained. It sits inside a `div.space-y-2` which also lacks overflow control. The flex item with `truncate` only works when its ancestor chain properly constrains width — but here the ancestors allow expansion.
 
-## Changes
+## Fix (single file: `src/components/deal/NotesModal.tsx`)
 
-### 1. `src/lib/numericInputFilter.ts` — Add percentage formatting helpers
+**Line 381** — Add `overflow-hidden` to the attachment list container:
+```
+// Before
+<div className="space-y-1 pl-[100px]">
 
-```typescript
-export const formatPercentageDisplay = (value: string): string => {
-  if (!value) return '';
-  const num = parseFloat(value.replace(/,/g, ''));
-  if (isNaN(num)) return '';
-  return num.toFixed(2);
-};
-
-export const unformatPercentageDisplay = (value: string): string => {
-  return value.replace(/%/g, '').trim();
-};
+// After
+<div className="space-y-1 pl-[100px] overflow-hidden">
 ```
 
-### 2. `src/components/deal/LoanTermsServicingForm.tsx` — Add formatting behavior
+**Line 383** — Add `max-w-full` to each attachment row to ensure it respects the container boundary:
+```
+// Before
+<div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1 overflow-hidden">
 
-**Imports**: Add `formatCurrencyDisplay`, `unformatCurrencyDisplay`, `formatPercentageDisplay`, `unformatPercentageDisplay`.
+// After
+<div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1 overflow-hidden max-w-full">
+```
 
-**Column classification**: Define which columns are currency (`cost`, `borrower_amount`) and which are percentage (`lender_percent`, `borrower_percent`).
+**Line 395-403** — Add `shrink-0` to the remove button so it never collapses:
+```
+// Before
+className="h-5 w-5"
 
-**Input changes** (for both the main rows and the custom row):
-- Currency columns (`cost`, `borrower_amount`):
-  - Display: prefix `$` via absolute-positioned span, add `pl-4` padding
-  - `onFocus`: unformat (strip commas) for editing
-  - `onBlur`: format with commas + 2 decimals
-  - `text-right` alignment
-  - Empty stays empty (no auto-fill)
+// After  
+className="h-5 w-5 shrink-0"
+```
 
-- Percentage columns (`lender_percent`, `borrower_percent`):
-  - Display: suffix `%` via absolute-positioned span, add `pr-5` padding
-  - `onFocus`: unformat (strip %)
-  - `onBlur`: format to 2 decimal places
-  - `text-right` alignment
-  - Empty stays empty
-
-- Broker column: no changes whatsoever
-- Lenders Split column: no changes (remains Select dropdown)
-
-### What Will NOT Change
-- No API, database, or schema changes
-- No changes to Broker column
-- No changes to any other component or file beyond the two listed
+## What Will NOT Change
+- No attachment functionality (upload, remove, download) modified
+- No APIs, database schema, or document generation logic touched
+- No layout changes outside the attachment rows in this modal
 
