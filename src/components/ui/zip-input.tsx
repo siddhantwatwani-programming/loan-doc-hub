@@ -55,7 +55,7 @@ export const ZipInput = React.forwardRef<HTMLInputElement, ZipInputProps>(
         />
         {showError && (
           <span className="text-[10px] text-destructive mt-0.5">
-            ZIP Code must be 5 or 9 digits
+            Please enter a valid US ZIP code (e.g., 10001 or 10001-1234).
           </span>
         )}
       </div>
