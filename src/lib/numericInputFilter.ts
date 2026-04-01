@@ -78,3 +78,21 @@ export const formatCurrencyDisplay = (value: string): string => {
 export const unformatCurrencyDisplay = (value: string): string => {
   return value.replace(/,/g, '');
 };
+
+/**
+ * Format a raw numeric string as percentage display (2 decimal places).
+ * e.g. "25.5" → "25.50", "" → ""
+ */
+export const formatPercentageDisplay = (value: string): string => {
+  if (!value) return '';
+  const num = parseFloat(value.replace(/,/g, ''));
+  if (isNaN(num)) return '';
+  return num.toFixed(2);
+};
+
+/**
+ * Strip % symbol from a formatted percentage string for editing/storage.
+ */
+export const unformatPercentageDisplay = (value: string): string => {
+  return value.replace(/%/g, '').trim();
+};
