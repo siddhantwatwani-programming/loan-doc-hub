@@ -392,6 +392,20 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
     });
   };
 
+  const handleBrokerPref = (prefKey: string, checked: boolean) => {
+    const allPrefs = ['preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax'];
+    setForm(prev => {
+      const u = { ...prev };
+      allPrefs.forEach(k => { u[k] = (k === prefKey && checked) ? 'true' : 'false'; });
+      return u;
+    });
+  };
+
+  const alphaNumKD = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (NAV_KEYS.includes(e.key) || e.ctrlKey || e.metaKey) return;
+    if (!/^[A-Za-z0-9]$/.test(e.key)) e.preventDefault();
+  };
+
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
