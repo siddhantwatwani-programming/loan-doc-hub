@@ -170,7 +170,18 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
       <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
       <div className="relative flex-1">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-        <Input value={formData[field]} onChange={(e) => handleChange(field, e.target.value)} className={`h-7 text-xs pl-7 ${forceDisabled ? 'opacity-50 bg-muted' : ''}`} inputMode="decimal" placeholder="0.00" disabled={forceDisabled} />
+        <Input
+          value={formData[field]}
+          onChange={(e) => handleChange(field, unformatCurrencyDisplay(e.target.value))}
+          onKeyDown={numericKeyDown}
+          onPaste={(e) => numericPaste(e, (val) => handleChange(field, val))}
+          onBlur={() => { const raw = formData[field]; if (raw) handleChange(field, formatCurrencyDisplay(raw)); }}
+          onFocus={() => { const raw = formData[field]; if (raw) handleChange(field, unformatCurrencyDisplay(raw)); }}
+          className={`h-7 text-xs pl-7 ${forceDisabled ? 'opacity-50 bg-muted' : ''}`}
+          inputMode="decimal"
+          placeholder="0.00"
+          disabled={forceDisabled}
+        />
       </div>
     </div>
   );
