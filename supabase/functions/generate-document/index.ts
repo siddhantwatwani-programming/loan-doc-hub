@@ -1038,53 +1038,87 @@ async function generateSingleDocument(
     }
 
     // ── Auto-compute HUD-1 column totals: Paid to Others, Paid to Broker, Grand Total ──
+    // Uses dynamic scanning of ALL origination fee currency fields plus explicit key lists
+    // to ensure no fee values are missed.
     {
+      // Explicit currency keys for "Paid to Others" column
       const othersKeys = [
-        'of_fe_800CustomItemOthers',
+        // 800 series
         'of_801_lenderLoanOriginationFee_others', 'of_802_lenderLoanDiscountFee_others',
         'of_803_appraisalFee_others', 'of_804_creditReportFee_others',
         'of_805_lenderInspectionFee_others', 'of_808_mortgageBrokerCommissionFee_others',
         'of_809_taxServiceFee_others', 'of_810_processingFee_others',
         'of_811_underwritingFee_others', 'of_812_wireTransferFee_others',
-        'of_fe_900CustomItemOthers', 'of_901_int_o', 'of_902_mi_o', 'of_903_hi_o', 'of_904_tax_o', 'of_905_va_o',
-        'of_fe_1000CustomItemOthers', 'of_1001_hi_o', 'of_1002_mi_o', 'of_1004_tax_o',
-        'of_fe_1100CustomItemOthers', 'of_1101_set_o', 'of_1105_doc_o', 'of_1106_not_o', 'of_1108_ti_o',
-        'of_fe_1200CustomItemOthers', 'of_1201_rec_o', 'of_1202_ts_o',
-        'of_fe_1301Others', 'of_1302_pest_o',
-        'of_fe_1300CustomItem13', 'of_fe_1300CustomItem23', 'of_fe_1300CustomItem33', 'of_fe_1300CustomItem43',
-        'of_fe_1300CustomItem53', 'of_fe_1300CustomItem63', 'of_fe_1300CustomItem73', 'of_fe_1300CustomItem83',
+        // 900 series
+        'of_900_desc_o', 'of_901_int_o', 'of_902_mi_o', 'of_903_hi_o', 'of_904_tax_o', 'of_905_va_o',
+        // 1000 series
+        'of_1000_desc_o', 'of_1001_hi_o', 'of_1002_mi_o', 'of_1004_tax_o',
+        // 1100 series
+        'of_1101_set_o', 'of_1105_doc_o', 'of_1106_not_o', 'of_1108_ti_o',
+        // 1200 series
+        'of_1200_desc_o', 'of_1201_rec_o', 'of_1202_ts_o',
+        // 1300 series
+        'of_1302_pest_o',
       ];
+      // Explicit currency keys for "Paid to Broker" column
       const brokerKeys = [
-        'of_fe_800CustomItemBroker',
+        // 800 series
         'of_801_lenderLoanOriginationFee_broker', 'of_802_lenderLoanDiscountFee_broker',
         'of_803_appraisalFee_broker', 'of_804_creditReportFee_broker',
         'of_805_lenderInspectionFee_broker', 'of_808_mortgageBrokerCommissionFee_broker',
         'of_809_taxServiceFee_broker', 'of_810_processingFee_broker',
         'of_811_underwritingFee_broker', 'of_812_wireTransferFee_broker',
-        'of_fe_900CustomItemBroker', 'of_901_int_b', 'of_902_mi_b', 'of_903_hi_b', 'of_904_tax_b', 'of_905_va_b',
-        'of_fe_1000CustomItemBroker', 'of_1001_hi_b', 'of_1002_mi_b', 'of_1004_tax_b',
-        'of_fe_1100CustomItemBroker', 'of_1101_set_b', 'of_1105_doc_b', 'of_1106_not_b', 'of_1108_ti_b',
-        'of_fe_1200CustomItemBroker', 'of_1201_rec_b', 'of_1202_ts_b',
-        'of_fe_1301Broker', 'of_1302_pest_b',
-        'of_fe_1300CustomItem1', 'of_fe_1300CustomItem2', 'of_fe_1300CustomItem3', 'of_fe_1300CustomItem4',
-        'of_fe_1300CustomItem5', 'of_fe_1300CustomItem6', 'of_fe_1300CustomItem7', 'of_fe_1300CustomItem8',
+        // 900 series
+        'of_900_desc_b', 'of_901_int_b', 'of_902_mi_b', 'of_903_hi_b', 'of_904_tax_b', 'of_905_va_b',
+        // 1000 series
+        'of_1000_desc_b', 'of_1001_hi_b', 'of_1002_mi_b', 'of_1004_tax_b',
+        // 1100 series
+        'of_1101_set_b', 'of_1105_doc_b', 'of_1106_not_b', 'of_1108_ti_b',
+        // 1200 series
+        'of_1200_desc_b', 'of_1201_rec_b', 'of_1202_ts_b',
+        // 1300 series
+        'of_1302_pest_b',
       ];
+
       const parseNum = (key: string): number => {
         const val = fieldValues.get(key);
         if (!val || val.rawValue == null) return 0;
+        // Skip boolean-typed fields (checkboxes) — they are not currency amounts
+        if (val.dataType === 'boolean') return 0;
         const cleaned = String(val.rawValue).replace(/[,$\s]/g, '');
         const n = parseFloat(cleaned);
         return isNaN(n) ? 0 : n;
       };
+
+      // Also dynamically scan fieldValues for any origination fee currency fields
+      // matching broker/others patterns that might not be in the explicit lists
+      const dynamicOthersKeys = new Set<string>(othersKeys);
+      const dynamicBrokerKeys = new Set<string>(brokerKeys);
+      for (const [key, data] of fieldValues.entries()) {
+        if (!key.startsWith('of_') || data.dataType !== 'currency') continue;
+        // Skip the total fields themselves
+        if (key === 'of_tot_oth' || key === 'of_tot_brk' || key === 'of_tot_all') continue;
+        // Skip subtotal display fields
+        if (key === 'of_fe_subtotalOthers' || key === 'of_fe_subtotalJ' || key === 'of_fe_totalJ') continue;
+        // Match "others" pattern: ends with _others, _o, or Others
+        if (key.endsWith('_others') || (key.endsWith('_o') && /^of_\d+_/.test(key)) || key.endsWith('Others')) {
+          dynamicOthersKeys.add(key);
+        }
+        // Match "broker" pattern: ends with _broker, _b, or Broker
+        if (key.endsWith('_broker') || (key.endsWith('_b') && /^of_\d+_/.test(key)) || key.endsWith('Broker')) {
+          dynamicBrokerKeys.add(key);
+        }
+      }
+
       let totalOthers = 0;
-      for (const k of othersKeys) totalOthers += parseNum(k);
+      for (const k of dynamicOthersKeys) totalOthers += parseNum(k);
       let totalBroker = 0;
-      for (const k of brokerKeys) totalBroker += parseNum(k);
+      for (const k of dynamicBrokerKeys) totalBroker += parseNum(k);
       const grandTotal = totalOthers + totalBroker;
       fieldValues.set('of_tot_oth', { rawValue: totalOthers.toFixed(2), dataType: 'currency' });
       fieldValues.set('of_tot_brk', { rawValue: totalBroker.toFixed(2), dataType: 'currency' });
       fieldValues.set('of_tot_all', { rawValue: grandTotal.toFixed(2), dataType: 'currency' });
-      debugLog(`[generate-document] Auto-computed HUD totals: Others=${totalOthers.toFixed(2)}, Broker=${totalBroker.toFixed(2)}, Grand=${grandTotal.toFixed(2)}`);
+      console.log(`[generate-document] Auto-computed HUD totals: Others=${totalOthers.toFixed(2)} (${dynamicOthersKeys.size} keys), Broker=${totalBroker.toFixed(2)} (${dynamicBrokerKeys.size} keys), Grand=${grandTotal.toFixed(2)}`);
     }
 
     // Build set of all valid field keys once and reuse it across invocations.
