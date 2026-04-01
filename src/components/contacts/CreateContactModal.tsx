@@ -325,23 +325,58 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
             {/* Column 1: Name / Details */}
             <div className="space-y-1.5">
               <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Name</h3>
-              {renderSelect('Lender Type', 'type', LENDER_TYPE_OPTIONS)}
-              {renderInline('Full Name', 'full_name')}
-              {renderInline('First', 'first_name')}
-              {renderInline('Middle', 'middle_name')}
-              {renderInline('Last', 'last_name')}
-              
+              {/* Lender Type - required */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Lender Type</Label>
+                <Select value={form['type'] || ''} onValueChange={(v) => { set('type', v); clrLErr('type'); }}>
+                  <SelectTrigger className={cn("h-7 text-xs flex-1", lenderErrors['type'] && "border-destructive")}><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-[200]">
+                    {LENDER_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {lenderErrors['type'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['type']}</p>}
+
+              {/* Full Name - alpha+spaces, max 100, required */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Full Name</Label>
+                <Input value={form['full_name'] || ''} onChange={(e) => { set('full_name', e.target.value); clrLErr('full_name'); }} onKeyDown={alphaSpaceKD} onPaste={(e) => { e.preventDefault(); set('full_name', e.clipboardData.getData('text').replace(/[^A-Za-z ]/g, '')); }} onBlur={() => { const v = (form['full_name'] || '').trim(); set('full_name', v); if (!v) setLErr('full_name', 'Full Name is required'); else clrLErr('full_name'); }} maxLength={100} className={cn("h-7 text-xs flex-1", lenderErrors['full_name'] && "border-destructive")} />
+              </div>
+              {lenderErrors['full_name'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['full_name']}</p>}
+
+              {/* First Name - alpha only, required */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">First</Label>
+                <Input value={form['first_name'] || ''} onChange={(e) => { set('first_name', e.target.value); clrLErr('first_name'); }} onKeyDown={alphaOnlyKD} onPaste={(e) => { e.preventDefault(); set('first_name', e.clipboardData.getData('text').replace(/[^A-Za-z]/g, '')); }} onBlur={() => { const v = (form['first_name'] || '').trim(); set('first_name', v); if (!v) setLErr('first_name', 'Enter valid first name'); else clrLErr('first_name'); }} className={cn("h-7 text-xs flex-1", lenderErrors['first_name'] && "border-destructive")} />
+              </div>
+              {lenderErrors['first_name'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['first_name']}</p>}
+
+              {/* Middle Name - alpha only, optional */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Middle</Label>
+                <Input value={form['middle_name'] || ''} onChange={(e) => set('middle_name', e.target.value)} onKeyDown={alphaOnlyKD} onPaste={(e) => { e.preventDefault(); set('middle_name', e.clipboardData.getData('text').replace(/[^A-Za-z]/g, '')); }} onBlur={() => set('middle_name', (form['middle_name'] || '').trim())} className="h-7 text-xs flex-1" />
+              </div>
+
+              {/* Last Name - alpha only, required */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Last</Label>
+                <Input value={form['last_name'] || ''} onChange={(e) => { set('last_name', e.target.value); clrLErr('last_name'); }} onKeyDown={alphaOnlyKD} onPaste={(e) => { e.preventDefault(); set('last_name', e.clipboardData.getData('text').replace(/[^A-Za-z]/g, '')); }} onBlur={() => { const v = (form['last_name'] || '').trim(); set('last_name', v); if (!v) setLErr('last_name', 'Enter valid last name'); else clrLErr('last_name'); }} className={cn("h-7 text-xs flex-1", lenderErrors['last_name'] && "border-destructive")} />
+              </div>
+              {lenderErrors['last_name'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['last_name']}</p>}
+
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">Email</Label>
-                <EmailInput value={form['email'] || ''} onValueChange={(v) => set('email', v)} className="h-7 text-xs" />
+                <EmailInput value={form['email'] || ''} onValueChange={(v) => { set('email', v); clrLErr('email'); }} className="h-7 text-xs" />
               </div>
+              {lenderErrors['email'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['email']}</p>}
+
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">DOB</Label>
                 <Popover open={dobOpen} onOpenChange={setDobOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("h-7 text-xs flex-1 justify-start font-normal", !form['dob'] && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("h-7 text-xs flex-1 justify-start font-normal", !form['dob'] && "text-muted-foreground", lenderErrors['dob'] && "border-destructive")}>
                       <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                      {form['dob'] || 'dd-mm-yyyy'}
+                      {form['dob'] || 'mm/dd/yyyy'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 z-[200]" align="start">
@@ -349,22 +384,30 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                       mode="single"
                       selected={form['dob'] ? new Date(form['dob']) : undefined}
                       onSelect={(date) => {
-                        set('dob', date ? format(date, 'MM/dd/yyyy') : '');
+                        if (date && date >= new Date()) {
+                          setLErr('dob', 'Enter valid date of birth');
+                          set('dob', format(date, 'MM/dd/yyyy'));
+                        } else {
+                          set('dob', date ? format(date, 'MM/dd/yyyy') : '');
+                          clrLErr('dob');
+                        }
                         setDobOpen(false);
                       }}
-                      onClear={() => { set('dob', ''); setDobOpen(false); }}
-                      onToday={() => { set('dob', format(new Date(), 'MM/dd/yyyy')); setDobOpen(false); }}
+                      onClear={() => { set('dob', ''); clrLErr('dob'); setDobOpen(false); }}
+                      onToday={() => { set('dob', format(new Date(), 'MM/dd/yyyy')); setLErr('dob', 'Enter valid date of birth'); setDobOpen(false); }}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
               </div>
+              {lenderErrors['dob'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['dob']}</p>}
+
               <div className="pt-2 space-y-1">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Tax Info</h3>
                 <div className="flex items-center gap-2">
                   <Label className="w-[100px] shrink-0 text-xs">Tax ID Type</Label>
-                  <Select value={form['tax_id_type'] || ''} onValueChange={(v) => set('tax_id_type', v)}>
-                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <Select value={form['tax_id_type'] || ''} onValueChange={(v) => { set('tax_id_type', v); clrLErr('tax_id_type'); set('tax_id', ''); }}>
+                    <SelectTrigger className={cn("h-7 text-xs flex-1", lenderErrors['tax_id_type'] && "border-destructive")}><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent className="bg-background border border-border z-[200]">
                       {TAX_ID_TYPE_OPTIONS.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
@@ -372,7 +415,23 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                     </SelectContent>
                   </Select>
                 </div>
-                {renderInline('TIN', 'tax_id')}
+                {lenderErrors['tax_id_type'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['tax_id_type']}</p>}
+
+                {/* TIN with SSN/EIN formatting */}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs">TIN</Label>
+                  <Input
+                    value={fmtTIN(form['tax_id'] || '', form['tax_id_type'] || '')}
+                    onChange={(e) => { const digits = e.target.value.replace(/\D/g, '').slice(0, 9); set('tax_id', digits); clrLErr('tax_id'); }}
+                    onKeyDown={digitOnlyKD}
+                    onPaste={(e) => { e.preventDefault(); set('tax_id', e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 9)); }}
+                    onBlur={() => { const d = (form['tax_id'] || '').replace(/\D/g, ''); if (d && d.length !== 9) setLErr('tax_id', 'Enter valid TIN (9 digits)'); else clrLErr('tax_id'); }}
+                    maxLength={11}
+                    className={cn("h-7 text-xs flex-1", lenderErrors['tax_id'] && "border-destructive")}
+                  />
+                </div>
+                {lenderErrors['tax_id'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['tax_id']}</p>}
+
                 {renderCheckbox('TIN Verified', 'tin_verified')}
               </div>
             </div>
