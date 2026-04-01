@@ -260,11 +260,10 @@ const LateFeeColumn: React.FC<{
           />
         </FieldRow>
         <FieldRow label="Calendar / Actual" fieldKey={`${prefix}.calendar_actual`}>
-          <Input
+          <PenaltyIntegerInput
             value={values[`${prefix}.calendar_actual`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.calendar_actual`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.calendar_actual`, val)}
             disabled={disabled || !isEnabled}
-            className="h-7 text-sm"
           />
         </FieldRow>
         <FieldRow label="Minimum Late Fee" fieldKey={`${prefix}.minimum_late_fee`}>
