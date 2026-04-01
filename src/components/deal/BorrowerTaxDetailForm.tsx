@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -9,9 +9,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ZipInput } from '@/components/ui/zip-input';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { validateSSN, formatSSN, maskSSN } from '@/lib/tinValidation';
 
 import { BORROWER_TAX_DETAIL_KEYS, BORROWER_PRIMARY_KEYS, BORROWER_GUARANTOR_KEYS } from '@/lib/fieldKeyMap';
 
@@ -28,9 +30,7 @@ const DESIGNATED_RECIPIENT_OPTIONS = [
 ];
 
 const TIN_TYPE_OPTIONS = [
-  { value: '0', label: '0 – Unknown' },
-  { value: '1', label: '1 – EIN' },
-  { value: '2', label: '2 – SSN' },
+  { value: '2', label: 'SSN' },
 ];
 
 // Maps for auto-populating from entity data
@@ -78,6 +78,11 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
   onValueChange,
   disabled = false,
 }) => {
+  const [tinFocused, setTinFocused] = useState(false);
+  const [tinTouched, setTinTouched] = useState(false);
+  const [acctFocused, setAcctFocused] = useState(false);
+  const [cityTouched, setCityTouched] = useState(false);
+
   const getValue = (key: keyof typeof FIELD_KEYS): string => {
     return values[FIELD_KEYS[key]] || '';
   };
@@ -125,18 +130,6 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
       return;
     }
 
-    // Debug: log available coborrower keys and source map lookups
-    if (designatedRecipient === 'co-borrower') {
-      const coborrowerKeys = Object.keys(currentValues).filter(k => k.startsWith('coborrower.'));
-      console.log('[1098 Debug] Co-borrower keys in values:', coborrowerKeys);
-      console.log('[1098 Debug] Source map:', sourceMap);
-      console.log('[1098 Debug] Resolved values:', {
-        name: currentValues[sourceMap.name],
-        address: currentValues[sourceMap.address],
-        tin: currentValues[sourceMap.tin],
-      });
-    }
-
     fireChange('name', currentValues[sourceMap.name] || '');
     fireChange('address', currentValues[sourceMap.address] || '');
     fireChange('city', currentValues[sourceMap.city] || '');
@@ -145,6 +138,36 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
     fireChange('tin', currentValues[sourceMap.tin] || '');
     fireChange('tinType', currentValues[sourceMap.tinType] || '');
   }, [designatedRecipient]);
+
+  // --- SSN handling ---
+  const rawTin = getValue('tin');
+  const tinDigits = rawTin.replace(/\D/g, '');
+
+  const handleTinChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 9);
+    handleChange('tin', digits);
+  }, []);
+
+  const tinDisplay = tinFocused ? formatSSN(tinDigits) : (tinDigits ? maskSSN(tinDigits) : '');
+  const tinValid = !tinDigits || validateSSN(tinDigits);
+  const showTinError = tinTouched && tinDigits.length > 0 && !tinValid;
+
+  // --- Account Number masking ---
+  const rawAcct = getValue('accountNumber');
+  const maskAccount = (val: string): string => {
+    if (!val || val.length <= 4) return val;
+    return '*'.repeat(val.length - 4) + val.slice(-4);
+  };
+  const acctDisplay = acctFocused ? rawAcct : maskAccount(rawAcct);
+
+  // --- City validation (alphabets + spaces only) ---
+  const handleCityChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+    handleChange('city', val);
+  }, []);
+  const cityVal = getValue('city');
+  const cityValid = !cityVal || /^[a-zA-Z\s]+$/.test(cityVal);
+  const showCityError = cityTouched && cityVal.length > 0 && !cityValid;
 
   return (
     <div className="p-6">
@@ -157,7 +180,7 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
         {/* Designated Recipient + Dropdown Populates */}
         <DirtyFieldWrapper fieldKey={FIELD_KEYS.designatedRecipient}>
           <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Designated Recipient</Label>
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Designated Recipient <span className="text-destructive">*</span></Label>
             <Select
               value={getValue('designatedRecipient')}
               onValueChange={(value) => handleChange('designatedRecipient', value)}
@@ -179,11 +202,12 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
 
         <DirtyFieldWrapper fieldKey={FIELD_KEYS.name}>
           <div className="flex items-center gap-3">
-            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Name</Label>
+            <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Name <span className="text-destructive">*</span></Label>
             <Input
               value={getValue('name')}
               onChange={(e) => handleChange('name', e.target.value)}
               disabled={disabled}
+              maxLength={150}
               className="h-7 text-sm flex-1"
             />
           </div>
@@ -192,28 +216,45 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
         <div className="grid grid-cols-2 gap-4">
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.address}>
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Address</Label>
-              <Input value={getValue('address')} onChange={(e) => handleChange('address', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">Address <span className="text-destructive">*</span></Label>
+              <Input value={getValue('address')} onChange={(e) => handleChange('address', e.target.value)} disabled={disabled} maxLength={200} className="h-7 text-sm flex-1" />
             </div>
           </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.accountNumber}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Account Number</Label>
-              <Input value={getValue('accountNumber')} onChange={(e) => handleChange('accountNumber', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              <Input
+                value={acctDisplay}
+                onChange={(e) => handleChange('accountNumber', e.target.value.slice(0, 20))}
+                onFocus={() => setAcctFocused(true)}
+                onBlur={() => setAcctFocused(false)}
+                disabled={disabled}
+                maxLength={20}
+                className="h-7 text-sm flex-1"
+              />
             </div>
           </DirtyFieldWrapper>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.city}>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">City</Label>
-              <Input value={getValue('city')} onChange={(e) => handleChange('city', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">City <span className="text-destructive">*</span></Label>
+                <Input
+                  value={getValue('city')}
+                  onChange={handleCityChange}
+                  onBlur={() => setCityTouched(true)}
+                  disabled={disabled}
+                  className="h-7 text-sm flex-1"
+                />
+              </div>
+              {showCityError && <span className="text-[10px] text-destructive ml-[152px]">Enter valid city</span>}
             </div>
           </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.tinType}>
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN Type</Label>
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN Type <span className="text-destructive">*</span></Label>
               <Select value={getValue('tinType') || undefined} onValueChange={(value) => handleChange('tinType', value)} disabled={disabled}>
                 <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent className="bg-background z-50">
@@ -227,7 +268,7 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
         <div className="grid grid-cols-2 gap-4">
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.state}>
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">State</Label>
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">State <span className="text-destructive">*</span></Label>
               <Select value={getValue('state')} onValueChange={(value) => handleChange('state', value)} disabled={disabled}>
                 <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent className="bg-background z-50 max-h-60">
@@ -237,9 +278,22 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
             </div>
           </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.tin}>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN</Label>
-              <Input value={getValue('tin')} onChange={(e) => handleChange('tin', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">TIN (SSN) <span className="text-destructive">*</span></Label>
+                <Input
+                  value={tinDisplay}
+                  onChange={handleTinChange}
+                  onFocus={() => setTinFocused(true)}
+                  onBlur={() => { setTinFocused(false); setTinTouched(true); }}
+                  disabled={disabled}
+                  maxLength={11}
+                  inputMode="numeric"
+                  placeholder="XXX-XX-XXXX"
+                  className={`h-7 text-sm flex-1 ${showTinError ? 'border-destructive' : ''}`}
+                />
+              </div>
+              {showTinError && <span className="text-[10px] text-destructive ml-[132px]">Enter valid SSN</span>}
             </div>
           </DirtyFieldWrapper>
         </div>
@@ -247,8 +301,13 @@ export const BorrowerTaxDetailForm: React.FC<BorrowerTaxDetailFormProps> = ({
         <div className="grid grid-cols-2 gap-4">
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.zip}>
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">ZIP</Label>
-              <Input value={getValue('zip')} onChange={(e) => handleChange('zip', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">ZIP <span className="text-destructive">*</span></Label>
+              <ZipInput
+                value={getValue('zip')}
+                onValueChange={(val) => handleChange('zip', val)}
+                disabled={disabled}
+                className="h-7 text-sm flex-1"
+              />
             </div>
           </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.send1098}>
