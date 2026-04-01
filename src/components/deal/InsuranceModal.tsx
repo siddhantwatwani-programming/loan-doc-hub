@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, CalendarIcon } from 'lucide-react';
+import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -63,7 +64,14 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
   };
 
   useEffect(() => {
-    if (open) setFormData(insurance ? insurance : getDefaultInsurance());
+    if (open) {
+      const data = insurance ? { ...insurance } : getDefaultInsurance();
+      // Format coverage for display
+      if (data.coverage) {
+        data.coverage = formatCurrencyDisplay(String(data.coverage));
+      }
+      setFormData(data);
+    }
   }, [open, insurance]);
 
   const handleChange = (field: keyof InsuranceData, value: string | boolean) => setFormData(prev => ({ ...prev, [field]: value }));
@@ -72,7 +80,15 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
   const emailsValid = hasValidEmails(formData as any, ['email']);
 
   const handleSaveClick = () => setShowConfirm(true);
-  const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
+  const handleConfirmSave = () => {
+    setShowConfirm(false);
+    const cleaned = { ...formData };
+    if (cleaned.coverage) {
+      cleaned.coverage = unformatCurrencyDisplay(String(cleaned.coverage));
+    }
+    onSave(cleaned);
+    onOpenChange(false);
+  };
 
   const renderInlineField = (field: keyof InsuranceData, label: string, props: Record<string, any> = {}) => {
     if (props.type === 'date') {
@@ -145,7 +161,17 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
                   <Label className="w-[100px] shrink-0 text-xs text-foreground">Coverage</Label>
                   <div className="relative flex-1">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-                    <Input value={String(formData.coverage || '')} onChange={(e) => handleChange('coverage', e.target.value)} className="h-7 text-xs text-right pl-5" inputMode="decimal" placeholder="0.00" />
+                    <Input
+                      value={String(formData.coverage || '')}
+                      onChange={(e) => handleChange('coverage', e.target.value)}
+                      onFocus={(e) => { e.target.value = unformatCurrencyDisplay(e.target.value); handleChange('coverage', e.target.value); }}
+                      onBlur={(e) => { const formatted = formatCurrencyDisplay(unformatCurrencyDisplay(e.target.value)); handleChange('coverage', formatted); }}
+                      onKeyDown={numericKeyDown}
+                      onPaste={(e) => numericPaste(e, (v) => handleChange('coverage', v))}
+                      className="h-7 text-xs text-right pl-5"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                    />
                   </div>
                 </div>
 
