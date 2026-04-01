@@ -191,11 +191,22 @@ function getValueFromRecord(record: FieldValue, dataType: FieldDataType): string
   }
 }
 
+// Format a raw numeric value as US currency display (comma-separated, 2 decimal places).
+function formatCurrencyForDisplay(value: string): string {
+  if (!value) return '';
+  const num = parseFloat(value.replace(/,/g, ''));
+  if (isNaN(num)) return value;
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 // Extract typed value from JSONB structure
 function extractTypedValueFromJsonb(fieldData: JsonbFieldValue, dataType: FieldDataType): string {
   switch (dataType) {
+    case 'currency': {
+      const raw = fieldData.value_number?.toString() || fieldData.value_text || '';
+      return formatCurrencyForDisplay(raw);
+    }
     case 'number':
-    case 'currency':
     case 'percentage':
       return fieldData.value_number?.toString() || fieldData.value_text || '';
     case 'date':
