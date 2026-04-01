@@ -99,7 +99,18 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   const emailsValid = hasValidEmails(formData as any, ['appraiserEmail']);
 
   const handleSaveClick = () => setShowConfirm(true);
-  const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
+  const CURRENCY_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'pledgedEquity', 'monthlyIncome', 'lienProtectiveEquity'];
+  const handleConfirmSave = () => {
+    setShowConfirm(false);
+    // Strip commas from currency fields before persisting
+    const cleaned = { ...formData };
+    CURRENCY_FIELDS.forEach(f => {
+      const v = String(cleaned[f] || '');
+      if (v) (cleaned as any)[f] = v.replace(/,/g, '');
+    });
+    onSave(cleaned);
+    onOpenChange(false);
+  };
 
   const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
 
