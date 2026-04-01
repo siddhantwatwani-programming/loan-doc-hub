@@ -153,12 +153,14 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
         );
       case '1099':
         return (
-          <LenderTaxInfoForm
-            fields={emptyFields}
-            values={values}
-            onValueChange={handleValueChange}
-            disabled={isReadOnly}
-          />
+          <div className="p-6">
+            <Lender1099
+              values={values}
+              onValueChange={handleValueChange}
+              onSave={handleSave}
+              disabled={isReadOnly}
+            />
+          </div>
         );
       case 'attachments':
         return (
