@@ -541,9 +541,9 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
             <span>{baseName}:</span>
             <Input type="number" inputMode="numeric" value={getValue(monthsKey)} onChange={(e) => setValue(monthsKey, e.target.value)} disabled={disabled} placeholder="0" className="h-6 text-xs text-right w-12 inline-flex" />
             <span>months at $</span>
-            <Input inputMode="decimal" value={getValue(perMonthKey)} onChange={(e) => setValue(perMonthKey, e.target.value)} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(perMonthKey, val))} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-16 inline-flex" />
+            <Input inputMode="decimal" value={getValue(perMonthKey)} onChange={(e) => setValue(perMonthKey, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(perMonthKey, val))} onBlur={() => { const raw = getValue(perMonthKey); if (raw) setValue(perMonthKey, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = getValue(perMonthKey); if (raw) setValue(perMonthKey, unformatCurrencyDisplay(raw)); }} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-20 inline-flex" />
             <span>/mo</span>
-            {totalVal && <span className="text-muted-foreground ml-1">= ${totalVal}</span>}
+            {totalVal && <span className="text-muted-foreground ml-1">= ${formatCurrencyDisplay(totalVal)}</span>}
           </div>
           <div className="relative">
             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
@@ -583,7 +583,7 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
       <span>Interest for</span>
       <Input type="number" inputMode="numeric" value={getValue(FIELD_KEYS.interestForDays_days)} onChange={(e) => setValue(FIELD_KEYS.interestForDays_days, e.target.value)} disabled={disabled} placeholder="0" className="h-6 text-xs text-right w-12 inline-flex" />
       <span>days at $</span>
-      <Input inputMode="decimal" value={getValue(FIELD_KEYS.interestForDays_perDay)} onChange={(e) => setValue(FIELD_KEYS.interestForDays_perDay, e.target.value)} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(FIELD_KEYS.interestForDays_perDay, val))} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-16 inline-flex" />
+      <Input inputMode="decimal" value={getValue(FIELD_KEYS.interestForDays_perDay)} onChange={(e) => setValue(FIELD_KEYS.interestForDays_perDay, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(FIELD_KEYS.interestForDays_perDay, val))} onBlur={() => { const raw = getValue(FIELD_KEYS.interestForDays_perDay); if (raw) setValue(FIELD_KEYS.interestForDays_perDay, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = getValue(FIELD_KEYS.interestForDays_perDay); if (raw) setValue(FIELD_KEYS.interestForDays_perDay, unformatCurrencyDisplay(raw)); }} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-20 inline-flex" />
       <span>per day</span>
     </div>
   );
@@ -669,16 +669,16 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
       <div className="space-y-1 pt-4 border-t-2 border-foreground">
         <div className="flex items-center gap-2 py-1">
           <div className="text-sm font-semibold text-foreground flex-1">Subtotal</div>
-          <div className="flex items-center w-28">
-            <span className="text-sm mr-1">$</span>
-            <Input inputMode="decimal" value={getValue(FIELD_KEYS.subtotal_j)} onChange={(e) => setValue(FIELD_KEYS.subtotal_j, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right" />
+          <div className="relative w-28">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
+            <Input inputMode="decimal" value={getValue(FIELD_KEYS.subtotal_j)} onChange={(e) => setValue(FIELD_KEYS.subtotal_j, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(FIELD_KEYS.subtotal_j, val))} onBlur={() => { const raw = getValue(FIELD_KEYS.subtotal_j); if (raw) setValue(FIELD_KEYS.subtotal_j, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = getValue(FIELD_KEYS.subtotal_j); if (raw) setValue(FIELD_KEYS.subtotal_j, unformatCurrencyDisplay(raw)); }} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
           </div>
         </div>
         <div className="flex items-center gap-2 py-1">
           <div className="text-sm font-bold text-foreground flex-1">Total</div>
-          <div className="flex items-center w-28">
-            <span className="text-sm mr-1 font-bold">$</span>
-            <Input inputMode="decimal" value={getValue(FIELD_KEYS.total_j)} onChange={(e) => setValue(FIELD_KEYS.total_j, e.target.value)} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right font-bold" />
+          <div className="relative w-28">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold pointer-events-none">$</span>
+            <Input inputMode="decimal" value={getValue(FIELD_KEYS.total_j)} onChange={(e) => setValue(FIELD_KEYS.total_j, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(FIELD_KEYS.total_j, val))} onBlur={() => { const raw = getValue(FIELD_KEYS.total_j); if (raw) setValue(FIELD_KEYS.total_j, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = getValue(FIELD_KEYS.total_j); if (raw) setValue(FIELD_KEYS.total_j, unformatCurrencyDisplay(raw)); }} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5 font-bold" />
           </div>
         </div>
       </div>
