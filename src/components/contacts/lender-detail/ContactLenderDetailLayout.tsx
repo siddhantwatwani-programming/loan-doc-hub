@@ -7,7 +7,7 @@ import LenderDetailSidebar, { type LenderSection } from './LenderDetailSidebar';
 import { LenderInfoForm } from '@/components/deal/LenderInfoForm';
 import { LenderAuthorizedPartyForm } from '@/components/deal/LenderAuthorizedPartyForm';
 import { LenderBankingForm } from '@/components/deal/LenderBankingForm';
-import { LenderTaxInfoForm } from '@/components/deal/LenderTaxInfoForm';
+import Lender1099 from './Lender1099';
 import LenderDashboard from './LenderDashboard';
 import LenderPortfolio from './LenderPortfolio';
 import LenderHistory from './LenderHistory';
