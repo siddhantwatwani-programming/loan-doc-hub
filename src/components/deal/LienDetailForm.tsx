@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Home, CalendarIcon } from 'lucide-react';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
+import { PhoneInput } from '@/components/ui/phone-input';
 import {
   Select,
   SelectContent,
@@ -260,8 +261,18 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           {renderField('maturityDate', 'Maturity Date', { type: 'date' }, isThisLoan)}
 
           {renderField('contact', 'Contact', {})}
-          {renderField('phone', 'Phone', {})}
-          {renderField('fax', 'Fax', {})}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.phone}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Phone</Label>
+              <PhoneInput value={lien.phone} onValueChange={(val) => onChange('phone', val)} disabled={disabled} className="h-7 text-sm flex-1" />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.fax}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Fax</Label>
+              <PhoneInput value={lien.fax} onValueChange={(val) => onChange('fax', val)} disabled={disabled} className="h-7 text-sm flex-1" />
+            </div>
+          </DirtyFieldWrapper>
           {renderField('email', 'Email', {})}
         </div>
       </div>

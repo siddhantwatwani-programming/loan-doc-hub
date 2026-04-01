@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
+import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -117,7 +118,11 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
               type="text"
               inputMode="decimal"
               value={data.fundingAmount}
-              onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('fundingAmount', v); }}
+              onChange={(e) => { const v = unformatCurrencyDisplay(e.target.value).replace(/[^0-9.]/g, ''); handleChange('fundingAmount', v); }}
+              onKeyDown={numericKeyDown}
+              onPaste={(e) => numericPaste(e, (val) => handleChange('fundingAmount', val))}
+              onBlur={() => { if (data.fundingAmount) handleChange('fundingAmount', formatCurrencyDisplay(data.fundingAmount)); }}
+              onFocus={() => { if (data.fundingAmount) handleChange('fundingAmount', unformatCurrencyDisplay(data.fundingAmount)); }}
               placeholder="0.00"
               className="h-7 text-sm pl-6"
             />
