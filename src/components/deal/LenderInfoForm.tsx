@@ -300,7 +300,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                     )}
                     disabled={disabled}
                   >
-                    {safeFormatDate(getValue('dob'), 'MM/dd/yyyy') || <span>dd-mm-yyyy</span>}
+                    {safeFormatDate(getValue('dob'), 'MM/dd/yyyy') || <span>mm/dd/yyyy</span>}
                     <CalendarIcon className="ml-auto h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
