@@ -659,11 +659,10 @@ const MaturitySection: React.FC<{
           onCheckboxChange={(checked) => onValueChange(`${prefix}.additional_flat_fee_enabled`, checked ? 'true' : 'false')}
           disabled={disabled || !isEnabled}
         >
-          <Input
+          <PenaltyCurrencyInput
             value={values[`${prefix}.additional_flat_fee`] || ''}
-            onChange={(e) => onValueChange(`${prefix}.additional_flat_fee`, e.target.value)}
+            onChange={(val) => onValueChange(`${prefix}.additional_flat_fee`, val)}
             disabled={disabled || !isEnabled || values[`${prefix}.additional_flat_fee_enabled`] !== 'true'}
-            className="h-7 text-sm"
           />
         </FieldRow>
       </div>
