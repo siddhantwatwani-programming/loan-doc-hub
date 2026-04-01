@@ -175,6 +175,41 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
       toast.error(phoneErrors[0]);
       return;
     }
+
+    // Lender-specific required field validation
+    if (contactType === 'lender') {
+      const errs: Record<string, string> = {};
+      if (!form['type']) errs['type'] = 'Please select a lender type';
+      if (!(form['full_name'] || '').trim()) errs['full_name'] = 'Full Name is required';
+      else if ((form['full_name'] || '').length > 100) errs['full_name'] = 'Max 100 characters';
+      if (!(form['first_name'] || '').trim()) errs['first_name'] = 'Enter valid first name';
+      if (!(form['last_name'] || '').trim()) errs['last_name'] = 'Enter valid last name';
+      if (!(form['email'] || '').trim()) errs['email'] = 'Enter a valid email address';
+      if (form['dob']) {
+        const dobParts = form['dob'].split('/');
+        if (dobParts.length === 3) {
+          const dobDate = new Date(parseInt(dobParts[2]), parseInt(dobParts[0]) - 1, parseInt(dobParts[1]));
+          if (dobDate >= new Date()) errs['dob'] = 'Enter valid date of birth';
+        }
+      }
+      if (!form['tax_id_type']) errs['tax_id_type'] = 'Please select Tax ID Type';
+      const tinDigits = (form['tax_id'] || '').replace(/\D/g, '');
+      if (tinDigits && tinDigits.length !== 9) errs['tax_id'] = 'Enter valid TIN (9 digits)';
+      if (!(form['primary_address.street'] || '').trim()) errs['primary_address.street'] = 'Street is required';
+      if (!(form['primary_address.city'] || '').trim()) errs['primary_address.city'] = 'City is required';
+      if (!form['primary_address.state']) errs['primary_address.state'] = 'State is required';
+      if (!(form['primary_address.zip'] || '').trim()) errs['primary_address.zip'] = 'ZIP is required';
+      if (form['delivery.print'] !== 'true' && form['delivery.email'] !== 'true' && form['delivery.sms'] !== 'true') {
+        errs['delivery'] = 'Select at least one delivery option';
+      }
+      if (Object.keys(errs).length > 0) {
+        setLenderErrors(errs);
+        toast.error(Object.values(errs)[0]);
+        return;
+      }
+      setLenderErrors({});
+    }
+
     setConfirmOpen(true);
   };
 
