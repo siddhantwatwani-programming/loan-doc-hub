@@ -142,7 +142,7 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
         <DirtyFieldWrapper fieldKey={FIELD_KEYS.phone}>
           <div>
             <Label className="text-sm text-foreground">Phone</Label>
-            <Input value={getFieldValue(FIELD_KEYS.phone)} onChange={(e) => onValueChange(FIELD_KEYS.phone, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+            <PhoneInput value={getFieldValue(FIELD_KEYS.phone)} onValueChange={(val) => onValueChange(FIELD_KEYS.phone, val)} disabled={disabled} className="h-8 text-sm mt-1" />
           </div>
         </DirtyFieldWrapper>
 
