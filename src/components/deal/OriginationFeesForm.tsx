@@ -541,7 +541,7 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
             <span>{baseName}:</span>
             <Input type="number" inputMode="numeric" value={getValue(monthsKey)} onChange={(e) => setValue(monthsKey, e.target.value)} disabled={disabled} placeholder="0" className="h-6 text-xs text-right w-12 inline-flex" />
             <span>months at $</span>
-            <Input inputMode="decimal" value={getValue(perMonthKey)} onChange={(e) => setValue(perMonthKey, e.target.value)} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(perMonthKey, val))} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-16 inline-flex" />
+            <Input inputMode="decimal" value={getValue(perMonthKey)} onChange={(e) => setValue(perMonthKey, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(perMonthKey, val))} onBlur={() => { const raw = getValue(perMonthKey); if (raw) setValue(perMonthKey, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = getValue(perMonthKey); if (raw) setValue(perMonthKey, unformatCurrencyDisplay(raw)); }} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-20 inline-flex" />
             <span>/mo</span>
             {totalVal && <span className="text-muted-foreground ml-1">= ${totalVal}</span>}
           </div>
