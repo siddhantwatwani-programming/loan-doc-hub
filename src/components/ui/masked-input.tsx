@@ -21,6 +21,7 @@ interface MaskedInputProps {
 export const MaskedInput: React.FC<MaskedInputProps> = ({
   value,
   onChange,
+  onBlur,
   disabled = false,
   className,
   placeholder,
