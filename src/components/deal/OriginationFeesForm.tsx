@@ -583,7 +583,7 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
       <span>Interest for</span>
       <Input type="number" inputMode="numeric" value={getValue(FIELD_KEYS.interestForDays_days)} onChange={(e) => setValue(FIELD_KEYS.interestForDays_days, e.target.value)} disabled={disabled} placeholder="0" className="h-6 text-xs text-right w-12 inline-flex" />
       <span>days at $</span>
-      <Input inputMode="decimal" value={getValue(FIELD_KEYS.interestForDays_perDay)} onChange={(e) => setValue(FIELD_KEYS.interestForDays_perDay, e.target.value)} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(FIELD_KEYS.interestForDays_perDay, val))} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-16 inline-flex" />
+      <Input inputMode="decimal" value={getValue(FIELD_KEYS.interestForDays_perDay)} onChange={(e) => setValue(FIELD_KEYS.interestForDays_perDay, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(FIELD_KEYS.interestForDays_perDay, val))} onBlur={() => { const raw = getValue(FIELD_KEYS.interestForDays_perDay); if (raw) setValue(FIELD_KEYS.interestForDays_perDay, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = getValue(FIELD_KEYS.interestForDays_perDay); if (raw) setValue(FIELD_KEYS.interestForDays_perDay, unformatCurrencyDisplay(raw)); }} disabled={disabled} placeholder="0.00" className="h-6 text-xs text-right w-20 inline-flex" />
       <span>per day</span>
     </div>
   );
