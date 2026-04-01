@@ -63,7 +63,7 @@ const renderCurrencyField = (key: string, label: string, values: Record<string, 
       <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
       <div className="relative flex-1">
         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-        <Input type="number" step="0.01" value={values[key] || ''} onChange={(e) => onValueChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" />
+        <Input type="text" inputMode="decimal" value={values[key] || ''} onChange={(e) => onValueChange(key, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => onValueChange(key, val))} onBlur={() => { const raw = values[key] || ''; if (raw) onValueChange(key, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = values[key] || ''; if (raw) onValueChange(key, unformatCurrencyDisplay(raw)); }} disabled={disabled} className="h-7 text-sm pl-6" placeholder="0.00" />
       </div>
     </div>
   </DirtyFieldWrapper>
