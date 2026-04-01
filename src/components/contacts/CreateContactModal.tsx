@@ -175,6 +175,41 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
       toast.error(phoneErrors[0]);
       return;
     }
+
+    // Lender-specific required field validation
+    if (contactType === 'lender') {
+      const errs: Record<string, string> = {};
+      if (!form['type']) errs['type'] = 'Please select a lender type';
+      if (!(form['full_name'] || '').trim()) errs['full_name'] = 'Full Name is required';
+      else if ((form['full_name'] || '').length > 100) errs['full_name'] = 'Max 100 characters';
+      if (!(form['first_name'] || '').trim()) errs['first_name'] = 'Enter valid first name';
+      if (!(form['last_name'] || '').trim()) errs['last_name'] = 'Enter valid last name';
+      if (!(form['email'] || '').trim()) errs['email'] = 'Enter a valid email address';
+      if (form['dob']) {
+        const dobParts = form['dob'].split('/');
+        if (dobParts.length === 3) {
+          const dobDate = new Date(parseInt(dobParts[2]), parseInt(dobParts[0]) - 1, parseInt(dobParts[1]));
+          if (dobDate >= new Date()) errs['dob'] = 'Enter valid date of birth';
+        }
+      }
+      if (!form['tax_id_type']) errs['tax_id_type'] = 'Please select Tax ID Type';
+      const tinDigits = (form['tax_id'] || '').replace(/\D/g, '');
+      if (tinDigits && tinDigits.length !== 9) errs['tax_id'] = 'Enter valid TIN (9 digits)';
+      if (!(form['primary_address.street'] || '').trim()) errs['primary_address.street'] = 'Street is required';
+      if (!(form['primary_address.city'] || '').trim()) errs['primary_address.city'] = 'City is required';
+      if (!form['primary_address.state']) errs['primary_address.state'] = 'State is required';
+      if (!(form['primary_address.zip'] || '').trim()) errs['primary_address.zip'] = 'ZIP is required';
+      if (form['delivery.print'] !== 'true' && form['delivery.email'] !== 'true' && form['delivery.sms'] !== 'true') {
+        errs['delivery'] = 'Select at least one delivery option';
+      }
+      if (Object.keys(errs).length > 0) {
+        setLenderErrors(errs);
+        toast.error(Object.values(errs)[0]);
+        return;
+      }
+      setLenderErrors({});
+    }
+
     setConfirmOpen(true);
   };
 
@@ -187,6 +222,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
     }
     onSubmit(data);
     setForm(getInitialForm(contactType));
+    setLenderErrors({});
   };
 
   const typeLabel = contactType.charAt(0).toUpperCase() + contactType.slice(1);
@@ -231,6 +267,48 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   const [dobOpen, setDobOpen] = useState(false);
   const [borrowerDobOpen, setBorrowerDobOpen] = useState(false);
 
+  // --- Lender validation helpers ---
+  const [lenderErrors, setLenderErrors] = useState<Record<string, string>>({});
+  const setLErr = (f: string, m: string) => setLenderErrors(p => ({ ...p, [f]: m }));
+  const clrLErr = (f: string) => setLenderErrors(p => { const n = { ...p }; delete n[f]; return n; });
+
+  const NAV_KEYS = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
+  const alphaSpaceKD = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (NAV_KEYS.includes(e.key) || e.ctrlKey || e.metaKey) return;
+    if (!/^[A-Za-z ]$/.test(e.key)) e.preventDefault();
+  };
+  const alphaOnlyKD = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (NAV_KEYS.includes(e.key) || e.ctrlKey || e.metaKey) return;
+    if (!/^[A-Za-z]$/.test(e.key)) e.preventDefault();
+  };
+  const digitOnlyKD = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (NAV_KEYS.includes(e.key) || e.ctrlKey || e.metaKey) return;
+    if (!/^\d$/.test(e.key)) e.preventDefault();
+  };
+
+  const fmtTIN = (raw: string, idType: string): string => {
+    const d = raw.replace(/\D/g, '').slice(0, 9);
+    if (idType === '2') { // SSN: XXX-XX-XXXX
+      if (d.length <= 3) return d;
+      if (d.length <= 5) return `${d.slice(0, 3)}-${d.slice(3)}`;
+      return `${d.slice(0, 3)}-${d.slice(3, 5)}-${d.slice(5)}`;
+    }
+    if (idType === '1') { // EIN: XX-XXXXXXX
+      if (d.length <= 2) return d;
+      return `${d.slice(0, 2)}-${d.slice(2)}`;
+    }
+    return d;
+  };
+
+  const handleLenderPref = (prefKey: string, checked: boolean) => {
+    const allPrefs = ['preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax'];
+    setForm(prev => {
+      const u = { ...prev };
+      allPrefs.forEach(k => { u[k] = (k === prefKey && checked) ? 'true' : 'false'; });
+      return u;
+    });
+  };
+
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -248,23 +326,58 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
             {/* Column 1: Name / Details */}
             <div className="space-y-1.5">
               <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Name</h3>
-              {renderSelect('Lender Type', 'type', LENDER_TYPE_OPTIONS)}
-              {renderInline('Full Name', 'full_name')}
-              {renderInline('First', 'first_name')}
-              {renderInline('Middle', 'middle_name')}
-              {renderInline('Last', 'last_name')}
-              
+              {/* Lender Type - required */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Lender Type</Label>
+                <Select value={form['type'] || ''} onValueChange={(v) => { set('type', v); clrLErr('type'); }}>
+                  <SelectTrigger className={cn("h-7 text-xs flex-1", lenderErrors['type'] && "border-destructive")}><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-[200]">
+                    {LENDER_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {lenderErrors['type'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['type']}</p>}
+
+              {/* Full Name - alpha+spaces, max 100, required */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Full Name</Label>
+                <Input value={form['full_name'] || ''} onChange={(e) => { set('full_name', e.target.value); clrLErr('full_name'); }} onKeyDown={alphaSpaceKD} onPaste={(e) => { e.preventDefault(); set('full_name', e.clipboardData.getData('text').replace(/[^A-Za-z ]/g, '')); }} onBlur={() => { const v = (form['full_name'] || '').trim(); set('full_name', v); if (!v) setLErr('full_name', 'Full Name is required'); else clrLErr('full_name'); }} maxLength={100} className={cn("h-7 text-xs flex-1", lenderErrors['full_name'] && "border-destructive")} />
+              </div>
+              {lenderErrors['full_name'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['full_name']}</p>}
+
+              {/* First Name - alpha only, required */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">First</Label>
+                <Input value={form['first_name'] || ''} onChange={(e) => { set('first_name', e.target.value); clrLErr('first_name'); }} onKeyDown={alphaOnlyKD} onPaste={(e) => { e.preventDefault(); set('first_name', e.clipboardData.getData('text').replace(/[^A-Za-z]/g, '')); }} onBlur={() => { const v = (form['first_name'] || '').trim(); set('first_name', v); if (!v) setLErr('first_name', 'Enter valid first name'); else clrLErr('first_name'); }} className={cn("h-7 text-xs flex-1", lenderErrors['first_name'] && "border-destructive")} />
+              </div>
+              {lenderErrors['first_name'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['first_name']}</p>}
+
+              {/* Middle Name - alpha only, optional */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Middle</Label>
+                <Input value={form['middle_name'] || ''} onChange={(e) => set('middle_name', e.target.value)} onKeyDown={alphaOnlyKD} onPaste={(e) => { e.preventDefault(); set('middle_name', e.clipboardData.getData('text').replace(/[^A-Za-z]/g, '')); }} onBlur={() => set('middle_name', (form['middle_name'] || '').trim())} className="h-7 text-xs flex-1" />
+              </div>
+
+              {/* Last Name - alpha only, required */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Last</Label>
+                <Input value={form['last_name'] || ''} onChange={(e) => { set('last_name', e.target.value); clrLErr('last_name'); }} onKeyDown={alphaOnlyKD} onPaste={(e) => { e.preventDefault(); set('last_name', e.clipboardData.getData('text').replace(/[^A-Za-z]/g, '')); }} onBlur={() => { const v = (form['last_name'] || '').trim(); set('last_name', v); if (!v) setLErr('last_name', 'Enter valid last name'); else clrLErr('last_name'); }} className={cn("h-7 text-xs flex-1", lenderErrors['last_name'] && "border-destructive")} />
+              </div>
+              {lenderErrors['last_name'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['last_name']}</p>}
+
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">Email</Label>
-                <EmailInput value={form['email'] || ''} onValueChange={(v) => set('email', v)} className="h-7 text-xs" />
+                <EmailInput value={form['email'] || ''} onValueChange={(v) => { set('email', v); clrLErr('email'); }} className="h-7 text-xs" />
               </div>
+              {lenderErrors['email'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['email']}</p>}
+
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">DOB</Label>
                 <Popover open={dobOpen} onOpenChange={setDobOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("h-7 text-xs flex-1 justify-start font-normal", !form['dob'] && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("h-7 text-xs flex-1 justify-start font-normal", !form['dob'] && "text-muted-foreground", lenderErrors['dob'] && "border-destructive")}>
                       <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                      {form['dob'] || 'dd-mm-yyyy'}
+                      {form['dob'] || 'mm/dd/yyyy'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 z-[200]" align="start">
@@ -272,22 +385,30 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                       mode="single"
                       selected={form['dob'] ? new Date(form['dob']) : undefined}
                       onSelect={(date) => {
-                        set('dob', date ? format(date, 'MM/dd/yyyy') : '');
+                        if (date && date >= new Date()) {
+                          setLErr('dob', 'Enter valid date of birth');
+                          set('dob', format(date, 'MM/dd/yyyy'));
+                        } else {
+                          set('dob', date ? format(date, 'MM/dd/yyyy') : '');
+                          clrLErr('dob');
+                        }
                         setDobOpen(false);
                       }}
-                      onClear={() => { set('dob', ''); setDobOpen(false); }}
-                      onToday={() => { set('dob', format(new Date(), 'MM/dd/yyyy')); setDobOpen(false); }}
+                      onClear={() => { set('dob', ''); clrLErr('dob'); setDobOpen(false); }}
+                      onToday={() => { set('dob', format(new Date(), 'MM/dd/yyyy')); setLErr('dob', 'Enter valid date of birth'); setDobOpen(false); }}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
               </div>
+              {lenderErrors['dob'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['dob']}</p>}
+
               <div className="pt-2 space-y-1">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Tax Info</h3>
                 <div className="flex items-center gap-2">
                   <Label className="w-[100px] shrink-0 text-xs">Tax ID Type</Label>
-                  <Select value={form['tax_id_type'] || ''} onValueChange={(v) => set('tax_id_type', v)}>
-                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <Select value={form['tax_id_type'] || ''} onValueChange={(v) => { set('tax_id_type', v); clrLErr('tax_id_type'); set('tax_id', ''); }}>
+                    <SelectTrigger className={cn("h-7 text-xs flex-1", lenderErrors['tax_id_type'] && "border-destructive")}><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent className="bg-background border border-border z-[200]">
                       {TAX_ID_TYPE_OPTIONS.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
@@ -295,7 +416,23 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                     </SelectContent>
                   </Select>
                 </div>
-                {renderInline('TIN', 'tax_id')}
+                {lenderErrors['tax_id_type'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['tax_id_type']}</p>}
+
+                {/* TIN with SSN/EIN formatting */}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs">TIN</Label>
+                  <Input
+                    value={fmtTIN(form['tax_id'] || '', form['tax_id_type'] || '')}
+                    onChange={(e) => { const digits = e.target.value.replace(/\D/g, '').slice(0, 9); set('tax_id', digits); clrLErr('tax_id'); }}
+                    onKeyDown={digitOnlyKD}
+                    onPaste={(e) => { e.preventDefault(); set('tax_id', e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 9)); }}
+                    onBlur={() => { const d = (form['tax_id'] || '').replace(/\D/g, ''); if (d && d.length !== 9) setLErr('tax_id', 'Enter valid TIN (9 digits)'); else clrLErr('tax_id'); }}
+                    maxLength={11}
+                    className={cn("h-7 text-xs flex-1", lenderErrors['tax_id'] && "border-destructive")}
+                  />
+                </div>
+                {lenderErrors['tax_id'] && <p className="text-[10px] text-destructive ml-[108px]">{lenderErrors['tax_id']}</p>}
+
                 {renderCheckbox('TIN Verified', 'tin_verified')}
               </div>
             </div>
@@ -303,8 +440,14 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
             {/* Column 2: Primary Address + Mailing + Options */}
             <div className="space-y-1.5">
               <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
-              {renderInline('Street', 'primary_address.street')}
-              {renderInline('City', 'primary_address.city')}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Street</Label>
+                <Input value={form['primary_address.street'] || ''} onChange={(e) => { set('primary_address.street', e.target.value); clrLErr('primary_address.street'); }} onBlur={() => set('primary_address.street', (form['primary_address.street'] || '').trim())} maxLength={150} className={cn("h-7 text-xs flex-1", lenderErrors['primary_address.street'] && "border-destructive")} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">City</Label>
+                <Input value={form['primary_address.city'] || ''} onChange={(e) => { set('primary_address.city', e.target.value); clrLErr('primary_address.city'); }} onKeyDown={alphaSpaceKD} onPaste={(e) => { e.preventDefault(); set('primary_address.city', e.clipboardData.getData('text').replace(/[^A-Za-z ]/g, '')); }} onBlur={() => set('primary_address.city', (form['primary_address.city'] || '').trim())} className={cn("h-7 text-xs flex-1", lenderErrors['primary_address.city'] && "border-destructive")} />
+              </div>
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">State</Label>
                 <Select value={form['primary_address.state'] || ''} onValueChange={(v) => set('primary_address.state', v)}>
@@ -321,8 +464,14 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               <div className="pt-2 space-y-1.5">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
                 {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
-                {renderInline('Street', 'mailing.street', 'text', isSameAsPrimary)}
-                {renderInline('City', 'mailing.city', 'text', isSameAsPrimary)}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs">Street</Label>
+                  <Input value={form['mailing.street'] || ''} onChange={(e) => set('mailing.street', e.target.value)} onBlur={() => set('mailing.street', (form['mailing.street'] || '').trim())} disabled={isSameAsPrimary} maxLength={150} className="h-7 text-xs flex-1" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs">City</Label>
+                  <Input value={form['mailing.city'] || ''} onChange={(e) => set('mailing.city', e.target.value)} onKeyDown={alphaSpaceKD} onPaste={(e) => { e.preventDefault(); set('mailing.city', e.clipboardData.getData('text').replace(/[^A-Za-z ]/g, '')); }} onBlur={() => set('mailing.city', (form['mailing.city'] || '').trim())} disabled={isSameAsPrimary} className="h-7 text-xs flex-1" />
+                </div>
                 <div className="flex items-center gap-2">
                   <Label className="w-[100px] shrink-0 text-xs">State</Label>
                   <Select value={form['mailing.state'] || ''} onValueChange={(v) => set('mailing.state', v)} disabled={isSameAsPrimary}>
@@ -367,17 +516,24 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                   />
                   <Checkbox
                     checked={form[p.prefKey] === 'true'}
-                    onCheckedChange={(checked) => set(p.prefKey, String(!!checked))}
+                    onCheckedChange={(checked) => handleLenderPref(p.prefKey, !!checked)}
                   />
                 </div>
               ))}
               <div className="pt-2 space-y-1">
-                <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Delivery Options</h3>
+                <h3 className={cn("font-semibold text-xs border-b pb-1 mb-1", lenderErrors['delivery'] ? "text-destructive border-destructive" : "text-foreground border-border")}>Delivery Options</h3>
                 <div className="flex items-center gap-3">
-                  {renderCheckbox('Print', 'delivery.print')}
-                  {renderCheckbox('Email', 'delivery.email')}
-                  {renderCheckbox('SMS', 'delivery.sms')}
+                  <div className="flex items-center gap-2" onClick={() => clrLErr('delivery')}>
+                    {renderCheckbox('Print', 'delivery.print')}
+                  </div>
+                  <div className="flex items-center gap-2" onClick={() => clrLErr('delivery')}>
+                    {renderCheckbox('Email', 'delivery.email')}
+                  </div>
+                  <div className="flex items-center gap-2" onClick={() => clrLErr('delivery')}>
+                    {renderCheckbox('SMS', 'delivery.sms')}
+                  </div>
                 </div>
+                {lenderErrors['delivery'] && <p className="text-[10px] text-destructive">{lenderErrors['delivery']}</p>}
               </div>
               <div className="pt-2 space-y-1">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Send</h3>
@@ -396,6 +552,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               value={form['vesting'] || ''}
               onChange={(e) => set('vesting', e.target.value)}
               rows={3}
+              maxLength={500}
               className="resize-none w-full text-xs"
             />
           </div>
