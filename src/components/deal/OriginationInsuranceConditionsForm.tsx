@@ -146,13 +146,12 @@ export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceCo
             {renderCheckbox('Umbrella / Excess Liability', FK.policy_umbrella)}
             {renderCheckbox('Loss of Rents / Business Income', FK.policy_loss_of_rents)}
             {renderCheckbox('Vacancy Endorsement', FK.policy_vacancy)}
-            <DirtyFieldWrapper fieldKey="origination_ins.coverage_construction_checkbox">
-              <div className="flex items-center gap-2 pt-1">
-                <Checkbox checked={bv('origination_ins.coverage_construction_checkbox')} onCheckedChange={(c) => sbv('origination_ins.coverage_construction_checkbox', !!c)} disabled={disabled} />
-                <Label className="text-sm shrink-0">Course-of-Construction Coverage Amount:</Label>
+            <div className="flex items-center gap-2 pt-1">
+              {renderCheckbox('Course-of-Construction Coverage Amount:', 'origination_ins.coverage_construction_checkbox')}
+              <DirtyFieldWrapper fieldKey={FK.policy_construction_amount}>
                 {renderCurrencyInline(FK.policy_construction_amount)}
-              </div>
-            </DirtyFieldWrapper>
+              </DirtyFieldWrapper>
+            </div>
           </div>
         </div>
 
