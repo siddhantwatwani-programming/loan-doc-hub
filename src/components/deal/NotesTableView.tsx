@@ -64,6 +64,10 @@ interface NotesTableViewProps {
   isLoading?: boolean;
   asOfFilter?: string;
   onAsOfFilterChange?: (value: string) => void;
+  currentPage?: number;
+  totalPages?: number;
+  totalCount?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
