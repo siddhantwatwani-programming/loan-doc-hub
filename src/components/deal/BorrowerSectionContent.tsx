@@ -823,16 +823,27 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
     setTrustLedgerModalOpen(false);
   }, [editingTrustLedgerEntry, getNextTrustLedgerPrefix, onValueChange]);
 
+  const trustLedgerTotalPages = Math.max(1, Math.ceil(extractTrustLedgerEntries.length / TRUST_LEDGER_PAGE_SIZE));
+  const trustLedgerSafePage = Math.min(trustLedgerCurrentPage, trustLedgerTotalPages);
+  const paginatedTrustLedgerEntries = extractTrustLedgerEntries.slice(
+    (trustLedgerSafePage - 1) * TRUST_LEDGER_PAGE_SIZE,
+    trustLedgerSafePage * TRUST_LEDGER_PAGE_SIZE
+  );
+
   const renderTrustLedger = () => (
     <>
       <TrustLedgerTableView
-        entries={extractTrustLedgerEntries}
+        entries={paginatedTrustLedgerEntries}
         onAddEntry={() => { setEditingTrustLedgerEntry(null); setTrustLedgerModalOpen(true); }}
         onEditEntry={(entry) => { setEditingTrustLedgerEntry(entry); setTrustLedgerModalOpen(true); }}
         onRowClick={(entry) => { setEditingTrustLedgerEntry(entry); setTrustLedgerModalOpen(true); }}
         onDeleteEntry={handleDeleteTrustLedgerEntry}
         disabled={disabled}
         onRefresh={onRefresh}
+        currentPage={trustLedgerSafePage}
+        totalPages={trustLedgerTotalPages}
+        totalCount={extractTrustLedgerEntries.length}
+        onPageChange={setTrustLedgerCurrentPage}
       />
       <TrustLedgerModal
         open={trustLedgerModalOpen}
