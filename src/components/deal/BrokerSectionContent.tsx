@@ -129,13 +129,13 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
 
   // Get the selected broker name for detail view header
   const selectedBrokerName = useMemo(() => {
-    const broker = brokers.find(b => b.id === selectedBrokerPrefix);
+    const broker = allBrokers.find(b => b.id === selectedBrokerPrefix);
     if (broker) {
       const fullName = [broker.firstName, broker.lastName].filter(Boolean).join(' ');
       return fullName || broker.company || `Broker ${selectedBrokerPrefix.replace('broker', '')}`;
     }
     return 'Broker';
-  }, [brokers, selectedBrokerPrefix]);
+  }, [allBrokers, selectedBrokerPrefix]);
 
   // Handle adding a new broker
   const handleAddBroker = useCallback(() => {
