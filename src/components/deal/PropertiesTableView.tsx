@@ -137,6 +137,10 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   onBulkDelete,
   onRefresh,
   disabled = false,
+  currentPage = 1,
+  totalPages = 1,
+  totalCount,
+  onPageChange,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig('properties', DEFAULT_COLUMNS);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
