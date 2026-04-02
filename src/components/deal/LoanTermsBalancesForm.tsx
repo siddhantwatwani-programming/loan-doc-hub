@@ -434,11 +434,23 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   <div className="relative flex-1">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">{isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent) ? '%' : '$'}</span>
                     <Input
-                      value={getValue(FIELD_KEYS.acceptShortPaymentsAmount)}
-                      onChange={(e) => setValue(FIELD_KEYS.acceptShortPaymentsAmount, e.target.value)}
+                      value={
+                        isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)
+                          ? getValue(FIELD_KEYS.acceptShortPaymentsAmount)
+                          : focusedCurrencyField === FIELD_KEYS.acceptShortPaymentsAmount
+                            ? getValue(FIELD_KEYS.acceptShortPaymentsAmount)
+                            : formatCurrencyDisplay(getValue(FIELD_KEYS.acceptShortPaymentsAmount))
+                      }
+                      onChange={(e) =>
+                        isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)
+                          ? setValue(FIELD_KEYS.acceptShortPaymentsAmount, e.target.value)
+                          : handleCurrencyChange(FIELD_KEYS.acceptShortPaymentsAmount, e.target.value)
+                      }
+                      onFocus={() => { if (!isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)) setFocusedCurrencyField(FIELD_KEYS.acceptShortPaymentsAmount); }}
+                      onBlur={() => { if (!isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)) handleCurrencyBlur(FIELD_KEYS.acceptShortPaymentsAmount); }}
                       disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
                       className="h-8 text-sm pl-7"
-                      placeholder="-"
+                      placeholder={isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent) ? '-' : '0.00'}
                     />
                   </div>
                 </div>
