@@ -70,7 +70,7 @@ const LenderDashboard: React.FC<Props> = ({ contact }) => {
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm">Financial / Compliance</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 gap-3">
-            <Field label="TIN" value={data.tin || ''} />
+            <Field label="TIN" value={data.tax_id || data.tin || ''} />
             <Field label="ACH" value={data.ach === 'true' ? 'Yes' : 'No'} />
             <Field label="Send 1099" value={data.send_1099 === 'true' ? 'Yes' : 'No'} />
             <Field label="Agreement" value={data.agreement_on_file === 'true' ? 'Yes' : 'No'} />
