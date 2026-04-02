@@ -13,6 +13,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { US_STATES } from '@/lib/usStates';
 import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -112,7 +113,21 @@ export const OriginationPropertyForm: React.FC<OriginationPropertyFormProps> = (
       <p className="text-sm italic text-foreground pt-3 pb-1">Appraiser Contact</p>
       {renderTextField('Street', FK.appraiser_street)}
       {renderTextField('City', FK.appraiser_city)}
-      {renderTextField('State', FK.appraiser_state)}
+      <DirtyFieldWrapper fieldKey={FK.appraiser_state}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[180px] text-sm shrink-0">State</Label>
+          <Select value={v(FK.appraiser_state)} onValueChange={(val) => sv(FK.appraiser_state, val)} disabled={disabled}>
+            <SelectTrigger className="h-7 text-sm flex-1">
+              <SelectValue placeholder="Select state" />
+            </SelectTrigger>
+            <SelectContent>
+              {US_STATES.map(s => (
+                <SelectItem key={s} value={s} className="text-sm">{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </DirtyFieldWrapper>
       <DirtyFieldWrapper fieldKey={FK.appraiser_zip}>
         <div className="flex items-center gap-2">
           <Label className="w-[180px] text-sm shrink-0">ZIP</Label>

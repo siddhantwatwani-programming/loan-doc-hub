@@ -275,7 +275,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                   <p className="text-xs italic text-foreground pt-3 pb-1">Appraiser Contact</p>
                   {renderInlineField('appraiserStreet', 'Street')}
                   {renderInlineField('appraiserCity', 'City')}
-                  {renderInlineField('appraiserState', 'State')}
+                  {renderInlineSelect('appraiserState', 'State', US_STATES, 'Select state')}
                   <div className="flex items-center gap-2">
                     <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP</Label>
                     <ZipInput value={String(formData.appraiserZip || '')} onValueChange={(v) => handleFieldChange('appraiserZip', v)} className="h-7 text-xs" />
