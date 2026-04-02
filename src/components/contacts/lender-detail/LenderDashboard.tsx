@@ -47,7 +47,13 @@ const LenderDashboard: React.FC<Props> = ({ contact }) => {
             <Field label="Home Phone" value={data['phone.home'] || ''} />
             <Field label="Work Phone" value={data['phone.work'] || ''} />
             <Field label="Fax" value={data['phone.fax'] || ''} />
-            <Field label="Preferred" value={data.preferred_phone || ''} />
+            <Field label="Preferred" value={
+              data['preferred.home'] === 'true' ? 'Home' :
+              data['preferred.work'] === 'true' ? 'Work' :
+              data['preferred.cell'] === 'true' ? 'Cell' :
+              data['preferred.fax'] === 'true' ? 'Fax' :
+              data.preferred_phone || ''
+            } />
           </CardContent>
         </Card>
 
