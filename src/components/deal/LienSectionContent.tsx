@@ -250,7 +250,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
           <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
             {currentView === 'table' ? (
               <LiensTableView
-                liens={liens}
+                liens={paginatedLiens}
                 onAddLien={handleAddLien}
                 onEditLien={handleEditLien}
                 onRowClick={handleRowClick}
@@ -258,6 +258,10 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
                 onBack={onBack}
                 disabled={disabled}
                 onRefresh={onRefresh}
+                currentPage={safePage}
+                totalPages={totalPages}
+                totalCount={totalLiens}
+                onPageChange={setCurrentPage}
               />
             ) : (
               <LienDetailForm
