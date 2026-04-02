@@ -632,7 +632,7 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'property1.tax.type': 'pr_p_taxType',
   'property1.tax.authority': 'pr_p_authorit',
   'property1.tax.tax_tracking': 'pr_p_taxTracki',
-  'property1.tax.last_verified': 'pr_p_taxLastVerifi',
+  'property1.tax.last_verified': 'pr_p_lastVerifi',
   'property1.tax.tracking_status': 'pr_p_taxTrackiStatus',
 
   // ──────────────────────────────────────────────────
