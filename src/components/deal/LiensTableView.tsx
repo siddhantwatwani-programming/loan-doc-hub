@@ -61,6 +61,10 @@ interface LiensTableViewProps {
   onRefresh?: () => void;
   onBack?: () => void;
   disabled?: boolean;
+  currentPage?: number;
+  totalPages?: number;
+  totalCount?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const SEARCHABLE_FIELDS = ['property', 'holder', 'loanType', 'lienPriorityNow', 'lienPriorityAfter', 'recordingNumber', 'lastVerified'];
@@ -109,6 +113,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
 
 export const LiensTableView: React.FC<LiensTableViewProps> = ({
   liens, onAddLien, onEditLien, onRowClick, onDeleteLien, onBulkDelete, onRefresh, onBack, disabled = false,
+  currentPage = 1, totalPages = 1, totalCount, onPageChange,
 }) => {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -255,6 +260,31 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
           </Table>
         </div>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-6 pb-2">
+          <div className="text-sm text-muted-foreground">
+            Showing {(currentPage - 1) * 10 + 1}–{Math.min(currentPage * 10, totalCount ?? liens.length)} of {totalCount ?? liens.length} liens
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(1)} disabled={currentPage <= 1 || disabled}>First</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage - 1)} disabled={currentPage <= 1 || disabled}>Previous</Button>
+            <span className="text-sm text-muted-foreground px-2">Page {currentPage} of {totalPages}</span>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage + 1)} disabled={currentPage >= totalPages || disabled}>Next</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(totalPages)} disabled={currentPage >= totalPages || disabled}>Last</Button>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      {liens.length > 0 && (
+        <div className="flex justify-end px-6 pb-4">
+          <div className="text-sm text-muted-foreground">
+            Total Liens: {totalCount ?? liens.length}
+          </div>
+        </div>
+      )}
 
       <DeleteConfirmationDialog
         open={bulkDeleteOpen}
