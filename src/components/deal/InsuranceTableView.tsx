@@ -90,6 +90,10 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
   onBack,
   onRefresh,
   disabled = false,
+  currentPage = 1,
+  totalPages = 1,
+  totalCount,
+  onPageChange,
 }) => {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
