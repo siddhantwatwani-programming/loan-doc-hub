@@ -899,6 +899,10 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'origination_fees.901_interest_for_days_paid_to_company': 'of_fe_901IntereForDays4',
   'origination_fees.901_interest_for_days_oral_disclosure': 'of_fe_901IntereForDays3',
 
+  // 901 dynamic description fields (days count + per day amount)
+  'origination_fees.901_interest_for_days_days': 'of_int_days',
+  'origination_fees.901_interest_for_days_per_day': 'of_int_pd',
+
   // 902 Mortgage Insurance Premiums (8 fields)
   'origination_fees.902_mortgage_insurance_premiums_payable_to': 'of_fe_902MortgaInsuraPremiu5',
   'origination_fees.902_mortgage_insurance_premiums_d': 'of_fe_mortgageInsuraPremiuD',
