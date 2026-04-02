@@ -701,7 +701,7 @@ async function generateSingleDocument(
           const addrStr = String(addr);
           if (!seenAddresses.has(addrStr)) {
             seenAddresses.add(addrStr);
-            propertyLines.push(addrStr);
+            propertyLines.push(addrStr.trim());
           }
         }
       }
