@@ -644,6 +644,13 @@ export const AppSidebar: React.FC = () => {
                 </CollapsibleContent>
               </Collapsible>
             ))}
+
+            {/* No results message */}
+            {searchQuery && !hasSearchResults && !isCollapsed && (
+              <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+                No results found
+              </div>
+            )}
           </TooltipProvider>
         </nav>
       </aside>
