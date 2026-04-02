@@ -79,6 +79,8 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<NoteData | null>(null);
   const [asOfFilter, setAsOfFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const notes = useMemo(() => extractNotesFromValues(values), [values]);
 
@@ -86,6 +88,11 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
     if (!asOfFilter) return notes;
     return notes.filter(n => n.asOfDate === asOfFilter);
   }, [notes, asOfFilter]);
+
+  const totalFiltered = filteredNotes.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedNotes = filteredNotes.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const handleAddNote = useCallback(() => { setEditingNote(null); setModalOpen(true); }, []);
   const handleEditNote = useCallback((note: NoteData) => { setEditingNote(note); setModalOpen(true); }, []);
@@ -131,7 +138,7 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
   return (
     <>
       <NotesTableView
-        notes={filteredNotes}
+        notes={paginatedNotes}
         onAddNote={handleAddNote}
         onEditNote={handleEditNote}
         onRowClick={handleRowClick}
@@ -140,7 +147,11 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
         onRefresh={onRefresh}
         disabled={disabled}
         asOfFilter={asOfFilter}
-        onAsOfFilterChange={setAsOfFilter}
+        onAsOfFilterChange={(v) => { setAsOfFilter(v); setCurrentPage(1); }}
+        currentPage={safePage}
+        totalPages={totalPages}
+        totalCount={totalFiltered}
+        onPageChange={setCurrentPage}
       />
 
       <NotesModal
