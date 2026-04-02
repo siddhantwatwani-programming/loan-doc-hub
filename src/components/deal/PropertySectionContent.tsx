@@ -133,6 +133,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const setSelectedPropertyPrefix = (prefix: string) => nav?.setSelectedPrefix('property', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<PropertyData | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
   
   // Check if we're in detail view
@@ -157,25 +159,28 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     return remapped;
   }, [dirtyFieldKeys, selectedPropertyPrefix]);
   
-  // Extract properties from values
-  const properties = extractPropertiesFromValues(values);
+  const allProperties = extractPropertiesFromValues(values);
+  const totalProperties = allProperties.length;
+  const totalPages = Math.max(1, Math.ceil(totalProperties / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedProperties = allProperties.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   
   // Build property options for liens dropdown
   const propertyOptions = useMemo(() => {
-    return properties.map(p => ({
+    return allProperties.map(p => ({
       id: p.id,
       label: p.description || p.street || `Property ${p.id.replace('property', '')}`,
     }));
-  }, [properties]);
+  }, [allProperties]);
 
   // Get the selected property name for detail view header
   const selectedPropertyName = useMemo(() => {
-    const property = properties.find(p => p.id === selectedPropertyPrefix);
+    const property = allProperties.find(p => p.id === selectedPropertyPrefix);
     if (property) {
       return property.description || property.street || `Property ${selectedPropertyPrefix.replace('property', '')}`;
     }
     return 'Property';
-  }, [properties, selectedPropertyPrefix]);
+  }, [allProperties, selectedPropertyPrefix]);
 
   // Handle adding a new property
   const handleAddProperty = useCallback(() => {
@@ -204,14 +209,14 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const handlePrimaryChange = useCallback((propertyId: string, isPrimary: boolean) => {
     if (isPrimary) {
       // Unset all other properties as non-primary
-      properties.forEach(p => {
+      allProperties.forEach(p => {
         if (p.id !== propertyId) {
           onValueChange(`${p.id}.primary_property`, 'false');
         }
       });
     }
     onValueChange(`${propertyId}.primary_property`, String(isPrimary));
-  }, [properties, onValueChange]);
+  }, [allProperties, onValueChange]);
 
   // Handle saving property from modal
   const handleSaveProperty = useCallback(async (propertyData: PropertyData) => {
@@ -261,7 +266,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     
     // If this is marked as primary, unset others
     if (propertyData.isPrimary) {
-      properties.forEach(p => {
+      allProperties.forEach(p => {
         if (p.id !== prefix) {
           onValueChange(`${p.id}.primary_property`, 'false');
         }
@@ -274,7 +279,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     if (onPersist) {
       setTimeout(() => { onPersist(); }, 50);
     }
-  }, [editingProperty, values, onValueChange, properties, onPersist]);
+  }, [editingProperty, values, onValueChange, allProperties, onPersist]);
 
   // Handle deleting a property
   const handleDeleteProperty = useCallback((property: PropertyData) => {
@@ -322,7 +327,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
       case 'properties':
         return (
           <PropertiesTableView
-            properties={properties}
+            properties={paginatedProperties}
             onAddProperty={handleAddProperty}
             onEditProperty={handleEditProperty}
             onRowClick={handleRowClick}
@@ -330,6 +335,10 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             onDeleteProperty={handleDeleteProperty}
             onRefresh={onRefresh}
             disabled={disabled}
+            currentPage={safePage}
+            totalPages={totalPages}
+            totalCount={totalProperties}
+            onPageChange={setCurrentPage}
           />
         );
       case 'property_details':
