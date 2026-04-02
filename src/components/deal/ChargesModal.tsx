@@ -90,7 +90,17 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
       <Label className="w-[110px] shrink-0 text-xs font-semibold text-foreground">{label}</Label>
       <div className="relative flex-1">
         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
-        <Input type="number" step="0.01" value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value)} className="h-7 text-xs pl-5" placeholder="0.00" />
+        <Input
+          inputMode="decimal"
+          value={focusedCurrencyField === field ? formData[field] : formatCurrencyDisplay(formData[field])}
+          onFocus={() => { setFocusedCurrencyField(field); handleFieldChange(field, unformatCurrencyDisplay(formData[field])); }}
+          onBlur={() => { setFocusedCurrencyField(null); const v = formatCurrencyDisplay(formData[field]); if (v) handleFieldChange(field, unformatCurrencyDisplay(v)); }}
+          onChange={(e) => handleFieldChange(field, e.target.value)}
+          onKeyDown={numericKeyDown}
+          onPaste={(e) => numericPaste(e, (v) => handleFieldChange(field, v))}
+          className="h-7 text-xs pl-5"
+          placeholder="0.00"
+        />
       </div>
     </div>
   );
