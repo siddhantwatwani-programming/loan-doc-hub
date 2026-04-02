@@ -204,7 +204,11 @@ function extractTypedValueFromJsonb(fieldData: JsonbFieldValue, dataType: FieldD
   switch (dataType) {
     case 'currency': {
       const raw = fieldData.value_number?.toString() || fieldData.value_text || '';
-      return formatCurrencyForDisplay(raw);
+      // Return raw numeric value (e.g. "1234.00") — UI components handle display formatting
+      if (!raw) return '';
+      const num = parseFloat(raw.replace(/,/g, ''));
+      if (isNaN(num)) return raw;
+      return num.toFixed(2);
     }
     case 'number':
     case 'percentage':
