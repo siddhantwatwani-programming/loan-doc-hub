@@ -117,6 +117,7 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string; d
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [viewingRow, setViewingRow] = useState<LogRow | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     (supabase as any).from('conversation_log_types').select('label').eq('is_active', true).order('display_order').then(({ data, error }: any) => {
@@ -199,7 +200,18 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string; d
     return results;
   };
 
+  const validateLog = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!newLog.type || newLog.type.trim() === '') errors.type = 'Type is required';
+    if (newLog.name && newLog.name.length > 100) errors.name = 'Name must be 100 characters or less';
+    if (newLog.account && newLog.account.length > 100) errors.account = 'Account must be 100 characters or less';
+    if (newLog.reference && newLog.reference.length > 100) errors.reference = 'Reference must be 100 characters or less';
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleAddLog = async () => {
+    if (!validateLog()) return;
     setUploading(true);
     const logId = `conv_${Date.now()}`;
     let attachmentsMeta: (string | AttachmentMeta)[] = [...newLog.attachments];
@@ -321,7 +333,7 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string; d
             </PopoverContent>
           </Popover>
           {!disabled && (
-            <Button size="sm" className="h-8 text-xs gap-1" onClick={() => { setNewLog(getEmptyLog()); setPendingFiles([]); setAddOpen(true); }}>
+            <Button size="sm" className="h-8 text-xs gap-1" onClick={() => { setNewLog(getEmptyLog()); setPendingFiles([]); setValidationErrors({}); setAddOpen(true); }}>
               <Plus className="h-3.5 w-3.5" /> Add Conversation Logs
             </Button>
           )}
@@ -528,28 +540,40 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string; d
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Label className="w-[80px] shrink-0 text-xs">Type</Label>
-                <Select value={newLog.type || undefined} onValueChange={(v) => setNewLog(p => ({ ...p, type: v }))}>
-                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select type..." /></SelectTrigger>
-                  <SelectContent className="z-[9999]">
-                    {logTypes.length > 0 ? logTypes.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>) : <SelectItem value="__none__" disabled className="text-xs">No options available</SelectItem>}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs">Type <span className="text-destructive">*</span></Label>
+                  <Select value={newLog.type || undefined} onValueChange={(v) => { setNewLog(p => ({ ...p, type: v })); setValidationErrors(prev => { const n = { ...prev }; delete n.type; return n; }); }}>
+                    <SelectTrigger className={cn("h-7 text-xs flex-1", validationErrors.type && "border-destructive")}><SelectValue placeholder="Select type..." /></SelectTrigger>
+                    <SelectContent className="z-[9999]">
+                      {logTypes.length > 0 ? logTypes.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>) : <SelectItem value="__none__" disabled className="text-xs">No options available</SelectItem>}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {validationErrors.type && <p className="text-xs text-destructive ml-[88px]">{validationErrors.type}</p>}
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-[80px] shrink-0 text-xs">Reference</Label>
-                <Input value={newLog.reference} onChange={e => setNewLog(p => ({ ...p, reference: e.target.value }))} className="h-7 text-xs flex-1" />
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs">Reference</Label>
+                  <Input value={newLog.reference} onChange={e => setNewLog(p => ({ ...p, reference: e.target.value }))} maxLength={100} className={cn("h-7 text-xs flex-1", validationErrors.reference && "border-destructive")} />
+                </div>
+                {validationErrors.reference && <p className="text-xs text-destructive ml-[88px]">{validationErrors.reference}</p>}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Label className="w-[80px] shrink-0 text-xs">Account</Label>
-                <Input value={newLog.account} onChange={e => setNewLog(p => ({ ...p, account: e.target.value }))} className="h-7 text-xs flex-1" />
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs">Account</Label>
+                  <Input value={newLog.account} onChange={e => setNewLog(p => ({ ...p, account: e.target.value }))} maxLength={100} className={cn("h-7 text-xs flex-1", validationErrors.account && "border-destructive")} />
+                </div>
+                {validationErrors.account && <p className="text-xs text-destructive ml-[88px]">{validationErrors.account}</p>}
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-[80px] shrink-0 text-xs">Name</Label>
-                <Input value={newLog.name} onChange={e => setNewLog(p => ({ ...p, name: e.target.value }))} className="h-7 text-xs flex-1" />
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs">Name</Label>
+                  <Input value={newLog.name} onChange={e => setNewLog(p => ({ ...p, name: e.target.value }))} maxLength={100} className={cn("h-7 text-xs flex-1", validationErrors.name && "border-destructive")} />
+                </div>
+                {validationErrors.name && <p className="text-xs text-destructive ml-[88px]">{validationErrors.name}</p>}
               </div>
             </div>
             <div className="space-y-1">
