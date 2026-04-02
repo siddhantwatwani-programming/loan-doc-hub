@@ -144,12 +144,13 @@ const DistributionFields: React.FC<{
         <DirtyFieldWrapper fieldKey={`${prefix}.distribution.lenders`}>
           <div className="flex items-center gap-3">
             <Label className="text-sm min-w-[160px] max-w-[160px]">Lenders</Label>
-            <Input
-              value={values[`${prefix}.distribution.lenders`] || ''}
-              onChange={(e) => onValueChange(`${prefix}.distribution.lenders`, e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
+            <div className="flex-1 min-w-0">
+              <PenaltyCurrencyInput
+                value={values[`${prefix}.distribution.lenders`] || ''}
+                onChange={(val) => onValueChange(`${prefix}.distribution.lenders`, val)}
+                disabled={disabled}
+              />
+            </div>
           </div>
         </DirtyFieldWrapper>
         <DirtyFieldWrapper fieldKey={`${prefix}.distribution.origination_vendors`}>
