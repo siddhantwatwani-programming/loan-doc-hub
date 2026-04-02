@@ -315,10 +315,10 @@ const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string; disab
               { key: 'reference', label: 'Reference' },
               { key: 'fromWhomReceivedPaid', label: 'From Whom' },
               { key: 'memo', label: 'Memo' },
-              { key: 'payment', label: 'Payment' },
-              { key: 'deposit', label: 'Deposit' },
+              { key: 'payment', label: 'Payment', type: 'currency' },
+              { key: 'deposit', label: 'Deposit', type: 'currency' },
               { key: 'clr', label: 'CLR' },
-              { key: 'balance', label: 'Balance' },
+              { key: 'balance', label: 'Balance', type: 'currency' },
             ].map(f => (
               <div key={f.key} className="space-y-1">
                 <Label className="text-xs">{f.label}</Label>
@@ -334,6 +334,28 @@ const BrokerTrustLedger: React.FC<{ brokerId: string; contactDbId: string; disab
                       <EnhancedCalendar mode="single" selected={(newEntry as any)[f.key] ? new Date((newEntry as any)[f.key]) : undefined} onSelect={(date) => setNewEntry(prev => ({ ...prev, [f.key]: date ? date.toISOString().split('T')[0] : '' }))} onClear={() => setNewEntry(prev => ({ ...prev, [f.key]: '' }))} onToday={() => setNewEntry(prev => ({ ...prev, [f.key]: new Date().toISOString().split('T')[0] }))} initialFocus />
                     </PopoverContent>
                   </Popover>
+                ) : f.type === 'currency' ? (
+                  <div className="relative">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      value={(newEntry as any)[f.key]}
+                      onChange={e => setNewEntry(prev => ({ ...prev, [f.key]: e.target.value }))}
+                      onKeyDown={numericKeyDown}
+                      onPaste={e => numericPaste(e, val => setNewEntry(prev => ({ ...prev, [f.key]: val })))}
+                      onFocus={() => {
+                        const raw = unformatCurrencyDisplay((newEntry as any)[f.key] || '');
+                        setNewEntry(prev => ({ ...prev, [f.key]: raw }));
+                      }}
+                      onBlur={() => {
+                        const raw = unformatCurrencyDisplay((newEntry as any)[f.key] || '');
+                        if (raw) setNewEntry(prev => ({ ...prev, [f.key]: formatCurrencyDisplay(raw) }));
+                      }}
+                      className="h-8 text-xs pl-5 text-right"
+                      placeholder="0.00"
+                    />
+                  </div>
                 ) : (
                   <Input type="text" value={(newEntry as any)[f.key]}
                     onChange={e => setNewEntry(prev => ({ ...prev, [f.key]: e.target.value }))} className="h-8 text-xs" />
