@@ -518,10 +518,11 @@ async function generateSingleDocument(
 
           // Force-set short prefix keys (bk_p_*)
           forceSet("bk_p_fullName", fullName);
-          // Add trailing space to firstName so adjacent tags like
-          // {{bk_p_firstName}}{{bk_p_lastName}} render with proper spacing
-          forceSet("bk_p_firstName", firstName ? firstName + " " : "");
-          forceSet("bk_p_lastName", lastName ? lastName + " " : "");
+          // Add trailing non-breaking space (\u00A0) to firstName and lastName so adjacent tags like
+          // {{bk_p_firstName}}{{bk_p_lastName}}{{bk_p_license}} render with proper spacing.
+          // Regular spaces get stripped by Word XML; \u00A0 is preserved.
+          forceSet("bk_p_firstName", firstName ? firstName + "\u00A0" : "");
+          forceSet("bk_p_lastName", lastName ? lastName + "\u00A0" : "");
           forceSet("bk_p_middleInitia", middleName);
           forceSet("bk_p_email", email);
           forceSet("bk_p_company", company);
