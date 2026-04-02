@@ -179,6 +179,15 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
     accruedInterest: charges.reduce((sum, c) => sum + parseCurrency(c.accruedInterest), 0),
   };
 
+  const formatDateUS = (value: string) => {
+    if (!value) return '-';
+    try {
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return value;
+      return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+    } catch { return value; }
+  };
+
   const renderCellValue = (charge: ChargeData, columnId: string) => {
     switch (columnId) {
       case 'description':
@@ -191,6 +200,9 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
         return formatCurrency(charge[columnId as keyof ChargeData] as string);
       case 'interestRate':
         return charge.interestRate ? `${charge.interestRate}%` : '-';
+      case 'date':
+      case 'interestFrom':
+        return formatDateUS(charge[columnId as keyof ChargeData] as string);
       default:
         return charge[columnId as keyof ChargeData] || '-';
     }
