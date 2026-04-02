@@ -145,6 +145,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   isLoading = false,
   currentPage = 1,
   totalPages = 1,
+  totalCount,
   onPageChange,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig('charges_v6', DEFAULT_COLUMNS);
