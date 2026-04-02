@@ -105,6 +105,8 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLender, setEditingLender] = useState<LenderData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
   
   // Check if we're in detail view
@@ -145,7 +147,11 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
   }, [dirtyFieldKeys, selectedLenderPrefix]);
   
   // Extract lenders from values
-  const lenders = useMemo(() => extractLendersFromValues(values), [values]);
+  const allLenders = useMemo(() => extractLendersFromValues(values), [values]);
+  const totalLenders = allLenders.length;
+  const totalPages = Math.max(1, Math.ceil(totalLenders / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedLenders = allLenders.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // Get the selected lender name for detail view header
   const selectedLenderName = useMemo(() => {
