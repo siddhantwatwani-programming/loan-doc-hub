@@ -87,7 +87,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
     id: contact.id,
     brokerId: contact.contact_id || '',
     hold: (contact.contact_data as any)?.hold === 'true',
-    type: (contact.contact_data as any)?.type || '',
+    type: (contact.contact_data as any)?.company || (contact.contact_data as any)?.type || '',
     ach: (contact.contact_data as any)?.ach === 'true',
     email: contact.email || '',
     agreement: (contact.contact_data as any)?.agreement_on_file === 'true',
