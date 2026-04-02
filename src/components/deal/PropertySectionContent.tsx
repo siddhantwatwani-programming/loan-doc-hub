@@ -327,7 +327,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
       case 'properties':
         return (
           <PropertiesTableView
-            properties={properties}
+            properties={paginatedProperties}
             onAddProperty={handleAddProperty}
             onEditProperty={handleEditProperty}
             onRowClick={handleRowClick}
@@ -335,6 +335,10 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             onDeleteProperty={handleDeleteProperty}
             onRefresh={onRefresh}
             disabled={disabled}
+            currentPage={safePage}
+            totalPages={totalPages}
+            totalCount={totalProperties}
+            onPageChange={setCurrentPage}
           />
         );
       case 'property_details':
