@@ -112,7 +112,7 @@ export const AppHeader: React.FC = () => {
       />
 
       <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[9999]">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
             <AlertDialogDescription>
