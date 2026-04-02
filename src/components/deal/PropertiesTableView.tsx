@@ -173,6 +173,15 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         return formatCurrency(property.appraisedValue);
       case 'ltv':
         return formatPercentage(property.ltv);
+      case 'appraisalDate': {
+        const val = property.appraisalDate;
+        if (!val) return '-';
+        try {
+          const d = new Date(val);
+          if (isNaN(d.getTime())) return val;
+          return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+        } catch { return val; }
+      }
       default:
         return property[columnId as keyof PropertyData] || '-';
     }

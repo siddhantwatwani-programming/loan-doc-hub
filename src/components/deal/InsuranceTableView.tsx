@@ -198,7 +198,14 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
                     <TableCell className="font-medium">{insurance.description || '-'}</TableCell>
                     <TableCell>{insurance.companyName || '-'}</TableCell>
                     <TableCell>{insurance.policyNumber || '-'}</TableCell>
-                    <TableCell>{insurance.expiration || '-'}</TableCell>
+                    <TableCell>{(() => {
+                      if (!insurance.expiration) return '-';
+                      try {
+                        const d = new Date(insurance.expiration);
+                        if (isNaN(d.getTime())) return insurance.expiration;
+                        return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+                      } catch { return insurance.expiration; }
+                    })()}</TableCell>
                     <TableCell className="text-right">{formatCurrency(insurance.coverage) || '-'}</TableCell>
                     <TableCell>
                       <Badge variant={insurance.active ? 'default' : 'secondary'}>

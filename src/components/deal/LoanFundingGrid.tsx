@@ -255,8 +255,14 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
 
   const renderCellValue = (record: FundingRecord, columnId: string) => {
     switch (columnId) {
-      case 'fundingDate':
-        return record.fundingDate || '-';
+      case 'fundingDate': {
+        if (!record.fundingDate) return '-';
+        try {
+          const d = new Date(record.fundingDate);
+          if (isNaN(d.getTime())) return record.fundingDate;
+          return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+        } catch { return record.fundingDate; }
+      }
       case 'lenderAccount':
         return <span className="font-medium">{record.lenderAccount || '-'}</span>;
       case 'lenderName':

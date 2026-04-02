@@ -154,7 +154,14 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
       case 'balanceAfter': return formatCurrency(lien.balanceAfter) || '-';
       case 'regularPayment': return formatCurrency(lien.regularPayment) || '-';
       case 'recordingNumber': return lien.recordingNumber || '-';
-      case 'lastVerified': return lien.lastVerified || '-';
+      case 'lastVerified': {
+        if (!lien.lastVerified) return '-';
+        try {
+          const d = new Date(lien.lastVerified);
+          if (isNaN(d.getTime())) return lien.lastVerified;
+          return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+        } catch { return lien.lastVerified; }
+      }
       default: return '-';
     }
   };
