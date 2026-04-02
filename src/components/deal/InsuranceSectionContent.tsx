@@ -111,7 +111,7 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
   onRefresh,
 }) => {
   const nav = useDealNavigationOptional();
-  const activeSubSection = (nav?.getSubSection('insurance') ?? 'allInsurances') as InsuranceSubSection;
+  const activeSubSection = (nav?.getSubSection('insurance') ?? 'insurances') as InsuranceSubSection;
   const setActiveSubSection = (sub: InsuranceSubSection) => nav?.setSubSection('insurance', sub);
   const selectedInsurancePrefix = nav?.getSelectedPrefix('insurance') ?? 'insurance1';
   const setSelectedInsurancePrefix = (prefix: string) => nav?.setSelectedPrefix('insurance', prefix);
