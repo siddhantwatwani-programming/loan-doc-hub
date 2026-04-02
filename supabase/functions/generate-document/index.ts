@@ -504,6 +504,18 @@ async function generateSingleDocument(
           const fax = cd["phone.fax"] || "";
           const license = cd.license_number || cd.License || cd.license || cr.license_number || "";
 
+          // Build full broker address from components
+          const addrStreet = cd["address.street"] || "";
+          const addrCity = cd["address.city"] || cr.city || "";
+          const addrState = cd["address.state"] || cr.state || "";
+          const addrZip = cd["address.zip"] || "";
+          const fullAddress = [addrStreet, [addrCity, addrState, addrZip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+
+          // Representative name: use explicit broker_representative if set, else assemble from first/last
+          const representativeName = cd.broker_representative || cd.representative || fullName;
+          // Representative license: use rep_license if available, else fall back to broker license
+          const repLicense = cd.rep_license || cd.representative_license || license;
+
           // Force-set short prefix keys (bk_p_*)
           forceSet("bk_p_fullName", fullName);
           forceSet("bk_p_firstName", firstName);
@@ -513,6 +525,11 @@ async function generateSingleDocument(
           forceSet("bk_p_company", company);
           forceSet("bk_p_phone", phone);
           forceSet("bk_p_fax", fax);
+          forceSet("bk_p_brokerName", company);
+          forceSet("bk_p_brokerRepres", representativeName);
+          forceSet("bk_p_brokerSignat", fullName);
+          forceSet("bk_p_repSignature", representativeName);
+          if (fullAddress) forceSet("bk_p_brokerAddres", fullAddress);
           if (license) {
             forceSet("bk_p_brokerLicens", String(license));
             forceSet("bk_p_license", String(license));
@@ -520,8 +537,9 @@ async function generateSingleDocument(
             forceSet("broker.license_number", String(license));
             forceSet("broker1.license_number", String(license));
           }
-          if (cd["address.street"]) forceSet("bk_p_brokerAddres", cd["address.street"]);
-          if (cd.broker_representative || cd.representative) forceSet("bk_p_brokerRepres", cd.broker_representative || cd.representative);
+          if (repLicense) {
+            forceSet("bk_p_repLicense", String(repLicense));
+          }
 
           // Force-set dot-notation keys
           for (const prefix of ["broker1", "broker"]) {
@@ -533,15 +551,15 @@ async function generateSingleDocument(
             forceSet(`${prefix}.company`, company);
             forceSet(`${prefix}.phone`, phone);
             forceSet(`${prefix}.fax`, fax);
-            if (cd["address.street"]) forceSet(`${prefix}.address.street`, cd["address.street"]);
-            if (cd["address.city"] || cr.city) forceSet(`${prefix}.address.city`, cd["address.city"] || cr.city);
-            if (cd["address.state"] || cr.state) forceSet(`${prefix}.state`, cd["address.state"] || cr.state);
-            if (cd["address.zip"]) forceSet(`${prefix}.address.zip`, cd["address.zip"]);
+            if (addrStreet) forceSet(`${prefix}.address.street`, addrStreet);
+            if (addrCity) forceSet(`${prefix}.address.city`, addrCity);
+            if (addrState) forceSet(`${prefix}.state`, addrState);
+            if (addrZip) forceSet(`${prefix}.address.zip`, addrZip);
             if (cd.tax_id) forceSet(`${prefix}.tax_id`, cd.tax_id);
             if (license) forceSet(`${prefix}.License`, String(license));
           }
 
-          debugLog(`[generate-document] Force-injected broker contact fields from participant (contact ${cr.contact_id}, license: ${license || 'n/a'})`);
+          debugLog(`[generate-document] Force-injected broker contact fields from participant (contact ${cr.contact_id}, license: ${license || 'n/a'}, rep: ${representativeName || 'n/a'}, address: ${fullAddress || 'n/a'})`);
         }
       }
     }
