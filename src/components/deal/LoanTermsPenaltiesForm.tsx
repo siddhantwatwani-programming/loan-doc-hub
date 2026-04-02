@@ -129,6 +129,137 @@ const TRIGGERED_BY_OPTIONS = [
   { value: 'maturity_only', label: 'Maturity Only' },
 ];
 
+// Distribution toggle field with currency/percentage switching
+const DistributionToggleField: React.FC<{
+  label: string;
+  fieldKey: string;
+  modeKey: string;
+  values: Record<string, string>;
+  onValueChange: (fieldKey: string, value: string) => void;
+  disabled?: boolean;
+}> = ({ label, fieldKey, modeKey, values, onValueChange, disabled }) => {
+  const isPercent = values[modeKey] === 'percent';
+  const rawValue = values[fieldKey] || '';
+  const [isFocused, setIsFocused] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const toggleMode = () => {
+    const newMode = isPercent ? 'currency' : 'percent';
+    onValueChange(modeKey, newMode);
+    // Clear value when switching to avoid confusion
+    onValueChange(fieldKey, '');
+    setValidationError(null);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/,/g, '').replace(/[$%]/g, '').trim();
+    if (val === '' || val === '.') {
+      onValueChange(fieldKey, val);
+      setValidationError(null);
+      return;
+    }
+    // Allow only numeric with one decimal
+    if (!/^\d*\.?\d*$/.test(val)) return;
+    onValueChange(fieldKey, val);
+    setValidationError(null);
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    if (!rawValue || rawValue === '.') {
+      setValidationError(null);
+      return;
+    }
+    const num = parseFloat(rawValue);
+    if (isNaN(num)) {
+      setValidationError('Please enter a valid number');
+      return;
+    }
+    if (num < 0) {
+      setValidationError('Value must be 0 or greater');
+      return;
+    }
+    if (isPercent && num > 100) {
+      setValidationError('Percentage must be between 0 and 100');
+      onValueChange(fieldKey, '100.00');
+      return;
+    }
+    setValidationError(null);
+    onValueChange(fieldKey, isPercent ? num.toFixed(2) : num.toFixed(2));
+  };
+
+  const displayValue = (() => {
+    if (isFocused) return unformatCurrencyDisplay(rawValue);
+    if (!rawValue) return '';
+    if (isPercent) return formatPercentageDisplay(rawValue);
+    return formatCurrencyDisplay(rawValue);
+  })();
+
+  return (
+    <DirtyFieldWrapper fieldKey={fieldKey}>
+      <div className="space-y-0.5">
+        <div className="flex items-center gap-3">
+          <Label className="text-sm min-w-[160px] max-w-[160px]">{label}</Label>
+          <div className="flex-1 min-w-0 relative">
+            {isPercent ? (
+              <>
+                <Input
+                  value={displayValue}
+                  onChange={handleChange}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={handleBlur}
+                  onKeyDown={numericKeyDown}
+                  onPaste={(e) => numericPaste(e, (val) => onValueChange(fieldKey, val))}
+                  disabled={disabled}
+                  inputMode="decimal"
+                  placeholder="0.00%"
+                  className={cn('h-7 text-sm pr-14 text-right', validationError && 'border-destructive')}
+                />
+                <span className="absolute right-8 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">%</span>
+              </>
+            ) : (
+              <>
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none z-10">$</span>
+                <Input
+                  value={displayValue}
+                  onChange={handleChange}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={handleBlur}
+                  onKeyDown={numericKeyDown}
+                  onPaste={(e) => numericPaste(e, (val) => onValueChange(fieldKey, val))}
+                  disabled={disabled}
+                  inputMode="decimal"
+                  placeholder="$0.00"
+                  className={cn('h-7 text-sm pl-5 pr-8 text-right', validationError && 'border-destructive')}
+                />
+              </>
+            )}
+            <button
+              type="button"
+              onClick={toggleMode}
+              disabled={disabled}
+              title={isPercent ? 'Switch to currency ($)' : 'Switch to percentage (%)'}
+              className={cn(
+                'absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-accent transition-colors',
+                disabled && 'opacity-50 cursor-not-allowed'
+              )}
+            >
+              {isPercent ? (
+                <DollarSign className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+              ) : (
+                <Percent className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+              )}
+            </button>
+          </div>
+        </div>
+        {validationError && (
+          <p className="text-[10px] text-destructive pl-[172px]">{validationError}</p>
+        )}
+      </div>
+    </DirtyFieldWrapper>
+  );
+};
+
 // Distribution fields component
 const DistributionFields: React.FC<{
   prefix: string;
@@ -136,55 +267,28 @@ const DistributionFields: React.FC<{
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
 }> = ({ prefix, values, onValueChange, disabled }) => {
+  const fields = [
+    { key: 'lenders', label: 'Lenders' },
+    { key: 'origination_vendors', label: 'Origination Vendors' },
+    { key: 'company', label: 'Company' },
+    { key: 'other', label: 'Other' },
+  ];
 
   return (
     <div className="space-y-2 pt-3">
       <h4 className="font-semibold text-sm text-foreground border-b border-border pb-1">Distribution</h4>
       <div className="space-y-2">
-        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.lenders`}>
-          <div className="flex items-center gap-3">
-            <Label className="text-sm min-w-[160px] max-w-[160px]">Lenders</Label>
-            <Input
-              value={values[`${prefix}.distribution.lenders`] || ''}
-              onChange={(e) => onValueChange(`${prefix}.distribution.lenders`, e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
-        </DirtyFieldWrapper>
-        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.origination_vendors`}>
-          <div className="flex items-center gap-3">
-            <Label className="text-sm min-w-[160px] max-w-[160px]">Origination Vendors</Label>
-            <Input
-              value={values[`${prefix}.distribution.origination_vendors`] || ''}
-              onChange={(e) => onValueChange(`${prefix}.distribution.origination_vendors`, e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
-        </DirtyFieldWrapper>
-        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.company`}>
-          <div className="flex items-center gap-3">
-            <Label className="text-sm min-w-[160px] max-w-[160px]">Company</Label>
-            <Input
-              value={values[`${prefix}.distribution.company`] || ''}
-              onChange={(e) => onValueChange(`${prefix}.distribution.company`, e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
-        </DirtyFieldWrapper>
-        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.other`}>
-          <div className="flex items-center gap-3">
-            <Label className="text-sm min-w-[160px] max-w-[160px]">Other</Label>
-            <Input
-              value={values[`${prefix}.distribution.other`] || ''}
-              onChange={(e) => onValueChange(`${prefix}.distribution.other`, e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
-          </div>
-        </DirtyFieldWrapper>
+        {fields.map(({ key, label }) => (
+          <DistributionToggleField
+            key={key}
+            label={label}
+            fieldKey={`${prefix}.distribution.${key}`}
+            modeKey={`${prefix}.distribution.${key}_mode`}
+            values={values}
+            onValueChange={onValueChange}
+            disabled={disabled}
+          />
+        ))}
       </div>
     </div>
   );
