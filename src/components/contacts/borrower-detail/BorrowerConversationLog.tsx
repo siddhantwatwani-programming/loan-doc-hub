@@ -212,6 +212,7 @@ const BorrowerConversationLog: React.FC<{ borrowerId: string; contactDbId: strin
 
   const handleAddLog = async () => {
     if (!validateLog()) return;
+    setUploading(true);
     const logId = `conv_${Date.now()}`;
     let attachmentsMeta: (string | AttachmentMeta)[] = [...newLog.attachments];
 
