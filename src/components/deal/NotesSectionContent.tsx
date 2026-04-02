@@ -138,7 +138,7 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
   return (
     <>
       <NotesTableView
-        notes={filteredNotes}
+        notes={paginatedNotes}
         onAddNote={handleAddNote}
         onEditNote={handleEditNote}
         onRowClick={handleRowClick}
@@ -147,7 +147,11 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
         onRefresh={onRefresh}
         disabled={disabled}
         asOfFilter={asOfFilter}
-        onAsOfFilterChange={setAsOfFilter}
+        onAsOfFilterChange={(v) => { setAsOfFilter(v); setCurrentPage(1); }}
+        currentPage={safePage}
+        totalPages={totalPages}
+        totalCount={totalFiltered}
+        onPageChange={setCurrentPage}
       />
 
       <NotesModal
