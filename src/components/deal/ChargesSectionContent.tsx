@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
+import { formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import { Button } from '@/components/ui/button';
 import { ChargesSubNavigation, ChargesSubSection } from './ChargesSubNavigation';
 import { ChargesDetailForm } from './ChargesDetailForm';
@@ -23,6 +24,8 @@ interface ChargesSectionContentProps {
 }
 
 // Helper to extract charges from values based on charge prefix pattern
+const CURRENCY_CHARGE_FIELDS = ['unpaid_balance', 'total_due', 'original_amount', 'advanced_by_amount', 'on_behalf_of_amount', 'amount_owed_by_borrower', 'accrued_interest'];
+
 const extractChargesFromValues = (values: Record<string, string>): ChargeData[] => {
   const charges: ChargeData[] = [];
   const chargePrefixes = new Set<string>();
@@ -34,14 +37,22 @@ const extractChargesFromValues = (values: Record<string, string>): ChargeData[] 
     }
   });
   
+  const getVal = (prefix: string, field: string): string => {
+    const raw = values[`${prefix}.${field}`] || '';
+    if (raw && CURRENCY_CHARGE_FIELDS.includes(field)) {
+      return formatCurrencyDisplay(unformatCurrencyDisplay(raw));
+    }
+    return raw;
+  };
+
   chargePrefixes.forEach(prefix => {
     const charge: ChargeData = {
       id: prefix,
       description: values[`${prefix}.description`] || '',
-      unpaidBalance: values[`${prefix}.unpaid_balance`] || '',
+      unpaidBalance: getVal(prefix, 'unpaid_balance'),
       owedTo: values[`${prefix}.owed_to`] || '',
       owedFrom: values[`${prefix}.owed_from`] || '',
-      totalDue: values[`${prefix}.total_due`] || '',
+      totalDue: getVal(prefix, 'total_due'),
       interestFrom: values[`${prefix}.interest_from`] || '',
       dateOfCharge: values[`${prefix}.date_of_charge`] || '',
       interestRate: values[`${prefix}.interest_rate`] || '',
@@ -49,17 +60,17 @@ const extractChargesFromValues = (values: Record<string, string>): ChargeData[] 
       reference: values[`${prefix}.reference`] || '',
       chargeType: values[`${prefix}.charge_type`] || values[`${prefix}.change_type`] || '',
       deferred: values[`${prefix}.deferred`] || '',
-      originalAmount: values[`${prefix}.original_amount`] || '',
+      originalAmount: getVal(prefix, 'original_amount'),
       account: values[`${prefix}.account`] || '',
       borrowerFullName: values[`${prefix}.borrower_full_name`] || '',
       advancedByAccount: values[`${prefix}.advanced_by_account`] || '',
       advancedByLenderName: values[`${prefix}.advanced_by_lender_name`] || '',
-      advancedByAmount: values[`${prefix}.advanced_by_amount`] || '',
+      advancedByAmount: getVal(prefix, 'advanced_by_amount'),
       onBehalfOfAccount: values[`${prefix}.on_behalf_of_account`] || '',
       onBehalfOfLenderName: values[`${prefix}.on_behalf_of_lender_name`] || '',
-      onBehalfOfAmount: values[`${prefix}.on_behalf_of_amount`] || '',
-      amountOwedByBorrower: values[`${prefix}.amount_owed_by_borrower`] || '',
-      accruedInterest: values[`${prefix}.accrued_interest`] || '',
+      onBehalfOfAmount: getVal(prefix, 'on_behalf_of_amount'),
+      amountOwedByBorrower: getVal(prefix, 'amount_owed_by_borrower'),
+      accruedInterest: getVal(prefix, 'accrued_interest'),
       distributeBetweenAllLenders: values[`${prefix}.distribute_between_all_lenders`] || '',
     };
     charges.push(charge);
@@ -188,8 +199,14 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
       { key: 'accruedInterest', dbField: 'accrued_interest' },
     ];
 
+    const currencyKeys: (keyof ChargeData)[] = ['unpaidBalance', 'totalDue', 'originalAmount', 'advancedByAmount', 'onBehalfOfAmount', 'amountOwedByBorrower', 'accruedInterest'];
+
     fieldEntries.forEach(({ key, dbField }) => {
-      const val = chargeData[key] || '';
+      let val = chargeData[key] || '';
+      // Strip commas from currency fields before persisting
+      if (currencyKeys.includes(key) && val) {
+        val = unformatCurrencyDisplay(val);
+      }
       // Only write fields with actual data to avoid false dirty flags on new entries
       if (val !== '' || isEdit) {
         onValueChange(`${prefix}.${dbField}`, val);
