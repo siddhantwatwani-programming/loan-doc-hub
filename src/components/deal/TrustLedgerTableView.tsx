@@ -128,6 +128,7 @@ const filterByDate = (entries: TrustLedgerEntry[], filter: string): TrustLedgerE
 
 export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
   entries, onAddEntry, onEditEntry, onRowClick, onDeleteEntry, onBulkDelete, onExport, onRefresh, disabled = false, isLoading = false,
+  currentPage = 1, totalPages = 1, totalCount, onPageChange,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig('trust_ledger', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
