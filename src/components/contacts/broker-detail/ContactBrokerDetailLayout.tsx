@@ -87,7 +87,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
     id: contact.id,
     brokerId: contact.contact_id || '',
     hold: (contact.contact_data as any)?.hold === 'true',
-    type: (contact.contact_data as any)?.type || '',
+    type: (contact.contact_data as any)?.company || (contact.contact_data as any)?.type || '',
     ach: (contact.contact_data as any)?.ach === 'true',
     email: contact.email || '',
     agreement: (contact.contact_data as any)?.agreement_on_file === 'true',
@@ -100,12 +100,19 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
     homePhone: (contact.contact_data as any)?.['phone.home'] || '',
     workPhone: (contact.contact_data as any)?.['phone.work'] || '',
     fax: (contact.contact_data as any)?.['phone.fax'] || '',
-    preferredPhone: (contact.contact_data as any)?.preferred_phone || '',
+    preferredPhone: (() => {
+      const cd = contact.contact_data as any;
+      if (cd?.['preferred.home'] === 'true') return 'Home';
+      if (cd?.['preferred.work'] === 'true') return 'Work';
+      if (cd?.['preferred.cell'] === 'true') return 'Cell';
+      if (cd?.['preferred.fax'] === 'true') return 'Fax';
+      return cd?.preferred_phone || '';
+    })(),
     verified: (contact.contact_data as any)?.tin_verified === 'true',
     send1099: (contact.contact_data as any)?.send_1099 === 'true',
-    tin: (contact.contact_data as any)?.tin || '',
-    street: (contact.contact_data as any)?.['primary_address.street'] || '',
-    zip: (contact.contact_data as any)?.['primary_address.zip'] || '',
+    tin: (contact.contact_data as any)?.tax_id || (contact.contact_data as any)?.tin || '',
+    street: (contact.contact_data as any)?.['address.street'] || (contact.contact_data as any)?.['primary_address.street'] || '',
+    zip: (contact.contact_data as any)?.['address.zip'] || (contact.contact_data as any)?.['primary_address.zip'] || '',
     mailingStreet: (contact.contact_data as any)?.['mailing_address.street'] || '',
     mailingCity: (contact.contact_data as any)?.['mailing_address.city'] || '',
     mailingState: (contact.contact_data as any)?.['mailing_address.state'] || '',

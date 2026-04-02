@@ -43,7 +43,7 @@ const BorrowerDashboard: React.FC<Props> = ({ contact }) => {
           <CardHeader className="pb-2"><CardTitle className="text-sm">Contact Information</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 gap-3">
             <Field label="Email" value={contact.email || ''} />
-            <Field label="Cell Phone" value={data['phone.cell'] || ''} />
+            <Field label="Cell Phone" value={data['phone.cell'] || data['phone.mobile'] || ''} />
             <Field label="Home Phone" value={data['phone.home'] || ''} />
             <Field label="Work Phone" value={data['phone.work'] || ''} />
             <Field label="Fax" value={data['phone.fax'] || ''} />
@@ -63,7 +63,7 @@ const BorrowerDashboard: React.FC<Props> = ({ contact }) => {
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm">Financial / Compliance</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 gap-3">
-            <Field label="TIN" value={data.tax_id || ''} />
+            <Field label="TIN" value={data.tin || data.tax_id || ''} />
             <Field label="ACH" value={data.ach === 'true' ? 'Yes' : 'No'} />
             <Field label="Send 1099" value={data.issue_1099 === 'true' ? 'Yes' : 'No'} />
             <Field label="Agreement" value={data.agreement_on_file === 'true' ? 'Yes' : 'No'} />
