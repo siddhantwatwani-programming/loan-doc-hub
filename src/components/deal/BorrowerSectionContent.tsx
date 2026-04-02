@@ -325,6 +325,8 @@ export const BorrowerSectionContent: React.FC<BorrowerSectionContentProps> = ({
   // Trust Ledger state
   const [trustLedgerModalOpen, setTrustLedgerModalOpen] = useState(false);
   const [editingTrustLedgerEntry, setEditingTrustLedgerEntry] = useState<TrustLedgerEntry | null>(null);
+  const [trustLedgerCurrentPage, setTrustLedgerCurrentPage] = useState(1);
+  const TRUST_LEDGER_PAGE_SIZE = 10;
 
   // Always in detail view now (no table view)
   const isBorrowerDetailView = ['primary', 'additional_guarantor', 'authorized_party', 'trust_ledger', 'banking', 'tax_detail', 'note', 'co_borrowers'].includes(activeSubSection);
