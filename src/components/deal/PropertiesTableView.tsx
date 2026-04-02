@@ -319,12 +319,27 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         </Table>
       </div>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {(currentPage - 1) * 10 + 1}–{Math.min(currentPage * 10, totalCount ?? properties.length)} of {totalCount ?? properties.length} properties
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(1)} disabled={currentPage <= 1 || disabled}>First</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage - 1)} disabled={currentPage <= 1 || disabled}>Previous</Button>
+            <span className="text-sm text-muted-foreground px-2">Page {currentPage} of {totalPages}</span>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage + 1)} disabled={currentPage >= totalPages || disabled}>Next</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(totalPages)} disabled={currentPage >= totalPages || disabled}>Last</Button>
+          </div>
+        </div>
+      )}
+
       {/* Footer with totals */}
       {properties.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
-            {filteredData.length !== properties.length && `Showing ${filteredData.length} of `}
-            Total Properties: {properties.length} | 
+            Total Properties: {totalCount ?? properties.length} | 
             Total Appraised Value: {formatCurrency(
               properties.reduce((sum, p) => sum + (parseFloat(p.appraisedValue) || 0), 0).toString()
             )}
