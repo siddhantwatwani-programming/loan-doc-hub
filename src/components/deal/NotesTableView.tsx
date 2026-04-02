@@ -341,12 +341,12 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
 
       {/* View Detail Dialog */}
       <Dialog open={!!viewingNote} onOpenChange={(open) => { if (!open) setViewingNote(null); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-4">
           <DialogHeader>
             <DialogTitle className="text-sm">Conversation Log Details</DialogTitle>
           </DialogHeader>
           {viewingNote && (
-            <div className="space-y-3 mt-3">
+            <div className="space-y-3 mt-3 min-w-0 overflow-hidden">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-2">
                   <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Date</Label>
