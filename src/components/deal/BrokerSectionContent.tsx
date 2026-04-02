@@ -223,7 +223,7 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
       case 'brokers':
         return (
           <BrokersTableView
-            brokers={brokers}
+            brokers={paginatedBrokers}
             onAddBroker={handleAddBroker}
             onEditBroker={handleEditBroker}
             onRowClick={handleRowClick}
@@ -231,6 +231,9 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
             onRefresh={onRefresh}
             disabled={disabled}
             isLoading={isLoading}
+            currentPage={safePage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
           />
         );
       case 'broker':
