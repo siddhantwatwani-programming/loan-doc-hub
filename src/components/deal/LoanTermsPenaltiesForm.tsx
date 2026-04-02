@@ -180,12 +180,13 @@ const DistributionFields: React.FC<{
         <DirtyFieldWrapper fieldKey={`${prefix}.distribution.other`}>
           <div className="flex items-center gap-3">
             <Label className="text-sm min-w-[160px] max-w-[160px]">Other</Label>
-            <Input
-              value={values[`${prefix}.distribution.other`] || ''}
-              onChange={(e) => onValueChange(`${prefix}.distribution.other`, e.target.value)}
-              disabled={disabled}
-              className="h-7 text-sm flex-1"
-            />
+            <div className="flex-1 min-w-0">
+              <PenaltyCurrencyInput
+                value={values[`${prefix}.distribution.other`] || ''}
+                onChange={(val) => onValueChange(`${prefix}.distribution.other`, val)}
+                disabled={disabled}
+              />
+            </div>
           </div>
         </DirtyFieldWrapper>
       </div>
