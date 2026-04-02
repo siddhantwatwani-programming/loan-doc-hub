@@ -245,6 +245,7 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
             isLoading={isLoading}
             currentPage={safePage}
             totalPages={totalPages}
+            totalCount={totalCharges}
             onPageChange={setCurrentPage}
           />
         );
