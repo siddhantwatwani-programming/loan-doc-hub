@@ -1,5 +1,4 @@
-import React, { useState, useCallback } from 'react';
-import { DollarSign, Percent } from 'lucide-react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -130,81 +129,6 @@ const TRIGGERED_BY_OPTIONS = [
   { value: 'maturity_only', label: 'Maturity Only' },
 ];
 
-// Togglable Currency/Percent input for distribution fields
-const DistributionToggleInput: React.FC<{
-  fieldKey: string;
-  value: string;
-  onChange: (value: string) => void;
-  modeKey: string;
-  mode: 'currency' | 'percentage';
-  onModeToggle: () => void;
-  disabled?: boolean;
-}> = ({ fieldKey, value, onChange, mode, onModeToggle, disabled }) => {
-  const [isFocused, setIsFocused] = useState(false);
-
-  const displayValue = isFocused
-    ? (mode === 'currency' ? unformatCurrencyDisplay(value || '') : (value || ''))
-    : (mode === 'currency' ? formatCurrencyDisplay(value || '') : formatPercentageDisplay(value || ''));
-
-  return (
-    <DirtyFieldWrapper fieldKey={fieldKey}>
-      <div className="flex items-center gap-1">
-        <div className="relative flex-1">
-          {mode === 'currency' && (
-            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
-          )}
-          <Input
-            value={displayValue}
-            onChange={(e) => {
-              const raw = mode === 'currency'
-                ? e.target.value.replace(/,/g, '')
-                : e.target.value.replace(/%/g, '').trim();
-              onChange(raw);
-            }}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => {
-              setIsFocused(false);
-              if (value) {
-                const num = parseFloat(value.replace(/,/g, ''));
-                if (!isNaN(num)) {
-                  if (mode === 'percentage') {
-                    onChange(Math.min(100, Math.max(0, num)).toFixed(2));
-                  } else {
-                    onChange(num.toFixed(2));
-                  }
-                }
-              }
-            }}
-            onKeyDown={numericKeyDown}
-            onPaste={(e) => numericPaste(e, onChange)}
-            disabled={disabled}
-            inputMode="decimal"
-            placeholder={mode === 'currency' ? '$0.00' : '0.00%'}
-            className={cn(
-              'h-7 text-sm text-right',
-              mode === 'currency' ? 'pl-5 pr-2' : 'pl-2 pr-6'
-            )}
-          />
-          {mode === 'percentage' && (
-            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">%</span>
-          )}
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="h-7 w-7 shrink-0"
-          disabled={disabled}
-          onClick={onModeToggle}
-          title={mode === 'currency' ? 'Switch to percentage' : 'Switch to currency'}
-        >
-          {mode === 'currency' ? <Percent className="h-3 w-3" /> : <DollarSign className="h-3 w-3" />}
-        </Button>
-      </div>
-    </DirtyFieldWrapper>
-  );
-};
-
 // Distribution fields component
 const DistributionFields: React.FC<{
   prefix: string;
@@ -212,48 +136,55 @@ const DistributionFields: React.FC<{
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
 }> = ({ prefix, values, onValueChange, disabled }) => {
-  const distFields = ['lenders', 'origination_vendors', 'company', 'other'] as const;
-  const distLabels: Record<string, string> = {
-    lenders: 'Lenders',
-    origination_vendors: 'Origination Vendors',
-    company: 'Company',
-    other: 'Other',
-  };
-
-  // Track mode per field: default to 'currency'
-  const [modes, setModes] = useState<Record<string, 'currency' | 'percentage'>>({});
-
-  const toggleMode = useCallback((field: string) => {
-    setModes(prev => ({
-      ...prev,
-      [field]: prev[field] === 'percentage' ? 'currency' : 'percentage',
-    }));
-  }, []);
 
   return (
     <div className="space-y-2 pt-3">
       <h4 className="font-semibold text-sm text-foreground border-b border-border pb-1">Distribution</h4>
       <div className="space-y-2">
-        {distFields.map((field) => {
-          const fieldKey = `${prefix}.distribution.${field}`;
-          const mode = modes[field] || 'currency';
-          return (
-            <div key={field} className="flex items-center gap-3">
-              <Label className="text-sm min-w-[160px] max-w-[160px]">{distLabels[field]}</Label>
-              <div className="flex-1 min-w-0">
-                <DistributionToggleInput
-                  fieldKey={fieldKey}
-                  value={values[fieldKey] || ''}
-                  onChange={(val) => onValueChange(fieldKey, val)}
-                  modeKey={field}
-                  mode={mode}
-                  onModeToggle={() => toggleMode(field)}
-                  disabled={disabled}
-                />
-              </div>
-            </div>
-          );
-        })}
+        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.lenders`}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Lenders</Label>
+            <Input
+              value={values[`${prefix}.distribution.lenders`] || ''}
+              onChange={(e) => onValueChange(`${prefix}.distribution.lenders`, e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </DirtyFieldWrapper>
+        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.origination_vendors`}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Origination Vendors</Label>
+            <Input
+              value={values[`${prefix}.distribution.origination_vendors`] || ''}
+              onChange={(e) => onValueChange(`${prefix}.distribution.origination_vendors`, e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </DirtyFieldWrapper>
+        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.company`}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Company</Label>
+            <Input
+              value={values[`${prefix}.distribution.company`] || ''}
+              onChange={(e) => onValueChange(`${prefix}.distribution.company`, e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </DirtyFieldWrapper>
+        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.other`}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Other</Label>
+            <Input
+              value={values[`${prefix}.distribution.other`] || ''}
+              onChange={(e) => onValueChange(`${prefix}.distribution.other`, e.target.value)}
+              disabled={disabled}
+              className="h-7 text-sm flex-1"
+            />
+          </div>
+        </DirtyFieldWrapper>
       </div>
     </div>
   );
