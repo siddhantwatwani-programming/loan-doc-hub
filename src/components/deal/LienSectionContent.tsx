@@ -161,9 +161,15 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   const [currentView, setCurrentView] = useState<LienView>('table');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLien, setEditingLien] = useState<LienData | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
 
-  const liens = extractLiensFromValues(values);
+  const allLiens = extractLiensFromValues(values);
+  const totalLiens = allLiens.length;
+  const totalPages = Math.max(1, Math.ceil(totalLiens / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedLiens = allLiens.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // Remap dirty field keys for the selected lien
   const remappedDirtyKeys = useMemo(() => {
