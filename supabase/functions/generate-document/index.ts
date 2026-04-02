@@ -518,8 +518,10 @@ async function generateSingleDocument(
 
           // Force-set short prefix keys (bk_p_*)
           forceSet("bk_p_fullName", fullName);
-          forceSet("bk_p_firstName", firstName);
-          forceSet("bk_p_lastName", lastName);
+          // Add trailing space to firstName so adjacent tags like
+          // {{bk_p_firstName}}{{bk_p_lastName}} render with proper spacing
+          forceSet("bk_p_firstName", firstName ? firstName + " " : "");
+          forceSet("bk_p_lastName", lastName ? lastName + " " : "");
           forceSet("bk_p_middleInitia", middleName);
           forceSet("bk_p_email", email);
           forceSet("bk_p_company", company);
