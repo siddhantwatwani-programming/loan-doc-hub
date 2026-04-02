@@ -109,6 +109,8 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCharge, setEditingCharge] = useState<ChargeData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
 
   // Remap dirty field keys: chargeN.xxx → charges.xxx for selected prefix
@@ -123,15 +125,19 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
   }, [dirtyFieldKeys, selectedChargePrefix]);
   
   const isDetailView = activeSubSection === 'detail';
-  const charges = extractChargesFromValues(values);
+  const allCharges = extractChargesFromValues(values);
+  const totalCharges = allCharges.length;
+  const totalPages = Math.max(1, Math.ceil(totalCharges / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedCharges = allCharges.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const selectedChargeName = useMemo(() => {
-    const charge = charges.find(c => c.id === selectedChargePrefix);
+    const charge = allCharges.find(c => c.id === selectedChargePrefix);
     if (charge) {
       return charge.description || `Charge ${selectedChargePrefix.replace('charge', '')}`;
     }
     return 'Charge';
-  }, [charges, selectedChargePrefix]);
+  }, [allCharges, selectedChargePrefix]);
 
   const handleAddCharge = useCallback(() => {
     setEditingCharge(null);
@@ -229,7 +235,7 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
       case 'charges':
         return (
           <ChargesTableView
-            charges={charges}
+            charges={paginatedCharges}
             onAddCharge={handleAddCharge}
             onEditCharge={handleEditCharge}
             onRowClick={handleRowClick}
@@ -237,6 +243,10 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
             onRefresh={onRefresh}
             disabled={disabled}
             isLoading={isLoading}
+            currentPage={safePage}
+            totalPages={totalPages}
+            totalCount={totalCharges}
+            onPageChange={setCurrentPage}
           />
         );
       case 'detail':
