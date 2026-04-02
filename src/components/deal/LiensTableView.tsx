@@ -113,6 +113,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
 
 export const LiensTableView: React.FC<LiensTableViewProps> = ({
   liens, onAddLien, onEditLien, onRowClick, onDeleteLien, onBulkDelete, onRefresh, onBack, disabled = false,
+  currentPage = 1, totalPages = 1, totalCount, onPageChange,
 }) => {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
