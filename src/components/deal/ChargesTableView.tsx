@@ -324,10 +324,15 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</div>
+          <div className="text-sm text-muted-foreground">
+            Showing {(currentPage - 1) * 10 + 1}–{Math.min(currentPage * 10, totalCount ?? charges.length)} of {totalCount ?? charges.length} charges
+          </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(1)} disabled={currentPage <= 1 || disabled}>First</Button>
             <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage - 1)} disabled={currentPage <= 1 || disabled}>Previous</Button>
+            <span className="text-sm text-muted-foreground px-2">Page {currentPage} of {totalPages}</span>
             <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage + 1)} disabled={currentPage >= totalPages || disabled}>Next</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(totalPages)} disabled={currentPage >= totalPages || disabled}>Last</Button>
           </div>
         </div>
       )}
@@ -336,8 +341,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
       {charges.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
-            {filteredData.length !== charges.length && `Showing ${filteredData.length} of `}
-            Total Charges: {charges.length}
+            Total Charges: {totalCount ?? charges.length}
           </div>
         </div>
       )}
