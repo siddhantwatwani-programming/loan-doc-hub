@@ -136,16 +136,30 @@ const DistributionFields: React.FC<{
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
 }> = ({ prefix, values, onValueChange, disabled }) => {
+  const isPercent = values[`${prefix}.distribution.is_percent`] === 'true';
+
+  const DistInput = isPercent ? PenaltyPercentInput : PenaltyCurrencyInput;
 
   return (
     <div className="space-y-2 pt-3">
-      <h4 className="font-semibold text-sm text-foreground border-b border-border pb-1">Distribution</h4>
+      <div className="flex items-center gap-2 border-b border-border pb-1">
+        <h4 className="font-semibold text-sm text-foreground">Distribution</h4>
+        <div className="flex items-center gap-1">
+          <Checkbox
+            checked={isPercent}
+            onCheckedChange={(checked) => onValueChange(`${prefix}.distribution.is_percent`, checked ? 'true' : 'false')}
+            disabled={disabled}
+            className="h-4 w-4"
+          />
+          <Label className="text-xs text-muted-foreground cursor-pointer">%</Label>
+        </div>
+      </div>
       <div className="space-y-2">
         <DirtyFieldWrapper fieldKey={`${prefix}.distribution.lenders`}>
           <div className="flex items-center gap-3">
             <Label className="text-sm min-w-[160px] max-w-[160px]">Lenders</Label>
             <div className="flex-1 min-w-0">
-              <PenaltyCurrencyInput
+              <DistInput
                 value={values[`${prefix}.distribution.lenders`] || ''}
                 onChange={(val) => onValueChange(`${prefix}.distribution.lenders`, val)}
                 disabled={disabled}
@@ -157,7 +171,7 @@ const DistributionFields: React.FC<{
           <div className="flex items-center gap-3">
             <Label className="text-sm min-w-[160px] max-w-[160px]">Origination Vendors</Label>
             <div className="flex-1 min-w-0">
-              <PenaltyCurrencyInput
+              <DistInput
                 value={values[`${prefix}.distribution.origination_vendors`] || ''}
                 onChange={(val) => onValueChange(`${prefix}.distribution.origination_vendors`, val)}
                 disabled={disabled}
@@ -169,7 +183,7 @@ const DistributionFields: React.FC<{
           <div className="flex items-center gap-3">
             <Label className="text-sm min-w-[160px] max-w-[160px]">Company</Label>
             <div className="flex-1 min-w-0">
-              <PenaltyCurrencyInput
+              <DistInput
                 value={values[`${prefix}.distribution.company`] || ''}
                 onChange={(val) => onValueChange(`${prefix}.distribution.company`, val)}
                 disabled={disabled}
@@ -181,7 +195,7 @@ const DistributionFields: React.FC<{
           <div className="flex items-center gap-3">
             <Label className="text-sm min-w-[160px] max-w-[160px]">Other</Label>
             <div className="flex-1 min-w-0">
-              <PenaltyCurrencyInput
+              <DistInput
                 value={values[`${prefix}.distribution.other`] || ''}
                 onChange={(val) => onValueChange(`${prefix}.distribution.other`, val)}
                 disabled={disabled}
