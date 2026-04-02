@@ -160,6 +160,28 @@ export const AppSidebar: React.FC = () => {
     items: group.items.filter(searchFilter),
   })).filter((group) => group.items.length > 0);
 
+  const hasSearchResults = React.useMemo(() => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    const m = (l: string) => l.toLowerCase().includes(q);
+    if (searchedMyWorkItems.length > 0 || searchedItems.length > 0 || searchedAdminItems.length > 0 || searchedGroups.length > 0) return true;
+    const allLabels = [
+      'Broker Services','Loan Servicing','Default Services','Operations','Accounting',
+      'Knowledge Center','Legal','Documents Vault','Event Journal','Contacts',
+      'Statements & Reports','System Administration','C Level Module',
+      'Management Dashboard','Department Alerts','Department Dashboard',
+      'All Loan Document Files','Custom Views','Activity Journal',
+      'Mod & Forbearance Wizard','Foreclosure Processing','Bankruptcy Monitoring',
+      'Senior Lien Tracking','Insurance Tracking','Tax Tracking','Account Maintenance',
+      'Outstanding / Missing Items','Fee Sheet','Policies & Processes','Industry News','Smart AI',
+      'Accounts','Calendar','Borrowers','Brokers','Lenders',
+      'User Management','Permission Management','Field Dictionary','Template Management',
+      'Packet Management','System Settings','Messages','Queue','Action Items',
+      'My Work','Doc Prep','Configuration',
+    ];
+    return allLabels.some(m);
+  }, [searchQuery, searchedMyWorkItems, searchedItems, searchedAdminItems, searchedGroups]);
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
@@ -622,6 +644,13 @@ export const AppSidebar: React.FC = () => {
                 </CollapsibleContent>
               </Collapsible>
             ))}
+
+            {/* No results message */}
+            {searchQuery && !hasSearchResults && !isCollapsed && (
+              <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+                No results found
+              </div>
+            )}
           </TooltipProvider>
         </nav>
       </aside>
