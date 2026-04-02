@@ -270,7 +270,7 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
       case 'lenders':
         return (
           <LendersTableView
-            allLenders={allLenders}
+            lenders={paginatedLenders}
             onAddLender={handleAddLender}
             onEditLender={handleEditLender}
             onRowClick={handleRowClick}
@@ -279,6 +279,9 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
             onRefresh={onRefresh}
             disabled={disabled}
             isLoading={isLoading}
+            currentPage={safePage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
           />
         );
       case 'lender':
