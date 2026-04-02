@@ -55,6 +55,7 @@ interface ChargesTableViewProps {
   isLoading?: boolean;
   currentPage?: number;
   totalPages?: number;
+  totalCount?: number;
   onPageChange?: (page: number) => void;
 }
 
