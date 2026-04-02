@@ -701,18 +701,22 @@ async function generateSingleDocument(
           const addrStr = String(addr);
           if (!seenAddresses.has(addrStr)) {
             seenAddresses.add(addrStr);
-            propertyLines.push(addrStr);
+            propertyLines.push(addrStr.trim());
           }
         }
       }
       if (propertyLines.length > 0) {
-        const allPropertiesText = propertyLines.join("\n");
+        const indentedListLines = propertyLines.map((line, i) => i === 0 ? line : `    ${line}`);
+        const allPropertiesText = indentedListLines.join("\n");
         fieldValues.set("all_properties_list", { rawValue: allPropertiesText, dataType: "text" });
         debugLog(`[generate-document] Built all_properties_list with ${propertyLines.length} properties`);
       }
       // When multiple properties exist, rebuild all address keys with all addresses separated by line breaks
       if (propertyLines.length > 1) {
-        const multiLineAddr = propertyLines.join("\n");
+        // Indent subsequent addresses with leading spaces to match first-line alignment
+        // (Word <w:br/> resets to paragraph left margin, losing first-line indent)
+        const indentedLines = propertyLines.map((line, i) => i === 0 ? line : `    ${line}`);
+        const multiLineAddr = indentedLines.join("\n");
         fieldValues.set("pr_p_address", { rawValue: multiLineAddr, dataType: "text" });
         // Also update Property1.Address / property1.address so merge tags like {{Property_Address}} resolve correctly
         fieldValues.set("Property1.Address", { rawValue: multiLineAddr, dataType: "text" });
