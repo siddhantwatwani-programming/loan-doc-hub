@@ -117,6 +117,8 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
   const setSelectedInsurancePrefix = (prefix: string) => nav?.setSelectedPrefix('insurance', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingInsurance, setEditingInsurance] = useState<InsuranceData | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
 
   // Remap dirty field keys: insuranceN.xxx → insurance1.xxx for selected prefix
