@@ -100,7 +100,14 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
     homePhone: (contact.contact_data as any)?.['phone.home'] || '',
     workPhone: (contact.contact_data as any)?.['phone.work'] || '',
     fax: (contact.contact_data as any)?.['phone.fax'] || '',
-    preferredPhone: (contact.contact_data as any)?.preferred_phone || '',
+    preferredPhone: (() => {
+      const cd = contact.contact_data as any;
+      if (cd?.['preferred.home'] === 'true') return 'Home';
+      if (cd?.['preferred.work'] === 'true') return 'Work';
+      if (cd?.['preferred.cell'] === 'true') return 'Cell';
+      if (cd?.['preferred.fax'] === 'true') return 'Fax';
+      return cd?.preferred_phone || '';
+    })(),
     verified: (contact.contact_data as any)?.tin_verified === 'true',
     send1099: (contact.contact_data as any)?.send_1099 === 'true',
     tin: (contact.contact_data as any)?.tin || '',
