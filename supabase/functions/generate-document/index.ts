@@ -706,7 +706,8 @@ async function generateSingleDocument(
         }
       }
       if (propertyLines.length > 0) {
-        const allPropertiesText = propertyLines.join("\n");
+        const indentedListLines = propertyLines.map((line, i) => i === 0 ? line : `    ${line}`);
+        const allPropertiesText = indentedListLines.join("\n");
         fieldValues.set("all_properties_list", { rawValue: allPropertiesText, dataType: "text" });
         debugLog(`[generate-document] Built all_properties_list with ${propertyLines.length} properties`);
       }
