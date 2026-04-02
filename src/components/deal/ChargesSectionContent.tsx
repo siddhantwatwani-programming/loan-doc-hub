@@ -132,12 +132,12 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
   const paginatedCharges = allCharges.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const selectedChargeName = useMemo(() => {
-    const charge = charges.find(c => c.id === selectedChargePrefix);
+    const charge = allCharges.find(c => c.id === selectedChargePrefix);
     if (charge) {
       return charge.description || `Charge ${selectedChargePrefix.replace('charge', '')}`;
     }
     return 'Charge';
-  }, [charges, selectedChargePrefix]);
+  }, [allCharges, selectedChargePrefix]);
 
   const handleAddCharge = useCallback(() => {
     setEditingCharge(null);
