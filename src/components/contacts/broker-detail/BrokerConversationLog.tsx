@@ -571,7 +571,7 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string; d
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Label className="w-[80px] shrink-0 text-xs">Name</Label>
-                  <Input value={newLog.name} onChange={e => setNewLog(p => ({ ...p, name: e.target.value }))} maxLength={100} className={cn("h-7 text-xs flex-1", validationErrors.name && "border-destructive")} />
+                  <Input value={newLog.name} onChange={e => { const v = e.target.value.replace(/[0-9]/g, ''); setNewLog(p => ({ ...p, name: v })); }} maxLength={100} className={cn("h-7 text-xs flex-1", validationErrors.name && "border-destructive")} />
                 </div>
                 {validationErrors.name && <p className="text-xs text-destructive ml-[88px]">{validationErrors.name}</p>}
               </div>
