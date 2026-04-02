@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useEventJournalEntries, type EventJournalEntry, type FieldChange } from '@/hooks/useEventJournal';
+import React, { useState, useEffect } from 'react';
+import { usePaginatedEventJournalEntries, useEventJournalEntries, type EventJournalEntry, type FieldChange } from '@/hooks/useEventJournal';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -69,22 +69,37 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'created_at', label: 'Timestamp' },
 ];
 
+const PAGE_SIZE = 10;
+
 export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, disabled = false }) => {
-  const { data: entries, isLoading } = useEventJournalEntries(dealId);
+  const [currentPage, setCurrentPage] = useState(1);
+  const { data: paginatedResult, isLoading } = usePaginatedEventJournalEntries(dealId, currentPage, PAGE_SIZE);
+  // Keep the full query for export only
+  const { data: allEntries } = useEventJournalEntries(dealId);
   const [selectedEntry, setSelectedEntry] = useState<EventJournalEntry | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const queryClient = useQueryClient();
 
+  const entries = paginatedResult?.entries || [];
+  const totalCount = paginatedResult?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
   const {
     searchQuery, setSearchQuery, sortState, toggleSort,
     activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
-  } = useGridSortFilter(entries || [], SEARCH_FIELDS);
+  } = useGridSortFilter(entries, SEARCH_FIELDS);
+
+  // Reset to page 1 when search or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeFilters]);
 
   const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['event-journal-paginated', dealId] });
     queryClient.invalidateQueries({ queryKey: ['event-journal', dealId] });
   };
 
-  if (isLoading) {
+  if (isLoading && currentPage === 1) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <p className="text-muted-foreground">Loading event journal…</p>
@@ -92,7 +107,7 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
     );
   }
 
-  if (!entries || entries.length === 0) {
+  if (totalCount === 0 && !isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="text-center">
@@ -134,7 +149,7 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
           {filteredData.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                No events match your search or filters.
+                {isLoading ? 'Loading…' : 'No events match your search or filters.'}
               </TableCell>
             </TableRow>
           ) : (
@@ -167,14 +182,36 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
         </TableBody>
       </Table>
 
-      {entries.length > 0 && (
-        <div className="flex justify-end">
-          <div className="text-sm text-muted-foreground">
-            {filteredData.length !== entries.length && `Showing ${filteredData.length} of `}
-            Total Events: {entries.length}
-          </div>
+      {/* Pagination Footer */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-muted-foreground">
+          {totalCount > 0 && (
+            <>
+              Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount)} of {totalCount} events
+            </>
+          )}
         </div>
-      )}
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(1)} disabled={currentPage <= 1 || isLoading}>
+              First
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage <= 1 || isLoading}>
+              Previous
+            </Button>
+            <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">
+              {currentPage}
+            </span>
+            <span className="text-sm text-muted-foreground">of {totalPages}</span>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage >= totalPages || isLoading}>
+              Next
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(totalPages)} disabled={currentPage >= totalPages || isLoading}>
+              Last
+            </Button>
+          </div>
+        )}
+      </div>
 
       <Dialog open={!!selectedEntry} onOpenChange={() => setSelectedEntry(null)}>
         <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto">
@@ -198,7 +235,7 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
         open={exportOpen}
         onOpenChange={setExportOpen}
         columns={EXPORT_COLUMNS}
-        data={entries || []}
+        data={allEntries || []}
         fileName="event_journal"
       />
     </div>
