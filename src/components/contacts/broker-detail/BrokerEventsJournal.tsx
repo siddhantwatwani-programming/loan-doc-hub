@@ -91,17 +91,14 @@ const BrokerEventsJournal: React.FC<{ brokerId: string; contactDbId: string }> =
     );
   }
 
-  if (!entries.length) {
-    return (
-      <div className="flex items-center justify-center min-h-[300px]">
-        <div className="text-center">
-          <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">Events Journal</h3>
-          <p className="text-muted-foreground">No changes recorded yet.</p>
-        </div>
-      </div>
-    );
-  }
+  const handleRefresh = async () => {
+    const { data } = await supabase.from('contacts').select('contact_data').eq('id', contactDbId).single();
+    if (data?.contact_data && (data.contact_data as any)._events_journal) {
+      setEntries(((data.contact_data as any)._events_journal as ContactEventJournalEntry[]).slice().reverse());
+    } else {
+      setEntries([]);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -116,12 +113,7 @@ const BrokerEventsJournal: React.FC<{ brokerId: string; contactDbId: string }> =
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
         onExport={() => setExportOpen(true)}
-        onRefresh={async () => {
-          const { data } = await supabase.from('contacts').select('contact_data').eq('id', contactDbId).single();
-          if (data?.contact_data && (data.contact_data as any)._events_journal) {
-            setEntries(((data.contact_data as any)._events_journal as ContactEventJournalEntry[]).slice().reverse());
-          }
-        }}
+        onRefresh={handleRefresh}
       />
 
       <div className="border border-border rounded-lg overflow-x-auto">
