@@ -43,7 +43,7 @@ const BorrowerDashboard: React.FC<Props> = ({ contact }) => {
           <CardHeader className="pb-2"><CardTitle className="text-sm">Contact Information</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-2 gap-3">
             <Field label="Email" value={contact.email || ''} />
-            <Field label="Cell Phone" value={data['phone.cell'] || ''} />
+            <Field label="Cell Phone" value={data['phone.cell'] || data['phone.mobile'] || ''} />
             <Field label="Home Phone" value={data['phone.home'] || ''} />
             <Field label="Work Phone" value={data['phone.work'] || ''} />
             <Field label="Fax" value={data['phone.fax'] || ''} />
