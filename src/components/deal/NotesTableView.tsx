@@ -128,6 +128,7 @@ const formatDate = (dateStr: string) => {
 export const NotesTableView: React.FC<NotesTableViewProps> = ({
   notes, onAddNote, onEditNote, onRowClick, onDeleteNote, onBulkDelete, onExport, onRefresh, disabled = false, isLoading = false,
   asOfFilter, onAsOfFilterChange,
+  currentPage = 1, totalPages = 1, totalCount, onPageChange,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig('notes_v4', DEFAULT_COLUMNS);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
