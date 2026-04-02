@@ -102,6 +102,8 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBroker, setEditingBroker] = useState<BrokerData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
   
   // Check if we're in detail view
@@ -119,7 +121,11 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
   }, [dirtyFieldKeys, selectedBrokerPrefix]);
   
   // Extract brokers from values
-  const brokers = extractBrokersFromValues(values);
+  const allBrokers = extractBrokersFromValues(values);
+  const totalBrokers = allBrokers.length;
+  const totalPages = Math.max(1, Math.ceil(totalBrokers / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedBrokers = allBrokers.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // Get the selected broker name for detail view header
   const selectedBrokerName = useMemo(() => {
