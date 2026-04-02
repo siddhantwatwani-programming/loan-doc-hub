@@ -209,14 +209,14 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const handlePrimaryChange = useCallback((propertyId: string, isPrimary: boolean) => {
     if (isPrimary) {
       // Unset all other properties as non-primary
-      properties.forEach(p => {
+      allProperties.forEach(p => {
         if (p.id !== propertyId) {
           onValueChange(`${p.id}.primary_property`, 'false');
         }
       });
     }
     onValueChange(`${propertyId}.primary_property`, String(isPrimary));
-  }, [properties, onValueChange]);
+  }, [allProperties, onValueChange]);
 
   // Handle saving property from modal
   const handleSaveProperty = useCallback(async (propertyData: PropertyData) => {
