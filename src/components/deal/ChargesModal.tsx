@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -15,6 +16,9 @@ import {
 } from '@/components/ui/select';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
 import { hasModalFormData } from '@/lib/modalFormValidation';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
+import { format, parse, isValid } from 'date-fns';
 import type { ChargeData } from './ChargesTableView';
 
 interface ChargesModalProps {
@@ -38,6 +42,7 @@ const getEmptyCharge = (): ChargeData => ({
 export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, charge, onSave, isEdit = false }) => {
   const [formData, setFormData] = useState<ChargeData>(getEmptyCharge());
   const [showConfirm, setShowConfirm] = useState(false);
+  const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (open) setFormData(charge ? charge : getEmptyCharge());
@@ -51,10 +56,31 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
   const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
 
   const renderInlineField = (field: keyof ChargeData, label: string, type = 'text') => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[110px] shrink-0 text-xs font-semibold text-foreground">{label}</Label>
-      <Input value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value)} className="h-7 text-xs flex-1" type={type} />
-    </div>
+    type === 'date' ? (() => {
+      const val = formData[field] || '';
+      const safeParse = (v: string): Date | undefined => { if (!v) return undefined; try { const d = parse(v, 'yyyy-MM-dd', new Date()); if (isValid(d)) return d; const d2 = new Date(v); return isValid(d2) ? d2 : undefined; } catch { return undefined; } };
+      return (
+        <div className="flex items-center gap-2">
+          <Label className="w-[110px] shrink-0 text-xs font-semibold text-foreground">{label}</Label>
+          <Popover open={datePickerStates[field] || false} onOpenChange={(o) => setDatePickerStates(prev => ({ ...prev, [field]: o }))}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn('h-7 text-xs flex-1 justify-start text-left font-normal', !val && 'text-muted-foreground')}>
+                {val && safeParse(val) ? format(safeParse(val)!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
+                <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+              <EnhancedCalendar mode="single" selected={safeParse(val)} onSelect={(date) => { if (date) handleFieldChange(field, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [field]: false })); }} onClear={() => { handleFieldChange(field, ''); setDatePickerStates(prev => ({ ...prev, [field]: false })); }} onToday={() => { handleFieldChange(field, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [field]: false })); }} initialFocus />
+            </PopoverContent>
+          </Popover>
+        </div>
+      );
+    })() : (
+      <div className="flex items-center gap-2">
+        <Label className="w-[110px] shrink-0 text-xs font-semibold text-foreground">{label}</Label>
+        <Input value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value)} className="h-7 text-xs flex-1" type={type} />
+      </div>
+    )
   );
 
   const renderCurrencyField = (field: keyof ChargeData, label: string) => (
