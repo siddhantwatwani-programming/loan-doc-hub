@@ -49,6 +49,10 @@ interface TrustLedgerTableViewProps {
   onRefresh?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
+  currentPage?: number;
+  totalPages?: number;
+  totalCount?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
