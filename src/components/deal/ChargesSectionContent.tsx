@@ -125,7 +125,11 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
   }, [dirtyFieldKeys, selectedChargePrefix]);
   
   const isDetailView = activeSubSection === 'detail';
-  const charges = extractChargesFromValues(values);
+  const allCharges = extractChargesFromValues(values);
+  const totalCharges = allCharges.length;
+  const totalPages = Math.max(1, Math.ceil(totalCharges / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedCharges = allCharges.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const selectedChargeName = useMemo(() => {
     const charge = charges.find(c => c.id === selectedChargePrefix);
