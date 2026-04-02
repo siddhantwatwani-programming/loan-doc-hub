@@ -332,7 +332,7 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string; d
             </PopoverContent>
           </Popover>
           {!disabled && (
-            <Button size="sm" className="h-8 text-xs gap-1" onClick={() => { setNewLog(getEmptyLog()); setPendingFiles([]); setAddOpen(true); }}>
+            <Button size="sm" className="h-8 text-xs gap-1" onClick={() => { setNewLog(getEmptyLog()); setPendingFiles([]); setValidationErrors({}); setAddOpen(true); }}>
               <Plus className="h-3.5 w-3.5" /> Add Conversation Logs
             </Button>
           )}
