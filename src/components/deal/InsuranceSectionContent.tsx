@@ -303,10 +303,10 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
 
   const renderSubSectionContent = () => {
     switch (activeSubSection) {
-      case 'allInsurances':
+      case 'insurances':
         return (
           <InsuranceTableView
-            allInsurances={allInsurances}
+            insurances={paginatedInsurances}
             onAddInsurance={handleAddInsurance}
             onEditInsurance={handleEditInsurance}
             onRowClick={handleRowClick}
@@ -314,6 +314,10 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
             onBack={onBack}
             onRefresh={onRefresh}
             disabled={disabled}
+            currentPage={safePage}
+            totalPages={totalPages}
+            totalCount={totalInsurances}
+            onPageChange={setCurrentPage}
           />
         );
       case 'insurance_details':
