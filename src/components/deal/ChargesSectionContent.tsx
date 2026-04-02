@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
+import { formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import { Button } from '@/components/ui/button';
 import { ChargesSubNavigation, ChargesSubSection } from './ChargesSubNavigation';
 import { ChargesDetailForm } from './ChargesDetailForm';
