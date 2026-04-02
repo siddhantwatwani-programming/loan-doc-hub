@@ -113,12 +113,8 @@ const BrokerEventsJournal: React.FC<{ brokerId: string; contactDbId: string }> =
         onClearFilters={clearFilters}
         activeFilterCount={activeFilterCount}
         onExport={() => setExportOpen(true)}
-        onRefresh={async () => {
-          const { data } = await supabase.from('contacts').select('contact_data').eq('id', contactDbId).single();
-          if (data?.contact_data && (data.contact_data as any)._events_journal) {
-            setEntries(((data.contact_data as any)._events_journal as ContactEventJournalEntry[]).slice().reverse());
-          }
-        }}
+        onRefresh={handleRefresh}
+      />
       />
 
       <div className="border border-border rounded-lg overflow-x-auto">
