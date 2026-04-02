@@ -44,6 +44,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
   const [formData, setFormData] = useState<ChargeData>(getEmptyCharge());
   const [showConfirm, setShowConfirm] = useState(false);
   const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
+  const [focusedCurrencyField, setFocusedCurrencyField] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) setFormData(charge ? charge : getEmptyCharge());
