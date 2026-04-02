@@ -159,8 +159,11 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     return remapped;
   }, [dirtyFieldKeys, selectedPropertyPrefix]);
   
-  // Extract properties from values
-  const properties = extractPropertiesFromValues(values);
+  const allProperties = extractPropertiesFromValues(values);
+  const totalProperties = allProperties.length;
+  const totalPages = Math.max(1, Math.ceil(totalProperties / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedProperties = allProperties.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   
   // Build property options for liens dropdown
   const propertyOptions = useMemo(() => {
