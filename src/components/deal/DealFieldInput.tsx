@@ -354,7 +354,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
     if (field.data_type === 'phone') return renderPhoneInput();
     if (field.data_type === 'date') return renderDatePicker();
     if (field.data_type === 'boolean') return renderCheckbox();
-    if (field.data_type === 'text' && field.field_key.includes('address')) return renderTextarea();
+    if (field.data_type === 'text' && field.field_key.toLowerCase().includes('addres')) return renderTextarea();
     return renderInput();
   };
 
