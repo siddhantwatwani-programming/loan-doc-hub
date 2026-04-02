@@ -183,8 +183,8 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   }, [dirtyFieldKeys, selectedLienPrefix]);
 
   const selectedLien = useMemo(() => {
-    return liens.find(l => l.id === selectedLienPrefix) || { ...DEFAULT_LIEN, id: selectedLienPrefix };
-  }, [liens, selectedLienPrefix]);
+    return allLiens.find(l => l.id === selectedLienPrefix) || { ...DEFAULT_LIEN, id: selectedLienPrefix };
+  }, [allLiens, selectedLienPrefix]);
 
   const selectedLienName = useMemo(() => {
     return selectedLien.holder || `Lien ${selectedLienPrefix.replace('lien', '')}`;
