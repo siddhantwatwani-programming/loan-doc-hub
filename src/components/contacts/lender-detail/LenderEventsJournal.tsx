@@ -115,7 +115,6 @@ const LenderEventsJournal: React.FC<{ lenderId: string; contactDbId: string }> =
         onExport={() => setExportOpen(true)}
         onRefresh={handleRefresh}
       />
-      />
 
       <div className="border border-border rounded-lg overflow-x-auto">
         <Table>
