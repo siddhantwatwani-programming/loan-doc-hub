@@ -235,7 +235,7 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
       case 'charges':
         return (
           <ChargesTableView
-            charges={charges}
+            charges={paginatedCharges}
             onAddCharge={handleAddCharge}
             onEditCharge={handleEditCharge}
             onRowClick={handleRowClick}
@@ -243,6 +243,9 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
             onRefresh={onRefresh}
             disabled={disabled}
             isLoading={isLoading}
+            currentPage={safePage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
           />
         );
       case 'detail':
