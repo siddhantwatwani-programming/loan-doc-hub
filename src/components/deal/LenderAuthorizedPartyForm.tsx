@@ -2,6 +2,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
 import { ZipInput } from '@/components/ui/zip-input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { US_STATES } from '@/lib/usStates';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
@@ -29,6 +31,9 @@ const CAPACITY_OPTIONS = [
   { value: 'bankruptcy_trustee', label: 'Bankruptcy Trustee' },
   { value: 'other', label: 'Other' },
 ];
+
+/** Only allow letters, spaces, hyphens, apostrophes */
+const sanitizeName = (v: string) => v.replace(/[^a-zA-Z\s'\-]/g, '').slice(0, 100);
 
 interface LenderAuthorizedPartyFormProps {
   fields: FieldDefinition[];
@@ -56,6 +61,39 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
     onValueChange(FIELD_KEYS[key], String(value));
   };
 
+  const handleNameChange = (key: keyof typeof FIELD_KEYS, raw: string) => {
+    handleChange(key, sanitizeName(raw));
+  };
+
+  const renderNameField = (key: keyof typeof FIELD_KEYS, label: string, labelWidth = 'min-w-[60px]') => (
+    <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
+      <div className="flex items-center gap-2">
+        <Label className={`text-sm text-muted-foreground ${labelWidth}`}>{label}</Label>
+        <Input
+          value={getValue(key)}
+          onChange={(e) => handleNameChange(key, e.target.value)}
+          disabled={disabled}
+          className="h-7 text-sm flex-1"
+          maxLength={100}
+        />
+      </div>
+    </DirtyFieldWrapper>
+  );
+
+  const renderPhoneField = (key: keyof typeof FIELD_KEYS, label: string, labelWidth = 'min-w-[40px]') => (
+    <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
+      <div className="flex items-center gap-2">
+        <Label className={`text-sm text-muted-foreground ${labelWidth}`}>{label}</Label>
+        <PhoneInput
+          value={getValue(key)}
+          onValueChange={(v) => handleChange(key, v)}
+          disabled={disabled}
+          className="h-7 text-sm flex-1"
+        />
+      </div>
+    </DirtyFieldWrapper>
+  );
+
   const renderInlineField = (key: keyof typeof FIELD_KEYS, label: string, labelWidth = 'min-w-[60px]', props: Record<string, any> = {}) => (
     <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
       <div className="flex items-center gap-2">
@@ -78,9 +116,9 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
         <div className="space-y-2">
           <h4 className="text-sm font-semibold text-foreground">Name</h4>
           <div className="space-y-2">
-            {renderInlineField('firstName', 'First')}
-            {renderInlineField('middleName', 'Middle')}
-            {renderInlineField('lastName', 'Last')}
+            {renderNameField('firstName', 'First')}
+            {renderNameField('middleName', 'Middle')}
+            {renderNameField('lastName', 'Last')}
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.capacity}>
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-muted-foreground min-w-[60px]">Capacity</Label>
@@ -111,7 +149,21 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
           <div className="space-y-2">
             {renderInlineField('street', 'Street', 'min-w-[50px]')}
             {renderInlineField('city', 'City', 'min-w-[50px]')}
-            {renderInlineField('state', 'State', 'min-w-[50px]')}
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.state}>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground min-w-[50px]">State</Label>
+                <Select value={getValue('state')} onValueChange={(v) => handleChange('state', v)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm flex-1 bg-background">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {US_STATES.map(s => (
+                      <SelectItem key={s} value={s} className="text-sm">{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </DirtyFieldWrapper>
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.zip}>
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-muted-foreground min-w-[50px]">ZIP</Label>
@@ -125,10 +177,10 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
         <div className="space-y-2">
           <h4 className="text-sm font-semibold text-foreground">Phone</h4>
           <div className="space-y-2">
-            {renderInlineField('phoneHome', 'Home', 'min-w-[40px]')}
-            {renderInlineField('phoneWork', 'Work', 'min-w-[40px]')}
-            {renderInlineField('phoneCell', 'Cell', 'min-w-[40px]')}
-            {renderInlineField('phoneFax', 'Fax', 'min-w-[40px]')}
+            {renderPhoneField('phoneHome', 'Home')}
+            {renderPhoneField('phoneWork', 'Work')}
+            {renderPhoneField('phoneCell', 'Cell')}
+            {renderPhoneField('phoneFax', 'Fax')}
           </div>
         </div>
       </div>
