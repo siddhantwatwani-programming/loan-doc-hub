@@ -51,6 +51,10 @@ interface InsuranceTableViewProps {
   onBack?: () => void;
   onRefresh?: () => void;
   disabled?: boolean;
+  currentPage?: number;
+  totalPages?: number;
+  totalCount?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const SEARCH_FIELDS = ['description', 'companyName', 'policyNumber', 'agentName', 'insuredName'];
