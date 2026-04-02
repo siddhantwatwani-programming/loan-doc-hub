@@ -49,6 +49,10 @@ interface TrustLedgerTableViewProps {
   onRefresh?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
+  currentPage?: number;
+  totalPages?: number;
+  totalCount?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -124,6 +128,7 @@ const filterByDate = (entries: TrustLedgerEntry[], filter: string): TrustLedgerE
 
 export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
   entries, onAddEntry, onEditEntry, onRowClick, onDeleteEntry, onBulkDelete, onExport, onRefresh, disabled = false, isLoading = false,
+  currentPage = 1, totalPages = 1, totalCount, onPageChange,
 }) => {
   const [columns, setColumns, resetColumns] = useTableColumnConfig('trust_ledger', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
@@ -328,9 +333,26 @@ export const TrustLedgerTableView: React.FC<TrustLedgerTableViewProps> = ({
         </Table>
       </div>
 
-      {filteredData.length > 0 && (
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {(currentPage - 1) * 10 + 1}–{Math.min(currentPage * 10, totalCount ?? entries.length)} of {totalCount ?? entries.length} entries
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(1)} disabled={currentPage <= 1 || disabled}>First</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage - 1)} disabled={currentPage <= 1 || disabled}>Previous</Button>
+            <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">{currentPage}</span>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage + 1)} disabled={currentPage >= totalPages || disabled}>Next</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(totalPages)} disabled={currentPage >= totalPages || disabled}>Last</Button>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      {entries.length > 0 && (
         <div className="flex justify-end">
-          <div className="text-sm text-muted-foreground">Total Entries: {filteredData.length}</div>
+          <div className="text-sm text-muted-foreground">Total Entries: {totalCount ?? entries.length}</div>
         </div>
       )}
 
