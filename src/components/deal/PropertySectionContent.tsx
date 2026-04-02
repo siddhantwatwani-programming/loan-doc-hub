@@ -167,11 +167,11 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   
   // Build property options for liens dropdown
   const propertyOptions = useMemo(() => {
-    return properties.map(p => ({
+    return allProperties.map(p => ({
       id: p.id,
       label: p.description || p.street || `Property ${p.id.replace('property', '')}`,
     }));
-  }, [properties]);
+  }, [allProperties]);
 
   // Get the selected property name for detail view header
   const selectedPropertyName = useMemo(() => {
