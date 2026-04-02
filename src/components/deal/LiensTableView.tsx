@@ -61,6 +61,10 @@ interface LiensTableViewProps {
   onRefresh?: () => void;
   onBack?: () => void;
   disabled?: boolean;
+  currentPage?: number;
+  totalPages?: number;
+  totalCount?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const SEARCHABLE_FIELDS = ['property', 'holder', 'loanType', 'lienPriorityNow', 'lienPriorityAfter', 'recordingNumber', 'lastVerified'];
