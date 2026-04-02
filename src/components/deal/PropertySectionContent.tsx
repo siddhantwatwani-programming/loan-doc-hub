@@ -266,7 +266,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     
     // If this is marked as primary, unset others
     if (propertyData.isPrimary) {
-      properties.forEach(p => {
+      allProperties.forEach(p => {
         if (p.id !== prefix) {
           onValueChange(`${p.id}.primary_property`, 'false');
         }
@@ -279,7 +279,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     if (onPersist) {
       setTimeout(() => { onPersist(); }, 50);
     }
-  }, [editingProperty, values, onValueChange, properties, onPersist]);
+  }, [editingProperty, values, onValueChange, allProperties, onPersist]);
 
   // Handle deleting a property
   const handleDeleteProperty = useCallback((property: PropertyData) => {
