@@ -240,10 +240,17 @@ export const LendersTableView: React.FC<LendersTableViewProps> = ({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage - 1)} disabled={currentPage <= 1 || isLoading}>Previous</Button>
-          <span className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</span>
-          <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage + 1)} disabled={currentPage >= totalPages || isLoading}>Next</Button>
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {((currentPage ?? 1) - 1) * 10 + 1}–{Math.min((currentPage ?? 1) * 10, lenders.length)} of {lenders.length} lenders
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(1)} disabled={(currentPage ?? 1) <= 1 || isLoading}>First</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.((currentPage ?? 1) - 1)} disabled={(currentPage ?? 1) <= 1 || isLoading}>Previous</Button>
+            <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">{currentPage ?? 1}</span>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.((currentPage ?? 1) + 1)} disabled={(currentPage ?? 1) >= (totalPages ?? 1) || isLoading}>Next</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(totalPages ?? 1)} disabled={(currentPage ?? 1) >= (totalPages ?? 1) || isLoading}>Last</Button>
+          </div>
         </div>
       )}
 

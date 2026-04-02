@@ -243,10 +243,15 @@ export const BrokersTableView: React.FC<BrokersTableViewProps> = ({
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage - 1)} disabled={currentPage <= 1 || disabled}>Previous</Button>
-            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage + 1)} disabled={currentPage >= totalPages || disabled}>Next</Button>
+          <div className="text-sm text-muted-foreground">
+            Showing {((currentPage ?? 1) - 1) * 10 + 1}–{Math.min((currentPage ?? 1) * 10, brokers.length)} of {brokers.length} brokers
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(1)} disabled={(currentPage ?? 1) <= 1 || disabled}>First</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.((currentPage ?? 1) - 1)} disabled={(currentPage ?? 1) <= 1 || disabled}>Previous</Button>
+            <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">{currentPage ?? 1}</span>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.((currentPage ?? 1) + 1)} disabled={(currentPage ?? 1) >= (totalPages ?? 1) || disabled}>Next</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(totalPages ?? 1)} disabled={(currentPage ?? 1) >= (totalPages ?? 1) || disabled}>Last</Button>
           </div>
         </div>
       )}
