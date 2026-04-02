@@ -199,8 +199,14 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
       { key: 'accruedInterest', dbField: 'accrued_interest' },
     ];
 
+    const currencyKeys: (keyof ChargeData)[] = ['unpaidBalance', 'totalDue', 'originalAmount', 'advancedByAmount', 'onBehalfOfAmount', 'amountOwedByBorrower', 'accruedInterest'];
+
     fieldEntries.forEach(({ key, dbField }) => {
-      const val = chargeData[key] || '';
+      let val = chargeData[key] || '';
+      // Strip commas from currency fields before persisting
+      if (currencyKeys.includes(key) && val) {
+        val = unformatCurrencyDisplay(val);
+      }
       // Only write fields with actual data to avoid false dirty flags on new entries
       if (val !== '' || isEdit) {
         onValueChange(`${prefix}.${dbField}`, val);
