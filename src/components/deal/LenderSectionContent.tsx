@@ -26,9 +26,9 @@ interface LenderSectionContentProps {
   onRefresh?: () => void;
 }
 
-// Helper to extract lenders from values based on lender prefix pattern
+// Helper to extract allLenders from values based on lender prefix pattern
 const extractLendersFromValues = (values: Record<string, string>): LenderData[] => {
-  const lenders: LenderData[] = [];
+  const allLenders: LenderData[] = [];
   const lenderPrefixes = new Set<string>();
   
   // Find all lender prefixes (lender1, lender2, etc.)
@@ -57,17 +57,17 @@ const extractLendersFromValues = (values: Record<string, string>): LenderData[] 
       taxId: values[`${prefix}.tax_id`] || '',
       taxIdType: values[`${prefix}.tax_id_type`] || '',
     };
-    lenders.push(lender);
+    allLenders.push(lender);
   });
   
   // Sort to ensure lender1 comes first
-  lenders.sort((a, b) => {
+  allLenders.sort((a, b) => {
     const numA = parseInt(a.id.replace('lender', ''));
     const numB = parseInt(b.id.replace('lender', ''));
     return numA - numB;
   });
   
-  return lenders;
+  return allLenders;
 };
 
 // Get the next available lender prefix
@@ -105,6 +105,8 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLender, setEditingLender] = useState<LenderData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
   
   // Check if we're in detail view
@@ -144,17 +146,21 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
     return result;
   }, [dirtyFieldKeys, selectedLenderPrefix]);
   
-  // Extract lenders from values
-  const lenders = useMemo(() => extractLendersFromValues(values), [values]);
+  // Extract allLenders from values
+  const allLenders = useMemo(() => extractLendersFromValues(values), [values]);
+  const totalLenders = allLenders.length;
+  const totalPages = Math.max(1, Math.ceil(totalLenders / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedLenders = allLenders.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // Get the selected lender name for detail view header
   const selectedLenderName = useMemo(() => {
-    const lender = lenders.find(l => l.id === selectedLenderPrefix);
+    const lender = allLenders.find(l => l.id === selectedLenderPrefix);
     if (lender) {
       return lender.fullName || `${lender.firstName} ${lender.lastName}`.trim() || `Lender ${selectedLenderPrefix.replace('lender', '')}`;
     }
     return 'Lender';
-  }, [lenders, selectedLenderPrefix]);
+  }, [allLenders, selectedLenderPrefix]);
 
   // Handle adding a new lender
   const handleAddLender = useCallback(() => {
@@ -182,15 +188,15 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
   // Handle primary lender change - only one can be primary
   const handlePrimaryChange = useCallback((lenderId: string, isPrimary: boolean) => {
     if (isPrimary) {
-      // Unset all other lenders as non-primary
-      lenders.forEach(l => {
+      // Unset all other allLenders as non-primary
+      allLenders.forEach(l => {
         if (l.id !== lenderId) {
           onValueChange(`${l.id}.is_primary`, 'false');
         }
       });
     }
     onValueChange(`${lenderId}.is_primary`, String(isPrimary));
-  }, [lenders, onValueChange]);
+  }, [allLenders, onValueChange]);
 
   // Handle saving lender from modal
   const handleSaveLender = useCallback((lenderData: LenderData) => {
@@ -213,7 +219,7 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
     
     // If this is marked as primary, unset others
     if (lenderData.isPrimary) {
-      lenders.forEach(l => {
+      allLenders.forEach(l => {
         if (l.id !== prefix) {
           onValueChange(`${l.id}.is_primary`, 'false');
         }
@@ -221,7 +227,7 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
     }
     
     setModalOpen(false);
-  }, [editingLender, values, onValueChange, lenders]);
+  }, [editingLender, values, onValueChange, allLenders]);
 
   // Handle deleting a lender
   const handleDeleteLender = useCallback((lender: LenderData) => {
@@ -264,7 +270,7 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
       case 'lenders':
         return (
           <LendersTableView
-            lenders={lenders}
+            lenders={paginatedLenders}
             onAddLender={handleAddLender}
             onEditLender={handleEditLender}
             onRowClick={handleRowClick}
@@ -273,6 +279,9 @@ export const LenderSectionContent: React.FC<LenderSectionContentProps> = ({
             onRefresh={onRefresh}
             disabled={disabled}
             isLoading={isLoading}
+            currentPage={safePage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
           />
         );
       case 'lender':

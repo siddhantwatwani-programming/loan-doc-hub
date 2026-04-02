@@ -323,7 +323,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => onPageChange?.(1)} disabled={currentPage <= 1 || disabled}>First</Button>
             <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage - 1)} disabled={currentPage <= 1 || disabled}>Previous</Button>
-            <span className="text-sm text-muted-foreground px-2">Page {currentPage} of {totalPages}</span>
+            <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">{currentPage}</span>
             <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage + 1)} disabled={currentPage >= totalPages || disabled}>Next</Button>
             <Button variant="outline" size="sm" onClick={() => onPageChange?.(totalPages)} disabled={currentPage >= totalPages || disabled}>Last</Button>
           </div>

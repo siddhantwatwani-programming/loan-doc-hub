@@ -102,6 +102,8 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBroker, setEditingBroker] = useState<BrokerData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
   
   // Check if we're in detail view
@@ -119,17 +121,21 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
   }, [dirtyFieldKeys, selectedBrokerPrefix]);
   
   // Extract brokers from values
-  const brokers = extractBrokersFromValues(values);
+  const allBrokers = extractBrokersFromValues(values);
+  const totalBrokers = allBrokers.length;
+  const totalPages = Math.max(1, Math.ceil(totalBrokers / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedBrokers = allBrokers.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // Get the selected broker name for detail view header
   const selectedBrokerName = useMemo(() => {
-    const broker = brokers.find(b => b.id === selectedBrokerPrefix);
+    const broker = allBrokers.find(b => b.id === selectedBrokerPrefix);
     if (broker) {
       const fullName = [broker.firstName, broker.lastName].filter(Boolean).join(' ');
       return fullName || broker.company || `Broker ${selectedBrokerPrefix.replace('broker', '')}`;
     }
     return 'Broker';
-  }, [brokers, selectedBrokerPrefix]);
+  }, [allBrokers, selectedBrokerPrefix]);
 
   // Handle adding a new broker
   const handleAddBroker = useCallback(() => {
@@ -217,7 +223,7 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
       case 'brokers':
         return (
           <BrokersTableView
-            brokers={brokers}
+            brokers={paginatedBrokers}
             onAddBroker={handleAddBroker}
             onEditBroker={handleEditBroker}
             onRowClick={handleRowClick}
@@ -225,6 +231,9 @@ export const BrokerSectionContent: React.FC<BrokerSectionContentProps> = ({
             onRefresh={onRefresh}
             disabled={disabled}
             isLoading={isLoading}
+            currentPage={safePage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
           />
         );
       case 'broker':

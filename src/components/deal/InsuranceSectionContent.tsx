@@ -20,9 +20,9 @@ interface InsuranceSectionContentProps {
   onRefresh?: () => void;
 }
 
-// Helper to extract insurances from values based on insurance prefix pattern
+// Helper to extract allInsurances from values based on insurance prefix pattern
 const extractInsurancesFromValues = (values: Record<string, string>): InsuranceData[] => {
-  const insurances: InsuranceData[] = [];
+  const allInsurances: InsuranceData[] = [];
   const insurancePrefixes = new Set<string>();
   
   // Find all insurance prefixes (insurance1, insurance2, etc.)
@@ -69,18 +69,18 @@ const extractInsurancesFromValues = (values: Record<string, string>): InsuranceD
       return val !== undefined && val !== '';
     });
     if (hasData) {
-      insurances.push(insurance);
+      allInsurances.push(insurance);
     }
   });
   
   // Sort to ensure insurance1 comes first
-  insurances.sort((a, b) => {
+  allInsurances.sort((a, b) => {
     const numA = parseInt(a.id.replace('insurance', ''));
     const numB = parseInt(b.id.replace('insurance', ''));
     return numA - numB;
   });
   
-  return insurances;
+  return allInsurances;
 };
 
 // Get the next available insurance prefix
@@ -117,6 +117,8 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
   const setSelectedInsurancePrefix = (prefix: string) => nav?.setSelectedPrefix('insurance', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingInsurance, setEditingInsurance] = useState<InsuranceData | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
 
   // Remap dirty field keys: insuranceN.xxx → insurance1.xxx for selected prefix
@@ -133,12 +135,16 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
   // Check if we're in detail view
   const isDetailView = activeSubSection === 'insurance_details';
   
-  // Extract insurances from values
-  const insurances = extractInsurancesFromValues(values);
+  // Extract allInsurances from values
+  const allInsurances = extractInsurancesFromValues(values);
+  const totalInsurances = allInsurances.length;
+  const totalPages = Math.max(1, Math.ceil(totalInsurances / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedInsurances = allInsurances.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // Get the selected insurance for detail view
   const selectedInsurance = useMemo(() => {
-    return insurances.find(i => i.id === selectedInsurancePrefix) || {
+    return allInsurances.find(i => i.id === selectedInsurancePrefix) || {
       id: selectedInsurancePrefix,
       property: '',
       description: '',
@@ -165,7 +171,7 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
       lastVerified: '',
       trackingStatus: '',
     };
-  }, [insurances, selectedInsurancePrefix]);
+  }, [allInsurances, selectedInsurancePrefix]);
 
   // Get the selected insurance name for detail view header
   const selectedInsuranceName = useMemo(() => {
@@ -300,7 +306,7 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
       case 'insurances':
         return (
           <InsuranceTableView
-            insurances={insurances}
+            insurances={paginatedInsurances}
             onAddInsurance={handleAddInsurance}
             onEditInsurance={handleEditInsurance}
             onRowClick={handleRowClick}
@@ -308,6 +314,10 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
             onBack={onBack}
             onRefresh={onRefresh}
             disabled={disabled}
+            currentPage={safePage}
+            totalPages={totalPages}
+            totalCount={totalInsurances}
+            onPageChange={setCurrentPage}
           />
         );
       case 'insurance_details':
