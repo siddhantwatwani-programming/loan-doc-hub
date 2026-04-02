@@ -109,6 +109,8 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCharge, setEditingCharge] = useState<ChargeData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
 
   // Remap dirty field keys: chargeN.xxx → charges.xxx for selected prefix
