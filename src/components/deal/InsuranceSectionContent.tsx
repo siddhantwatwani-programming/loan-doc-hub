@@ -136,7 +136,11 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
   const isDetailView = activeSubSection === 'insurance_details';
   
   // Extract insurances from values
-  const insurances = extractInsurancesFromValues(values);
+  const allInsurances = extractInsurancesFromValues(values);
+  const totalInsurances = allInsurances.length;
+  const totalPages = Math.max(1, Math.ceil(totalInsurances / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedInsurances = allInsurances.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // Get the selected insurance for detail view
   const selectedInsurance = useMemo(() => {
