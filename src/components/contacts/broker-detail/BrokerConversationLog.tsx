@@ -200,8 +200,18 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string; d
     return results;
   };
 
+  const validateLog = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!newLog.type || newLog.type.trim() === '') errors.type = 'Type is required';
+    if (newLog.name && newLog.name.length > 100) errors.name = 'Name must be 100 characters or less';
+    if (newLog.account && newLog.account.length > 100) errors.account = 'Account must be 100 characters or less';
+    if (newLog.reference && newLog.reference.length > 100) errors.reference = 'Reference must be 100 characters or less';
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleAddLog = async () => {
-    setUploading(true);
+    if (!validateLog()) return;
     const logId = `conv_${Date.now()}`;
     let attachmentsMeta: (string | AttachmentMeta)[] = [...newLog.attachments];
 
