@@ -229,12 +229,28 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
         </div>
       </div>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {(currentPage - 1) * 10 + 1}–{Math.min(currentPage * 10, totalCount ?? insurances.length)} of {totalCount ?? insurances.length} records
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(1)} disabled={currentPage <= 1 || disabled}>First</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage - 1)} disabled={currentPage <= 1 || disabled}>Previous</Button>
+            <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">{currentPage}</span>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage + 1)} disabled={currentPage >= totalPages || disabled}>Next</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(totalPages)} disabled={currentPage >= totalPages || disabled}>Last</Button>
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       {insurances.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
             {filteredData.length !== insurances.length && `Showing ${filteredData.length} of `}
-            Total Insurance Records: {insurances.length}
+            Total Insurance Records: {totalCount ?? insurances.length}
           </div>
         </div>
       )}
