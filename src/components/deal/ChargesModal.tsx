@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DollarSign } from 'lucide-react';
 import { CalendarIcon } from 'lucide-react';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
+import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -43,6 +44,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
   const [formData, setFormData] = useState<ChargeData>(getEmptyCharge());
   const [showConfirm, setShowConfirm] = useState(false);
   const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
+  const [focusedCurrencyField, setFocusedCurrencyField] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) setFormData(charge ? charge : getEmptyCharge());
@@ -88,7 +90,17 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
       <Label className="w-[110px] shrink-0 text-xs font-semibold text-foreground">{label}</Label>
       <div className="relative flex-1">
         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
-        <Input type="number" step="0.01" value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value)} className="h-7 text-xs pl-5" placeholder="0.00" />
+        <Input
+          inputMode="decimal"
+          value={focusedCurrencyField === field ? formData[field] : formatCurrencyDisplay(formData[field])}
+          onFocus={() => { setFocusedCurrencyField(field); handleFieldChange(field, unformatCurrencyDisplay(formData[field])); }}
+          onBlur={() => { setFocusedCurrencyField(null); const v = formatCurrencyDisplay(formData[field]); if (v) handleFieldChange(field, unformatCurrencyDisplay(v)); }}
+          onChange={(e) => handleFieldChange(field, e.target.value)}
+          onKeyDown={numericKeyDown}
+          onPaste={(e) => numericPaste(e, (v) => handleFieldChange(field, v))}
+          className="h-7 text-xs pl-5"
+          placeholder="0.00"
+        />
       </div>
     </div>
   );
@@ -172,13 +184,13 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
                   <div className="px-2 py-1 text-xs font-medium text-foreground">Advanced By</div>
                   <div className="px-1.5 py-1"><Input value={formData.advancedByAccount} onChange={(e) => handleFieldChange('advancedByAccount', e.target.value)} className="h-6 text-xs" /></div>
                   <div className="px-1.5 py-1"><Input value={formData.advancedByLenderName} onChange={(e) => handleFieldChange('advancedByLenderName', e.target.value)} className="h-6 text-xs" /></div>
-                  <div className="px-1.5 py-1"><div className="relative"><span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span><Input type="number" step="0.01" value={formData.advancedByAmount} onChange={(e) => handleFieldChange('advancedByAmount', e.target.value)} className="h-6 text-xs pl-4" placeholder="0.00" /></div></div>
+                  <div className="px-1.5 py-1"><div className="relative"><span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span><Input inputMode="decimal" value={focusedCurrencyField === 'advancedByAmount' ? formData.advancedByAmount : formatCurrencyDisplay(formData.advancedByAmount)} onFocus={() => { setFocusedCurrencyField('advancedByAmount'); handleFieldChange('advancedByAmount', unformatCurrencyDisplay(formData.advancedByAmount)); }} onBlur={() => setFocusedCurrencyField(null)} onChange={(e) => handleFieldChange('advancedByAmount', e.target.value)} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (v) => handleFieldChange('advancedByAmount', v))} className="h-6 text-xs pl-4" placeholder="0.00" /></div></div>
                 </div>
                 <div className="grid grid-cols-[120px_1fr_1fr_1fr] border-b border-border items-center">
                   <div className="px-2 py-1 text-xs font-medium text-foreground">On Behalf Of</div>
                   <div className="px-1.5 py-1"><Input value={formData.onBehalfOfAccount} onChange={(e) => handleFieldChange('onBehalfOfAccount', e.target.value)} className="h-6 text-xs" /></div>
                   <div className="px-1.5 py-1"><Input value={formData.onBehalfOfLenderName} onChange={(e) => handleFieldChange('onBehalfOfLenderName', e.target.value)} className="h-6 text-xs" /></div>
-                  <div className="px-1.5 py-1"><div className="relative"><span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span><Input type="number" step="0.01" value={formData.onBehalfOfAmount} onChange={(e) => handleFieldChange('onBehalfOfAmount', e.target.value)} className="h-6 text-xs pl-4" placeholder="0.00" /></div></div>
+                  <div className="px-1.5 py-1"><div className="relative"><span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span><Input inputMode="decimal" value={focusedCurrencyField === 'onBehalfOfAmount' ? formData.onBehalfOfAmount : formatCurrencyDisplay(formData.onBehalfOfAmount)} onFocus={() => { setFocusedCurrencyField('onBehalfOfAmount'); handleFieldChange('onBehalfOfAmount', unformatCurrencyDisplay(formData.onBehalfOfAmount)); }} onBlur={() => setFocusedCurrencyField(null)} onChange={(e) => handleFieldChange('onBehalfOfAmount', e.target.value)} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (v) => handleFieldChange('onBehalfOfAmount', v))} className="h-6 text-xs pl-4" placeholder="0.00" /></div></div>
                 </div>
                 <div className="grid grid-cols-[120px_1fr_1fr_1fr] items-center">
                   <div className="px-2 py-1 flex items-center gap-1">
@@ -188,7 +200,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
                     <Label className="text-[10px] font-medium text-foreground cursor-pointer whitespace-nowrap" onClick={() => handleFieldChange('distributeBetweenAllLenders', formData.distributeBetweenAllLenders === 'true' ? 'false' : 'true')}>Distribute Between All Lenders</Label>
                   </div>
                   <div className="px-2 py-1 text-xs font-medium text-foreground col-span-2 text-right pr-3">Amount Advanced:</div>
-                  <div className="px-1.5 py-1"><div className="relative"><span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span><Input type="number" step="0.01" value={formData.amountOwedByBorrower} onChange={(e) => handleFieldChange('amountOwedByBorrower', e.target.value)} className="h-6 text-xs pl-4" placeholder="0.00" /></div></div>
+                  <div className="px-1.5 py-1"><div className="relative"><span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span><Input inputMode="decimal" value={focusedCurrencyField === 'amountOwedByBorrower' ? formData.amountOwedByBorrower : formatCurrencyDisplay(formData.amountOwedByBorrower)} onFocus={() => { setFocusedCurrencyField('amountOwedByBorrower'); handleFieldChange('amountOwedByBorrower', unformatCurrencyDisplay(formData.amountOwedByBorrower)); }} onBlur={() => setFocusedCurrencyField(null)} onChange={(e) => handleFieldChange('amountOwedByBorrower', e.target.value)} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (v) => handleFieldChange('amountOwedByBorrower', v))} className="h-6 text-xs pl-4" placeholder="0.00" /></div></div>
                 </div>
               </div>
             </div>
