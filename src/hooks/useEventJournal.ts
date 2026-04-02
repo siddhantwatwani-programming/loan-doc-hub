@@ -108,3 +108,64 @@ export function useEventJournalEntries(dealId: string | null) {
     },
   });
 }
+
+export interface PaginatedEventJournalResult {
+  entries: EventJournalEntry[];
+  totalCount: number;
+}
+
+export function usePaginatedEventJournalEntries(
+  dealId: string | null,
+  page: number,
+  pageSize: number
+) {
+  return useQuery({
+    queryKey: ['event-journal-paginated', dealId, page, pageSize],
+    enabled: !!dealId,
+    queryFn: async (): Promise<PaginatedEventJournalResult> => {
+      if (!dealId) return { entries: [], totalCount: 0 };
+
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      // Fetch paginated entries with count
+      const { data: entries, error, count } = await supabase
+        .from('event_journal' as any)
+        .select('*', { count: 'exact' })
+        .eq('deal_id', dealId)
+        .order('event_number', { ascending: false })
+        .range(from, to);
+
+      if (error) throw error;
+
+      // Fetch actor names from profiles
+      const actorIds = [...new Set((entries || []).map((e: any) => e.actor_user_id))];
+      let profileMap: Record<string, string> = {};
+
+      if (actorIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, email')
+          .in('user_id', actorIds);
+
+        (profiles || []).forEach((p: any) => {
+          profileMap[p.user_id] = p.full_name || p.email || 'Unknown';
+        });
+      }
+
+      const mapped = (entries || []).map((e: any): EventJournalEntry => ({
+        id: e.id,
+        deal_id: e.deal_id,
+        event_number: e.event_number,
+        actor_user_id: e.actor_user_id,
+        actor_name: profileMap[e.actor_user_id] || 'Unknown',
+        section: e.section,
+        details: (e.details || []) as FieldChange[],
+        created_at: e.created_at,
+        ip_address: e.ip_address || null,
+      }));
+
+      return { entries: mapped, totalCount: count || 0 };
+    },
+  });
+}
