@@ -133,6 +133,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const setSelectedPropertyPrefix = (prefix: string) => nav?.setSelectedPrefix('property', prefix);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<PropertyData | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
   
   // Check if we're in detail view
