@@ -175,12 +175,12 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
 
   // Get the selected property name for detail view header
   const selectedPropertyName = useMemo(() => {
-    const property = properties.find(p => p.id === selectedPropertyPrefix);
+    const property = allProperties.find(p => p.id === selectedPropertyPrefix);
     if (property) {
       return property.description || property.street || `Property ${selectedPropertyPrefix.replace('property', '')}`;
     }
     return 'Property';
-  }, [properties, selectedPropertyPrefix]);
+  }, [allProperties, selectedPropertyPrefix]);
 
   // Handle adding a new property
   const handleAddProperty = useCallback(() => {
