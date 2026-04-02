@@ -426,13 +426,13 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" size="sm" onClick={() => { setViewingNote(null); onEditNote(viewingNote); }}>Edit</Button>
-              </div>
             </div>
           )}
           <DialogFooter className="mt-4">
-            <Button variant="outline" size="sm" onClick={() => setViewingNote(null)}>Close</Button>
+            <div className="flex justify-end gap-2 w-full">
+              <Button variant="outline" size="sm" onClick={() => { if (viewingNote) { setViewingNote(null); onEditNote(viewingNote); } }}>Edit</Button>
+              <Button variant="outline" size="sm" onClick={() => setViewingNote(null)}>Close</Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
