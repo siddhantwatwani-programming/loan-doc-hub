@@ -117,6 +117,7 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string; d
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [viewingRow, setViewingRow] = useState<LogRow | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     (supabase as any).from('conversation_log_types').select('label').eq('is_active', true).order('display_order').then(({ data, error }: any) => {
