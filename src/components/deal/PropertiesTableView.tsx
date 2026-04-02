@@ -68,6 +68,10 @@ interface PropertiesTableViewProps {
   onBulkDelete?: (properties: PropertyData[]) => void;
   onRefresh?: () => void;
   disabled?: boolean;
+  currentPage?: number;
+  totalPages?: number;
+  totalCount?: number;
+  onPageChange?: (page: number) => void;
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
