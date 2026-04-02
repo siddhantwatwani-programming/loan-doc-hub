@@ -225,7 +225,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-3 mt-3">
+          <div className="space-y-3 mt-3 min-w-0">
             <div className="flex items-center gap-2">
               <Checkbox
                 checked={formData.highPriority}
