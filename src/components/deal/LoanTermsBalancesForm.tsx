@@ -561,9 +561,11 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               <Label className={LABEL_CLASS}>Day Due</Label>
               <Input
                 value={getValue(FIELD_KEYS.dayDue)}
-                onChange={(e) => setValue(FIELD_KEYS.dayDue, e.target.value)}
+                onChange={(e) => setValue(FIELD_KEYS.dayDue, e.target.value.replace(/\D/g, ''))}
+                onKeyDown={(e) => { if (!/\d/.test(e.key) && !['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'].includes(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault(); }}
                 disabled={disabled}
                 className="h-8 text-sm flex-1"
+                inputMode="numeric"
               />
             </div>
 
