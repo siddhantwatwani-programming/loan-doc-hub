@@ -380,7 +380,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               {formData.attachments.length > 0 ? (
                 <div className="space-y-1 overflow-hidden">
                   {formData.attachments.map((att, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1 overflow-hidden">
+                    <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1 overflow-hidden min-w-0">
                       <Paperclip className="h-3 w-3 shrink-0" />
                       <TooltipProvider>
                         <Tooltip>
