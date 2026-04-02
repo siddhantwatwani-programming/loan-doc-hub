@@ -385,7 +385,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="min-w-0 truncate">{getAttachmentName(att)}</span>
+                            <span className="flex-1 min-w-0 truncate">{getAttachmentName(att)}</span>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-sm break-all">
                             <p>{getAttachmentName(att)}</p>
