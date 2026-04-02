@@ -282,12 +282,18 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {/* Unearned Discount Balance */}
             <div className="flex items-center gap-3">
               <Label className={LABEL_CLASS}>Unearned Disc. Bal.</Label>
-              <Input
-                value={getValue(FIELD_KEYS.unearnedDiscountBalance)}
-                onChange={(e) => setValue(FIELD_KEYS.unearnedDiscountBalance, e.target.value)}
-                disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
-                className="h-8 text-sm flex-1"
-              />
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                <Input
+                  value={focusedCurrencyField === FIELD_KEYS.unearnedDiscountBalance ? getValue(FIELD_KEYS.unearnedDiscountBalance) : formatCurrencyDisplay(getValue(FIELD_KEYS.unearnedDiscountBalance))}
+                  onChange={(e) => handleCurrencyChange(FIELD_KEYS.unearnedDiscountBalance, e.target.value)}
+                  onFocus={() => setFocusedCurrencyField(FIELD_KEYS.unearnedDiscountBalance)}
+                  onBlur={() => handleCurrencyBlur(FIELD_KEYS.unearnedDiscountBalance)}
+                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                  className="h-8 text-sm pl-7"
+                  placeholder="0.00"
+                />
+              </div>
             </div>
 
             {/* Accrual Method - enabled only when Interest Split is checked */}
