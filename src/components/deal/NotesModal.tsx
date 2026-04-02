@@ -210,7 +210,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="max-w-2xl max-h-[90vh] overflow-y-auto p-4"
+          className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-4"
           onInteractOutside={(e) => {
             const target = e.target as HTMLElement | null;
             if (target?.closest('[data-radix-popper-content-wrapper]')) {
@@ -378,14 +378,14 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                 />
               </div>
               {formData.attachments.length > 0 ? (
-                <div className="space-y-1 pl-[100px] overflow-hidden" style={{ maxWidth: '100%' }}>
+                <div className="space-y-1 overflow-hidden">
                   {formData.attachments.map((att, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1 overflow-hidden max-w-full" style={{ width: '100%' }}>
+                    <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1 overflow-hidden">
                       <Paperclip className="h-3 w-3 shrink-0" />
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="flex-1 min-w-0 truncate">{getAttachmentName(att)}</span>
+                            <span className="min-w-0 truncate">{getAttachmentName(att)}</span>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-sm break-all">
                             <p>{getAttachmentName(att)}</p>
@@ -405,12 +405,12 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground italic pl-[100px]">No attachments available</p>
+                <p className="text-xs text-muted-foreground italic">No attachments available</p>
               )}
             </div>
           </div>
 
-          <DialogFooter className="mt-4">
+          <DialogFooter className="mt-4 flex-shrink-0">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button size="sm" onClick={handleSaveClick} disabled={uploading || !isFormFilled}>{uploading ? 'Uploading...' : 'OK'}</Button>
           </DialogFooter>
