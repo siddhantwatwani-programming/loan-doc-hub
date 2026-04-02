@@ -204,7 +204,7 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
 
   // Handle back navigation
   const handleBackToTable = useCallback(() => {
-    setActiveSubSection('allInsurances');
+    setActiveSubSection('insurances');
   }, []);
 
   // Handle saving insurance from modal
