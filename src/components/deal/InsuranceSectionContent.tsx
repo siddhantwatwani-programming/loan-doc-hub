@@ -320,6 +320,12 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
       insuranceTracking: 'insurance_tracking',
       lastVerified: 'last_verified',
       trackingStatus: 'tracking_status',
+      impoundsActive: 'impounds_active',
+      redFlagTrigger: 'red_flag_trigger',
+      attemptAgent: 'attempt_agent',
+      attemptBorrower: 'attempt_borrower',
+      lenderNotified: 'lender_notified',
+      lenderNotifiedDate: 'lender_notified_date',
     };
     const dbField = fieldKeyMap[field];
     if (dbField && dbField !== 'id') {
