@@ -275,8 +275,12 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
 
   // Handle back navigation
   const handleBackToTable = useCallback(() => {
-    setActiveSubSection('properties');
-  }, []);
+    if (activeSubSection === 'property_tax_detail') {
+      setActiveSubSection('property_tax');
+    } else {
+      setActiveSubSection('properties');
+    }
+  }, [activeSubSection]);
 
   // Handle primary property change - only one can be primary
   const handlePrimaryChange = useCallback((propertyId: string, isPrimary: boolean) => {
