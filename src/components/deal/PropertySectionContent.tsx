@@ -278,6 +278,21 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     onValueChange(`${prefix}.paid_by_loan`, String(!!propertyData.paidByLoan));
     onValueChange(`${prefix}.source_of_payment`, propertyData.sourceOfPayment || '');
     onValueChange(`${prefix}.recording_number`, propertyData.recordingNumber || '');
+    onValueChange(`${prefix}.primary_collateral`, String(!!propertyData.primaryCollateral));
+    onValueChange(`${prefix}.purchase_date`, propertyData.purchaseDate || '');
+    onValueChange(`${prefix}.property_generates_income`, String(!!propertyData.propertyGeneratesIncome));
+    onValueChange(`${prefix}.net_monthly_income`, propertyData.netMonthlyIncome || '');
+    onValueChange(`${prefix}.from_rent`, propertyData.fromRent || '');
+    onValueChange(`${prefix}.from_other_describe`, propertyData.fromOtherDescribe || '');
+    onValueChange(`${prefix}.valuation_date`, propertyData.valuationDate || '');
+    onValueChange(`${prefix}.valuation_type`, propertyData.valuationType || '');
+    onValueChange(`${prefix}.third_party_full_name`, propertyData.thirdPartyFullName || '');
+    onValueChange(`${prefix}.third_party_street`, propertyData.thirdPartyStreet || '');
+    onValueChange(`${prefix}.third_party_city`, propertyData.thirdPartyCity || '');
+    onValueChange(`${prefix}.third_party_state`, propertyData.thirdPartyState || '');
+    onValueChange(`${prefix}.third_party_zip`, propertyData.thirdPartyZip || '');
+    onValueChange(`${prefix}.protective_equity`, propertyData.protectiveEquity || '');
+    onValueChange(`${prefix}.cltv`, propertyData.cltv || '');
     
     // If this is marked as primary, unset others
     if (propertyData.isPrimary) {
