@@ -284,6 +284,70 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
     </DirtyFieldWrapper>
   );
 
+  const renderAdjIntegerField = (fieldKey: string, label: string, suffix: string) => (
+    <DirtyFieldWrapper fieldKey={fieldKey}>
+      <div className="flex items-center gap-2">
+        <Label className="shrink-0 text-xs">{label}</Label>
+        <Input
+          value={getValue(fieldKey)}
+          onChange={(e) => setValue(fieldKey, e.target.value.replace(/\D/g, ''))}
+          disabled={disabled}
+          className="h-8 text-xs w-[70px]"
+          inputMode="numeric"
+          placeholder="0"
+        />
+        <Label className="shrink-0 text-xs">{suffix}</Label>
+      </div>
+    </DirtyFieldWrapper>
+  );
+
+  const renderAdjPercentField = (fieldKey: string, label: string) => (
+    <DirtyFieldWrapper fieldKey={fieldKey}>
+      <div className="flex items-center gap-2">
+        <Label className="shrink-0 text-xs">{label}</Label>
+        <div className="relative w-[100px]">
+          <Input
+            value={getValue(fieldKey)}
+            onChange={(e) => {
+              const cleaned = e.target.value.replace(/[^0-9.]/g, '');
+              setValue(fieldKey, cleaned);
+            }}
+            onBlur={() => {
+              const val = getValue(fieldKey);
+              if (val) { const num = parseFloat(val); if (!isNaN(num)) setValue(fieldKey, num.toFixed(3)); }
+            }}
+            disabled={disabled}
+            className="h-8 text-xs pr-5"
+            inputMode="decimal"
+            placeholder="0.000"
+          />
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+        </div>
+      </div>
+    </DirtyFieldWrapper>
+  );
+
+  const renderAdjCurrencyField = (fieldKey: string, label: string, suffix: string) => (
+    <DirtyFieldWrapper fieldKey={fieldKey}>
+      <div className="flex items-center gap-2">
+        <Label className="shrink-0 text-xs">{label}</Label>
+        <div className="relative w-[120px]">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+          <Input
+            value={focusedCurrencyField === fieldKey ? getValue(fieldKey).replace(/,/g, '') : formatCurrencyDisplay(getValue(fieldKey))}
+            onChange={(e) => handleCurrencyChange(fieldKey, e.target.value)}
+            onFocus={() => setFocusedCurrencyField(fieldKey)}
+            onBlur={() => handleCurrencyBlur(fieldKey)}
+            disabled={disabled}
+            className="h-8 text-xs pl-5"
+            placeholder="0.00"
+          />
+        </div>
+        <Label className="shrink-0 text-xs">{suffix}</Label>
+      </div>
+    </DirtyFieldWrapper>
+  );
+
   return (
     <div className="p-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-6 gap-y-0">
