@@ -73,7 +73,10 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
   const renderPhoneField = (key: keyof typeof FIELD_KEYS, prefKey: keyof typeof FIELD_KEYS, label: string) => (
     <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
       <div className="flex items-center gap-2">
-        <Label className="w-14 shrink-0 text-xs">{label}</Label>
+        <div className="w-14 shrink-0 flex flex-col">
+          <Label className="text-xs">{label}</Label>
+          {getBoolValue(prefKey) && <span className="text-[10px] text-primary font-medium">Primary</span>}
+        </div>
         <PhoneInput value={getValue(key)} onValueChange={(val) => handleChange(key, val)} disabled={disabled} className="h-7 text-xs flex-1" />
         <Checkbox
           checked={getBoolValue(prefKey)}
