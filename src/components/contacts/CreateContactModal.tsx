@@ -776,20 +776,8 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
             {/* Column 4: Tax Info */}
             <div className="space-y-1.5">
               <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Tax Info</h3>
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">Tax ID Type</Label>
-                <Select value={form['tax_id_type'] || ''} onValueChange={(v) => { set('tax_id_type', v); clrKErr('tax_id_type'); set('tax_id', ''); }}>
-                  <SelectTrigger className={cn("h-7 text-xs flex-1", brokerErrors['tax_id_type'] && "border-destructive")}><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent className="bg-background border border-border z-[200]">
-                    {TAX_ID_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {brokerErrors['tax_id_type'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['tax_id_type']}</p>}
 
-              {/* TIN with SSN/EIN formatting */}
+              {/* TIN */}
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">TIN</Label>
                 <Input
@@ -803,8 +791,6 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 />
               </div>
               {brokerErrors['tax_id'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['tax_id']}</p>}
-
-              {renderCheckbox('TIN Verified', 'tin_verified')}
             </div>
           </div>
         )}
