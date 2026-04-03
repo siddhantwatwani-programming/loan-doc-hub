@@ -86,6 +86,9 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
     if (cleaned.coverage) {
       cleaned.coverage = unformatCurrencyDisplay(String(cleaned.coverage));
     }
+    if (cleaned.annualPremium) {
+      cleaned.annualPremium = unformatCurrencyDisplay(String(cleaned.annualPremium));
+    }
     onSave(cleaned);
     onOpenChange(false);
   };
