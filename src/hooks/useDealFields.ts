@@ -511,7 +511,7 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
                     }
                   } else {
                     // No legacy mapping - use DB field_key with prefix
-                    const canonicalField = fieldMeta.field_key.replace(/^(borrower|coborrower|co_borrower|lender|property\d*|broker|lien|insurance|notes_entry)\./, '');
+                    const canonicalField = fieldMeta.field_key.replace(/^(borrower|coborrower|co_borrower|lender|property\d*|broker|lien|insurance|propertytax|notes_entry)\./, '');
                     keyToUse = `${prefix}.${canonicalField}`;
                   }
                 }
