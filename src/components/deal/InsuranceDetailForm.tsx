@@ -58,6 +58,8 @@ const DIRTY_KEY_MAP: Record<string, string> = {
   policyNumber: 'insurance1.policy_number',
   expiration: 'insurance1.expiration',
   coverage: 'insurance1.coverage',
+  annualPremium: 'insurance1.annual_premium',
+  frequency: 'insurance1.frequency',
   active: 'insurance1.active',
   agentName: 'insurance1.agent_name',
   businessAddress: 'insurance1.business_address',
