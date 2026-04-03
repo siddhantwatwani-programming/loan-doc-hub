@@ -152,6 +152,32 @@ function computeField(
   try {
     const baseValue = values[parsed.baseField];
     
+    if (parsed.type === 'arithmetic') {
+      const baseNum = parseFloat(baseValue.replace(/[,$]/g, ''));
+      if (isNaN(baseNum)) {
+        return { field_key: field.field_key, value: null, computed: false, error: `Invalid numeric value for ${parsed.baseField}` };
+      }
+      let operand = parsed.staticValue || 0;
+      if (parsed.addendField) {
+        const addVal = parseFloat(values[parsed.addendField].replace(/[,$]/g, ''));
+        if (isNaN(addVal)) {
+          return { field_key: field.field_key, value: null, computed: false, error: `Invalid numeric value for ${parsed.addendField}` };
+        }
+        operand = addVal;
+      }
+      let result: number;
+      switch (parsed.operator) {
+        case '*': result = baseNum * operand; break;
+        case '+': result = baseNum + operand; break;
+        case '-': result = baseNum - operand; break;
+        case '/':
+          if (operand === 0) return { field_key: field.field_key, value: null, computed: false, error: 'Division by zero' };
+          result = baseNum / operand; break;
+        default: result = 0;
+      }
+      return { field_key: field.field_key, value: result.toFixed(2), computed: true };
+    }
+
     if (parsed.type === 'date_add_months' || parsed.type === 'date_add_days') {
       // Parse the base date
       const baseDate = parseISO(baseValue);

@@ -543,6 +543,7 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'property1.square_feet': 'pr_p_squareFeet',
   'property1.construction_type': 'pr_p_construcType',
   'property1.monthly_income': 'pr_p_monthlyIncome',
+  'property1.annual_income': 'pr_p_annualIncome',
   'property1.lien_protective_equity': 'pr_p_lienProtecEquity',
   'property1.source_lien_info': 'pr_p_sourceLienInfo',
   'property1.thomas_map': 'pr_p_thomasMap',
