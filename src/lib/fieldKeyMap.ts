@@ -429,6 +429,17 @@ export const LOAN_TERMS_DETAILS_KEYS = {
   parentAccountValue: 'loan_terms.parent_account_value',
   childAccount: 'loan_terms.child_account',
   childAccountValue: 'loan_terms.child_account_value',
+  // ARM / GTM adjustable fields
+  adjInitialRateMonths: 'loan_terms.adj_initial_rate_months',
+  adjFullyIndexedRate: 'loan_terms.adj_fully_indexed_rate',
+  adjMaxInterestRate: 'loan_terms.adj_max_interest_rate',
+  adjProposedInitialPayment: 'loan_terms.adj_proposed_initial_payment',
+  adjRateIncreasePercent: 'loan_terms.adj_rate_increase_percent',
+  adjRateIncreaseMonths: 'loan_terms.adj_rate_increase_months',
+  adjPaymentOptionsEndMonths: 'loan_terms.adj_payment_options_end_months',
+  adjPaymentOptionsEndPercent: 'loan_terms.adj_payment_options_end_percent',
+  adjFinalPaymentAmount: 'loan_terms.adj_final_payment_amount',
+  adjFinalPaymentMonths: 'loan_terms.adj_final_payment_months',
 } as const;
 
 export const LOAN_TERMS_FUNDING_KEYS = {
