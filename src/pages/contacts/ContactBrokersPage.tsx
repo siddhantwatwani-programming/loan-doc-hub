@@ -28,7 +28,6 @@ export interface ContactBroker {
   preferredPhone: string;
   verified: boolean;
   send1099: boolean;
-  tin: string;
   street: string;
   zip: string;
   mailingStreet: string;
