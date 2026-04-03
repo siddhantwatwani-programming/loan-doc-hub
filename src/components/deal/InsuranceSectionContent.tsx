@@ -180,6 +180,12 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
       insuranceTracking: false,
       lastVerified: '',
       trackingStatus: '',
+      impoundsActive: false,
+      redFlagTrigger: '',
+      attemptAgent: false,
+      attemptBorrower: false,
+      lenderNotified: false,
+      lenderNotifiedDate: '',
     };
   }, [allInsurances, selectedInsurancePrefix]);
 
