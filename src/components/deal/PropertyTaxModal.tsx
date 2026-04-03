@@ -224,10 +224,8 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
 
       <ModalSaveConfirmation
         open={showConfirm}
-        onOpenChange={setShowConfirm}
         onConfirm={handleConfirmSave}
-        title={isEdit ? 'Update Property Tax' : 'Save Property Tax'}
-        description={isEdit ? 'Are you sure you want to update this property tax record?' : 'Are you sure you want to save this property tax record?'}
+        onCancel={() => setShowConfirm(false)}
       />
     </>
   );
