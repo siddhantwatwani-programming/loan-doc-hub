@@ -686,6 +686,7 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
         <div className="text-center">Paid to Broker</div>
         <div className="text-center">Include in APR</div>
         <div className="text-center">Paid to Company</div>
+        <div />
       </div>
 
       {/* 800 Items Payable in Connection with Loan */}
