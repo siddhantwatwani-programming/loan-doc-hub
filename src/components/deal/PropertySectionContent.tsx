@@ -5,9 +5,6 @@ import { Button } from '@/components/ui/button';
 import { PropertySubNavigation, type PropertySubSection } from './PropertySubNavigation';
 import { PropertyDetailsForm } from './PropertyDetailsForm';
 import { PropertyLegalDescriptionForm } from './PropertyLegalDescriptionForm';
-import { PropertyTaxForm } from './PropertyTaxForm';
-import { PropertyTaxTableView, type PropertyTaxData } from './PropertyTaxTableView';
-import { PropertyTaxModal } from './PropertyTaxModal';
 
 import { PropertiesTableView, type PropertyData } from './PropertiesTableView';
 import { PropertyModal } from './PropertyModal';
