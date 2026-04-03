@@ -708,12 +708,12 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
       {/* 900 Items Required by Lender to be Paid in Advance */}
       <div className="space-y-0">
         <h3 className="font-semibold text-sm text-foreground underline mb-1">900 – Items Required by Lender to be Paid in Advance</h3>
-        {renderFeeRow('901', '', { others: FIELD_KEYS.interestForDays_others, broker: FIELD_KEYS.interestForDays_broker, apr: FIELD_KEYS.interestForDays_apr, paidToCompany: FIELD_KEYS.interestForDays_paid_to_company }, undefined, render901Description())}
-        {renderFeeRow('902', 'Mortgage Insurance Premiums', { others: FIELD_KEYS.mortgageInsurancePremiums_others, broker: FIELD_KEYS.mortgageInsurancePremiums_broker, apr: FIELD_KEYS.mortgageInsurancePremiums_apr, paidToCompany: FIELD_KEYS.mortgageInsurancePremiums_paid_to_company })}
-        {renderFeeRow('903', 'Hazard Insurance Premiums', { others: FIELD_KEYS.hazardInsurancePremiums_others, broker: FIELD_KEYS.hazardInsurancePremiums_broker, apr: FIELD_KEYS.hazardInsurancePremiums_apr, paidToCompany: FIELD_KEYS.hazardInsurancePremiums_paid_to_company })}
-        {renderFeeRow('904', 'County Property Taxes', { others: FIELD_KEYS.countyPropertyTaxes_others, broker: FIELD_KEYS.countyPropertyTaxes_broker, apr: FIELD_KEYS.countyPropertyTaxes_apr, paidToCompany: FIELD_KEYS.countyPropertyTaxes_paid_to_company })}
-        {renderFeeRow('905', 'VA Funding Fee', { others: FIELD_KEYS.vaFundingFee_others, broker: FIELD_KEYS.vaFundingFee_broker, apr: FIELD_KEYS.vaFundingFee_apr, paidToCompany: FIELD_KEYS.vaFundingFee_paid_to_company })}
-        {renderFeeRow('', '', { others: FIELD_KEYS.customItem900_others, broker: FIELD_KEYS.customItem900_broker, apr: FIELD_KEYS.customItem900_apr, paidToCompany: FIELD_KEYS.customItem900_paid_to_company }, FIELD_KEYS.customItem900_label)}
+        {renderFeeRow('901', '', { others: FIELD_KEYS.interestForDays_others, broker: FIELD_KEYS.interestForDays_broker, apr: FIELD_KEYS.interestForDays_apr, paidToCompany: FIELD_KEYS.interestForDays_paid_to_company }, undefined, render901Description(), FIELD_KEYS.interestForDays_d)}
+        {renderFeeRow('902', 'Mortgage Insurance Premiums', { others: FIELD_KEYS.mortgageInsurancePremiums_others, broker: FIELD_KEYS.mortgageInsurancePremiums_broker, apr: FIELD_KEYS.mortgageInsurancePremiums_apr, paidToCompany: FIELD_KEYS.mortgageInsurancePremiums_paid_to_company }, undefined, undefined, FIELD_KEYS.mortgageInsurancePremiums_d)}
+        {renderFeeRow('903', 'Hazard Insurance Premiums', { others: FIELD_KEYS.hazardInsurancePremiums_others, broker: FIELD_KEYS.hazardInsurancePremiums_broker, apr: FIELD_KEYS.hazardInsurancePremiums_apr, paidToCompany: FIELD_KEYS.hazardInsurancePremiums_paid_to_company }, undefined, undefined, FIELD_KEYS.hazardInsurancePremiums_d)}
+        {renderFeeRow('904', 'County Property Taxes', { others: FIELD_KEYS.countyPropertyTaxes_others, broker: FIELD_KEYS.countyPropertyTaxes_broker, apr: FIELD_KEYS.countyPropertyTaxes_apr, paidToCompany: FIELD_KEYS.countyPropertyTaxes_paid_to_company }, undefined, undefined, FIELD_KEYS.countyPropertyTaxes_d)}
+        {renderFeeRow('905', 'VA Funding Fee', { others: FIELD_KEYS.vaFundingFee_others, broker: FIELD_KEYS.vaFundingFee_broker, apr: FIELD_KEYS.vaFundingFee_apr, paidToCompany: FIELD_KEYS.vaFundingFee_paid_to_company }, undefined, undefined, FIELD_KEYS.vaFundingFee_d)}
+        {renderFeeRow('', '', { others: FIELD_KEYS.customItem900_others, broker: FIELD_KEYS.customItem900_broker, apr: FIELD_KEYS.customItem900_apr, paidToCompany: FIELD_KEYS.customItem900_paid_to_company }, FIELD_KEYS.customItem900_label, undefined, FIELD_KEYS.customItem900_d)}
       </div>
 
       {/* 1000 Reserves Deposited with Lender or Other */}
