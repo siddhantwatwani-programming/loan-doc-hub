@@ -538,18 +538,16 @@ export const PROPERTY_LIENS_KEYS = {
 } as const;
 
 export const PROPERTY_TAX_KEYS = {
-  payee: 'property1.tax.payee',
-  payeeAddress: 'property1.tax.payee_address',
-  nextDueDate: 'property1.tax.next_due_date',
-  frequency: 'property1.tax.frequency',
-  hold: 'property1.tax.hold',
-  ref: 'property1.tax.ref',
-  memo: 'property1.tax.memo',
-  type: 'property1.tax.type',
-  authority: 'property1.tax.authority',
-  taxTracking: 'property1.tax.tax_tracking',
-  lastVerified: 'property1.tax.last_verified',
-  trackingStatus: 'property1.tax.tracking_status',
+  authority: 'propertytax1.authority',
+  type: 'propertytax1.type',
+  annualPayment: 'propertytax1.annual_payment',
+  frequency: 'propertytax1.frequency',
+  active: 'propertytax1.active',
+  lastVerified: 'propertytax1.last_verified',
+  lenderNotified: 'propertytax1.lender_notified',
+  current: 'propertytax1.current',
+  delinquent: 'propertytax1.delinquent',
+  delinquentAmount: 'propertytax1.delinquent_amount',
 } as const;
 
 // ──────────────────────────────────────────────────
