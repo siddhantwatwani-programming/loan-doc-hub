@@ -500,47 +500,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
       case 'insurance':
         // Insurance section is handled separately below
         return null;
-      case 'property_tax':
-        return (
-          <PropertyTaxTableView
-            taxes={paginatedTaxes}
-            onAddTax={handleAddTax}
-            onEditTax={handleEditTax}
-            onRowClick={handleRowClickTax}
-            onDeleteTax={handleDeleteTax}
-            onRefresh={onRefresh}
-            disabled={disabled}
-            currentPage={taxSafePage}
-            totalPages={taxTotalPages}
-            totalCount={totalTaxes}
-            onPageChange={setTaxCurrentPage}
-          />
-        );
-      case 'property_tax_detail': {
-        // Build tax-specific values remapped to propertytax1.* for the form
-        const taxSpecificValues: Record<string, string> = {};
-        Object.entries(values).forEach(([key, value]) => {
-          if (key.startsWith(`${selectedTaxPrefix}.`)) {
-            taxSpecificValues[key.replace(`${selectedTaxPrefix}.`, 'propertytax1.')] = value;
-          } else {
-            taxSpecificValues[key] = value;
-          }
-        });
-        const handleTaxValueChange = (fieldKey: string, value: string) => {
-          const actualKey = fieldKey.replace('propertytax1.', `${selectedTaxPrefix}.`);
-          onValueChange(actualKey, value);
-        };
-        return (
-          <PropertyTaxForm
-            fields={fields}
-            values={taxSpecificValues}
-            onValueChange={handleTaxValueChange}
-            showValidation={showValidation}
-            disabled={disabled}
-            calculationResults={calculationResults}
-          />
-        );
-      }
       default:
         return null;
     }
