@@ -1,12 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 import { RE885ProposedLoanTerms } from './RE885ProposedLoanTerms';
 import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
-import { MessageSquare } from 'lucide-react';
+import type { CalculationResult } from '@/lib/calculationEngine';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationFeesFormProps {
