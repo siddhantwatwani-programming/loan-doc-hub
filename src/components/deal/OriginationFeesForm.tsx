@@ -601,6 +601,18 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
 
     return (
       <DirtyFieldWrapper fieldKey={monthsKey}>
+        {commentKey && isExpanded && (
+          <div className="pl-[59px] pr-8 pt-1 pb-1">
+            <Textarea
+              value={getValue(commentKey)}
+              onChange={(e) => setValue(commentKey, e.target.value)}
+              disabled={disabled}
+              placeholder="Add a comment or note..."
+              className="text-xs min-h-[50px] resize-y"
+              rows={2}
+            />
+          </div>
+        )}
         <div style={GRID_STYLE} className="py-1 border-b border-border/50">
           <div className="text-xs font-medium text-foreground">{hudNumber}</div>
           <div className="flex items-center gap-1 text-xs text-foreground flex-wrap">
@@ -632,18 +644,6 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
             </button>
           ) : <div />}
         </div>
-        {commentKey && isExpanded && (
-          <div className="pl-[59px] pr-8 pb-2 pt-1">
-            <Textarea
-              value={getValue(commentKey)}
-              onChange={(e) => setValue(commentKey, e.target.value)}
-              disabled={disabled}
-              placeholder="Add a comment or note..."
-              className="text-xs min-h-[50px] resize-y"
-              rows={2}
-            />
-          </div>
-        )}
       </DirtyFieldWrapper>
     );
   };
