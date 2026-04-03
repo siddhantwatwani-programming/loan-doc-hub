@@ -113,7 +113,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
           value={String(formData[field] || '')}
           onChange={(e) => handleChange(field, e.target.value)}
           onKeyDown={numericKeyDown}
-          onPaste={numericPaste}
+          onPaste={(e) => numericPaste(e, (v) => handleChange(field, v))}
           onFocus={(e) => { const v = unformatCurrencyDisplay(e.target.value); handleChange(field, v); }}
           onBlur={(e) => { const v = formatCurrencyDisplay(e.target.value); handleChange(field, v); }}
           className="h-7 text-xs pl-5"
