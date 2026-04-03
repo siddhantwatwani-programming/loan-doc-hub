@@ -592,9 +592,13 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
     monthsKey: string,
     perMonthKey: string,
     totalKey: string,
-    keys: { others: string; broker: string; apr: string; paidToCompany: string }
+    keys: { others: string; broker: string; apr: string; paidToCompany: string },
+    commentKey?: string
   ) => {
     const totalVal = getValue(totalKey);
+    const hasComment = commentKey ? !!(values[commentKey] && values[commentKey].trim()) : false;
+    const isExpanded = commentKey ? expandedComments.has(commentKey) : false;
+
     return (
       <DirtyFieldWrapper fieldKey={monthsKey}>
         <div style={GRID_STYLE} className="py-1 border-b border-border/50">
@@ -617,7 +621,29 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
           </div>
           <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
           <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.paidToCompany)} onCheckedChange={(c) => setBoolValue(keys.paidToCompany, !!c)} disabled={disabled} /></div>
+          {commentKey ? (
+            <button
+              type="button"
+              onClick={() => toggleComment(commentKey)}
+              className={`flex justify-center items-center h-6 w-6 rounded hover:bg-accent transition-colors ${hasComment ? 'text-primary' : 'text-muted-foreground'}`}
+              title="Toggle comment"
+            >
+              <MessageSquare size={14} className={hasComment ? 'fill-primary/20' : ''} />
+            </button>
+          ) : <div />}
         </div>
+        {commentKey && isExpanded && (
+          <div className="pl-[59px] pr-8 pb-2 pt-1">
+            <Textarea
+              value={getValue(commentKey)}
+              onChange={(e) => setValue(commentKey, e.target.value)}
+              disabled={disabled}
+              placeholder="Add a comment or note..."
+              className="text-xs min-h-[50px] resize-y"
+              rows={2}
+            />
+          </div>
+        )}
       </DirtyFieldWrapper>
     );
   };
