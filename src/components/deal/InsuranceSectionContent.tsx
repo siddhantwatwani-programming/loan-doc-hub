@@ -44,6 +44,8 @@ const extractInsurancesFromValues = (values: Record<string, string>): InsuranceD
       policyNumber: values[`${prefix}.policy_number`] || '',
       expiration: values[`${prefix}.expiration`] || '',
       coverage: values[`${prefix}.coverage`] || '',
+      annualPremium: values[`${prefix}.annual_premium`] || '',
+      frequency: values[`${prefix}.frequency`] || '',
       active: values[`${prefix}.active`] === 'true',
       agentName: values[`${prefix}.agent_name`] || '',
       businessAddress: values[`${prefix}.business_address`] || '',
