@@ -19,7 +19,6 @@ const BrokerDashboard: React.FC<Props> = ({ broker }) => (
     <div className="flex gap-2 flex-wrap">
       {broker.hold && <Badge variant="destructive">On Hold</Badge>}
       {broker.verified && <Badge variant="secondary">Verified</Badge>}
-      {broker.ach && <Badge variant="outline">ACH</Badge>}
       {broker.agreement && <Badge variant="outline">Agreement on File</Badge>}
       {broker.send1099 && <Badge variant="outline">1099</Badge>}
     </div>
@@ -49,7 +48,7 @@ const BrokerDashboard: React.FC<Props> = ({ broker }) => (
       </Card>
 
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-sm">Primary Address</CardTitle></CardHeader>
+        <CardHeader className="pb-2"><CardTitle className="text-sm">Address</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-2 gap-3">
           <Field label="Street" value={broker.street} />
           <Field label="City" value={broker.city} />
@@ -62,7 +61,6 @@ const BrokerDashboard: React.FC<Props> = ({ broker }) => (
         <CardHeader className="pb-2"><CardTitle className="text-sm">Financial / Compliance</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-2 gap-3">
           <Field label="TIN" value={broker.tin} />
-          <Field label="ACH" value={broker.ach ? 'Yes' : 'No'} />
           <Field label="Send 1099" value={broker.send1099 ? 'Yes' : 'No'} />
           <Field label="Agreement" value={broker.agreement ? 'Yes' : 'No'} />
         </CardContent>

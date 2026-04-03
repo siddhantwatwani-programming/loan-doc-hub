@@ -226,7 +226,6 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
       if (!(form['address.city'] || '').trim()) errs['address.city'] = 'City is required';
       if (!form['address.state']) errs['address.state'] = 'State is required';
       if (!(form['address.zip'] || '').trim()) errs['address.zip'] = 'ZIP is required';
-      if (!form['tax_id_type']) errs['tax_id_type'] = 'Please select Tax ID Type';
       const tinDigits = (form['tax_id'] || '').replace(/\D/g, '');
       if (!tinDigits) errs['tax_id'] = 'Enter valid TIN (9 digits)';
       else if (tinDigits.length !== 9) errs['tax_id'] = 'Enter valid TIN (9 digits)';
@@ -711,7 +710,6 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
               <div className="pt-2 space-y-1">
                 {renderCheckbox('Frozen', 'frozen')}
-                {renderCheckbox('ACH', 'ach')}
                 {renderCheckbox('Agreement on File', 'agreement_on_file')}
                 {renderCheckbox('Send 1099', 'issue_1099')}
               </div>
@@ -719,7 +717,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
             {/* Column 2: Address */}
             <div className="space-y-1.5">
-              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Address</h3>
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">Street</Label>
                 <Input value={form['address.street'] || ''} onChange={(e) => { set('address.street', e.target.value); clrKErr('address.street'); }} onBlur={() => set('address.street', (form['address.street'] || '').trim())} maxLength={150} className={cn("h-7 text-xs flex-1", brokerErrors['address.street'] && "border-destructive")} />
@@ -745,31 +743,6 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 <ZipInput value={form['address.zip'] || ''} onValueChange={(val) => { set('address.zip', val); clrKErr('address.zip'); }} className="h-7 text-xs" />
               </div>
               {brokerErrors['address.zip'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['address.zip']}</p>}
-              <div className="pt-2 space-y-1.5">
-                <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
-                {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs">Street</Label>
-                  <Input value={form['mailing.street'] || ''} onChange={(e) => set('mailing.street', e.target.value)} onBlur={() => set('mailing.street', (form['mailing.street'] || '').trim())} disabled={isSameAsPrimary} maxLength={150} className="h-7 text-xs flex-1" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs">City</Label>
-                  <Input value={form['mailing.city'] || ''} onChange={(e) => set('mailing.city', e.target.value)} onKeyDown={alphaSpaceKD} onPaste={(e) => { e.preventDefault(); set('mailing.city', e.clipboardData.getData('text').replace(/[^A-Za-z ]/g, '')); }} onBlur={() => set('mailing.city', (form['mailing.city'] || '').trim())} disabled={isSameAsPrimary} className="h-7 text-xs flex-1" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs">State</Label>
-                  <Select value={form['mailing.state'] || ''} onValueChange={(v) => set('mailing.state', v)} disabled={isSameAsPrimary}>
-                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-[200]">
-                      {US_STATES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
-                  <ZipInput value={form['mailing.zip'] || ''} onValueChange={(val) => set('mailing.zip', val)} disabled={isSameAsPrimary} className="h-7 text-xs" />
-                </div>
-              </div>
             </div>
 
             {/* Column 3: Phone */}
@@ -802,20 +775,8 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
             {/* Column 4: Tax Info */}
             <div className="space-y-1.5">
               <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Tax Info</h3>
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">Tax ID Type</Label>
-                <Select value={form['tax_id_type'] || ''} onValueChange={(v) => { set('tax_id_type', v); clrKErr('tax_id_type'); set('tax_id', ''); }}>
-                  <SelectTrigger className={cn("h-7 text-xs flex-1", brokerErrors['tax_id_type'] && "border-destructive")}><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent className="bg-background border border-border z-[200]">
-                    {TAX_ID_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {brokerErrors['tax_id_type'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['tax_id_type']}</p>}
 
-              {/* TIN with SSN/EIN formatting */}
+              {/* TIN */}
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">TIN</Label>
                 <Input
@@ -829,8 +790,6 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 />
               </div>
               {brokerErrors['tax_id'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['tax_id']}</p>}
-
-              {renderCheckbox('TIN Verified', 'tin_verified')}
             </div>
           </div>
         )}

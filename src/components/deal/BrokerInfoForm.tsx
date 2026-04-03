@@ -35,7 +35,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
   };
 
   const requiredFieldsStatus = useMemo(() => {
-    const requiredFields: (keyof typeof FIELD_KEYS)[] = ['brokerId'];
+    const requiredFields: (keyof typeof FIELD_KEYS)[] = [];
     const filledCount = requiredFields.filter(field => getValue(field).trim() !== '').length;
     return { filledCount, totalRequired: requiredFields.length, missingCount: requiredFields.length - filledCount };
   }, [values]);
@@ -73,7 +73,10 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
   const renderPhoneField = (key: keyof typeof FIELD_KEYS, prefKey: keyof typeof FIELD_KEYS, label: string) => (
     <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
       <div className="flex items-center gap-2">
-        <Label className="w-14 shrink-0 text-xs">{label}</Label>
+        <div className="w-14 shrink-0 flex flex-col">
+          <Label className="text-xs">{label}</Label>
+          {getBoolValue(prefKey) && <span className="text-[10px] text-primary font-medium">Primary</span>}
+        </div>
         <PhoneInput value={getValue(key)} onValueChange={(val) => handleChange(key, val)} disabled={disabled} className="h-7 text-xs flex-1" />
         <Checkbox
           checked={getBoolValue(prefKey)}
@@ -101,7 +104,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
         {/* Column 1 - Name */}
         <div className="space-y-1.5">
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Broker Details</h3>
-          {renderInlineField('brokerId', 'Broker ID', true)}
+          {renderInlineField('brokerId', 'Broker ID')}
           {renderInlineField('license', 'License')}
           {renderInlineField('company', 'Company')}
           {renderInlineField('fullName', 'Full Name')}
@@ -116,26 +119,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
           </DirtyFieldWrapper>
 
           <div className="space-y-1.5 pt-2">
-            <DirtyFieldWrapper fieldKey={FIELD_KEYS.taxIdType}>
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">Tax ID Type</Label>
-                <Select value={getValue('taxIdType') || '0'} onValueChange={(val) => handleChange('taxIdType', val)} disabled={disabled}>
-                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">0 - Unknown</SelectItem>
-                    <SelectItem value="1">1 - EIN</SelectItem>
-                    <SelectItem value="2">2 - SSN</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </DirtyFieldWrapper>
             {renderInlineField('taxId', 'TIN')}
-            <DirtyFieldWrapper fieldKey={FIELD_KEYS.tinVerified}>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="broker-tinVerified" checked={getBoolValue('tinVerified')} onCheckedChange={(checked) => handleChange('tinVerified', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
-                <Label htmlFor="broker-tinVerified" className="text-xs font-normal cursor-pointer">TIN Verified</Label>
-              </div>
-            </DirtyFieldWrapper>
           </div>
 
           <div className="space-y-1.5 pt-2">
@@ -143,12 +127,6 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
               <div className="flex items-center space-x-2">
                 <Checkbox id="broker-frozen" checked={getBoolValue('frozen')} onCheckedChange={(checked) => handleChange('frozen', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
                 <Label htmlFor="broker-frozen" className="text-xs font-normal cursor-pointer">Frozen</Label>
-              </div>
-            </DirtyFieldWrapper>
-            <DirtyFieldWrapper fieldKey={FIELD_KEYS.ach}>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="broker-ach" checked={getBoolValue('ach')} onCheckedChange={(checked) => handleChange('ach', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
-                <Label htmlFor="broker-ach" className="text-xs font-normal cursor-pointer">ACH</Label>
               </div>
             </DirtyFieldWrapper>
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.agreementOnFile}>
@@ -163,7 +141,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
 
         {/* Column 2 - Address */}
         <div className="space-y-1.5">
-          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
+          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Address</h3>
           {renderInlineField('street', 'Street')}
           {renderInlineField('city', 'City')}
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.state}>
@@ -181,56 +159,6 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
               <ZipInput value={getValue('zip')} onValueChange={(v) => handleChange('zip', v)} disabled={disabled} className="h-7 text-xs" />
-            </div>
-          </DirtyFieldWrapper>
-
-          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-3 flex items-center gap-3">
-            Mailing Address
-            <div className="flex items-center gap-1.5 ml-2">
-              <Checkbox id="broker-mailingSameAsPrimary" checked={getBoolValue('mailingSameAsPrimary')} onCheckedChange={(checked) => {
-                handleChange('mailingSameAsPrimary', !!checked);
-                if (checked) {
-                  handleChange('mailingStreet', getValue('street'));
-                  handleChange('mailingCity', getValue('city'));
-                  handleChange('mailingState', getValue('state'));
-                  handleChange('mailingZip', getValue('zip'));
-                } else {
-                  handleChange('mailingStreet', '');
-                  handleChange('mailingCity', '');
-                  handleChange('mailingState', '');
-                  handleChange('mailingZip', '');
-                }
-              }} disabled={disabled} className="h-3.5 w-3.5" />
-              <Label htmlFor="broker-mailingSameAsPrimary" className="text-[10px] font-normal text-muted-foreground">Same as Primary</Label>
-            </div>
-          </h3>
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingStreet}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[100px] shrink-0 text-xs">Street</Label>
-              <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs flex-1" />
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingCity}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[100px] shrink-0 text-xs">City</Label>
-              <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs flex-1" />
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingState}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[100px] shrink-0 text-xs">State</Label>
-              <Select value={getValue('mailingState') || ''} onValueChange={(val) => handleChange('mailingState', val)} disabled={disabled || getBoolValue('mailingSameAsPrimary')}>
-                <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                <SelectContent>
-                  {US_STATES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
-                </SelectContent>
-              </Select>
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingZip}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
-              <ZipInput value={getValue('mailingZip')} onValueChange={(v) => handleChange('mailingZip', v)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-xs" />
             </div>
           </DirtyFieldWrapper>
         </div>
