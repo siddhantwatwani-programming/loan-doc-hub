@@ -53,7 +53,7 @@ const BrokerDetailLayout: React.FC<BrokerDetailLayoutProps> = ({ broker, onBack,
           <ArrowLeft className="h-4 w-4 mr-1" /> Back to Brokers
         </Button>
         <h3 className="font-semibold text-lg text-foreground">
-          {broker.fullName || 'Broker Detail'} — {broker.brokerId}
+          {[broker.firstName, broker.lastName].filter(Boolean).join(' ') || 'Broker Detail'} — {broker.brokerId}
         </h3>
       </div>
       <div className="flex flex-1 overflow-hidden">

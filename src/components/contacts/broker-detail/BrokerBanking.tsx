@@ -17,7 +17,7 @@ interface BankingData {
 const BrokerBanking: React.FC<{ broker: ContactBroker; onUpdate: (b: ContactBroker) => void }> = ({ broker }) => {
   const [form, setForm] = useState<BankingData>({
     achEnabled: broker.ach, bankName: '', routingNumber: '', accountNumber: '',
-    accountType: 'checking', checkPayableTo: broker.fullName, checkMailingStreet: broker.street,
+    accountType: 'checking', checkPayableTo: [broker.firstName, broker.lastName].filter(Boolean).join(' '), checkMailingStreet: broker.street,
     checkMailingCity: broker.city, checkMailingState: broker.state, checkMailingZip: broker.zip,
   });
 
