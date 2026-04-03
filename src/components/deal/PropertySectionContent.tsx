@@ -211,7 +211,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const { dirtyFieldKeys } = useDirtyFields();
   
   // Check if we're in detail view
-  const isDetailView = ['property_details', 'legal_description', 'property_tax', 'property_tax_detail'].includes(activeSubSection);
+  const isDetailView = ['property_details', 'legal_description'].includes(activeSubSection);
   
   // Check if insurance section is active (rendered separately)
   const isInsuranceSection = activeSubSection === 'insurance';
