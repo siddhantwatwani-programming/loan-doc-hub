@@ -196,7 +196,7 @@ const ContactBrokersPage: React.FC = () => {
     };
     if (columnId in topLevel) {
       const val = topLevel[columnId] || '';
-      if (columnId === 'full_name') return <span className="font-medium">{val || '-'}</span>;
+      if (columnId === 'full_name') return <span className="font-medium">{[contact.first_name, contact.last_name].filter(Boolean).join(' ') || '-'}</span>;
       return val || '-';
     }
 
