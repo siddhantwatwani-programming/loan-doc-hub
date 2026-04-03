@@ -464,37 +464,8 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
   const getBoolValue = (key: string) => values[key] === 'true';
   const setBoolValue = (key: string, value: boolean) => onValueChange(key, String(value));
 
-  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
 
-  // Auto-expand rows that already have comment data on load
-  useEffect(() => {
-    const autoExpand = new Set<string>();
-    const allDKeys = Object.entries(FIELD_KEYS).filter(([k]) => k.endsWith('_d'));
-    allDKeys.forEach(([, fieldKey]) => {
-      if (values[fieldKey] && values[fieldKey].trim()) {
-        autoExpand.add(fieldKey);
-      }
-    });
-    if (autoExpand.size > 0) {
-      setExpandedComments(prev => {
-        const merged = new Set(prev);
-        autoExpand.forEach(k => merged.add(k));
-        return merged;
-      });
-    }
-  }, []);
 
-  const toggleComment = (commentKey: string) => {
-    setExpandedComments(prev => {
-      const next = new Set(prev);
-      if (next.has(commentKey)) {
-        next.delete(commentKey);
-      } else {
-        next.add(commentKey);
-      }
-      return next;
-    });
-  };
 
   const parseNumber = (val: string): number => {
     const num = parseFloat(val.replace(/[^0-9.-]/g, ''));
