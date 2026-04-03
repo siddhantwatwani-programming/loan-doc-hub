@@ -1,93 +1,57 @@
 
 
-## Plan: Add Missing Property Fields to Modal and Detail View
+## Plan: Add Comment/Notes Box to Each HUD-1 Fee Row in Origination Fees
 
 ### Summary
-Add new fields to the Property Add/Edit modal and Property Detail section to match the screenshots. This involves updating the `PropertyData` interface, adding new field keys, creating field dictionary entries, and updating both the modal and detail form UIs.
+Add a collapsible or inline comment/notes text box for each HUD-1 fee item (801–1108) in the Origination Fees form. Each item already has a `_d` field key defined in `FIELD_KEYS` that can serve as the comment storage. A small notes icon/toggle per row will expand a text area below the row for free-text input.
 
-### Files to Modify
+### File to Modify
 
-1. **`src/components/deal/PropertiesTableView.tsx`** — Add new properties to `PropertyData` interface:
-   - `primaryCollateral?: boolean`
-   - `purchaseDate?: string`
-   - `propertyGeneratesIncome?: boolean`
-   - `netMonthlyIncome?: string`
-   - `fromRent?: string`
-   - `fromOtherDescribe?: string`
-   - `valuationDate?: string`
-   - `valuationType?: string`
-   - `thirdPartyFullName?: string`, `thirdPartyStreet?: string`, `thirdPartyCity?: string`, `thirdPartyState?: string`, `thirdPartyZip?: string`
-   - `protectiveEquity?: string`
-   - `cltv?: string`
+**`src/components/deal/OriginationFeesForm.tsx`**
 
-2. **`src/lib/fieldKeyMap.ts`** — Add new keys to `PROPERTY_DETAILS_KEYS`:
-   - `primaryCollateral`, `purchaseDate`, `propertyGeneratesIncome`, `netMonthlyIncome`, `fromRent`, `fromOtherDescribe`, `valuationDate`, `valuationType`, `thirdPartyFullName`, `thirdPartyStreet`, `thirdPartyCity`, `thirdPartyState`, `thirdPartyZip`, `protectiveEquity`, `cltv`
+1. Update `renderFeeRow` to include an expandable comment box below each row:
+   - Add a small "comment" icon button (e.g., `MessageSquare` from lucide-react) at the end of each row
+   - Clicking it toggles a `Textarea` below the row bound to the item's `_d` field key
+   - The icon shows a visual indicator (filled/highlighted) when a comment exists
 
-3. **`src/components/deal/PropertyModal.tsx`** — UI changes:
-   - Rename "Description" label → "Description (Nick Name)"
-   - Add "Primary Collateral" checkbox below Description
-   - Add "Purchase Information" section header below Address with: Purchase Date (date picker), Purchase Price (existing), Down Payment (existing)
-   - Change "Flood Zone" from dropdown to checkbox
-   - Add "Property Generates Income" checkbox below Flood Zone, then Net Monthly Income, From Rent, From Other (Describe) as currency fields
-   - Add "Valuation:" section below Recording Number with: Valuation Date, Valuation Type dropdown (Broker BPO / Appraisal), Performed By dropdown (Broker / Third Party — already exists, relocate), conditional Third Party fields (Full Name, Street, City, State, ZIP Code), Protective Equity (currency), Loan to Value (% — already exists, relocate), CLTV (%)
-   - Update `getEmptyProperty()`, `CURRENCY_MODAL_FIELDS`, and save logic for new fields
+2. Update `renderInsuranceRow` similarly to support comment boxes for 1000-series items
 
-4. **`src/components/deal/PropertyDetailsForm.tsx`** — Mirror same UI changes as the modal:
-   - Same label rename, new sections, field additions, and Flood Zone → checkbox change
-   - Add Valuation section with conditional Third Party fields
+3. Add local state (`expandedComments: Set<string>`) to track which rows have their comment box open
 
-5. **`src/components/deal/PropertySectionContent.tsx`** — Update `extractPropertiesFromValues` and `handleSaveProperty` to include all new field keys for persistence roundtrip.
+4. Each comment textarea will:
+   - Use the existing `_d` field key (e.g., `FIELD_KEYS.lendersLoanOriginationFee_d`)
+   - Be a standard `Textarea` component
+   - Span the full width of the row below the grid
+   - Auto-expand if a saved comment exists on load
 
-6. **Database Migration** — Add field dictionary entries for all new keys so values persist via `deal_section_values`.
+### Field Key Mapping (already defined)
+All `_d` keys already exist in `FIELD_KEYS` and the field dictionary — no database migration needed:
+- `801`: `lendersLoanOriginationFee_d`
+- `802`: `lendersLoanDiscountFee_d`
+- `803`: `appraisalFee_d`
+- `804`: `creditReport_d`
+- `805`: `lendersInspectionFee_d`
+- `808`: `mortgageBrokerFee_d`
+- `809`: `taxServiceFee_d`
+- `810`: `processingFee_d`
+- `811`: `underwritingFee_d`
+- `901`: `interestForDays_d`
+- `902`: `mortgageInsurancePremiums_d`
+- `903`: `hazardInsurancePremiums_d`
+- `904`: `countyPropertyTaxes_d`
+- `905`: `vaFundingFee_d`
+- `1001–1004`: Use existing `_d` or `_charge` keys
+- `1101`: `settlementClosingFee_d`
+- `1105`: `docPreparationFee_d`
+- `1106`: `notaryFee_d`
+- `1108`: `titleInsurance_d`
 
-### Detailed UI Layout Changes
+### No Database Migration Required
+All field keys already exist in `FIELD_KEYS` and should already have corresponding `field_dictionary` entries from prior migrations. Values will persist via the existing `deal_section_values` JSONB mechanism.
 
-**Left column (Property Information) — Modal & Detail Form:**
-```text
-Property Details (header)
-  Description (Nick Name)        [text input]
-  ☐ Primary Collateral
-  Address (header)
-    ☐ Copy Borrower's Address
-    Street / City / State / ZIP Code / County
-  Purchase Information (header)
-    Purchase Date                [date picker]
-    Purchase Price               [$ currency]
-    Down Payment                 [$ currency]
-```
-
-**Right column (Appraisal Information) — existing fields remain, changes:**
-```text
-  ...existing fields...
-  ☐ Flood Zone                  (changed from dropdown to checkbox)
-  ☐ Property Generates Income
-    Net Monthly Income           [$ currency]
-    From Rent                    [$ currency]
-    From Other (Describe)        [$ currency]
-```
-
-**Below existing sections — Valuation section:**
-```text
-Valuation: (header)
-  Valuation Date                 [date picker]
-  Valuation Type                 [dropdown: Broker BPO, Appraisal]
-  Performed By                   [dropdown: Broker, Third Party]
-  If Third Party:
-    Full Name / Street / City / State / ZIP Code
-  Protective Equity              [$ currency]
-  Loan to Value                  [% input]
-  CLTV (If a Junior Lien)        [% input]
-```
-
-### Validation
-- All currency fields: `$` prefix, numeric-only input, US comma formatting on blur
-- Percentage fields: numeric with `%` suffix
-- ZIP Code: existing `ZipInput` component
-- State: existing `US_STATES` dropdown
-- Date fields: `EnhancedCalendar` with MM/DD/YYYY format
-
-### Backend Persistence
-- New field dictionary entries will be created via migration for each new key
-- `PropertySectionContent` extraction/save will be updated to handle all new fields
-- Existing currency field handling pattern (strip commas on save, format on load) will be applied to new currency fields
+### UI Design
+- Comment icon appears as a 6th column (or inline button) at the right edge of each row
+- When expanded, a `Textarea` appears below the row spanning the full grid width
+- Rows with existing comments auto-expand on load
+- Consistent with existing form styling
 
