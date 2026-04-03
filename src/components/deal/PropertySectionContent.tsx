@@ -500,22 +500,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
       case 'insurance':
         // Insurance section is handled separately below
         return null;
-      case 'property_tax':
-        return (
-          <PropertyTaxTableView
-            taxes={paginatedTaxes}
-            onAddTax={handleAddTax}
-            onEditTax={handleEditTax}
-            onRowClick={handleRowClickTax}
-            onDeleteTax={handleDeleteTax}
-            onRefresh={onRefresh}
-            disabled={disabled}
-            currentPage={taxSafePage}
-            totalPages={taxTotalPages}
-            totalCount={totalTaxes}
-            onPageChange={setTaxCurrentPage}
-          />
-        );
       case 'property_tax_detail': {
         // Build tax-specific values remapped to propertytax1.* for the form
         const taxSpecificValues: Record<string, string> = {};
@@ -531,14 +515,35 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
           onValueChange(actualKey, value);
         };
         return (
-          <PropertyTaxForm
-            fields={fields}
-            values={taxSpecificValues}
-            onValueChange={handleTaxValueChange}
-            showValidation={showValidation}
-            disabled={disabled}
-            calculationResults={calculationResults}
-          />
+          <div className="flex flex-col">
+            {/* Property Tax Table */}
+            <PropertyTaxTableView
+              taxes={paginatedTaxes}
+              onAddTax={handleAddTax}
+              onEditTax={handleEditTax}
+              onRowClick={handleRowClickTaxDetail}
+              onDeleteTax={handleDeleteTax}
+              onRefresh={onRefresh}
+              disabled={disabled}
+              currentPage={taxSafePage}
+              totalPages={taxTotalPages}
+              totalCount={totalTaxes}
+              onPageChange={setTaxCurrentPage}
+            />
+            {/* Property Tax Detail Form (shown when a tax record is selected) */}
+            {totalTaxes > 0 && (
+              <div className="border-t border-border">
+                <PropertyTaxForm
+                  fields={fields}
+                  values={taxSpecificValues}
+                  onValueChange={handleTaxValueChange}
+                  showValidation={showValidation}
+                  disabled={disabled}
+                  calculationResults={calculationResults}
+                />
+              </div>
+            )}
+          </div>
         );
       }
       default:
