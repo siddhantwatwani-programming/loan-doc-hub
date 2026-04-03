@@ -449,7 +449,7 @@ const FIELD_KEYS = {
 
 const GRID_STYLE: React.CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: '55px minmax(200px, 1fr) 110px 110px 70px 70px 28px',
+  gridTemplateColumns: '55px minmax(160px, 1fr) minmax(120px, 1fr) 110px 110px 70px 70px',
   gap: '4px',
   alignItems: 'center',
 };
