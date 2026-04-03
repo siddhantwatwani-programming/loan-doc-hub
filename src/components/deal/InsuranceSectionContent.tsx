@@ -256,6 +256,12 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
       { key: 'insuranceTracking', dbField: 'insurance_tracking', defaultVal: 'false' },
       { key: 'lastVerified', dbField: 'last_verified', defaultVal: '' },
       { key: 'trackingStatus', dbField: 'tracking_status', defaultVal: '' },
+      { key: 'impoundsActive', dbField: 'impounds_active', defaultVal: 'false' },
+      { key: 'redFlagTrigger', dbField: 'red_flag_trigger', defaultVal: '' },
+      { key: 'attemptAgent', dbField: 'attempt_agent', defaultVal: 'false' },
+      { key: 'attemptBorrower', dbField: 'attempt_borrower', defaultVal: 'false' },
+      { key: 'lenderNotified', dbField: 'lender_notified', defaultVal: 'false' },
+      { key: 'lenderNotifiedDate', dbField: 'lender_notified_date', defaultVal: '' },
     ];
 
     fieldEntries.forEach(({ key, dbField }) => {
