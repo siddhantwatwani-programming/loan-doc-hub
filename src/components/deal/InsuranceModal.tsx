@@ -48,6 +48,8 @@ const getDefaultInsurance = (): InsuranceData => ({
   phoneNumber: '', faxNumber: '', email: '', note: '',
   paymentMailingStreet: '', paymentMailingCity: '', paymentMailingState: '', paymentMailingZip: '',
   insuranceTracking: false, lastVerified: '', trackingStatus: '',
+  impoundsActive: false, redFlagTrigger: '', attemptAgent: false, attemptBorrower: false,
+  lenderNotified: false, lenderNotifiedDate: '',
 });
 
 export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChange, insurance, onSave, isEdit, propertyOptions = [] }) => {
