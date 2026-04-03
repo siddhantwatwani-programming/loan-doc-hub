@@ -403,6 +403,10 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     setSelectedTaxPrefix(tax.id);
   }, []);
 
+  const handleBackToTaxTable = useCallback(() => {
+    setSelectedTaxPrefix(null);
+  }, []);
+
   const handleSaveTax = useCallback((taxData: PropertyTaxData) => {
     const prefix = editingTax ? editingTax.id : getNextPropertyTaxPrefix(values);
     const fieldEntries: { key: keyof PropertyTaxData; dbField: string }[] = [
