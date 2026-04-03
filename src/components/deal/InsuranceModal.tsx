@@ -70,6 +70,9 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
       if (data.coverage) {
         data.coverage = formatCurrencyDisplay(String(data.coverage));
       }
+      if (data.annualPremium) {
+        data.annualPremium = formatCurrencyDisplay(String(data.annualPremium));
+      }
       setFormData(data);
     }
   }, [open, insurance]);

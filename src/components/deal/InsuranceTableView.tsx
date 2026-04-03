@@ -22,6 +22,8 @@ export interface InsuranceData {
   policyNumber: string;
   expiration: string;
   coverage: string;
+  annualPremium: string;
+  frequency: string;
   active: boolean;
   agentName: string;
   businessAddress: string;
