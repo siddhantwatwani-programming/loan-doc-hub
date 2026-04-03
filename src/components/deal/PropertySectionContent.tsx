@@ -516,6 +516,31 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             onPageChange={setTaxCurrentPage}
           />
         );
+      case 'property_tax_detail': {
+        // Build tax-specific values remapped to propertytax1.* for the form
+        const taxSpecificValues: Record<string, string> = {};
+        Object.entries(values).forEach(([key, value]) => {
+          if (key.startsWith(`${selectedTaxPrefix}.`)) {
+            taxSpecificValues[key.replace(`${selectedTaxPrefix}.`, 'propertytax1.')] = value;
+          } else {
+            taxSpecificValues[key] = value;
+          }
+        });
+        const handleTaxValueChange = (fieldKey: string, value: string) => {
+          const actualKey = fieldKey.replace('propertytax1.', `${selectedTaxPrefix}.`);
+          onValueChange(actualKey, value);
+        };
+        return (
+          <PropertyTaxForm
+            fields={fields}
+            values={taxSpecificValues}
+            onValueChange={handleTaxValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+          />
+        );
+      }
       default:
         return null;
     }
