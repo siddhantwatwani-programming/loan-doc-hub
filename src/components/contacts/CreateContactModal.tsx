@@ -718,7 +718,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
             {/* Column 2: Address */}
             <div className="space-y-1.5">
-              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Address</h3>
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">Street</Label>
                 <Input value={form['address.street'] || ''} onChange={(e) => { set('address.street', e.target.value); clrKErr('address.street'); }} onBlur={() => set('address.street', (form['address.street'] || '').trim())} maxLength={150} className={cn("h-7 text-xs flex-1", brokerErrors['address.street'] && "border-destructive")} />
