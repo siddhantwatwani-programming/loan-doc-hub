@@ -36,6 +36,9 @@ export interface ContactBroker {
   mailingState: string;
   mailingZip: string;
   sameAsPrimary: boolean;
+  company: string;
+  license: string;
+  brokersRepresentative: string;
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
