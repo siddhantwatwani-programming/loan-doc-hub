@@ -328,51 +328,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     }
   }, [values, onValueChange, onRemoveValuesByPrefix, onPersist]);
 
-  // ── Property Tax multi-entity ──
-  const allPropertyTaxes = extractPropertyTaxesFromValues(values);
-  const totalTaxes = allPropertyTaxes.length;
-  const taxTotalPages = Math.max(1, Math.ceil(totalTaxes / PAGE_SIZE));
-  const taxSafePage = Math.min(taxCurrentPage, taxTotalPages);
-  const paginatedTaxes = allPropertyTaxes.slice((taxSafePage - 1) * PAGE_SIZE, taxSafePage * PAGE_SIZE);
-
-  const handleAddTax = useCallback(() => { setEditingTax(null); setTaxModalOpen(true); }, []);
-  const handleEditTax = useCallback((tax: PropertyTaxData) => { setEditingTax(tax); setTaxModalOpen(true); }, []);
-  const handleRowClickTax = useCallback((tax: PropertyTaxData) => {
-    setSelectedTaxPrefix(tax.id);
-    setActiveSubSection('property_tax_detail');
-  }, []);
-
-  const handleSaveTax = useCallback((taxData: PropertyTaxData) => {
-    const prefix = editingTax ? editingTax.id : getNextPropertyTaxPrefix(values);
-    const fieldEntries: { key: keyof PropertyTaxData; dbField: string }[] = [
-      { key: 'authority', dbField: 'authority' },
-      { key: 'type', dbField: 'type' },
-      { key: 'annualPayment', dbField: 'annual_payment' },
-      { key: 'frequency', dbField: 'frequency' },
-      { key: 'active', dbField: 'active' },
-      { key: 'lastVerified', dbField: 'last_verified' },
-      { key: 'lenderNotified', dbField: 'lender_notified' },
-      { key: 'current', dbField: 'current' },
-      { key: 'delinquent', dbField: 'delinquent' },
-      { key: 'delinquentAmount', dbField: 'delinquent_amount' },
-    ];
-    fieldEntries.forEach(({ key, dbField }) => {
-      onValueChange(`${prefix}.${dbField}`, String(taxData[key] ?? ''));
-    });
-    setTaxModalOpen(false);
-    if (onPersist) setTimeout(() => { onPersist(); }, 50);
-  }, [editingTax, values, onValueChange, onPersist]);
-
-  const handleDeleteTax = useCallback((tax: PropertyTaxData) => {
-    if (onRemoveValuesByPrefix) {
-      onRemoveValuesByPrefix(tax.id);
-    } else {
-      Object.keys(values).forEach(key => {
-        if (key.startsWith(`${tax.id}.`)) onValueChange(key, '');
-      });
-    }
-    if (onPersist) setTimeout(() => { onPersist(); }, 50);
-  }, [values, onValueChange, onRemoveValuesByPrefix, onPersist]);
 
   // Create property-specific values for the detail forms
   const getPropertySpecificValues = (): Record<string, string> => {
