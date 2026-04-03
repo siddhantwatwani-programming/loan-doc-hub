@@ -508,7 +508,26 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         // Insurance section is handled separately below
         return null;
       case 'property_tax_detail': {
-        // Build tax-specific values remapped to propertytax1.* for the form
+        // If no tax record is selected, show the table (like Properties table view)
+        if (!selectedTaxPrefix) {
+          return (
+            <PropertyTaxTableView
+              taxes={paginatedTaxes}
+              onAddTax={handleAddTax}
+              onEditTax={handleEditTax}
+              onRowClick={handleRowClickTaxDetail}
+              onDeleteTax={handleDeleteTax}
+              onRefresh={onRefresh}
+              disabled={disabled}
+              currentPage={taxSafePage}
+              totalPages={taxTotalPages}
+              totalCount={totalTaxes}
+              onPageChange={setTaxCurrentPage}
+            />
+          );
+        }
+
+        // A tax record is selected — show back button + detail form
         const taxSpecificValues: Record<string, string> = {};
         Object.entries(values).forEach(([key, value]) => {
           if (key.startsWith(`${selectedTaxPrefix}.`)) {
@@ -523,33 +542,25 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         };
         return (
           <div className="flex flex-col">
-            {/* Property Tax Table */}
-            <PropertyTaxTableView
-              taxes={paginatedTaxes}
-              onAddTax={handleAddTax}
-              onEditTax={handleEditTax}
-              onRowClick={handleRowClickTaxDetail}
-              onDeleteTax={handleDeleteTax}
-              onRefresh={onRefresh}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/20">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackToTaxTable}
+                className="gap-1 h-8"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Property Tax
+              </Button>
+            </div>
+            <PropertyTaxForm
+              fields={fields}
+              values={taxSpecificValues}
+              onValueChange={handleTaxValueChange}
+              showValidation={showValidation}
               disabled={disabled}
-              currentPage={taxSafePage}
-              totalPages={taxTotalPages}
-              totalCount={totalTaxes}
-              onPageChange={setTaxCurrentPage}
+              calculationResults={calculationResults}
             />
-            {/* Property Tax Detail Form (shown when a tax record is selected) */}
-            {totalTaxes > 0 && (
-              <div className="border-t border-border">
-                <PropertyTaxForm
-                  fields={fields}
-                  values={taxSpecificValues}
-                  onValueChange={handleTaxValueChange}
-                  showValidation={showValidation}
-                  disabled={disabled}
-                  calculationResults={calculationResults}
-                />
-              </div>
-            )}
           </div>
         );
       }
