@@ -126,9 +126,6 @@ export const ContactBrokerModal: React.FC<Props> = ({ open, onOpenChange, onSubm
                 <Checkbox checked={form.hold} onCheckedChange={(v) => set('hold', !!v)} /> Hold
               </label>
               <label className="flex items-center gap-2 text-sm">
-                <Checkbox checked={form.ach} onCheckedChange={(v) => set('ach', !!v)} /> ACH
-              </label>
-              <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={form.agreement} onCheckedChange={(v) => set('agreement', !!v)} /> Agreement
               </label>
               <label className="flex items-center gap-2 text-sm">
