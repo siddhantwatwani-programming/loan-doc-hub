@@ -283,6 +283,8 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
       policyNumber: 'policy_number',
       expiration: 'expiration',
       coverage: 'coverage',
+      annualPremium: 'annual_premium',
+      frequency: 'frequency',
       active: 'active',
       agentName: 'agent_name',
       businessAddress: 'business_address',
