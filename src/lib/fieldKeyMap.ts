@@ -486,6 +486,7 @@ export const PROPERTY_DETAILS_KEYS = {
   squareFeet: 'property1.square_feet',
   constructionType: 'property1.construction_type',
   monthlyIncome: 'property1.monthly_income',
+  annualIncome: 'property1.annual_income',
   lienProtectiveEquity: 'property1.lien_protective_equity',
   sourceLienInfo: 'property1.source_lien_info',
   delinquencies60day: 'property1.delinquencies_60day',
