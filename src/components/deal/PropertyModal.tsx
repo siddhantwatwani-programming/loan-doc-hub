@@ -60,6 +60,10 @@ const getEmptyProperty = (): PropertyData => ({
   yearBuilt: '', squareFeet: '', constructionType: '', monthlyIncome: '', lienProtectiveEquity: '', sourceLienInfo: '',
   delinquencies60day: false, delinquenciesHowMany: '', currentlyDelinquent: false, paidByLoan: false,
   sourceOfPayment: '', recordingNumber: '',
+  primaryCollateral: false, purchaseDate: '', propertyGeneratesIncome: false,
+  netMonthlyIncome: '', fromRent: '', fromOtherDescribe: '',
+  valuationDate: '', valuationType: '', thirdPartyFullName: '', thirdPartyStreet: '', thirdPartyCity: '',
+  thirdPartyState: '', thirdPartyZip: '', protectiveEquity: '', cltv: '',
 });
 
 export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange, property, onSave, isEdit = false }) => {
