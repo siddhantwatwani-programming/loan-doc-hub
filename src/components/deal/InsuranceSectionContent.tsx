@@ -63,6 +63,12 @@ const extractInsurancesFromValues = (values: Record<string, string>): InsuranceD
       insuranceTracking: values[`${prefix}.insurance_tracking`] === 'true',
       lastVerified: values[`${prefix}.last_verified`] || '',
       trackingStatus: values[`${prefix}.tracking_status`] || '',
+      impoundsActive: values[`${prefix}.impounds_active`] === 'true',
+      redFlagTrigger: values[`${prefix}.red_flag_trigger`] || '',
+      attemptAgent: values[`${prefix}.attempt_agent`] === 'true',
+      attemptBorrower: values[`${prefix}.attempt_borrower`] === 'true',
+      lenderNotified: values[`${prefix}.lender_notified`] === 'true',
+      lenderNotifiedDate: values[`${prefix}.lender_notified_date`] || '',
     };
     // Only add if the insurance has meaningful data (not an empty shell after deletion)
     const hasData = Object.keys(insurance).some(key => {
