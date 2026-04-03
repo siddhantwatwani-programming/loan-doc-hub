@@ -206,11 +206,12 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const [taxModalOpen, setTaxModalOpen] = useState(false);
   const [editingTax, setEditingTax] = useState<PropertyTaxData | null>(null);
   const [taxCurrentPage, setTaxCurrentPage] = useState(1);
+  const [selectedTaxPrefix, setSelectedTaxPrefix] = useState('propertytax1');
   const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
   
   // Check if we're in detail view
-  const isDetailView = ['property_details', 'legal_description', 'property_tax'].includes(activeSubSection);
+  const isDetailView = ['property_details', 'legal_description', 'property_tax', 'property_tax_detail'].includes(activeSubSection);
   
   // Check if insurance section is active (rendered separately)
   const isInsuranceSection = activeSubSection === 'insurance';
