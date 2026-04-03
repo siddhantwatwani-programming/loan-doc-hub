@@ -281,13 +281,38 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
 
           {/* Insurance Tracking */}
           <div className="border-b border-border pb-2 pt-2">
+            <span className="font-semibold text-sm text-primary">Impounds</span>
+          </div>
+
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.impoundsActive}>
+            <div className="flex items-center gap-2">
+              <Checkbox id="detail-impounds-active" checked={insurance.impoundsActive} onCheckedChange={(checked) => onChange('impoundsActive', !!checked)} disabled={disabled} className="h-4 w-4" />
+              <Label htmlFor="detail-impounds-active" className="text-sm text-foreground">Active</Label>
+            </div>
+          </DirtyFieldWrapper>
+
+          <div className="border-b border-border pb-2 pt-2">
             <span className="font-semibold text-sm text-primary">Insurance Tracking</span>
           </div>
 
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.insuranceTracking}>
             <div className="flex items-center gap-2">
               <Checkbox id="detail-insurance-tracking" checked={insurance.insuranceTracking} onCheckedChange={(checked) => onChange('insuranceTracking', !!checked)} disabled={disabled} className="h-4 w-4" />
-              <Label htmlFor="detail-insurance-tracking" className="text-sm text-foreground">Insurance Tracking</Label>
+              <Label htmlFor="detail-insurance-tracking" className="text-sm text-foreground">Active</Label>
+            </div>
+          </DirtyFieldWrapper>
+
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.redFlagTrigger}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Red Flag Trigger</Label>
+              <Select value={insurance.redFlagTrigger || undefined} onValueChange={(val) => onChange('redFlagTrigger', val)} disabled={disabled}>
+                <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  <SelectItem value="Not Paid">Not Paid</SelectItem>
+                  <SelectItem value="Pending Cancellation">Pending Cancellation</SelectItem>
+                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </DirtyFieldWrapper>
 
@@ -307,6 +332,29 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
               </DirtyFieldWrapper>
             </>
           )}
+
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.attemptAgent}>
+            <div className="flex items-center gap-2">
+              <Checkbox id="detail-attempt-agent" checked={insurance.attemptAgent} onCheckedChange={(checked) => onChange('attemptAgent', !!checked)} disabled={disabled} className="h-4 w-4" />
+              <Label htmlFor="detail-attempt-agent" className="text-sm text-foreground">Attempt Agent</Label>
+            </div>
+          </DirtyFieldWrapper>
+
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.attemptBorrower}>
+            <div className="flex items-center gap-2">
+              <Checkbox id="detail-attempt-borrower" checked={insurance.attemptBorrower} onCheckedChange={(checked) => onChange('attemptBorrower', !!checked)} disabled={disabled} className="h-4 w-4" />
+              <Label htmlFor="detail-attempt-borrower" className="text-sm text-foreground">Attempt Borrower</Label>
+            </div>
+          </DirtyFieldWrapper>
+
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.lenderNotified}>
+            <div className="flex items-center gap-2">
+              <Checkbox id="detail-lender-notified" checked={insurance.lenderNotified} onCheckedChange={(checked) => onChange('lenderNotified', !!checked)} disabled={disabled} className="h-4 w-4" />
+              <Label htmlFor="detail-lender-notified" className="text-sm text-foreground">Lender Notified</Label>
+            </div>
+          </DirtyFieldWrapper>
+
+          {insurance.lenderNotified && renderField('lenderNotifiedDate', 'Date', { type: 'date' })}
         </div>
       </div>
 
