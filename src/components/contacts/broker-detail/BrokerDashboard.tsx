@@ -29,9 +29,12 @@ const BrokerDashboard: React.FC<Props> = ({ broker }) => (
         <CardContent className="grid grid-cols-2 gap-3">
           <Field label="Broker ID" value={broker.brokerId} />
           <Field label="Type" value={broker.type} />
+          <Field label="Company" value={broker.company} />
+          <Field label="License" value={broker.license} />
           <Field label="Full Name" value={broker.fullName} />
           <Field label="First Name" value={broker.firstName} />
           <Field label="Last Name" value={broker.lastName} />
+          <Field label="Broker's Representative" value={broker.brokersRepresentative} />
         </CardContent>
       </Card>
 
