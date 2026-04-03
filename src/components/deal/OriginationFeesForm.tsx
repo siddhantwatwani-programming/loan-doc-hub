@@ -668,10 +668,6 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
       <div className="space-y-0">
         <h3 className="font-semibold text-sm text-foreground underline mb-1">1300 – Additional Settlement Charges</h3>
         {renderFeeRow('1302', 'Pest Inspection', { others: FIELD_KEYS.pestInspection_others, broker: FIELD_KEYS.pestInspection_broker, apr: FIELD_KEYS.pestInspection_apr, paidToCompany: FIELD_KEYS.pestInspection_paid_to_company }, undefined, undefined, FIELD_KEYS.pestInspection_d)}
-        {[7, 8].map((i) => {
-          const prefix = `origination_fees.1300_custom_item_${i}`;
-          return renderFeeRow('', '', { others: `${prefix}_others`, broker: `${prefix}_broker`, apr: `${prefix}_apr`, paidToCompany: `${prefix}_paid_to_company` }, `${prefix}_label`, undefined, `${prefix}_d`);
-        })}
       </div>
 
       {/* Subtotal and Total */}
