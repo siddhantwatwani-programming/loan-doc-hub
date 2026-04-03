@@ -711,7 +711,6 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
               <div className="pt-2 space-y-1">
                 {renderCheckbox('Frozen', 'frozen')}
-                {renderCheckbox('ACH', 'ach')}
                 {renderCheckbox('Agreement on File', 'agreement_on_file')}
                 {renderCheckbox('Send 1099', 'issue_1099')}
               </div>
