@@ -599,6 +599,15 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         onSave={handleSaveProperty}
         isEdit={!!editingProperty}
       />
+
+      {/* Add/Edit Property Tax Modal */}
+      <PropertyTaxModal
+        open={taxModalOpen}
+        onOpenChange={setTaxModalOpen}
+        propertyTax={editingTax}
+        onSave={handleSaveTax}
+        isEdit={!!editingTax}
+      />
     </>
   );
 };
