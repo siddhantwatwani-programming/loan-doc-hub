@@ -41,7 +41,7 @@ const PROPERTY_TYPE_OPTIONS = [
 ];
 const OCCUPANCY_OPTIONS = ['Investor', 'Other', 'Owner', 'Primary Borrower', 'Secondary Borrower', 'Tenant', 'Unknown', 'Vacant', 'Non Owner Occupied'];
 const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
-const FLOOD_ZONE_OPTIONS = ['Zone A', 'Zone AE', 'Zone AO', 'Zone X', 'Zone V', 'Zone VE', 'Zone D', 'Unknown'];
+const VALUATION_TYPE_OPTIONS = ['Broker BPO', 'Appraisal'];
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
 const CONSTRUCTION_TYPES = ['Wood/Stucco', 'Stick', 'Concrete Block'];
 const LIEN_SOURCES = ['Broker', 'Borrower', 'Other'];
