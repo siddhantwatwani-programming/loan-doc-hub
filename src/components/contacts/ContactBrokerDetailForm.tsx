@@ -32,15 +32,7 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
   const isDirty = JSON.stringify(form) !== initialSnapshot;
 
   const set = (field: keyof ContactBroker, value: string | boolean) =>
-    setForm((p) => {
-      const updated = { ...p, [field]: value };
-      if (field === 'firstName' || field === 'lastName') {
-        const fn = field === 'firstName' ? String(value) : p.firstName;
-        const ln = field === 'lastName' ? String(value) : p.lastName;
-        updated.fullName = [fn, ln].filter(Boolean).join(' ');
-      }
-      return updated;
-    });
+    setForm((p) => ({ ...p, [field]: value }));
 
   useEffect(() => {
     if (form.sameAsPrimary) {
@@ -77,6 +69,7 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
       { label: 'Work Phone', value: form.workPhone },
       { label: 'Cell Phone', value: form.cellPhone },
       { label: 'Fax', value: form.fax },
+      { label: 'Rep Phone', value: form.repPhone },
     ]);
     if (phoneErrors.length > 0) { toast.error(phoneErrors[0]); return; }
     setShowConfirm(true);
@@ -104,22 +97,6 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
           <Input value={form.license} onChange={(e) => set('license', e.target.value)} />
         </div>
         <div>
-          <Label>Broker's Representative</Label>
-          <Input value={form.brokersRepresentative} onChange={(e) => set('brokersRepresentative', e.target.value)} />
-        </div>
-        <div className="col-span-2">
-          <Label>Full Name</Label>
-          <Input value={form.fullName} disabled className="bg-muted" />
-        </div>
-        <div>
-          <Label>First Name</Label>
-          <Input value={form.firstName} onChange={(e) => set('firstName', e.target.value)} />
-        </div>
-        <div>
-          <Label>Last Name</Label>
-          <Input value={form.lastName} onChange={(e) => set('lastName', e.target.value)} />
-        </div>
-        <div>
           <Label>Type</Label>
           <Select value={form.type} onValueChange={(v) => set('type', v)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -137,6 +114,31 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
           <label className="flex items-center gap-2 text-sm">
             <Checkbox checked={form.verified} onCheckedChange={(v) => set('verified', !!v)} /> Verified
           </label>
+        </div>
+      </div>
+
+      {/* Broker's Representative */}
+      <SectionTitle>Broker's Representative</SectionTitle>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>First Name</Label>
+          <Input value={form.firstName} onChange={(e) => set('firstName', e.target.value)} />
+        </div>
+        <div>
+          <Label>Last Name</Label>
+          <Input value={form.lastName} onChange={(e) => set('lastName', e.target.value)} />
+        </div>
+        <div>
+          <Label>Phone</Label>
+          <PhoneInput value={form.repPhone} onValueChange={(v) => set('repPhone', v)} />
+        </div>
+        <div>
+          <Label>Email</Label>
+          <EmailInput value={form.repEmail} onValueChange={(v) => set('repEmail', v)} />
+        </div>
+        <div>
+          <Label>License</Label>
+          <Input value={form.repLicense} onChange={(e) => set('repLicense', e.target.value)} />
         </div>
       </div>
 

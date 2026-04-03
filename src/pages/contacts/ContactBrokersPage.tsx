@@ -16,7 +16,6 @@ export interface ContactBroker {
   ach: boolean;
   email: string;
   agreement: boolean;
-  fullName: string;
   firstName: string;
   lastName: string;
   city: string;
@@ -38,6 +37,9 @@ export interface ContactBroker {
   company: string;
   license: string;
   brokersRepresentative: string;
+  repPhone: string;
+  repEmail: string;
+  repLicense: string;
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -47,8 +49,8 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ach', label: 'ACH', visible: true },
   { id: 'email', label: 'Email', visible: true },
   { id: 'agreement_on_file', label: 'Agreement on File', visible: true },
-  { id: 'full_name', label: 'Full Name', visible: true },
   { id: 'first_name', label: 'First', visible: true },
+  { id: 'last_name', label: 'Last', visible: true },
   { id: 'last_name', label: 'Last', visible: true },
   { id: 'address.street', label: 'Street', visible: true },
   { id: 'city', label: 'City', visible: true },
@@ -194,7 +196,7 @@ const ContactBrokersPage: React.FC = () => {
     };
     if (columnId in topLevel) {
       const val = topLevel[columnId] || '';
-      if (columnId === 'full_name') return <span className="font-medium">{val || '-'}</span>;
+      if (columnId === 'full_name') return <span className="font-medium">{[contact.first_name, contact.last_name].filter(Boolean).join(' ') || '-'}</span>;
       return val || '-';
     }
 

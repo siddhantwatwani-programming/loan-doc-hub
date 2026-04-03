@@ -31,10 +31,17 @@ const BrokerDashboard: React.FC<Props> = ({ broker }) => (
           <Field label="Type" value={broker.type} />
           <Field label="Company" value={broker.company} />
           <Field label="License" value={broker.license} />
-          <Field label="Full Name" value={broker.fullName} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2"><CardTitle className="text-sm">Broker's Representative</CardTitle></CardHeader>
+        <CardContent className="grid grid-cols-2 gap-3">
           <Field label="First Name" value={broker.firstName} />
           <Field label="Last Name" value={broker.lastName} />
-          <Field label="Broker's Representative" value={broker.brokersRepresentative} />
+          <Field label="Phone" value={broker.repPhone} />
+          <Field label="Email" value={broker.repEmail} />
+          <Field label="License" value={broker.repLicense} />
         </CardContent>
       </Card>
 
