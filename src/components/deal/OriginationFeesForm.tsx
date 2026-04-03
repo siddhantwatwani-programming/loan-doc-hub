@@ -738,19 +738,19 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
       {/* 1200 Government Recording and Transfer Charges */}
       <div className="space-y-0">
         <h3 className="font-semibold text-sm text-foreground underline mb-1">1200 – Government Recording and Transfer Charges</h3>
-        {renderFeeRow('1201', 'Recording Fees', { others: FIELD_KEYS.recordingFees_others, broker: FIELD_KEYS.recordingFees_broker, apr: FIELD_KEYS.recordingFees_apr, paidToCompany: FIELD_KEYS.recordingFees_paid_to_company })}
-        {renderFeeRow('1301', '', { others: FIELD_KEYS.addThisLine_others, broker: FIELD_KEYS.addThisLine_broker, apr: FIELD_KEYS.addThisLine_apr, paidToCompany: FIELD_KEYS.addThisLine_paid_to_company }, FIELD_KEYS.addThisLine_label)}
-        {renderFeeRow('1202', 'City/County Tax/Stamps', { others: FIELD_KEYS.cityCountyTaxStamps_others, broker: FIELD_KEYS.cityCountyTaxStamps_broker, apr: FIELD_KEYS.cityCountyTaxStamps_apr, paidToCompany: FIELD_KEYS.cityCountyTaxStamps_paid_to_company })}
-        {renderFeeRow('', '', { others: FIELD_KEYS.customItem1200_others, broker: FIELD_KEYS.customItem1200_broker, apr: FIELD_KEYS.customItem1200_apr, paidToCompany: FIELD_KEYS.customItem1200_paid_to_company }, FIELD_KEYS.customItem1200_label)}
+        {renderFeeRow('1201', 'Recording Fees', { others: FIELD_KEYS.recordingFees_others, broker: FIELD_KEYS.recordingFees_broker, apr: FIELD_KEYS.recordingFees_apr, paidToCompany: FIELD_KEYS.recordingFees_paid_to_company }, undefined, undefined, FIELD_KEYS.recordingFees_d)}
+        {renderFeeRow('1301', '', { others: FIELD_KEYS.addThisLine_others, broker: FIELD_KEYS.addThisLine_broker, apr: FIELD_KEYS.addThisLine_apr, paidToCompany: FIELD_KEYS.addThisLine_paid_to_company }, FIELD_KEYS.addThisLine_label, undefined, FIELD_KEYS.addThisLine_d)}
+        {renderFeeRow('1202', 'City/County Tax/Stamps', { others: FIELD_KEYS.cityCountyTaxStamps_others, broker: FIELD_KEYS.cityCountyTaxStamps_broker, apr: FIELD_KEYS.cityCountyTaxStamps_apr, paidToCompany: FIELD_KEYS.cityCountyTaxStamps_paid_to_company }, undefined, undefined, FIELD_KEYS.cityCountyTaxStamps_d)}
+        {renderFeeRow('', '', { others: FIELD_KEYS.customItem1200_others, broker: FIELD_KEYS.customItem1200_broker, apr: FIELD_KEYS.customItem1200_apr, paidToCompany: FIELD_KEYS.customItem1200_paid_to_company }, FIELD_KEYS.customItem1200_label, undefined, FIELD_KEYS.customItem1200_d)}
       </div>
 
       {/* 1300 Additional Settlement Charges */}
       <div className="space-y-0">
         <h3 className="font-semibold text-sm text-foreground underline mb-1">1300 – Additional Settlement Charges</h3>
-        {renderFeeRow('1302', 'Pest Inspection', { others: FIELD_KEYS.pestInspection_others, broker: FIELD_KEYS.pestInspection_broker, apr: FIELD_KEYS.pestInspection_apr, paidToCompany: FIELD_KEYS.pestInspection_paid_to_company })}
+        {renderFeeRow('1302', 'Pest Inspection', { others: FIELD_KEYS.pestInspection_others, broker: FIELD_KEYS.pestInspection_broker, apr: FIELD_KEYS.pestInspection_apr, paidToCompany: FIELD_KEYS.pestInspection_paid_to_company }, undefined, undefined, FIELD_KEYS.pestInspection_d)}
         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => {
           const prefix = `origination_fees.1300_custom_item_${i}`;
-          return renderFeeRow('', '', { others: `${prefix}_others`, broker: `${prefix}_broker`, apr: `${prefix}_apr`, paidToCompany: `${prefix}_paid_to_company` }, `${prefix}_label`);
+          return renderFeeRow('', '', { others: `${prefix}_others`, broker: `${prefix}_broker`, apr: `${prefix}_apr`, paidToCompany: `${prefix}_paid_to_company` }, `${prefix}_label`, undefined, `${prefix}_d`);
         })}
       </div>
 
