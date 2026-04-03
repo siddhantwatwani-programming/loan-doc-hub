@@ -47,20 +47,43 @@ function allDependenciesPresent(
  * - "{next_due_date} + {grace_days} + 4 days"
  */
 function parseFormula(formula: string): {
-  type: 'date_add_months' | 'date_add_days' | 'unknown';
+  type: 'date_add_months' | 'date_add_days' | 'arithmetic' | 'unknown';
   baseField: string;
   addendField: string | null;
   staticValue: number | null;
+  operator?: '*' | '+' | '-' | '/';
 } | null {
-  // Pattern: {base_field} + {other_field} months/days
-  // or: {base_field} + {other_field} + N months/days
-  // or: {base_field} + N months/days
-  
   const cleanFormula = formula.trim();
   
-  // Match patterns like: {field1} + {field2} months
+  // Arithmetic: {field} * N  or  {field} + N  etc.
+  const fieldArithStaticPattern = /^\{([^}]+)\}\s*([+\-*/])\s*(\d+(?:\.\d+)?)$/;
+  let match = cleanFormula.match(fieldArithStaticPattern);
+  if (match) {
+    return {
+      type: 'arithmetic',
+      baseField: match[1],
+      addendField: null,
+      staticValue: parseFloat(match[3]),
+      operator: match[2] as '*' | '+' | '-' | '/',
+    };
+  }
+
+  // Arithmetic: {field1} * {field2}
+  const fieldArithFieldPattern = /^\{([^}]+)\}\s*([+\-*/])\s*\{([^}]+)\}$/;
+  match = cleanFormula.match(fieldArithFieldPattern);
+  if (match) {
+    return {
+      type: 'arithmetic',
+      baseField: match[1],
+      addendField: match[3],
+      staticValue: null,
+      operator: match[2] as '*' | '+' | '-' | '/',
+    };
+  }
+
+  // Date patterns: {field1} + {field2} months
   const fieldAddPattern = /^\{([^}]+)\}\s*\+\s*\{([^}]+)\}\s*(months?|days?)$/i;
-  let match = cleanFormula.match(fieldAddPattern);
+  match = cleanFormula.match(fieldAddPattern);
   if (match) {
     const unit = match[3].toLowerCase();
     return {
@@ -71,7 +94,7 @@ function parseFormula(formula: string): {
     };
   }
   
-  // Match patterns like: {field1} + {field2} + N days
+  // {field1} + {field2} + N days
   const fieldAndStaticPattern = /^\{([^}]+)\}\s*\+\s*\{([^}]+)\}\s*\+\s*(\d+)\s*(months?|days?)$/i;
   match = cleanFormula.match(fieldAndStaticPattern);
   if (match) {
@@ -84,7 +107,7 @@ function parseFormula(formula: string): {
     };
   }
   
-  // Match patterns like: {field1} + N months
+  // {field1} + N months
   const staticAddPattern = /^\{([^}]+)\}\s*\+\s*(\d+)\s*(months?|days?)$/i;
   match = cleanFormula.match(staticAddPattern);
   if (match) {
