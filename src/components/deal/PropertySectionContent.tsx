@@ -504,13 +504,18 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         return null;
       case 'property_tax':
         return (
-          <PropertyTaxForm
-            fields={fields}
-            values={getPropertySpecificValues()}
-            onValueChange={handlePropertyValueChange}
-            showValidation={showValidation}
+          <PropertyTaxTableView
+            taxes={paginatedTaxes}
+            onAddTax={handleAddTax}
+            onEditTax={handleEditTax}
+            onRowClick={handleRowClickTax}
+            onDeleteTax={handleDeleteTax}
+            onRefresh={onRefresh}
             disabled={disabled}
-            calculationResults={calculationResults}
+            currentPage={taxSafePage}
+            totalPages={taxTotalPages}
+            totalCount={totalTaxes}
+            onPageChange={setTaxCurrentPage}
           />
         );
       default:
