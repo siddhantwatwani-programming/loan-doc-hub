@@ -76,7 +76,7 @@ const getInitialForm = (contactType: string): Record<string, string> => {
   }
   if (contactType === 'broker') {
     return {
-      company: '', first_name: '', middle_name: '', last_name: '', full_name: '',
+      company: '', first_name: '', last_name: '',
       email: '', License: '',
       'address.street': '', 'address.city': '', 'address.state': '', 'address.zip': '',
       'mailing.street': '', 'mailing.city': '', 'mailing.state': '', 'mailing.zip': '',
@@ -84,6 +84,7 @@ const getInitialForm = (contactType: string): Record<string, string> => {
       'phone.home': '', 'phone.work': '', 'phone.cell': '', 'phone.fax': '',
       'preferred.home': 'false', 'preferred.work': 'false', 'preferred.cell': 'false', 'preferred.fax': 'false',
       brokers_representative: '',
+      rep_phone: '', rep_email: '', rep_license: '',
       frozen: 'false', agreement_on_file: 'false',
       issue_1099: 'false',
     };
