@@ -42,6 +42,7 @@ const PROPERTY_TYPE_OPTIONS = [
 const OCCUPANCY_OPTIONS = ['Investor', 'Other', 'Owner', 'Primary Borrower', 'Secondary Borrower', 'Tenant', 'Unknown', 'Vacant', 'Non Owner Occupied'];
 const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
 const FLOOD_ZONE_OPTIONS = ['Zone A', 'Zone AE', 'Zone AO', 'Zone X', 'Zone V', 'Zone VE', 'Zone D', 'Unknown'];
+const VALUATION_TYPE_OPTIONS = ['Broker BPO', 'Appraisal'];
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
 const CONSTRUCTION_TYPES = ['Wood/Stucco', 'Stick', 'Concrete Block'];
 const LIEN_SOURCES = ['Broker', 'Borrower', 'Other'];
@@ -59,6 +60,10 @@ const getEmptyProperty = (): PropertyData => ({
   yearBuilt: '', squareFeet: '', constructionType: '', monthlyIncome: '', lienProtectiveEquity: '', sourceLienInfo: '',
   delinquencies60day: false, delinquenciesHowMany: '', currentlyDelinquent: false, paidByLoan: false,
   sourceOfPayment: '', recordingNumber: '',
+  primaryCollateral: false, purchaseDate: '', propertyGeneratesIncome: false,
+  netMonthlyIncome: '', fromRent: '', fromOtherDescribe: '',
+  valuationDate: '', valuationType: '', thirdPartyFullName: '', thirdPartyStreet: '', thirdPartyCity: '',
+  thirdPartyState: '', thirdPartyZip: '', protectiveEquity: '', cltv: '',
 });
 
 export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange, property, onSave, isEdit = false }) => {
@@ -67,7 +72,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   const [yearBuiltOpen, setYearBuiltOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const CURRENCY_MODAL_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'pledgedEquity', 'monthlyIncome', 'lienProtectiveEquity'];
+  const CURRENCY_MODAL_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'pledgedEquity', 'monthlyIncome', 'lienProtectiveEquity', 'netMonthlyIncome', 'fromRent', 'fromOtherDescribe', 'protectiveEquity'];
   useEffect(() => {
     if (open) {
       const base = property ? { ...getEmptyProperty(), ...property } : getEmptyProperty();
@@ -106,7 +111,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   const emailsValid = hasValidEmails(formData as any, ['appraiserEmail']);
 
   const handleSaveClick = () => setShowConfirm(true);
-  const CURRENCY_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'pledgedEquity', 'monthlyIncome', 'lienProtectiveEquity'];
+  const CURRENCY_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'pledgedEquity', 'monthlyIncome', 'lienProtectiveEquity', 'netMonthlyIncome', 'fromRent', 'fromOtherDescribe', 'protectiveEquity'];
   const handleConfirmSave = () => {
     setShowConfirm(false);
     // Strip commas from currency fields before persisting
@@ -223,7 +228,8 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
                 <div className="space-y-1.5">
                   <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Property Information</span></div>
-                  {renderInlineField('description', 'Description')}
+                  {renderInlineField('description', 'Description (Nick Name)')}
+                  {renderCheckboxField('primaryCollateral', 'Primary Collateral')}
                   <div className="pt-1">
                     <span className="text-xs font-medium text-primary">Address</span>
                   </div>
@@ -243,33 +249,39 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                     <Checkbox id="modal-primary-property" checked={formData.isPrimary} onCheckedChange={(checked) => handleFieldChange('isPrimary', !!checked)} className="h-3.5 w-3.5" />
                     <Label htmlFor="modal-primary-property" className="text-xs text-foreground">Primary Property</Label>
                   </div>
+
+                  <div className="pt-2">
+                    <span className="text-xs font-medium text-primary">Purchase Information</span>
+                  </div>
+                  {renderInlineField('purchaseDate', 'Purchase Date', 'date')}
+                  {renderCurrencyField('purchasePrice', 'Purchase Price')}
+                  {renderCurrencyField('downPayment', 'Down Payment')}
                 </div>
 
                 <div className="space-y-1.5">
                   <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Appraisal Information</span></div>
                   {renderInlineField('appraisedDate', 'Appraisal Date', 'date')}
-                  {renderInlineSelect('performedBy', 'Performed By', PERFORMED_BY_OPTIONS, 'Select')}
                   {renderInlineSelect('propertyType', 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
                   {renderInlineSelect('occupancy', 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
-                  <div className="flex items-center gap-2">
-                    <Label className="w-[100px] shrink-0 text-xs text-foreground">Loan To Value</Label>
-                    <div className="relative flex-1">
-                      <Input value={formData.ltv} onChange={(e) => handlePercentageChange('ltv', e.target.value)} className="h-7 text-xs pr-6" inputMode="decimal" />
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
-                    </div>
-                  </div>
                   {renderInlineField('zoning', 'Zoning')}
                   {renderCurrencyField('appraisedValue', 'Appraised Value')}
                   {renderCurrencyField('pledgedEquity', 'Pledged Equity')}
                   {renderInlineSelect('loanPriority', 'Priority', PRIORITY_OPTIONS, 'Select')}
-                  {renderInlineSelect('floodZone', 'Flood Zone', FLOOD_ZONE_OPTIONS, 'Select')}
+                  {renderCheckboxField('floodZone', 'Flood Zone')}
+
+                  {renderCheckboxField('propertyGeneratesIncome', 'Property Generates Income')}
+                  {formData.propertyGeneratesIncome && (
+                    <>
+                      {renderCurrencyField('netMonthlyIncome', 'Net Monthly Income')}
+                      {renderCurrencyField('fromRent', 'From Rent')}
+                      {renderCurrencyField('fromOtherDescribe', 'From Other (Describe)')}
+                    </>
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0 mt-4">
                 <div className="space-y-1.5">
-                  {renderCurrencyField('purchasePrice', 'Purchase Price')}
-                  {renderCurrencyField('downPayment', 'Down Payment')}
                   {renderCurrencyField('delinquentTaxes', 'Delinquent Taxes')}
 
                   <p className="text-xs italic text-foreground pt-3 pb-1">Appraiser Contact</p>
@@ -322,6 +334,47 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                   {renderCheckboxField('paidByLoan', 'Will be Paid by this Loan')}
                   {renderInlineField('sourceOfPayment', 'If No, List Source of Payment')}
                   {renderInlineField('recordingNumber', 'Recording number')}
+                </div>
+              </div>
+
+              {/* Valuation Section */}
+              <div className="mt-4">
+                <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Valuation:</span></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
+                  <div className="space-y-1.5">
+                    {renderInlineField('valuationDate', 'Valuation Date', 'date')}
+                    {renderInlineSelect('valuationType', 'Valuation Type', VALUATION_TYPE_OPTIONS, 'Select')}
+                    {renderInlineSelect('performedBy', 'Performed By', PERFORMED_BY_OPTIONS, 'Select')}
+                    {formData.performedBy === 'Third Party' && (
+                      <>
+                        {renderInlineField('thirdPartyFullName', 'Full Name')}
+                        {renderInlineField('thirdPartyStreet', 'Street')}
+                        {renderInlineField('thirdPartyCity', 'City')}
+                        {renderInlineSelect('thirdPartyState', 'State', US_STATES, 'Select state')}
+                        <div className="flex items-center gap-2">
+                          <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP Code</Label>
+                          <ZipInput value={String(formData.thirdPartyZip || '')} onValueChange={(v) => handleFieldChange('thirdPartyZip', v)} className="h-7 text-xs" />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    {renderCurrencyField('protectiveEquity', 'Protective Equity')}
+                    <div className="flex items-center gap-2">
+                      <Label className="w-[100px] shrink-0 text-xs text-foreground">Loan to Value</Label>
+                      <div className="relative flex-1">
+                        <Input value={formData.ltv} onChange={(e) => handlePercentageChange('ltv', e.target.value)} className="h-7 text-xs pr-6" inputMode="decimal" />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label className="w-[100px] shrink-0 text-xs text-foreground">CLTV (If a Junior Lien)</Label>
+                      <div className="relative flex-1">
+                        <Input value={String(formData.cltv || '')} onChange={(e) => handlePercentageChange('cltv', e.target.value)} className="h-7 text-xs pr-6" inputMode="decimal" />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </TabsContent>
