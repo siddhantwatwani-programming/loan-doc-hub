@@ -174,6 +174,24 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
                     />
                   </div>
                 </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Annual Premium</Label>
+                  <div className="relative flex-1">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                    <Input
+                      value={String(formData.annualPremium || '')}
+                      onChange={(e) => handleChange('annualPremium', e.target.value)}
+                      onFocus={(e) => { e.target.value = unformatCurrencyDisplay(e.target.value); handleChange('annualPremium', e.target.value); }}
+                      onBlur={(e) => { const formatted = formatCurrencyDisplay(unformatCurrencyDisplay(e.target.value)); handleChange('annualPremium', formatted); }}
+                      onKeyDown={numericKeyDown}
+                      onPaste={(e) => numericPaste(e, (v) => handleChange('annualPremium', v))}
+                      className="h-7 text-xs text-right pl-5"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                {renderInlineSelect('frequency', 'Frequency', ['Monthly', 'Quarterly', 'Semiannually', 'Annually'], 'Select')}
 
                 <div className="border-b border-border pb-1 mb-2 pt-2">
                   <span className="font-semibold text-xs text-primary">Payment Mailing Address</span>
