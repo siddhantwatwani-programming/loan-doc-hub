@@ -397,8 +397,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const handleEditTax = useCallback((tax: PropertyTaxData) => { setEditingTax(tax); setTaxModalOpen(true); }, []);
   const handleRowClickTax = useCallback((tax: PropertyTaxData) => {
     setSelectedTaxPrefix(tax.id);
-    setActiveSubSection('property_tax_detail');
   }, []);
+  const handleRowClickTaxDetail = handleRowClickTax;
 
   const handleSaveTax = useCallback((taxData: PropertyTaxData) => {
     const prefix = editingTax ? editingTax.id : getNextPropertyTaxPrefix(values);
