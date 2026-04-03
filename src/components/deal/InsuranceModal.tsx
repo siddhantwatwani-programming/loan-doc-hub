@@ -43,7 +43,7 @@ const TRACKING_STATUS_OPTIONS = [
 
 const getDefaultInsurance = (): InsuranceData => ({
   id: '', property: '', description: '', insuredName: '', companyName: '', policyNumber: '',
-  expiration: '', coverage: '', active: true, agentName: '', businessAddress: '',
+  expiration: '', coverage: '', annualPremium: '', frequency: '', active: true, agentName: '', businessAddress: '',
   businessAddressCity: '', businessAddressState: '', businessAddressZip: '',
   phoneNumber: '', faxNumber: '', email: '', note: '',
   paymentMailingStreet: '', paymentMailingCity: '', paymentMailingState: '', paymentMailingZip: '',
