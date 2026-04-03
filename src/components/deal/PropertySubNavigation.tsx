@@ -1,13 +1,12 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export type PropertySubSection = 'properties' | 'property_details' | 'legal_description' | 'insurance' | 'property_tax' | 'property_tax_detail';
+export type PropertySubSection = 'properties' | 'property_details' | 'legal_description' | 'insurance' | 'property_tax_detail';
 
 const PROPERTY_DETAIL_SECTIONS: { key: PropertySubSection; label: string }[] = [
   { key: 'property_details', label: 'Property Details' },
   { key: 'legal_description', label: 'Legal Description' },
   { key: 'insurance', label: 'Insurance' },
-  { key: 'property_tax', label: 'Property Tax' },
   { key: 'property_tax_detail', label: 'Tax Detail' },
 ];
 

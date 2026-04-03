@@ -211,7 +211,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const { dirtyFieldKeys } = useDirtyFields();
   
   // Check if we're in detail view
-  const isDetailView = ['property_details', 'legal_description', 'property_tax', 'property_tax_detail'].includes(activeSubSection);
+  const isDetailView = ['property_details', 'legal_description', 'property_tax_detail'].includes(activeSubSection);
   
   // Check if insurance section is active (rendered separately)
   const isInsuranceSection = activeSubSection === 'insurance';
@@ -275,12 +275,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
 
   // Handle back navigation
   const handleBackToTable = useCallback(() => {
-    if (activeSubSection === 'property_tax_detail') {
-      setActiveSubSection('property_tax');
-    } else {
-      setActiveSubSection('properties');
-    }
-  }, [activeSubSection]);
+    setActiveSubSection('properties');
+  }, []);
 
   // Handle primary property change - only one can be primary
   const handlePrimaryChange = useCallback((propertyId: string, isPrimary: boolean) => {
@@ -401,8 +397,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const handleEditTax = useCallback((tax: PropertyTaxData) => { setEditingTax(tax); setTaxModalOpen(true); }, []);
   const handleRowClickTax = useCallback((tax: PropertyTaxData) => {
     setSelectedTaxPrefix(tax.id);
-    setActiveSubSection('property_tax_detail');
   }, []);
+  const handleRowClickTaxDetail = handleRowClickTax;
 
   const handleSaveTax = useCallback((taxData: PropertyTaxData) => {
     const prefix = editingTax ? editingTax.id : getNextPropertyTaxPrefix(values);
@@ -504,22 +500,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
       case 'insurance':
         // Insurance section is handled separately below
         return null;
-      case 'property_tax':
-        return (
-          <PropertyTaxTableView
-            taxes={paginatedTaxes}
-            onAddTax={handleAddTax}
-            onEditTax={handleEditTax}
-            onRowClick={handleRowClickTax}
-            onDeleteTax={handleDeleteTax}
-            onRefresh={onRefresh}
-            disabled={disabled}
-            currentPage={taxSafePage}
-            totalPages={taxTotalPages}
-            totalCount={totalTaxes}
-            onPageChange={setTaxCurrentPage}
-          />
-        );
       case 'property_tax_detail': {
         // Build tax-specific values remapped to propertytax1.* for the form
         const taxSpecificValues: Record<string, string> = {};
@@ -535,14 +515,35 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
           onValueChange(actualKey, value);
         };
         return (
-          <PropertyTaxForm
-            fields={fields}
-            values={taxSpecificValues}
-            onValueChange={handleTaxValueChange}
-            showValidation={showValidation}
-            disabled={disabled}
-            calculationResults={calculationResults}
-          />
+          <div className="flex flex-col">
+            {/* Property Tax Table */}
+            <PropertyTaxTableView
+              taxes={paginatedTaxes}
+              onAddTax={handleAddTax}
+              onEditTax={handleEditTax}
+              onRowClick={handleRowClickTaxDetail}
+              onDeleteTax={handleDeleteTax}
+              onRefresh={onRefresh}
+              disabled={disabled}
+              currentPage={taxSafePage}
+              totalPages={taxTotalPages}
+              totalCount={totalTaxes}
+              onPageChange={setTaxCurrentPage}
+            />
+            {/* Property Tax Detail Form (shown when a tax record is selected) */}
+            {totalTaxes > 0 && (
+              <div className="border-t border-border">
+                <PropertyTaxForm
+                  fields={fields}
+                  values={taxSpecificValues}
+                  onValueChange={handleTaxValueChange}
+                  showValidation={showValidation}
+                  disabled={disabled}
+                  calculationResults={calculationResults}
+                />
+              </div>
+            )}
+          </div>
         );
       }
       default:
