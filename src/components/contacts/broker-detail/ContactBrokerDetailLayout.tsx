@@ -110,7 +110,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
     })(),
     verified: (contact.contact_data as any)?.tin_verified === 'true',
     send1099: (contact.contact_data as any)?.send_1099 === 'true',
-    tin: (contact.contact_data as any)?.tax_id || (contact.contact_data as any)?.tin || '',
+    
     street: (contact.contact_data as any)?.['address.street'] || (contact.contact_data as any)?.['primary_address.street'] || '',
     zip: (contact.contact_data as any)?.['address.zip'] || (contact.contact_data as any)?.['primary_address.zip'] || '',
     mailingStreet: (contact.contact_data as any)?.['mailing_address.street'] || '',
