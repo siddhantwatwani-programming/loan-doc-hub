@@ -42,15 +42,7 @@ export const ContactBrokerModal: React.FC<Props> = ({ open, onOpenChange, onSubm
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const set = (field: keyof CreatePayload, value: string | boolean) =>
-    setForm((p) => {
-      const updated = { ...p, [field]: value };
-      if (field === 'firstName' || field === 'lastName') {
-        const fn = field === 'firstName' ? String(value) : p.firstName;
-        const ln = field === 'lastName' ? String(value) : p.lastName;
-        updated.fullName = [fn, ln].filter(Boolean).join(' ');
-      }
-      return updated;
-    });
+    setForm((p) => ({ ...p, [field]: value }));
 
   const handleSubmit = () => {
     if (!hasAtLeastOneFieldFilled(form as any, ['preferredPhone', 'type'])) {

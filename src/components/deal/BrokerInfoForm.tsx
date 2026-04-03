@@ -108,16 +108,30 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-x-6 gap-y-0">
-        {/* Column 1 - Name */}
+        {/* Column 1 - Broker Details + Representative */}
         <div className="space-y-1.5">
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Broker Details</h3>
           {renderInlineField('brokerId', 'Broker ID')}
-          {renderInlineField('license', 'License')}
           {renderInlineField('company', 'Company')}
-          {renderInlineField('fullName', 'Full Name')}
-          {renderInlineField('firstName', 'First')}
-          {renderInlineField('middleName', 'Middle')}
-          {renderInlineField('lastName', 'Last')}
+          {renderInlineField('license', 'License')}
+
+          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-4">Broker's Representative</h3>
+          {renderInlineField('firstName', 'First Name')}
+          {renderInlineField('lastName', 'Last Name')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.repPhone}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">Phone</Label>
+              <PhoneInput value={getValue('repPhone')} onValueChange={(v) => handleChange('repPhone', v)} disabled={disabled} className="h-7 text-xs flex-1" />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.repEmail}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">Email</Label>
+              <EmailInput value={getValue('repEmail')} onValueChange={(v) => handleChange('repEmail', v)} disabled={disabled} className="h-7 text-xs" />
+            </div>
+          </DirtyFieldWrapper>
+          {renderInlineField('repLicense', 'License')}
+
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.email}>
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs">Email</Label>
