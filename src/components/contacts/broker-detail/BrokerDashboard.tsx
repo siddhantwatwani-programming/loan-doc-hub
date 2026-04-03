@@ -48,7 +48,7 @@ const BrokerDashboard: React.FC<Props> = ({ broker }) => (
       </Card>
 
       <Card>
-        <CardHeader className="pb-2"><CardTitle className="text-sm">Primary Address</CardTitle></CardHeader>
+        <CardHeader className="pb-2"><CardTitle className="text-sm">Address</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-2 gap-3">
           <Field label="Street" value={broker.street} />
           <Field label="City" value={broker.city} />
