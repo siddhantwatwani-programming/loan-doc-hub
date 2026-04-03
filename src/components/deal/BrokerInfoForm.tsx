@@ -119,26 +119,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
           </DirtyFieldWrapper>
 
           <div className="space-y-1.5 pt-2">
-            <DirtyFieldWrapper fieldKey={FIELD_KEYS.taxIdType}>
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">Tax ID Type</Label>
-                <Select value={getValue('taxIdType') || '0'} onValueChange={(val) => handleChange('taxIdType', val)} disabled={disabled}>
-                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">0 - Unknown</SelectItem>
-                    <SelectItem value="1">1 - EIN</SelectItem>
-                    <SelectItem value="2">2 - SSN</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </DirtyFieldWrapper>
             {renderInlineField('taxId', 'TIN')}
-            <DirtyFieldWrapper fieldKey={FIELD_KEYS.tinVerified}>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="broker-tinVerified" checked={getBoolValue('tinVerified')} onCheckedChange={(checked) => handleChange('tinVerified', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
-                <Label htmlFor="broker-tinVerified" className="text-xs font-normal cursor-pointer">TIN Verified</Label>
-              </div>
-            </DirtyFieldWrapper>
           </div>
 
           <div className="space-y-1.5 pt-2">
@@ -146,12 +127,6 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
               <div className="flex items-center space-x-2">
                 <Checkbox id="broker-frozen" checked={getBoolValue('frozen')} onCheckedChange={(checked) => handleChange('frozen', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
                 <Label htmlFor="broker-frozen" className="text-xs font-normal cursor-pointer">Frozen</Label>
-              </div>
-            </DirtyFieldWrapper>
-            <DirtyFieldWrapper fieldKey={FIELD_KEYS.ach}>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="broker-ach" checked={getBoolValue('ach')} onCheckedChange={(checked) => handleChange('ach', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
-                <Label htmlFor="broker-ach" className="text-xs font-normal cursor-pointer">ACH</Label>
               </div>
             </DirtyFieldWrapper>
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.agreementOnFile}>
