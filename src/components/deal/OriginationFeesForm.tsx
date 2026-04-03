@@ -610,11 +610,11 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
       <div style={GRID_STYLE} className="py-2 border-b-2 border-foreground text-xs font-semibold text-foreground">
         <div>HUD-1 #</div>
         <div>Item Description</div>
+        <div>Comment</div>
         <div className="text-center">Paid to Others</div>
         <div className="text-center">Paid to Broker</div>
         <div className="text-center">Include in APR</div>
         <div className="text-center">Paid to Company</div>
-        <div />
       </div>
 
       {/* 800 Items Payable in Connection with Loan */}
