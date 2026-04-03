@@ -35,7 +35,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
   };
 
   const requiredFieldsStatus = useMemo(() => {
-    const requiredFields: (keyof typeof FIELD_KEYS)[] = ['brokerId'];
+    const requiredFields: (keyof typeof FIELD_KEYS)[] = [];
     const filledCount = requiredFields.filter(field => getValue(field).trim() !== '').length;
     return { filledCount, totalRequired: requiredFields.length, missingCount: requiredFields.length - filledCount };
   }, [values]);
