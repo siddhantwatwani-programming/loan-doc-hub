@@ -41,6 +41,8 @@ const RATE_STRUCTURE_OPTIONS = [
   { value: 'other', label: 'Other' },
 ];
 const AMORTIZATION_OPTIONS = [
+  { value: 'arm_adjustable_rate', label: 'ARM – Adjustable Rate' },
+  { value: 'gtm_graduated_terms', label: 'GTM – Graduated Terms' },
   { value: 'fully_amortized', label: 'Fully Amortized' },
   { value: 'partially_amortized', label: 'Partially Amortized' },
   { value: 'interest_only', label: 'Interest Only' },
@@ -440,7 +442,7 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
       </div>
 
       {/* Adjustable / Graduated Loan Details - shown for ARM or GTM */}
-      {(getValue(FIELD_KEYS.rateStructure) === 'arm_adjustable_rate' || getValue(FIELD_KEYS.rateStructure) === 'gtm_graduated_terms') && (
+      {(getValue(FIELD_KEYS.amortization) === 'arm_adjustable_rate' || getValue(FIELD_KEYS.amortization) === 'gtm_graduated_terms') && (
         <div className="mt-4 border-t border-border pt-4">
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-3">Adjustable / Graduated Loan Details</h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-2">
