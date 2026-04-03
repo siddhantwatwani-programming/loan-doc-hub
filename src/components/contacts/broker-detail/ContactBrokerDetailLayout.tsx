@@ -118,6 +118,9 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
     mailingState: (contact.contact_data as any)?.['mailing_address.state'] || '',
     mailingZip: (contact.contact_data as any)?.['mailing_address.zip'] || '',
     sameAsPrimary: (contact.contact_data as any)?.mailing_same_as_primary === 'true',
+    company: (contact.contact_data as any)?.company || contact.company || '',
+    license: (contact.contact_data as any)?.License || (contact.contact_data as any)?.license || '',
+    brokersRepresentative: (contact.contact_data as any)?.brokers_representative || '',
   };
 
   const emptyDirty = new Set<string>();
