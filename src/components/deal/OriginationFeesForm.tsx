@@ -627,7 +627,7 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
         {renderFeeRow('809', 'Tax Service Fee', { others: FIELD_KEYS.taxServiceFee_others, broker: FIELD_KEYS.taxServiceFee_broker, apr: FIELD_KEYS.taxServiceFee_apr, paidToCompany: FIELD_KEYS.taxServiceFee_paid_to_company }, undefined, undefined, FIELD_KEYS.taxServiceFee_d)}
         {renderFeeRow('810', 'Processing Fee', { others: FIELD_KEYS.processingFee_others, broker: FIELD_KEYS.processingFee_broker, apr: FIELD_KEYS.processingFee_apr, paidToCompany: FIELD_KEYS.processingFee_paid_to_company }, undefined, undefined, FIELD_KEYS.processingFee_d)}
         {renderFeeRow('811', 'Underwriting Fee', { others: FIELD_KEYS.underwritingFee_others, broker: FIELD_KEYS.underwritingFee_broker, apr: FIELD_KEYS.underwritingFee_apr, paidToCompany: FIELD_KEYS.underwritingFee_paid_to_company }, undefined, undefined, FIELD_KEYS.underwritingFee_d)}
-        {renderFeeRow('812', 'Wire Transfer Fee', { others: FIELD_KEYS.wireTransferFee_others, broker: FIELD_KEYS.wireTransferFee_broker, apr: FIELD_KEYS.wireTransferFee_apr, paidToCompany: FIELD_KEYS.wireTransferFee_paid_to_company }, undefined, undefined, FIELD_KEYS.wireTransferFee_d)}
+        {renderFeeRow('812', 'Wire Transfer Fee', { others: FIELD_KEYS.wireTransferFee_others, broker: FIELD_KEYS.wireTransferFee_broker, apr: FIELD_KEYS.wireTransferFee_apr, paidToCompany: FIELD_KEYS.wireTransferFee_paid_to_company }, undefined, undefined, undefined)}
         {renderFeeRow('', '', { others: FIELD_KEYS.customItem800_others, broker: FIELD_KEYS.customItem800_broker, apr: FIELD_KEYS.customItem800_apr, paidToCompany: FIELD_KEYS.customItem800_paid_to_company }, FIELD_KEYS.customItem800_label, undefined, FIELD_KEYS.customItem800_d)}
       </div>
 
