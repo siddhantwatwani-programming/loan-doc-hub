@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -16,6 +15,7 @@ import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { CalendarIcon } from 'lucide-react';
 import { format, parse, isValid } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
@@ -29,39 +29,24 @@ interface PropertyTaxFormProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
-import { PROPERTY_TAX_KEYS } from '@/lib/fieldKeyMap';
-
-// Use central field key map
-const FIELD_KEYS = PROPERTY_TAX_KEYS;
-
 const FREQUENCY_OPTIONS = [
-  'Once Only',
-  'Monthly',
-  'Quarterly',
-  'Bi-Monthly',
-  'Bi-Weekly',
-  'Weekly',
-  'Semi-Monthly',
-  'Semi-Yearly',
-  'Yearly',
+  'Once Only', 'Monthly', 'Quarterly', 'Bi-Monthly', 'Bi-Weekly',
+  'Weekly', 'Semi-Monthly', 'Semi-Yearly', 'Yearly',
 ];
 
-const TYPE_OPTIONS = ['Property Tax', 'Other'];
+const TYPE_OPTIONS = ['Current Property Tax', 'Delinquent Property Tax', 'Other'];
 
-const TRACKING_STATUS_OPTIONS = ['Current', 'Delinquent'];
+// Use propertytax1.* prefix for form keys (remapped by parent)
+const PREFIX = 'propertytax1';
 
 export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
   values,
   onValueChange,
   disabled = false,
 }) => {
-  const getValue = (key: keyof typeof FIELD_KEYS): string => {
-    return values[FIELD_KEYS[key]] || '';
-  };
-
-  const handleChange = (key: keyof typeof FIELD_KEYS, value: string) => {
-    onValueChange(FIELD_KEYS[key], value);
-  };
+  const getValue = (field: string): string => values[`${PREFIX}.${field}`] || '';
+  const getBoolValue = (field: string): boolean => values[`${PREFIX}.${field}`] === 'true';
+  const handleChange = (field: string, value: string) => onValueChange(`${PREFIX}.${field}`, value);
 
   const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
 
@@ -73,10 +58,51 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
     } catch { return undefined; }
   };
 
-  // Auto-populate Ref from APN (Legal Description tab)
-  const apnValue = values['property1.apn'] || '';
+  const renderDateField = (field: string, label: string) => {
+    const val = getValue(field);
+    return (
+      <div className="flex items-center gap-3">
+        <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">{label}</Label>
+        <Popover open={datePickerStates[field] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [field]: open }))}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn('h-7 text-sm flex-1 justify-start text-left font-normal', !val && 'text-muted-foreground')} disabled={disabled}>
+              {val && safeParseDateStr(val) ? format(safeParseDateStr(val)!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
+              <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+            <EnhancedCalendar
+              mode="single"
+              selected={safeParseDateStr(val)}
+              onSelect={(date) => { if (date) handleChange(field, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [field]: false })); }}
+              onClear={() => { handleChange(field, ''); setDatePickerStates(prev => ({ ...prev, [field]: false })); }}
+              onToday={() => { handleChange(field, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [field]: false })); }}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
+  };
 
-  const taxTrackingEnabled = getValue('taxTracking') === 'true';
+  const renderCurrencyField = (field: string, label: string) => (
+    <div className="flex items-center gap-3">
+      <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">{label}</Label>
+      <div className="relative flex-1">
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+        <Input
+          value={getValue(field)}
+          onChange={(e) => handleChange(field, e.target.value)}
+          onKeyDown={numericKeyDown}
+          onPaste={(e) => numericPaste(e, (v) => handleChange(field, v))}
+          onFocus={(e) => { const v = unformatCurrencyDisplay(e.target.value); handleChange(field, v); }}
+          onBlur={(e) => { const v = formatCurrencyDisplay(e.target.value); handleChange(field, v); }}
+          disabled={disabled}
+          className="h-7 text-sm flex-1 pl-5"
+        />
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-6">
@@ -86,34 +112,19 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
       </div>
 
       <div className="max-w-[800px]">
-        {/* Two column layout */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-3">
           {/* Left column */}
           <div className="space-y-3">
-            <DirtyFieldWrapper fieldKey={FIELD_KEYS.payee}>
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.authority`}>
               <div className="flex items-center gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">Property</Label>
-                <Input value={getValue('payee')} onChange={(e) => handleChange('payee', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-              </div>
-            </DirtyFieldWrapper>
-
-            <DirtyFieldWrapper fieldKey={FIELD_KEYS.authority}>
-              <div className="flex items-center gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">Authority</Label>
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Tax Authority</Label>
                 <Input value={getValue('authority')} onChange={(e) => handleChange('authority', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
               </div>
             </DirtyFieldWrapper>
 
-            <DirtyFieldWrapper fieldKey={FIELD_KEYS.payeeAddress}>
-              <div className="flex items-start gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px] mt-1.5">Address</Label>
-                <Textarea value={getValue('payeeAddress')} onChange={(e) => handleChange('payeeAddress', e.target.value)} disabled={disabled} className="text-sm min-h-[70px] resize-none flex-1" />
-              </div>
-            </DirtyFieldWrapper>
-
-            <DirtyFieldWrapper fieldKey={FIELD_KEYS.type}>
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.type`}>
               <div className="flex items-center gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">Type</Label>
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Type</Label>
                 <Select value={getValue('type')} onValueChange={(value) => handleChange('type', value)} disabled={disabled}>
                   <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent className="bg-background z-50">
@@ -123,131 +134,73 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               </div>
             </DirtyFieldWrapper>
 
-            {/* APN */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px]">APN</Label>
-              <Input
-                value={apnValue}
-                disabled={true}
-                className="h-7 text-sm flex-1 bg-muted/50"
-              />
-            </div>
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.annual_payment`}>
+              {renderCurrencyField('annual_payment', 'Annual Payment (est.)')}
+            </DirtyFieldWrapper>
 
-            <DirtyFieldWrapper fieldKey={FIELD_KEYS.memo}>
-              <div className="flex items-start gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[100px] mt-1.5">Memo</Label>
-                <Textarea value={getValue('memo')} onChange={(e) => handleChange('memo', e.target.value)} disabled={disabled} className="text-sm min-h-[70px] resize-none flex-1" />
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.frequency`}>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Frequency</Label>
+                <Select value={getValue('frequency')} onValueChange={(value) => handleChange('frequency', value)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {FREQUENCY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                  </SelectContent>
+                </Select>
               </div>
             </DirtyFieldWrapper>
           </div>
 
-          {/* Right column */}
+          {/* Right column - Tax Tracking */}
           <div className="space-y-3">
-            {/* Next Due Date */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Next Due</Label>
-              <Popover open={datePickerStates['nextDueDate'] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, nextDueDate: open }))}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn('h-7 text-sm flex-1 justify-start text-left font-normal', !getValue('nextDueDate') && 'text-muted-foreground')} disabled={disabled}>
-                    {getValue('nextDueDate') && safeParseDateStr(getValue('nextDueDate')) ? format(safeParseDateStr(getValue('nextDueDate'))!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
-                    <CalendarIcon className="ml-auto h-3.5 w-3.5" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-                  <EnhancedCalendar
-                    mode="single"
-                    selected={safeParseDateStr(getValue('nextDueDate'))}
-                    onSelect={(date) => { if (date) handleChange('nextDueDate', format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, nextDueDate: false })); }}
-                    onClear={() => { handleChange('nextDueDate', ''); setDatePickerStates(prev => ({ ...prev, nextDueDate: false })); }}
-                    onToday={() => { handleChange('nextDueDate', format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, nextDueDate: false })); }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+            <div className="border-b border-border pb-1 mb-2">
+              <span className="font-semibold text-sm text-foreground">Tax Tracking</span>
             </div>
 
-            {/* Frequency */}
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Frequency</Label>
-              <Select
-                value={getValue('frequency')}
-                onValueChange={(value) => handleChange('frequency', value)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-7 text-sm flex-1 bg-background">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  {FREQUENCY_OPTIONS.map((opt) => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.active`}>
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  checked={getBoolValue('active')}
+                  onCheckedChange={(checked) => handleChange('active', checked === true ? 'true' : 'false')}
+                  disabled={disabled}
+                />
+                <Label className="text-sm text-foreground whitespace-nowrap">Active</Label>
+              </div>
+            </DirtyFieldWrapper>
 
-            {/* Separator */}
-            <div className="border-b border-border my-2" />
+            {renderDateField('last_verified', 'Last Verified')}
+            {renderDateField('lender_notified', 'Lender Notified')}
 
-            {/* Tax Tracking */}
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={taxTrackingEnabled}
-                onCheckedChange={(checked) => handleChange('taxTracking', checked === true ? 'true' : 'false')}
-                disabled={disabled}
-              />
-              <Label className="text-sm text-foreground whitespace-nowrap">Tax Tracking</Label>
-            </div>
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.current`}>
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  checked={getBoolValue('current')}
+                  onCheckedChange={(checked) => handleChange('current', checked === true ? 'true' : 'false')}
+                  disabled={disabled}
+                />
+                <Label className="text-sm text-foreground whitespace-nowrap">Current</Label>
+              </div>
+            </DirtyFieldWrapper>
 
-            {/* Conditional fields when Tax Tracking is enabled */}
-            {taxTrackingEnabled && (
-              <>
-                {/* Last Verified */}
-                <div className="flex items-center gap-3">
-                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Last Verified</Label>
-                  <Popover open={datePickerStates['lastVerified'] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, lastVerified: open }))}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn('h-7 text-sm flex-1 justify-start text-left font-normal', !getValue('lastVerified') && 'text-muted-foreground')} disabled={disabled}>
-                        {getValue('lastVerified') && safeParseDateStr(getValue('lastVerified')) ? format(safeParseDateStr(getValue('lastVerified'))!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
-                        <CalendarIcon className="ml-auto h-3.5 w-3.5" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-                      <EnhancedCalendar
-                        mode="single"
-                        selected={safeParseDateStr(getValue('lastVerified'))}
-                        onSelect={(date) => { if (date) handleChange('lastVerified', format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, lastVerified: false })); }}
-                        onClear={() => { handleChange('lastVerified', ''); setDatePickerStates(prev => ({ ...prev, lastVerified: false })); }}
-                        onToday={() => { handleChange('lastVerified', format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, lastVerified: false })); }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.delinquent`}>
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  checked={getBoolValue('delinquent')}
+                  onCheckedChange={(checked) => handleChange('delinquent', checked === true ? 'true' : 'false')}
+                  disabled={disabled}
+                />
+                <Label className="text-sm text-foreground whitespace-nowrap">Delinquent</Label>
+              </div>
+            </DirtyFieldWrapper>
 
-                {/* Status */}
-                <div className="flex items-center gap-3">
-                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Status</Label>
-                  <Select
-                    value={getValue('trackingStatus')}
-                    onValueChange={(value) => handleChange('trackingStatus', value)}
-                    disabled={disabled}
-                  >
-                    <SelectTrigger className="h-7 text-sm flex-1 bg-background">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background z-50">
-                      {TRACKING_STATUS_OPTIONS.map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>
+            {getBoolValue('delinquent') && (
+              <DirtyFieldWrapper fieldKey={`${PREFIX}.delinquent_amount`}>
+                {renderCurrencyField('delinquent_amount', 'Delinquent Amt')}
+              </DirtyFieldWrapper>
             )}
           </div>
         </div>
       </div>
-
     </div>
   );
 };

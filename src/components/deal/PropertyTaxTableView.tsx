@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -15,18 +14,15 @@ import { useGridSelection } from '@/hooks/useGridSelection';
 
 export interface PropertyTaxData {
   id: string;
-  payee: string;
   authority: string;
-  payeeAddress: string;
   type: string;
-  memo: string;
-  nextDueDate: string;
-  frequency: string;
   annualPayment: string;
-  taxTracking: boolean;
+  frequency: string;
+  active: boolean;
   lastVerified: string;
   lenderNotified: string;
-  trackingStatus: string;
+  current: boolean;
+  delinquent: boolean;
   delinquentAmount: string;
 }
 
@@ -45,7 +41,7 @@ interface PropertyTaxTableViewProps {
   onPageChange?: (page: number) => void;
 }
 
-const SEARCH_FIELDS = ['payee', 'authority', 'type', 'trackingStatus', 'frequency'];
+const SEARCH_FIELDS = ['authority', 'type', 'frequency'];
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
@@ -57,24 +53,18 @@ const FILTER_OPTIONS: FilterOption[] = [
       { value: 'Other', label: 'Other' },
     ],
   },
-  {
-    id: 'trackingStatus',
-    label: 'Status',
-    options: [
-      { value: 'Current', label: 'Current' },
-      { value: 'Delinquent', label: 'Delinquent' },
-    ],
-  },
 ];
 
 const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'authority', label: 'Tax Authority' },
   { id: 'type', label: 'Type' },
-  { id: 'annualPayment', label: 'Annual Payment' },
+  { id: 'annualPayment', label: 'Annual Payment (est.)' },
   { id: 'frequency', label: 'Frequency' },
-  { id: 'nextDueDate', label: 'Next Due' },
-  { id: 'trackingStatus', label: 'Status' },
+  { id: 'active', label: 'Active' },
   { id: 'lastVerified', label: 'Last Verified' },
+  { id: 'lenderNotified', label: 'Lender Notified' },
+  { id: 'current', label: 'Current' },
+  { id: 'delinquent', label: 'Delinquent' },
 ];
 
 export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
@@ -178,17 +168,19 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
                 </TableHead>
                 <SortableTableHead columnId="authority" label="Tax Authority" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[150px]" />
                 <SortableTableHead columnId="type" label="Type" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[150px]" />
-                <SortableTableHead columnId="annualPayment" label="Annual Payment" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[130px] text-right" />
+                <SortableTableHead columnId="annualPayment" label="Annual Payment (est.)" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[150px] text-right" />
                 <SortableTableHead columnId="frequency" label="Frequency" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
-                <SortableTableHead columnId="nextDueDate" label="Next Due" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
-                <SortableTableHead columnId="trackingStatus" label="Status" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
-                <SortableTableHead columnId="lastVerified" label="Last Verified" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
+                <SortableTableHead columnId="active" label="Active" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[70px]" />
+                <SortableTableHead columnId="lastVerified" label="Last Verified" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[110px]" />
+                <SortableTableHead columnId="lenderNotified" label="Lender Notified" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
+                <SortableTableHead columnId="current" label="Current" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[80px]" />
+                <SortableTableHead columnId="delinquent" label="Delinquent" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                     {taxes.length === 0 ? 'No property tax records added. Click "Add Property Tax" to create one.' : 'No property tax records match your search or filters.'}
                   </TableCell>
                 </TableRow>
@@ -202,15 +194,15 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
                     <TableCell>{tax.type || '-'}</TableCell>
                     <TableCell className="text-right">{formatCurrency(tax.annualPayment) || '-'}</TableCell>
                     <TableCell>{tax.frequency || '-'}</TableCell>
-                    <TableCell>{formatDate(tax.nextDueDate)}</TableCell>
+                    <TableCell>{tax.active ? '✓' : '-'}</TableCell>
+                    <TableCell>{formatDate(tax.lastVerified)}</TableCell>
+                    <TableCell>{formatDate(tax.lenderNotified)}</TableCell>
+                    <TableCell>{tax.current ? '✓' : '-'}</TableCell>
                     <TableCell>
-                      {tax.trackingStatus ? (
-                        <Badge variant={tax.trackingStatus === 'Current' ? 'default' : 'secondary'}>
-                          {tax.trackingStatus}
-                        </Badge>
+                      {tax.delinquent ? (
+                        <span>{formatCurrency(tax.delinquentAmount) || '✓'}</span>
                       ) : '-'}
                     </TableCell>
-                    <TableCell>{formatDate(tax.lastVerified)}</TableCell>
                   </TableRow>
                 ))
               )}

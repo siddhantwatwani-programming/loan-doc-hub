@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -30,12 +29,11 @@ interface PropertyTaxModalProps {
 
 const TYPE_OPTIONS = ['Current Property Tax', 'Delinquent Property Tax', 'Other'];
 const FREQUENCY_OPTIONS = ['Once Only', 'Monthly', 'Quarterly', 'Bi-Monthly', 'Bi-Weekly', 'Weekly', 'Semi-Monthly', 'Semi-Yearly', 'Yearly'];
-const TRACKING_STATUS_OPTIONS = ['Current', 'Delinquent'];
 
 const getDefaultTax = (): PropertyTaxData => ({
-  id: '', payee: '', authority: '', payeeAddress: '', type: '', memo: '',
-  nextDueDate: '', frequency: '', annualPayment: '', taxTracking: false,
-  lastVerified: '', lenderNotified: '', trackingStatus: '', delinquentAmount: '',
+  id: '', authority: '', type: '', annualPayment: '', frequency: '',
+  active: false, lastVerified: '', lenderNotified: '',
+  current: false, delinquent: false, delinquentAmount: '',
 });
 
 export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
@@ -65,7 +63,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
   const handleChange = (field: keyof PropertyTaxData, value: string | boolean) =>
     setFormData(prev => ({ ...prev, [field]: value }));
 
-  const isFormFilled = hasModalFormData(formData, ['id', 'taxTracking']);
+  const isFormFilled = hasModalFormData(formData, ['id', 'active', 'current', 'delinquent']);
 
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = () => {
@@ -148,17 +146,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
                 </Select>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Label className="w-[120px] shrink-0 text-xs text-foreground">Property</Label>
-                <Input value={formData.payee} onChange={(e) => handleChange('payee', e.target.value)} className="h-7 text-xs flex-1" />
-              </div>
-
-              <div className="flex items-start gap-2">
-                <Label className="w-[120px] shrink-0 text-xs text-foreground mt-1.5">Address</Label>
-                <Textarea value={formData.payeeAddress} onChange={(e) => handleChange('payeeAddress', e.target.value)} className="text-xs min-h-[60px] resize-none flex-1" />
-              </div>
-
-              {renderCurrencyField('annualPayment', 'Annual Payment')}
+              {renderCurrencyField('annualPayment', 'Annual Payment (est.)')}
 
               <div className="flex items-center gap-2">
                 <Label className="w-[120px] shrink-0 text-xs text-foreground">Frequency</Label>
@@ -169,46 +157,43 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="flex items-start gap-2">
-                <Label className="w-[120px] shrink-0 text-xs text-foreground mt-1.5">Memo</Label>
-                <Textarea value={formData.memo} onChange={(e) => handleChange('memo', e.target.value)} className="text-xs min-h-[60px] resize-none flex-1" />
-              </div>
             </div>
 
-            {/* Right column */}
+            {/* Right column - Tax Tracking */}
             <div className="space-y-3">
-              {renderDateField('nextDueDate', 'Next Due')}
-
-              <div className="border-b border-border my-2" />
+              <div className="border-b border-border pb-1 mb-2">
+                <span className="font-semibold text-xs text-foreground">Tax Tracking</span>
+              </div>
 
               <div className="flex items-center gap-2">
                 <Checkbox
-                  checked={formData.taxTracking}
-                  onCheckedChange={(checked) => handleChange('taxTracking', checked === true)}
+                  checked={formData.active}
+                  onCheckedChange={(checked) => handleChange('active', checked === true)}
                 />
-                <Label className="text-xs text-foreground">Tax Tracking</Label>
+                <Label className="text-xs text-foreground">Active</Label>
               </div>
 
-              {formData.taxTracking && (
-                <>
-                  {renderDateField('lastVerified', 'Last Verified')}
-                  {renderDateField('lenderNotified', 'Lender Notified')}
+              {renderDateField('lastVerified', 'Last Verified')}
+              {renderDateField('lenderNotified', 'Lender Notified')}
 
-                  <div className="flex items-center gap-2">
-                    <Label className="w-[120px] shrink-0 text-xs text-foreground">Status</Label>
-                    <Select value={formData.trackingStatus} onValueChange={(v) => handleChange('trackingStatus', v)}>
-                      <SelectTrigger className="h-7 text-xs flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
-                      <SelectContent className="bg-background z-[9999]">
-                        {TRACKING_STATUS_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={formData.current}
+                  onCheckedChange={(checked) => handleChange('current', checked === true)}
+                />
+                <Label className="text-xs text-foreground">Current</Label>
+              </div>
 
-                  {formData.trackingStatus === 'Delinquent' && (
-                    renderCurrencyField('delinquentAmount', 'Delinquent Amt')
-                  )}
-                </>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={formData.delinquent}
+                  onCheckedChange={(checked) => handleChange('delinquent', checked === true)}
+                />
+                <Label className="text-xs text-foreground">Delinquent</Label>
+              </div>
+
+              {formData.delinquent && (
+                renderCurrencyField('delinquentAmount', 'Delinquent Amt')
               )}
             </div>
           </div>
