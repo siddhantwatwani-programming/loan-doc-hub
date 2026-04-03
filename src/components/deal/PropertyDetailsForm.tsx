@@ -339,6 +339,25 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           {renderInlineField(FIELD_KEYS.squareFeet, 'Square Feet')}
           {renderInlineSelect(FIELD_KEYS.constructionType, 'Type of Construction', CONSTRUCTION_TYPES, 'Select...')}
           {renderCurrencyField(FIELD_KEYS.monthlyIncome, 'Generates Monthly Income')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.annualIncome}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Annual Income</Label>
+              <div className="relative flex-1">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                <Input
+                  value={(() => {
+                    const monthly = getFieldValue(FIELD_KEYS.monthlyIncome);
+                    const num = parseFloat((monthly || '').replace(/[,$]/g, ''));
+                    if (isNaN(num) || !monthly) return '';
+                    return (num * 12).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                  })()}
+                  disabled
+                  className="h-7 text-xs pl-6 bg-muted"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          </DirtyFieldWrapper>
           {renderCurrencyField(FIELD_KEYS.lienProtectiveEquity, 'Lien (Protective Equity)')}
           {renderInlineSelect(FIELD_KEYS.sourceLienInfo, 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
 

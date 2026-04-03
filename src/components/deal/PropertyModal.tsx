@@ -324,6 +324,23 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                   {renderInlineField('squareFeet', 'Square Feet')}
                   {renderInlineSelect('constructionType', 'Type of Construction', CONSTRUCTION_TYPES, 'Select...')}
                   {renderCurrencyField('monthlyIncome', 'Generates Monthly Income')}
+                  <div className="flex items-center gap-2">
+                    <Label className="w-[110px] shrink-0 text-xs text-foreground">Annual Income</Label>
+                    <div className="relative flex-1">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                      <Input
+                        value={(() => {
+                          const monthly = formData.monthlyIncome || '';
+                          const num = parseFloat(monthly.replace(/[,$]/g, ''));
+                          if (isNaN(num) || !monthly) return '';
+                          return (num * 12).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                        })()}
+                        disabled
+                        className="h-7 text-xs pl-6 bg-muted"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
                   {renderCurrencyField('lienProtectiveEquity', 'Lien (Protective Equity)')}
                   {renderInlineSelect('sourceLienInfo', 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
 
