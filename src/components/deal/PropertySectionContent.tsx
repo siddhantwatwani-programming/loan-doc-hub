@@ -128,22 +128,19 @@ const extractPropertyTaxesFromValues = (values: Record<string, string>): Propert
   taxPrefixes.forEach(prefix => {
     const tax: PropertyTaxData = {
       id: prefix,
-      payee: values[`${prefix}.payee`] || '',
       authority: values[`${prefix}.authority`] || '',
-      payeeAddress: values[`${prefix}.payee_address`] || '',
       type: values[`${prefix}.type`] || '',
-      memo: values[`${prefix}.memo`] || '',
-      nextDueDate: values[`${prefix}.next_due_date`] || '',
-      frequency: values[`${prefix}.frequency`] || '',
       annualPayment: values[`${prefix}.annual_payment`] || '',
-      taxTracking: values[`${prefix}.tax_tracking`] === 'true',
+      frequency: values[`${prefix}.frequency`] || '',
+      active: values[`${prefix}.active`] === 'true',
       lastVerified: values[`${prefix}.last_verified`] || '',
       lenderNotified: values[`${prefix}.lender_notified`] || '',
-      trackingStatus: values[`${prefix}.tracking_status`] || '',
+      current: values[`${prefix}.current`] === 'true',
+      delinquent: values[`${prefix}.delinquent`] === 'true',
       delinquentAmount: values[`${prefix}.delinquent_amount`] || '',
     };
     const hasData = Object.keys(tax).some(key => {
-      if (key === 'id' || key === 'taxTracking') return false;
+      if (key === 'id' || key === 'active' || key === 'current' || key === 'delinquent') return false;
       const val = (tax as any)[key];
       return val !== undefined && val !== '';
     });
