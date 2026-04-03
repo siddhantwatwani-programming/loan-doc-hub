@@ -339,6 +339,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           {renderInlineField(FIELD_KEYS.squareFeet, 'Square Feet')}
           {renderInlineSelect(FIELD_KEYS.constructionType, 'Type of Construction', CONSTRUCTION_TYPES, 'Select...')}
           {renderCurrencyField(FIELD_KEYS.monthlyIncome, 'Generates Monthly Income')}
+          {renderCurrencyField(FIELD_KEYS.annualIncome, 'Annual Income', true)}
           {renderCurrencyField(FIELD_KEYS.lienProtectiveEquity, 'Lien (Protective Equity)')}
           {renderInlineSelect(FIELD_KEYS.sourceLienInfo, 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
 
