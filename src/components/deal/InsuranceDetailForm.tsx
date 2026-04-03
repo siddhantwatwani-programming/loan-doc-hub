@@ -77,6 +77,12 @@ const DIRTY_KEY_MAP: Record<string, string> = {
   insuranceTracking: 'insurance1.insurance_tracking',
   lastVerified: 'insurance1.last_verified',
   trackingStatus: 'insurance1.tracking_status',
+  impoundsActive: 'insurance1.impounds_active',
+  redFlagTrigger: 'insurance1.red_flag_trigger',
+  attemptAgent: 'insurance1.attempt_agent',
+  attemptBorrower: 'insurance1.attempt_borrower',
+  lenderNotified: 'insurance1.lender_notified',
+  lenderNotifiedDate: 'insurance1.lender_notified_date',
 };
 
 export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
