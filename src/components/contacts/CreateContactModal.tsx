@@ -744,31 +744,6 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 <ZipInput value={form['address.zip'] || ''} onValueChange={(val) => { set('address.zip', val); clrKErr('address.zip'); }} className="h-7 text-xs" />
               </div>
               {brokerErrors['address.zip'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['address.zip']}</p>}
-              <div className="pt-2 space-y-1.5">
-                <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
-                {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs">Street</Label>
-                  <Input value={form['mailing.street'] || ''} onChange={(e) => set('mailing.street', e.target.value)} onBlur={() => set('mailing.street', (form['mailing.street'] || '').trim())} disabled={isSameAsPrimary} maxLength={150} className="h-7 text-xs flex-1" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs">City</Label>
-                  <Input value={form['mailing.city'] || ''} onChange={(e) => set('mailing.city', e.target.value)} onKeyDown={alphaSpaceKD} onPaste={(e) => { e.preventDefault(); set('mailing.city', e.clipboardData.getData('text').replace(/[^A-Za-z ]/g, '')); }} onBlur={() => set('mailing.city', (form['mailing.city'] || '').trim())} disabled={isSameAsPrimary} className="h-7 text-xs flex-1" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs">State</Label>
-                  <Select value={form['mailing.state'] || ''} onValueChange={(v) => set('mailing.state', v)} disabled={isSameAsPrimary}>
-                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-[200]">
-                      {US_STATES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
-                  <ZipInput value={form['mailing.zip'] || ''} onValueChange={(val) => set('mailing.zip', val)} disabled={isSameAsPrimary} className="h-7 text-xs" />
-                </div>
-              </div>
             </div>
 
             {/* Column 3: Phone */}
