@@ -162,28 +162,8 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
         </div>
       </div>
 
-      {/* Financial / Compliance */}
-      <SectionTitle>Financial / Compliance</SectionTitle>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>TIN</Label>
-          <Input value={form.tin} onChange={(e) => set('tin', e.target.value)} />
-        </div>
-        <div className="flex items-end gap-6">
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={form.ach} onCheckedChange={(v) => set('ach', !!v)} /> ACH
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={form.send1099} onCheckedChange={(v) => set('send1099', !!v)} /> Send 1099
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={form.agreement} onCheckedChange={(v) => set('agreement', !!v)} /> Agreement on File
-          </label>
-        </div>
-      </div>
-
-      {/* Primary Address */}
-      <SectionTitle>Primary Address</SectionTitle>
+      {/* Address */}
+      <SectionTitle>Address</SectionTitle>
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
           <Label>Street</Label>
@@ -201,33 +181,6 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
           <div>
             <Label>ZIP</Label>
             <ZipInput value={form.zip} onValueChange={(v) => set('zip', v)} />
-          </div>
-        </div>
-      </div>
-
-      {/* Mailing Address */}
-      <SectionTitle>Mailing Address</SectionTitle>
-      <label className="flex items-center gap-2 text-sm mb-3">
-        <Checkbox checked={form.sameAsPrimary} onCheckedChange={(v) => set('sameAsPrimary', !!v)} />
-        Same as Primary Address
-      </label>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
-          <Label>Mailing Street</Label>
-          <Input value={form.mailingStreet} onChange={(e) => set('mailingStreet', e.target.value)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} />
-        </div>
-        <div>
-          <Label>Mailing City</Label>
-          <Input value={form.mailingCity} onChange={(e) => set('mailingCity', e.target.value)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label>Mailing State</Label>
-            <Input value={form.mailingState} onChange={(e) => set('mailingState', e.target.value)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} />
-          </div>
-          <div>
-            <Label>Mailing ZIP</Label>
-            <ZipInput value={form.mailingZip} onValueChange={(v) => set('mailingZip', v)} readOnly={form.sameAsPrimary} className={form.sameAsPrimary ? 'bg-muted' : ''} />
           </div>
         </div>
       </div>
