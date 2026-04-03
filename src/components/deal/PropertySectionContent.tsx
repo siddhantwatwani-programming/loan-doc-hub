@@ -6,6 +6,8 @@ import { PropertySubNavigation, type PropertySubSection } from './PropertySubNav
 import { PropertyDetailsForm } from './PropertyDetailsForm';
 import { PropertyLegalDescriptionForm } from './PropertyLegalDescriptionForm';
 import { PropertyTaxForm } from './PropertyTaxForm';
+import { PropertyTaxTableView, type PropertyTaxData } from './PropertyTaxTableView';
+import { PropertyTaxModal } from './PropertyTaxModal';
 
 import { PropertiesTableView, type PropertyData } from './PropertiesTableView';
 import { PropertyModal } from './PropertyModal';
@@ -113,6 +115,61 @@ const extractPropertiesFromValues = (values: Record<string, string>): PropertyDa
   return properties;
 };
 
+// Helper to extract property tax records from values
+const extractPropertyTaxesFromValues = (values: Record<string, string>): PropertyTaxData[] => {
+  const allTaxes: PropertyTaxData[] = [];
+  const taxPrefixes = new Set<string>();
+  
+  Object.keys(values).forEach(key => {
+    const match = key.match(/^(propertytax\d+)\./);
+    if (match) taxPrefixes.add(match[1]);
+  });
+  
+  taxPrefixes.forEach(prefix => {
+    const tax: PropertyTaxData = {
+      id: prefix,
+      payee: values[`${prefix}.payee`] || '',
+      authority: values[`${prefix}.authority`] || '',
+      payeeAddress: values[`${prefix}.payee_address`] || '',
+      type: values[`${prefix}.type`] || '',
+      memo: values[`${prefix}.memo`] || '',
+      nextDueDate: values[`${prefix}.next_due_date`] || '',
+      frequency: values[`${prefix}.frequency`] || '',
+      annualPayment: values[`${prefix}.annual_payment`] || '',
+      taxTracking: values[`${prefix}.tax_tracking`] === 'true',
+      lastVerified: values[`${prefix}.last_verified`] || '',
+      lenderNotified: values[`${prefix}.lender_notified`] || '',
+      trackingStatus: values[`${prefix}.tracking_status`] || '',
+      delinquentAmount: values[`${prefix}.delinquent_amount`] || '',
+    };
+    const hasData = Object.keys(tax).some(key => {
+      if (key === 'id' || key === 'taxTracking') return false;
+      const val = (tax as any)[key];
+      return val !== undefined && val !== '';
+    });
+    if (hasData) allTaxes.push(tax);
+  });
+  
+  allTaxes.sort((a, b) => {
+    const numA = parseInt(a.id.replace('propertytax', ''));
+    const numB = parseInt(b.id.replace('propertytax', ''));
+    return numA - numB;
+  });
+  
+  return allTaxes;
+};
+
+const getNextPropertyTaxPrefix = (values: Record<string, string>): string => {
+  const prefixes = new Set<string>();
+  Object.keys(values).forEach(key => {
+    const match = key.match(/^(propertytax\d+)\./);
+    if (match) prefixes.add(match[1]);
+  });
+  let nextNum = 1;
+  while (prefixes.has(`propertytax${nextNum}`)) nextNum++;
+  return `propertytax${nextNum}`;
+};
+
 // Get the next available property prefix
 const getNextPropertyPrefix = (values: Record<string, string>): string => {
   const propertyPrefixes = new Set<string>();
@@ -149,6 +206,9 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<PropertyData | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [taxModalOpen, setTaxModalOpen] = useState(false);
+  const [editingTax, setEditingTax] = useState<PropertyTaxData | null>(null);
+  const [taxCurrentPage, setTaxCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
   
@@ -167,7 +227,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         remapped.add(key.replace(`${selectedPropertyPrefix}.`, 'property1.'));
       }
       // Pass through lien and insurance keys unchanged (they handle their own remapping)
-      if (key.match(/^(lien\d+|insurance\d+)\./)) {
+      if (key.match(/^(lien\d+|insurance\d+|propertytax\d+)\./)) {
         remapped.add(key);
       }
     });
@@ -328,6 +388,52 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     }
   }, [values, onValueChange, onRemoveValuesByPrefix, onPersist]);
 
+  // ── Property Tax multi-entity ──
+  const allPropertyTaxes = extractPropertyTaxesFromValues(values);
+  const totalTaxes = allPropertyTaxes.length;
+  const taxTotalPages = Math.max(1, Math.ceil(totalTaxes / PAGE_SIZE));
+  const taxSafePage = Math.min(taxCurrentPage, taxTotalPages);
+  const paginatedTaxes = allPropertyTaxes.slice((taxSafePage - 1) * PAGE_SIZE, taxSafePage * PAGE_SIZE);
+
+  const handleAddTax = useCallback(() => { setEditingTax(null); setTaxModalOpen(true); }, []);
+  const handleEditTax = useCallback((tax: PropertyTaxData) => { setEditingTax(tax); setTaxModalOpen(true); }, []);
+  const handleRowClickTax = useCallback((tax: PropertyTaxData) => { setEditingTax(tax); setTaxModalOpen(true); }, []);
+
+  const handleSaveTax = useCallback((taxData: PropertyTaxData) => {
+    const prefix = editingTax ? editingTax.id : getNextPropertyTaxPrefix(values);
+    const fieldEntries: { key: keyof PropertyTaxData; dbField: string }[] = [
+      { key: 'payee', dbField: 'payee' },
+      { key: 'authority', dbField: 'authority' },
+      { key: 'payeeAddress', dbField: 'payee_address' },
+      { key: 'type', dbField: 'type' },
+      { key: 'memo', dbField: 'memo' },
+      { key: 'nextDueDate', dbField: 'next_due_date' },
+      { key: 'frequency', dbField: 'frequency' },
+      { key: 'annualPayment', dbField: 'annual_payment' },
+      { key: 'taxTracking', dbField: 'tax_tracking' },
+      { key: 'lastVerified', dbField: 'last_verified' },
+      { key: 'lenderNotified', dbField: 'lender_notified' },
+      { key: 'trackingStatus', dbField: 'tracking_status' },
+      { key: 'delinquentAmount', dbField: 'delinquent_amount' },
+    ];
+    fieldEntries.forEach(({ key, dbField }) => {
+      onValueChange(`${prefix}.${dbField}`, String(taxData[key] ?? ''));
+    });
+    setTaxModalOpen(false);
+    if (onPersist) setTimeout(() => { onPersist(); }, 50);
+  }, [editingTax, values, onValueChange, onPersist]);
+
+  const handleDeleteTax = useCallback((tax: PropertyTaxData) => {
+    if (onRemoveValuesByPrefix) {
+      onRemoveValuesByPrefix(tax.id);
+    } else {
+      Object.keys(values).forEach(key => {
+        if (key.startsWith(`${tax.id}.`)) onValueChange(key, '');
+      });
+    }
+    if (onPersist) setTimeout(() => { onPersist(); }, 50);
+  }, [values, onValueChange, onRemoveValuesByPrefix, onPersist]);
+
   // Create property-specific values for the detail forms
   const getPropertySpecificValues = (): Record<string, string> => {
     const result: Record<string, string> = {};
@@ -398,13 +504,18 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         return null;
       case 'property_tax':
         return (
-          <PropertyTaxForm
-            fields={fields}
-            values={getPropertySpecificValues()}
-            onValueChange={handlePropertyValueChange}
-            showValidation={showValidation}
+          <PropertyTaxTableView
+            taxes={paginatedTaxes}
+            onAddTax={handleAddTax}
+            onEditTax={handleEditTax}
+            onRowClick={handleRowClickTax}
+            onDeleteTax={handleDeleteTax}
+            onRefresh={onRefresh}
             disabled={disabled}
-            calculationResults={calculationResults}
+            currentPage={taxSafePage}
+            totalPages={taxTotalPages}
+            totalCount={totalTaxes}
+            onPageChange={setTaxCurrentPage}
           />
         );
       default:
@@ -487,6 +598,15 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         property={editingProperty}
         onSave={handleSaveProperty}
         isEdit={!!editingProperty}
+      />
+
+      {/* Add/Edit Property Tax Modal */}
+      <PropertyTaxModal
+        open={taxModalOpen}
+        onOpenChange={setTaxModalOpen}
+        propertyTax={editingTax}
+        onSave={handleSaveTax}
+        isEdit={!!editingTax}
       />
     </>
   );
