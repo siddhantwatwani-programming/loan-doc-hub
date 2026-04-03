@@ -41,6 +41,12 @@ export interface InsuranceData {
   insuranceTracking: boolean;
   lastVerified: string;
   trackingStatus: string;
+  impoundsActive: boolean;
+  redFlagTrigger: string;
+  attemptAgent: boolean;
+  attemptBorrower: boolean;
+  lenderNotified: boolean;
+  lenderNotifiedDate: string;
 }
 
 interface InsuranceTableViewProps {
