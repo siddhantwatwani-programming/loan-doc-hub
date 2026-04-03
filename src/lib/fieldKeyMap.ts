@@ -598,7 +598,7 @@ export const BROKER_INFO_KEYS = {
   frozen: 'broker.frozen',
   ach: 'broker.ach',
   agreementOnFile: 'broker.agreement_on_file',
-  fullName: 'broker.full_name',
+  brokersRepresentative: 'broker.brokers_representative',
   tinVerified: 'broker.tin_verified',
   mailingStreet: 'broker.mailing.street',
   mailingCity: 'broker.mailing.city',
