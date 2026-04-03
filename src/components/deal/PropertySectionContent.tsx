@@ -149,10 +149,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<PropertyData | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [taxModalOpen, setTaxModalOpen] = useState(false);
-  const [editingTax, setEditingTax] = useState<PropertyTaxData | null>(null);
-  const [taxCurrentPage, setTaxCurrentPage] = useState(1);
-  const [selectedTaxPrefix, setSelectedTaxPrefix] = useState('propertytax1');
   const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
   
