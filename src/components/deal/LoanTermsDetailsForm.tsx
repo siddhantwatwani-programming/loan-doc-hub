@@ -374,6 +374,115 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Adjustable / Graduated Loan Details - shown for ARM or GTM */}
+      {(getValue(FIELD_KEYS.amortization) === 'arm_adjustable_rate' || getValue(FIELD_KEYS.amortization) === 'gtm_graduated_terms') && (
+        <div className="mt-4 border-t border-border pt-4">
+          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-3">Adjustable / Graduated Loan Details</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-2">
+            {renderAdjIntegerField(FIELD_KEYS.adjInitialRateMonths, 'Initial Adjustable Rate in effect for', 'Months')}
+            {renderAdjPercentField(FIELD_KEYS.adjFullyIndexedRate, 'Fully Indexed Interest Rate')}
+            {renderAdjPercentField(FIELD_KEYS.adjMaxInterestRate, 'Maximum Interest Rate')}
+            {renderAdjCurrencyField(FIELD_KEYS.adjProposedInitialPayment, 'Proposed Initial (Minimum) Loan Payment', 'Monthly')}
+
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.adjRateIncreasePercent}>
+              <div className="flex items-center gap-2">
+                <Label className="shrink-0 text-xs">Interest Rate can Increase</Label>
+                <div className="relative w-[90px]">
+                  <Input
+                    value={getValue(FIELD_KEYS.adjRateIncreasePercent)}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/[^0-9.]/g, '');
+                      setValue(FIELD_KEYS.adjRateIncreasePercent, cleaned);
+                    }}
+                    onBlur={() => {
+                      const val = getValue(FIELD_KEYS.adjRateIncreasePercent);
+                      if (val) { const num = parseFloat(val); if (!isNaN(num)) setValue(FIELD_KEYS.adjRateIncreasePercent, num.toFixed(3)); }
+                    }}
+                    disabled={disabled}
+                    className="h-8 text-xs pr-5"
+                    inputMode="decimal"
+                    placeholder="0.000"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+                </div>
+                <Label className="shrink-0 text-xs">each</Label>
+                <Input
+                  value={getValue(FIELD_KEYS.adjRateIncreaseMonths)}
+                  onChange={(e) => setValue(FIELD_KEYS.adjRateIncreaseMonths, e.target.value.replace(/\D/g, ''))}
+                  disabled={disabled}
+                  className="h-8 text-xs w-[70px]"
+                  inputMode="numeric"
+                  placeholder="0"
+                />
+                <Label className="shrink-0 text-xs">Months</Label>
+              </div>
+            </DirtyFieldWrapper>
+
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.adjPaymentOptionsEndMonths}>
+              <div className="flex items-center gap-2">
+                <Label className="shrink-0 text-xs">Payment Options end after</Label>
+                <Input
+                  value={getValue(FIELD_KEYS.adjPaymentOptionsEndMonths)}
+                  onChange={(e) => setValue(FIELD_KEYS.adjPaymentOptionsEndMonths, e.target.value.replace(/\D/g, ''))}
+                  disabled={disabled}
+                  className="h-8 text-xs w-[70px]"
+                  inputMode="numeric"
+                  placeholder="0"
+                />
+                <Label className="shrink-0 text-xs">Months or</Label>
+                <div className="relative w-[90px]">
+                  <Input
+                    value={getValue(FIELD_KEYS.adjPaymentOptionsEndPercent)}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/[^0-9.]/g, '');
+                      setValue(FIELD_KEYS.adjPaymentOptionsEndPercent, cleaned);
+                    }}
+                    onBlur={() => {
+                      const val = getValue(FIELD_KEYS.adjPaymentOptionsEndPercent);
+                      if (val) { const num = parseFloat(val); if (!isNaN(num)) setValue(FIELD_KEYS.adjPaymentOptionsEndPercent, num.toFixed(3)); }
+                    }}
+                    disabled={disabled}
+                    className="h-8 text-xs pr-5"
+                    inputMode="decimal"
+                    placeholder="0.000"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+                </div>
+                <Label className="shrink-0 text-xs">of Original Balance</Label>
+              </div>
+            </DirtyFieldWrapper>
+
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.adjFinalPaymentAmount}>
+              <div className="flex items-center gap-2">
+                <Label className="shrink-0 text-xs">Borrower must then make principal and interest payments of</Label>
+                <div className="relative w-[120px]">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                  <Input
+                    value={focusedCurrencyField === FIELD_KEYS.adjFinalPaymentAmount ? getValue(FIELD_KEYS.adjFinalPaymentAmount).replace(/,/g, '') : formatCurrencyDisplay(getValue(FIELD_KEYS.adjFinalPaymentAmount))}
+                    onChange={(e) => handleCurrencyChange(FIELD_KEYS.adjFinalPaymentAmount, e.target.value)}
+                    onFocus={() => setFocusedCurrencyField(FIELD_KEYS.adjFinalPaymentAmount)}
+                    onBlur={() => handleCurrencyBlur(FIELD_KEYS.adjFinalPaymentAmount)}
+                    disabled={disabled}
+                    className="h-8 text-xs pl-5"
+                    placeholder="0.00"
+                  />
+                </div>
+                <Label className="shrink-0 text-xs">for the remaining</Label>
+                <Input
+                  value={getValue(FIELD_KEYS.adjFinalPaymentMonths)}
+                  onChange={(e) => setValue(FIELD_KEYS.adjFinalPaymentMonths, e.target.value.replace(/\D/g, ''))}
+                  disabled={disabled}
+                  className="h-8 text-xs w-[70px]"
+                  inputMode="numeric"
+                  placeholder="0"
+                />
+                <Label className="shrink-0 text-xs">months.</Label>
+              </div>
+            </DirtyFieldWrapper>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
