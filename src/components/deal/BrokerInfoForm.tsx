@@ -70,6 +70,13 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
     </DirtyFieldWrapper>
   );
 
+  const handlePhonePref = (prefKey: keyof typeof FIELD_KEYS, checked: boolean) => {
+    const allPrefKeys: (keyof typeof FIELD_KEYS)[] = ['preferredHome', 'preferredWork', 'preferredCell', 'preferredFax'];
+    allPrefKeys.forEach(k => {
+      handleChange(k, k === prefKey && checked);
+    });
+  };
+
   const renderPhoneField = (key: keyof typeof FIELD_KEYS, prefKey: keyof typeof FIELD_KEYS, label: string) => (
     <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
       <div className="flex items-center gap-2">
@@ -80,7 +87,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
         <PhoneInput value={getValue(key)} onValueChange={(val) => handleChange(key, val)} disabled={disabled} className="h-7 text-xs flex-1" />
         <Checkbox
           checked={getBoolValue(prefKey)}
-          onCheckedChange={(checked) => handleChange(prefKey, !!checked)}
+          onCheckedChange={(checked) => handlePhonePref(prefKey, !!checked)}
           disabled={disabled}
           className="h-3.5 w-3.5 shrink-0"
         />
@@ -118,9 +125,6 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          <div className="space-y-1.5 pt-2">
-            {renderInlineField('taxId', 'TIN')}
-          </div>
 
           <div className="space-y-1.5 pt-2">
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.frozen}>

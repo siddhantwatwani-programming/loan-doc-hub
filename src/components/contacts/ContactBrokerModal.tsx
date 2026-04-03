@@ -25,7 +25,7 @@ const EMPTY: CreatePayload = {
   hold: false, type: 'Individual', ach: false, email: '', agreement: false,
   fullName: '', firstName: '', lastName: '', city: '', state: '', cellPhone: '',
   homePhone: '', workPhone: '', fax: '', preferredPhone: 'Cell', verified: false,
-  send1099: false, tin: '', street: '', zip: '',
+  send1099: false, street: '', zip: '',
   mailingStreet: '', mailingCity: '', mailingState: '', mailingZip: '', sameAsPrimary: false,
   company: '', license: '', brokersRepresentative: '',
 };
