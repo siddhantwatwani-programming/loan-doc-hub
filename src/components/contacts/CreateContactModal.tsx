@@ -226,9 +226,6 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
       if (!(form['address.city'] || '').trim()) errs['address.city'] = 'City is required';
       if (!form['address.state']) errs['address.state'] = 'State is required';
       if (!(form['address.zip'] || '').trim()) errs['address.zip'] = 'ZIP is required';
-      const tinDigits = (form['tax_id'] || '').replace(/\D/g, '');
-      if (!tinDigits) errs['tax_id'] = 'Enter valid TIN (9 digits)';
-      else if (tinDigits.length !== 9) errs['tax_id'] = 'Enter valid TIN (9 digits)';
       if (Object.keys(errs).length > 0) {
         setBrokerErrors(errs);
         toast.error(Object.values(errs)[0]);
