@@ -112,57 +112,6 @@ const extractPropertiesFromValues = (values: Record<string, string>): PropertyDa
   return properties;
 };
 
-// Helper to extract property tax records from values
-const extractPropertyTaxesFromValues = (values: Record<string, string>): PropertyTaxData[] => {
-  const allTaxes: PropertyTaxData[] = [];
-  const taxPrefixes = new Set<string>();
-  
-  Object.keys(values).forEach(key => {
-    const match = key.match(/^(propertytax\d+)\./);
-    if (match) taxPrefixes.add(match[1]);
-  });
-  
-  taxPrefixes.forEach(prefix => {
-    const tax: PropertyTaxData = {
-      id: prefix,
-      authority: values[`${prefix}.authority`] || '',
-      type: values[`${prefix}.type`] || '',
-      annualPayment: values[`${prefix}.annual_payment`] || '',
-      frequency: values[`${prefix}.frequency`] || '',
-      active: values[`${prefix}.active`] === 'true',
-      lastVerified: values[`${prefix}.last_verified`] || '',
-      lenderNotified: values[`${prefix}.lender_notified`] || '',
-      current: values[`${prefix}.current`] === 'true',
-      delinquent: values[`${prefix}.delinquent`] === 'true',
-      delinquentAmount: values[`${prefix}.delinquent_amount`] || '',
-    };
-    const hasData = Object.keys(tax).some(key => {
-      if (key === 'id' || key === 'active' || key === 'current' || key === 'delinquent') return false;
-      const val = (tax as any)[key];
-      return val !== undefined && val !== '';
-    });
-    if (hasData) allTaxes.push(tax);
-  });
-  
-  allTaxes.sort((a, b) => {
-    const numA = parseInt(a.id.replace('propertytax', ''));
-    const numB = parseInt(b.id.replace('propertytax', ''));
-    return numA - numB;
-  });
-  
-  return allTaxes;
-};
-
-const getNextPropertyTaxPrefix = (values: Record<string, string>): string => {
-  const prefixes = new Set<string>();
-  Object.keys(values).forEach(key => {
-    const match = key.match(/^(propertytax\d+)\./);
-    if (match) prefixes.add(match[1]);
-  });
-  let nextNum = 1;
-  while (prefixes.has(`propertytax${nextNum}`)) nextNum++;
-  return `propertytax${nextNum}`;
-};
 
 // Get the next available property prefix
 const getNextPropertyPrefix = (values: Record<string, string>): string => {
