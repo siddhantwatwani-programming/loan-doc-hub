@@ -118,9 +118,6 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          <div className="space-y-1.5 pt-2">
-            {renderInlineField('taxId', 'TIN')}
-          </div>
 
           <div className="space-y-1.5 pt-2">
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.frozen}>
