@@ -27,6 +27,7 @@ const EMPTY: CreatePayload = {
   homePhone: '', workPhone: '', fax: '', preferredPhone: 'Cell', verified: false,
   send1099: false, tin: '', street: '', zip: '',
   mailingStreet: '', mailingCity: '', mailingState: '', mailingZip: '', sameAsPrimary: false,
+  company: '', license: '', brokersRepresentative: '',
 };
 
 interface Props {
