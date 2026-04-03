@@ -145,6 +145,7 @@ function getCanonicalKey(indexedKey: string): string {
     .replace(/^(charge)\d+\./, 'charge.')
     .replace(/^(lien)\d+\./, 'lien.')
     .replace(/^(insurance)\d+\./, 'insurance.')
+    .replace(/^(propertytax)\d+\./, 'propertytax.')
     .replace(/^(notes_entry)\d+\./, 'notes_entry.')
     .replace(/^(trust_ledger)\d+\./, 'trust_ledger.');
   // Inline co-borrower keys (borrower.coborrower.X) -> coborrower.X for dictionary lookup
