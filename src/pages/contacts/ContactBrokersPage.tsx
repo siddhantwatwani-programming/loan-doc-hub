@@ -36,6 +36,9 @@ export interface ContactBroker {
   mailingState: string;
   mailingZip: string;
   sameAsPrimary: boolean;
+  company: string;
+  license: string;
+  brokersRepresentative: string;
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -57,7 +60,9 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'phone.cell', label: 'Cell Phone', visible: true },
   { id: 'phone.fax', label: 'Fax', visible: true },
   { id: 'preferred_phone', label: 'Preferred Phone', visible: true },
-  { id: 'tax_id', label: 'TIN', visible: true },
+  { id: 'License', label: 'License', visible: true },
+  { id: 'company', label: 'Company', visible: true },
+  { id: 'brokers_representative', label: "Broker's Representative", visible: true },
   { id: 'issue_1099', label: 'Send 1099', visible: true },
   { id: 'tin_verified', label: 'Verified', visible: true },
   { id: 'mailing.street', label: 'Mailing Street', visible: true },

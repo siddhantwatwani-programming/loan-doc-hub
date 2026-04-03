@@ -95,7 +95,18 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
           <Label>Broker ID</Label>
           <Input value={form.brokerId} disabled className="bg-muted" />
         </div>
-        <div />
+        <div>
+          <Label>Company</Label>
+          <Input value={form.company} onChange={(e) => set('company', e.target.value)} />
+        </div>
+        <div>
+          <Label>License</Label>
+          <Input value={form.license} onChange={(e) => set('license', e.target.value)} />
+        </div>
+        <div>
+          <Label>Broker's Representative</Label>
+          <Input value={form.brokersRepresentative} onChange={(e) => set('brokersRepresentative', e.target.value)} />
+        </div>
         <div className="col-span-2">
           <Label>Full Name</Label>
           <Input value={form.fullName} disabled className="bg-muted" />
