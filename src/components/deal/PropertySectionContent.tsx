@@ -394,23 +394,23 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
 
   const handleAddTax = useCallback(() => { setEditingTax(null); setTaxModalOpen(true); }, []);
   const handleEditTax = useCallback((tax: PropertyTaxData) => { setEditingTax(tax); setTaxModalOpen(true); }, []);
-  const handleRowClickTax = useCallback((tax: PropertyTaxData) => { setEditingTax(tax); setTaxModalOpen(true); }, []);
+  const handleRowClickTax = useCallback((tax: PropertyTaxData) => {
+    setSelectedTaxPrefix(tax.id);
+    setActiveSubSection('property_tax_detail');
+  }, []);
 
   const handleSaveTax = useCallback((taxData: PropertyTaxData) => {
     const prefix = editingTax ? editingTax.id : getNextPropertyTaxPrefix(values);
     const fieldEntries: { key: keyof PropertyTaxData; dbField: string }[] = [
-      { key: 'payee', dbField: 'payee' },
       { key: 'authority', dbField: 'authority' },
-      { key: 'payeeAddress', dbField: 'payee_address' },
       { key: 'type', dbField: 'type' },
-      { key: 'memo', dbField: 'memo' },
-      { key: 'nextDueDate', dbField: 'next_due_date' },
-      { key: 'frequency', dbField: 'frequency' },
       { key: 'annualPayment', dbField: 'annual_payment' },
-      { key: 'taxTracking', dbField: 'tax_tracking' },
+      { key: 'frequency', dbField: 'frequency' },
+      { key: 'active', dbField: 'active' },
       { key: 'lastVerified', dbField: 'last_verified' },
       { key: 'lenderNotified', dbField: 'lender_notified' },
-      { key: 'trackingStatus', dbField: 'tracking_status' },
+      { key: 'current', dbField: 'current' },
+      { key: 'delinquent', dbField: 'delinquent' },
       { key: 'delinquentAmount', dbField: 'delinquent_amount' },
     ];
     fieldEntries.forEach(({ key, dbField }) => {
