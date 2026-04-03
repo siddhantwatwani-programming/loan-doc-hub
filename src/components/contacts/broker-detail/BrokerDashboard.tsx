@@ -19,7 +19,6 @@ const BrokerDashboard: React.FC<Props> = ({ broker }) => (
     <div className="flex gap-2 flex-wrap">
       {broker.hold && <Badge variant="destructive">On Hold</Badge>}
       {broker.verified && <Badge variant="secondary">Verified</Badge>}
-      {broker.ach && <Badge variant="outline">ACH</Badge>}
       {broker.agreement && <Badge variant="outline">Agreement on File</Badge>}
       {broker.send1099 && <Badge variant="outline">1099</Badge>}
     </div>
