@@ -56,6 +56,21 @@ export interface PropertyData {
   paidByLoan?: boolean;
   sourceOfPayment?: string;
   recordingNumber?: string;
+  primaryCollateral?: boolean;
+  purchaseDate?: string;
+  propertyGeneratesIncome?: boolean;
+  netMonthlyIncome?: string;
+  fromRent?: string;
+  fromOtherDescribe?: string;
+  valuationDate?: string;
+  valuationType?: string;
+  thirdPartyFullName?: string;
+  thirdPartyStreet?: string;
+  thirdPartyCity?: string;
+  thirdPartyState?: string;
+  thirdPartyZip?: string;
+  protectiveEquity?: string;
+  cltv?: string;
 }
 
 interface PropertiesTableViewProps {

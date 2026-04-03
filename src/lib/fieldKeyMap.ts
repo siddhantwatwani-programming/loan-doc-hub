@@ -483,6 +483,21 @@ export const PROPERTY_DETAILS_KEYS = {
   paidByLoan: 'property1.paid_by_loan',
   sourceOfPayment: 'property1.source_of_payment',
   recordingNumber: 'property1.recording_number',
+  primaryCollateral: 'property1.primary_collateral',
+  purchaseDate: 'property1.purchase_date',
+  propertyGeneratesIncome: 'property1.property_generates_income',
+  netMonthlyIncome: 'property1.net_monthly_income',
+  fromRent: 'property1.from_rent',
+  fromOtherDescribe: 'property1.from_other_describe',
+  valuationDate: 'property1.valuation_date',
+  valuationType: 'property1.valuation_type',
+  thirdPartyFullName: 'property1.third_party_full_name',
+  thirdPartyStreet: 'property1.third_party_street',
+  thirdPartyCity: 'property1.third_party_city',
+  thirdPartyState: 'property1.third_party_state',
+  thirdPartyZip: 'property1.third_party_zip',
+  protectiveEquity: 'property1.protective_equity',
+  cltv: 'property1.cltv',
 } as const;
 
 export const PROPERTY_LEGAL_KEYS = {
