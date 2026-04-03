@@ -84,6 +84,21 @@ const extractPropertiesFromValues = (values: Record<string, string>): PropertyDa
       paidByLoan: values[`${prefix}.paid_by_loan`] === 'true',
       sourceOfPayment: values[`${prefix}.source_of_payment`] || '',
       recordingNumber: values[`${prefix}.recording_number`] || '',
+      primaryCollateral: values[`${prefix}.primary_collateral`] === 'true',
+      purchaseDate: values[`${prefix}.purchase_date`] || '',
+      propertyGeneratesIncome: values[`${prefix}.property_generates_income`] === 'true',
+      netMonthlyIncome: values[`${prefix}.net_monthly_income`] || '',
+      fromRent: values[`${prefix}.from_rent`] || '',
+      fromOtherDescribe: values[`${prefix}.from_other_describe`] || '',
+      valuationDate: values[`${prefix}.valuation_date`] || '',
+      valuationType: values[`${prefix}.valuation_type`] || '',
+      thirdPartyFullName: values[`${prefix}.third_party_full_name`] || '',
+      thirdPartyStreet: values[`${prefix}.third_party_street`] || '',
+      thirdPartyCity: values[`${prefix}.third_party_city`] || '',
+      thirdPartyState: values[`${prefix}.third_party_state`] || '',
+      thirdPartyZip: values[`${prefix}.third_party_zip`] || '',
+      protectiveEquity: values[`${prefix}.protective_equity`] || '',
+      cltv: values[`${prefix}.cltv`] || '',
     };
     properties.push(property);
   });
