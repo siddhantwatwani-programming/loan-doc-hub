@@ -104,7 +104,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
         {/* Column 1 - Name */}
         <div className="space-y-1.5">
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Broker Details</h3>
-          {renderInlineField('brokerId', 'Broker ID', true)}
+          {renderInlineField('brokerId', 'Broker ID')}
           {renderInlineField('license', 'License')}
           {renderInlineField('company', 'Company')}
           {renderInlineField('fullName', 'Full Name')}
