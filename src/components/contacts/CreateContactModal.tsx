@@ -769,24 +769,21 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               ))}
             </div>
 
-            {/* Column 4: Tax Info */}
+            {/* Column 4: Additional */}
             <div className="space-y-1.5">
-              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Tax Info</h3>
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Additional</h3>
 
-              {/* TIN */}
+              {/* Broker's Representative */}
               <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">TIN</Label>
+                <Label className="w-[100px] shrink-0 text-xs">Broker's Rep</Label>
                 <Input
-                  value={fmtTIN(form['tax_id'] || '', form['tax_id_type'] || '')}
-                  onChange={(e) => { const digits = e.target.value.replace(/\D/g, '').slice(0, 9); set('tax_id', digits); clrKErr('tax_id'); }}
-                  onKeyDown={digitOnlyKD}
-                  onPaste={(e) => { e.preventDefault(); set('tax_id', e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 9)); }}
-                  onBlur={() => { const d = (form['tax_id'] || '').replace(/\D/g, ''); if (d && d.length !== 9) setKErr('tax_id', 'Enter valid TIN (9 digits)'); else clrKErr('tax_id'); }}
-                  maxLength={11}
-                  className={cn("h-7 text-xs flex-1", brokerErrors['tax_id'] && "border-destructive")}
+                  value={form['brokers_representative'] || ''}
+                  onChange={(e) => set('brokers_representative', e.target.value)}
+                  onBlur={() => set('brokers_representative', (form['brokers_representative'] || '').trim())}
+                  maxLength={100}
+                  className="h-7 text-xs flex-1"
                 />
               </div>
-              {brokerErrors['tax_id'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['tax_id']}</p>}
             </div>
           </div>
         )}

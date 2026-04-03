@@ -63,7 +63,6 @@ const BrokerDashboard: React.FC<Props> = ({ broker }) => (
       <Card>
         <CardHeader className="pb-2"><CardTitle className="text-sm">Financial / Compliance</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-2 gap-3">
-          <Field label="TIN" value={broker.tin} />
           <Field label="Send 1099" value={broker.send1099 ? 'Yes' : 'No'} />
           <Field label="Agreement" value={broker.agreement ? 'Yes' : 'No'} />
         </CardContent>
