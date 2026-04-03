@@ -227,7 +227,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         remapped.add(key.replace(`${selectedPropertyPrefix}.`, 'property1.'));
       }
       // Pass through lien and insurance keys unchanged (they handle their own remapping)
-      if (key.match(/^(lien\d+|insurance\d+)\./)) {
+      if (key.match(/^(lien\d+|insurance\d+|propertytax\d+)\./)) {
         remapped.add(key);
       }
     });
