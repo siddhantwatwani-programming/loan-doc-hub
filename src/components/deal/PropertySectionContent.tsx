@@ -115,6 +115,61 @@ const extractPropertiesFromValues = (values: Record<string, string>): PropertyDa
   return properties;
 };
 
+// Helper to extract property tax records from values
+const extractPropertyTaxesFromValues = (values: Record<string, string>): PropertyTaxData[] => {
+  const allTaxes: PropertyTaxData[] = [];
+  const taxPrefixes = new Set<string>();
+  
+  Object.keys(values).forEach(key => {
+    const match = key.match(/^(propertytax\d+)\./);
+    if (match) taxPrefixes.add(match[1]);
+  });
+  
+  taxPrefixes.forEach(prefix => {
+    const tax: PropertyTaxData = {
+      id: prefix,
+      payee: values[`${prefix}.payee`] || '',
+      authority: values[`${prefix}.authority`] || '',
+      payeeAddress: values[`${prefix}.payee_address`] || '',
+      type: values[`${prefix}.type`] || '',
+      memo: values[`${prefix}.memo`] || '',
+      nextDueDate: values[`${prefix}.next_due_date`] || '',
+      frequency: values[`${prefix}.frequency`] || '',
+      annualPayment: values[`${prefix}.annual_payment`] || '',
+      taxTracking: values[`${prefix}.tax_tracking`] === 'true',
+      lastVerified: values[`${prefix}.last_verified`] || '',
+      lenderNotified: values[`${prefix}.lender_notified`] || '',
+      trackingStatus: values[`${prefix}.tracking_status`] || '',
+      delinquentAmount: values[`${prefix}.delinquent_amount`] || '',
+    };
+    const hasData = Object.keys(tax).some(key => {
+      if (key === 'id' || key === 'taxTracking') return false;
+      const val = (tax as any)[key];
+      return val !== undefined && val !== '';
+    });
+    if (hasData) allTaxes.push(tax);
+  });
+  
+  allTaxes.sort((a, b) => {
+    const numA = parseInt(a.id.replace('propertytax', ''));
+    const numB = parseInt(b.id.replace('propertytax', ''));
+    return numA - numB;
+  });
+  
+  return allTaxes;
+};
+
+const getNextPropertyTaxPrefix = (values: Record<string, string>): string => {
+  const prefixes = new Set<string>();
+  Object.keys(values).forEach(key => {
+    const match = key.match(/^(propertytax\d+)\./);
+    if (match) prefixes.add(match[1]);
+  });
+  let nextNum = 1;
+  while (prefixes.has(`propertytax${nextNum}`)) nextNum++;
+  return `propertytax${nextNum}`;
+};
+
 // Get the next available property prefix
 const getNextPropertyPrefix = (values: Record<string, string>): string => {
   const propertyPrefixes = new Set<string>();
