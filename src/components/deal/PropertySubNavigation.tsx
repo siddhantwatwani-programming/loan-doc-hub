@@ -8,6 +8,7 @@ const PROPERTY_DETAIL_SECTIONS: { key: PropertySubSection; label: string }[] = [
   { key: 'legal_description', label: 'Legal Description' },
   { key: 'insurance', label: 'Insurance' },
   { key: 'property_tax', label: 'Property Tax' },
+  { key: 'property_tax_detail', label: 'Tax Detail' },
 ];
 
 interface PropertySubNavigationProps {
