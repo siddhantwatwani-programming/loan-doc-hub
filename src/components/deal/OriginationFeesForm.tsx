@@ -545,8 +545,6 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
     commentKey?: string
   ) => {
     const totalVal = getValue(totalKey);
-    const hasComment = commentKey ? !!(values[commentKey] && values[commentKey].trim()) : false;
-    const isExpanded = commentKey ? expandedComments.has(commentKey) : false;
 
     return (
       <DirtyFieldWrapper fieldKey={monthsKey}>
@@ -560,6 +558,9 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
             <span>/mo</span>
             {totalVal && <span className="text-muted-foreground ml-1">= ${formatCurrencyDisplay(totalVal)}</span>}
           </div>
+          {commentKey ? (
+            <Input value={getValue(commentKey)} onChange={(e) => setValue(commentKey, e.target.value)} disabled={disabled} placeholder="Comment" className="h-7 text-xs" />
+          ) : <div />}
           <div className="relative">
             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
             <Input inputMode="decimal" value={getValue(keys.others)} onChange={(e) => setValue(keys.others, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(keys.others, val))} onBlur={() => { const raw = getValue(keys.others); if (raw) setValue(keys.others, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = getValue(keys.others); if (raw) setValue(keys.others, unformatCurrencyDisplay(raw)); }} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
@@ -570,29 +571,7 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
           </div>
           <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
           <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.paidToCompany)} onCheckedChange={(c) => setBoolValue(keys.paidToCompany, !!c)} disabled={disabled} /></div>
-          {commentKey ? (
-            <button
-              type="button"
-              onClick={() => toggleComment(commentKey)}
-              className={`flex justify-center items-center h-6 w-6 rounded hover:bg-accent transition-colors ${hasComment ? 'text-primary' : 'text-muted-foreground'}`}
-              title="Toggle comment"
-            >
-              <MessageSquare size={14} className={hasComment ? 'fill-primary/20' : ''} />
-            </button>
-          ) : <div />}
         </div>
-        {commentKey && isExpanded && (
-          <div className="pl-[59px] pr-8 pb-2 pt-1">
-            <Textarea
-              value={getValue(commentKey)}
-              onChange={(e) => setValue(commentKey, e.target.value)}
-              disabled={disabled}
-              placeholder="Add a comment or note..."
-              className="text-xs min-h-[50px] resize-y"
-              rows={2}
-            />
-          </div>
-        )}
       </DirtyFieldWrapper>
     );
   };
