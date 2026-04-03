@@ -654,9 +654,9 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
         {contactType === 'broker' && (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-x-6 gap-y-0">
-            {/* Column 1: Name */}
+            {/* Column 1: Broker Details + Representative */}
             <div className="space-y-1.5">
-              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Name</h3>
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Broker Details</h3>
               {/* License - alphanumeric, max 50, required */}
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">License</Label>
@@ -671,34 +671,45 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               </div>
               {brokerErrors['company'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['company']}</p>}
 
-              {/* Full Name - alpha+spaces, max 100, required */}
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">Full Name</Label>
-                <Input value={form['full_name'] || ''} onChange={(e) => { set('full_name', e.target.value); clrKErr('full_name'); }} onKeyDown={alphaSpaceKD} onPaste={(e) => { e.preventDefault(); set('full_name', e.clipboardData.getData('text').replace(/[^A-Za-z ]/g, '')); }} onBlur={() => { const v = (form['full_name'] || '').trim(); set('full_name', v); if (!v) setKErr('full_name', 'Full Name is required'); else clrKErr('full_name'); }} maxLength={100} className={cn("h-7 text-xs flex-1", brokerErrors['full_name'] && "border-destructive")} />
-              </div>
-              {brokerErrors['full_name'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['full_name']}</p>}
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-4">Broker's Representative</h3>
 
               {/* First Name - alpha only, required */}
               <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">First</Label>
+                <Label className="w-[100px] shrink-0 text-xs">First Name</Label>
                 <Input value={form['first_name'] || ''} onChange={(e) => { set('first_name', e.target.value); clrKErr('first_name'); }} onKeyDown={alphaOnlyKD} onPaste={(e) => { e.preventDefault(); set('first_name', e.clipboardData.getData('text').replace(/[^A-Za-z]/g, '')); }} onBlur={() => { const v = (form['first_name'] || '').trim(); set('first_name', v); if (!v) setKErr('first_name', 'Enter valid first name'); else clrKErr('first_name'); }} className={cn("h-7 text-xs flex-1", brokerErrors['first_name'] && "border-destructive")} />
               </div>
               {brokerErrors['first_name'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['first_name']}</p>}
 
-              {/* Middle Name - alpha only, optional */}
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">Middle</Label>
-                <Input value={form['middle_name'] || ''} onChange={(e) => set('middle_name', e.target.value)} onKeyDown={alphaOnlyKD} onPaste={(e) => { e.preventDefault(); set('middle_name', e.clipboardData.getData('text').replace(/[^A-Za-z]/g, '')); }} onBlur={() => set('middle_name', (form['middle_name'] || '').trim())} className="h-7 text-xs flex-1" />
-              </div>
-
               {/* Last Name - alpha only, required */}
               <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">Last</Label>
+                <Label className="w-[100px] shrink-0 text-xs">Last Name</Label>
                 <Input value={form['last_name'] || ''} onChange={(e) => { set('last_name', e.target.value); clrKErr('last_name'); }} onKeyDown={alphaOnlyKD} onPaste={(e) => { e.preventDefault(); set('last_name', e.clipboardData.getData('text').replace(/[^A-Za-z]/g, '')); }} onBlur={() => { const v = (form['last_name'] || '').trim(); set('last_name', v); if (!v) setKErr('last_name', 'Enter valid last name'); else clrKErr('last_name'); }} className={cn("h-7 text-xs flex-1", brokerErrors['last_name'] && "border-destructive")} />
               </div>
               {brokerErrors['last_name'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['last_name']}</p>}
 
+              {/* Rep Phone */}
               <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Phone</Label>
+                <PhoneInput
+                  value={form['rep_phone'] || ''}
+                  onValueChange={(v) => set('rep_phone', v)}
+                  className="h-7 text-xs flex-1"
+                />
+              </div>
+
+              {/* Rep Email */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Email</Label>
+                <EmailInput value={form['rep_email'] || ''} onValueChange={(v) => set('rep_email', v)} className="h-7 text-xs" />
+              </div>
+
+              {/* Rep License */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">License</Label>
+                <Input value={form['rep_license'] || ''} onChange={(e) => set('rep_license', e.target.value)} onBlur={() => set('rep_license', (form['rep_license'] || '').trim())} maxLength={50} className="h-7 text-xs flex-1" />
+              </div>
+
+              <div className="flex items-center gap-2 mt-2">
                 <Label className="w-[100px] shrink-0 text-xs">Email</Label>
                 <EmailInput value={form['email'] || ''} onValueChange={(v) => { set('email', v); clrKErr('email'); }} className="h-7 text-xs" />
               </div>
@@ -766,23 +777,6 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                   />
                 </div>
               ))}
-            </div>
-
-            {/* Column 4: Additional */}
-            <div className="space-y-1.5">
-              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Additional</h3>
-
-              {/* Broker's Representative */}
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">Broker's Rep</Label>
-                <Input
-                  value={form['brokers_representative'] || ''}
-                  onChange={(e) => set('brokers_representative', e.target.value)}
-                  onBlur={() => set('brokers_representative', (form['brokers_representative'] || '').trim())}
-                  maxLength={100}
-                  className="h-7 text-xs flex-1"
-                />
-              </div>
             </div>
           </div>
         )}
