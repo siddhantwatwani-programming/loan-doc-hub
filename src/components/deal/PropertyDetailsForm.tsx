@@ -161,6 +161,32 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
     </div>
   );
 
+  const renderDateField = (fieldKey: string, label: string) => {
+    const val = getFieldValue(fieldKey);
+    return (
+      <DirtyFieldWrapper fieldKey={fieldKey}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
+          <Popover open={datePickerStates[fieldKey] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [fieldKey]: open }))}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !val && 'text-muted-foreground')} disabled={disabled}>
+                {val && parseDate(val) ? format(parseDate(val)!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
+                <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+              <EnhancedCalendar mode="single" selected={parseDate(val)}
+                onSelect={(date) => { if (date) onValueChange(fieldKey, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [fieldKey]: false })); }}
+                onClear={() => { onValueChange(fieldKey, ''); setDatePickerStates(prev => ({ ...prev, [fieldKey]: false })); }}
+                onToday={() => { onValueChange(fieldKey, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [fieldKey]: false })); }}
+                initialFocus />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </DirtyFieldWrapper>
+    );
+  };
+
   return (
     <div className="p-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-0">
@@ -169,7 +195,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           <div className="border-b border-border pb-1 mb-2">
             <span className="font-semibold text-xs text-primary">Property Information</span>
           </div>
-          {renderInlineField(FIELD_KEYS.description, 'Description')}
+          {renderInlineField(FIELD_KEYS.description, 'Description (Nick Name)')}
+          {renderCheckboxField(FIELD_KEYS.primaryCollateral, 'Primary Collateral')}
           <div className="pt-1">
             <span className="text-xs font-medium text-primary">Address</span>
           </div>
@@ -211,6 +238,13 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             <Checkbox id="primary-property" checked={getFieldValue(FIELD_KEYS.primaryProperty) === 'true'} onCheckedChange={(checked) => onValueChange(FIELD_KEYS.primaryProperty, String(!!checked))} disabled={disabled} className="h-3.5 w-3.5" />
             <Label htmlFor="primary-property" className="text-xs text-foreground">Primary Property</Label>
           </div>
+
+          <div className="pt-2">
+            <span className="text-xs font-medium text-primary">Purchase Information</span>
+          </div>
+          {renderDateField(FIELD_KEYS.purchaseDate, 'Purchase Date')}
+          {renderCurrencyField(FIELD_KEYS.purchasePrice, 'Purchase Price')}
+          {renderCurrencyField(FIELD_KEYS.downPayment, 'Down Payment')}
         </div>
 
         {/* Right Column - Appraisal Information */}
@@ -238,15 +272,22 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
               </Popover>
             </div>
           </DirtyFieldWrapper>
-          {renderInlineSelect(FIELD_KEYS.performedBy, 'Performed By', PERFORMED_BY_OPTIONS, 'Select...')}
           {renderInlineSelect(FIELD_KEYS.propertyType, 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
           {renderInlineSelect(FIELD_KEYS.occupancy, 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
-          {renderPercentageField(FIELD_KEYS.ltv, 'Loan To Value')}
           {renderInlineField(FIELD_KEYS.zoning, 'Zoning')}
           {renderCurrencyField(FIELD_KEYS.appraisedValue, 'Appraised Value')}
           {renderCurrencyField(FIELD_KEYS.pledgedEquity, 'Pledged Equity')}
           {renderInlineSelect(FIELD_KEYS.priority, 'Priority', PRIORITY_OPTIONS, 'Select')}
-          {renderInlineSelect(FIELD_KEYS.floodZone, 'Flood Zone', FLOOD_ZONE_OPTIONS, 'Select')}
+          {renderCheckboxField(FIELD_KEYS.floodZone, 'Flood Zone')}
+
+          {renderCheckboxField(FIELD_KEYS.propertyGeneratesIncome, 'Property Generates Income')}
+          {getFieldValue(FIELD_KEYS.propertyGeneratesIncome) === 'true' && (
+            <>
+              {renderCurrencyField(FIELD_KEYS.netMonthlyIncome, 'Net Monthly Income')}
+              {renderCurrencyField(FIELD_KEYS.fromRent, 'From Rent')}
+              {renderCurrencyField(FIELD_KEYS.fromOtherDescribe, 'From Other (Describe)')}
+            </>
+          )}
         </div>
       </div>
 
@@ -254,8 +295,6 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-0 mt-4">
         {/* Left Column - Purchase & Tax */}
         <div className="space-y-1.5">
-          {renderCurrencyField(FIELD_KEYS.purchasePrice, 'Purchase Price')}
-          {renderCurrencyField(FIELD_KEYS.downPayment, 'Down Payment')}
           {renderCurrencyField(FIELD_KEYS.delinquentTaxes, 'Delinquent Taxes')}
 
           <p className="text-xs italic text-foreground pt-3 pb-1">Appraiser Contact</p>
@@ -310,6 +349,37 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           {renderCheckboxField(FIELD_KEYS.paidByLoan, 'Will be Paid by this Loan')}
           {renderInlineField(FIELD_KEYS.sourceOfPayment, 'If No, List Source of Payment')}
           {renderInlineField(FIELD_KEYS.recordingNumber, 'Recording number')}
+        </div>
+      </div>
+
+      {/* Valuation Section */}
+      <div className="mt-4">
+        <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Valuation:</span></div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-0">
+          <div className="space-y-1.5">
+            {renderDateField(FIELD_KEYS.valuationDate, 'Valuation Date')}
+            {renderInlineSelect(FIELD_KEYS.valuationType, 'Valuation Type', VALUATION_TYPE_OPTIONS, 'Select')}
+            {renderInlineSelect(FIELD_KEYS.performedBy, 'Performed By', PERFORMED_BY_OPTIONS, 'Select...')}
+            {getFieldValue(FIELD_KEYS.performedBy) === 'Third Party' && (
+              <>
+                {renderInlineField(FIELD_KEYS.thirdPartyFullName, 'Full Name')}
+                {renderInlineField(FIELD_KEYS.thirdPartyStreet, 'Street')}
+                {renderInlineField(FIELD_KEYS.thirdPartyCity, 'City')}
+                {renderInlineSelect(FIELD_KEYS.thirdPartyState, 'State', US_STATES, 'Select state')}
+                <DirtyFieldWrapper fieldKey={FIELD_KEYS.thirdPartyZip}>
+                  <div className="flex items-center gap-2">
+                    <Label className="w-[110px] shrink-0 text-xs text-foreground">ZIP Code</Label>
+                    <ZipInput value={getFieldValue(FIELD_KEYS.thirdPartyZip)} onValueChange={(v) => onValueChange(FIELD_KEYS.thirdPartyZip, v)} disabled={disabled} className="h-7 text-xs" />
+                  </div>
+                </DirtyFieldWrapper>
+              </>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            {renderCurrencyField(FIELD_KEYS.protectiveEquity, 'Protective Equity')}
+            {renderPercentageField(FIELD_KEYS.ltv, 'Loan To Value')}
+            {renderPercentageField(FIELD_KEYS.cltv, 'CLTV (If a Junior Lien)')}
+          </div>
         </div>
       </div>
     </div>
