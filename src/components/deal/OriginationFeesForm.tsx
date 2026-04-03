@@ -661,9 +661,7 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
       <div className="space-y-0">
         <h3 className="font-semibold text-sm text-foreground underline mb-1">1200 – Government Recording and Transfer Charges</h3>
         {renderFeeRow('1201', 'Recording Fees', { others: FIELD_KEYS.recordingFees_others, broker: FIELD_KEYS.recordingFees_broker, apr: FIELD_KEYS.recordingFees_apr, paidToCompany: FIELD_KEYS.recordingFees_paid_to_company }, undefined, undefined, FIELD_KEYS.recordingFees_d)}
-        {renderFeeRow('1301', '', { others: FIELD_KEYS.addThisLine_others, broker: FIELD_KEYS.addThisLine_broker, apr: FIELD_KEYS.addThisLine_apr, paidToCompany: FIELD_KEYS.addThisLine_paid_to_company }, FIELD_KEYS.addThisLine_label, undefined, FIELD_KEYS.addThisLine_d)}
         {renderFeeRow('1202', 'City/County Tax/Stamps', { others: FIELD_KEYS.cityCountyTaxStamps_others, broker: FIELD_KEYS.cityCountyTaxStamps_broker, apr: FIELD_KEYS.cityCountyTaxStamps_apr, paidToCompany: FIELD_KEYS.cityCountyTaxStamps_paid_to_company }, undefined, undefined, FIELD_KEYS.cityCountyTaxStamps_d)}
-        {renderFeeRow('', '', { others: FIELD_KEYS.customItem1200_others, broker: FIELD_KEYS.customItem1200_broker, apr: FIELD_KEYS.customItem1200_apr, paidToCompany: FIELD_KEYS.customItem1200_paid_to_company }, FIELD_KEYS.customItem1200_label, undefined, FIELD_KEYS.customItem1200_d)}
       </div>
 
       {/* 1300 Additional Settlement Charges */}
