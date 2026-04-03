@@ -5,9 +5,6 @@ import { Button } from '@/components/ui/button';
 import { PropertySubNavigation, type PropertySubSection } from './PropertySubNavigation';
 import { PropertyDetailsForm } from './PropertyDetailsForm';
 import { PropertyLegalDescriptionForm } from './PropertyLegalDescriptionForm';
-import { PropertyTaxForm } from './PropertyTaxForm';
-import { PropertyTaxTableView, type PropertyTaxData } from './PropertyTaxTableView';
-import { PropertyTaxModal } from './PropertyTaxModal';
 
 import { PropertiesTableView, type PropertyData } from './PropertiesTableView';
 import { PropertyModal } from './PropertyModal';
@@ -115,57 +112,6 @@ const extractPropertiesFromValues = (values: Record<string, string>): PropertyDa
   return properties;
 };
 
-// Helper to extract property tax records from values
-const extractPropertyTaxesFromValues = (values: Record<string, string>): PropertyTaxData[] => {
-  const allTaxes: PropertyTaxData[] = [];
-  const taxPrefixes = new Set<string>();
-  
-  Object.keys(values).forEach(key => {
-    const match = key.match(/^(propertytax\d+)\./);
-    if (match) taxPrefixes.add(match[1]);
-  });
-  
-  taxPrefixes.forEach(prefix => {
-    const tax: PropertyTaxData = {
-      id: prefix,
-      authority: values[`${prefix}.authority`] || '',
-      type: values[`${prefix}.type`] || '',
-      annualPayment: values[`${prefix}.annual_payment`] || '',
-      frequency: values[`${prefix}.frequency`] || '',
-      active: values[`${prefix}.active`] === 'true',
-      lastVerified: values[`${prefix}.last_verified`] || '',
-      lenderNotified: values[`${prefix}.lender_notified`] || '',
-      current: values[`${prefix}.current`] === 'true',
-      delinquent: values[`${prefix}.delinquent`] === 'true',
-      delinquentAmount: values[`${prefix}.delinquent_amount`] || '',
-    };
-    const hasData = Object.keys(tax).some(key => {
-      if (key === 'id' || key === 'active' || key === 'current' || key === 'delinquent') return false;
-      const val = (tax as any)[key];
-      return val !== undefined && val !== '';
-    });
-    if (hasData) allTaxes.push(tax);
-  });
-  
-  allTaxes.sort((a, b) => {
-    const numA = parseInt(a.id.replace('propertytax', ''));
-    const numB = parseInt(b.id.replace('propertytax', ''));
-    return numA - numB;
-  });
-  
-  return allTaxes;
-};
-
-const getNextPropertyTaxPrefix = (values: Record<string, string>): string => {
-  const prefixes = new Set<string>();
-  Object.keys(values).forEach(key => {
-    const match = key.match(/^(propertytax\d+)\./);
-    if (match) prefixes.add(match[1]);
-  });
-  let nextNum = 1;
-  while (prefixes.has(`propertytax${nextNum}`)) nextNum++;
-  return `propertytax${nextNum}`;
-};
 
 // Get the next available property prefix
 const getNextPropertyPrefix = (values: Record<string, string>): string => {
@@ -203,15 +149,11 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<PropertyData | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [taxModalOpen, setTaxModalOpen] = useState(false);
-  const [editingTax, setEditingTax] = useState<PropertyTaxData | null>(null);
-  const [taxCurrentPage, setTaxCurrentPage] = useState(1);
-  const [selectedTaxPrefix, setSelectedTaxPrefix] = useState('propertytax1');
   const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
   
   // Check if we're in detail view
-  const isDetailView = ['property_details', 'legal_description', 'property_tax', 'property_tax_detail'].includes(activeSubSection);
+  const isDetailView = ['property_details', 'legal_description'].includes(activeSubSection);
   
   // Check if insurance section is active (rendered separately)
   const isInsuranceSection = activeSubSection === 'insurance';
@@ -275,12 +217,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
 
   // Handle back navigation
   const handleBackToTable = useCallback(() => {
-    if (activeSubSection === 'property_tax_detail') {
-      setActiveSubSection('property_tax');
-    } else {
-      setActiveSubSection('properties');
-    }
-  }, [activeSubSection]);
+    setActiveSubSection('properties');
+  }, []);
 
   // Handle primary property change - only one can be primary
   const handlePrimaryChange = useCallback((propertyId: string, isPrimary: boolean) => {
@@ -390,51 +328,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     }
   }, [values, onValueChange, onRemoveValuesByPrefix, onPersist]);
 
-  // ── Property Tax multi-entity ──
-  const allPropertyTaxes = extractPropertyTaxesFromValues(values);
-  const totalTaxes = allPropertyTaxes.length;
-  const taxTotalPages = Math.max(1, Math.ceil(totalTaxes / PAGE_SIZE));
-  const taxSafePage = Math.min(taxCurrentPage, taxTotalPages);
-  const paginatedTaxes = allPropertyTaxes.slice((taxSafePage - 1) * PAGE_SIZE, taxSafePage * PAGE_SIZE);
-
-  const handleAddTax = useCallback(() => { setEditingTax(null); setTaxModalOpen(true); }, []);
-  const handleEditTax = useCallback((tax: PropertyTaxData) => { setEditingTax(tax); setTaxModalOpen(true); }, []);
-  const handleRowClickTax = useCallback((tax: PropertyTaxData) => {
-    setSelectedTaxPrefix(tax.id);
-    setActiveSubSection('property_tax_detail');
-  }, []);
-
-  const handleSaveTax = useCallback((taxData: PropertyTaxData) => {
-    const prefix = editingTax ? editingTax.id : getNextPropertyTaxPrefix(values);
-    const fieldEntries: { key: keyof PropertyTaxData; dbField: string }[] = [
-      { key: 'authority', dbField: 'authority' },
-      { key: 'type', dbField: 'type' },
-      { key: 'annualPayment', dbField: 'annual_payment' },
-      { key: 'frequency', dbField: 'frequency' },
-      { key: 'active', dbField: 'active' },
-      { key: 'lastVerified', dbField: 'last_verified' },
-      { key: 'lenderNotified', dbField: 'lender_notified' },
-      { key: 'current', dbField: 'current' },
-      { key: 'delinquent', dbField: 'delinquent' },
-      { key: 'delinquentAmount', dbField: 'delinquent_amount' },
-    ];
-    fieldEntries.forEach(({ key, dbField }) => {
-      onValueChange(`${prefix}.${dbField}`, String(taxData[key] ?? ''));
-    });
-    setTaxModalOpen(false);
-    if (onPersist) setTimeout(() => { onPersist(); }, 50);
-  }, [editingTax, values, onValueChange, onPersist]);
-
-  const handleDeleteTax = useCallback((tax: PropertyTaxData) => {
-    if (onRemoveValuesByPrefix) {
-      onRemoveValuesByPrefix(tax.id);
-    } else {
-      Object.keys(values).forEach(key => {
-        if (key.startsWith(`${tax.id}.`)) onValueChange(key, '');
-      });
-    }
-    if (onPersist) setTimeout(() => { onPersist(); }, 50);
-  }, [values, onValueChange, onRemoveValuesByPrefix, onPersist]);
 
   // Create property-specific values for the detail forms
   const getPropertySpecificValues = (): Record<string, string> => {
@@ -504,47 +397,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
       case 'insurance':
         // Insurance section is handled separately below
         return null;
-      case 'property_tax':
-        return (
-          <PropertyTaxTableView
-            taxes={paginatedTaxes}
-            onAddTax={handleAddTax}
-            onEditTax={handleEditTax}
-            onRowClick={handleRowClickTax}
-            onDeleteTax={handleDeleteTax}
-            onRefresh={onRefresh}
-            disabled={disabled}
-            currentPage={taxSafePage}
-            totalPages={taxTotalPages}
-            totalCount={totalTaxes}
-            onPageChange={setTaxCurrentPage}
-          />
-        );
-      case 'property_tax_detail': {
-        // Build tax-specific values remapped to propertytax1.* for the form
-        const taxSpecificValues: Record<string, string> = {};
-        Object.entries(values).forEach(([key, value]) => {
-          if (key.startsWith(`${selectedTaxPrefix}.`)) {
-            taxSpecificValues[key.replace(`${selectedTaxPrefix}.`, 'propertytax1.')] = value;
-          } else {
-            taxSpecificValues[key] = value;
-          }
-        });
-        const handleTaxValueChange = (fieldKey: string, value: string) => {
-          const actualKey = fieldKey.replace('propertytax1.', `${selectedTaxPrefix}.`);
-          onValueChange(actualKey, value);
-        };
-        return (
-          <PropertyTaxForm
-            fields={fields}
-            values={taxSpecificValues}
-            onValueChange={handleTaxValueChange}
-            showValidation={showValidation}
-            disabled={disabled}
-            calculationResults={calculationResults}
-          />
-        );
-      }
       default:
         return null;
     }
@@ -627,14 +479,6 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         isEdit={!!editingProperty}
       />
 
-      {/* Add/Edit Property Tax Modal */}
-      <PropertyTaxModal
-        open={taxModalOpen}
-        onOpenChange={setTaxModalOpen}
-        propertyTax={editingTax}
-        onSave={handleSaveTax}
-        isEdit={!!editingTax}
-      />
     </>
   );
 };
