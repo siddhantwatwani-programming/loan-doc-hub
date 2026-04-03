@@ -464,6 +464,38 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
   const getBoolValue = (key: string) => values[key] === 'true';
   const setBoolValue = (key: string, value: boolean) => onValueChange(key, String(value));
 
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
+
+  // Auto-expand rows that already have comment data on load
+  useEffect(() => {
+    const autoExpand = new Set<string>();
+    const allDKeys = Object.entries(FIELD_KEYS).filter(([k]) => k.endsWith('_d'));
+    allDKeys.forEach(([, fieldKey]) => {
+      if (values[fieldKey] && values[fieldKey].trim()) {
+        autoExpand.add(fieldKey);
+      }
+    });
+    if (autoExpand.size > 0) {
+      setExpandedComments(prev => {
+        const merged = new Set(prev);
+        autoExpand.forEach(k => merged.add(k));
+        return merged;
+      });
+    }
+  }, []);
+
+  const toggleComment = (commentKey: string) => {
+    setExpandedComments(prev => {
+      const next = new Set(prev);
+      if (next.has(commentKey)) {
+        next.delete(commentKey);
+      } else {
+        next.add(commentKey);
+      }
+      return next;
+    });
+  };
+
   const parseNumber = (val: string): number => {
     const num = parseFloat(val.replace(/[^0-9.-]/g, ''));
     return isNaN(num) ? 0 : num;
@@ -488,7 +520,7 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
     if (m * p > 0) setValue(FIELD_KEYS.coPropertyTaxes_total, (m * p).toFixed(2));
   }, [values[FIELD_KEYS.coPropertyTaxes_months], values[FIELD_KEYS.coPropertyTaxes_perMonth]]);
 
-  // Standard fee row: HUD# | Description | Paid to Others | Paid to Broker | Include in APR | Paid to Company
+  // Standard fee row: HUD# | Description | Paid to Others | Paid to Broker | Include in APR | Paid to Company | Comment
   const renderFeeRow = (
     hudNumber: string,
     description: string,
@@ -499,31 +531,59 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
       paidToCompany: string;
     },
     labelKey?: string,
-    descriptionNode?: React.ReactNode
-  ) => (
-    <DirtyFieldWrapper fieldKey={keys.others}>
-      <div style={GRID_STYLE} className="py-1 border-b border-border/50">
-        <div className="text-xs font-medium text-foreground">{hudNumber}</div>
-        {labelKey ? (
-          <Input value={getValue(labelKey)} onChange={(e) => setValue(labelKey, e.target.value)} disabled={disabled} placeholder="Enter description" className="h-7 text-xs" />
-        ) : descriptionNode ? (
-          <div className="text-xs text-foreground">{descriptionNode}</div>
-        ) : (
-          <div className="text-xs text-foreground">{description}</div>
+    descriptionNode?: React.ReactNode,
+    commentKey?: string
+  ) => {
+    const hasComment = commentKey ? !!(values[commentKey] && values[commentKey].trim()) : false;
+    const isExpanded = commentKey ? expandedComments.has(commentKey) : false;
+
+    return (
+      <DirtyFieldWrapper fieldKey={keys.others}>
+        <div style={GRID_STYLE} className="py-1 border-b border-border/50">
+          <div className="text-xs font-medium text-foreground">{hudNumber}</div>
+          {labelKey ? (
+            <Input value={getValue(labelKey)} onChange={(e) => setValue(labelKey, e.target.value)} disabled={disabled} placeholder="Enter description" className="h-7 text-xs" />
+          ) : descriptionNode ? (
+            <div className="text-xs text-foreground">{descriptionNode}</div>
+          ) : (
+            <div className="text-xs text-foreground">{description}</div>
+          )}
+          <div className="relative">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
+            <Input inputMode="decimal" value={getValue(keys.others)} onChange={(e) => setValue(keys.others, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(keys.others, val))} onBlur={() => { const raw = getValue(keys.others); if (raw) setValue(keys.others, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = getValue(keys.others); if (raw) setValue(keys.others, unformatCurrencyDisplay(raw)); }} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+          </div>
+          <div className="relative">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
+            <Input inputMode="decimal" value={getValue(keys.broker)} onChange={(e) => setValue(keys.broker, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(keys.broker, val))} onBlur={() => { const raw = getValue(keys.broker); if (raw) setValue(keys.broker, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = getValue(keys.broker); if (raw) setValue(keys.broker, unformatCurrencyDisplay(raw)); }} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
+          </div>
+          <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
+          <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.paidToCompany)} onCheckedChange={(c) => setBoolValue(keys.paidToCompany, !!c)} disabled={disabled} /></div>
+          {commentKey ? (
+            <button
+              type="button"
+              onClick={() => toggleComment(commentKey)}
+              className={`flex justify-center items-center h-6 w-6 rounded hover:bg-accent transition-colors ${hasComment ? 'text-primary' : 'text-muted-foreground'}`}
+              title="Toggle comment"
+            >
+              <MessageSquare size={14} className={hasComment ? 'fill-primary/20' : ''} />
+            </button>
+          ) : <div />}
+        </div>
+        {commentKey && isExpanded && (
+          <div className="pl-[59px] pr-8 pb-2 pt-1">
+            <Textarea
+              value={getValue(commentKey)}
+              onChange={(e) => setValue(commentKey, e.target.value)}
+              disabled={disabled}
+              placeholder="Add a comment or note..."
+              className="text-xs min-h-[50px] resize-y"
+              rows={2}
+            />
+          </div>
         )}
-        <div className="relative">
-          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
-          <Input inputMode="decimal" value={getValue(keys.others)} onChange={(e) => setValue(keys.others, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(keys.others, val))} onBlur={() => { const raw = getValue(keys.others); if (raw) setValue(keys.others, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = getValue(keys.others); if (raw) setValue(keys.others, unformatCurrencyDisplay(raw)); }} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
-        </div>
-        <div className="relative">
-          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">$</span>
-          <Input inputMode="decimal" value={getValue(keys.broker)} onChange={(e) => setValue(keys.broker, unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => setValue(keys.broker, val))} onBlur={() => { const raw = getValue(keys.broker); if (raw) setValue(keys.broker, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = getValue(keys.broker); if (raw) setValue(keys.broker, unformatCurrencyDisplay(raw)); }} disabled={disabled} placeholder="0.00" className="h-7 text-xs text-right pl-5" />
-        </div>
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.apr)} onCheckedChange={(c) => setBoolValue(keys.apr, !!c)} disabled={disabled} /></div>
-        <div className="flex justify-center"><Checkbox checked={getBoolValue(keys.paidToCompany)} onCheckedChange={(c) => setBoolValue(keys.paidToCompany, !!c)} disabled={disabled} /></div>
-      </div>
-    </DirtyFieldWrapper>
-  );
+      </DirtyFieldWrapper>
+    );
+  };
 
   // Insurance row for 1000 section with dynamic description
   const renderInsuranceRow = (
