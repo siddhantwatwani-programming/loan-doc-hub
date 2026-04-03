@@ -16,7 +16,6 @@ export interface ContactBroker {
   ach: boolean;
   email: string;
   agreement: boolean;
-  fullName: string;
   firstName: string;
   lastName: string;
   city: string;
@@ -38,6 +37,9 @@ export interface ContactBroker {
   company: string;
   license: string;
   brokersRepresentative: string;
+  repPhone: string;
+  repEmail: string;
+  repLicense: string;
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
