@@ -54,6 +54,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
   onValueChange,
   showValidation = false,
   disabled = false,
+  onNavigate,
 }) => {
   const getValue = (key: string) => values[key] || "";
   const setValue = (key: string, value: string) => onValueChange(key, value);
@@ -62,6 +63,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
   const [focusedCurrencyField, setFocusedCurrencyField] = useState<string | null>(null);
   const [soldRateSplitOpen, setSoldRateSplitOpen] = useState(false);
+  const [otherSchedPmtsOpen, setOtherSchedPmtsOpen] = useState(false);
 
   const formatCurrencyDisplay = useCallback((val: string) => {
     if (!val) return "";
