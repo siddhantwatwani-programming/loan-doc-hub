@@ -1,55 +1,39 @@
 
 
-## Plan: Update Insurance Modal/Form and Table Grid
+## Plan: Fix Re851a Checkbox Label Matching
 
-### Summary
-Modify the Insurance modal (Add/Edit popup) to remove "Insured's Name" and "Coverage", convert "Insurance Company" to a contacts dropdown, and update the table grid columns accordingly. The modal already has Annual Premium, Frequency, Impounds, and Insurance Tracking fields — no changes needed there.
+### Root Cause (2 issues)
 
-### What Changes
+1. **Wrong label**: The `merge_tag_aliases` entry for `ln_p_amortized` has `tag_name = 'AMORTIZED'`, but the Re851a template uses `FULLY AMORTIZED` next to the checkbox. So the label never matches correctly.
 
-**1. InsuranceModal.tsx** — 3 edits:
-- **Remove** line 164: `renderInlineField('insuredName', "Insured's Name")`
-- **Remove** lines 168-184: The "Coverage" currency field block
-- **Convert** line 165: Change `renderInlineField('companyName', 'Ins. Company')` to a Select dropdown that fetches contacts (all contact types) from the database, similar to the "Other" dropdown pattern in LoanTermsPenaltiesForm
+2. **Substring collision**: The regex in `replaceStaticCheckboxLabel` matches `AMORTIZED` as a substring inside `AMORTIZED PARTIALLY`, causing the wrong checkbox to be checked. The regex needs a word boundary or end-of-match guard after the label.
 
-**2. InsuranceTableView.tsx** — Update grid columns:
-- **Remove** "Coverage" column (header + cell)
-- **Add** "Annual Premium" column (currency formatted)
-- **Add** "Frequency" column
-- Update EXPORT_COLUMNS and SEARCH_FIELDS accordingly
-- Update colSpan for empty state row
+### Fix
 
-**3. PropertyInsuranceForm.tsx** — 3 edits:
-- **Remove** the "Insured's Name" field block (lines 125-130)
-- **Remove** the "Coverage" field block (lines 170-189)
-- **Convert** "Company Name" (lines 132-137) to a Select dropdown fetching contacts
-- **Add** "Annual Premium" currency field (new key `annualPremium`)
-- **Add** "Frequency" dropdown (Monthly, Quarterly, Semiannually, Annually)
-- **Add** "Impounds" section title above "Active" checkbox
-- **Add** "Insurance Tracking" section with 3 checkboxes: Attempted Agent, Attempted Borrower, Notified Lender
+**1. Database migration** — Update the `merge_tag_aliases` entry:
+```sql
+UPDATE merge_tag_aliases
+SET tag_name = 'FULLY AMORTIZED'
+WHERE field_key = 'ln_p_amortized' AND tag_type = 'label';
+```
+This aligns the label with what the Re851a template actually contains.
 
-**4. fieldKeyMap.ts** — Add new keys to `PROPERTY_INSURANCE_KEYS`:
-- `annualPremium: 'property1.insurance_annual_premium'`
-- `frequency: 'property1.insurance_frequency'`
-- `impoundsActive: 'property1.insurance_impounds_active'`
-- `attemptAgent: 'property1.insurance_attempt_agent'`
-- `attemptBorrower: 'property1.insurance_attempt_borrower'`
-- `lenderNotified: 'property1.insurance_lender_notified'`
+**2. `supabase/functions/_shared/tag-parser.ts`** — Add word boundary after label in regex (line 567):
+```
+Change:  `([☐☑☒])((?:\\s|<[^>]+>)*)(${labelEscaped})`
+To:      `([☐☑☒])((?:\\s|<[^>]+>)*)(${labelEscaped})(?![A-Za-z])`
+```
+The negative lookahead `(?![A-Za-z])` prevents `AMORTIZED` from matching inside `AMORTIZED PARTIALLY` (the `P` that follows would block the match). This is a minimal, safe change — it only rejects matches where the label is immediately followed by another letter.
 
-**5. legacyKeyMap.ts** — Add corresponding legacy mappings for the new keys
-
-### Contacts Dropdown Approach
-The Insurance Company Select will use a `useEffect` to fetch from `supabase.from('contacts').select('id, full_name, company, contact_type')` and display as "Company (Name) — Type". The selected value (contact name/company) is stored as a string in the existing `companyName` field — no schema change needed.
-
-### No Database/Schema Changes
-All new fields persist via the existing JSONB `deal_section_values` store using the `insuranceN.xxx` prefix pattern already in place. No new tables or columns needed.
+### No Other Changes
+- No UI changes
+- No template formatting changes
+- No changes to the derivation logic (lines 736-747 in generate-document already correct)
+- No schema changes
 
 ### Files Changed
 | File | Change |
 |---|---|
-| `src/components/deal/InsuranceModal.tsx` | Remove Insured's Name + Coverage; Company → contacts dropdown |
-| `src/components/deal/InsuranceTableView.tsx` | Remove Coverage column; add Annual Premium + Frequency columns |
-| `src/components/deal/PropertyInsuranceForm.tsx` | Remove Insured's Name + Coverage; add Annual Premium, Frequency, Impounds, Insurance Tracking |
-| `src/lib/fieldKeyMap.ts` | Add 6 new keys to PROPERTY_INSURANCE_KEYS |
-| `src/lib/legacyKeyMap.ts` | Add 6 legacy mappings |
+| Database migration | UPDATE tag_name from `AMORTIZED` to `FULLY AMORTIZED` |
+| `supabase/functions/_shared/tag-parser.ts` | Add `(?![A-Za-z])` to checkbox label regex (line 567) |
 
