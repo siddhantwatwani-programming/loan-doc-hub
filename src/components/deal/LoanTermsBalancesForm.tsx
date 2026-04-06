@@ -187,7 +187,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
             {/* Sold Rate with checkbox */}
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 min-w-[140px] max-w-[140px] shrink-0">
+              <div className="flex items-center gap-2 min-w-[180px] max-w-[180px] shrink-0">
                 <Checkbox
                   id={`${FIELD_KEYS.soldRateEnabled}-cb`}
                   checked={isChecked(FIELD_KEYS.soldRateEnabled)}
@@ -320,7 +320,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
             {/* Prepaid Payments */}
             <div className="flex items-center gap-3">
-              <div className="min-w-[140px] max-w-[140px] shrink-0">
+              <div className="min-w-[180px] max-w-[180px] shrink-0">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id={`${FIELD_KEYS.prepaidPaymentsEnabled}-cb`}
@@ -349,7 +349,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
             {/* Impounded Payments */}
             <div className="flex items-center gap-3">
-              <div className="min-w-[140px] max-w-[140px] shrink-0">
+              <div className="min-w-[180px] max-w-[180px] shrink-0">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id={`${FIELD_KEYS.impoundedPaymentsEnabled}-cb`}
@@ -378,7 +378,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
             {/* Funding Holdback */}
             <div className="flex items-center gap-3">
-              <div className="min-w-[140px] max-w-[140px] shrink-0">
+              <div className="min-w-[180px] max-w-[180px] shrink-0">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id={`${FIELD_KEYS.fundingHoldbackEnabled}-cb`}
@@ -418,7 +418,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               {/* Accept Short Payments */}
               <div>
                 <div className="flex items-center gap-3">
-                  <div className="min-w-[140px] max-w-[140px] shrink-0">
+                  <div className="min-w-[180px] max-w-[180px] shrink-0">
                     <div className="flex items-center gap-2">
                       <Checkbox
                         id={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`}
@@ -479,7 +479,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 />
                 <Label
                   htmlFor={`${FIELD_KEYS.acceptPostMaturity}-cb`}
-                  className="text-sm min-w-[140px] max-w-[140px] shrink-0"
+                  className="text-sm min-w-[180px] max-w-[180px] shrink-0"
                 >
                   Accept Post-maturity
                 </Label>
@@ -496,7 +496,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 />
                 <Label
                   htmlFor={`${FIELD_KEYS.autoPostEnabled}-cb`}
-                  className="text-sm min-w-[140px] max-w-[140px] shrink-0"
+                  className="text-sm min-w-[180px] max-w-[180px] shrink-0"
                 >
                   Auto-post Enabled
                 </Label>
@@ -504,7 +504,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
               {/* Override Funds Held - last in section */}
               <div className="flex items-center gap-3">
-                <div className="min-w-[140px] max-w-[140px] shrink-0">
+                <div className="min-w-[180px] max-w-[180px] shrink-0">
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id={`${FIELD_KEYS.overrideFundsHeld}-cb`}
@@ -581,7 +581,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {isChecked(FIELD_KEYS.salesTaxEnabled) ? (
               <DirtyFieldWrapper fieldKey={FIELD_KEYS.servicingFees}>
                 <div className="flex items-center gap-3">
-                  <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0">
+                  <Label className="text-sm text-muted-foreground min-w-[180px] max-w-[180px] text-left shrink-0">
                     Servicing Fees
                   </Label>
                   <div className="relative flex-1">
@@ -602,7 +602,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
             {/* Sales Tax checkbox */}
             <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0">
+              <Label className="text-sm text-muted-foreground min-w-[180px] max-w-[180px] text-left shrink-0">
                 Sales Tax
               </Label>
               <Checkbox
@@ -620,12 +620,12 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {renderCurrencyField(
               FIELD_KEYS.otherScheduledPayments,
               "Other Sched. Pmts",
-              "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0",
+              "text-sm text-primary font-medium min-w-[180px] max-w-[180px] text-left shrink-0",
             )}
             {renderCurrencyField(
               FIELD_KEYS.toEscrowImpounds,
               "To Escrow Impounds",
-              "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0",
+              "text-sm text-primary font-medium min-w-[180px] max-w-[180px] text-left shrink-0",
             )}
             {renderCurrencyField(FIELD_KEYS.defaultInterest, "Default Interest")}
             {renderCurrencyField(FIELD_KEYS.totalPayment, "Total Payment")}
@@ -649,17 +649,17 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {renderCurrencyField(
               FIELD_KEYS.amountToReinstate,
               "Amount to Reinstate",
-              "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0",
+              "text-sm text-primary font-medium min-w-[180px] max-w-[180px] text-left shrink-0",
             )}
             {renderCurrencyField(
               FIELD_KEYS.reserveBalance,
               "Reserve Balance",
-              "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0",
+              "text-sm text-primary font-medium min-w-[180px] max-w-[180px] text-left shrink-0",
             )}
             {renderCurrencyField(
               FIELD_KEYS.escrowBalance,
               "Escrow Balance",
-              "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0",
+              "text-sm text-primary font-medium min-w-[180px] max-w-[180px] text-left shrink-0",
             )}
 
             {/* Section 6: Total Balance Due & Estimated Balloon Payment */}
@@ -668,7 +668,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 {renderCurrencyField(
                   FIELD_KEYS.totalBalanceDue,
                   "Total Balance Due",
-                  "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0",
+                  "text-sm text-primary font-medium min-w-[180px] max-w-[180px] text-left shrink-0",
                 )}
                 <p className="text-xs text-muted-foreground mt-0.5" style={{ paddingLeft: "0px" }}>
                   * Does not include Close-out Fees
@@ -678,7 +678,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 {renderCurrencyField(
                   FIELD_KEYS.estimatedBalloonPayment,
                   "Estimated Balloon Payment",
-                  "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0",
+                  "text-sm text-primary font-medium min-w-[180px] max-w-[180px] text-left shrink-0",
                 )}
                 <p className="text-xs text-muted-foreground mt-0.5" style={{ paddingLeft: "0px" }}>
                   * Does not include Close-out Fees
