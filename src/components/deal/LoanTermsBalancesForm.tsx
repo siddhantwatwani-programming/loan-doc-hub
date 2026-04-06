@@ -13,6 +13,9 @@ import type { FieldDefinition } from "@/hooks/useDealFields";
 import type { CalculationResult } from "@/lib/calculationEngine";
 import { DirtyFieldWrapper } from "./DirtyFieldWrapper";
 import { sanitizeInterestInput, normalizeInterestOnBlur } from "@/lib/interestValidation";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useDealNavigationOptional } from "@/contexts/DealNavigationContext";
+import type { LoanTermsSubSection } from "./LoanTermsSubNavigation";
 
 
 interface LoanTermsBalancesFormProps {
@@ -53,6 +56,13 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
   showValidation = false,
   disabled = false,
 }) => {
+  const nav = useDealNavigationOptional();
+  const [otherSchedPmtsOpen, setOtherSchedPmtsOpen] = useState(false);
+
+  const navigateToSubSection = (sub: LoanTermsSubSection) => {
+    nav?.setSubSection('loan_terms', sub);
+  };
+
   const getValue = (key: string) => values[key] || "";
   const setValue = (key: string, value: string) => onValueChange(key, value);
   const isChecked = (key: string) => getValue(key) === "true";
@@ -609,16 +619,54 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </Label>
             </div>
 
-            {renderCurrencyField(
-              FIELD_KEYS.otherScheduledPayments,
-              "Other Sched. Pmts",
-              "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0",
-            )}
-            {renderCurrencyField(
-              FIELD_KEYS.toEscrowImpounds,
-              "To Escrow Impounds",
-              "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0",
-            )}
+            {/* Other Scheduled Payments - clickable label opens modal */}
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.otherScheduledPayments}>
+              <div className="flex items-center gap-3">
+                <Label
+                  className="text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0 cursor-pointer hover:underline"
+                  onClick={() => setOtherSchedPmtsOpen(true)}
+                >
+                  Other Sched. Pmts
+                </Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                  <Input
+                    id={FIELD_KEYS.otherScheduledPayments}
+                    value={focusedCurrencyField === FIELD_KEYS.otherScheduledPayments ? getValue(FIELD_KEYS.otherScheduledPayments) : formatCurrencyDisplay(getValue(FIELD_KEYS.otherScheduledPayments))}
+                    onChange={(e) => handleCurrencyChange(FIELD_KEYS.otherScheduledPayments, e.target.value)}
+                    onFocus={() => setFocusedCurrencyField(FIELD_KEYS.otherScheduledPayments)}
+                    onBlur={() => handleCurrencyBlur(FIELD_KEYS.otherScheduledPayments)}
+                    disabled={disabled}
+                    className="h-8 text-sm pl-7"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            </DirtyFieldWrapper>
+            {/* To Escrow Impounds - clickable label navigates to Escrow Impound section */}
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.toEscrowImpounds}>
+              <div className="flex items-center gap-3">
+                <Label
+                  className="text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0 cursor-pointer hover:underline"
+                  onClick={() => navigateToSubSection('escrow_impound')}
+                >
+                  To Escrow Impounds
+                </Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                  <Input
+                    id={FIELD_KEYS.toEscrowImpounds}
+                    value={focusedCurrencyField === FIELD_KEYS.toEscrowImpounds ? getValue(FIELD_KEYS.toEscrowImpounds) : formatCurrencyDisplay(getValue(FIELD_KEYS.toEscrowImpounds))}
+                    onChange={(e) => handleCurrencyChange(FIELD_KEYS.toEscrowImpounds, e.target.value)}
+                    onFocus={() => setFocusedCurrencyField(FIELD_KEYS.toEscrowImpounds)}
+                    onBlur={() => handleCurrencyBlur(FIELD_KEYS.toEscrowImpounds)}
+                    disabled={disabled}
+                    className="h-8 text-sm pl-7"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            </DirtyFieldWrapper>
             {renderCurrencyField(FIELD_KEYS.defaultInterest, "Default Interest")}
             {renderCurrencyField(FIELD_KEYS.totalPayment, "Total Payment")}
           </div>
@@ -643,16 +691,59 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               "Amount to Reinstate",
               "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0",
             )}
-            {renderCurrencyField(
-              FIELD_KEYS.reserveBalance,
-              "Reserve Balance",
-              "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0",
-            )}
+            {/* Reserve Balance - clickable label navigates to Trust Ledger */}
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.reserveBalance}>
+              <div className="flex items-center gap-3">
+                <Label
+                  className="text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0 cursor-pointer hover:underline"
+                  onClick={() => navigateToSubSection('trust_ledger')}
+                >
+                  Reserve Balance
+                </Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                  <Input
+                    id={FIELD_KEYS.reserveBalance}
+                    value={focusedCurrencyField === FIELD_KEYS.reserveBalance ? getValue(FIELD_KEYS.reserveBalance) : formatCurrencyDisplay(getValue(FIELD_KEYS.reserveBalance))}
+                    onChange={(e) => handleCurrencyChange(FIELD_KEYS.reserveBalance, e.target.value)}
+                    onFocus={() => setFocusedCurrencyField(FIELD_KEYS.reserveBalance)}
+                    onBlur={() => handleCurrencyBlur(FIELD_KEYS.reserveBalance)}
+                    disabled={disabled}
+                    className="h-8 text-sm pl-7"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            </DirtyFieldWrapper>
             {renderCurrencyField(
               FIELD_KEYS.escrowBalance,
               "Escrow Balance",
               "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0",
             )}
+            {/* Suspense Funds - clickable label navigates to Trust Ledger */}
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.suspenseFunds}>
+              <div className="flex items-center gap-3">
+                <Label
+                  className="text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0 cursor-pointer hover:underline"
+                  onClick={() => navigateToSubSection('trust_ledger')}
+                >
+                  Suspense Funds
+                </Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                  <Input
+                    id={FIELD_KEYS.suspenseFunds}
+                    value={focusedCurrencyField === FIELD_KEYS.suspenseFunds ? getValue(FIELD_KEYS.suspenseFunds) : formatCurrencyDisplay(getValue(FIELD_KEYS.suspenseFunds))}
+                    onChange={(e) => handleCurrencyChange(FIELD_KEYS.suspenseFunds, e.target.value)}
+                    onFocus={() => setFocusedCurrencyField(FIELD_KEYS.suspenseFunds)}
+                    onBlur={() => handleCurrencyBlur(FIELD_KEYS.suspenseFunds)}
+                    disabled={disabled}
+                    className="h-8 text-sm pl-7"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            </DirtyFieldWrapper>
 
             {/* Section 6: Total Balance Due & Estimated Balloon Payment */}
             <div className="pt-2 space-y-2">
@@ -680,6 +771,23 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Other Scheduled Payments Modal */}
+      <Dialog open={otherSchedPmtsOpen} onOpenChange={setOtherSchedPmtsOpen}>
+        <DialogContent className="sm:max-w-[500px] z-[9999]" style={{ zIndex: 9999 }}>
+          <DialogHeader>
+            <DialogTitle>Other Scheduled Payments</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {renderCurrencyField(FIELD_KEYS.otherScheduledPayments, "Amount")}
+          </div>
+          <DialogFooter className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setOtherSchedPmtsOpen(false)} className="flex-shrink-0">
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
