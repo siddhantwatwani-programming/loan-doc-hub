@@ -47,11 +47,12 @@ function allDependenciesPresent(
  * - "{next_due_date} + {grace_days} + 4 days"
  */
 function parseFormula(formula: string): {
-  type: 'date_add_months' | 'date_add_days' | 'arithmetic' | 'unknown';
+  type: 'date_add_months' | 'date_add_days' | 'arithmetic' | 'arithmetic_chained' | 'unknown';
   baseField: string;
   addendField: string | null;
   staticValue: number | null;
   operator?: '*' | '+' | '-' | '/';
+  chainOperator?: '*' | '+' | '-' | '/';
 } | null {
   const cleanFormula = formula.trim();
   
