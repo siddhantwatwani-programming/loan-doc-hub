@@ -490,6 +490,7 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'loan_terms.prepayment_penalty': 'ln_pn_prepaymePenalt',
   'loan_terms.prepayment_penalty_expires': 'ln_pn_prepaymePenaltExpire',
   'loan_terms.prepayment_penalty_and_privilege': 'ln_pn_prepaymePenaltAndPrivil',
+  'loan_terms.loan_to_value_ratio': 'ln_p_loanToValueRatio',
 
   // ──────────────────────────────────────────────────
   // PENALTIES – map UI keys to existing DB keys

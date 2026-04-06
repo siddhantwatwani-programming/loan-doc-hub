@@ -440,6 +440,7 @@ export const LOAN_TERMS_DETAILS_KEYS = {
   adjPaymentOptionsEndPercent: 'loan_terms.adj_payment_options_end_percent',
   adjFinalPaymentAmount: 'loan_terms.adj_final_payment_amount',
   adjFinalPaymentMonths: 'loan_terms.adj_final_payment_months',
+  loanToValueRatio: 'loan_terms.loan_to_value_ratio',
 } as const;
 
 export const LOAN_TERMS_FUNDING_KEYS = {

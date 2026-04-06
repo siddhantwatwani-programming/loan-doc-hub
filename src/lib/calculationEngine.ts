@@ -47,17 +47,32 @@ function allDependenciesPresent(
  * - "{next_due_date} + {grace_days} + 4 days"
  */
 function parseFormula(formula: string): {
-  type: 'date_add_months' | 'date_add_days' | 'arithmetic' | 'unknown';
+  type: 'date_add_months' | 'date_add_days' | 'arithmetic' | 'arithmetic_chained' | 'unknown';
   baseField: string;
   addendField: string | null;
   staticValue: number | null;
   operator?: '*' | '+' | '-' | '/';
+  chainOperator?: '*' | '+' | '-' | '/';
 } | null {
   const cleanFormula = formula.trim();
   
+  // Chained arithmetic: ({field1} / {field2}) * N  e.g. LTV ratio
+  const chainedArithPattern = /^\(\{([^}]+)\}\s*([+\-*/])\s*\{([^}]+)\}\)\s*([+\-*/])\s*(\d+(?:\.\d+)?)$/;
+  let match: RegExpMatchArray | null = cleanFormula.match(chainedArithPattern);
+  if (match) {
+    return {
+      type: 'arithmetic_chained',
+      baseField: match[1],
+      addendField: match[3],
+      staticValue: parseFloat(match[5]),
+      operator: match[2] as '*' | '+' | '-' | '/',
+      chainOperator: match[4] as '*' | '+' | '-' | '/',
+    };
+  }
+
   // Arithmetic: {field} * N  or  {field} + N  etc.
   const fieldArithStaticPattern = /^\{([^}]+)\}\s*([+\-*/])\s*(\d+(?:\.\d+)?)$/;
-  let match = cleanFormula.match(fieldArithStaticPattern);
+  match = cleanFormula.match(fieldArithStaticPattern);
   if (match) {
     return {
       type: 'arithmetic',
@@ -174,6 +189,41 @@ function computeField(
           if (operand === 0) return { field_key: field.field_key, value: null, computed: false, error: 'Division by zero' };
           result = baseNum / operand; break;
         default: result = 0;
+      }
+      return { field_key: field.field_key, value: result.toFixed(2), computed: true };
+    }
+
+    if (parsed.type === 'arithmetic_chained') {
+      const baseNum = parseFloat(baseValue.replace(/[,$]/g, ''));
+      if (isNaN(baseNum)) {
+        return { field_key: field.field_key, value: null, computed: false, error: `Invalid numeric value for ${parsed.baseField}` };
+      }
+      const addVal = parseFloat(values[parsed.addendField!].replace(/[,$]/g, ''));
+      if (isNaN(addVal)) {
+        return { field_key: field.field_key, value: null, computed: false, error: `Invalid numeric value for ${parsed.addendField}` };
+      }
+      // First operation: baseNum op addVal
+      let intermediate: number;
+      switch (parsed.operator) {
+        case '/':
+          if (addVal === 0) return { field_key: field.field_key, value: null, computed: false, error: 'Division by zero' };
+          intermediate = baseNum / addVal; break;
+        case '*': intermediate = baseNum * addVal; break;
+        case '+': intermediate = baseNum + addVal; break;
+        case '-': intermediate = baseNum - addVal; break;
+        default: intermediate = 0;
+      }
+      // Chain operation: intermediate chainOp staticValue
+      const chainVal = parsed.staticValue || 0;
+      let result: number;
+      switch (parsed.chainOperator) {
+        case '*': result = intermediate * chainVal; break;
+        case '+': result = intermediate + chainVal; break;
+        case '-': result = intermediate - chainVal; break;
+        case '/':
+          if (chainVal === 0) return { field_key: field.field_key, value: null, computed: false, error: 'Division by zero' };
+          result = intermediate / chainVal; break;
+        default: result = intermediate;
       }
       return { field_key: field.field_key, value: result.toFixed(2), computed: true };
     }
