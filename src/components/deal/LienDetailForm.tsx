@@ -73,6 +73,11 @@ const DIRTY_KEY_MAP: Record<string, string> = {
   thisLoan: 'lien1.this_loan',
   estimate: 'lien1.estimate',
   status: 'lien1.status',
+  delinquencies60day: 'lien1.delinquencies_60day',
+  delinquenciesHowMany: 'lien1.delinquencies_how_many',
+  currentlyDelinquent: 'lien1.currently_delinquent',
+  paidByLoan: 'lien1.paid_by_loan',
+  sourceOfPayment: 'lien1.source_of_payment',
 };
 
 // Determine the active loan type radio value
