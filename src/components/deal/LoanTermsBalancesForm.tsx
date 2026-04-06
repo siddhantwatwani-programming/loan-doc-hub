@@ -60,6 +60,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
   const toggleCheck = (key: string) => setValue(key, isChecked(key) ? "" : "true");
 
   const [focusedCurrencyField, setFocusedCurrencyField] = useState<string | null>(null);
+  const [soldRateSplitOpen, setSoldRateSplitOpen] = useState(false);
 
   const formatCurrencyDisplay = useCallback((val: string) => {
     if (!val) return "";
