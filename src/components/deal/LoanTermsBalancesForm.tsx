@@ -56,6 +56,13 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
   showValidation = false,
   disabled = false,
 }) => {
+  const nav = useDealNavigationOptional();
+  const [otherSchedPmtsOpen, setOtherSchedPmtsOpen] = useState(false);
+
+  const navigateToSubSection = (sub: LoanTermsSubSection) => {
+    nav?.setSubSection('loan_terms', sub);
+  };
+
   const getValue = (key: string) => values[key] || "";
   const setValue = (key: string, value: string) => onValueChange(key, value);
   const isChecked = (key: string) => getValue(key) === "true";
