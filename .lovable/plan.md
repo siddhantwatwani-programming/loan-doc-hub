@@ -1,76 +1,54 @@
 
-## Plan: Preserve Re851a Formatting While Fixing Checkbox State
 
-### Root Cause
-The current engine already derives the correct boolean keys in `supabase/functions/generate-document/index.ts`:
+## Plan: Add "Borrower Notified" and "Lender Notified" Date Fields to Property Tax
 
-- `ln_p_amortizedPartially`
-- `ln_p_amortized`
-- `ln_p_paymentMonthly`
-- `ln_p_paymentWeekly`
+### Summary
+Add a "Borrower Notified" checkbox (with conditional date field) and a "Lender Notified" label with date field below the existing "Delinquent" section in the Property Tax modal, detail form, and table grid.
 
-But the output is still being altered because `supabase/functions/_shared/tag-parser.ts` runs **label-based checkbox glyph replacement** afterward:
-
-- `FULLY AMORTIZED`
-- `AMORTIZED PARTIALLY`
-- `MONTHLY`
-- `WEEKLY`
-
-That logic replaces visible checkbox characters in text (`☐/☑/...`), which can shift labels and break the original Word layout.
-
-### Minimal Fix
-Use the existing derived boolean keys, but stop Re851a from using label-based glyph replacement for these checkbox fields.
+### What Currently Exists
+- The modal and form already have a "Lender Notified" date field in the Tax Tracking section (right column, between Last Verified and Current)
+- The request asks for a NEW "Lender Notified" date below Delinquent — this appears to be a separate field from the existing one
+- "Borrower Notified" is entirely new
 
 ### Changes
-**1. Keep current boolean derivation logic**
-- No change to `generate-document/index.ts`
-- It already maps:
-  - `ln_p_amortiza` → `ln_p_amortizedPartially` / `ln_p_amortized`
-  - `ln_p_paymentFreque` → `ln_p_paymentMonthly` / `ln_p_paymentWeekly`
 
-**2. Disable label-based checkbox aliasing for these Re851a fields**
-- Add a database migration that deactivates the 4 label alias rows in `merge_tag_aliases` for:
-  - `ln_p_amortizedPartially`
-  - `ln_p_amortized`
-  - `ln_p_paymentMonthly`
-  - `ln_p_paymentWeekly`
-- This prevents the engine from replacing visible checkbox symbols beside static labels.
+**1. PropertyTaxTableView.tsx** — Update data interface + table grid
+- Add `borrowerNotified: boolean`, `borrowerNotifiedDate: string`, `lenderNotifiedDate: string` to `PropertyTaxData` interface
+- Add 3 new columns to table header and body: Borrower Notified, Borrower Notified Date, Lender Notified Date (below Delinquent)
+- Add to EXPORT_COLUMNS
 
-**3. Preserve native template checkbox handling only**
-- Let the template’s existing checkbox/merge-tag mechanism handle the checked state.
-- The parser already has a separate `processSdtCheckboxes(...)` path for native Word checkbox controls, which is the format-preserving path.
-- No change to generic checkbox rendering or non-Re851a templates.
+**2. PropertyTaxModal.tsx** — Add fields below Delinquent section
+- Update `getDefaultTax()` with `borrowerNotified: false`, `borrowerNotifiedDate: ''`, `lenderNotifiedDate: ''`
+- After the Delinquent Amount conditional block, add:
+  - Checkbox "Borrower Notified" — when checked, show a date picker (mm/dd/yyyy)
+  - Label "Lender Notified" with date picker input (mm/dd/yyyy)
 
-### Why this is the safest fix
-- No UI changes
+**3. PropertyTaxForm.tsx** — Add same fields below Delinquent in detail form
+- After the Delinquent Amount conditional block, add:
+  - DirtyFieldWrapper + Checkbox "Borrower Notified" — when checked, show date picker
+  - DirtyFieldWrapper + "Lender Notified" label with date picker
+
+**4. fieldKeyMap.ts** — Add 3 new keys to PROPERTY_TAX_KEYS
+- `borrowerNotified: 'propertytax1.borrower_notified'`
+- `borrowerNotifiedDate: 'propertytax1.borrower_notified_date'`
+- `lenderNotifiedDate: 'propertytax1.lender_notified_date'`
+
+**5. Database migration** — Add 3 field_dictionary entries
+- `propertytax.borrower_notified` (boolean)
+- `propertytax.borrower_notified_date` (date)
+- `propertytax.lender_notified_date` (date)
+
+### No Other Changes
 - No schema changes
-- No document layout rewriting
-- No global parser refactor
-- No formatting changes to the original template structure
-- Only removes the specific fallback behavior that is causing Re851a formatting damage
+- No new tables
+- Persists via existing JSONB save mechanism
 
-### Files / Data Updated
-| Target | Change |
+### Files Changed
+| File | Change |
 |---|---|
-| Database migration | Set `is_active = false` for the 4 Re851a checkbox label aliases in `merge_tag_aliases` |
-| `supabase/functions/generate-document/index.ts` | No change |
-| `supabase/functions/_shared/tag-parser.ts` | No change unless a tiny safeguard is needed after validation |
+| `src/components/deal/PropertyTaxTableView.tsx` | Add 3 fields to interface, grid columns, export |
+| `src/components/deal/PropertyTaxModal.tsx` | Add Borrower Notified checkbox + date, Lender Notified date below Delinquent |
+| `src/components/deal/PropertyTaxForm.tsx` | Add same fields in detail form |
+| `src/lib/fieldKeyMap.ts` | Add 3 keys to PROPERTY_TAX_KEYS |
+| Database migration | INSERT 3 field_dictionary rows |
 
-### Validation
-After implementation, verify that:
-1. `Amortized Partially` checks only the partially amortized box
-2. `Amortized` checks only the fully amortized box
-3. `Monthly` checks only monthly
-4. `Weekly` checks only weekly
-5. Re851a formatting in Transaction Information remains identical to the original template
-6. No extra checkbox symbols appear
-7. Balloon Payment layout remains unchanged
-
-### Technical Notes
-- Confirmed in code: `replaceStaticCheckboxLabel(...)` in `tag-parser.ts` is what swaps visible checkbox glyphs.
-- Confirmed in database: active label aliases currently exist for:
-  - `FULLY AMORTIZED`
-  - `AMORTIZED PARTIALLY`
-  - `MONTHLY`
-  - `WEEKLY`
-- Since those aliases are active, they override presentation in-place and are the most likely cause of the layout corruption.
