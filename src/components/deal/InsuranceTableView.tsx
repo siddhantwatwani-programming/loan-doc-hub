@@ -224,7 +224,8 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
                         return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
                       } catch { return insurance.expiration; }
                     })()}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(insurance.coverage) || '-'}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(insurance.annualPremium) || '-'}</TableCell>
+                    <TableCell>{insurance.frequency || '-'}</TableCell>
                     <TableCell>
                       <Badge variant={insurance.active ? 'default' : 'secondary'}>
                         {insurance.active ? 'Active' : 'Inactive'}
