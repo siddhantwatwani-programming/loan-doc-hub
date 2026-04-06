@@ -774,8 +774,9 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {renderCurrencyField(FIELD_KEYS.accruedDefaultInterest, "Accrued Def. Interest")}
             {renderCurrencyField(FIELD_KEYS.chargesOwed, "Charges Owed")}
             {renderCurrencyField(FIELD_KEYS.chargesInterest, "Charges Interest")}
-            {renderCurrencyField(
-              FIELD_KEYS.amountToReinstate,
+            {renderCurrencyField(FIELD_KEYS.unpaidOther, "Unpaid Other")}
+            {renderReadOnlyCurrencyField(
+              calculatedAmountToReinstate,
               "Amount to Reinstate",
               "text-sm text-primary font-medium min-w-[140px] max-w-[140px] text-left shrink-0",
             )}
