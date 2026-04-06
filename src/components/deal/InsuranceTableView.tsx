@@ -65,7 +65,7 @@ interface InsuranceTableViewProps {
   onPageChange?: (page: number) => void;
 }
 
-const SEARCH_FIELDS = ['description', 'companyName', 'policyNumber', 'agentName', 'insuredName'];
+const SEARCH_FIELDS = ['description', 'companyName', 'policyNumber', 'agentName', 'annualPremium', 'frequency'];
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
@@ -83,7 +83,8 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'companyName', label: 'Company' },
   { id: 'policyNumber', label: 'Policy #' },
   { id: 'expiration', label: 'Expiration' },
-  { id: 'coverage', label: 'Coverage' },
+  { id: 'annualPremium', label: 'Annual Premium' },
+  { id: 'frequency', label: 'Frequency' },
   { id: 'active', label: 'Status' },
   { id: 'agentName', label: 'Agent' },
 ];
