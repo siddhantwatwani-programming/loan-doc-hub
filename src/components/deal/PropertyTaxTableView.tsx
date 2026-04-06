@@ -189,7 +189,7 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
                     {taxes.length === 0 ? 'No property tax records added. Click "Add Property Tax" to create one.' : 'No property tax records match your search or filters.'}
                   </TableCell>
                 </TableRow>
