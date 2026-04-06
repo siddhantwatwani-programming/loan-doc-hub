@@ -94,9 +94,6 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
   const handleConfirmSave = () => {
     setShowConfirm(false);
     const cleaned = { ...formData };
-    if (cleaned.coverage) {
-      cleaned.coverage = unformatCurrencyDisplay(String(cleaned.coverage));
-    }
     if (cleaned.annualPremium) {
       cleaned.annualPremium = unformatCurrencyDisplay(String(cleaned.annualPremium));
     }

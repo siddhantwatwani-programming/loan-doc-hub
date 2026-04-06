@@ -19,11 +19,9 @@ export interface InsuranceData {
   id: string;
   property: string;
   description: string;
-  insuredName: string;
   companyName: string;
   policyNumber: string;
   expiration: string;
-  coverage: string;
   annualPremium: string;
   frequency: string;
   active: boolean;
