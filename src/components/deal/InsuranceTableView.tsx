@@ -10,6 +10,8 @@ import {
 import { GridToolbar, FilterOption } from './GridToolbar';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
+import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
+import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
 
@@ -89,6 +91,49 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'agentName', label: 'Agent' },
 ];
 
+const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'description', label: 'Description', visible: true },
+  { id: 'companyName', label: 'Company', visible: true },
+  { id: 'policyNumber', label: 'Policy #', visible: true },
+  { id: 'expiration', label: 'Expiration', visible: true },
+  { id: 'annualPremium', label: 'Annual Premium', visible: true },
+  { id: 'frequency', label: 'Frequency', visible: true },
+  { id: 'active', label: 'Status', visible: true },
+  { id: 'agentName', label: 'Agent', visible: true },
+];
+
+const formatCurrency = (value: string) => {
+  if (!value) return '';
+  const num = parseFloat(value.replace(/[^0-9.-]/g, ''));
+  if (isNaN(num)) return value;
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(num);
+};
+
+const renderCellValue = (insurance: InsuranceData, columnId: string) => {
+  switch (columnId) {
+    case 'description': return insurance.description || '-';
+    case 'companyName': return insurance.companyName || '-';
+    case 'policyNumber': return insurance.policyNumber || '-';
+    case 'expiration': {
+      if (!insurance.expiration) return '-';
+      try {
+        const d = new Date(insurance.expiration);
+        if (isNaN(d.getTime())) return insurance.expiration;
+        return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+      } catch { return insurance.expiration; }
+    }
+    case 'annualPremium': return formatCurrency(insurance.annualPremium) || '-';
+    case 'frequency': return insurance.frequency || '-';
+    case 'active': return (
+      <Badge variant={insurance.active ? 'default' : 'secondary'}>
+        {insurance.active ? 'Active' : 'Inactive'}
+      </Badge>
+    );
+    case 'agentName': return insurance.agentName || '-';
+    default: return '-';
+  }
+};
+
 export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
   insurances,
   onAddInsurance,
@@ -106,6 +151,8 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
 }) => {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('insurance', DEFAULT_COLUMNS);
+  const visibleColumns = columns.filter((col) => col.visible);
 
   const {
     searchQuery, setSearchQuery, sortState, toggleSort,
@@ -125,13 +172,6 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
     selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
     isAllSelected, isSomeSelected, selectedCount,
   } = useGridSelection(filteredData);
-
-  const formatCurrency = (value: string) => {
-    if (!value) return '';
-    const num = parseFloat(value.replace(/[^0-9.-]/g, ''));
-    if (isNaN(num)) return value;
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(num);
-  };
 
   const handleBulkDelete = () => {
     if (onBulkDelete) {
@@ -155,10 +195,18 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
           )}
           <h3 className="text-lg font-semibold text-foreground">Insurance</h3>
         </div>
-        <Button size="sm" onClick={onAddInsurance} disabled={disabled} className="gap-1">
-          <Plus className="h-4 w-4" />
-          Add Insurance
-        </Button>
+        <div className="flex items-center gap-2">
+          <ColumnConfigPopover
+            columns={columns}
+            onColumnsChange={setColumns}
+            onResetColumns={resetColumns}
+            disabled={disabled}
+          />
+          <Button size="sm" onClick={onAddInsurance} disabled={disabled} className="gap-1">
+            <Plus className="h-4 w-4" />
+            Add Insurance
+          </Button>
+        </div>
       </div>
 
       {/* Grid Toolbar */}
@@ -190,20 +238,23 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
                     disabled={disabled || filteredData.length === 0}
                   />
                 </TableHead>
-                <SortableTableHead columnId="description" label="Description" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
-                <SortableTableHead columnId="companyName" label="Company" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[150px]" />
-                <SortableTableHead columnId="policyNumber" label="Policy #" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
-                <SortableTableHead columnId="expiration" label="Expiration" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
-                <SortableTableHead columnId="annualPremium" label="Annual Premium" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px] text-right" />
-                <SortableTableHead columnId="frequency" label="Frequency" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
-                <SortableTableHead columnId="active" label="Status" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[80px]" />
-                <SortableTableHead columnId="agentName" label="Agent" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[150px]" />
+                {visibleColumns.map((col) => (
+                  <SortableTableHead
+                    key={col.id}
+                    columnId={col.id}
+                    label={col.label}
+                    sortColumnId={sortState.columnId}
+                    sortDirection={sortState.direction}
+                    onSort={toggleSort}
+                    className={col.id === 'annualPremium' ? 'min-w-[120px] text-right' : 'min-w-[100px]'}
+                  />
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
                     {insurances.length === 0 ? 'No insurance records added. Click "Add Insurance" to create one.' : 'No insurance records match your search or filters.'}
                   </TableCell>
                 </TableRow>
@@ -213,25 +264,11 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selectedIds.has(insurance.id)} onCheckedChange={() => toggleOne(insurance.id)} disabled={disabled} />
                     </TableCell>
-                    <TableCell className="font-medium">{insurance.description || '-'}</TableCell>
-                    <TableCell>{insurance.companyName || '-'}</TableCell>
-                    <TableCell>{insurance.policyNumber || '-'}</TableCell>
-                    <TableCell>{(() => {
-                      if (!insurance.expiration) return '-';
-                      try {
-                        const d = new Date(insurance.expiration);
-                        if (isNaN(d.getTime())) return insurance.expiration;
-                        return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
-                      } catch { return insurance.expiration; }
-                    })()}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(insurance.annualPremium) || '-'}</TableCell>
-                    <TableCell>{insurance.frequency || '-'}</TableCell>
-                    <TableCell>
-                      <Badge variant={insurance.active ? 'default' : 'secondary'}>
-                        {insurance.active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{insurance.agentName || '-'}</TableCell>
+                    {visibleColumns.map((col) => (
+                      <TableCell key={col.id} className={col.id === 'description' ? 'font-medium' : col.id === 'annualPremium' ? 'text-right' : ''}>
+                        {renderCellValue(insurance, col.id)}
+                      </TableCell>
+                    ))}
                   </TableRow>
                 ))
               )}

@@ -20,7 +20,16 @@ import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
-import { supabase } from '@/integrations/supabase/client';
+
+const US_INSURANCE_COMPANIES = [
+  'State Farm', 'Allstate', 'GEICO', 'Progressive', 'Liberty Mutual',
+  'Nationwide', 'Farmers', 'USAA', 'Travelers', 'American Family',
+  'Erie Insurance', 'Auto-Owners', 'Hartford', 'Chubb', 'MetLife',
+  'AIG', 'Zurich', 'Cincinnati Financial', 'Hanover', 'Safeco',
+  'Amica Mutual', 'Country Financial', 'Shelter Insurance', 'CSAA',
+  'Mercury Insurance', 'Kemper', 'Westfield', 'Grange Insurance',
+  'Donegal', 'Plymouth Rock',
+];
 
 interface PropertyInsuranceFormProps {
   fields: FieldDefinition[];
@@ -57,26 +66,6 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
 }) => {
   const getFieldValue = (key: string) => values[key] || '';
   const [expirationOpen, setExpirationOpen] = useState(false);
-  const [contactOptions, setContactOptions] = useState<{ value: string; label: string }[]>([]);
-
-  useEffect(() => {
-    const fetchContacts = async () => {
-      const { data } = await supabase
-        .from('contacts')
-        .select('id, full_name, first_name, last_name, company, contact_type')
-        .order('full_name');
-      if (data) {
-        setContactOptions(data.map(c => {
-          const name = c.full_name || [c.first_name, c.last_name].filter(Boolean).join(' ') || 'Unknown';
-          const parts = [name];
-          if (c.company) parts.push(`(${c.company})`);
-          if (c.contact_type) parts.push(`— ${c.contact_type.charAt(0).toUpperCase() + c.contact_type.slice(1)}`);
-          return { value: parts.join(' '), label: parts.join(' ') };
-        }));
-      }
-    };
-    fetchContacts();
-  }, []);
 
   const safeParseDateStr = (val: string): Date | undefined => {
     if (!val) return undefined;
@@ -146,7 +135,7 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
               <Select value={getFieldValue(FIELD_KEYS.companyName) || undefined} onValueChange={(val) => onValueChange(FIELD_KEYS.companyName, val)} disabled={disabled}>
                 <SelectTrigger className="h-8 text-sm mt-1"><SelectValue placeholder="Select company" /></SelectTrigger>
                 <SelectContent className="bg-background border border-border z-50">
-                  {contactOptions.map(opt => (<SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>))}
+                  {US_INSURANCE_COMPANIES.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
