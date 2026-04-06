@@ -93,6 +93,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
   disabled = false,
   propertyOptions = [],
   loanValues = {},
+  onPropertyValueChange,
 }) => {
   const isThisLoan = lien.thisLoan === 'true';
   const isAnticipated = lien.anticipated === 'true';
