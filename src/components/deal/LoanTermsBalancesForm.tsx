@@ -213,59 +213,81 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
             </div>
 
-            {/* Sold Rate sub-fields - visible only when Sold Rate is checked */}
+            {/* Sold Rate Split - opens in modal */}
             {isChecked(FIELD_KEYS.soldRateEnabled) && (
-              <div className="space-y-2 pl-5">
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateCompany}>
-                  <div className="flex items-center gap-3">
-                    <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">
-                      Company
-                    </Label>
-                    <div className="relative flex-1">
-                      <Input
-                        value={getValue(FIELD_KEYS.soldRateCompany)}
-                        onChange={(e) => setValue(FIELD_KEYS.soldRateCompany, e.target.value)}
-                        disabled={disabled}
-                        className="h-8 text-sm pr-7"
-                        placeholder="%"
-                      />
-                    </div>
-                  </div>
-                </DirtyFieldWrapper>
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient1}>
-                  <div className="flex items-center gap-3">
-                    <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">
-                      Other - Client List
-                    </Label>
-                    <div className="relative flex-1">
-                      <Input
-                        value={getValue(FIELD_KEYS.soldRateOtherClient1)}
-                        onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient1, e.target.value)}
-                        disabled={disabled}
-                        className="h-8 text-sm pr-7"
-                        placeholder="%"
-                      />
-                    </div>
-                  </div>
-                </DirtyFieldWrapper>
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient2}>
-                  <div className="flex items-center gap-3">
-                    <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">
-                      Other - Client List
-                    </Label>
-                    <div className="relative flex-1">
-                      <Input
-                        value={getValue(FIELD_KEYS.soldRateOtherClient2)}
-                        onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient2, e.target.value)}
-                        disabled={disabled}
-                        className="h-8 text-sm pr-7"
-                        placeholder="%"
-                      />
-                    </div>
-                  </div>
-                </DirtyFieldWrapper>
+              <div className="pl-5">
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-6 px-0 text-xs text-primary"
+                  onClick={() => setSoldRateSplitOpen(true)}
+                >
+                  View Sold Rate Split…
+                </Button>
               </div>
             )}
+
+            {/* Sold Rate Split Modal */}
+            <Dialog open={soldRateSplitOpen} onOpenChange={setSoldRateSplitOpen}>
+              <DialogContent className="sm:max-w-md z-[9999]">
+                <DialogHeader>
+                  <DialogTitle>Sold Rate Split</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                  <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateCompany}>
+                    <div className="flex items-center gap-3">
+                      <Label className="text-sm text-muted-foreground min-w-[130px] max-w-[130px] text-left shrink-0 whitespace-nowrap">
+                        Company
+                      </Label>
+                      <div className="relative flex-1">
+                        <Input
+                          value={getValue(FIELD_KEYS.soldRateCompany)}
+                          onChange={(e) => setValue(FIELD_KEYS.soldRateCompany, e.target.value)}
+                          disabled={disabled}
+                          className="h-8 text-sm"
+                          placeholder="%"
+                        />
+                      </div>
+                    </div>
+                  </DirtyFieldWrapper>
+                  <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient1}>
+                    <div className="flex items-center gap-3">
+                      <Label className="text-sm text-muted-foreground min-w-[130px] max-w-[130px] text-left shrink-0 whitespace-nowrap">
+                        Other - Client List
+                      </Label>
+                      <div className="relative flex-1">
+                        <Input
+                          value={getValue(FIELD_KEYS.soldRateOtherClient1)}
+                          onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient1, e.target.value)}
+                          disabled={disabled}
+                          className="h-8 text-sm"
+                          placeholder="%"
+                        />
+                      </div>
+                    </div>
+                  </DirtyFieldWrapper>
+                  <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient2}>
+                    <div className="flex items-center gap-3">
+                      <Label className="text-sm text-muted-foreground min-w-[130px] max-w-[130px] text-left shrink-0 whitespace-nowrap">
+                        Other - Client List
+                      </Label>
+                      <div className="relative flex-1">
+                        <Input
+                          value={getValue(FIELD_KEYS.soldRateOtherClient2)}
+                          onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient2, e.target.value)}
+                          disabled={disabled}
+                          className="h-8 text-sm"
+                          placeholder="%"
+                        />
+                      </div>
+                    </div>
+                  </DirtyFieldWrapper>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setSoldRateSplitOpen(false)}>Close</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {/* Interest Split */}
             <div className="flex items-center gap-2 py-1">
