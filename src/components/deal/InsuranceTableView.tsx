@@ -65,7 +65,7 @@ interface InsuranceTableViewProps {
   onPageChange?: (page: number) => void;
 }
 
-const SEARCH_FIELDS = ['description', 'companyName', 'policyNumber', 'agentName', 'insuredName'];
+const SEARCH_FIELDS = ['description', 'companyName', 'policyNumber', 'agentName', 'annualPremium', 'frequency'];
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
@@ -83,7 +83,8 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'companyName', label: 'Company' },
   { id: 'policyNumber', label: 'Policy #' },
   { id: 'expiration', label: 'Expiration' },
-  { id: 'coverage', label: 'Coverage' },
+  { id: 'annualPremium', label: 'Annual Premium' },
+  { id: 'frequency', label: 'Frequency' },
   { id: 'active', label: 'Status' },
   { id: 'agentName', label: 'Agent' },
 ];
@@ -193,7 +194,8 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
                 <SortableTableHead columnId="companyName" label="Company" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[150px]" />
                 <SortableTableHead columnId="policyNumber" label="Policy #" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
                 <SortableTableHead columnId="expiration" label="Expiration" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
-                <SortableTableHead columnId="coverage" label="Coverage" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px] text-right" />
+                <SortableTableHead columnId="annualPremium" label="Annual Premium" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px] text-right" />
+                <SortableTableHead columnId="frequency" label="Frequency" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
                 <SortableTableHead columnId="active" label="Status" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[80px]" />
                 <SortableTableHead columnId="agentName" label="Agent" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[150px]" />
               </TableRow>
@@ -201,7 +203,7 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                     {insurances.length === 0 ? 'No insurance records added. Click "Add Insurance" to create one.' : 'No insurance records match your search or filters.'}
                   </TableCell>
                 </TableRow>
@@ -222,7 +224,8 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
                         return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
                       } catch { return insurance.expiration; }
                     })()}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(insurance.coverage) || '-'}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(insurance.annualPremium) || '-'}</TableCell>
+                    <TableCell>{insurance.frequency || '-'}</TableCell>
                     <TableCell>
                       <Badge variant={insurance.active ? 'default' : 'secondary'}>
                         {insurance.active ? 'Active' : 'Inactive'}

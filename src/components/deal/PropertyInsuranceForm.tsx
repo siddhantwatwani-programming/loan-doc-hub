@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +20,7 @@ import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PropertyInsuranceFormProps {
   fields: FieldDefinition[];
@@ -41,9 +42,10 @@ const INSURANCE_DESCRIPTION_OPTIONS = [
   'Wind'
 ];
 
+const FREQUENCY_OPTIONS = ['Monthly', 'Quarterly', 'Semiannually', 'Annually'];
+
 import { PROPERTY_INSURANCE_KEYS } from '@/lib/fieldKeyMap';
 
-// Use central field key map
 const FIELD_KEYS = PROPERTY_INSURANCE_KEYS;
 
 export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
@@ -55,6 +57,26 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
 }) => {
   const getFieldValue = (key: string) => values[key] || '';
   const [expirationOpen, setExpirationOpen] = useState(false);
+  const [contactOptions, setContactOptions] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    const fetchContacts = async () => {
+      const { data } = await supabase
+        .from('contacts')
+        .select('id, full_name, first_name, last_name, company, contact_type')
+        .order('full_name');
+      if (data) {
+        setContactOptions(data.map(c => {
+          const name = c.full_name || [c.first_name, c.last_name].filter(Boolean).join(' ') || 'Unknown';
+          const parts = [name];
+          if (c.company) parts.push(`(${c.company})`);
+          if (c.contact_type) parts.push(`— ${c.contact_type.charAt(0).toUpperCase() + c.contact_type.slice(1)}`);
+          return { value: parts.join(' '), label: parts.join(' ') };
+        }));
+      }
+    };
+    fetchContacts();
+  }, []);
 
   const safeParseDateStr = (val: string): Date | undefined => {
     if (!val) return undefined;
@@ -64,18 +86,15 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
     } catch { return undefined; }
   };
 
-  // Pulls in property addresses for the dropdown
   const propertyAddress = values['property1.street'] || 'Unassigned';
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-2">
         <Home className="h-5 w-5 text-primary" />
         <span className="font-semibold text-lg text-foreground">New Insurance</span>
       </div>
 
-      {/* Property Selection - shows available property addresses */}
       {propertyAddress !== 'Unassigned' && (
         <div className="bg-muted/30 px-3 py-2 rounded text-sm">
           <span className="text-muted-foreground">Property: </span>
@@ -83,7 +102,6 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
         </div>
       )}
 
-      {/* Two Column Layout */}
       <div className="grid grid-cols-2 gap-8">
         {/* Left Column - Insurance Policy Information */}
         <div className="space-y-4">
@@ -122,17 +140,15 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.insuredName}>
-            <div>
-              <Label className="text-sm text-foreground">Insured's Name</Label>
-              <Input value={getFieldValue(FIELD_KEYS.insuredName)} onChange={(e) => onValueChange(FIELD_KEYS.insuredName, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
-            </div>
-          </DirtyFieldWrapper>
-
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.companyName}>
             <div>
-              <Label className="text-sm text-foreground">Company Name</Label>
-              <Input value={getFieldValue(FIELD_KEYS.companyName)} onChange={(e) => onValueChange(FIELD_KEYS.companyName, e.target.value)} disabled={disabled} className="h-8 text-sm mt-1" />
+              <Label className="text-sm text-foreground">Insurance Company</Label>
+              <Select value={getFieldValue(FIELD_KEYS.companyName) || undefined} onValueChange={(val) => onValueChange(FIELD_KEYS.companyName, val)} disabled={disabled}>
+                <SelectTrigger className="h-8 text-sm mt-1"><SelectValue placeholder="Select company" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  {contactOptions.map(opt => (<SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
           </DirtyFieldWrapper>
 
@@ -167,18 +183,18 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.coverage}>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.annualPremium}>
             <div>
-              <Label className="text-sm text-foreground">Coverage</Label>
+              <Label className="text-sm text-foreground">Annual Premium</Label>
               <div className="flex items-center gap-1 mt-1">
                 <span className="text-sm text-muted-foreground">$</span>
                 <Input
-                  value={getFieldValue(FIELD_KEYS.coverage)}
-                  onChange={(e) => onValueChange(FIELD_KEYS.coverage, e.target.value)}
-                  onFocus={(e) => { const raw = unformatCurrencyDisplay(e.target.value); e.target.value = raw; onValueChange(FIELD_KEYS.coverage, raw); }}
-                  onBlur={(e) => { const formatted = formatCurrencyDisplay(unformatCurrencyDisplay(e.target.value)); onValueChange(FIELD_KEYS.coverage, formatted); }}
+                  value={getFieldValue(FIELD_KEYS.annualPremium)}
+                  onChange={(e) => onValueChange(FIELD_KEYS.annualPremium, e.target.value)}
+                  onFocus={(e) => { const raw = unformatCurrencyDisplay(e.target.value); e.target.value = raw; onValueChange(FIELD_KEYS.annualPremium, raw); }}
+                  onBlur={(e) => { const formatted = formatCurrencyDisplay(unformatCurrencyDisplay(e.target.value)); onValueChange(FIELD_KEYS.annualPremium, formatted); }}
                   onKeyDown={numericKeyDown}
-                  onPaste={(e) => numericPaste(e, (v) => onValueChange(FIELD_KEYS.coverage, v))}
+                  onPaste={(e) => numericPaste(e, (v) => onValueChange(FIELD_KEYS.annualPremium, v))}
                   disabled={disabled}
                   className="h-8 text-sm text-right"
                   inputMode="decimal"
@@ -188,7 +204,23 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          <div className="flex items-center gap-2 pt-2">
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.frequency}>
+            <div>
+              <Label className="text-sm text-foreground">Frequency</Label>
+              <Select value={getFieldValue(FIELD_KEYS.frequency) || undefined} onValueChange={(val) => onValueChange(FIELD_KEYS.frequency, val)} disabled={disabled}>
+                <SelectTrigger className="h-8 text-sm mt-1"><SelectValue placeholder="Select frequency" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  {FREQUENCY_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
+
+          <div className="border-b border-border pb-2 pt-2">
+            <span className="font-semibold text-sm text-primary">Impounds</span>
+          </div>
+
+          <div className="flex items-center gap-2">
             <Checkbox
               id="insurance-active"
               checked={getFieldValue(FIELD_KEYS.active) === 'true'}
@@ -199,6 +231,43 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
             <Label htmlFor="insurance-active" className="text-sm text-foreground">
               Active
             </Label>
+          </div>
+
+          <div className="border-b border-border pb-2 pt-2">
+            <span className="font-semibold text-sm text-primary">Insurance Tracking</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="insurance-attempt-agent"
+              checked={getFieldValue(FIELD_KEYS.attemptAgent) === 'true'}
+              onCheckedChange={(checked) => onValueChange(FIELD_KEYS.attemptAgent, checked ? 'true' : 'false')}
+              disabled={disabled}
+              className="h-4 w-4"
+            />
+            <Label htmlFor="insurance-attempt-agent" className="text-sm text-foreground">Attempted Agent</Label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="insurance-attempt-borrower"
+              checked={getFieldValue(FIELD_KEYS.attemptBorrower) === 'true'}
+              onCheckedChange={(checked) => onValueChange(FIELD_KEYS.attemptBorrower, checked ? 'true' : 'false')}
+              disabled={disabled}
+              className="h-4 w-4"
+            />
+            <Label htmlFor="insurance-attempt-borrower" className="text-sm text-foreground">Attempted Borrower</Label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="insurance-lender-notified"
+              checked={getFieldValue(FIELD_KEYS.lenderNotified) === 'true'}
+              onCheckedChange={(checked) => onValueChange(FIELD_KEYS.lenderNotified, checked ? 'true' : 'false')}
+              disabled={disabled}
+              className="h-4 w-4"
+            />
+            <Label htmlFor="insurance-lender-notified" className="text-sm text-foreground">Notified Lender</Label>
           </div>
         </div>
 
@@ -244,7 +313,6 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
           </DirtyFieldWrapper>
         </div>
       </div>
-
     </div>
   );
 };

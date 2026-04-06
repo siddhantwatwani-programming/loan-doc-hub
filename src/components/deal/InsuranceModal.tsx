@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
 import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
 import { US_STATES } from '@/lib/usStates';
+import { supabase } from '@/integrations/supabase/client';
 import type { InsuranceData } from './InsuranceTableView';
 
 interface InsuranceModalProps {
@@ -56,6 +57,26 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
   const [formData, setFormData] = useState<InsuranceData>(getDefaultInsurance());
   const [showConfirm, setShowConfirm] = useState(false);
   const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
+  const [contactOptions, setContactOptions] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    const fetchContacts = async () => {
+      const { data } = await supabase
+        .from('contacts')
+        .select('id, full_name, first_name, last_name, company, contact_type')
+        .order('full_name');
+      if (data) {
+        setContactOptions(data.map(c => {
+          const name = c.full_name || [c.first_name, c.last_name].filter(Boolean).join(' ') || 'Unknown';
+          const parts = [name];
+          if (c.company) parts.push(`(${c.company})`);
+          if (c.contact_type) parts.push(`— ${c.contact_type.charAt(0).toUpperCase() + c.contact_type.slice(1)}`);
+          return { value: parts.join(' '), label: parts.join(' ') };
+        }));
+      }
+    };
+    fetchContacts();
+  }, []);
 
   const safeParseDateStr = (val: string): Date | undefined => {
     if (!val) return undefined;
@@ -161,27 +182,19 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
                 </div>
                 {renderInlineSelect('property', 'Property', [{ id: 'unassigned', label: 'Unassigned' }, ...propertyOptions], 'Unassigned')}
                 {renderInlineSelect('description', 'Description', INSURANCE_DESCRIPTION_OPTIONS, 'Select')}
-                {renderInlineField('insuredName', "Insured's Name")}
-                {renderInlineField('companyName', 'Ins. Company')}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Ins. Company</Label>
+                  <Select value={String(formData.companyName || '') || undefined} onValueChange={(val) => handleChange('companyName', val === '__none__' ? '' : val)}>
+                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select company" /></SelectTrigger>
+                    <SelectContent className="bg-background border border-border !z-[9999]" position="popper" sideOffset={4}>
+                      {contactOptions.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 {renderInlineField('policyNumber', 'Policy Number')}
                 {renderInlineField('expiration', 'Expiration', { type: 'date' })}
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Coverage</Label>
-                  <div className="relative flex-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-                    <Input
-                      value={String(formData.coverage || '')}
-                      onChange={(e) => handleChange('coverage', e.target.value)}
-                      onFocus={(e) => { e.target.value = unformatCurrencyDisplay(e.target.value); handleChange('coverage', e.target.value); }}
-                      onBlur={(e) => { const formatted = formatCurrencyDisplay(unformatCurrencyDisplay(e.target.value)); handleChange('coverage', formatted); }}
-                      onKeyDown={numericKeyDown}
-                      onPaste={(e) => numericPaste(e, (v) => handleChange('coverage', v))}
-                      className="h-7 text-xs text-right pl-5"
-                      inputMode="decimal"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
                 <div className="flex items-center gap-2">
                   <Label className="w-[100px] shrink-0 text-xs text-foreground">Annual Premium</Label>
                   <div className="relative flex-1">

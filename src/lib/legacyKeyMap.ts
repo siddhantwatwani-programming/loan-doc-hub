@@ -582,6 +582,12 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'property1.insurance_phone_number': 'pr_p_insurancPhoneNumber',
   'property1.insurance_fax_number': 'pr_p_faxNumber',
   'property1.insurance_e_mail': 'pr_p_email',
+  'property1.insurance_annual_premium': 'pr_ins_annualPremium',
+  'property1.insurance_frequency': 'pr_ins_frequency',
+  'property1.insurance_impounds_active': 'pr_ins_impoundsActive',
+  'property1.insurance_attempt_agent': 'pr_ins_attemptAgent',
+  'property1.insurance_attempt_borrower': 'pr_ins_attemptBorrower',
+  'property1.insurance_lender_notified': 'pr_ins_lenderNotified',
 
   // PROPERTY LIENS
   'property1.lien_property': 'pr_li_lienProper',

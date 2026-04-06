@@ -538,6 +538,12 @@ export const PROPERTY_INSURANCE_KEYS = {
   phoneNumber: 'property1.insurance_phone_number',
   faxNumber: 'property1.insurance_fax_number',
   email: 'property1.insurance_e_mail',
+  annualPremium: 'property1.insurance_annual_premium',
+  frequency: 'property1.insurance_frequency',
+  impoundsActive: 'property1.insurance_impounds_active',
+  attemptAgent: 'property1.insurance_attempt_agent',
+  attemptBorrower: 'property1.insurance_attempt_borrower',
+  lenderNotified: 'property1.insurance_lender_notified',
 } as const;
 
 export const PROPERTY_LIENS_KEYS = {
