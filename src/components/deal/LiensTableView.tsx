@@ -49,6 +49,11 @@ export interface LienData {
   thisLoan: string;
   estimate: string;
   status: string;
+  delinquencies60day: string;
+  delinquenciesHowMany: string;
+  currentlyDelinquent: string;
+  paidByLoan: string;
+  sourceOfPayment: string;
 }
 
 interface LiensTableViewProps {

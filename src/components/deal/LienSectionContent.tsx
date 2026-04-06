@@ -96,6 +96,11 @@ const LIEN_FIELD_MAP: Record<string, string> = {
   thisLoan: 'this_loan',
   estimate: 'estimate',
   status: 'status',
+  delinquencies60day: 'delinquencies_60day',
+  delinquenciesHowMany: 'delinquencies_how_many',
+  currentlyDelinquent: 'currently_delinquent',
+  paidByLoan: 'paid_by_loan',
+  sourceOfPayment: 'source_of_payment',
 };
 
 const extractLiensFromValues = (values: Record<string, string>): LienData[] => {
