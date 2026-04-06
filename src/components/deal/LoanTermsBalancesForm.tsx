@@ -68,6 +68,94 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
   const isChecked = (key: string) => getValue(key) === "true";
   const toggleCheck = (key: string) => setValue(key, isChecked(key) ? "" : "true");
 
+  const parseNum = (key: string) => {
+    const v = getValue(key).replace(/[^0-9.\-]/g, '');
+    const n = parseFloat(v);
+    return isNaN(n) ? 0 : n;
+  };
+
+  // Auto-calculated values
+  const calculatedTotalPayment = useMemo(() => {
+    return (
+      parseNum(FIELD_KEYS.regularPayment) +
+      parseNum(FIELD_KEYS.additionalPrincipal) +
+      parseNum(FIELD_KEYS.servicingFees) +
+      parseNum(FIELD_KEYS.otherScheduledPayments) +
+      parseNum(FIELD_KEYS.toEscrowImpounds) +
+      parseNum(FIELD_KEYS.defaultInterest)
+    );
+  }, [
+    values[FIELD_KEYS.regularPayment], values[FIELD_KEYS.additionalPrincipal],
+    values[FIELD_KEYS.servicingFees], values[FIELD_KEYS.otherScheduledPayments],
+    values[FIELD_KEYS.toEscrowImpounds], values[FIELD_KEYS.defaultInterest],
+  ]);
+
+  const calculatedAmountToReinstate = useMemo(() => {
+    return (
+      parseNum(FIELD_KEYS.principal) +
+      parseNum(FIELD_KEYS.unpaidLateCharges) +
+      parseNum(FIELD_KEYS.accruedLateCharges) +
+      parseNum(FIELD_KEYS.unpaidInterest) +
+      parseNum(FIELD_KEYS.accruedInterest) +
+      parseNum(FIELD_KEYS.interestGuarantee) +
+      parseNum(FIELD_KEYS.unpaidDefaultInterest) +
+      parseNum(FIELD_KEYS.accruedDefaultInterest) +
+      parseNum(FIELD_KEYS.chargesOwed) +
+      parseNum(FIELD_KEYS.chargesInterest) +
+      parseNum(FIELD_KEYS.unpaidOther)
+    );
+  }, [
+    values[FIELD_KEYS.principal], values[FIELD_KEYS.unpaidLateCharges],
+    values[FIELD_KEYS.accruedLateCharges], values[FIELD_KEYS.unpaidInterest],
+    values[FIELD_KEYS.accruedInterest], values[FIELD_KEYS.interestGuarantee],
+    values[FIELD_KEYS.unpaidDefaultInterest], values[FIELD_KEYS.accruedDefaultInterest],
+    values[FIELD_KEYS.chargesOwed], values[FIELD_KEYS.chargesInterest],
+    values[FIELD_KEYS.unpaidOther],
+  ]);
+
+  const calculatedTotalBalanceDue = useMemo(() => {
+    return (
+      parseNum(FIELD_KEYS.principal) +
+      parseNum(FIELD_KEYS.unpaidInterest) +
+      parseNum(FIELD_KEYS.accruedInterest) +
+      parseNum(FIELD_KEYS.chargesOwed) +
+      parseNum(FIELD_KEYS.chargesInterest) +
+      parseNum(FIELD_KEYS.unpaidOther)
+    );
+  }, [
+    values[FIELD_KEYS.principal], values[FIELD_KEYS.unpaidInterest],
+    values[FIELD_KEYS.accruedInterest], values[FIELD_KEYS.chargesOwed],
+    values[FIELD_KEYS.chargesInterest], values[FIELD_KEYS.unpaidOther],
+  ]);
+
+  const calculatedEstimatedBalloon = useMemo(() => {
+    const loanAmount = parseNum(FIELD_KEYS.loanAmount);
+    const noteRate = parseNum(FIELD_KEYS.noteRate);
+    const oneMonthInterest = loanAmount * (noteRate / 100) / 12;
+    return calculatedTotalBalanceDue + oneMonthInterest;
+  }, [calculatedTotalBalanceDue, values[FIELD_KEYS.loanAmount], values[FIELD_KEYS.noteRate]]);
+
+  const renderReadOnlyCurrencyField = (value: number, label: string, labelClassName?: string) => {
+    const displayValue = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+    return (
+      <div className="flex items-center gap-3">
+        <Label className={labelClassName || LABEL_CLASS}>{label}</Label>
+        <div className="relative flex-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+          <Input
+            value={displayValue}
+            disabled
+            className="h-8 text-sm pl-7 bg-muted/50"
+            readOnly
+          />
+        </div>
+      </div>
+    );
+  };
+
   const [focusedCurrencyField, setFocusedCurrencyField] = useState<string | null>(null);
 
   const formatCurrencyDisplay = useCallback((val: string) => {
