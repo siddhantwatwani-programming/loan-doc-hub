@@ -181,6 +181,9 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
                 <SortableTableHead columnId="lenderNotified" label="Lender Notified" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
                 <SortableTableHead columnId="current" label="Current" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[80px]" />
                 <SortableTableHead columnId="delinquent" label="Delinquent" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
+                <SortableTableHead columnId="borrowerNotified" label="Borrower Notified" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
+                <SortableTableHead columnId="borrowerNotifiedDate" label="Borrower Notified Date" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[140px]" />
+                <SortableTableHead columnId="lenderNotifiedDate" label="Lender Notified Date" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[140px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
