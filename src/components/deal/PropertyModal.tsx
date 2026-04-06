@@ -264,9 +264,9 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                   {renderInlineSelect('propertyType', 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
                   {renderInlineSelect('occupancy', 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
                   {renderInlineField('zoning', 'Zoning')}
-                  {renderCurrencyField('appraisedValue', 'Appraised Value')}
+                  {renderCurrencyField('appraisedValue', 'Estimate of Value')}
                   {renderCurrencyField('pledgedEquity', 'Pledged Equity')}
-                  {renderInlineSelect('loanPriority', 'Priority', PRIORITY_OPTIONS, 'Select')}
+                  {renderCheckboxField('floodZone', 'Flood Zone')}
                   {renderCheckboxField('floodZone', 'Flood Zone')}
 
                   {renderCheckboxField('propertyGeneratesIncome', 'Property Generates Income')}
