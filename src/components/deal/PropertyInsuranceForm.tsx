@@ -20,7 +20,16 @@ import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
-import { supabase } from '@/integrations/supabase/client';
+
+const US_INSURANCE_COMPANIES = [
+  'State Farm', 'Allstate', 'GEICO', 'Progressive', 'Liberty Mutual',
+  'Nationwide', 'Farmers', 'USAA', 'Travelers', 'American Family',
+  'Erie Insurance', 'Auto-Owners', 'Hartford', 'Chubb', 'MetLife',
+  'AIG', 'Zurich', 'Cincinnati Financial', 'Hanover', 'Safeco',
+  'Amica Mutual', 'Country Financial', 'Shelter Insurance', 'CSAA',
+  'Mercury Insurance', 'Kemper', 'Westfield', 'Grange Insurance',
+  'Donegal', 'Plymouth Rock',
+];
 
 interface PropertyInsuranceFormProps {
   fields: FieldDefinition[];
