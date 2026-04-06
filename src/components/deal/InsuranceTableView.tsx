@@ -147,19 +147,22 @@ const formatCurrency = (value: string) => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(num);
 };
 
+const formatDateValue = (val: string) => {
+  if (!val) return '-';
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return val;
+    return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+  } catch { return val; }
+};
+
 const renderCellValue = (insurance: InsuranceData, columnId: string) => {
   switch (columnId) {
+    case 'property': return insurance.property || 'Unassigned';
     case 'description': return insurance.description || '-';
     case 'companyName': return insurance.companyName || '-';
     case 'policyNumber': return insurance.policyNumber || '-';
-    case 'expiration': {
-      if (!insurance.expiration) return '-';
-      try {
-        const d = new Date(insurance.expiration);
-        if (isNaN(d.getTime())) return insurance.expiration;
-        return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
-      } catch { return insurance.expiration; }
-    }
+    case 'expiration': return formatDateValue(insurance.expiration);
     case 'annualPremium': return formatCurrency(insurance.annualPremium) || '-';
     case 'frequency': return insurance.frequency || '-';
     case 'active': return (
@@ -168,6 +171,24 @@ const renderCellValue = (insurance: InsuranceData, columnId: string) => {
       </Badge>
     );
     case 'agentName': return insurance.agentName || '-';
+    case 'businessAddress': return insurance.businessAddress || '-';
+    case 'businessAddressCity': return insurance.businessAddressCity || '-';
+    case 'businessAddressState': return insurance.businessAddressState || '-';
+    case 'businessAddressZip': return insurance.businessAddressZip || '-';
+    case 'phoneNumber': return insurance.phoneNumber || '-';
+    case 'faxNumber': return insurance.faxNumber || '-';
+    case 'email': return insurance.email || '-';
+    case 'paymentMailingStreet': return insurance.paymentMailingStreet || '-';
+    case 'paymentMailingCity': return insurance.paymentMailingCity || '-';
+    case 'paymentMailingState': return insurance.paymentMailingState || '-';
+    case 'paymentMailingZip': return insurance.paymentMailingZip || '-';
+    case 'impoundsActive': return insurance.impoundsActive ? 'Yes' : 'No';
+    case 'lastVerified': return formatDateValue(insurance.lastVerified);
+    case 'trackingStatus': return insurance.trackingStatus || '-';
+    case 'attemptAgent': return insurance.attemptAgent ? 'Yes' : 'No';
+    case 'attemptBorrower': return insurance.attemptBorrower ? 'Yes' : 'No';
+    case 'lenderNotified': return insurance.lenderNotified ? 'Yes' : 'No';
+    case 'lenderNotifiedDate': return formatDateValue(insurance.lenderNotifiedDate);
     default: return '-';
   }
 };
