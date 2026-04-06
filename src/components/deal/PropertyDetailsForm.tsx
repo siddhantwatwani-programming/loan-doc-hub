@@ -361,6 +361,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           {renderInlineSelect(FIELD_KEYS.sourceLienInfo, 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
 
           {renderInlineField(FIELD_KEYS.recordingNumber, 'Recording number')}
+        </div>
       </div>
 
       {/* Valuation Section */}
