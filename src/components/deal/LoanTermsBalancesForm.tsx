@@ -23,6 +23,7 @@ interface LoanTermsBalancesFormProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  onNavigate?: (tab: string, subSection?: string) => void;
 }
 
 import { LOAN_TERMS_BALANCES_KEYS } from "@/lib/fieldKeyMap";
