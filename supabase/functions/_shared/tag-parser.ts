@@ -563,7 +563,7 @@ function replaceStaticCheckboxLabel(
   label: string,
   checkboxValue: string,
 ): { content: string; replaced: boolean } {
-  const labelEscaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\\$&');
+  const labelEscaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   // Strategy: find a <w:t> containing a checkbox glyph that is followed
   // (possibly with intervening XML tags / whitespace) by the label text,
@@ -585,7 +585,7 @@ function replaceStaticCheckboxLabel(
   }
 
   // Fallback: plain-text glyph adjacent to label (no <w:t> wrapper)
-  const plainPattern = new RegExp(`([☐☑☒])((?:\s|<[^>]+>)*)(${labelEscaped})(?![A-Za-z])`, 'gi');
+  const plainPattern = new RegExp(`([☐☑☒])((?:\\s|<[^>]+>)*)(${labelEscaped})(?![A-Za-z])`, 'gi');
   if (!plainPattern.test(content)) {
     return { content, replaced: false };
   }
