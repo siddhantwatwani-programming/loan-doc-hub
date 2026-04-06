@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
 import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
 import { US_STATES } from '@/lib/usStates';
+import { supabase } from '@/integrations/supabase/client';
 import type { InsuranceData } from './InsuranceTableView';
 
 interface InsuranceModalProps {
