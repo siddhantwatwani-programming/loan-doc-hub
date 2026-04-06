@@ -182,27 +182,19 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
                 </div>
                 {renderInlineSelect('property', 'Property', [{ id: 'unassigned', label: 'Unassigned' }, ...propertyOptions], 'Unassigned')}
                 {renderInlineSelect('description', 'Description', INSURANCE_DESCRIPTION_OPTIONS, 'Select')}
-                {renderInlineField('insuredName', "Insured's Name")}
-                {renderInlineField('companyName', 'Ins. Company')}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Ins. Company</Label>
+                  <Select value={String(formData.companyName || '') || undefined} onValueChange={(val) => handleChange('companyName', val === '__none__' ? '' : val)}>
+                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select company" /></SelectTrigger>
+                    <SelectContent className="bg-background border border-border !z-[9999]" position="popper" sideOffset={4}>
+                      {contactOptions.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 {renderInlineField('policyNumber', 'Policy Number')}
                 {renderInlineField('expiration', 'Expiration', { type: 'date' })}
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Coverage</Label>
-                  <div className="relative flex-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-                    <Input
-                      value={String(formData.coverage || '')}
-                      onChange={(e) => handleChange('coverage', e.target.value)}
-                      onFocus={(e) => { e.target.value = unformatCurrencyDisplay(e.target.value); handleChange('coverage', e.target.value); }}
-                      onBlur={(e) => { const formatted = formatCurrencyDisplay(unformatCurrencyDisplay(e.target.value)); handleChange('coverage', formatted); }}
-                      onKeyDown={numericKeyDown}
-                      onPaste={(e) => numericPaste(e, (v) => handleChange('coverage', v))}
-                      className="h-7 text-xs text-right pl-5"
-                      inputMode="decimal"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
                 <div className="flex items-center gap-2">
                   <Label className="w-[100px] shrink-0 text-xs text-foreground">Annual Premium</Label>
                   <div className="relative flex-1">
