@@ -1,49 +1,57 @@
 
 
-## Plan: Fix Template Placeholder Population for Re851a
+## Plan: Dropdown-to-Checkbox Auto-Mapping for Re851a Document
 
-### Problem Analysis
+### Summary
+When generating Re851a, derive boolean checkbox values from existing dropdown fields (Amortization and Payment Frequency), so checkboxes in the template are automatically checked based on the selected dropdown value. The generated DOCX remains editable.
 
-Five placeholders in the Re851a template are blank during document generation despite having values in the UI. Each has a distinct root cause:
+### How It Works Today
+The document engine already supports two checkbox mechanisms:
+- **Native Word SDT checkboxes** (`processSdtCheckboxes` in tag-parser.ts) — reads `<w:tag>` values, resolves to field keys, toggles checked state. These remain editable in DOCX.
+- **Static checkbox labels** (`replaceStaticCheckboxLabel`) — replaces ☐/☑ Unicode glyphs next to label text for boolean fields.
 
-1. **`ln_p_loanToValueRatio`** — This is a *calculated* field (`is_calculated = true`). The document generation engine does NOT evaluate calculated fields — it only reads stored values from `deal_section_values`. The UI computes it on the fly but never persists the calculated result.
+Both mechanisms look up boolean values from `fieldValues`. The fix is to **inject derived boolean values** into `fieldValues` based on the dropdown selections, before the template is processed.
 
-2. **`bk_p_cellPhone`** — The broker participant injection (generate-document/index.ts) sets `bk_p_phone` but never sets `bk_p_cellPhone`. The broker's cell phone from contact_data (`phone.cell`) is consumed into the generic `bk_p_phone` key, leaving `bk_p_cellPhone` empty.
+### Field Mapping
 
-3. **`ln_p_months`** — This field exists in the `field_dictionary` but has NO entry in `legacyKeyMap.ts` and NO corresponding UI field key in `fieldKeyMap.ts`. Without a legacy mapping, data saved via the UI (which uses dot-notation keys) cannot be resolved to this db key during generation.
+| Dropdown Field | Stored Key | Dropdown Value | Derived Boolean Key | Value |
+|---|---|---|---|---|
+| Amortization | `ln_p_amortiza` | `Amortized Partially` | `ln_p_amortizedPartially` | `true` |
+| Amortization | `ln_p_amortiza` | `Amortized` | `ln_p_amortized` | `true` |
+| Payment Frequency | `ln_p_paymentFreque` | `Monthly` | `ln_p_paymentMonthly` | `true` |
+| Payment Frequency | `ln_p_paymentFreque` | `Weekly` | `ln_p_paymentWeekly` | `true` |
 
-4. **`ld_fd_fundingAmount`** — This field exists in the `field_dictionary` (section: lender, form: funding) but the Lender Funding Form is a "Coming Soon" placeholder. There is no UI form to enter this value, no fieldKeyMap entry, and no legacyKeyMap entry. Since there's no UI to persist data, it will always be blank.
+All non-matching derived keys get set to `false`.
 
-5. **`br_p_address`** — In `legacyKeyMap.ts`, `borrower.address.street` maps to `br_p_address`. However, the participant-based contact injection sets `br_p_street` (not `br_p_address`) for the street. So if the value comes from participant contact data (rather than direct deal_section_values entry), `br_p_address` stays empty.
+### Template Requirement
+The Re851a template must have checkboxes tagged with these derived boolean key names (either as SDT `<w:tag>` values or as `{{ln_p_amortized|checkbox}}` merge tags next to labels). **No template format change needed** — we just need to confirm which mechanism the template uses. Both are already supported.
 
-### Proposed Fix (5 changes in the Edge Function)
+### Technical Changes
 
-All fixes go in **`supabase/functions/generate-document/index.ts`** — the document generation engine. No UI, schema, or template changes needed.
+**File: `supabase/functions/generate-document/index.ts`** (1 change)
 
-**Step 1: Inject `ln_p_loanToValueRatio` as a computed value during generation**
-After the existing auto-compute blocks (around line 690), add logic to compute LTV from `ln_p_loanAmount` and `pr_p_appraiseValue` (matching the formula in field_dictionary) and set `ln_p_loanToValueRatio` if not already present.
+After the existing auto-compute blocks (around line 734), add a new block that:
+1. Reads the amortization value from `fieldValues` (`ln_p_amortiza` or `loan_terms.amortization`)
+2. Sets `ln_p_amortizedPartially` = `true`/`false` and `ln_p_amortized` = `true`/`false` based on the dropdown value
+3. Reads the payment frequency value from `fieldValues` (`ln_p_paymentFreque` or `loan_terms.payment_frequency`)
+4. Sets `ln_p_paymentMonthly` = `true`/`false` and `ln_p_paymentWeekly` = `true`/`false` based on the dropdown value
 
-**Step 2: Inject `bk_p_cellPhone` from broker contact data**
-In the broker injection block (around line 490-567), add a line to extract `cd["phone.cell"]` specifically and `forceSet("bk_p_cellPhone", cellPhone)`.
+This ensures the boolean values exist in `fieldValues` before `processDocx` runs, so both SDT checkboxes and static checkbox labels will resolve correctly.
 
-**Step 3: Add `ln_p_months` mapping in `legacyKeyMap.ts`**
-Add a legacy key entry so that if a UI field stores months under a dot-notation key, it resolves correctly. Also add a fieldKeyMap entry so the UI can populate this field. The most logical mapping: `'loan_terms.months': 'ln_p_months'`.
+**File: `src/lib/legacyKeyMap.ts`** (add 4 entries)
 
-**Step 4: Handle `ld_fd_fundingAmount` via lender participant injection**
-Since the Lender Funding Form is "Coming Soon" and no UI exists, add injection logic in the lender participant block to compute/bridge this from existing lender funding data in deal_section_values, or at minimum ensure the field_dictionary entry can be resolved during generation.
+Add legacy key mappings for the derived boolean keys so they are recognized by the resolver:
+- `'loan_terms.amortized_partially': 'ln_p_amortizedPartially'`
+- `'loan_terms.amortized': 'ln_p_amortized'`
+- `'loan_terms.payment_monthly': 'ln_p_paymentMonthly'`
+- `'loan_terms.payment_weekly': 'ln_p_paymentWeekly'`
 
-**Step 5: Fix `br_p_address` borrower injection**
-In the borrower injection's short-prefix block, ensure `br_p_address` is set from `cd["address.street"]` (matching the legacy mapping where `br_p_address` = street address).
+### Editability
+Native Word SDT checkboxes remain interactive in the generated DOCX — users can toggle them after generation. No additional work is needed for editability since the engine already preserves the SDT structure (it only updates `w14:checked` val and the display glyph).
 
-### Files to Modify
-
-| File | Change |
-|------|--------|
-| `supabase/functions/generate-document/index.ts` | Add auto-compute for LTV ratio; inject `bk_p_cellPhone`; fix `br_p_address` borrower injection |
-| `src/lib/legacyKeyMap.ts` | Add `'loan_terms.months': 'ln_p_months'` mapping |
-| `src/lib/fieldKeyMap.ts` | Add `months` entry to `LOAN_TERMS_DETAILS_KEYS` |
-
-### Note on `ld_fd_fundingAmount`
-
-This field's UI (Lender Funding Form) is a "Coming Soon" stub. Without a data entry form, there is no source data to populate this field. The fix will attempt to bridge from any existing lender funding records in deal_section_values. If no data exists, the placeholder will remain blank until the Lender Funding UI is built. I will inject it from `deal_section_values` if the field_dictionary_id resolves, which it should if the CSR entered data via another path.
+### Validation
+After implementation:
+1. Set Amortization = "Amortized Partially" → generate Re851a → confirm "AMORTIZED PARTIALLY" checkbox is checked
+2. Set Payment Frequency = "Monthly" → generate Re851a → confirm "MONTHLY" checkbox is checked
+3. Open generated DOCX → confirm checkboxes can be toggled manually
 
