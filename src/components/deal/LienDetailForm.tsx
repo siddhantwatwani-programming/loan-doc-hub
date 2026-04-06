@@ -28,6 +28,7 @@ interface LienDetailFormProps {
   disabled?: boolean;
   propertyOptions?: { id: string; label: string }[];
   loanValues?: Record<string, string>;
+  onPropertyValueChange?: (fieldKey: string, value: string) => void;
 }
 
 const STATUS_OPTIONS = ['Current', 'Unable to Verify', '30-90', '90+', 'Foreclosure', 'Modification', 'Paid'];
