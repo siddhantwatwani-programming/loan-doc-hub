@@ -655,16 +655,74 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </Label>
             </div>
 
-            {renderCurrencyField(
-              FIELD_KEYS.otherScheduledPayments,
-              "Other Sched. Pmts",
-              "text-sm text-primary font-medium min-w-[180px] max-w-[180px] text-left shrink-0",
-            )}
-            {renderCurrencyField(
-              FIELD_KEYS.toEscrowImpounds,
-              "To Escrow Impounds",
-              "text-sm text-primary font-medium min-w-[180px] max-w-[180px] text-left shrink-0",
-            )}
+            {/* Other Scheduled Payments - clickable to open modal */}
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.otherScheduledPayments}>
+              <div className="flex items-center gap-3">
+                <Label
+                  className="text-sm text-primary font-medium min-w-[180px] max-w-[180px] text-left shrink-0 whitespace-nowrap cursor-pointer hover:underline"
+                  onClick={() => setOtherSchedPmtsOpen(true)}
+                >
+                  Other Sched. Pmts
+                </Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                  <Input
+                    id={FIELD_KEYS.otherScheduledPayments}
+                    value={focusedCurrencyField === FIELD_KEYS.otherScheduledPayments ? getValue(FIELD_KEYS.otherScheduledPayments) : formatCurrencyDisplay(getValue(FIELD_KEYS.otherScheduledPayments))}
+                    onChange={(e) => handleCurrencyChange(FIELD_KEYS.otherScheduledPayments, e.target.value)}
+                    onFocus={() => setFocusedCurrencyField(FIELD_KEYS.otherScheduledPayments)}
+                    onBlur={() => handleCurrencyBlur(FIELD_KEYS.otherScheduledPayments)}
+                    disabled={disabled}
+                    className="h-8 text-sm pl-7"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            </DirtyFieldWrapper>
+
+            {/* Other Scheduled Payments Modal */}
+            <Dialog open={otherSchedPmtsOpen} onOpenChange={setOtherSchedPmtsOpen}>
+              <DialogContent className="sm:max-w-md z-[9999]">
+                <DialogHeader>
+                  <DialogTitle>Other Scheduled Payments</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                  {renderCurrencyField(FIELD_KEYS.otherScheduledPayments, "Amount")}
+                  <p className="text-xs text-muted-foreground">
+                    Enter any additional scheduled payment amounts not covered by regular payment, escrow, or servicing fees.
+                  </p>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setOtherSchedPmtsOpen(false)}>Close</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* To Escrow Impounds - clickable to navigate to Escrow Impounds sub-section */}
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.toEscrowImpounds}>
+              <div className="flex items-center gap-3">
+                <Label
+                  className="text-sm text-primary font-medium min-w-[180px] max-w-[180px] text-left shrink-0 whitespace-nowrap cursor-pointer hover:underline"
+                  onClick={() => onNavigate?.('loan_terms', 'escrow_impound')}
+                >
+                  To Escrow Impounds
+                </Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                  <Input
+                    id={FIELD_KEYS.toEscrowImpounds}
+                    value={focusedCurrencyField === FIELD_KEYS.toEscrowImpounds ? getValue(FIELD_KEYS.toEscrowImpounds) : formatCurrencyDisplay(getValue(FIELD_KEYS.toEscrowImpounds))}
+                    onChange={(e) => handleCurrencyChange(FIELD_KEYS.toEscrowImpounds, e.target.value)}
+                    onFocus={() => setFocusedCurrencyField(FIELD_KEYS.toEscrowImpounds)}
+                    onBlur={() => handleCurrencyBlur(FIELD_KEYS.toEscrowImpounds)}
+                    disabled={disabled}
+                    className="h-8 text-sm pl-7"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            </DirtyFieldWrapper>
+
             {renderCurrencyField(FIELD_KEYS.defaultInterest, "Default Interest")}
             {renderCurrencyField(FIELD_KEYS.totalPayment, "Total Payment")}
           </div>
