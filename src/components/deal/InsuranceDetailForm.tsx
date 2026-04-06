@@ -53,11 +53,11 @@ const TRACKING_STATUS_OPTIONS = [
 const DIRTY_KEY_MAP: Record<string, string> = {
   property: 'insurance1.property',
   description: 'insurance1.description',
-  insuredName: 'insurance1.insured_name',
+  
   companyName: 'insurance1.company_name',
   policyNumber: 'insurance1.policy_number',
   expiration: 'insurance1.expiration',
-  coverage: 'insurance1.coverage',
+  
   annualPremium: 'insurance1.annual_premium',
   frequency: 'insurance1.frequency',
   active: 'insurance1.active',
@@ -172,20 +172,9 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          {renderField('insuredName', "Insured's Name")}
           {renderField('companyName', 'Ins. Company')}
           {renderField('policyNumber', 'Policy Number')}
           {renderField('expiration', 'Expiration', { type: 'date' })}
-
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.coverage}>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Coverage</Label>
-              <div className="relative flex-1">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-                <Input value={insurance.coverage} onChange={(e) => onChange('coverage', unformatCurrencyDisplay(e.target.value))} onBlur={() => { const raw = insurance.coverage; if (raw) onChange('coverage', formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = insurance.coverage; if (raw) onChange('coverage', unformatCurrencyDisplay(raw)); }} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => onChange('coverage', val))} disabled={disabled} className="h-7 text-sm text-right pl-5" inputMode="decimal" placeholder="0.00" />
-              </div>
-            </div>
-          </DirtyFieldWrapper>
 
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.annualPremium}>
             <div className="flex items-center gap-3">

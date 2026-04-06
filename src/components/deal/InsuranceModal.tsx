@@ -52,8 +52,8 @@ const TRACKING_STATUS_OPTIONS = [
 ];
 
 const getDefaultInsurance = (): InsuranceData => ({
-  id: '', property: '', description: '', insuredName: '', companyName: '', policyNumber: '',
-  expiration: '', coverage: '', annualPremium: '', frequency: '', active: true, agentName: '', businessAddress: '',
+  id: '', property: '', description: '', companyName: '', policyNumber: '',
+  expiration: '', annualPremium: '', frequency: '', active: true, agentName: '', businessAddress: '',
   businessAddressCity: '', businessAddressState: '', businessAddressZip: '',
   phoneNumber: '', faxNumber: '', email: '', note: '',
   paymentMailingStreet: '', paymentMailingCity: '', paymentMailingState: '', paymentMailingZip: '',
@@ -78,10 +78,6 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
   useEffect(() => {
     if (open) {
       const data = insurance ? { ...insurance } : getDefaultInsurance();
-      // Format coverage for display
-      if (data.coverage) {
-        data.coverage = formatCurrencyDisplay(String(data.coverage));
-      }
       if (data.annualPremium) {
         data.annualPremium = formatCurrencyDisplay(String(data.annualPremium));
       }
@@ -98,9 +94,6 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
   const handleConfirmSave = () => {
     setShowConfirm(false);
     const cleaned = { ...formData };
-    if (cleaned.coverage) {
-      cleaned.coverage = unformatCurrencyDisplay(String(cleaned.coverage));
-    }
     if (cleaned.annualPremium) {
       cleaned.annualPremium = unformatCurrencyDisplay(String(cleaned.annualPremium));
     }
