@@ -373,7 +373,10 @@ async function generateSingleDocument(
           setIfEmpty(`${shortPrefix}_phone`, phone);
           setIfEmpty(`${shortPrefix}_fax`, fax);
           if (cd.tax_id) setIfEmpty(`${shortPrefix}_taxId`, cd.tax_id);
-          if (cd["address.street"]) setIfEmpty(`${shortPrefix}_street`, cd["address.street"]);
+          if (cd["address.street"]) {
+            setIfEmpty(`${shortPrefix}_street`, cd["address.street"]);
+            setIfEmpty(`${shortPrefix}_address`, cd["address.street"]);
+          }
           if (cd["address.city"] || contact.city) setIfEmpty(`${shortPrefix}_city`, cd["address.city"] || contact.city);
           if (cd["address.state"] || contact.state) setIfEmpty(`${shortPrefix}_state`, cd["address.state"] || contact.state);
           if (cd["address.zip"]) setIfEmpty(`${shortPrefix}_zip`, cd["address.zip"]);
@@ -527,6 +530,7 @@ async function generateSingleDocument(
           forceSet("bk_p_email", email);
           forceSet("bk_p_company", company);
           forceSet("bk_p_phone", phone);
+          forceSet("bk_p_cellPhone", cd["phone.cell"] || cd["phone.mobile"] || "");
           forceSet("bk_p_fax", fax);
           forceSet("bk_p_brokerName", company);
           forceSet("bk_p_brokerRepres", representativeName);
@@ -687,6 +691,45 @@ async function generateSingleDocument(
         const fullAddress = parts.join(", ");
         fieldValues.set("pr_p_address", { rawValue: fullAddress, dataType: "text" });
         debugLog(`[generate-document] Auto-computed pr_p_address = "${fullAddress}"`);
+      }
+    }
+
+    // Auto-compute ln_p_loanToValueRatio if not already set
+    const existingLtv = fieldValues.get("ln_p_loanToValueRatio");
+    if (!existingLtv || !existingLtv.rawValue) {
+      const loanAmountVal = fieldValues.get("ln_p_loanAmount")?.rawValue || fieldValues.get("loan_terms.loan_amount")?.rawValue;
+      const appraiseVal = fieldValues.get("pr_p_appraiseValue")?.rawValue || fieldValues.get("property1.appraise_value")?.rawValue;
+      const loanNum = parseFloat(String(loanAmountVal || "").replace(/[^0-9.-]/g, ""));
+      const appraiseNum = parseFloat(String(appraiseVal || "").replace(/[^0-9.-]/g, ""));
+      if (!isNaN(loanNum) && !isNaN(appraiseNum) && appraiseNum > 0) {
+        const ltv = (loanNum / appraiseNum) * 100;
+        const ltvStr = ltv.toFixed(2);
+        fieldValues.set("ln_p_loanToValueRatio", { rawValue: ltvStr, dataType: "percentage" });
+        fieldValues.set("loan_terms.loan_to_value_ratio", { rawValue: ltvStr, dataType: "percentage" });
+        debugLog(`[generate-document] Auto-computed ln_p_loanToValueRatio = ${ltvStr}%`);
+      }
+    }
+
+    // Auto-compute ln_p_months if not already set (bridge from number_of_payments)
+    const existingMonths = fieldValues.get("ln_p_months");
+    if (!existingMonths || !existingMonths.rawValue) {
+      const numPayments = fieldValues.get("ln_p_numberOfPaymen")?.rawValue || fieldValues.get("loan_terms.number_of_payments")?.rawValue;
+      if (numPayments) {
+        fieldValues.set("ln_p_months", { rawValue: String(numPayments), dataType: "number" });
+        fieldValues.set("loan_terms.months", { rawValue: String(numPayments), dataType: "number" });
+        debugLog(`[generate-document] Auto-bridged ln_p_months from number_of_payments = ${numPayments}`);
+      }
+    }
+
+    // Bridge ld_fd_fundingAmount from lender funding data or loan amount if not set
+    const existingFundingAmt = fieldValues.get("ld_fd_fundingAmount");
+    if (!existingFundingAmt || !existingFundingAmt.rawValue) {
+      const lenderFunding = fieldValues.get("lender.funding.amount")?.rawValue;
+      const loanAmount = fieldValues.get("ln_p_loanAmount")?.rawValue || fieldValues.get("loan_terms.loan_amount")?.rawValue;
+      const fundingVal = lenderFunding || loanAmount;
+      if (fundingVal) {
+        fieldValues.set("ld_fd_fundingAmount", { rawValue: String(fundingVal), dataType: "currency" });
+        debugLog(`[generate-document] Auto-bridged ld_fd_fundingAmount = ${fundingVal}`);
       }
     }
 
