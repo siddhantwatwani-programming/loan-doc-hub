@@ -361,6 +361,31 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
           {renderInlineDateField(FIELD_KEYS.origination, 'Origination')}
           {renderInlineDateField(FIELD_KEYS.boarding, 'Boarding')}
           {renderInlineDateField(FIELD_KEYS.maturityDate, 'Maturity Date')}
+          {/* LTV Ratio – computed read-only field */}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.loanToValueRatio}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[130px] shrink-0 text-xs">LTV Ratio</Label>
+              <div className="relative flex-1">
+                <Input
+                  id={FIELD_KEYS.loanToValueRatio}
+                  value={(() => {
+                    const loanAmtKey = 'loan_terms.loan_amount';
+                    const appraisedKey = 'property1.appraised_value';
+                    const loanRaw = values[loanAmtKey] || '';
+                    const appraisedRaw = values[appraisedKey] || '';
+                    const loan = parseFloat(loanRaw.replace(/[,$]/g, ''));
+                    const appraised = parseFloat(appraisedRaw.replace(/[,$]/g, ''));
+                    if (isNaN(loan) || isNaN(appraised) || appraised === 0) return '';
+                    return ((loan / appraised) * 100).toFixed(2);
+                  })()}
+                  disabled
+                  className="h-8 text-xs flex-1 bg-muted pr-7"
+                  placeholder="—"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+              </div>
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
         {/* Middle Column */}
