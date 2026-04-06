@@ -24,6 +24,9 @@ export interface PropertyTaxData {
   current: boolean;
   delinquent: boolean;
   delinquentAmount: string;
+  borrowerNotified: boolean;
+  borrowerNotifiedDate: string;
+  lenderNotifiedDate: string;
 }
 
 interface PropertyTaxTableViewProps {
