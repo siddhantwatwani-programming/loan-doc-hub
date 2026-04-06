@@ -196,6 +196,20 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
               {formData.delinquent && (
                 renderCurrencyField('delinquentAmount', 'Delinquent Amt')
               )}
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={formData.borrowerNotified}
+                  onCheckedChange={(checked) => handleChange('borrowerNotified', checked === true)}
+                />
+                <Label className="text-xs text-foreground">Borrower Notified</Label>
+              </div>
+
+              {formData.borrowerNotified && (
+                renderDateField('borrowerNotifiedDate', 'Borrower Notified')
+              )}
+
+              {renderDateField('lenderNotifiedDate', 'Lender Notified')}
             </div>
           </div>
 

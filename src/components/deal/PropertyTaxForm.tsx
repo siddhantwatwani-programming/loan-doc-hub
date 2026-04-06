@@ -198,6 +198,27 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
                 {renderCurrencyField('delinquent_amount', 'Delinquent Amt')}
               </DirtyFieldWrapper>
             )}
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.borrower_notified`}>
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  checked={getBoolValue('borrower_notified')}
+                  onCheckedChange={(checked) => handleChange('borrower_notified', checked === true ? 'true' : 'false')}
+                  disabled={disabled}
+                />
+                <Label className="text-sm text-foreground whitespace-nowrap">Borrower Notified</Label>
+              </div>
+            </DirtyFieldWrapper>
+
+            {getBoolValue('borrower_notified') && (
+              <DirtyFieldWrapper fieldKey={`${PREFIX}.borrower_notified_date`}>
+                {renderDateField('borrower_notified_date', 'Borrower Notified')}
+              </DirtyFieldWrapper>
+            )}
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.lender_notified_date`}>
+              {renderDateField('lender_notified_date', 'Lender Notified')}
+            </DirtyFieldWrapper>
           </div>
         </div>
       </div>

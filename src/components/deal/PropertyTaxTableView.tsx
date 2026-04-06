@@ -212,6 +212,9 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
                         <span>{formatCurrency(tax.delinquentAmount) || '✓'}</span>
                       ) : '-'}
                     </TableCell>
+                    <TableCell>{tax.borrowerNotified ? '✓' : '-'}</TableCell>
+                    <TableCell>{formatDate(tax.borrowerNotifiedDate)}</TableCell>
+                    <TableCell>{formatDate(tax.lenderNotifiedDate)}</TableCell>
                   </TableRow>
                 ))
               )}
