@@ -81,6 +81,7 @@ const FILTER_OPTIONS: FilterOption[] = [
 ];
 
 const EXPORT_COLUMNS: ExportColumn[] = [
+  { id: 'property', label: 'Property' },
   { id: 'description', label: 'Description' },
   { id: 'companyName', label: 'Company' },
   { id: 'policyNumber', label: 'Policy #' },
@@ -89,9 +90,28 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'frequency', label: 'Frequency' },
   { id: 'active', label: 'Status' },
   { id: 'agentName', label: 'Agent' },
+  { id: 'businessAddress', label: 'Bus. Address' },
+  { id: 'businessAddressCity', label: 'Agent City' },
+  { id: 'businessAddressState', label: 'Agent State' },
+  { id: 'businessAddressZip', label: 'Agent ZIP' },
+  { id: 'phoneNumber', label: 'Phone' },
+  { id: 'faxNumber', label: 'Fax' },
+  { id: 'email', label: 'Email' },
+  { id: 'paymentMailingStreet', label: 'Pmt Street' },
+  { id: 'paymentMailingCity', label: 'Pmt City' },
+  { id: 'paymentMailingState', label: 'Pmt State' },
+  { id: 'paymentMailingZip', label: 'Pmt ZIP' },
+  { id: 'impoundsActive', label: 'Impounds' },
+  { id: 'lastVerified', label: 'Last Verified' },
+  { id: 'trackingStatus', label: 'Tracking Status' },
+  { id: 'attemptAgent', label: 'Attempt Agent' },
+  { id: 'attemptBorrower', label: 'Attempt Borrower' },
+  { id: 'lenderNotified', label: 'Lender Notified' },
+  { id: 'lenderNotifiedDate', label: 'Lender Notified Date' },
 ];
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'property', label: 'Property', visible: true },
   { id: 'description', label: 'Description', visible: true },
   { id: 'companyName', label: 'Company', visible: true },
   { id: 'policyNumber', label: 'Policy #', visible: true },
@@ -100,6 +120,24 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'frequency', label: 'Frequency', visible: true },
   { id: 'active', label: 'Status', visible: true },
   { id: 'agentName', label: 'Agent', visible: true },
+  { id: 'businessAddress', label: 'Bus. Address', visible: false },
+  { id: 'businessAddressCity', label: 'Agent City', visible: false },
+  { id: 'businessAddressState', label: 'Agent State', visible: false },
+  { id: 'businessAddressZip', label: 'Agent ZIP', visible: false },
+  { id: 'phoneNumber', label: 'Phone', visible: false },
+  { id: 'faxNumber', label: 'Fax', visible: false },
+  { id: 'email', label: 'Email', visible: false },
+  { id: 'paymentMailingStreet', label: 'Pmt Street', visible: false },
+  { id: 'paymentMailingCity', label: 'Pmt City', visible: false },
+  { id: 'paymentMailingState', label: 'Pmt State', visible: false },
+  { id: 'paymentMailingZip', label: 'Pmt ZIP', visible: false },
+  { id: 'impoundsActive', label: 'Impounds', visible: false },
+  { id: 'lastVerified', label: 'Last Verified', visible: false },
+  { id: 'trackingStatus', label: 'Tracking Status', visible: false },
+  { id: 'attemptAgent', label: 'Attempt Agent', visible: false },
+  { id: 'attemptBorrower', label: 'Attempt Borrower', visible: false },
+  { id: 'lenderNotified', label: 'Lender Notified', visible: false },
+  { id: 'lenderNotifiedDate', label: 'Lender Notified Date', visible: false },
 ];
 
 const formatCurrency = (value: string) => {
@@ -109,19 +147,22 @@ const formatCurrency = (value: string) => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(num);
 };
 
+const formatDateValue = (val: string) => {
+  if (!val) return '-';
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return val;
+    return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+  } catch { return val; }
+};
+
 const renderCellValue = (insurance: InsuranceData, columnId: string) => {
   switch (columnId) {
+    case 'property': return insurance.property || 'Unassigned';
     case 'description': return insurance.description || '-';
     case 'companyName': return insurance.companyName || '-';
     case 'policyNumber': return insurance.policyNumber || '-';
-    case 'expiration': {
-      if (!insurance.expiration) return '-';
-      try {
-        const d = new Date(insurance.expiration);
-        if (isNaN(d.getTime())) return insurance.expiration;
-        return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
-      } catch { return insurance.expiration; }
-    }
+    case 'expiration': return formatDateValue(insurance.expiration);
     case 'annualPremium': return formatCurrency(insurance.annualPremium) || '-';
     case 'frequency': return insurance.frequency || '-';
     case 'active': return (
@@ -130,6 +171,24 @@ const renderCellValue = (insurance: InsuranceData, columnId: string) => {
       </Badge>
     );
     case 'agentName': return insurance.agentName || '-';
+    case 'businessAddress': return insurance.businessAddress || '-';
+    case 'businessAddressCity': return insurance.businessAddressCity || '-';
+    case 'businessAddressState': return insurance.businessAddressState || '-';
+    case 'businessAddressZip': return insurance.businessAddressZip || '-';
+    case 'phoneNumber': return insurance.phoneNumber || '-';
+    case 'faxNumber': return insurance.faxNumber || '-';
+    case 'email': return insurance.email || '-';
+    case 'paymentMailingStreet': return insurance.paymentMailingStreet || '-';
+    case 'paymentMailingCity': return insurance.paymentMailingCity || '-';
+    case 'paymentMailingState': return insurance.paymentMailingState || '-';
+    case 'paymentMailingZip': return insurance.paymentMailingZip || '-';
+    case 'impoundsActive': return insurance.impoundsActive ? 'Yes' : 'No';
+    case 'lastVerified': return formatDateValue(insurance.lastVerified);
+    case 'trackingStatus': return insurance.trackingStatus || '-';
+    case 'attemptAgent': return insurance.attemptAgent ? 'Yes' : 'No';
+    case 'attemptBorrower': return insurance.attemptBorrower ? 'Yes' : 'No';
+    case 'lenderNotified': return insurance.lenderNotified ? 'Yes' : 'No';
+    case 'lenderNotifiedDate': return formatDateValue(insurance.lenderNotifiedDate);
     default: return '-';
   }
 };
