@@ -564,19 +564,40 @@ function replaceStaticCheckboxLabel(
   checkboxValue: string,
 ): { content: string; replaced: boolean } {
   const labelEscaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const checkboxPattern = new RegExp(`([☐☑☒])((?:\\s|<[^>]+>)*)(${labelEscaped})(?![A-Za-z])`, 'gi');
 
-  if (!checkboxPattern.test(content)) {
-    return { content, replaced: false };
+  // Strategy: find a <w:t> containing a checkbox glyph that is followed
+  // (possibly with intervening XML tags / whitespace) by the label text,
+  // then ONLY replace the glyph character inside its <w:t> element.
+  // This preserves font styling (<w:rPr>) and run boundaries.
+  const glyphInWtPattern = new RegExp(
+    `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)((?:\s|<[^>]+>)*?${labelEscaped})(?![A-Za-z])`,
+    'gi'
+  );
+
+  if (glyphInWtPattern.test(content)) {
+    glyphInWtPattern.lastIndex = 0;
+    return {
+      content: content.replace(glyphInWtPattern, (_match, wtOpen, pre, _glyph, wtTail, labelPart) => {
+        return `${wtOpen}${pre}${checkboxValue}${wtTail}${labelPart}`;
+      }),
+      replaced: true,
+    };
   }
 
+  // Fallback: plain-text glyph adjacent to label (no <w:t> wrapper)
+  const plainPattern = new RegExp(`([☐☑☒])((?:\\s|<[^>]+>)*)(${labelEscaped})(?![A-Za-z])`, 'gi');
+  if (!plainPattern.test(content)) {
+    return { content, replaced: false };
+  }
+  plainPattern.lastIndex = 0;
   return {
-    content: content.replace(checkboxPattern, (_match, _glyph, spacing, labelText) => {
+    content: content.replace(plainPattern, (_match, _glyph, spacing, labelText) => {
       return `${checkboxValue}${spacing}${labelText}`;
     }),
     replaced: true,
   };
 }
+
 
 /**
  * Perform label-based replacement for templates without explicit merge tags.
