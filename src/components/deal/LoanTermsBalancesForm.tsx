@@ -589,28 +589,8 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {renderCurrencyField(FIELD_KEYS.regularPayment, "Regular Payment")}
             {renderCurrencyField(FIELD_KEYS.additionalPrincipal, "Additional Principal")}
 
-            {/* Servicing Fees */}
-            {isChecked(FIELD_KEYS.salesTaxEnabled) ? (
-              <DirtyFieldWrapper fieldKey={FIELD_KEYS.servicingFees}>
-                <div className="flex items-center gap-3">
-                  <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0">
-                    Servicing Fees
-                  </Label>
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
-                    <Input
-                      value={getValue(FIELD_KEYS.servicingFees)}
-                      onChange={(e) => setValue(FIELD_KEYS.servicingFees, e.target.value)}
-                      disabled={disabled}
-                      className="h-8 text-sm pl-7"
-                      placeholder="-"
-                    />
-                  </div>
-                </div>
-              </DirtyFieldWrapper>
-            ) : (
-              renderCurrencyField(FIELD_KEYS.servicingFees, "Servicing Fees")
-            )}
+            {/* Servicing Fees - always currency, independent of Sales Tax */}
+            {renderCurrencyField(FIELD_KEYS.servicingFees, "Servicing Fees")}
 
             {/* Sales Tax checkbox */}
             <div className="flex items-center gap-2">
