@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -140,6 +140,13 @@ const DistributionFields: React.FC<{
 
   const DistInput = isPercent ? PenaltyPercentInput : PenaltyCurrencyInput;
 
+  const lendersVal = parseFloat(values[`${prefix}.distribution.lenders`] || '') || 0;
+  const vendorVal = parseFloat(values[`${prefix}.distribution.origination_vendors`] || '') || 0;
+  const companyVal = parseFloat(values[`${prefix}.distribution.company`] || '') || 0;
+  const percentTotal = lendersVal + vendorVal + companyVal;
+  const hasAnyPercentValue = !!(values[`${prefix}.distribution.lenders`] || values[`${prefix}.distribution.origination_vendors`] || values[`${prefix}.distribution.company`]);
+  const showPercentError = isPercent && hasAnyPercentValue && Math.abs(percentTotal - 100) > 0.001;
+
   return (
     <div className="space-y-2 pt-3">
       <div className="flex items-center gap-2 border-b border-border pb-1">
@@ -169,7 +176,7 @@ const DistributionFields: React.FC<{
         </DirtyFieldWrapper>
         <DirtyFieldWrapper fieldKey={`${prefix}.distribution.origination_vendors`}>
           <div className="flex items-center gap-3">
-            <Label className="text-sm min-w-[160px] max-w-[160px]">Origination Vendors</Label>
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Origination Vendor</Label>
             <div className="flex-1 min-w-0">
               <DistInput
                 value={values[`${prefix}.distribution.origination_vendors`] || ''}
@@ -204,6 +211,11 @@ const DistributionFields: React.FC<{
           </div>
         </DirtyFieldWrapper>
       </div>
+      {showPercentError && (
+        <p className="text-[11px] text-destructive flex items-center gap-1 pt-1">
+          Total distribution percentage must equal 100% (current: {percentTotal.toFixed(2)}%)
+        </p>
+      )}
     </div>
   );
 };
