@@ -360,14 +360,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           {renderCurrencyField(FIELD_KEYS.lienProtectiveEquity, 'Lien (Protective Equity)')}
           {renderInlineSelect(FIELD_KEYS.sourceLienInfo, 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
 
-          <p className="text-xs font-medium text-foreground pt-3 pb-1">During Previous 12 Months</p>
-          {renderCheckboxField(FIELD_KEYS.delinquencies60day, '60-day + Delinquencies')}
-          {renderInlineField(FIELD_KEYS.delinquenciesHowMany, 'How Many')}
-          {renderCheckboxField(FIELD_KEYS.currentlyDelinquent, 'Currently Delinquent')}
-          {renderCheckboxField(FIELD_KEYS.paidByLoan, 'Will be Paid by this Loan')}
-          {renderInlineField(FIELD_KEYS.sourceOfPayment, 'If No, List Source of Payment')}
           {renderInlineField(FIELD_KEYS.recordingNumber, 'Recording number')}
-        </div>
       </div>
 
       {/* Valuation Section */}

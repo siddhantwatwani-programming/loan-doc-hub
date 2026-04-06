@@ -344,12 +344,6 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                   {renderCurrencyField('lienProtectiveEquity', 'Lien (Protective Equity)')}
                   {renderInlineSelect('sourceLienInfo', 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
 
-                  <p className="text-xs font-medium text-foreground pt-3 pb-1">During Previous 12 Months</p>
-                  {renderCheckboxField('delinquencies60day', '60-day + Delinquencies')}
-                  {renderInlineField('delinquenciesHowMany', 'How Many')}
-                  {renderCheckboxField('currentlyDelinquent', 'Currently Delinquent')}
-                  {renderCheckboxField('paidByLoan', 'Will be Paid by this Loan')}
-                  {renderInlineField('sourceOfPayment', 'If No, List Source of Payment')}
                   {renderInlineField('recordingNumber', 'Recording number')}
                 </div>
               </div>
