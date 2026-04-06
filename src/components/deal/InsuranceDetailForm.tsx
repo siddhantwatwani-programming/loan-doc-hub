@@ -53,7 +53,7 @@ const TRACKING_STATUS_OPTIONS = [
 const DIRTY_KEY_MAP: Record<string, string> = {
   property: 'insurance1.property',
   description: 'insurance1.description',
-  insuredName: 'insurance1.insured_name',
+  
   companyName: 'insurance1.company_name',
   policyNumber: 'insurance1.policy_number',
   expiration: 'insurance1.expiration',
