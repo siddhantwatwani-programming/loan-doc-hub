@@ -68,6 +68,9 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'lenderNotified', label: 'Lender Notified' },
   { id: 'current', label: 'Current' },
   { id: 'delinquent', label: 'Delinquent' },
+  { id: 'borrowerNotified', label: 'Borrower Notified' },
+  { id: 'borrowerNotifiedDate', label: 'Borrower Notified Date' },
+  { id: 'lenderNotifiedDate', label: 'Lender Notified Date' },
 ];
 
 export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
