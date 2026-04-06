@@ -1,39 +1,48 @@
 
 
-## Plan: Fix Re851a Checkbox Label Matching
+## Plan: Update Insurance Modal, Form, and Table Grid
 
-### Root Cause (2 issues)
+### Summary
+1. Add a Column config popover button before "Add Insurance" (same as Liens)
+2. Change "Insurance Company" dropdown to a static list of US insurance companies (replacing contacts fetch)
+3. Items 4-6 already exist in the current code — no changes needed
+4. Remove "Active" checkbox and "Red Flag Trigger" dropdown from Insurance Tracking section
 
-1. **Wrong label**: The `merge_tag_aliases` entry for `ln_p_amortized` has `tag_name = 'AMORTIZED'`, but the Re851a template uses `FULLY AMORTIZED` next to the checkbox. So the label never matches correctly.
+### Changes
 
-2. **Substring collision**: The regex in `replaceStaticCheckboxLabel` matches `AMORTIZED` as a substring inside `AMORTIZED PARTIALLY`, causing the wrong checkbox to be checked. The regex needs a word boundary or end-of-match guard after the label.
+**1. InsuranceTableView.tsx** — Add Column config button
+- Import `ColumnConfigPopover`, `ColumnConfig`, `useTableColumnConfig` (same as LiensTableView)
+- Define `DEFAULT_COLUMNS` array matching current grid columns
+- Add `ColumnConfigPopover` button before "Add Insurance" button (same layout as Liens)
+- Render only visible columns in table header and body
+- Update colSpan for empty state to use `visibleColumns.length + 1`
 
-### Fix
+**2. InsuranceModal.tsx** — Replace contacts dropdown with US insurance companies
+- Remove the `contactOptions` state and the `useEffect` that fetches from `contacts` table
+- Remove the `supabase` import
+- Add a static `US_INSURANCE_COMPANIES` array (State Farm, Allstate, GEICO, Progressive, Liberty Mutual, Nationwide, Farmers, USAA, Travelers, American Family, Erie Insurance, Auto-Owners, Hartford, Chubb, MetLife, AIG, Zurich, Cincinnati Financial, Hanover, etc.)
+- Replace the custom `Ins. Company` Select to use `renderInlineSelect('companyName', 'Ins. Company', US_INSURANCE_COMPANIES, 'Select company')`
 
-**1. Database migration** — Update the `merge_tag_aliases` entry:
-```sql
-UPDATE merge_tag_aliases
-SET tag_name = 'FULLY AMORTIZED'
-WHERE field_key = 'ln_p_amortized' AND tag_type = 'label';
-```
-This aligns the label with what the Re851a template actually contains.
+**3. PropertyInsuranceForm.tsx** — Same change for Insurance Company dropdown
+- Remove the `contactOptions` state and the `useEffect` fetching contacts
+- Remove the `supabase` import
+- Use the same `US_INSURANCE_COMPANIES` static list in the Select dropdown
 
-**2. `supabase/functions/_shared/tag-parser.ts`** — Add word boundary after label in regex (line 567):
-```
-Change:  `([☐☑☒])((?:\\s|<[^>]+>)*)(${labelEscaped})`
-To:      `([☐☑☒])((?:\\s|<[^>]+>)*)(${labelEscaped})(?![A-Za-z])`
-```
-The negative lookahead `(?![A-Za-z])` prevents `AMORTIZED` from matching inside `AMORTIZED PARTIALLY` (the `P` that follows would block the match). This is a minimal, safe change — it only rejects matches where the label is immediately followed by another letter.
+**4. InsuranceModal.tsx** — Remove "Active" and "Red Flag Trigger" from Insurance Tracking
+- Remove lines 264-267 (Active checkbox under Insurance Tracking)
+- Remove line 268 (`renderInlineSelect('redFlagTrigger', ...)`)
 
-### No Other Changes
-- No UI changes
-- No template formatting changes
-- No changes to the derivation logic (lines 736-747 in generate-document already correct)
-- No schema changes
+**5. PropertyInsuranceForm.tsx** — No changes needed for items 4-7
+- Annual Premium, Frequency, Impounds title already exist
+- Insurance Tracking section doesn't have Active or Red Flag Trigger in the detail form (only in modal)
+
+### No Database/Schema Changes
+All data persists via existing JSONB keys. The `companyName` field stores the selected company name string as before.
 
 ### Files Changed
 | File | Change |
 |---|---|
-| Database migration | UPDATE tag_name from `AMORTIZED` to `FULLY AMORTIZED` |
-| `supabase/functions/_shared/tag-parser.ts` | Add `(?![A-Za-z])` to checkbox label regex (line 567) |
+| `src/components/deal/InsuranceTableView.tsx` | Add Column config popover (same pattern as Liens) |
+| `src/components/deal/InsuranceModal.tsx` | Replace contacts dropdown with US insurance companies; remove Active + Red Flag Trigger from Insurance Tracking |
+| `src/components/deal/PropertyInsuranceForm.tsx` | Replace contacts dropdown with US insurance companies |
 
