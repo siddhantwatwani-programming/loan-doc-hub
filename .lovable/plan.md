@@ -1,70 +1,44 @@
 
 
-## Plan: Add "Unpaid Other" Field + Auto-Calculated Fields in Loan Terms Balances
+## Plan: Fix Re851a Checkbox Labels Not Getting Checked
 
-### Summary
-Add a new "Unpaid Other" currency field below "Charges Interest" in the Balances column, then make 4 fields auto-calculated and read-only: Total Payment, Amount to Reinstate, Total Balance Due, and Estimated Balloon Payment.
+### Root Cause
 
-### New Field
+The engine derives the correct boolean values (`ln_p_amortizedPartially`, `ln_p_amortized`, `ln_p_paymentMonthly`, `ln_p_paymentWeekly`) at lines 736-747 of `generate-document/index.ts`. However, the Re851a template uses **static checkbox glyphs** (☐ followed by label text like "AMORTIZED PARTIALLY"), and the label-based replacement mechanism (`replaceStaticCheckboxLabel`) only processes labels that are registered in the `merge_tag_aliases` table with `tag_type = 'label'`.
 
-**Unpaid Other** — currency field placed below "Charges Interest" in the Balances column.
-- Field key: `loan_terms.unpaid_other`
-- Legacy key: `ln_p_unpaidOther`
+Currently, **no `merge_tag_aliases` entries exist** for these checkbox labels. Without them, the engine never matches the checkbox glyphs to the boolean field values, so they remain unchecked (☐) in the output.
 
-### Calculation Formulas
+### Fix
 
-| Field | Formula (sum of field keys) |
-|---|---|
-| **Total Payment** | Regular Payment + Additional Principal + Servicing Fees + Other Sched. Pmts + To Escrow Impounds + Default Interest |
-| **Amount to Reinstate** | Principal + Unpaid Late Charges + Accrued Late Charges + Unpaid Interest + Accrued Interest + Interest Guarantee + Unpaid Def. Interest + Accrued Def. Interest + Charges Owed + Charges Interest + Unpaid Other |
-| **Total Balance Due** | Principal + (Unpaid Interest + Accrued Interest) + (Charges Owed + Charges Interest) + Unpaid Other |
-| **Estimated Balloon Payment** | Total Balance Due + (Loan Amount × Note Rate / 12 / 100) — i.e. Total Balance Due + 1 month interest |
+**Database migration** — INSERT 4 rows into `merge_tag_aliases`:
 
-All 4 calculated fields will be **read-only** and **auto-updated in real-time** as users change input values.
+| tag_name | field_key | tag_type | is_active |
+|---|---|---|---|
+| `AMORTIZED PARTIALLY` | `ln_p_amortizedPartially` | `label` | `true` |
+| `AMORTIZED` | `ln_p_amortized` | `label` | `true` |
+| `MONTHLY` | `ln_p_paymentMonthly` | `label` | `true` |
+| `WEEKLY` | `ln_p_paymentWeekly` | `label` | `true` |
 
-### Technical Changes
+These entries tell the label-based replacement engine to:
+1. Find `☐ AMORTIZED PARTIALLY` in the template XML
+2. Look up `ln_p_amortizedPartially` in `fieldValues`
+3. If `true`, replace `☐` with `☑`; if `false`, keep `☐`
 
-**1. Database migration** — INSERT 1 new row into `field_dictionary`:
-- `ln_p_unpaidOther`, label "Unpaid Other", section `loan_terms`, form_type `balances_loan_details`, data_type `currency`
-
-**2. `src/lib/fieldKeyMap.ts`** — Add `unpaidOther: 'loan_terms.unpaid_other'` to `LOAN_TERMS_BALANCES_KEYS`
-
-**3. `src/lib/legacyKeyMap.ts`** — Add `'loan_terms.unpaid_other': 'ln_p_unpaidOther'`
-
-**4. `src/components/deal/LoanTermsBalancesForm.tsx`** — 3 changes:
-- Add `unpaidOther` currency field below "Charges Interest" (after line 688)
-- Add real-time calculation logic using `useEffect` or inline computation that sums the relevant fields for Total Payment, Amount to Reinstate, Total Balance Due, and Estimated Balloon Payment
-- Make those 4 fields read-only (disabled inputs with computed values)
-
-**5. `src/lib/calculationEngine.ts`** — No changes needed. The calculations will be done inline in the form component (like existing patterns) since they involve summing many fields, which is simpler than defining complex multi-dependency formulas in the calculation engine.
-
-### UI Layout (Balances Column — field order)
+### How It Works (already implemented)
 
 ```text
-Principal
-Unpaid Late Charges
-Accrued Late Charges
-Unpaid Interest
-Accrued Interest
-Interest Guarantee
-Unpaid Def. Interest
-Accrued Def. Interest
-Charges Owed
-Charges Interest
-Unpaid Other          ← NEW
-Amount to Reinstate   ← NOW CALCULATED, READ-ONLY
-Reserve Balance
-Escrow Balance
-Suspense Funds
-Total Balance Due     ← NOW CALCULATED, READ-ONLY
-Estimated Balloon Pmt ← NOW CALCULATED, READ-ONLY
+Dropdown selected → Edge function derives boolean (line 739) →
+labelMap loaded from merge_tag_aliases → replaceStaticCheckboxLabel
+matches "☐ AMORTIZED PARTIALLY" → replaces glyph with ☑
 ```
 
-Payments column — Total Payment becomes calculated and read-only.
+### No Code Changes Required
 
-### Behavior
-- All 4 calculated fields display formatted currency with `$` prefix
-- Values update instantly as any input field changes
-- Fields are visually distinguished (primary styled labels, as they already are)
-- Empty/missing input values treated as `0` in calculations
+The edge function logic (lines 736-747) and the static checkbox replacement mechanism are already fully functional. Only the database mapping entries are missing.
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| Database migration | INSERT 4 rows into `merge_tag_aliases` |
 
