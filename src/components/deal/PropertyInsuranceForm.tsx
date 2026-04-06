@@ -135,7 +135,7 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
               <Select value={getFieldValue(FIELD_KEYS.companyName) || undefined} onValueChange={(val) => onValueChange(FIELD_KEYS.companyName, val)} disabled={disabled}>
                 <SelectTrigger className="h-8 text-sm mt-1"><SelectValue placeholder="Select company" /></SelectTrigger>
                 <SelectContent className="bg-background border border-border z-50">
-                  {contactOptions.map(opt => (<SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>))}
+                  {US_INSURANCE_COMPANIES.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>

@@ -240,11 +240,6 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
                 <div className="border-b border-border pb-1 mb-2 pt-2">
                   <span className="font-semibold text-xs text-primary">Insurance Tracking</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox id="modal-insurance-tracking" checked={formData.insuranceTracking} onCheckedChange={(checked) => handleChange('insuranceTracking', !!checked)} className="h-3.5 w-3.5" />
-                  <Label htmlFor="modal-insurance-tracking" className="text-xs text-foreground">Active</Label>
-                </div>
-                {renderInlineSelect('redFlagTrigger', 'Red Flag Trigger', ['Not Paid', 'Pending Cancellation', 'Cancelled'], 'Select')}
                 {formData.insuranceTracking && (
                   <>
                     {renderInlineField('lastVerified', 'Last Verified', { type: 'date' })}
