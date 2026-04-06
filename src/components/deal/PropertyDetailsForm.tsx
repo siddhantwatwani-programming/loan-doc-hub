@@ -44,7 +44,6 @@ const PROPERTY_TYPE_OPTIONS = [
 
 const OCCUPANCY_OPTIONS = ['Investor', 'Other', 'Owner', 'Primary Borrower', 'Secondary Borrower', 'Tenant', 'Unknown', 'Vacant', 'Non Owner Occupied'];
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
-const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
 const CONSTRUCTION_TYPES = ['Wood/Stucco', 'Stick', 'Concrete Block'];
 const LIEN_SOURCES = ['Broker', 'Borrower', 'Other'];
 const VALUATION_TYPE_OPTIONS = ['Broker BPO', 'Appraisal'];
