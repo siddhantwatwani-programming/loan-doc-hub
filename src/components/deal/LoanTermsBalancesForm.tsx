@@ -127,10 +127,10 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             id={key}
             value={getValue(key)}
             onChange={(e) => setValue(key, sanitizeInterestInput(e.target.value))}
-            onBlur={() => { const v = normalizeInterestOnBlur(getValue(key), 3); if (v !== getValue(key)) setValue(key, v); }}
+            onBlur={() => { const v = normalizeInterestOnBlur(getValue(key), 2); if (v !== getValue(key)) setValue(key, v); }}
             disabled={disabled}
             className="h-8 text-sm pr-7"
-            placeholder="0.000"
+            placeholder="0.00"
             inputMode="decimal"
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
