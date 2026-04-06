@@ -48,6 +48,7 @@ const getDefaultLien = (): LienData => ({
   maturityDate: '', originalBalance: '', balanceAfter: '', currentBalance: '', regularPayment: '',
   recordingNumber: '', recordingNumberFlag: 'false', recordingDate: '', seniorLienTracking: 'false',
   lastVerified: '', lastChecked: '', note: '', thisLoan: 'false', estimate: 'false', status: '',
+  delinquencies60day: 'false', delinquenciesHowMany: '', currentlyDelinquent: 'false', paidByLoan: 'false', sourceOfPayment: '',
 });
 
 export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, onSave, isEdit, propertyOptions = [], loanValues = {} }) => {
