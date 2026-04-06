@@ -635,6 +635,11 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'lien.status': 'pr_li_lienHolder3',
   'lien.interest_rate': 'li_gd_interestRate',
   'lien.maturity_date': 'li_gd_maturityDate',
+  'lien.delinquencies_60day': 'pr_li_delinqu60day',
+  'lien.delinquencies_how_many': 'pr_li_delinquHowMany',
+  'lien.currently_delinquent': 'pr_li_currentDelinqu',
+  'lien.paid_by_loan': 'pr_li_paidByLoan',
+  'lien.source_of_payment': 'pr_li_sourceOfPayment',
 
   // PROPERTY TAX
   'property1.tax.payee': 'pr_p_taxPayee',
