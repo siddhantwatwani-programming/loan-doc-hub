@@ -55,6 +55,11 @@ const DEFAULT_LIEN: LienData = {
   thisLoan: 'false',
   estimate: 'false',
   status: '',
+  delinquencies60day: 'false',
+  delinquenciesHowMany: '',
+  currentlyDelinquent: 'false',
+  paidByLoan: 'false',
+  sourceOfPayment: '',
 };
 
 const LIEN_FIELD_MAP: Record<string, string> = {
