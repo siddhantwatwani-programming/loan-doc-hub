@@ -564,7 +564,7 @@ function replaceStaticCheckboxLabel(
   checkboxValue: string,
 ): { content: string; replaced: boolean } {
   const labelEscaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const checkboxPattern = new RegExp(`([☐☑☒])((?:\\s|<[^>]+>)*)(${labelEscaped})`, 'gi');
+  const checkboxPattern = new RegExp(`([☐☑☒])((?:\\s|<[^>]+>)*)(${labelEscaped})(?![A-Za-z])`, 'gi');
 
   if (!checkboxPattern.test(content)) {
     return { content, replaced: false };
