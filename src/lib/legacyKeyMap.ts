@@ -443,6 +443,7 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'loan_terms.accrued_default_interest': 'ln_p_accruedDefaulIntere',
   'loan_terms.charges_owed': 'ln_p_chargesOwed',
   'loan_terms.charges_interest': 'ln_p_chargesIntere',
+  'loan_terms.unpaid_other': 'ln_p_unpaidOther',
   'loan_terms.amount_to_reinstate': 'ln_p_amountToReinst',
   'loan_terms.reserve_balance': 'ln_p_reserveBalanc',
   'loan_terms.escrow_balance': 'ln_p_escrowBalanc',

@@ -378,6 +378,7 @@ export const LOAN_TERMS_BALANCES_KEYS = {
   accruedDefaultInterest: 'loan_terms.accrued_default_interest',
   chargesOwed: 'loan_terms.charges_owed',
   chargesInterest: 'loan_terms.charges_interest',
+  unpaidOther: 'loan_terms.unpaid_other',
   amountToReinstate: 'loan_terms.amount_to_reinstate',
   reserveBalance: 'loan_terms.reserve_balance',
   escrowBalance: 'loan_terms.escrow_balance',
