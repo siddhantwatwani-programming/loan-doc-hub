@@ -203,7 +203,7 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                     {insurances.length === 0 ? 'No insurance records added. Click "Add Insurance" to create one.' : 'No insurance records match your search or filters.'}
                   </TableCell>
                 </TableRow>
