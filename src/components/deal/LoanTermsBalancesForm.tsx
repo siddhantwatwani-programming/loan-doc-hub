@@ -771,6 +771,23 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Other Scheduled Payments Modal */}
+      <Dialog open={otherSchedPmtsOpen} onOpenChange={setOtherSchedPmtsOpen}>
+        <DialogContent className="sm:max-w-[500px] z-[9999]" style={{ zIndex: 9999 }}>
+          <DialogHeader>
+            <DialogTitle>Other Scheduled Payments</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {renderCurrencyField(FIELD_KEYS.otherScheduledPayments, "Amount")}
+          </div>
+          <DialogFooter className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setOtherSchedPmtsOpen(false)} className="flex-shrink-0">
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
