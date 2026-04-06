@@ -193,6 +193,41 @@ function computeField(
       return { field_key: field.field_key, value: result.toFixed(2), computed: true };
     }
 
+    if (parsed.type === 'arithmetic_chained') {
+      const baseNum = parseFloat(baseValue.replace(/[,$]/g, ''));
+      if (isNaN(baseNum)) {
+        return { field_key: field.field_key, value: null, computed: false, error: `Invalid numeric value for ${parsed.baseField}` };
+      }
+      const addVal = parseFloat(values[parsed.addendField!].replace(/[,$]/g, ''));
+      if (isNaN(addVal)) {
+        return { field_key: field.field_key, value: null, computed: false, error: `Invalid numeric value for ${parsed.addendField}` };
+      }
+      // First operation: baseNum op addVal
+      let intermediate: number;
+      switch (parsed.operator) {
+        case '/':
+          if (addVal === 0) return { field_key: field.field_key, value: null, computed: false, error: 'Division by zero' };
+          intermediate = baseNum / addVal; break;
+        case '*': intermediate = baseNum * addVal; break;
+        case '+': intermediate = baseNum + addVal; break;
+        case '-': intermediate = baseNum - addVal; break;
+        default: intermediate = 0;
+      }
+      // Chain operation: intermediate chainOp staticValue
+      const chainVal = parsed.staticValue || 0;
+      let result: number;
+      switch (parsed.chainOperator) {
+        case '*': result = intermediate * chainVal; break;
+        case '+': result = intermediate + chainVal; break;
+        case '-': result = intermediate - chainVal; break;
+        case '/':
+          if (chainVal === 0) return { field_key: field.field_key, value: null, computed: false, error: 'Division by zero' };
+          result = intermediate / chainVal; break;
+        default: result = intermediate;
+      }
+      return { field_key: field.field_key, value: result.toFixed(2), computed: true };
+    }
+
     if (parsed.type === 'date_add_months' || parsed.type === 'date_add_days') {
       // Parse the base date
       const baseDate = parseISO(baseValue);
