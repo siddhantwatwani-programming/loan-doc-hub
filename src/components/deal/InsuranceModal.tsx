@@ -78,10 +78,6 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
   useEffect(() => {
     if (open) {
       const data = insurance ? { ...insurance } : getDefaultInsurance();
-      // Format coverage for display
-      if (data.coverage) {
-        data.coverage = formatCurrencyDisplay(String(data.coverage));
-      }
       if (data.annualPremium) {
         data.annualPremium = formatCurrencyDisplay(String(data.annualPremium));
       }
