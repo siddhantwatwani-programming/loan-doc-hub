@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -137,8 +138,27 @@ const DistributionFields: React.FC<{
   disabled?: boolean;
 }> = ({ prefix, values, onValueChange, disabled }) => {
   const isPercent = values[`${prefix}.distribution.is_percent`] === 'true';
-
   const DistInput = isPercent ? PenaltyPercentInput : PenaltyCurrencyInput;
+
+  const [brokerLenderContacts, setBrokerLenderContacts] = useState<{ id: string; label: string; type: string }[]>([]);
+
+  useEffect(() => {
+    const fetchContacts = async () => {
+      const { data } = await supabase
+        .from('contacts')
+        .select('id, full_name, first_name, last_name, company, contact_type')
+        .in('contact_type', ['broker', 'lender'])
+        .order('full_name');
+      if (data) {
+        setBrokerLenderContacts(data.map(c => ({
+          id: c.id,
+          label: `${c.full_name || [c.first_name, c.last_name].filter(Boolean).join(' ')}${c.company ? ` (${c.company})` : ''} — ${c.contact_type === 'broker' ? 'Broker' : 'Lender'}`,
+          type: c.contact_type,
+        })));
+      }
+    };
+    fetchContacts();
+  }, []);
 
   const lendersVal = parseFloat(values[`${prefix}.distribution.lenders`] || '') || 0;
   const vendorVal = parseFloat(values[`${prefix}.distribution.origination_vendors`] || '') || 0;
@@ -202,11 +222,20 @@ const DistributionFields: React.FC<{
           <div className="flex items-center gap-3">
             <Label className="text-sm min-w-[160px] max-w-[160px]">Other</Label>
             <div className="flex-1 min-w-0">
-              <DistInput
+              <Select
                 value={values[`${prefix}.distribution.other`] || ''}
-                onChange={(val) => onValueChange(`${prefix}.distribution.other`, val)}
+                onValueChange={(val) => onValueChange(`${prefix}.distribution.other`, val)}
                 disabled={disabled}
-              />
+              >
+                <SelectTrigger className="h-7 text-sm">
+                  <SelectValue placeholder="Select Broker or Lender..." />
+                </SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50 max-h-60">
+                  {brokerLenderContacts.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </DirtyFieldWrapper>
