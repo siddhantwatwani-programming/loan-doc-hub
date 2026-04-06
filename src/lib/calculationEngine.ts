@@ -72,7 +72,7 @@ function parseFormula(formula: string): {
 
   // Arithmetic: {field} * N  or  {field} + N  etc.
   const fieldArithStaticPattern = /^\{([^}]+)\}\s*([+\-*/])\s*(\d+(?:\.\d+)?)$/;
-  let match = cleanFormula.match(fieldArithStaticPattern);
+  match = cleanFormula.match(fieldArithStaticPattern);
   if (match) {
     return {
       type: 'arithmetic',
