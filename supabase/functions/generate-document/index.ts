@@ -373,7 +373,10 @@ async function generateSingleDocument(
           setIfEmpty(`${shortPrefix}_phone`, phone);
           setIfEmpty(`${shortPrefix}_fax`, fax);
           if (cd.tax_id) setIfEmpty(`${shortPrefix}_taxId`, cd.tax_id);
-          if (cd["address.street"]) setIfEmpty(`${shortPrefix}_street`, cd["address.street"]);
+          if (cd["address.street"]) {
+            setIfEmpty(`${shortPrefix}_street`, cd["address.street"]);
+            setIfEmpty(`${shortPrefix}_address`, cd["address.street"]);
+          }
           if (cd["address.city"] || contact.city) setIfEmpty(`${shortPrefix}_city`, cd["address.city"] || contact.city);
           if (cd["address.state"] || contact.state) setIfEmpty(`${shortPrefix}_state`, cd["address.state"] || contact.state);
           if (cd["address.zip"]) setIfEmpty(`${shortPrefix}_zip`, cd["address.zip"]);
