@@ -55,6 +55,20 @@ function parseFormula(formula: string): {
 } | null {
   const cleanFormula = formula.trim();
   
+  // Chained arithmetic: ({field1} / {field2}) * N  e.g. LTV ratio
+  const chainedArithPattern = /^\(\{([^}]+)\}\s*([+\-*/])\s*\{([^}]+)\}\)\s*([+\-*/])\s*(\d+(?:\.\d+)?)$/;
+  let match = cleanFormula.match(chainedArithPattern);
+  if (match) {
+    return {
+      type: 'arithmetic_chained',
+      baseField: match[1],
+      addendField: match[3],
+      staticValue: parseFloat(match[5]),
+      operator: match[2] as '*' | '+' | '-' | '/',
+      chainOperator: match[4] as '*' | '+' | '-' | '/',
+    };
+  }
+
   // Arithmetic: {field} * N  or  {field} + N  etc.
   const fieldArithStaticPattern = /^\{([^}]+)\}\s*([+\-*/])\s*(\d+(?:\.\d+)?)$/;
   let match = cleanFormula.match(fieldArithStaticPattern);
