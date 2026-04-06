@@ -24,6 +24,9 @@ export interface PropertyTaxData {
   current: boolean;
   delinquent: boolean;
   delinquentAmount: string;
+  borrowerNotified: boolean;
+  borrowerNotifiedDate: string;
+  lenderNotifiedDate: string;
 }
 
 interface PropertyTaxTableViewProps {
@@ -65,6 +68,9 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'lenderNotified', label: 'Lender Notified' },
   { id: 'current', label: 'Current' },
   { id: 'delinquent', label: 'Delinquent' },
+  { id: 'borrowerNotified', label: 'Borrower Notified' },
+  { id: 'borrowerNotifiedDate', label: 'Borrower Notified Date' },
+  { id: 'lenderNotifiedDate', label: 'Lender Notified Date' },
 ];
 
 export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
@@ -175,12 +181,15 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
                 <SortableTableHead columnId="lenderNotified" label="Lender Notified" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
                 <SortableTableHead columnId="current" label="Current" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[80px]" />
                 <SortableTableHead columnId="delinquent" label="Delinquent" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
+                <SortableTableHead columnId="borrowerNotified" label="Borrower Notified" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
+                <SortableTableHead columnId="borrowerNotifiedDate" label="Borrower Notified Date" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[140px]" />
+                <SortableTableHead columnId="lenderNotifiedDate" label="Lender Notified Date" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[140px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
                     {taxes.length === 0 ? 'No property tax records added. Click "Add Property Tax" to create one.' : 'No property tax records match your search or filters.'}
                   </TableCell>
                 </TableRow>
@@ -203,6 +212,9 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
                         <span>{formatCurrency(tax.delinquentAmount) || '✓'}</span>
                       ) : '-'}
                     </TableCell>
+                    <TableCell>{tax.borrowerNotified ? '✓' : '-'}</TableCell>
+                    <TableCell>{formatDate(tax.borrowerNotifiedDate)}</TableCell>
+                    <TableCell>{formatDate(tax.lenderNotifiedDate)}</TableCell>
                   </TableRow>
                 ))
               )}

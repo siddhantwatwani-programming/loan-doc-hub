@@ -570,6 +570,9 @@ export const PROPERTY_TAX_KEYS = {
   current: 'propertytax1.current',
   delinquent: 'propertytax1.delinquent',
   delinquentAmount: 'propertytax1.delinquent_amount',
+  borrowerNotified: 'propertytax1.borrower_notified',
+  borrowerNotifiedDate: 'propertytax1.borrower_notified_date',
+  lenderNotifiedDate: 'propertytax1.lender_notified_date',
 } as const;
 
 // ──────────────────────────────────────────────────

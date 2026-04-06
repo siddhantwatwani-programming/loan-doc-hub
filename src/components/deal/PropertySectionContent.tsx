@@ -138,9 +138,12 @@ const extractPropertyTaxesFromValues = (values: Record<string, string>): Propert
       current: values[`${prefix}.current`] === 'true',
       delinquent: values[`${prefix}.delinquent`] === 'true',
       delinquentAmount: values[`${prefix}.delinquent_amount`] || '',
+      borrowerNotified: values[`${prefix}.borrower_notified`] === 'true',
+      borrowerNotifiedDate: values[`${prefix}.borrower_notified_date`] || '',
+      lenderNotifiedDate: values[`${prefix}.lender_notified_date`] || '',
     };
     const hasData = Object.keys(tax).some(key => {
-      if (key === 'id' || key === 'active' || key === 'current' || key === 'delinquent') return false;
+      if (key === 'id' || key === 'active' || key === 'current' || key === 'delinquent' || key === 'borrowerNotified') return false;
       const val = (tax as any)[key];
       return val !== undefined && val !== '';
     });
