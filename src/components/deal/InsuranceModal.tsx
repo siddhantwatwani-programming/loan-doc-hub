@@ -20,8 +20,17 @@ import { cn } from '@/lib/utils';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
 import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
 import { US_STATES } from '@/lib/usStates';
-import { supabase } from '@/integrations/supabase/client';
 import type { InsuranceData } from './InsuranceTableView';
+
+const US_INSURANCE_COMPANIES = [
+  'State Farm', 'Allstate', 'GEICO', 'Progressive', 'Liberty Mutual',
+  'Nationwide', 'Farmers', 'USAA', 'Travelers', 'American Family',
+  'Erie Insurance', 'Auto-Owners', 'Hartford', 'Chubb', 'MetLife',
+  'AIG', 'Zurich', 'Cincinnati Financial', 'Hanover', 'Safeco',
+  'Amica Mutual', 'Country Financial', 'Shelter Insurance', 'CSAA',
+  'Mercury Insurance', 'Kemper', 'Westfield', 'Grange Insurance',
+  'Donegal', 'Plymouth Rock',
+];
 
 interface InsuranceModalProps {
   open: boolean;
