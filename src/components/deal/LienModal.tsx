@@ -48,6 +48,7 @@ const getDefaultLien = (): LienData => ({
   maturityDate: '', originalBalance: '', balanceAfter: '', currentBalance: '', regularPayment: '',
   recordingNumber: '', recordingNumberFlag: 'false', recordingDate: '', seniorLienTracking: 'false',
   lastVerified: '', lastChecked: '', note: '', thisLoan: 'false', estimate: 'false', status: '',
+  delinquencies60day: 'false', delinquenciesHowMany: '', currentlyDelinquent: 'false', paidByLoan: 'false', sourceOfPayment: '',
 });
 
 export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, onSave, isEdit, propertyOptions = [], loanValues = {} }) => {
@@ -341,6 +342,28 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
                 </div>
               </div>
             )}
+
+            {/* During Previous 12 Months */}
+            <div className="border-b border-border pb-1 mt-3">
+              <span className="font-semibold text-xs text-primary">During Previous 12 Months</span>
+            </div>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 mt-1">
+              <div className="flex items-center gap-2">
+                <Checkbox id="modal-delinquencies60day" checked={formData.delinquencies60day === 'true'} onCheckedChange={(c) => handleChange('delinquencies60day', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                <Label htmlFor="modal-delinquencies60day" className="text-xs text-foreground">60-day + Delinquencies</Label>
+              </div>
+              {renderInlineField('delinquenciesHowMany', 'How Many')}
+              <div className="flex items-center gap-2">
+                <Checkbox id="modal-currentlyDelinquent" checked={formData.currentlyDelinquent === 'true'} onCheckedChange={(c) => handleChange('currentlyDelinquent', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                <Label htmlFor="modal-currentlyDelinquent" className="text-xs text-foreground">Currently Delinquent</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="modal-paidByLoan" checked={formData.paidByLoan === 'true'} onCheckedChange={(c) => handleChange('paidByLoan', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                <Label htmlFor="modal-paidByLoan" className="text-xs text-foreground">Will be Paid by this Loan</Label>
+              </div>
+              {renderInlineField('sourceOfPayment', 'If No, Source of Payment')}
+              <div />
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-3 border-t border-border shrink-0 mt-0">

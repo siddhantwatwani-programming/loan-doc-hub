@@ -264,9 +264,9 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                   {renderInlineSelect('propertyType', 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
                   {renderInlineSelect('occupancy', 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
                   {renderInlineField('zoning', 'Zoning')}
-                  {renderCurrencyField('appraisedValue', 'Appraised Value')}
+                  {renderCurrencyField('appraisedValue', 'Estimate of Value')}
                   {renderCurrencyField('pledgedEquity', 'Pledged Equity')}
-                  {renderInlineSelect('loanPriority', 'Priority', PRIORITY_OPTIONS, 'Select')}
+                  {renderCheckboxField('floodZone', 'Flood Zone')}
                   {renderCheckboxField('floodZone', 'Flood Zone')}
 
                   {renderCheckboxField('propertyGeneratesIncome', 'Property Generates Income')}
@@ -344,12 +344,6 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                   {renderCurrencyField('lienProtectiveEquity', 'Lien (Protective Equity)')}
                   {renderInlineSelect('sourceLienInfo', 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
 
-                  <p className="text-xs font-medium text-foreground pt-3 pb-1">During Previous 12 Months</p>
-                  {renderCheckboxField('delinquencies60day', '60-day + Delinquencies')}
-                  {renderInlineField('delinquenciesHowMany', 'How Many')}
-                  {renderCheckboxField('currentlyDelinquent', 'Currently Delinquent')}
-                  {renderCheckboxField('paidByLoan', 'Will be Paid by this Loan')}
-                  {renderInlineField('sourceOfPayment', 'If No, List Source of Payment')}
                   {renderInlineField('recordingNumber', 'Recording number')}
                 </div>
               </div>

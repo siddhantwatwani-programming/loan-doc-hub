@@ -73,6 +73,11 @@ const DIRTY_KEY_MAP: Record<string, string> = {
   thisLoan: 'lien1.this_loan',
   estimate: 'lien1.estimate',
   status: 'lien1.status',
+  delinquencies60day: 'lien1.delinquencies_60day',
+  delinquenciesHowMany: 'lien1.delinquencies_how_many',
+  currentlyDelinquent: 'lien1.currently_delinquent',
+  paidByLoan: 'lien1.paid_by_loan',
+  sourceOfPayment: 'lien1.source_of_payment',
 };
 
 // Determine the active loan type radio value
@@ -380,6 +385,35 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
               </DirtyFieldWrapper>
             </>
           )}
+        </div>
+      </div>
+
+      {/* During Previous 12 Months */}
+      <div className="space-y-3">
+        <div className="border-b border-border pb-2">
+          <span className="font-semibold text-sm text-primary">During Previous 12 Months</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.delinquencies60day}>
+            <div className="flex items-center gap-2">
+              <Checkbox id="delinquencies60day" checked={lien.delinquencies60day === 'true'} onCheckedChange={(checked) => onChange('delinquencies60day', checked ? 'true' : 'false')} disabled={disabled} />
+              <Label htmlFor="delinquencies60day" className="text-sm text-foreground">60-day + Delinquencies</Label>
+            </div>
+          </DirtyFieldWrapper>
+          {renderField('delinquenciesHowMany', 'How Many')}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.currentlyDelinquent}>
+            <div className="flex items-center gap-2">
+              <Checkbox id="currentlyDelinquent" checked={lien.currentlyDelinquent === 'true'} onCheckedChange={(checked) => onChange('currentlyDelinquent', checked ? 'true' : 'false')} disabled={disabled} />
+              <Label htmlFor="currentlyDelinquent" className="text-sm text-foreground">Currently Delinquent</Label>
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.paidByLoan}>
+            <div className="flex items-center gap-2">
+              <Checkbox id="paidByLoan" checked={lien.paidByLoan === 'true'} onCheckedChange={(checked) => onChange('paidByLoan', checked ? 'true' : 'false')} disabled={disabled} />
+              <Label htmlFor="paidByLoan" className="text-sm text-foreground">Will be Paid by this Loan</Label>
+            </div>
+          </DirtyFieldWrapper>
+          {renderField('sourceOfPayment', 'If No, List Source of Payment')}
         </div>
       </div>
     </div>

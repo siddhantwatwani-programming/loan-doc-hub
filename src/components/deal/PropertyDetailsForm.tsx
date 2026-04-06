@@ -275,9 +275,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           {renderInlineSelect(FIELD_KEYS.propertyType, 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
           {renderInlineSelect(FIELD_KEYS.occupancy, 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
           {renderInlineField(FIELD_KEYS.zoning, 'Zoning')}
-          {renderCurrencyField(FIELD_KEYS.appraisedValue, 'Appraised Value')}
+          {renderCurrencyField(FIELD_KEYS.appraisedValue, 'Estimate of Value')}
           {renderCurrencyField(FIELD_KEYS.pledgedEquity, 'Pledged Equity')}
-          {renderInlineSelect(FIELD_KEYS.priority, 'Priority', PRIORITY_OPTIONS, 'Select')}
           {renderCheckboxField(FIELD_KEYS.floodZone, 'Flood Zone')}
 
           {renderCheckboxField(FIELD_KEYS.propertyGeneratesIncome, 'Property Generates Income')}
@@ -361,12 +360,6 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           {renderCurrencyField(FIELD_KEYS.lienProtectiveEquity, 'Lien (Protective Equity)')}
           {renderInlineSelect(FIELD_KEYS.sourceLienInfo, 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
 
-          <p className="text-xs font-medium text-foreground pt-3 pb-1">During Previous 12 Months</p>
-          {renderCheckboxField(FIELD_KEYS.delinquencies60day, '60-day + Delinquencies')}
-          {renderInlineField(FIELD_KEYS.delinquenciesHowMany, 'How Many')}
-          {renderCheckboxField(FIELD_KEYS.currentlyDelinquent, 'Currently Delinquent')}
-          {renderCheckboxField(FIELD_KEYS.paidByLoan, 'Will be Paid by this Loan')}
-          {renderInlineField(FIELD_KEYS.sourceOfPayment, 'If No, List Source of Payment')}
           {renderInlineField(FIELD_KEYS.recordingNumber, 'Recording number')}
         </div>
       </div>
