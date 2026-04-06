@@ -125,10 +125,10 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             id={key}
             value={getValue(key)}
             onChange={(e) => setValue(key, sanitizeInterestInput(e.target.value))}
-            onBlur={() => { const v = normalizeInterestOnBlur(getValue(key), 3); if (v !== getValue(key)) setValue(key, v); }}
+            onBlur={() => { const v = normalizeInterestOnBlur(getValue(key), 2); if (v !== getValue(key)) setValue(key, v); }}
             disabled={disabled}
             className="h-8 text-sm pr-7"
-            placeholder="0.000"
+            placeholder="0.00"
             inputMode="decimal"
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
@@ -202,68 +202,81 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 <Input
                   value={getValue(FIELD_KEYS.soldRate)}
                   onChange={(e) => setValue(FIELD_KEYS.soldRate, sanitizeInterestInput(e.target.value))}
-                  onBlur={() => { const v = normalizeInterestOnBlur(getValue(FIELD_KEYS.soldRate), 3); if (v !== getValue(FIELD_KEYS.soldRate)) setValue(FIELD_KEYS.soldRate, v); }}
+                  onBlur={() => { const v = normalizeInterestOnBlur(getValue(FIELD_KEYS.soldRate), 2); if (v !== getValue(FIELD_KEYS.soldRate)) setValue(FIELD_KEYS.soldRate, v); }}
                   disabled={disabled || !isChecked(FIELD_KEYS.soldRateEnabled)}
                   className="h-8 text-sm pr-7"
-                  placeholder="0.000"
+                  placeholder="0.00"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
               </div>
             </div>
 
             {/* Sold Rate sub-fields - visible only when Sold Rate is checked */}
-            {isChecked(FIELD_KEYS.soldRateEnabled) && (
-              <div className="space-y-2 pl-5">
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateCompany}>
-                  <div className="flex items-center gap-3">
-                    <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">
-                      Company
-                    </Label>
-                    <div className="relative flex-1">
-                      <Input
-                        value={getValue(FIELD_KEYS.soldRateCompany)}
-                        onChange={(e) => setValue(FIELD_KEYS.soldRateCompany, e.target.value)}
-                        disabled={disabled}
-                        className="h-8 text-sm pr-7"
-                        placeholder="%"
-                      />
+            {isChecked(FIELD_KEYS.soldRateEnabled) && (() => {
+              const companyVal = parseFloat((getValue(FIELD_KEYS.soldRateCompany) || '0').replace(/[^0-9.]/g, '')) || 0;
+              const other1Val = parseFloat((getValue(FIELD_KEYS.soldRateOtherClient1) || '0').replace(/[^0-9.]/g, '')) || 0;
+              const other2Val = parseFloat((getValue(FIELD_KEYS.soldRateOtherClient2) || '0').replace(/[^0-9.]/g, '')) || 0;
+              const splitTotal = companyVal + other1Val + other2Val;
+              const hasAnyValue = !!(getValue(FIELD_KEYS.soldRateCompany) || getValue(FIELD_KEYS.soldRateOtherClient1) || getValue(FIELD_KEYS.soldRateOtherClient2));
+              const showSplitError = hasAnyValue && Math.abs(splitTotal - 100) > 0.001;
+              return (
+                <div className="space-y-2 pl-5">
+                  <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateCompany}>
+                    <div className="flex items-center gap-3">
+                      <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">
+                        Company
+                      </Label>
+                      <div className="relative flex-1">
+                        <Input
+                          value={getValue(FIELD_KEYS.soldRateCompany)}
+                          onChange={(e) => setValue(FIELD_KEYS.soldRateCompany, e.target.value)}
+                          disabled={disabled}
+                          className={cn("h-8 text-sm pr-7", showSplitError && "border-destructive")}
+                          placeholder="%"
+                        />
+                      </div>
                     </div>
-                  </div>
-                </DirtyFieldWrapper>
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient1}>
-                  <div className="flex items-center gap-3">
-                    <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">
-                      Other - Client List
-                    </Label>
-                    <div className="relative flex-1">
-                      <Input
-                        value={getValue(FIELD_KEYS.soldRateOtherClient1)}
-                        onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient1, e.target.value)}
-                        disabled={disabled}
-                        className="h-8 text-sm pr-7"
-                        placeholder="%"
-                      />
+                  </DirtyFieldWrapper>
+                  <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient1}>
+                    <div className="flex items-center gap-3">
+                      <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">
+                        Other - Client List
+                      </Label>
+                      <div className="relative flex-1">
+                        <Input
+                          value={getValue(FIELD_KEYS.soldRateOtherClient1)}
+                          onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient1, e.target.value)}
+                          disabled={disabled}
+                          className={cn("h-8 text-sm pr-7", showSplitError && "border-destructive")}
+                          placeholder="%"
+                        />
+                      </div>
                     </div>
-                  </div>
-                </DirtyFieldWrapper>
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient2}>
-                  <div className="flex items-center gap-3">
-                    <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">
-                      Other - Client List
-                    </Label>
-                    <div className="relative flex-1">
-                      <Input
-                        value={getValue(FIELD_KEYS.soldRateOtherClient2)}
-                        onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient2, e.target.value)}
-                        disabled={disabled}
-                        className="h-8 text-sm pr-7"
-                        placeholder="%"
-                      />
+                  </DirtyFieldWrapper>
+                  <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient2}>
+                    <div className="flex items-center gap-3">
+                      <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">
+                        Other - Client List
+                      </Label>
+                      <div className="relative flex-1">
+                        <Input
+                          value={getValue(FIELD_KEYS.soldRateOtherClient2)}
+                          onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient2, e.target.value)}
+                          disabled={disabled}
+                          className={cn("h-8 text-sm pr-7", showSplitError && "border-destructive")}
+                          placeholder="%"
+                        />
+                      </div>
                     </div>
-                  </div>
-                </DirtyFieldWrapper>
-              </div>
-            )}
+                  </DirtyFieldWrapper>
+                  {showSplitError && (
+                    <p className="text-xs text-destructive pl-[135px]">
+                      Split must equal 100% (currently {splitTotal.toFixed(2)}%)
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Interest Split */}
             <div className="flex items-center gap-2 py-1">
@@ -576,28 +589,8 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {renderCurrencyField(FIELD_KEYS.regularPayment, "Regular Payment")}
             {renderCurrencyField(FIELD_KEYS.additionalPrincipal, "Additional Principal")}
 
-            {/* Servicing Fees */}
-            {isChecked(FIELD_KEYS.salesTaxEnabled) ? (
-              <DirtyFieldWrapper fieldKey={FIELD_KEYS.servicingFees}>
-                <div className="flex items-center gap-3">
-                  <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0">
-                    Servicing Fees
-                  </Label>
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
-                    <Input
-                      value={getValue(FIELD_KEYS.servicingFees)}
-                      onChange={(e) => setValue(FIELD_KEYS.servicingFees, e.target.value)}
-                      disabled={disabled}
-                      className="h-8 text-sm pl-7"
-                      placeholder="-"
-                    />
-                  </div>
-                </div>
-              </DirtyFieldWrapper>
-            ) : (
-              renderCurrencyField(FIELD_KEYS.servicingFees, "Servicing Fees")
-            )}
+            {/* Servicing Fees - always currency, independent of Sales Tax */}
+            {renderCurrencyField(FIELD_KEYS.servicingFees, "Servicing Fees")}
 
             {/* Sales Tax checkbox */}
             <div className="flex items-center gap-2">
