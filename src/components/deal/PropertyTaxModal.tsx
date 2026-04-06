@@ -34,6 +34,7 @@ const getDefaultTax = (): PropertyTaxData => ({
   id: '', authority: '', type: '', annualPayment: '', frequency: '',
   active: false, lastVerified: '', lenderNotified: '',
   current: false, delinquent: false, delinquentAmount: '',
+  borrowerNotified: false, borrowerNotifiedDate: '', lenderNotifiedDate: '',
 });
 
 export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
