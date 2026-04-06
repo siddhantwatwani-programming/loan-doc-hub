@@ -57,6 +57,26 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
   const [formData, setFormData] = useState<InsuranceData>(getDefaultInsurance());
   const [showConfirm, setShowConfirm] = useState(false);
   const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
+  const [contactOptions, setContactOptions] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    const fetchContacts = async () => {
+      const { data } = await supabase
+        .from('contacts')
+        .select('id, full_name, first_name, last_name, company, contact_type')
+        .order('full_name');
+      if (data) {
+        setContactOptions(data.map(c => {
+          const name = c.full_name || [c.first_name, c.last_name].filter(Boolean).join(' ') || 'Unknown';
+          const parts = [name];
+          if (c.company) parts.push(`(${c.company})`);
+          if (c.contact_type) parts.push(`— ${c.contact_type.charAt(0).toUpperCase() + c.contact_type.slice(1)}`);
+          return { value: parts.join(' '), label: parts.join(' ') };
+        }));
+      }
+    };
+    fetchContacts();
+  }, []);
 
   const safeParseDateStr = (val: string): Date | undefined => {
     if (!val) return undefined;
