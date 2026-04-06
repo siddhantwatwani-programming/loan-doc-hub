@@ -58,7 +58,7 @@ function parseFormula(formula: string): {
   
   // Chained arithmetic: ({field1} / {field2}) * N  e.g. LTV ratio
   const chainedArithPattern = /^\(\{([^}]+)\}\s*([+\-*/])\s*\{([^}]+)\}\)\s*([+\-*/])\s*(\d+(?:\.\d+)?)$/;
-  let match = cleanFormula.match(chainedArithPattern);
+  let match: RegExpMatchArray | null = cleanFormula.match(chainedArithPattern);
   if (match) {
     return {
       type: 'arithmetic_chained',
