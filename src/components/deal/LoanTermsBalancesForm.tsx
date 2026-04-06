@@ -13,6 +13,9 @@ import type { FieldDefinition } from "@/hooks/useDealFields";
 import type { CalculationResult } from "@/lib/calculationEngine";
 import { DirtyFieldWrapper } from "./DirtyFieldWrapper";
 import { sanitizeInterestInput, normalizeInterestOnBlur } from "@/lib/interestValidation";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useDealNavigationOptional } from "@/contexts/DealNavigationContext";
+import type { LoanTermsSubSection } from "./LoanTermsSubNavigation";
 
 
 interface LoanTermsBalancesFormProps {
