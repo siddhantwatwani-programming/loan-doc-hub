@@ -28,7 +28,6 @@ interface LienDetailFormProps {
   disabled?: boolean;
   propertyOptions?: { id: string; label: string }[];
   loanValues?: Record<string, string>;
-  onPropertyValueChange?: (fieldKey: string, value: string) => void;
 }
 
 const STATUS_OPTIONS = ['Current', 'Unable to Verify', '30-90', '90+', 'Foreclosure', 'Modification', 'Paid'];
@@ -93,7 +92,6 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
   disabled = false,
   propertyOptions = [],
   loanValues = {},
-  onPropertyValueChange,
 }) => {
   const isThisLoan = lien.thisLoan === 'true';
   const isAnticipated = lien.anticipated === 'true';
@@ -384,59 +382,6 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           )}
         </div>
       </div>
-
-      {/* During Previous 12 Months — property-level fields */}
-      {onPropertyValueChange && (
-        <div className="space-y-3">
-          <div className="border-b border-border pb-2">
-            <span className="font-semibold text-sm text-primary">During Previous 12 Months</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">60-day + Delinquencies</Label>
-              <Checkbox
-                checked={loanValues['property1.delinquencies_60day'] === 'true'}
-                onCheckedChange={(c) => onPropertyValueChange('property1.delinquencies_60day', String(!!c))}
-                disabled={disabled}
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">How Many</Label>
-              <Input
-                value={loanValues['property1.delinquencies_how_many'] || ''}
-                onChange={(e) => onPropertyValueChange('property1.delinquencies_how_many', e.target.value)}
-                disabled={disabled}
-                className="h-7 text-sm flex-1"
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Currently Delinquent</Label>
-              <Checkbox
-                checked={loanValues['property1.currently_delinquent'] === 'true'}
-                onCheckedChange={(c) => onPropertyValueChange('property1.currently_delinquent', String(!!c))}
-                disabled={disabled}
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Will be Paid by this Loan</Label>
-              <Checkbox
-                checked={loanValues['property1.paid_by_loan'] === 'true'}
-                onCheckedChange={(c) => onPropertyValueChange('property1.paid_by_loan', String(!!c))}
-                disabled={disabled}
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">If No, List Source of Payment</Label>
-              <Input
-                value={loanValues['property1.source_of_payment'] || ''}
-                onChange={(e) => onPropertyValueChange('property1.source_of_payment', e.target.value)}
-                disabled={disabled}
-                className="h-7 text-sm flex-1"
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

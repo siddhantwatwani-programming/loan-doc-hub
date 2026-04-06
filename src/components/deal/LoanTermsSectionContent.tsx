@@ -50,12 +50,6 @@ export const LoanTermsSectionContent: React.FC<LoanTermsSectionContentProps> = (
   const activeSubSection = (nav?.getSubSection('loan_terms') ?? 'balances_loan_details') as LoanTermsSubSection;
   const setActiveSubSection = (sub: LoanTermsSubSection) => nav?.setSubSection('loan_terms', sub);
 
-  const handleNavigate = (tab: string, subSection?: string) => {
-    if (subSection) {
-      setActiveSubSection(subSection as LoanTermsSubSection);
-    }
-  };
-
   const renderSubSectionContent = () => {
     switch (activeSubSection) {
       case 'balances_loan_details':
@@ -67,7 +61,6 @@ export const LoanTermsSectionContent: React.FC<LoanTermsSectionContentProps> = (
             showValidation={showValidation}
             disabled={disabled}
             calculationResults={calculationResults}
-            onNavigate={handleNavigate}
           />
         );
       case 'details':

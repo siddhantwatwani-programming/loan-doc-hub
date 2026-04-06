@@ -270,7 +270,6 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
                 disabled={disabled}
                 propertyOptions={propertyOptions}
                 loanValues={values}
-                onPropertyValueChange={onValueChange}
               />
             )}
           </DirtyFieldsProvider>

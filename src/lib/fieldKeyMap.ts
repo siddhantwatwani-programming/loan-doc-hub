@@ -380,7 +380,6 @@ export const LOAN_TERMS_BALANCES_KEYS = {
   chargesInterest: 'loan_terms.charges_interest',
   amountToReinstate: 'loan_terms.amount_to_reinstate',
   reserveBalance: 'loan_terms.reserve_balance',
-  suspenseFunds: 'loan_terms.suspense_funds',
   escrowBalance: 'loan_terms.escrow_balance',
   totalBalanceDue: 'loan_terms.total_balance_due',
   estimatedBalloonPayment: 'loan_terms.estimated_balloon_payment',
