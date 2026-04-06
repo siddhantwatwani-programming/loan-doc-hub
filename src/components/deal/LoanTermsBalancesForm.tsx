@@ -16,7 +16,7 @@ import { DirtyFieldWrapper } from "./DirtyFieldWrapper";
 import { sanitizeInterestInput, normalizeInterestOnBlur } from "@/lib/interestValidation";
 import { SoldRateSplitModal } from "./SoldRateSplitModal";
 import { useDealNavigationOptional } from "@/contexts/DealNavigationContext";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+
 
 interface LoanTermsBalancesFormProps {
   fields: FieldDefinition[];
