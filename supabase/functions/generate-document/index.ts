@@ -733,6 +733,19 @@ async function generateSingleDocument(
       }
     }
 
+    // ── Dropdown-to-Checkbox derivation for Re851a ──
+    // Amortization dropdown → boolean checkbox keys
+    const amortVal = (fieldValues.get("ln_p_amortiza")?.rawValue || fieldValues.get("loan_terms.amortization")?.rawValue || "").toString().trim().toLowerCase();
+    fieldValues.set("ln_p_amortizedPartially", { rawValue: amortVal === "amortized partially" ? "true" : "false", dataType: "boolean" });
+    fieldValues.set("ln_p_amortized", { rawValue: amortVal === "amortized" ? "true" : "false", dataType: "boolean" });
+    debugLog(`[generate-document] Derived amortization checkboxes from "${amortVal}": amortizedPartially=${amortVal === "amortized partially"}, amortized=${amortVal === "amortized"}`);
+
+    // Payment Frequency dropdown → boolean checkbox keys
+    const payFreqVal = (fieldValues.get("ln_p_paymentFreque")?.rawValue || fieldValues.get("loan_terms.payment_frequency")?.rawValue || "").toString().trim().toLowerCase();
+    fieldValues.set("ln_p_paymentMonthly", { rawValue: payFreqVal === "monthly" ? "true" : "false", dataType: "boolean" });
+    fieldValues.set("ln_p_paymentWeekly", { rawValue: payFreqVal === "weekly" ? "true" : "false", dataType: "boolean" });
+    debugLog(`[generate-document] Derived payment frequency checkboxes from "${payFreqVal}": monthly=${payFreqVal === "monthly"}, weekly=${payFreqVal === "weekly"}`);
+
     // Build all_properties_list and multi-property pr_p_address
     if (propertyIndices.size > 0) {
       const sortedIndices = [...propertyIndices].sort((a, b) => a - b);
