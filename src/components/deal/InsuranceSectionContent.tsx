@@ -228,11 +228,9 @@ export const InsuranceSectionContent: React.FC<InsuranceSectionContentProps> = (
     const fieldEntries: { key: keyof InsuranceData; dbField: string; defaultVal: string }[] = [
       { key: 'property', dbField: 'property', defaultVal: '' },
       { key: 'description', dbField: 'description', defaultVal: '' },
-      { key: 'insuredName', dbField: 'insured_name', defaultVal: '' },
       { key: 'companyName', dbField: 'company_name', defaultVal: '' },
       { key: 'policyNumber', dbField: 'policy_number', defaultVal: '' },
       { key: 'expiration', dbField: 'expiration', defaultVal: '' },
-      { key: 'coverage', dbField: 'coverage', defaultVal: '' },
       { key: 'annualPremium', dbField: 'annual_premium', defaultVal: '' },
       { key: 'frequency', dbField: 'frequency', defaultVal: '' },
       { key: 'active', dbField: 'active', defaultVal: 'true' },
