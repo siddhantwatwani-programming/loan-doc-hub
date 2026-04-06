@@ -1,48 +1,76 @@
 
+## Plan: Preserve Re851a Formatting While Fixing Checkbox State
 
-## Plan: Update Insurance Modal, Form, and Table Grid
+### Root Cause
+The current engine already derives the correct boolean keys in `supabase/functions/generate-document/index.ts`:
 
-### Summary
-1. Add a Column config popover button before "Add Insurance" (same as Liens)
-2. Change "Insurance Company" dropdown to a static list of US insurance companies (replacing contacts fetch)
-3. Items 4-6 already exist in the current code — no changes needed
-4. Remove "Active" checkbox and "Red Flag Trigger" dropdown from Insurance Tracking section
+- `ln_p_amortizedPartially`
+- `ln_p_amortized`
+- `ln_p_paymentMonthly`
+- `ln_p_paymentWeekly`
+
+But the output is still being altered because `supabase/functions/_shared/tag-parser.ts` runs **label-based checkbox glyph replacement** afterward:
+
+- `FULLY AMORTIZED`
+- `AMORTIZED PARTIALLY`
+- `MONTHLY`
+- `WEEKLY`
+
+That logic replaces visible checkbox characters in text (`☐/☑/...`), which can shift labels and break the original Word layout.
+
+### Minimal Fix
+Use the existing derived boolean keys, but stop Re851a from using label-based glyph replacement for these checkbox fields.
 
 ### Changes
+**1. Keep current boolean derivation logic**
+- No change to `generate-document/index.ts`
+- It already maps:
+  - `ln_p_amortiza` → `ln_p_amortizedPartially` / `ln_p_amortized`
+  - `ln_p_paymentFreque` → `ln_p_paymentMonthly` / `ln_p_paymentWeekly`
 
-**1. InsuranceTableView.tsx** — Add Column config button
-- Import `ColumnConfigPopover`, `ColumnConfig`, `useTableColumnConfig` (same as LiensTableView)
-- Define `DEFAULT_COLUMNS` array matching current grid columns
-- Add `ColumnConfigPopover` button before "Add Insurance" button (same layout as Liens)
-- Render only visible columns in table header and body
-- Update colSpan for empty state to use `visibleColumns.length + 1`
+**2. Disable label-based checkbox aliasing for these Re851a fields**
+- Add a database migration that deactivates the 4 label alias rows in `merge_tag_aliases` for:
+  - `ln_p_amortizedPartially`
+  - `ln_p_amortized`
+  - `ln_p_paymentMonthly`
+  - `ln_p_paymentWeekly`
+- This prevents the engine from replacing visible checkbox symbols beside static labels.
 
-**2. InsuranceModal.tsx** — Replace contacts dropdown with US insurance companies
-- Remove the `contactOptions` state and the `useEffect` that fetches from `contacts` table
-- Remove the `supabase` import
-- Add a static `US_INSURANCE_COMPANIES` array (State Farm, Allstate, GEICO, Progressive, Liberty Mutual, Nationwide, Farmers, USAA, Travelers, American Family, Erie Insurance, Auto-Owners, Hartford, Chubb, MetLife, AIG, Zurich, Cincinnati Financial, Hanover, etc.)
-- Replace the custom `Ins. Company` Select to use `renderInlineSelect('companyName', 'Ins. Company', US_INSURANCE_COMPANIES, 'Select company')`
+**3. Preserve native template checkbox handling only**
+- Let the template’s existing checkbox/merge-tag mechanism handle the checked state.
+- The parser already has a separate `processSdtCheckboxes(...)` path for native Word checkbox controls, which is the format-preserving path.
+- No change to generic checkbox rendering or non-Re851a templates.
 
-**3. PropertyInsuranceForm.tsx** — Same change for Insurance Company dropdown
-- Remove the `contactOptions` state and the `useEffect` fetching contacts
-- Remove the `supabase` import
-- Use the same `US_INSURANCE_COMPANIES` static list in the Select dropdown
+### Why this is the safest fix
+- No UI changes
+- No schema changes
+- No document layout rewriting
+- No global parser refactor
+- No formatting changes to the original template structure
+- Only removes the specific fallback behavior that is causing Re851a formatting damage
 
-**4. InsuranceModal.tsx** — Remove "Active" and "Red Flag Trigger" from Insurance Tracking
-- Remove lines 264-267 (Active checkbox under Insurance Tracking)
-- Remove line 268 (`renderInlineSelect('redFlagTrigger', ...)`)
-
-**5. PropertyInsuranceForm.tsx** — No changes needed for items 4-7
-- Annual Premium, Frequency, Impounds title already exist
-- Insurance Tracking section doesn't have Active or Red Flag Trigger in the detail form (only in modal)
-
-### No Database/Schema Changes
-All data persists via existing JSONB keys. The `companyName` field stores the selected company name string as before.
-
-### Files Changed
-| File | Change |
+### Files / Data Updated
+| Target | Change |
 |---|---|
-| `src/components/deal/InsuranceTableView.tsx` | Add Column config popover (same pattern as Liens) |
-| `src/components/deal/InsuranceModal.tsx` | Replace contacts dropdown with US insurance companies; remove Active + Red Flag Trigger from Insurance Tracking |
-| `src/components/deal/PropertyInsuranceForm.tsx` | Replace contacts dropdown with US insurance companies |
+| Database migration | Set `is_active = false` for the 4 Re851a checkbox label aliases in `merge_tag_aliases` |
+| `supabase/functions/generate-document/index.ts` | No change |
+| `supabase/functions/_shared/tag-parser.ts` | No change unless a tiny safeguard is needed after validation |
 
+### Validation
+After implementation, verify that:
+1. `Amortized Partially` checks only the partially amortized box
+2. `Amortized` checks only the fully amortized box
+3. `Monthly` checks only monthly
+4. `Weekly` checks only weekly
+5. Re851a formatting in Transaction Information remains identical to the original template
+6. No extra checkbox symbols appear
+7. Balloon Payment layout remains unchanged
+
+### Technical Notes
+- Confirmed in code: `replaceStaticCheckboxLabel(...)` in `tag-parser.ts` is what swaps visible checkbox glyphs.
+- Confirmed in database: active label aliases currently exist for:
+  - `FULLY AMORTIZED`
+  - `AMORTIZED PARTIALLY`
+  - `MONTHLY`
+  - `WEEKLY`
+- Since those aliases are active, they override presentation in-place and are the most likely cause of the layout corruption.
