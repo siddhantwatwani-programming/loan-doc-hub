@@ -1,57 +1,49 @@
 
 
-## Plan: Add Comment/Notes Box to Each HUD-1 Fee Row in Origination Fees
+## Plan: Fix Template Placeholder Population for Re851a
 
-### Summary
-Add a collapsible or inline comment/notes text box for each HUD-1 fee item (801–1108) in the Origination Fees form. Each item already has a `_d` field key defined in `FIELD_KEYS` that can serve as the comment storage. A small notes icon/toggle per row will expand a text area below the row for free-text input.
+### Problem Analysis
 
-### File to Modify
+Five placeholders in the Re851a template are blank during document generation despite having values in the UI. Each has a distinct root cause:
 
-**`src/components/deal/OriginationFeesForm.tsx`**
+1. **`ln_p_loanToValueRatio`** — This is a *calculated* field (`is_calculated = true`). The document generation engine does NOT evaluate calculated fields — it only reads stored values from `deal_section_values`. The UI computes it on the fly but never persists the calculated result.
 
-1. Update `renderFeeRow` to include an expandable comment box below each row:
-   - Add a small "comment" icon button (e.g., `MessageSquare` from lucide-react) at the end of each row
-   - Clicking it toggles a `Textarea` below the row bound to the item's `_d` field key
-   - The icon shows a visual indicator (filled/highlighted) when a comment exists
+2. **`bk_p_cellPhone`** — The broker participant injection (generate-document/index.ts) sets `bk_p_phone` but never sets `bk_p_cellPhone`. The broker's cell phone from contact_data (`phone.cell`) is consumed into the generic `bk_p_phone` key, leaving `bk_p_cellPhone` empty.
 
-2. Update `renderInsuranceRow` similarly to support comment boxes for 1000-series items
+3. **`ln_p_months`** — This field exists in the `field_dictionary` but has NO entry in `legacyKeyMap.ts` and NO corresponding UI field key in `fieldKeyMap.ts`. Without a legacy mapping, data saved via the UI (which uses dot-notation keys) cannot be resolved to this db key during generation.
 
-3. Add local state (`expandedComments: Set<string>`) to track which rows have their comment box open
+4. **`ld_fd_fundingAmount`** — This field exists in the `field_dictionary` (section: lender, form: funding) but the Lender Funding Form is a "Coming Soon" placeholder. There is no UI form to enter this value, no fieldKeyMap entry, and no legacyKeyMap entry. Since there's no UI to persist data, it will always be blank.
 
-4. Each comment textarea will:
-   - Use the existing `_d` field key (e.g., `FIELD_KEYS.lendersLoanOriginationFee_d`)
-   - Be a standard `Textarea` component
-   - Span the full width of the row below the grid
-   - Auto-expand if a saved comment exists on load
+5. **`br_p_address`** — In `legacyKeyMap.ts`, `borrower.address.street` maps to `br_p_address`. However, the participant-based contact injection sets `br_p_street` (not `br_p_address`) for the street. So if the value comes from participant contact data (rather than direct deal_section_values entry), `br_p_address` stays empty.
 
-### Field Key Mapping (already defined)
-All `_d` keys already exist in `FIELD_KEYS` and the field dictionary — no database migration needed:
-- `801`: `lendersLoanOriginationFee_d`
-- `802`: `lendersLoanDiscountFee_d`
-- `803`: `appraisalFee_d`
-- `804`: `creditReport_d`
-- `805`: `lendersInspectionFee_d`
-- `808`: `mortgageBrokerFee_d`
-- `809`: `taxServiceFee_d`
-- `810`: `processingFee_d`
-- `811`: `underwritingFee_d`
-- `901`: `interestForDays_d`
-- `902`: `mortgageInsurancePremiums_d`
-- `903`: `hazardInsurancePremiums_d`
-- `904`: `countyPropertyTaxes_d`
-- `905`: `vaFundingFee_d`
-- `1001–1004`: Use existing `_d` or `_charge` keys
-- `1101`: `settlementClosingFee_d`
-- `1105`: `docPreparationFee_d`
-- `1106`: `notaryFee_d`
-- `1108`: `titleInsurance_d`
+### Proposed Fix (5 changes in the Edge Function)
 
-### No Database Migration Required
-All field keys already exist in `FIELD_KEYS` and should already have corresponding `field_dictionary` entries from prior migrations. Values will persist via the existing `deal_section_values` JSONB mechanism.
+All fixes go in **`supabase/functions/generate-document/index.ts`** — the document generation engine. No UI, schema, or template changes needed.
 
-### UI Design
-- Comment icon appears as a 6th column (or inline button) at the right edge of each row
-- When expanded, a `Textarea` appears below the row spanning the full grid width
-- Rows with existing comments auto-expand on load
-- Consistent with existing form styling
+**Step 1: Inject `ln_p_loanToValueRatio` as a computed value during generation**
+After the existing auto-compute blocks (around line 690), add logic to compute LTV from `ln_p_loanAmount` and `pr_p_appraiseValue` (matching the formula in field_dictionary) and set `ln_p_loanToValueRatio` if not already present.
+
+**Step 2: Inject `bk_p_cellPhone` from broker contact data**
+In the broker injection block (around line 490-567), add a line to extract `cd["phone.cell"]` specifically and `forceSet("bk_p_cellPhone", cellPhone)`.
+
+**Step 3: Add `ln_p_months` mapping in `legacyKeyMap.ts`**
+Add a legacy key entry so that if a UI field stores months under a dot-notation key, it resolves correctly. Also add a fieldKeyMap entry so the UI can populate this field. The most logical mapping: `'loan_terms.months': 'ln_p_months'`.
+
+**Step 4: Handle `ld_fd_fundingAmount` via lender participant injection**
+Since the Lender Funding Form is "Coming Soon" and no UI exists, add injection logic in the lender participant block to compute/bridge this from existing lender funding data in deal_section_values, or at minimum ensure the field_dictionary entry can be resolved during generation.
+
+**Step 5: Fix `br_p_address` borrower injection**
+In the borrower injection's short-prefix block, ensure `br_p_address` is set from `cd["address.street"]` (matching the legacy mapping where `br_p_address` = street address).
+
+### Files to Modify
+
+| File | Change |
+|------|--------|
+| `supabase/functions/generate-document/index.ts` | Add auto-compute for LTV ratio; inject `bk_p_cellPhone`; fix `br_p_address` borrower injection |
+| `src/lib/legacyKeyMap.ts` | Add `'loan_terms.months': 'ln_p_months'` mapping |
+| `src/lib/fieldKeyMap.ts` | Add `months` entry to `LOAN_TERMS_DETAILS_KEYS` |
+
+### Note on `ld_fd_fundingAmount`
+
+This field's UI (Lender Funding Form) is a "Coming Soon" stub. Without a data entry form, there is no source data to populate this field. The fix will attempt to bridge from any existing lender funding records in deal_section_values. If no data exists, the placeholder will remain blank until the Lender Funding UI is built. I will inject it from `deal_section_values` if the field_dictionary_id resolves, which it should if the CSR entered data via another path.
 
