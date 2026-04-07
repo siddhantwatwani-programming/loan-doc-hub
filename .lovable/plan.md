@@ -1,27 +1,34 @@
 
 
-## Plan: Add "IS BROKER ALSO A BORROWER?" Boolean Field
+## Plan: Fix Re851a Part 2 "IS BROKER ALSO A BORROWER?" Checkbox
 
-### Summary
-Add a new dual-checkbox field (YES/NO) to the Application → Document Request sub-section, positioned below "Periods Reviewed" and above "Additional Information Attached". Register it in the field dictionary for persistence and add document generation support.
+### Problem
+1. The UI renders **two** checkboxes but the Re851a document has only **one** checkbox
+2. The UI persistence key (`origination_app.doc.is_broker_also_borrower_yes`) has **no mapping** in `legacyKeyMap.ts` to the document generation key (`or_p_isBrokerAlsoBorrower_yes`), so the value never reaches the generator
 
 ### Changes
 
-**1. Database Migration — Register field in `field_dictionary`**
-- Insert `origination_app.doc.is_broker_also_borrower_yes` (boolean, section: origination, form_type: application) with canonical_key `or_p_isBrokerAlsoBorrower_yes`
-- Insert `origination_app.doc.is_broker_also_borrower_no` (boolean, section: origination, form_type: application) with canonical_key `or_p_isBrokerAlsoBorrower_no`
+**File 1: `src/components/deal/OriginationApplicationForm.tsx`** (lines 312-331)
+- Remove the second checkbox (the "No" checkbox)
+- Keep only a single checkbox bound to `FIELD_KEYS.is_broker_borrower_yes`
+- Remove the mutual-exclusivity logic (no longer needed with one checkbox)
+- Checked = true, Unchecked = false — simple toggle
 
-**2. UI — `src/components/deal/OriginationApplicationForm.tsx`**
-- Add field keys for the two checkboxes: `is_broker_borrower_yes` and `is_broker_borrower_no`
-- Render a new row below "Periods Reviewed" (line 309) styled like "Income Statement Received" — label + two checkboxes (YES / NO)
-- Implement mutual exclusivity: checking YES unchecks NO, and vice versa
+**File 2: `src/lib/legacyKeyMap.ts`**
+- Add one mapping entry:
+  - `'origination_app.doc.is_broker_also_borrower_yes'` → `'or_p_isBrokerAlsoBorrower_yes'`
+- This bridges the UI persistence key to the canonical key used by the existing derive block in `generate-document/index.ts`
 
-**3. Document Generation — `supabase/functions/generate-document/index.ts`**
-- After field resolution, derive `or_p_isBrokerAlsoBorrower` from the YES checkbox value
-- Map to checked/unchecked glyphs so templates using `{{or_p_isBrokerAlsoBorrower_yes}}` and `{{or_p_isBrokerAlsoBorrower_no}}` render ☑/☐ correctly
+### What is NOT changed
+- No database schema changes
+- No template modifications
+- No changes to the document generation Edge Function (the existing derive block at lines 1235-1242 already handles converting the boolean to checked/unchecked glyphs)
+- No changes to any other UI fields or sections
+- The `_no` key in the UI FIELD_KEYS definition can remain but will no longer be rendered
 
-### Technical Details
-- The dual-checkbox pattern matches existing fields like "Balance Sheet Received" / "Reviewed" but with YES/NO semantics and mutual exclusivity
-- Persistence uses existing `deal_section_values` JSONB via `onValueChange` — no schema changes
-- Field dictionary entries ensure `saveDraft` persists the values
+### How it works end-to-end
+1. User checks/unchecks the single checkbox → value stored as `origination_app.doc.is_broker_also_borrower_yes` = `"true"`/`"false"`
+2. `useDealFields` save resolves via `legacyKeyMap` → persists as `or_p_isBrokerAlsoBorrower_yes`
+3. Document generator reads `or_p_isBrokerAlsoBorrower_yes`, existing derive block sets YES/NO glyphs
+4. Re851a Part 2 checkbox populates correctly
 
