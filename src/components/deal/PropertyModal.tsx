@@ -356,6 +356,16 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                     {renderInlineField('valuationDate', 'Valuation Date', 'date')}
                     {renderInlineSelect('valuationType', 'Valuation Type', VALUATION_TYPE_OPTIONS, 'Select')}
                     {renderInlineSelect('performedBy', 'Performed By', PERFORMED_BY_OPTIONS, 'Select')}
+                    {formData.valuationType === 'Broker Determined Value (BPO)' && formData.valuationDate && (
+                      <p className="text-xs italic text-foreground pl-[108px]">
+                        property valuation performed on {(() => {
+                          try {
+                            const d = parseDate(formData.valuationDate);
+                            return d ? format(d, 'MM/dd/yyyy') : formData.valuationDate;
+                          } catch { return formData.valuationDate; }
+                        })()}
+                      </p>
+                    )}
                     {formData.performedBy === 'Third Party' && (
                       <>
                         {renderInlineField('thirdPartyFullName', 'Full Name')}
