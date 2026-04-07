@@ -91,6 +91,7 @@ interface PropertiesTableViewProps {
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'isPrimary', label: 'Primary', visible: true },
+  { id: 'description', label: 'Description', visible: true },
   { id: 'street', label: 'Street', visible: true },
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
@@ -99,9 +100,10 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'propertyType', label: 'Property Type', visible: true },
   { id: 'occupancy', label: 'Occupancy', visible: true },
   { id: 'appraisedValue', label: 'Appraised Value', visible: true },
-  { id: 'appraisedDate', label: 'Appraisal Date', visible: true },
+  { id: 'appraisedDate', label: 'Valuation Date', visible: true },
+  { id: 'purchasePrice', label: 'Purchase Price', visible: true },
   { id: 'ltv', label: 'Loan To Value', visible: true },
-  { id: 'loanPriority', label: 'Priority', visible: true },
+  { id: 'floodZone', label: 'Flood Zone', visible: true },
 ];
 
 const SEARCH_FIELDS = ['street', 'city', 'state', 'zipCode', 'county', 'propertyType', 'description', 'apn'];

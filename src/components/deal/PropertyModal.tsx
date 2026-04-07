@@ -343,7 +343,8 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                   {renderCurrencyField('lienProtectiveEquity', 'Lien (Protective Equity)')}
                   {renderInlineSelect('sourceLienInfo', 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
 
-                  {renderInlineField('recordingNumber', 'Recording number')}
+                  {renderCurrencyField('lienProtectiveEquity', 'Lien (Protective Equity)')}
+                  {renderInlineSelect('sourceLienInfo', 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
                 </div>
               </div>
 
