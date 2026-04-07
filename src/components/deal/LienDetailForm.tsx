@@ -415,6 +415,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
             </div>
           </DirtyFieldWrapper>
           {renderField('sourceOfPayment', 'If No, List Source of Payment')}
+          {renderField('sourceOfInformation', 'Source of Information')}
         </div>
       </div>
     </div>

@@ -363,6 +363,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
                 <Label htmlFor="modal-paidByLoan" className="text-xs text-foreground">Will be Paid by this Loan</Label>
               </div>
               {renderInlineField('sourceOfPayment', 'If No, Source of Payment')}
+              {renderInlineField('sourceOfInformation', 'Source of Information')}
               <div />
             </div>
           </div>
