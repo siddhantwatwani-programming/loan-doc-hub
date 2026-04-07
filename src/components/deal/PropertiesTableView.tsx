@@ -196,8 +196,12 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         ) : null;
       case 'appraisedValue':
         return formatCurrency(property.appraisedValue);
+      case 'purchasePrice':
+        return formatCurrency(property.purchasePrice || '');
       case 'ltv':
         return formatPercentage(property.ltv);
+      case 'floodZone':
+        return property.floodZone ? 'Yes' : 'No';
       case 'appraisedDate': {
         const val = property.appraisedDate;
         if (!val) return '-';
