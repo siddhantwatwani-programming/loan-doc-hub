@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -29,9 +30,12 @@ interface PropertyTaxModalProps {
 
 const TYPE_OPTIONS = ['Current Property Tax', 'Delinquent Property Tax', 'Other'];
 const FREQUENCY_OPTIONS = ['Once Only', 'Monthly', 'Quarterly', 'Bi-Monthly', 'Bi-Weekly', 'Weekly', 'Semi-Monthly', 'Semi-Yearly', 'Yearly'];
+const SOURCE_OPTIONS = ['Borrower', 'Title Report', 'Tax Records'];
 
 const getDefaultTax = (): PropertyTaxData => ({
-  id: '', authority: '', type: '', annualPayment: '', frequency: '',
+  id: '', authority: '', address: '', type: '', apn: '', memo: '',
+  annualPayment: '', amount: '', nextDue: '', frequency: '',
+  escrowImpounds: '', passThrough: '', sourceOfInformation: '',
   active: false, lastVerified: '', lenderNotified: '',
   current: false, delinquent: false, delinquentAmount: '',
   borrowerNotified: false, borrowerNotifiedDate: '', lenderNotifiedDate: '',
@@ -57,6 +61,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
       const data = propertyTax ? { ...propertyTax } : getDefaultTax();
       if (data.annualPayment) data.annualPayment = formatCurrencyDisplay(String(data.annualPayment));
       if (data.delinquentAmount) data.delinquentAmount = formatCurrencyDisplay(String(data.delinquentAmount));
+      if (data.amount) data.amount = formatCurrencyDisplay(String(data.amount));
       setFormData(data);
     }
   }, [open, propertyTax]);
@@ -64,7 +69,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
   const handleChange = (field: keyof PropertyTaxData, value: string | boolean) =>
     setFormData(prev => ({ ...prev, [field]: value }));
 
-  const isFormFilled = hasModalFormData(formData, ['id', 'active', 'current', 'delinquent']);
+  const isFormFilled = hasModalFormData(formData, ['id', 'active', 'current', 'delinquent', 'borrowerNotified']);
 
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = () => {
@@ -72,6 +77,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
     const cleaned = { ...formData };
     if (cleaned.annualPayment) cleaned.annualPayment = unformatCurrencyDisplay(String(cleaned.annualPayment));
     if (cleaned.delinquentAmount) cleaned.delinquentAmount = unformatCurrencyDisplay(String(cleaned.delinquentAmount));
+    if (cleaned.amount) cleaned.amount = unformatCurrencyDisplay(String(cleaned.amount));
     onSave(cleaned);
     onOpenChange(false);
   };
@@ -121,6 +127,18 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
     </div>
   );
 
+  const renderDropdownField = (field: keyof PropertyTaxData, label: string, options: string[]) => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[120px] shrink-0 text-xs text-foreground">{label}</Label>
+      <Select value={String(formData[field] || '')} onValueChange={(v) => handleChange(field, v)}>
+        <SelectTrigger className="h-7 text-xs flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
+        <SelectContent className="bg-background z-[9999]">
+          {options.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -137,27 +155,32 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
                 <Input value={formData.authority} onChange={(e) => handleChange('authority', e.target.value)} className="h-7 text-xs flex-1" />
               </div>
 
+              <div className="flex items-start gap-2">
+                <Label className="w-[120px] shrink-0 text-xs text-foreground pt-1">Address</Label>
+                <Textarea value={formData.address} onChange={(e) => handleChange('address', e.target.value)} className="text-xs flex-1 min-h-[50px]" />
+              </div>
+
+              {renderDropdownField('type', 'Type', TYPE_OPTIONS)}
+
               <div className="flex items-center gap-2">
-                <Label className="w-[120px] shrink-0 text-xs text-foreground">Type</Label>
-                <Select value={formData.type} onValueChange={(v) => handleChange('type', v)}>
-                  <SelectTrigger className="h-7 text-xs flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent className="bg-background z-[9999]">
-                    {TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-                  </SelectContent>
-                </Select>
+                <Label className="w-[120px] shrink-0 text-xs text-foreground">APN</Label>
+                <Input value={formData.apn} onChange={(e) => handleChange('apn', e.target.value)} className="h-7 text-xs flex-1" />
+              </div>
+
+              <div className="flex items-start gap-2">
+                <Label className="w-[120px] shrink-0 text-xs text-foreground pt-1">Memo</Label>
+                <Textarea value={formData.memo} onChange={(e) => handleChange('memo', e.target.value)} className="text-xs flex-1 min-h-[50px]" />
               </div>
 
               {renderCurrencyField('annualPayment', 'Annual Payment (est.)')}
+              {renderCurrencyField('amount', 'Amount')}
+              {renderDateField('nextDue', 'Next Due')}
 
-              <div className="flex items-center gap-2">
-                <Label className="w-[120px] shrink-0 text-xs text-foreground">Frequency</Label>
-                <Select value={formData.frequency} onValueChange={(v) => handleChange('frequency', v)}>
-                  <SelectTrigger className="h-7 text-xs flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent className="bg-background z-[9999]">
-                    {FREQUENCY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {renderDropdownField('frequency', 'Frequency', FREQUENCY_OPTIONS)}
+
+              {renderDropdownField('escrowImpounds', 'Escrow Impounds', SOURCE_OPTIONS)}
+              {renderDropdownField('passThrough', 'Pass Through', SOURCE_OPTIONS)}
+              {renderDropdownField('sourceOfInformation', 'Source of Information', SOURCE_OPTIONS)}
             </div>
 
             {/* Right column - Tax Tracking */}
