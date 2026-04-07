@@ -114,11 +114,20 @@ export interface DisbursementRow {
   comments: string;
 }
 
+const EMPTY_DISBURSEMENT_ROWS: DisbursementRow[] = [
+  { accountId: '', name: '', amount: '', percent: '', comments: '' },
+  { accountId: '', name: '', amount: '', percent: '', comments: '' },
+  { accountId: '', name: '', amount: '', percent: '', comments: '' },
+  { accountId: '', name: '', amount: '', percent: '', comments: '' },
+];
+
 const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: string, soldRate: string): FundingFormData => ({
   loan: loanNumber, borrower: borrowerName, lenderId: '', lenderFullName: '',
   lenderRate: '', fundingAmount: '', fundingDate: '', interestFrom: '', notes: '', brokerParticipates: false,
+  roundingAdjustment: false,
   percentOwned: '', regularPayment: '', lenderShare: '',
   rateSelection: 'note_rate', rateNoteValue: noteRate, rateSoldValue: soldRate, rateLenderValue: '',
+  disbursements: [...EMPTY_DISBURSEMENT_ROWS],
   overrideServicingFees: false,
   companyServicingFee: '', companyServicingFeePct: '', companyMaxFee: '', companyMaxFeePct: '',
   companyMinFee: '', companyMinFeePct: '', brokerServicingFee: '', brokerServicingFeePct: '',
@@ -130,6 +139,8 @@ const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: 
   interestGuaranteeLender: '', interestGuaranteeCompany: '', interestGuaranteeBroker: '', interestGuaranteeTotal: '',
   prepaymentLender: '', prepaymentCompany: '', prepaymentBroker: '', prepaymentTotal: '',
   maturityLender: '', maturityCompany: '', maturityBroker: '', maturityTotal: '',
+  maturityMaximum: '', lateFee1Maximum: '', lateFee2Maximum: '',
+  defaultInterestMaximum: '', interestGuaranteeMaximum: '', prepaymentMaximum: '',
 });
 
 export const AddFundingModal: React.FC<AddFundingModalProps> = ({
