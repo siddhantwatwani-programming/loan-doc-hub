@@ -298,7 +298,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     </div>
   );
 
-  const renderDefaultFeeRow = (label: string, lenderField: keyof FundingFormData, companyField: keyof FundingFormData, brokerField: keyof FundingFormData, totalField: keyof FundingFormData) => (
+  const renderDefaultFeeRow = (label: string, lenderField: keyof FundingFormData, companyField: keyof FundingFormData, brokerField: keyof FundingFormData, totalField: keyof FundingFormData, maximumField: keyof FundingFormData) => (
     <div className="flex items-center gap-2">
       <Label className="text-xs text-foreground font-medium min-w-[120px] shrink-0">{label}</Label>
       <div className="relative w-16">
@@ -316,6 +316,9 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
       <div className="relative w-16">
         <Input value={formData[totalField] as string} disabled className="h-7 text-xs pr-4 text-right opacity-50 bg-muted" placeholder="0%" />
         <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+      </div>
+      <div className="relative w-16">
+        <Input value={formData[maximumField] as string} onChange={(e) => handleChange(maximumField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs pr-4 text-right" inputMode="decimal" placeholder="-" />
       </div>
     </div>
   );
