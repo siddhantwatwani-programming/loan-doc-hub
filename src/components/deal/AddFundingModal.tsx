@@ -48,6 +48,7 @@ export interface FundingFormData {
   interestFrom: string;
   notes: string;
   brokerParticipates: boolean;
+  roundingAdjustment: boolean;
   percentOwned: string;
   regularPayment: string;
   lenderShare: string;
@@ -55,6 +56,8 @@ export interface FundingFormData {
   rateNoteValue: string;
   rateSoldValue: string;
   rateLenderValue: string;
+  // Disbursements
+  disbursements: DisbursementRow[];
   // Servicing fees section
   overrideServicingFees: boolean;
   companyServicingFee: string;
@@ -95,13 +98,36 @@ export interface FundingFormData {
   maturityCompany: string;
   maturityBroker: string;
   maturityTotal: string;
+  maturityMaximum: string;
+  lateFee1Maximum: string;
+  lateFee2Maximum: string;
+  defaultInterestMaximum: string;
+  interestGuaranteeMaximum: string;
+  prepaymentMaximum: string;
 }
+
+export interface DisbursementRow {
+  accountId: string;
+  name: string;
+  amount: string;
+  percent: string;
+  comments: string;
+}
+
+const EMPTY_DISBURSEMENT_ROWS: DisbursementRow[] = [
+  { accountId: '', name: '', amount: '', percent: '', comments: '' },
+  { accountId: '', name: '', amount: '', percent: '', comments: '' },
+  { accountId: '', name: '', amount: '', percent: '', comments: '' },
+  { accountId: '', name: '', amount: '', percent: '', comments: '' },
+];
 
 const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: string, soldRate: string): FundingFormData => ({
   loan: loanNumber, borrower: borrowerName, lenderId: '', lenderFullName: '',
   lenderRate: '', fundingAmount: '', fundingDate: '', interestFrom: '', notes: '', brokerParticipates: false,
+  roundingAdjustment: false,
   percentOwned: '', regularPayment: '', lenderShare: '',
   rateSelection: 'note_rate', rateNoteValue: noteRate, rateSoldValue: soldRate, rateLenderValue: '',
+  disbursements: [...EMPTY_DISBURSEMENT_ROWS],
   overrideServicingFees: false,
   companyServicingFee: '', companyServicingFeePct: '', companyMaxFee: '', companyMaxFeePct: '',
   companyMinFee: '', companyMinFeePct: '', brokerServicingFee: '', brokerServicingFeePct: '',
@@ -113,6 +139,8 @@ const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: 
   interestGuaranteeLender: '', interestGuaranteeCompany: '', interestGuaranteeBroker: '', interestGuaranteeTotal: '',
   prepaymentLender: '', prepaymentCompany: '', prepaymentBroker: '', prepaymentTotal: '',
   maturityLender: '', maturityCompany: '', maturityBroker: '', maturityTotal: '',
+  maturityMaximum: '', lateFee1Maximum: '', lateFee2Maximum: '',
+  defaultInterestMaximum: '', interestGuaranteeMaximum: '', prepaymentMaximum: '',
 });
 
 export const AddFundingModal: React.FC<AddFundingModalProps> = ({
@@ -270,7 +298,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     </div>
   );
 
-  const renderDefaultFeeRow = (label: string, lenderField: keyof FundingFormData, companyField: keyof FundingFormData, brokerField: keyof FundingFormData, totalField: keyof FundingFormData) => (
+  const renderDefaultFeeRow = (label: string, lenderField: keyof FundingFormData, companyField: keyof FundingFormData, brokerField: keyof FundingFormData, totalField: keyof FundingFormData, maximumField: keyof FundingFormData) => (
     <div className="flex items-center gap-2">
       <Label className="text-xs text-foreground font-medium min-w-[120px] shrink-0">{label}</Label>
       <div className="relative w-16">
@@ -288,6 +316,9 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
       <div className="relative w-16">
         <Input value={formData[totalField] as string} disabled className="h-7 text-xs pr-4 text-right opacity-50 bg-muted" placeholder="0%" />
         <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+      </div>
+      <div className="relative w-16">
+        <Input value={formData[maximumField] as string} onChange={(e) => handleChange(maximumField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs pr-4 text-right" inputMode="decimal" placeholder="-" />
       </div>
     </div>
   );
@@ -365,8 +396,13 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   <PopoverContent className="w-auto p-0 z-[9999]" align="start"><EnhancedCalendar mode="single" selected={interestFromDate} onSelect={(d) => { setInterestFromDate(d); setInterestFromOpen(false); }} onClear={() => { setInterestFromDate(undefined); setInterestFromOpen(false); }} onToday={() => { setInterestFromDate(new Date()); setInterestFromOpen(false); }} initialFocus /></PopoverContent>
                 </Popover>
               </div>
-            </div>
+              </div>
 
+              {/* Rounding Adjustment */}
+              <div className="flex items-center gap-2">
+                <Checkbox id="roundingAdjustment" checked={formData.roundingAdjustment} onCheckedChange={(checked) => handleChange('roundingAdjustment', !!checked)} />
+                <Label htmlFor="roundingAdjustment" className="text-sm font-medium leading-tight cursor-pointer">Rounding Adjustment</Label>
+              </div>
             {/* Rate Selection */}
             <div className="space-y-2 mt-2">
               <div className="border-b border-border pb-1">
@@ -429,6 +465,56 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               <Label htmlFor="brokerParticipates" className="text-sm font-medium leading-tight cursor-pointer">Lender is: The Broker, Employee or Family of Broker</Label>
             </div>
 
+            {/* Disbursements Section */}
+            <div className="space-y-2 mt-3">
+              <div className="flex items-center justify-between">
+                <div className="border-b border-border pb-1">
+                  <span className="font-semibold text-sm text-primary">Disbursements</span>
+                </div>
+                <span className="text-xs text-destructive font-medium">Note: Disbursements will be for payments deducted from outgoing lender payments</span>
+              </div>
+              <div className="border border-border rounded-md overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-muted/50">
+                      <th className="text-left px-2 py-1.5 font-semibold text-muted-foreground">Account ID</th>
+                      <th className="text-left px-2 py-1.5 font-semibold text-muted-foreground">Name</th>
+                      <th className="text-left px-2 py-1.5 font-semibold text-muted-foreground w-24">$</th>
+                      <th className="text-left px-2 py-1.5 font-semibold text-muted-foreground w-20">%</th>
+                      <th className="text-left px-2 py-1.5 font-semibold text-muted-foreground">Comments</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {formData.disbursements.map((row, idx) => (
+                      <tr key={idx} className="border-t border-border">
+                        <td className="px-1 py-0.5">
+                          <Input value={row.accountId} onChange={(e) => { const updated = [...formData.disbursements]; updated[idx] = { ...updated[idx], accountId: e.target.value }; setFormData(prev => ({ ...prev, disbursements: updated })); }} className="h-7 text-xs border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" placeholder="" />
+                        </td>
+                        <td className="px-1 py-0.5">
+                          <Input value={row.name} onChange={(e) => { const updated = [...formData.disbursements]; updated[idx] = { ...updated[idx], name: e.target.value }; setFormData(prev => ({ ...prev, disbursements: updated })); }} className="h-7 text-xs border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" placeholder="" />
+                        </td>
+                        <td className="px-1 py-0.5">
+                          <div className="relative">
+                            <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                            <Input value={row.amount} onChange={(e) => { const updated = [...formData.disbursements]; updated[idx] = { ...updated[idx], amount: e.target.value.replace(/[^0-9.]/g, '') }; setFormData(prev => ({ ...prev, disbursements: updated })); }} onKeyDown={numericKeyDown} className="h-7 text-xs pl-4 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" inputMode="decimal" placeholder="" />
+                          </div>
+                        </td>
+                        <td className="px-1 py-0.5">
+                          <div className="relative">
+                            <Input value={row.percent} onChange={(e) => { const updated = [...formData.disbursements]; updated[idx] = { ...updated[idx], percent: e.target.value.replace(/[^0-9.]/g, '') }; setFormData(prev => ({ ...prev, disbursements: updated })); }} className="h-7 text-xs pr-4 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" inputMode="decimal" placeholder="" />
+                            <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
+                          </div>
+                        </td>
+                        <td className="px-1 py-0.5">
+                          <Input value={row.comments} onChange={(e) => { const updated = [...formData.disbursements]; updated[idx] = { ...updated[idx], comments: e.target.value }; setFormData(prev => ({ ...prev, disbursements: updated })); }} className="h-7 text-xs border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" placeholder="" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             {/* Servicing Fees & Default Fees Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4 mt-4">
               {/* Left: Override Standard Servicing Fees */}
@@ -456,20 +542,21 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   <Label htmlFor="overrideDefaultFees" className="text-sm font-semibold text-foreground">Override Default Fees Fees</Label>
                 </div>
                 <div className="space-y-1.5 pl-2">
-                    {/* Column headers */}
+                     {/* Column headers */}
                     <div className="flex items-center gap-2">
                       <div className="min-w-[120px]" />
                       <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Lender</span>
                       <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Company</span>
                       <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Broker</span>
-                      <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Total</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Total %</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Maximum</span>
                     </div>
-                    {renderDefaultFeeRow('Late Fee 1', 'lateFee1Lender', 'lateFee1Company', 'lateFee1Broker', 'lateFee1Total')}
-                    {renderDefaultFeeRow('Late Fee 2', 'lateFee2Lender', 'lateFee2Company', 'lateFee2Broker', 'lateFee2Total')}
-                    {renderDefaultFeeRow('Default Interest', 'defaultInterestLender', 'defaultInterestCompany', 'defaultInterestBroker', 'defaultInterestTotal')}
-                    {renderDefaultFeeRow('Interest Guarantee', 'interestGuaranteeLender', 'interestGuaranteeCompany', 'interestGuaranteeBroker', 'interestGuaranteeTotal')}
-                    {renderDefaultFeeRow('Prepayment', 'prepaymentLender', 'prepaymentCompany', 'prepaymentBroker', 'prepaymentTotal')}
-                    {renderDefaultFeeRow('Maturity', 'maturityLender', 'maturityCompany', 'maturityBroker', 'maturityTotal')}
+                    {renderDefaultFeeRow('Late Fee 1', 'lateFee1Lender', 'lateFee1Company', 'lateFee1Broker', 'lateFee1Total', 'lateFee1Maximum')}
+                    {renderDefaultFeeRow('Late Fee 2', 'lateFee2Lender', 'lateFee2Company', 'lateFee2Broker', 'lateFee2Total', 'lateFee2Maximum')}
+                    {renderDefaultFeeRow('Default Interest', 'defaultInterestLender', 'defaultInterestCompany', 'defaultInterestBroker', 'defaultInterestTotal', 'defaultInterestMaximum')}
+                    {renderDefaultFeeRow('Interest Guarantee', 'interestGuaranteeLender', 'interestGuaranteeCompany', 'interestGuaranteeBroker', 'interestGuaranteeTotal', 'interestGuaranteeMaximum')}
+                    {renderDefaultFeeRow('Prepayment', 'prepaymentLender', 'prepaymentCompany', 'prepaymentBroker', 'prepaymentTotal', 'prepaymentMaximum')}
+                    {renderDefaultFeeRow('Maturity', 'maturityLender', 'maturityCompany', 'maturityBroker', 'maturityTotal', 'maturityMaximum')}
                 </div>
               </div>
             </div>

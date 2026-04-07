@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { DisbursementRow } from './AddFundingModal';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
@@ -51,7 +52,9 @@ export interface FundingRecord {
   rateSoldValue?: string;
   rateLenderValue?: string;
   brokerParticipates?: boolean;
+  roundingAdjustment?: boolean;
   interestFrom?: string;
+  disbursements?: DisbursementRow[];
   // Servicing fees
   overrideServicingFees?: boolean;
   companyServicingFee?: string;
@@ -92,6 +95,12 @@ export interface FundingRecord {
   maturityCompany?: string;
   maturityBroker?: string;
   maturityTotal?: string;
+  maturityMaximum?: string;
+  lateFee1Maximum?: string;
+  lateFee2Maximum?: string;
+  defaultInterestMaximum?: string;
+  interestGuaranteeMaximum?: string;
+  prepaymentMaximum?: string;
 }
 
 interface LoanFundingGridProps {
@@ -220,6 +229,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       interestFrom: record.interestFrom || '',
       notes: '',
       brokerParticipates: record.brokerParticipates || false,
+      roundingAdjustment: record.roundingAdjustment || false,
       percentOwned: String(record.pctOwned),
       regularPayment: String(record.regularPayment),
       lenderShare: String(record.lenderShare || ''),
@@ -227,6 +237,12 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       rateNoteValue: record.rateNoteValue || noteRate,
       rateSoldValue: record.rateSoldValue || soldRate,
       rateLenderValue: record.rateLenderValue || '',
+      disbursements: record.disbursements || [
+        { accountId: '', name: '', amount: '', percent: '', comments: '' },
+        { accountId: '', name: '', amount: '', percent: '', comments: '' },
+        { accountId: '', name: '', amount: '', percent: '', comments: '' },
+        { accountId: '', name: '', amount: '', percent: '', comments: '' },
+      ],
       overrideServicingFees: record.overrideServicingFees || false,
       companyServicingFee: record.companyServicingFee || '', companyServicingFeePct: record.companyServicingFeePct || '',
       companyMaxFee: record.companyMaxFee || '', companyMaxFeePct: record.companyMaxFeePct || '',
@@ -241,6 +257,9 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       interestGuaranteeLender: record.interestGuaranteeLender || '', interestGuaranteeCompany: record.interestGuaranteeCompany || '', interestGuaranteeBroker: record.interestGuaranteeBroker || '', interestGuaranteeTotal: record.interestGuaranteeTotal || '',
       prepaymentLender: record.prepaymentLender || '', prepaymentCompany: record.prepaymentCompany || '', prepaymentBroker: record.prepaymentBroker || '', prepaymentTotal: record.prepaymentTotal || '',
       maturityLender: record.maturityLender || '', maturityCompany: record.maturityCompany || '', maturityBroker: record.maturityBroker || '', maturityTotal: record.maturityTotal || '',
+      lateFee1Maximum: record.lateFee1Maximum || '', lateFee2Maximum: record.lateFee2Maximum || '',
+      defaultInterestMaximum: record.defaultInterestMaximum || '', interestGuaranteeMaximum: record.interestGuaranteeMaximum || '',
+      prepaymentMaximum: record.prepaymentMaximum || '', maturityMaximum: record.maturityMaximum || '',
     });
     setSelectedRecord(record);
     setIsAddModalOpen(true);
