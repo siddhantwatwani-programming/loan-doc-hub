@@ -272,7 +272,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
               </Popover>
             </div>
           </DirtyFieldWrapper>
-          {renderCurrencyField(FIELD_KEYS.appraisedValue, 'Appraised Value')}
+          {renderCurrencyField(FIELD_KEYS.appraisedValue, 'Estimate of Value')}
           {renderInlineSelect(FIELD_KEYS.propertyType, 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
           {renderInlineSelect(FIELD_KEYS.occupancy, 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
           {renderInlineField(FIELD_KEYS.zoning, 'Zoning')}

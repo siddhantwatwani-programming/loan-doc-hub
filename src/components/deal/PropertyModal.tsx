@@ -261,7 +261,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                 <div className="space-y-1.5">
                   <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Property Valuation</span></div>
                   {renderInlineField('appraisedDate', 'Valuation Date', 'date')}
-                  {renderCurrencyField('appraisedValue', 'Appraised Value')}
+                  {renderCurrencyField('appraisedValue', 'Estimate of Value')}
                   {renderInlineSelect('propertyType', 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
                   {renderInlineSelect('occupancy', 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
                   {renderInlineField('zoning', 'Zoning')}

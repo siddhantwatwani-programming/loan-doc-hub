@@ -99,7 +99,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'county', label: 'County', visible: true },
   { id: 'propertyType', label: 'Property Type', visible: true },
   { id: 'occupancy', label: 'Occupancy', visible: true },
-  { id: 'appraisedValue', label: 'Appraised Value', visible: true },
+  { id: 'appraisedValue', label: 'Estimate of Value', visible: true },
   { id: 'appraisedDate', label: 'Valuation Date', visible: true },
   { id: 'purchasePrice', label: 'Purchase Price', visible: true },
   { id: 'ltv', label: 'Loan To Value', visible: true },
@@ -361,7 +361,7 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
             Total Properties: {totalCount ?? properties.length} | 
-            Total Appraised Value: {formatCurrency(
+            Total Estimate of Value: {formatCurrency(
               properties.reduce((sum, p) => sum + (parseFloat(p.appraisedValue) || 0), 0).toString()
             )}
           </div>
