@@ -60,6 +60,7 @@ const DEFAULT_LIEN: LienData = {
   currentlyDelinquent: 'false',
   paidByLoan: 'false',
   sourceOfPayment: '',
+  sourceOfInformation: '',
 };
 
 const LIEN_FIELD_MAP: Record<string, string> = {
@@ -101,6 +102,7 @@ const LIEN_FIELD_MAP: Record<string, string> = {
   currentlyDelinquent: 'currently_delinquent',
   paidByLoan: 'paid_by_loan',
   sourceOfPayment: 'source_of_payment',
+  sourceOfInformation: 'source_of_information',
 };
 
 const extractLiensFromValues = (values: Record<string, string>): LienData[] => {
@@ -176,6 +178,18 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   const { dirtyFieldKeys } = useDirtyFields();
 
   const allLiens = extractLiensFromValues(values);
+
+  // Auto-compute 10A: "yes" if any lien has an existing type checked
+  const hasExistingLien = allLiens.some(l =>
+    l.existingRemain === 'true' || l.existingPaydown === 'true' || l.existingPayoff === 'true'
+  );
+  const current10A = values['liens.answer_10a'] || '';
+  const expected10A = hasExistingLien ? 'yes' : 'no';
+  React.useEffect(() => {
+    if (current10A !== expected10A) {
+      onValueChange('liens.answer_10a', expected10A);
+    }
+  }, [expected10A, current10A, onValueChange]);
   const totalLiens = allLiens.length;
   const totalPages = Math.max(1, Math.ceil(totalLiens / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);

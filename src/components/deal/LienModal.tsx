@@ -49,6 +49,7 @@ const getDefaultLien = (): LienData => ({
   recordingNumber: '', recordingNumberFlag: 'false', recordingDate: '', seniorLienTracking: 'false',
   lastVerified: '', lastChecked: '', note: '', thisLoan: 'false', estimate: 'false', status: '',
   delinquencies60day: 'false', delinquenciesHowMany: '', currentlyDelinquent: 'false', paidByLoan: 'false', sourceOfPayment: '',
+  sourceOfInformation: '',
 });
 
 export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, onSave, isEdit, propertyOptions = [], loanValues = {} }) => {
@@ -362,6 +363,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
                 <Label htmlFor="modal-paidByLoan" className="text-xs text-foreground">Will be Paid by this Loan</Label>
               </div>
               {renderInlineField('sourceOfPayment', 'If No, Source of Payment')}
+              {renderInlineField('sourceOfInformation', 'Source of Information')}
               <div />
             </div>
           </div>

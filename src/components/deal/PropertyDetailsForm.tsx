@@ -360,7 +360,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           {renderCurrencyField(FIELD_KEYS.lienProtectiveEquity, 'Lien (Protective Equity)')}
           {renderInlineSelect(FIELD_KEYS.sourceLienInfo, 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
 
-          {renderInlineField(FIELD_KEYS.recordingNumber, 'Recording number')}
+          
         </div>
       </div>
 
