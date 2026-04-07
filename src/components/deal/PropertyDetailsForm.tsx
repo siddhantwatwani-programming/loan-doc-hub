@@ -47,7 +47,7 @@ const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
 const CONSTRUCTION_TYPES = ['Wood/Stucco', 'Stick', 'Concrete Block'];
 const LIEN_SOURCES = ['Broker', 'Borrower', 'Other'];
-const VALUATION_TYPE_OPTIONS = ['Broker BPO', 'Appraisal'];
+const VALUATION_TYPE_OPTIONS = ['Appraisal', 'Broker Determined Value (BPO)'];
 
 import { PROPERTY_DETAILS_KEYS } from '@/lib/fieldKeyMap';
 
