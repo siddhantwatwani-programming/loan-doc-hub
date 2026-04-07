@@ -48,6 +48,7 @@ export interface FundingFormData {
   interestFrom: string;
   notes: string;
   brokerParticipates: boolean;
+  roundingAdjustment: boolean;
   percentOwned: string;
   regularPayment: string;
   lenderShare: string;
@@ -55,6 +56,8 @@ export interface FundingFormData {
   rateNoteValue: string;
   rateSoldValue: string;
   rateLenderValue: string;
+  // Disbursements
+  disbursements: DisbursementRow[];
   // Servicing fees section
   overrideServicingFees: boolean;
   companyServicingFee: string;
