@@ -422,6 +422,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const handleSaveTax = useCallback((taxData: PropertyTaxData) => {
     const prefix = editingTax ? editingTax.id : getNextPropertyTaxPrefix(values);
     const fieldEntries: { key: keyof PropertyTaxData; dbField: string }[] = [
+      { key: 'property', dbField: 'property' },
       { key: 'authority', dbField: 'authority' },
       { key: 'address', dbField: 'address' },
       { key: 'type', dbField: 'type' },
