@@ -28,6 +28,7 @@ interface PropertyTaxFormProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  propertyOptions?: string[];
 }
 
 const FREQUENCY_OPTIONS = [
