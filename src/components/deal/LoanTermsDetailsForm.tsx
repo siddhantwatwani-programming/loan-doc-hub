@@ -394,6 +394,9 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
           {renderInlineSelect(FIELD_KEYS.lienPosition, 'Lien Position', LIEN_POSITION_OPTIONS, 'Select')}
           {renderInlineSelect(FIELD_KEYS.loanPurpose, 'Loan Purpose', LOAN_PURPOSE_OPTIONS, 'Select')}
           {renderInlineSelect(FIELD_KEYS.rateStructure, 'Rate Structure', RATE_STRUCTURE_OPTIONS, 'Select')}
+          {getValue(FIELD_KEYS.rateStructure) === 'other' && (
+            renderInlineField(FIELD_KEYS.rateStructureOther, 'Other (specify)')
+          )}
           {renderInlineSelect(FIELD_KEYS.amortization, 'Amortization', AMORTIZATION_OPTIONS, 'Select')}
           {renderInlineSelect(FIELD_KEYS.interestCalculation, 'Interest Calc', INTEREST_CALCULATION_OPTIONS, 'Select')}
           {renderInlineSelect(FIELD_KEYS.shortPaymentsAppliedTo, 'Apply Short Payments', SHORT_PAYMENTS_OPTIONS, 'Select')}
