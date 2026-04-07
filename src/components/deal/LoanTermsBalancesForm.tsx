@@ -219,7 +219,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
     <DirtyFieldWrapper fieldKey={key}>
       <div className="flex items-center gap-3">
         <Label className={LABEL_CLASS}>{label}</Label>
-        <div className="relative flex-1">
+        <div className={cn("relative", INPUT_CONTAINER_CLASS, "flex-1")}>
           <Input
             id={key}
             value={getValue(key)}
