@@ -94,6 +94,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
 ];
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'property', label: 'Property', visible: true },
   { id: 'authority', label: 'Tax Authority', visible: true },
   { id: 'address', label: 'Address', visible: false },
   { id: 'type', label: 'Type', visible: true },
