@@ -199,6 +199,36 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
   const bv = (key: string) => values[key] === 'true';
   const sbv = (key: string, val: boolean) => onValueChange(key, String(val));
 
+  // Dynamic custom service rows – derive IDs from persisted values
+  const [customServiceIds, setCustomServiceIds] = useState<string[]>(() => {
+    const ids: string[] = [];
+    const prefix = 'loan_terms.servicing.custom_';
+    Object.keys(values).forEach((k) => {
+      if (k.startsWith(prefix)) {
+        const rest = k.slice(prefix.length);
+        const id = rest.split('.')[0];
+        if (id && !ids.includes(id)) ids.push(id);
+      }
+    });
+    return ids.length > 0 ? ids : [];
+  });
+
+  const addCustomService = useCallback(() => {
+    const newId = Date.now().toString(36);
+    setCustomServiceIds((prev) => [...prev, newId]);
+  }, []);
+
+  const removeCustomService = useCallback((id: string) => {
+    setCustomServiceIds((prev) => prev.filter((i) => i !== id));
+    // Clear persisted values for this row
+    const prefix = `loan_terms.servicing.custom_${id}.`;
+    Object.keys(values).forEach((k) => {
+      if (k.startsWith(prefix)) onValueChange(k, '');
+    });
+    onValueChange(`loan_terms.servicing.custom_${id}.enabled`, '');
+    onValueChange(`loan_terms.servicing.custom_${id}.label`, '');
+  }, [values, onValueChange]);
+
   // Override Individual state
   const [overridePopoverOpen, setOverridePopoverOpen] = useState(false);
   const [participants, setParticipants] = useState<Array<{ id: string; name: string; role: string; contact_id: string | null }>>([]);
