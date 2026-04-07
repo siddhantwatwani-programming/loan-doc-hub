@@ -98,6 +98,20 @@ export interface FundingFormData {
   maturityCompany: string;
   maturityBroker: string;
   maturityTotal: string;
+  maturityMaximum: string;
+  lateFee1Maximum: string;
+  lateFee2Maximum: string;
+  defaultInterestMaximum: string;
+  interestGuaranteeMaximum: string;
+  prepaymentMaximum: string;
+}
+
+export interface DisbursementRow {
+  accountId: string;
+  name: string;
+  amount: string;
+  percent: string;
+  comments: string;
 }
 
 const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: string, soldRate: string): FundingFormData => ({
