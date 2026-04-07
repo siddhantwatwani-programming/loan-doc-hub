@@ -1,11 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { EmailInput } from '@/components/ui/email-input';
 import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ChevronDown } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';

@@ -94,6 +94,7 @@ export const LoanTermsSectionContent: React.FC<LoanTermsSectionContentProps> = (
             showValidation={showValidation}
             disabled={disabled}
             calculationResults={calculationResults}
+            dealId={dealId}
           />
         );
       case 'history':
