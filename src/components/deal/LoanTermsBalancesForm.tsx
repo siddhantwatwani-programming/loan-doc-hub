@@ -416,7 +416,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 onValueChange={(value) => setValue(FIELD_KEYS.accrualMethod, value)}
                 disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
               >
-                <SelectTrigger className="h-8 text-sm flex-1">
+                <SelectTrigger className="h-8 text-sm flex-1 max-w-[180px]">
                   <SelectValue placeholder="Select method" />
                 </SelectTrigger>
                 <SelectContent>
@@ -454,7 +454,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   !isChecked(FIELD_KEYS.interestSplitEnabled) ||
                   !isChecked(FIELD_KEYS.prepaidPaymentsEnabled)
                 }
-                className="h-8 text-sm flex-1"
+                className="h-8 text-sm flex-1 max-w-[180px]"
               />
             </div>
 
@@ -483,7 +483,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   !isChecked(FIELD_KEYS.interestSplitEnabled) ||
                   !isChecked(FIELD_KEYS.impoundedPaymentsEnabled)
                 }
-                className="h-8 text-sm flex-1"
+                className="h-8 text-sm flex-1 max-w-[180px]"
               />
             </div>
 
@@ -513,7 +513,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   !isChecked(FIELD_KEYS.fundingHoldbackEnabled)
                 }
               >
-                <SelectTrigger className="h-8 text-sm flex-1">
+                <SelectTrigger className="h-8 text-sm flex-1 max-w-[180px]">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
@@ -637,7 +637,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   disabled={
                     disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.overrideFundsHeld)
                   }
-                  className="h-8 text-sm flex-1"
+                  className="h-8 text-sm flex-1 max-w-[180px]"
                   inputMode="numeric"
                 />
               </div>
@@ -656,7 +656,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 onValueChange={(value) => setValue(FIELD_KEYS.paymentFrequency, value)}
                 disabled={disabled}
               >
-                <SelectTrigger className="h-8 text-sm flex-1">
+                <SelectTrigger className="h-8 text-sm flex-1 max-w-[180px]">
                   <SelectValue placeholder="Select frequency" />
                 </SelectTrigger>
                 <SelectContent>
@@ -676,7 +676,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 onChange={(e) => setValue(FIELD_KEYS.dayDue, e.target.value.replace(/\D/g, ''))}
                 onKeyDown={(e) => { if (!/\d/.test(e.key) && !['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'].includes(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault(); }}
                 disabled={disabled}
-                className="h-8 text-sm flex-1"
+                className="h-8 text-sm flex-1 max-w-[180px]"
                 inputMode="numeric"
               />
             </div>
