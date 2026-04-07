@@ -95,6 +95,12 @@ export interface FundingRecord {
   maturityCompany?: string;
   maturityBroker?: string;
   maturityTotal?: string;
+  maturityMaximum?: string;
+  lateFee1Maximum?: string;
+  lateFee2Maximum?: string;
+  defaultInterestMaximum?: string;
+  interestGuaranteeMaximum?: string;
+  prepaymentMaximum?: string;
 }
 
 interface LoanFundingGridProps {
