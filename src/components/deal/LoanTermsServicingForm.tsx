@@ -43,31 +43,31 @@ const AGENT_FK = {
 // Source field keys for auto-populate by agent type
 const COMPANY_SOURCE_KEYS = {
   name: 'loan_terms.details_company',
-  street: 'borrower.address.street',
-  city: 'borrower.address.city',
-  state: 'borrower.state',
-  zip: 'borrower.address.zip',
-  phone: 'borrower.phone.work',
-  email: 'borrower.email',
+  street: 'loan_terms.details_originating_vendor_street',
+  city: 'loan_terms.details_originating_vendor_city',
+  state: 'loan_terms.details_originating_vendor_state',
+  zip: 'loan_terms.details_originating_vendor_zip',
+  phone: 'loan_terms.details_originating_vendor_phone',
+  email: 'loan_terms.details_originating_vendor_email',
 };
 
 const BROKER_SOURCE_KEYS = {
-  name: 'broker.company_name',
+  name: 'broker.company',
   street: 'broker.address.street',
   city: 'broker.address.city',
-  state: 'broker.state',
+  state: 'broker.address.state',
   zip: 'broker.address.zip',
-  phone: 'broker.phone',
+  phone: 'broker.phone.work',
   email: 'broker.email',
 };
 
 const LENDER_SOURCE_KEYS = {
-  name: 'lender.name',
-  street: 'lender.address.street',
-  city: 'lender.address.city',
-  state: 'lender.state',
-  zip: 'lender.address.zip',
-  phone: 'lender.phone',
+  name: 'lender.full_name',
+  street: 'lender.primary_address.street',
+  city: 'lender.primary_address.city',
+  state: 'lender.primary_address.state',
+  zip: 'lender.primary_address.zip',
+  phone: 'lender.phone.work',
   email: 'lender.email',
 };
 
