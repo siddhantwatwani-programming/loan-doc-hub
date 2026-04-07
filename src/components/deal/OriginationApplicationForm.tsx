@@ -309,27 +309,7 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
           {renderDualCheckboxField('Income Statement Received', FIELD_KEYS.doc_income_statement, FIELD_KEYS.doc_income_statement_2)}
           {renderDualCheckboxField('Audited Financials', FIELD_KEYS.doc_audited_financials, FIELD_KEYS.doc_audited_financials_2)}
           {renderTextField('Periods Reviewed', FIELD_KEYS.doc_periods_reviewed)}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.is_broker_borrower_yes}>
-            <div className="flex items-center gap-2">
-              <Label className="text-sm shrink-0 flex-1">IS BROKER ALSO A BORROWER?</Label>
-              <Checkbox
-                checked={getBoolValue(FIELD_KEYS.is_broker_borrower_yes)}
-                onCheckedChange={(checked) => {
-                  setBoolValue(FIELD_KEYS.is_broker_borrower_yes, !!checked);
-                  if (checked) setBoolValue(FIELD_KEYS.is_broker_borrower_no, false);
-                }}
-                disabled={disabled}
-              />
-              <Checkbox
-                checked={getBoolValue(FIELD_KEYS.is_broker_borrower_no)}
-                onCheckedChange={(checked) => {
-                  setBoolValue(FIELD_KEYS.is_broker_borrower_no, !!checked);
-                  if (checked) setBoolValue(FIELD_KEYS.is_broker_borrower_yes, false);
-                }}
-                disabled={disabled}
-              />
-            </div>
-          </DirtyFieldWrapper>
+          {renderCheckboxField('IS BROKER ALSO A BORROWER?', FIELD_KEYS.is_broker_borrower_yes)}
           <DirtyFieldWrapper fieldKey="origination_app.doc.additional_info_check1">
             <div className="flex items-center gap-2">
               <Label className="text-sm shrink-0 flex-1">Additional Information Attached</Label>

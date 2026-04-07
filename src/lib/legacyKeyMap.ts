@@ -1325,6 +1325,11 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'notes_entry.content': 'nt_p_content',
   'notes_entry.type': 'nt_p_type',
   'notes_entry.attachments': 'nt_p_attachments',
+
+  // ──────────────────────────────────────────────────
+  // ORIGINATION APPLICATION
+  // ──────────────────────────────────────────────────
+  'origination_app.doc.is_broker_also_borrower_yes': 'or_p_isBrokerAlsoBorrower_yes',
 };
 
 // Build reverse map: DB key → legacy key (for hydration)
