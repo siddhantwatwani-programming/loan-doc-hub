@@ -55,7 +55,7 @@ interface PropertyTaxTableViewProps {
   onPageChange?: (page: number) => void;
 }
 
-const SEARCH_FIELDS = ['authority', 'type', 'frequency', 'apn', 'address'];
+const SEARCH_FIELDS = ['property', 'authority', 'type', 'frequency', 'apn', 'address'];
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
