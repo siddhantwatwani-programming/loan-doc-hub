@@ -159,7 +159,10 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   editingRecordId,
 }) => {
   const getInitialFormData = (): FundingFormData => {
-    if (editData) return { ...editData, loan: loanNumber || editData.loan, borrower: borrowerName || editData.borrower };
+    if (editData) {
+      const defaults = getDefaultFormData(loanNumber, borrowerName, noteRate, soldRate);
+      return { ...defaults, ...editData, disbursements: Array.isArray(editData.disbursements) ? editData.disbursements : [...EMPTY_DISBURSEMENT_ROWS], loan: loanNumber || editData.loan, borrower: borrowerName || editData.borrower };
+    }
     return getDefaultFormData(loanNumber, borrowerName, noteRate, soldRate);
   };
 
