@@ -465,6 +465,56 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               <Label htmlFor="brokerParticipates" className="text-sm font-medium leading-tight cursor-pointer">Lender is: The Broker, Employee or Family of Broker</Label>
             </div>
 
+            {/* Disbursements Section */}
+            <div className="space-y-2 mt-3">
+              <div className="flex items-center justify-between">
+                <div className="border-b border-border pb-1">
+                  <span className="font-semibold text-sm text-primary">Disbursements</span>
+                </div>
+                <span className="text-xs text-destructive font-medium">Note: Disbursements will be for payments deducted from outgoing lender payments</span>
+              </div>
+              <div className="border border-border rounded-md overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-muted/50">
+                      <th className="text-left px-2 py-1.5 font-semibold text-muted-foreground">Account ID</th>
+                      <th className="text-left px-2 py-1.5 font-semibold text-muted-foreground">Name</th>
+                      <th className="text-left px-2 py-1.5 font-semibold text-muted-foreground w-24">$</th>
+                      <th className="text-left px-2 py-1.5 font-semibold text-muted-foreground w-20">%</th>
+                      <th className="text-left px-2 py-1.5 font-semibold text-muted-foreground">Comments</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {formData.disbursements.map((row, idx) => (
+                      <tr key={idx} className="border-t border-border">
+                        <td className="px-1 py-0.5">
+                          <Input value={row.accountId} onChange={(e) => { const updated = [...formData.disbursements]; updated[idx] = { ...updated[idx], accountId: e.target.value }; setFormData(prev => ({ ...prev, disbursements: updated })); }} className="h-7 text-xs border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" placeholder="" />
+                        </td>
+                        <td className="px-1 py-0.5">
+                          <Input value={row.name} onChange={(e) => { const updated = [...formData.disbursements]; updated[idx] = { ...updated[idx], name: e.target.value }; setFormData(prev => ({ ...prev, disbursements: updated })); }} className="h-7 text-xs border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" placeholder="" />
+                        </td>
+                        <td className="px-1 py-0.5">
+                          <div className="relative">
+                            <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                            <Input value={row.amount} onChange={(e) => { const updated = [...formData.disbursements]; updated[idx] = { ...updated[idx], amount: e.target.value.replace(/[^0-9.]/g, '') }; setFormData(prev => ({ ...prev, disbursements: updated })); }} onKeyDown={numericKeyDown} className="h-7 text-xs pl-4 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" inputMode="decimal" placeholder="" />
+                          </div>
+                        </td>
+                        <td className="px-1 py-0.5">
+                          <div className="relative">
+                            <Input value={row.percent} onChange={(e) => { const updated = [...formData.disbursements]; updated[idx] = { ...updated[idx], percent: e.target.value.replace(/[^0-9.]/g, '') }; setFormData(prev => ({ ...prev, disbursements: updated })); }} className="h-7 text-xs pr-4 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" inputMode="decimal" placeholder="" />
+                            <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
+                          </div>
+                        </td>
+                        <td className="px-1 py-0.5">
+                          <Input value={row.comments} onChange={(e) => { const updated = [...formData.disbursements]; updated[idx] = { ...updated[idx], comments: e.target.value }; setFormData(prev => ({ ...prev, disbursements: updated })); }} className="h-7 text-xs border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" placeholder="" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             {/* Servicing Fees & Default Fees Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4 mt-4">
               {/* Left: Override Standard Servicing Fees */}
