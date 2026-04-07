@@ -297,7 +297,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   Sold Rate
                 </Label>
               </div>
-              <div className="relative flex-1">
+              <div className="relative flex-1 max-w-[180px]">
                 <Input
                   value={getValue(FIELD_KEYS.soldRate)}
                   onChange={(e) => setValue(FIELD_KEYS.soldRate, sanitizeInterestInput(e.target.value))}
@@ -325,7 +325,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                       <Label className="text-sm text-muted-foreground min-w-[155px] max-w-[155px] text-left shrink-0">
                         Company
                       </Label>
-                      <div className="relative flex-1">
+                      <div className="relative flex-1 max-w-[180px]">
                         <Input
                           value={getValue(FIELD_KEYS.soldRateCompany)}
                           onChange={(e) => setValue(FIELD_KEYS.soldRateCompany, e.target.value)}
@@ -341,7 +341,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                       <Label className="text-sm text-muted-foreground min-w-[155px] max-w-[155px] text-left shrink-0">
                         Other - Client List
                       </Label>
-                      <div className="relative flex-1">
+                      <div className="relative flex-1 max-w-[180px]">
                         <Input
                           value={getValue(FIELD_KEYS.soldRateOtherClient1)}
                           onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient1, e.target.value)}
@@ -357,7 +357,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                       <Label className="text-sm text-muted-foreground min-w-[155px] max-w-[155px] text-left shrink-0">
                         Other - Client List
                       </Label>
-                      <div className="relative flex-1">
+                      <div className="relative flex-1 max-w-[180px]">
                         <Input
                           value={getValue(FIELD_KEYS.soldRateOtherClient2)}
                           onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient2, e.target.value)}
@@ -394,7 +394,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {/* Unearned Discount Balance */}
             <div className="flex items-center gap-3">
               <Label className={LABEL_CLASS}>Unearned Disc. Bal.</Label>
-              <div className="relative flex-1">
+              <div className="relative flex-1 max-w-[180px]">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                 <Input
                   value={focusedCurrencyField === FIELD_KEYS.unearnedDiscountBalance ? getValue(FIELD_KEYS.unearnedDiscountBalance) : formatCurrencyDisplay(getValue(FIELD_KEYS.unearnedDiscountBalance))}
@@ -543,7 +543,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                       </Label>
                     </div>
                   </div>
-                  <div className="relative flex-1">
+                  <div className="relative flex-1 max-w-[180px]">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">{isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent) ? '%' : '$'}</span>
                     <Input
                       value={
@@ -717,7 +717,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 >
                   Other Sched. Pmts
                 </Label>
-                <div className="relative flex-1">
+                <div className="relative flex-1 max-w-[180px]">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                   <Input
                     id={FIELD_KEYS.otherScheduledPayments}
@@ -741,7 +741,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 >
                   To Escrow Impounds
                 </Label>
-                <div className="relative flex-1">
+                <div className="relative flex-1 max-w-[180px]">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                   <Input
                     id={FIELD_KEYS.toEscrowImpounds}
@@ -790,7 +790,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 >
                   Reserve Balance
                 </Label>
-                <div className="relative flex-1">
+                <div className="relative flex-1 max-w-[180px]">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                   <Input
                     id={FIELD_KEYS.reserveBalance}
@@ -819,7 +819,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 >
                   Suspense Funds
                 </Label>
-                <div className="relative flex-1">
+                <div className="relative flex-1 max-w-[180px]">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                   <Input
                     id={FIELD_KEYS.suspenseFunds}
