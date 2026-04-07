@@ -677,6 +677,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         propertyTax={editingTax}
         onSave={handleSaveTax}
         isEdit={!!editingTax}
+        propertyOptions={propertyOptions.map(p => p.label)}
       />
     </>
   );
