@@ -778,19 +778,13 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
               </table>
             </div>
 
-            {/* Add Service button */}
-            <div className="border-t border-border px-3 py-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs gap-1 text-primary hover:text-primary"
-                onClick={addCustomService}
-                disabled={disabled}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add Service
-              </Button>
-            </div>
+            {/* Add Service Modal */}
+            <AddServiceModal
+              open={addServiceModalOpen}
+              onOpenChange={setAddServiceModalOpen}
+              onSave={addCustomService}
+              existingNames={existingServiceNames}
+            />
           </div>
         );
       })()}
