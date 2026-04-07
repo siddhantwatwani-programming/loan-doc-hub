@@ -1234,7 +1234,8 @@ async function generateSingleDocument(
 
     // ── Derive or_p_isBrokerAlsoBorrower checkbox glyphs for document generation ──
     {
-      const yesVal = fieldValues.get("or_p_isBrokerAlsoBorrower_yes");
+      const yesVal = fieldValues.get("or_p_isBrokerAlsoBorrower_yes")
+        || fieldValues.get("origination_app.doc.is_broker_also_borrower_yes");
       const isYes = yesVal && (yesVal.rawValue === "true" || yesVal.rawValue === true);
       fieldValues.set("or_p_isBrokerAlsoBorrower_yes", { rawValue: isYes ? "true" : "false", dataType: "boolean" });
       fieldValues.set("or_p_isBrokerAlsoBorrower_no", { rawValue: isYes ? "false" : "true", dataType: "boolean" });
