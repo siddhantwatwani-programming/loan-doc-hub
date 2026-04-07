@@ -34,7 +34,7 @@ const FREQUENCY_OPTIONS = ['Once Only', 'Monthly', 'Quarterly', 'Bi-Monthly', 'B
 const SOURCE_OPTIONS = ['Borrower', 'Title Report', 'Tax Records'];
 
 const getDefaultTax = (): PropertyTaxData => ({
-  id: '', authority: '', address: '', type: '', apn: '', memo: '',
+  id: '', property: '', authority: '', address: '', type: '', apn: '', memo: '',
   annualPayment: '', amount: '', nextDue: '', frequency: '',
   escrowImpounds: '', passThrough: '', sourceOfInformation: '',
   active: false, lastVerified: '', lenderNotified: '',
