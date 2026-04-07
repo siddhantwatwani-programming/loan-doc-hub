@@ -1325,6 +1325,11 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'notes_entry.content': 'nt_p_content',
   'notes_entry.type': 'nt_p_type',
   'notes_entry.attachments': 'nt_p_attachments',
+
+  // ──────────────────────────────────────────────────
+  // ORIGINATION APPLICATION
+  // ──────────────────────────────────────────────────
+  'origination_app.doc.is_broker_also_borrower_yes': 'or_p_isBrokerAlsoBorrower_yes',
 };
 
 // Build reverse map: DB key → legacy key (for hydration)
@@ -1342,18 +1347,6 @@ for (const [legacy, db] of Object.entries(LEGACY_TO_DB_KEY)) {
  * Resolve a legacy dot-notation key to its DB field_key.
  * Returns the DB key if found, otherwise the original key unchanged.
  */
-  // ──────────────────────────────────────────────────
-  // ORIGINATION APPLICATION
-  // ──────────────────────────────────────────────────
-  'origination_app.doc.is_broker_also_borrower_yes': 'or_p_isBrokerAlsoBorrower_yes',
-
-};
-
-// Build reverse map
-const DB_KEY_TO_LEGACY: Record<string, string> = Object.fromEntries(
-  Object.entries(LEGACY_TO_DB_KEY).map(([k, v]) => [v, k])
-);
-
 export function resolveLegacyKey(legacyKey: string): string {
   return LEGACY_TO_DB_KEY[legacyKey] || legacyKey;
 }
