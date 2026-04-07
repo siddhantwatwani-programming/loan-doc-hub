@@ -372,10 +372,10 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
       {/* Services and Rates heading */}
       <h3 className="text-sm font-semibold text-foreground">Services and Rates</h3>
       {/* Override and Lender Split Dropdown */}
-      <div className="flex items-center justify-between gap-8">
+      <div className="flex items-center gap-6">
         <DirtyFieldWrapper fieldKey="loan_terms.servicing.override">
           <div className="flex items-center gap-3">
-            <Label className="text-sm font-medium">Override</Label>
+            <Label className="text-sm font-medium">Override All</Label>
             <Checkbox
               checked={values['loan_terms.servicing.override'] === 'true'}
               onCheckedChange={(checked) => 
@@ -385,7 +385,71 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
             />
           </div>
         </DirtyFieldWrapper>
+
+        {/* Override Individual */}
+        <Popover open={overridePopoverOpen} onOpenChange={setOverridePopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" disabled={disabled}>
+              Override Individual
+              <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-2 z-50" align="start">
+            {participants.length === 0 ? (
+              <div className="text-xs text-muted-foreground p-2 text-center">
+                No Broker/Lender participants found.
+                <br />
+                <span className="text-primary">Add participants from the Participants section.</span>
+              </div>
+            ) : (
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {participants.map((p) => (
+                  <button
+                    key={p.id}
+                    className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted/50 flex items-center justify-between"
+                    onClick={() => {
+                      setSelectedParticipant(p);
+                      setFundingModalOpen(true);
+                      setOverridePopoverOpen(false);
+                    }}
+                  >
+                    <span className="truncate">{p.name}</span>
+                    <span className="text-muted-foreground capitalize ml-2 shrink-0">{p.role}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
       </div>
+
+      {/* Individual Funding Modal */}
+      {selectedParticipant && (
+        <AddFundingModal
+          open={fundingModalOpen}
+          onOpenChange={(open) => {
+            setFundingModalOpen(open);
+            if (!open) setSelectedParticipant(null);
+          }}
+          loanNumber={values['loan_terms.details_loan_number'] || ''}
+          borrowerName={values['borrower.full_name'] || ''}
+          onSubmit={(data) => {
+            // Save individual override data for this participant
+            const prefix = `loan_terms.servicing.individual.${selectedParticipant.id}`;
+            Object.entries(data).forEach(([key, val]) => {
+              if (val !== undefined && val !== null) {
+                onValueChange(`${prefix}.${key}`, String(val));
+              }
+            });
+            setFundingModalOpen(false);
+            setSelectedParticipant(null);
+          }}
+          noteRate={values['loan_terms.balances_note_rate'] || ''}
+          soldRate={values['loan_terms.balances_sold_rate'] || ''}
+          totalPayment={values['loan_terms.balances_total_payment'] || ''}
+          loanAmount={values['loan_terms.balances_loan_amount'] || ''}
+        />
+      )}
 
       {/* Services Grid */}
       <div className="border border-border rounded-lg overflow-hidden">
