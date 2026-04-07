@@ -1174,6 +1174,62 @@ async function generateSingleDocument(
         fieldValues.set("ln_p_lienPosit", lienPosVal);
         debugLog(`[generate-document] Bridged ln_p_lienPositi -> ln_p_lienPosit`);
       }
+
+      // ── Auto-compute li_bp_balanceAfter as SUM of balance_after for all liens
+      // with lien_priority_now < current loan's lien position ──
+      {
+        // Get current loan's lien position from loan_terms.lien_position or ln_p_lienPositi
+        const lienPosRaw = fieldValues.get("ln_p_lienPositi")?.rawValue
+          || fieldValues.get("loan_terms.lien_position")?.rawValue
+          || "";
+        // Parse priority: extract leading digits from values like "1st", "2nd", "3"
+        const parsePriority = (val: string): number => {
+          if (!val) return NaN;
+          const cleaned = String(val).trim().toLowerCase();
+          const numMatch = cleaned.match(/^(\d+)/);
+          return numMatch ? parseInt(numMatch[1], 10) : NaN;
+        };
+        const currentPriority = parsePriority(String(lienPosRaw));
+        debugLog(`[generate-document] Senior lien calc: currentLoanPriority = ${currentPriority} (raw: "${lienPosRaw}")`);
+
+        if (!isNaN(currentPriority)) {
+          // Collect all lien entries with their priority and balance_after
+          const lienPriorityCollector = lienFieldCollector["lien_priority_now"] || [];
+          const lienBalanceCollector = lienFieldCollector["balance_after"] || [];
+
+          // Build a map of lienIndex -> priority
+          const lienPriorityMap = new Map<number, number>();
+          for (const entry of lienPriorityCollector) {
+            const p = parsePriority(entry.value);
+            if (!isNaN(p)) lienPriorityMap.set(entry.index, p);
+          }
+
+          // Build a map of lienIndex -> balance_after (numeric)
+          const lienBalanceMap = new Map<number, number>();
+          for (const entry of lienBalanceCollector) {
+            const num = parseFloat(String(entry.value).replace(/[,$]/g, ""));
+            if (!isNaN(num)) lienBalanceMap.set(entry.index, num);
+          }
+
+          // Sum balance_after for all liens where priority < currentPriority
+          let seniorLienTotal = 0;
+          for (const [lienIdx, priority] of lienPriorityMap.entries()) {
+            if (priority < currentPriority) {
+              seniorLienTotal += lienBalanceMap.get(lienIdx) || 0;
+            }
+          }
+
+          // If current loan is 1st position, total = 0
+          if (currentPriority === 1) seniorLienTotal = 0;
+
+          const formattedTotal = seniorLienTotal.toFixed(2);
+          fieldValues.set("li_bp_balanceAfter", { rawValue: formattedTotal, dataType: "currency" });
+          debugLog(`[generate-document] Auto-computed li_bp_balanceAfter (senior lien balance) = ${formattedTotal} from ${lienPriorityMap.size} liens`);
+          console.log(`[generate-document] li_bp_balanceAfter = ${formattedTotal} (currentPriority=${currentPriority}, liens with priority data: ${lienPriorityMap.size})`);
+        } else {
+          debugLog(`[generate-document] Could not determine current loan priority for li_bp_balanceAfter calculation`);
+        }
+      }
     }
 
     // ── Auto-compute HUD-1 column totals: Paid to Others, Paid to Broker, Grand Total ──
