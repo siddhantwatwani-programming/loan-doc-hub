@@ -214,10 +214,31 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
     return ids.length > 0 ? ids : [];
   });
 
-  const addCustomService = useCallback(() => {
+  const [addServiceModalOpen, setAddServiceModalOpen] = useState(false);
+
+  // Collect existing custom service names for duplicate detection
+  const existingServiceNames = useMemo(() => {
+    const names: string[] = SERVICE_ROWS.map(r => r.label).filter(Boolean);
+    customServiceIds.forEach(id => {
+      const label = values[`loan_terms.servicing.custom_${id}.label`];
+      if (label) names.push(label);
+    });
+    return names;
+  }, [customServiceIds, values]);
+
+  const addCustomService = useCallback((data: AddServiceFormData) => {
     const newId = Date.now().toString(36);
     setCustomServiceIds((prev) => [...prev, newId]);
-  }, []);
+    const prefix = `loan_terms.servicing.custom_${newId}`;
+    onValueChange(`${prefix}.label`, data.label.trim());
+    onValueChange(`${prefix}.enabled`, 'true');
+    if (data.cost) onValueChange(`${prefix}.cost`, data.cost);
+    if (data.lender_percent) onValueChange(`${prefix}.lender_percent`, data.lender_percent);
+    if (data.lenders_split) onValueChange(`${prefix}.lenders_split`, data.lenders_split);
+    if (data.borrower_amount) onValueChange(`${prefix}.borrower_amount`, data.borrower_amount);
+    if (data.borrower_percent) onValueChange(`${prefix}.borrower_percent`, data.borrower_percent);
+    if (data.broker) onValueChange(`${prefix}.broker`, data.broker);
+  }, [onValueChange]);
 
   const removeCustomService = useCallback((id: string) => {
     setCustomServiceIds((prev) => prev.filter((i) => i !== id));
