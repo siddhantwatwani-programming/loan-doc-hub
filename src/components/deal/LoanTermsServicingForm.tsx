@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { EmailInput } from '@/components/ui/email-input';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import type { FieldDefinition } from '@/hooks/useDealFields';
@@ -198,6 +198,36 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
   const sv = (key: string, val: string) => onValueChange(key, val);
   const bv = (key: string) => values[key] === 'true';
   const sbv = (key: string, val: boolean) => onValueChange(key, String(val));
+
+  // Dynamic custom service rows – derive IDs from persisted values
+  const [customServiceIds, setCustomServiceIds] = useState<string[]>(() => {
+    const ids: string[] = [];
+    const prefix = 'loan_terms.servicing.custom_';
+    Object.keys(values).forEach((k) => {
+      if (k.startsWith(prefix)) {
+        const rest = k.slice(prefix.length);
+        const id = rest.split('.')[0];
+        if (id && !ids.includes(id)) ids.push(id);
+      }
+    });
+    return ids.length > 0 ? ids : [];
+  });
+
+  const addCustomService = useCallback(() => {
+    const newId = Date.now().toString(36);
+    setCustomServiceIds((prev) => [...prev, newId]);
+  }, []);
+
+  const removeCustomService = useCallback((id: string) => {
+    setCustomServiceIds((prev) => prev.filter((i) => i !== id));
+    // Clear persisted values for this row
+    const prefix = `loan_terms.servicing.custom_${id}.`;
+    Object.keys(values).forEach((k) => {
+      if (k.startsWith(prefix)) onValueChange(k, '');
+    });
+    onValueChange(`loan_terms.servicing.custom_${id}.enabled`, '');
+    onValueChange(`loan_terms.servicing.custom_${id}.label`, '');
+  }, [values, onValueChange]);
 
   // Override Individual state
   const [overridePopoverOpen, setOverridePopoverOpen] = useState(false);
@@ -517,141 +547,219 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
       )}
 
       {/* Services Grid */}
-      <div className="border border-border rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-muted/50 border-b border-border">
-                <th className="text-left px-3 py-2 font-medium text-foreground w-48">Services</th>
-                <th className="text-left px-1 py-2 font-medium text-foreground w-8"></th>
-                {GRID_COLUMNS.map((col) => (
-                  <th key={col.key} className="text-left px-2 py-2 font-medium text-foreground min-w-24">
-                    {col.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {SERVICE_ROWS.map((row, index) => (
-                <tr 
-                  key={row.key} 
-                  className={`border-b border-border last:border-b-0 ${
-                    row.isSpacer ? 'h-6 bg-muted/20' : 'hover:bg-muted/30'
-                  }`}
-                >
-                  <td className="px-3 py-1.5">
-                    {row.isLink ? (
-                      <span className="text-primary cursor-pointer hover:underline">{row.label}</span>
-                    ) : (
-                      <span className="text-foreground">{row.label}</span>
-                    )}
-                  </td>
-                  <td className="px-1 py-1.5">
-                    {!row.isSpacer && (
-                      <DirtyFieldWrapper fieldKey={`loan_terms.servicing.${row.key}.enabled`}>
-                        <Checkbox
-                          checked={values[`loan_terms.servicing.${row.key}.enabled`] === 'true'}
-                          onCheckedChange={(checked) => 
-                            onValueChange(`loan_terms.servicing.${row.key}.enabled`, checked ? 'true' : 'false')
-                          }
-                          disabled={disabled}
-                          className="h-4 w-4"
-                        />
-                      </DirtyFieldWrapper>
-                    )}
-                  </td>
-                  {GRID_COLUMNS.map((col) => (
-                    <td key={col.key} className="px-1 py-1">
-                      {!row.isSpacer && (
-                        <DirtyFieldWrapper fieldKey={getFieldKey(row.key, col.key)}>
-                          {col.key === 'lenders_split' ? (
-                            <Select
-                              value={values[getFieldKey(row.key, col.key)] || ''}
-                              onValueChange={(value) => onValueChange(getFieldKey(row.key, col.key), value)}
+      {(() => {
+        // Compute totals across all rows (static + custom)
+        const SUMMABLE_COLS = ['cost', 'lender_percent', 'borrower_amount', 'borrower_percent', 'broker'];
+        const allRowKeys = [
+          ...SERVICE_ROWS.filter(r => !r.isSpacer).map(r => r.key),
+          ...customServiceIds.map(id => `custom_${id}`),
+        ];
+        const totals: Record<string, number> = {};
+        SUMMABLE_COLS.forEach(col => {
+          let sum = 0;
+          allRowKeys.forEach(rk => {
+            const raw = values[`loan_terms.servicing.${rk}.${col}`] || '';
+            const num = parseFloat(raw.replace(/,/g, ''));
+            if (!isNaN(num)) sum += num;
+          });
+          totals[col] = sum;
+        });
+
+        return (
+          <div className="border border-border rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left px-3 py-2 font-medium text-foreground w-48">Services</th>
+                    <th className="text-left px-1 py-2 font-medium text-foreground w-8"></th>
+                    {GRID_COLUMNS.map((col) => (
+                      <th key={col.key} className="text-left px-2 py-2 font-medium text-foreground min-w-24">
+                        {col.label}
+                      </th>
+                    ))}
+                    <th className="w-8"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Static rows */}
+                  {SERVICE_ROWS.map((row) => (
+                    <tr 
+                      key={row.key} 
+                      className={`border-b border-border last:border-b-0 ${
+                        row.isSpacer ? 'h-6 bg-muted/20' : 'hover:bg-muted/30'
+                      }`}
+                    >
+                      <td className="px-3 py-1.5">
+                        {row.isLink ? (
+                          <span className="text-primary cursor-pointer hover:underline">{row.label}</span>
+                        ) : (
+                          <span className="text-foreground">{row.label}</span>
+                        )}
+                      </td>
+                      <td className="px-1 py-1.5">
+                        {!row.isSpacer && (
+                          <DirtyFieldWrapper fieldKey={`loan_terms.servicing.${row.key}.enabled`}>
+                            <Checkbox
+                              checked={values[`loan_terms.servicing.${row.key}.enabled`] === 'true'}
+                              onCheckedChange={(checked) => 
+                                onValueChange(`loan_terms.servicing.${row.key}.enabled`, checked ? 'true' : 'false')
+                              }
                               disabled={disabled}
-                            >
-                              <SelectTrigger className="h-7 text-xs border-border">
-                                <SelectValue placeholder="Select..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="fee_per_lender">Fee Per Lender - No Split</SelectItem>
-                                <SelectItem value="pro_rata">Pro Rata</SelectItem>
-                                <SelectItem value="split_50_50">Split 50/50</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <ServicingInput
-                              colKey={col.key}
-                              fieldKey={getFieldKey(row.key, col.key)}
-                              value={values[getFieldKey(row.key, col.key)] || ''}
-                              onValueChange={onValueChange}
-                              disabled={disabled}
+                              className="h-4 w-4"
                             />
+                          </DirtyFieldWrapper>
+                        )}
+                      </td>
+                      {GRID_COLUMNS.map((col) => (
+                        <td key={col.key} className="px-1 py-1">
+                          {!row.isSpacer && (
+                            <DirtyFieldWrapper fieldKey={getFieldKey(row.key, col.key)}>
+                              {col.key === 'lenders_split' ? (
+                                <Select
+                                  value={values[getFieldKey(row.key, col.key)] || ''}
+                                  onValueChange={(value) => onValueChange(getFieldKey(row.key, col.key), value)}
+                                  disabled={disabled}
+                                >
+                                  <SelectTrigger className="h-7 text-xs border-border">
+                                    <SelectValue placeholder="Select..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="fee_per_lender">Fee Per Lender - No Split</SelectItem>
+                                    <SelectItem value="pro_rata">Pro Rata</SelectItem>
+                                    <SelectItem value="split_50_50">Split 50/50</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <ServicingInput
+                                  colKey={col.key}
+                                  fieldKey={getFieldKey(row.key, col.key)}
+                                  value={values[getFieldKey(row.key, col.key)] || ''}
+                                  onValueChange={onValueChange}
+                                  disabled={disabled}
+                                />
+                              )}
+                            </DirtyFieldWrapper>
                           )}
-                        </DirtyFieldWrapper>
-                      )}
-                    </td>
+                        </td>
+                      ))}
+                      <td></td>
+                    </tr>
                   ))}
-                </tr>
-              ))}
-              {/* Extra row at the bottom for custom entry */}
-              <tr className="border-b border-border hover:bg-muted/30">
-                <td className="px-3 py-1.5">
-                  <Input
-                    value={values['loan_terms.servicing.custom.label'] || ''}
-                    onChange={(e) => onValueChange('loan_terms.servicing.custom.label', e.target.value)}
-                    disabled={disabled}
-                    placeholder="Custom service..."
-                    className="h-7 text-xs border-border"
-                  />
-                </td>
-                <td className="px-1 py-1.5">
-                  <DirtyFieldWrapper fieldKey="loan_terms.servicing.custom.enabled">
-                    <Checkbox
-                      checked={values['loan_terms.servicing.custom.enabled'] === 'true'}
-                      onCheckedChange={(checked) => 
-                        onValueChange('loan_terms.servicing.custom.enabled', checked ? 'true' : 'false')
-                      }
-                      disabled={disabled}
-                      className="h-4 w-4"
-                    />
-                  </DirtyFieldWrapper>
-                </td>
-                {GRID_COLUMNS.map((col) => (
-                  <td key={col.key} className="px-1 py-1">
-                    <DirtyFieldWrapper fieldKey={`loan_terms.servicing.custom.${col.key}`}>
-                      {col.key === 'lenders_split' ? (
-                        <Select
-                          value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
-                          onValueChange={(value) => onValueChange(`loan_terms.servicing.custom.${col.key}`, value)}
-                          disabled={disabled}
-                        >
-                          <SelectTrigger className="h-7 text-xs border-border">
-                            <SelectValue placeholder="Select..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="fee_per_lender">Fee Per Lender - No Split</SelectItem>
-                            <SelectItem value="pro_rata">Pro Rata</SelectItem>
-                            <SelectItem value="split_50_50">Split 50/50</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <ServicingInput
-                          colKey={col.key}
-                          fieldKey={`loan_terms.servicing.custom.${col.key}`}
-                          value={values[`loan_terms.servicing.custom.${col.key}`] || ''}
-                          onValueChange={onValueChange}
-                          disabled={disabled}
-                        />
-                      )}
-                    </DirtyFieldWrapper>
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+
+                  {/* Dynamic custom service rows */}
+                  {customServiceIds.map((id) => {
+                    const prefix = `loan_terms.servicing.custom_${id}`;
+                    return (
+                      <tr key={id} className="border-b border-border hover:bg-muted/30">
+                        <td className="px-3 py-1.5">
+                          <Input
+                            value={values[`${prefix}.label`] || ''}
+                            onChange={(e) => onValueChange(`${prefix}.label`, e.target.value)}
+                            disabled={disabled}
+                            placeholder="Custom service..."
+                            className="h-7 text-xs border-border"
+                          />
+                        </td>
+                        <td className="px-1 py-1.5">
+                          <DirtyFieldWrapper fieldKey={`${prefix}.enabled`}>
+                            <Checkbox
+                              checked={values[`${prefix}.enabled`] === 'true'}
+                              onCheckedChange={(checked) => 
+                                onValueChange(`${prefix}.enabled`, checked ? 'true' : 'false')
+                              }
+                              disabled={disabled}
+                              className="h-4 w-4"
+                            />
+                          </DirtyFieldWrapper>
+                        </td>
+                        {GRID_COLUMNS.map((col) => (
+                          <td key={col.key} className="px-1 py-1">
+                            <DirtyFieldWrapper fieldKey={`${prefix}.${col.key}`}>
+                              {col.key === 'lenders_split' ? (
+                                <Select
+                                  value={values[`${prefix}.${col.key}`] || ''}
+                                  onValueChange={(value) => onValueChange(`${prefix}.${col.key}`, value)}
+                                  disabled={disabled}
+                                >
+                                  <SelectTrigger className="h-7 text-xs border-border">
+                                    <SelectValue placeholder="Select..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="fee_per_lender">Fee Per Lender - No Split</SelectItem>
+                                    <SelectItem value="pro_rata">Pro Rata</SelectItem>
+                                    <SelectItem value="split_50_50">Split 50/50</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <ServicingInput
+                                  colKey={col.key}
+                                  fieldKey={`${prefix}.${col.key}`}
+                                  value={values[`${prefix}.${col.key}`] || ''}
+                                  onValueChange={onValueChange}
+                                  disabled={disabled}
+                                />
+                              )}
+                            </DirtyFieldWrapper>
+                          </td>
+                        ))}
+                        <td className="px-1 py-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => removeCustomService(id)}
+                            disabled={disabled}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {/* Total row */}
+                  <tr className="bg-muted/60 border-t-2 border-border font-semibold">
+                    <td className="px-3 py-2 text-foreground">Total</td>
+                    <td></td>
+                    {GRID_COLUMNS.map((col) => (
+                      <td key={col.key} className="px-2 py-2 text-right text-foreground">
+                        {SUMMABLE_COLS.includes(col.key) ? (
+                          <span className="text-xs">
+                            {CURRENCY_COLS.has(col.key) && totals[col.key] ? '$' : ''}
+                            {totals[col.key]
+                              ? (CURRENCY_COLS.has(col.key)
+                                  ? totals[col.key].toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                  : PERCENT_COLS.has(col.key)
+                                    ? totals[col.key].toFixed(2) + '%'
+                                    : totals[col.key].toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+                              : '—'}
+                          </span>
+                        ) : null}
+                      </td>
+                    ))}
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Add Service button */}
+            <div className="border-t border-border px-3 py-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs gap-1 text-primary hover:text-primary"
+                onClick={addCustomService}
+                disabled={disabled}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add Service
+              </Button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };
