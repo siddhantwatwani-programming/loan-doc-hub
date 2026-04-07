@@ -396,8 +396,13 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   <PopoverContent className="w-auto p-0 z-[9999]" align="start"><EnhancedCalendar mode="single" selected={interestFromDate} onSelect={(d) => { setInterestFromDate(d); setInterestFromOpen(false); }} onClear={() => { setInterestFromDate(undefined); setInterestFromOpen(false); }} onToday={() => { setInterestFromDate(new Date()); setInterestFromOpen(false); }} initialFocus /></PopoverContent>
                 </Popover>
               </div>
-            </div>
+              </div>
 
+              {/* Rounding Adjustment */}
+              <div className="flex items-center gap-2">
+                <Checkbox id="roundingAdjustment" checked={formData.roundingAdjustment} onCheckedChange={(checked) => handleChange('roundingAdjustment', !!checked)} />
+                <Label htmlFor="roundingAdjustment" className="text-sm font-medium leading-tight cursor-pointer">Rounding Adjustment</Label>
+              </div>
             {/* Rate Selection */}
             <div className="space-y-2 mt-2">
               <div className="border-b border-border pb-1">
