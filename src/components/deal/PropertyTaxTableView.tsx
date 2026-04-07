@@ -70,6 +70,7 @@ const FILTER_OPTIONS: FilterOption[] = [
 ];
 
 const EXPORT_COLUMNS: ExportColumn[] = [
+  { id: 'property', label: 'Property' },
   { id: 'authority', label: 'Tax Authority' },
   { id: 'address', label: 'Address' },
   { id: 'type', label: 'Type' },
