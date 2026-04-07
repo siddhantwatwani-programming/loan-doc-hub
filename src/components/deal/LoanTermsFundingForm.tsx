@@ -310,9 +310,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       rateSoldValue: data.rateSoldValue,
       rateLenderValue: data.rateLenderValue,
       brokerParticipates: data.brokerParticipates,
-      roundingAdjustment: data.roundingAdjustment,
       interestFrom: data.interestFrom,
-      disbursements: data.disbursements,
       overrideServicingFees: data.overrideServicingFees,
       companyServicingFee: data.companyServicingFee, companyServicingFeePct: data.companyServicingFeePct,
       companyMaxFee: data.companyMaxFee, companyMaxFeePct: data.companyMaxFeePct,
@@ -327,9 +325,6 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       interestGuaranteeLender: data.interestGuaranteeLender, interestGuaranteeCompany: data.interestGuaranteeCompany, interestGuaranteeBroker: data.interestGuaranteeBroker, interestGuaranteeTotal: data.interestGuaranteeTotal,
       prepaymentLender: data.prepaymentLender, prepaymentCompany: data.prepaymentCompany, prepaymentBroker: data.prepaymentBroker, prepaymentTotal: data.prepaymentTotal,
       maturityLender: data.maturityLender, maturityCompany: data.maturityCompany, maturityBroker: data.maturityBroker, maturityTotal: data.maturityTotal,
-      lateFee1Maximum: data.lateFee1Maximum, lateFee2Maximum: data.lateFee2Maximum,
-      defaultInterestMaximum: data.defaultInterestMaximum, interestGuaranteeMaximum: data.interestGuaranteeMaximum,
-      prepaymentMaximum: data.prepaymentMaximum, maturityMaximum: data.maturityMaximum,
     };
 
     const updatedRecords = [...fundingRecords, newRecord];
