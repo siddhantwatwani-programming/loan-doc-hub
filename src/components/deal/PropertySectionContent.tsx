@@ -584,6 +584,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
               showValidation={showValidation}
               disabled={disabled}
               calculationResults={calculationResults}
+              propertyOptions={propertyOptions.map(p => p.label)}
             />
           </div>
         );
