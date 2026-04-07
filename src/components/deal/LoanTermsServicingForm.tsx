@@ -1,11 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { EmailInput } from '@/components/ui/email-input';
 import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ChevronDown } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
@@ -78,6 +83,7 @@ interface LoanTermsServicingFormProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  dealId?: string;
 }
 
 const SERVICE_ROWS = [
@@ -186,11 +192,39 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
   showValidation = false,
   disabled = false,
   calculationResults = {},
+  dealId = '',
 }) => {
   const v = (key: string) => values[key] || '';
   const sv = (key: string, val: string) => onValueChange(key, val);
   const bv = (key: string) => values[key] === 'true';
   const sbv = (key: string, val: boolean) => onValueChange(key, String(val));
+
+  // Override Individual state
+  const [overridePopoverOpen, setOverridePopoverOpen] = useState(false);
+  const [participants, setParticipants] = useState<Array<{ id: string; name: string; role: string; contact_id: string | null }>>([]);
+  const [selectedParticipant, setSelectedParticipant] = useState<{ id: string; name: string; role: string } | null>(null);
+  const [fundingModalOpen, setFundingModalOpen] = useState(false);
+
+  // Fetch broker/lender participants for the deal
+  useEffect(() => {
+    if (!dealId) return;
+    const fetchParticipants = async () => {
+      const { data } = await supabase
+        .from('deal_participants')
+        .select('id, name, email, role, contact_id')
+        .eq('deal_id', dealId)
+        .in('role', ['broker', 'lender']);
+      if (data) {
+        setParticipants(data.map(p => ({
+          id: p.id,
+          name: p.name || p.email || 'Unknown',
+          role: p.role,
+          contact_id: p.contact_id,
+        })));
+      }
+    };
+    fetchParticipants();
+  }, [dealId]);
 
   const agentValue = v(AGENT_FK.servicing_agent);
   const sameAsTP = bv(AGENT_FK.sp_same_as_tp);
@@ -338,10 +372,10 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
       {/* Services and Rates heading */}
       <h3 className="text-sm font-semibold text-foreground">Services and Rates</h3>
       {/* Override and Lender Split Dropdown */}
-      <div className="flex items-center justify-between gap-8">
+      <div className="flex items-center gap-6">
         <DirtyFieldWrapper fieldKey="loan_terms.servicing.override">
           <div className="flex items-center gap-3">
-            <Label className="text-sm font-medium">Override</Label>
+            <Label className="text-sm font-medium">Override All</Label>
             <Checkbox
               checked={values['loan_terms.servicing.override'] === 'true'}
               onCheckedChange={(checked) => 
@@ -351,7 +385,71 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
             />
           </div>
         </DirtyFieldWrapper>
+
+        {/* Override Individual */}
+        <Popover open={overridePopoverOpen} onOpenChange={setOverridePopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" disabled={disabled}>
+              Override Individual
+              <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 p-2 z-50" align="start">
+            {participants.length === 0 ? (
+              <div className="text-xs text-muted-foreground p-2 text-center">
+                No Broker/Lender participants found.
+                <br />
+                <span className="text-primary">Add participants from the Participants section.</span>
+              </div>
+            ) : (
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {participants.map((p) => (
+                  <button
+                    key={p.id}
+                    className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted/50 flex items-center justify-between"
+                    onClick={() => {
+                      setSelectedParticipant(p);
+                      setFundingModalOpen(true);
+                      setOverridePopoverOpen(false);
+                    }}
+                  >
+                    <span className="truncate">{p.name}</span>
+                    <span className="text-muted-foreground capitalize ml-2 shrink-0">{p.role}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
       </div>
+
+      {/* Individual Funding Modal */}
+      {selectedParticipant && (
+        <AddFundingModal
+          open={fundingModalOpen}
+          onOpenChange={(open) => {
+            setFundingModalOpen(open);
+            if (!open) setSelectedParticipant(null);
+          }}
+          loanNumber={values['loan_terms.details_loan_number'] || ''}
+          borrowerName={values['borrower.full_name'] || ''}
+          onSubmit={(data) => {
+            // Save individual override data for this participant
+            const prefix = `loan_terms.servicing.individual.${selectedParticipant.id}`;
+            Object.entries(data).forEach(([key, val]) => {
+              if (val !== undefined && val !== null) {
+                onValueChange(`${prefix}.${key}`, String(val));
+              }
+            });
+            setFundingModalOpen(false);
+            setSelectedParticipant(null);
+          }}
+          noteRate={values['loan_terms.balances_note_rate'] || ''}
+          soldRate={values['loan_terms.balances_sold_rate'] || ''}
+          totalPayment={values['loan_terms.balances_total_payment'] || ''}
+          loanAmount={values['loan_terms.balances_loan_amount'] || ''}
+        />
+      )}
 
       {/* Services Grid */}
       <div className="border border-border rounded-lg overflow-hidden">
