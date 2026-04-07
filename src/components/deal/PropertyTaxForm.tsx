@@ -45,6 +45,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
   values,
   onValueChange,
   disabled = false,
+  propertyOptions = [],
 }) => {
   const getValue = (field: string): string => values[`${PREFIX}.${field}`] || '';
   const getBoolValue = (field: string): boolean => values[`${PREFIX}.${field}`] === 'true';
