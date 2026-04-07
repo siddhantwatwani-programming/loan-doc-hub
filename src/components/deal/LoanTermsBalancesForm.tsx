@@ -369,7 +369,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     </div>
                   </DirtyFieldWrapper>
                   {showSplitError && (
-                    <p className="text-xs text-destructive pl-[135px]">
+                    <p className="text-xs text-destructive pl-[155px]">
                       Split must equal 100% (currently {splitTotal.toFixed(2)}%)
                     </p>
                   )}
