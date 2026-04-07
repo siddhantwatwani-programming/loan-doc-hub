@@ -304,6 +304,24 @@ export const FieldDictionaryPage: React.FC = () => {
 
   useEffect(() => {
     fetchFields();
+
+    const handleFocusRefresh = () => {
+      void fetchFields();
+    };
+
+    const handleVisibilityRefresh = () => {
+      if (document.visibilityState === 'visible') {
+        void fetchFields();
+      }
+    };
+
+    window.addEventListener('focus', handleFocusRefresh);
+    document.addEventListener('visibilitychange', handleVisibilityRefresh);
+
+    return () => {
+      window.removeEventListener('focus', handleFocusRefresh);
+      document.removeEventListener('visibilitychange', handleVisibilityRefresh);
+    };
   }, []);
 
   const fetchFields = async () => {
