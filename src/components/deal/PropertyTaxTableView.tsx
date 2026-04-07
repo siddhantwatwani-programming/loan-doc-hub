@@ -16,6 +16,7 @@ import { useGridSelection } from '@/hooks/useGridSelection';
 
 export interface PropertyTaxData {
   id: string;
+  property: string;
   authority: string;
   address: string;
   type: string;
