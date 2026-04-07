@@ -214,8 +214,8 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
         [sourceKeys.email, AGENT_FK.tp_email],
       ];
       mappings.forEach(([src, dst]) => {
-        const srcVal = values[src] || '';
-        if (srcVal !== v(dst)) sv(dst, srcVal);
+        const srcVal = src ? (values[src] || '') : '';
+        sv(dst, srcVal);
       });
     }
   }, [agentValue]);
