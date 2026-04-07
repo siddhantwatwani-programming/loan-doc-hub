@@ -372,6 +372,14 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             {renderDateField(FIELD_KEYS.valuationDate, 'Valuation Date')}
             {renderInlineSelect(FIELD_KEYS.valuationType, 'Valuation Type', VALUATION_TYPE_OPTIONS, 'Select')}
             {renderInlineSelect(FIELD_KEYS.performedBy, 'Performed By', PERFORMED_BY_OPTIONS, 'Select...')}
+            {getFieldValue(FIELD_KEYS.valuationType) === 'Broker Determined Value (BPO)' && getFieldValue(FIELD_KEYS.valuationDate) && (
+              <p className="text-xs italic text-foreground pl-[118px]">
+                property valuation performed on {(() => {
+                  const d = parseDate(getFieldValue(FIELD_KEYS.valuationDate));
+                  return d ? format(d, 'MM/dd/yyyy') : getFieldValue(FIELD_KEYS.valuationDate);
+                })()}
+              </p>
+            )}
             {getFieldValue(FIELD_KEYS.performedBy) === 'Third Party' && (
               <>
                 {renderInlineField(FIELD_KEYS.thirdPartyFullName, 'Full Name')}
