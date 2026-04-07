@@ -26,6 +26,7 @@ interface PropertyTaxModalProps {
   propertyTax: PropertyTaxData | null;
   onSave: (data: PropertyTaxData) => void;
   isEdit: boolean;
+  propertyOptions?: string[];
 }
 
 const TYPE_OPTIONS = ['Current Property Tax', 'Delinquent Property Tax', 'Other'];
@@ -33,7 +34,7 @@ const FREQUENCY_OPTIONS = ['Once Only', 'Monthly', 'Quarterly', 'Bi-Monthly', 'B
 const SOURCE_OPTIONS = ['Borrower', 'Title Report', 'Tax Records'];
 
 const getDefaultTax = (): PropertyTaxData => ({
-  id: '', authority: '', address: '', type: '', apn: '', memo: '',
+  id: '', property: '', authority: '', address: '', type: '', apn: '', memo: '',
   annualPayment: '', amount: '', nextDue: '', frequency: '',
   escrowImpounds: '', passThrough: '', sourceOfInformation: '',
   active: false, lastVerified: '', lenderNotified: '',
@@ -42,7 +43,7 @@ const getDefaultTax = (): PropertyTaxData => ({
 });
 
 export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
-  open, onOpenChange, propertyTax, onSave, isEdit,
+  open, onOpenChange, propertyTax, onSave, isEdit, propertyOptions = [],
 }) => {
   const [formData, setFormData] = useState<PropertyTaxData>(getDefaultTax());
   const [showConfirm, setShowConfirm] = useState(false);
@@ -150,6 +151,8 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 py-4">
             {/* Left column */}
             <div className="space-y-3">
+              {propertyOptions.length > 0 && renderDropdownField('property', 'Property', propertyOptions)}
+
               <div className="flex items-center gap-2">
                 <Label className="w-[120px] shrink-0 text-xs text-foreground">Tax Authority</Label>
                 <Input value={formData.authority} onChange={(e) => handleChange('authority', e.target.value)} className="h-7 text-xs flex-1" />

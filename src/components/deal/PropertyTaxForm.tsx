@@ -28,6 +28,7 @@ interface PropertyTaxFormProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  propertyOptions?: string[];
 }
 
 const FREQUENCY_OPTIONS = [
@@ -44,6 +45,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
   values,
   onValueChange,
   disabled = false,
+  propertyOptions = [],
 }) => {
   const getValue = (field: string): string => values[`${PREFIX}.${field}`] || '';
   const getBoolValue = (field: string): boolean => values[`${PREFIX}.${field}`] === 'true';
@@ -127,6 +129,12 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
         <div className="grid grid-cols-2 gap-x-6 gap-y-3">
           {/* Left column */}
           <div className="space-y-3">
+            {propertyOptions.length > 0 && (
+              <DirtyFieldWrapper fieldKey={`${PREFIX}.property`}>
+                {renderDropdownField('property', 'Property', propertyOptions)}
+              </DirtyFieldWrapper>
+            )}
+
             <DirtyFieldWrapper fieldKey={`${PREFIX}.authority`}>
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Tax Authority</Label>

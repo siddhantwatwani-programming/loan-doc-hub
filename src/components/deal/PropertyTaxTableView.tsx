@@ -16,6 +16,7 @@ import { useGridSelection } from '@/hooks/useGridSelection';
 
 export interface PropertyTaxData {
   id: string;
+  property: string;
   authority: string;
   address: string;
   type: string;
@@ -54,7 +55,7 @@ interface PropertyTaxTableViewProps {
   onPageChange?: (page: number) => void;
 }
 
-const SEARCH_FIELDS = ['authority', 'type', 'frequency', 'apn', 'address'];
+const SEARCH_FIELDS = ['property', 'authority', 'type', 'frequency', 'apn', 'address'];
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
@@ -69,6 +70,7 @@ const FILTER_OPTIONS: FilterOption[] = [
 ];
 
 const EXPORT_COLUMNS: ExportColumn[] = [
+  { id: 'property', label: 'Property' },
   { id: 'authority', label: 'Tax Authority' },
   { id: 'address', label: 'Address' },
   { id: 'type', label: 'Type' },
@@ -92,6 +94,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
 ];
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'property', label: 'Property', visible: true },
   { id: 'authority', label: 'Tax Authority', visible: true },
   { id: 'address', label: 'Address', visible: false },
   { id: 'type', label: 'Type', visible: true },
@@ -132,6 +135,7 @@ const formatDate = (val: string) => {
 
 const renderCellValue = (tax: PropertyTaxData, columnId: string) => {
   switch (columnId) {
+    case 'property': return tax.property || '-';
     case 'authority': return tax.authority || '-';
     case 'address': return tax.address || '-';
     case 'type': return tax.type || '-';

@@ -128,6 +128,7 @@ const extractPropertyTaxesFromValues = (values: Record<string, string>): Propert
   taxPrefixes.forEach(prefix => {
     const tax: PropertyTaxData = {
       id: prefix,
+      property: values[`${prefix}.property`] || '',
       authority: values[`${prefix}.authority`] || '',
       address: values[`${prefix}.address`] || '',
       type: values[`${prefix}.type`] || '',
@@ -421,6 +422,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const handleSaveTax = useCallback((taxData: PropertyTaxData) => {
     const prefix = editingTax ? editingTax.id : getNextPropertyTaxPrefix(values);
     const fieldEntries: { key: keyof PropertyTaxData; dbField: string }[] = [
+      { key: 'property', dbField: 'property' },
       { key: 'authority', dbField: 'authority' },
       { key: 'address', dbField: 'address' },
       { key: 'type', dbField: 'type' },
@@ -582,6 +584,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
               showValidation={showValidation}
               disabled={disabled}
               calculationResults={calculationResults}
+              propertyOptions={propertyOptions.map(p => p.label)}
             />
           </div>
         );
@@ -675,6 +678,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         propertyTax={editingTax}
         onSave={handleSaveTax}
         isEdit={!!editingTax}
+        propertyOptions={propertyOptions.map(p => p.label)}
       />
     </>
   );
