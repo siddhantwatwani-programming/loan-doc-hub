@@ -47,7 +47,7 @@ const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
 const CONSTRUCTION_TYPES = ['Wood/Stucco', 'Stick', 'Concrete Block'];
 const LIEN_SOURCES = ['Broker', 'Borrower', 'Other'];
-const VALUATION_TYPE_OPTIONS = ['Broker BPO', 'Appraisal'];
+const VALUATION_TYPE_OPTIONS = ['Appraisal', 'Broker Determined Value (BPO)'];
 
 import { PROPERTY_DETAILS_KEYS } from '@/lib/fieldKeyMap';
 
@@ -250,11 +250,11 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
         {/* Right Column - Appraisal Information */}
         <div className="space-y-1.5">
           <div className="border-b border-border pb-1 mb-2">
-            <span className="font-semibold text-xs text-primary">Appraisal Information</span>
+            <span className="font-semibold text-xs text-primary">Property Valuation</span>
           </div>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.appraisedDate}>
             <div className="flex items-center gap-2">
-              <Label className="w-[110px] shrink-0 text-xs text-foreground">Appraisal Date</Label>
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Valuation Date</Label>
               <Popover open={datePickerStates[FIELD_KEYS.appraisedDate] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.appraisedDate]: open }))}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !getFieldValue(FIELD_KEYS.appraisedDate) && 'text-muted-foreground')} disabled={disabled}>
@@ -272,10 +272,10 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
               </Popover>
             </div>
           </DirtyFieldWrapper>
+          {renderCurrencyField(FIELD_KEYS.appraisedValue, 'Appraised Value')}
           {renderInlineSelect(FIELD_KEYS.propertyType, 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
           {renderInlineSelect(FIELD_KEYS.occupancy, 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
           {renderInlineField(FIELD_KEYS.zoning, 'Zoning')}
-          {renderCurrencyField(FIELD_KEYS.appraisedValue, 'Estimate of Value')}
           {renderCurrencyField(FIELD_KEYS.pledgedEquity, 'Pledged Equity')}
           {renderCheckboxField(FIELD_KEYS.floodZone, 'Flood Zone')}
 
@@ -372,6 +372,14 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             {renderDateField(FIELD_KEYS.valuationDate, 'Valuation Date')}
             {renderInlineSelect(FIELD_KEYS.valuationType, 'Valuation Type', VALUATION_TYPE_OPTIONS, 'Select')}
             {renderInlineSelect(FIELD_KEYS.performedBy, 'Performed By', PERFORMED_BY_OPTIONS, 'Select...')}
+            {getFieldValue(FIELD_KEYS.valuationType) === 'Broker Determined Value (BPO)' && getFieldValue(FIELD_KEYS.valuationDate) && (
+              <p className="text-xs italic text-foreground pl-[118px]">
+                property valuation performed on {(() => {
+                  const d = parseDate(getFieldValue(FIELD_KEYS.valuationDate));
+                  return d ? format(d, 'MM/dd/yyyy') : getFieldValue(FIELD_KEYS.valuationDate);
+                })()}
+              </p>
+            )}
             {getFieldValue(FIELD_KEYS.performedBy) === 'Third Party' && (
               <>
                 {renderInlineField(FIELD_KEYS.thirdPartyFullName, 'Full Name')}
