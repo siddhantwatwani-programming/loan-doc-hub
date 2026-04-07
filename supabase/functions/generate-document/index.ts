@@ -736,8 +736,8 @@ async function generateSingleDocument(
     // ── Dropdown-to-Checkbox derivation for Re851a ──
     // Amortization dropdown → boolean checkbox keys
     const amortVal = (fieldValues.get("ln_p_amortiza")?.rawValue || fieldValues.get("loan_terms.amortization")?.rawValue || "").toString().trim().toLowerCase();
-    fieldValues.set("ln_p_amortizedPartially", { rawValue: amortVal === "amortized partially" ? "true" : "false", dataType: "boolean" });
-    fieldValues.set("ln_p_amortized", { rawValue: amortVal === "amortized" ? "true" : "false", dataType: "boolean" });
+    fieldValues.set("ln_p_amortizedPartially", { rawValue: ["partially_amortized", "partially amortized", "amortized partially"].includes(amortVal) ? "true" : "false", dataType: "boolean" });
+    fieldValues.set("ln_p_amortized", { rawValue: ["fully_amortized", "fully amortized", "amortized"].includes(amortVal) ? "true" : "false", dataType: "boolean" });
     debugLog(`[generate-document] Derived amortization checkboxes from "${amortVal}": amortizedPartially=${amortVal === "amortized partially"}, amortized=${amortVal === "amortized"}`);
 
     // Payment Frequency dropdown → boolean checkbox keys
