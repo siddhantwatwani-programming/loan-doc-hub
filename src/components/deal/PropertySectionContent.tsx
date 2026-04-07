@@ -128,6 +128,7 @@ const extractPropertyTaxesFromValues = (values: Record<string, string>): Propert
   taxPrefixes.forEach(prefix => {
     const tax: PropertyTaxData = {
       id: prefix,
+      property: values[`${prefix}.property`] || '',
       authority: values[`${prefix}.authority`] || '',
       address: values[`${prefix}.address`] || '',
       type: values[`${prefix}.type`] || '',
