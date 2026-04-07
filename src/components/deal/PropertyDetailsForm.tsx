@@ -250,11 +250,11 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
         {/* Right Column - Appraisal Information */}
         <div className="space-y-1.5">
           <div className="border-b border-border pb-1 mb-2">
-            <span className="font-semibold text-xs text-primary">Appraisal Information</span>
+            <span className="font-semibold text-xs text-primary">Property Valuation</span>
           </div>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.appraisedDate}>
             <div className="flex items-center gap-2">
-              <Label className="w-[110px] shrink-0 text-xs text-foreground">Appraisal Date</Label>
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Valuation Date</Label>
               <Popover open={datePickerStates[FIELD_KEYS.appraisedDate] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.appraisedDate]: open }))}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !getFieldValue(FIELD_KEYS.appraisedDate) && 'text-muted-foreground')} disabled={disabled}>
@@ -272,10 +272,10 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
               </Popover>
             </div>
           </DirtyFieldWrapper>
+          {renderCurrencyField(FIELD_KEYS.appraisedValue, 'Appraised Value')}
           {renderInlineSelect(FIELD_KEYS.propertyType, 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
           {renderInlineSelect(FIELD_KEYS.occupancy, 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
           {renderInlineField(FIELD_KEYS.zoning, 'Zoning')}
-          {renderCurrencyField(FIELD_KEYS.appraisedValue, 'Estimate of Value')}
           {renderCurrencyField(FIELD_KEYS.pledgedEquity, 'Pledged Equity')}
           {renderCheckboxField(FIELD_KEYS.floodZone, 'Flood Zone')}
 
