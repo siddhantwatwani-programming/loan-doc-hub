@@ -43,12 +43,12 @@ const AGENT_FK = {
 // Source field keys for auto-populate by agent type
 const COMPANY_SOURCE_KEYS = {
   name: 'loan_terms.details_company',
-  street: 'loan_terms.details_originating_vendor_street',
-  city: 'loan_terms.details_originating_vendor_city',
-  state: 'loan_terms.details_originating_vendor_state',
-  zip: 'loan_terms.details_originating_vendor_zip',
-  phone: 'loan_terms.details_originating_vendor_phone',
-  email: 'loan_terms.details_originating_vendor_email',
+  street: '',
+  city: '',
+  state: '',
+  zip: '',
+  phone: '',
+  email: '',
 };
 
 const BROKER_SOURCE_KEYS = {
