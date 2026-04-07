@@ -542,20 +542,21 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   <Label htmlFor="overrideDefaultFees" className="text-sm font-semibold text-foreground">Override Default Fees Fees</Label>
                 </div>
                 <div className="space-y-1.5 pl-2">
-                    {/* Column headers */}
+                     {/* Column headers */}
                     <div className="flex items-center gap-2">
                       <div className="min-w-[120px]" />
                       <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Lender</span>
                       <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Company</span>
                       <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Broker</span>
-                      <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Total</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Total %</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Maximum</span>
                     </div>
-                    {renderDefaultFeeRow('Late Fee 1', 'lateFee1Lender', 'lateFee1Company', 'lateFee1Broker', 'lateFee1Total')}
-                    {renderDefaultFeeRow('Late Fee 2', 'lateFee2Lender', 'lateFee2Company', 'lateFee2Broker', 'lateFee2Total')}
-                    {renderDefaultFeeRow('Default Interest', 'defaultInterestLender', 'defaultInterestCompany', 'defaultInterestBroker', 'defaultInterestTotal')}
-                    {renderDefaultFeeRow('Interest Guarantee', 'interestGuaranteeLender', 'interestGuaranteeCompany', 'interestGuaranteeBroker', 'interestGuaranteeTotal')}
-                    {renderDefaultFeeRow('Prepayment', 'prepaymentLender', 'prepaymentCompany', 'prepaymentBroker', 'prepaymentTotal')}
-                    {renderDefaultFeeRow('Maturity', 'maturityLender', 'maturityCompany', 'maturityBroker', 'maturityTotal')}
+                    {renderDefaultFeeRow('Late Fee 1', 'lateFee1Lender', 'lateFee1Company', 'lateFee1Broker', 'lateFee1Total', 'lateFee1Maximum')}
+                    {renderDefaultFeeRow('Late Fee 2', 'lateFee2Lender', 'lateFee2Company', 'lateFee2Broker', 'lateFee2Total', 'lateFee2Maximum')}
+                    {renderDefaultFeeRow('Default Interest', 'defaultInterestLender', 'defaultInterestCompany', 'defaultInterestBroker', 'defaultInterestTotal', 'defaultInterestMaximum')}
+                    {renderDefaultFeeRow('Interest Guarantee', 'interestGuaranteeLender', 'interestGuaranteeCompany', 'interestGuaranteeBroker', 'interestGuaranteeTotal', 'interestGuaranteeMaximum')}
+                    {renderDefaultFeeRow('Prepayment', 'prepaymentLender', 'prepaymentCompany', 'prepaymentBroker', 'prepaymentTotal', 'prepaymentMaximum')}
+                    {renderDefaultFeeRow('Maturity', 'maturityLender', 'maturityCompany', 'maturityBroker', 'maturityTotal', 'maturityMaximum')}
                 </div>
               </div>
             </div>
