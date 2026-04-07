@@ -422,15 +422,26 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     const prefix = editingTax ? editingTax.id : getNextPropertyTaxPrefix(values);
     const fieldEntries: { key: keyof PropertyTaxData; dbField: string }[] = [
       { key: 'authority', dbField: 'authority' },
+      { key: 'address', dbField: 'address' },
       { key: 'type', dbField: 'type' },
+      { key: 'apn', dbField: 'apn' },
+      { key: 'memo', dbField: 'memo' },
       { key: 'annualPayment', dbField: 'annual_payment' },
+      { key: 'amount', dbField: 'amount' },
+      { key: 'nextDue', dbField: 'next_due' },
       { key: 'frequency', dbField: 'frequency' },
+      { key: 'escrowImpounds', dbField: 'escrow_impounds' },
+      { key: 'passThrough', dbField: 'pass_through' },
+      { key: 'sourceOfInformation', dbField: 'source_of_information' },
       { key: 'active', dbField: 'active' },
       { key: 'lastVerified', dbField: 'last_verified' },
       { key: 'lenderNotified', dbField: 'lender_notified' },
       { key: 'current', dbField: 'current' },
       { key: 'delinquent', dbField: 'delinquent' },
       { key: 'delinquentAmount', dbField: 'delinquent_amount' },
+      { key: 'borrowerNotified', dbField: 'borrower_notified' },
+      { key: 'borrowerNotifiedDate', dbField: 'borrower_notified_date' },
+      { key: 'lenderNotifiedDate', dbField: 'lender_notified_date' },
     ];
     fieldEntries.forEach(({ key, dbField }) => {
       onValueChange(`${prefix}.${dbField}`, String(taxData[key] ?? ''));
