@@ -1232,6 +1232,15 @@ async function generateSingleDocument(
       }
     }
 
+    // ── Derive or_p_isBrokerAlsoBorrower checkbox glyphs for document generation ──
+    {
+      const yesVal = fieldValues.get("or_p_isBrokerAlsoBorrower_yes");
+      const isYes = yesVal && (yesVal.rawValue === "true" || yesVal.rawValue === true);
+      fieldValues.set("or_p_isBrokerAlsoBorrower_yes", { rawValue: isYes ? "true" : "false", dataType: "boolean" });
+      fieldValues.set("or_p_isBrokerAlsoBorrower_no", { rawValue: isYes ? "false" : "true", dataType: "boolean" });
+      debugLog(`[generate-document] or_p_isBrokerAlsoBorrower: YES=${isYes}`);
+    }
+
     // ── Auto-compute HUD-1 column totals: Paid to Others, Paid to Broker, Grand Total ──
     // Uses dynamic scanning of ALL origination fee currency fields plus explicit key lists
     // to ensure no fee values are missed.
