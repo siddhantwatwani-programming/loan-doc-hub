@@ -62,6 +62,8 @@ const FIELD_KEYS = {
   doc_audited_financials: 'origination_app.doc.audited_financials',
   doc_audited_financials_2: 'origination_app.doc.audited_financials_reviewed',
   doc_periods_reviewed: 'origination_app.doc.periods_reviewed',
+  is_broker_borrower_yes: 'origination_app.doc.is_broker_also_borrower_yes',
+  is_broker_borrower_no: 'origination_app.doc.is_broker_also_borrower_no',
   doc_additional_info: 'origination_app.doc.additional_info_attached',
 };
 
