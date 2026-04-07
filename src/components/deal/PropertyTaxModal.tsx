@@ -43,7 +43,7 @@ const getDefaultTax = (): PropertyTaxData => ({
 });
 
 export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
-  open, onOpenChange, propertyTax, onSave, isEdit,
+  open, onOpenChange, propertyTax, onSave, isEdit, propertyOptions = [],
 }) => {
   const [formData, setFormData] = useState<PropertyTaxData>(getDefaultTax());
   const [showConfirm, setShowConfirm] = useState(false);
