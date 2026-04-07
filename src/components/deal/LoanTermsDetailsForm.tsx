@@ -427,6 +427,10 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
             <Label htmlFor={FIELD_KEYS.balloonPayment} className="font-normal cursor-pointer text-xs">Balloon Payment</Label>
           </div>
           <div className="flex items-center space-x-2">
+            <Checkbox id={FIELD_KEYS.subordinationProvision} checked={getBoolValue(FIELD_KEYS.subordinationProvision)} onCheckedChange={(checked) => setBoolValue(FIELD_KEYS.subordinationProvision, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+            <Label htmlFor={FIELD_KEYS.subordinationProvision} className="font-normal cursor-pointer text-xs">Subordination Provision</Label>
+          </div>
+          <div className="flex items-center space-x-2">
             <Checkbox id={FIELD_KEYS.loanProvisions} checked={getBoolValue(FIELD_KEYS.loanProvisions)} onCheckedChange={(checked) => setBoolValue(FIELD_KEYS.loanProvisions, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
             <Label htmlFor={FIELD_KEYS.loanProvisions} className="font-normal cursor-pointer text-xs">Loan Provisions</Label>
           </div>

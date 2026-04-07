@@ -427,6 +427,7 @@ export const LOAN_TERMS_DETAILS_KEYS = {
   crossCollateral: 'loan_terms.cross_collateral',
   limitedNoDoc: 'loan_terms.limited_no_doc',
   balloonPayment: 'loan_terms.balloon_payment',
+   subordinationProvision: 'loan_terms.subordination_provision',
   parentAccount: 'loan_terms.parent_account',
   parentAccountValue: 'loan_terms.parent_account_value',
   childAccount: 'loan_terms.child_account',
