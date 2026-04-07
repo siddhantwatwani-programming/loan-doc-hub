@@ -83,6 +83,7 @@ interface LoanTermsServicingFormProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  dealId?: string;
 }
 
 const SERVICE_ROWS = [
