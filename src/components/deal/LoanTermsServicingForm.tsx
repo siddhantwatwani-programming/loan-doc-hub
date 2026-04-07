@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { EmailInput } from '@/components/ui/email-input';
+import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { US_STATES } from '@/lib/usStates';
 import {
   numericKeyDown,
   numericPaste,
@@ -14,6 +18,58 @@ import {
   formatPercentageDisplay,
   unformatPercentageDisplay,
 } from '@/lib/numericInputFilter';
+
+const SERVICING_AGENT_OPTIONS = ['Company', 'Other Servicer', 'Lender', 'Broker'];
+
+const AGENT_FK = {
+  servicing_agent: 'origination_svc.servicing_agent',
+  tp_name: 'origination_svc.third_party.name',
+  tp_street: 'origination_svc.third_party.street',
+  tp_city: 'origination_svc.third_party.city',
+  tp_state: 'origination_svc.third_party.state',
+  tp_zip: 'origination_svc.third_party.zip',
+  tp_phone: 'origination_svc.third_party.phone',
+  tp_email: 'origination_svc.third_party.email',
+  sp_same_as_tp: 'origination_svc.send_payments.same_as_third_party',
+  sp_name: 'origination_svc.send_payments.name',
+  sp_street: 'origination_svc.send_payments.street',
+  sp_city: 'origination_svc.send_payments.city',
+  sp_state: 'origination_svc.send_payments.state',
+  sp_zip: 'origination_svc.send_payments.zip',
+  sp_phone: 'origination_svc.send_payments.phone',
+  sp_email: 'origination_svc.send_payments.email',
+};
+
+// Source field keys for auto-populate by agent type
+const COMPANY_SOURCE_KEYS = {
+  name: 'loan_terms.details_company',
+  street: 'borrower.address.street',
+  city: 'borrower.address.city',
+  state: 'borrower.state',
+  zip: 'borrower.address.zip',
+  phone: 'borrower.phone.work',
+  email: 'borrower.email',
+};
+
+const BROKER_SOURCE_KEYS = {
+  name: 'broker.company_name',
+  street: 'broker.address.street',
+  city: 'broker.address.city',
+  state: 'broker.state',
+  zip: 'broker.address.zip',
+  phone: 'broker.phone',
+  email: 'broker.email',
+};
+
+const LENDER_SOURCE_KEYS = {
+  name: 'lender.name',
+  street: 'lender.address.street',
+  city: 'lender.address.city',
+  state: 'lender.state',
+  zip: 'lender.address.zip',
+  phone: 'lender.phone',
+  email: 'lender.email',
+};
 
 interface LoanTermsServicingFormProps {
   fields: FieldDefinition[];
@@ -131,11 +187,156 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
   disabled = false,
   calculationResults = {},
 }) => {
+  const v = (key: string) => values[key] || '';
+  const sv = (key: string, val: string) => onValueChange(key, val);
+  const bv = (key: string) => values[key] === 'true';
+  const sbv = (key: string, val: boolean) => onValueChange(key, String(val));
+
+  const agentValue = v(AGENT_FK.servicing_agent);
+  const sameAsTP = bv(AGENT_FK.sp_same_as_tp);
+
+  // Auto-populate 3rd party address when agent changes to Company/Broker/Lender
+  useEffect(() => {
+    if (!agentValue) return;
+    let sourceKeys: Record<string, string> | null = null;
+    if (agentValue === 'Company') sourceKeys = COMPANY_SOURCE_KEYS;
+    else if (agentValue === 'Broker') sourceKeys = BROKER_SOURCE_KEYS;
+    else if (agentValue === 'Lender') sourceKeys = LENDER_SOURCE_KEYS;
+
+    if (sourceKeys) {
+      const mappings: [string, string][] = [
+        [sourceKeys.name, AGENT_FK.tp_name],
+        [sourceKeys.street, AGENT_FK.tp_street],
+        [sourceKeys.city, AGENT_FK.tp_city],
+        [sourceKeys.state, AGENT_FK.tp_state],
+        [sourceKeys.zip, AGENT_FK.tp_zip],
+        [sourceKeys.phone, AGENT_FK.tp_phone],
+        [sourceKeys.email, AGENT_FK.tp_email],
+      ];
+      mappings.forEach(([src, dst]) => {
+        const srcVal = values[src] || '';
+        if (srcVal !== v(dst)) sv(dst, srcVal);
+      });
+    }
+  }, [agentValue]);
+
+  // Auto-copy 3rd party values when "Same as 3rd Party" is checked
+  useEffect(() => {
+    if (sameAsTP) {
+      const mappings: [string, string][] = [
+        [AGENT_FK.tp_name, AGENT_FK.sp_name], [AGENT_FK.tp_street, AGENT_FK.sp_street],
+        [AGENT_FK.tp_city, AGENT_FK.sp_city], [AGENT_FK.tp_state, AGENT_FK.sp_state],
+        [AGENT_FK.tp_zip, AGENT_FK.sp_zip], [AGENT_FK.tp_phone, AGENT_FK.sp_phone],
+        [AGENT_FK.tp_email, AGENT_FK.sp_email],
+      ];
+      mappings.forEach(([src, dst]) => {
+        if (v(src) !== v(dst)) sv(dst, v(src));
+      });
+    }
+  }, [sameAsTP, values[AGENT_FK.tp_name], values[AGENT_FK.tp_street], values[AGENT_FK.tp_city], values[AGENT_FK.tp_state], values[AGENT_FK.tp_zip], values[AGENT_FK.tp_phone], values[AGENT_FK.tp_email]]);
+
+  const renderTextField = (label: string, key: string, extraDisabled = false) => (
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[80px] text-sm shrink-0">{label}</Label>
+        <Input value={v(key)} onChange={(e) => sv(key, e.target.value)} disabled={disabled || extraDisabled} className="h-7 text-sm" />
+      </div>
+    </DirtyFieldWrapper>
+  );
+
+  const renderAddressBlock = (keys: { name: string; street: string; city: string; state: string; zip: string; phone: string; email: string }, extraDisabled = false) => (
+    <div className="space-y-2">
+      {renderTextField('Name', keys.name, extraDisabled)}
+      {renderTextField('Street', keys.street, extraDisabled)}
+      {renderTextField('City', keys.city, extraDisabled)}
+      <DirtyFieldWrapper fieldKey={keys.state}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[80px] text-sm shrink-0">State</Label>
+          <Select value={v(keys.state)} onValueChange={(val) => sv(keys.state, val)} disabled={disabled || extraDisabled}>
+            <SelectTrigger className="h-7 text-sm">
+              <SelectValue placeholder="Select..." />
+            </SelectTrigger>
+            <SelectContent className="bg-popover z-50">
+              {US_STATES.map((st) => (
+                <SelectItem key={st} value={st}>{st}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </DirtyFieldWrapper>
+      <DirtyFieldWrapper fieldKey={keys.zip}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[80px] text-sm shrink-0">ZIP</Label>
+          <ZipInput value={v(keys.zip)} onValueChange={(val) => sv(keys.zip, val)} disabled={disabled || extraDisabled} className="h-7 text-sm" />
+        </div>
+      </DirtyFieldWrapper>
+      <DirtyFieldWrapper fieldKey={keys.phone}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[80px] text-sm shrink-0">Phone</Label>
+          <PhoneInput value={v(keys.phone)} onValueChange={(val) => sv(keys.phone, val)} disabled={disabled || extraDisabled} className="h-7 text-sm" />
+        </div>
+      </DirtyFieldWrapper>
+      <DirtyFieldWrapper fieldKey={keys.email}>
+        <div className="flex items-center gap-2">
+          <Label className="w-[80px] text-sm shrink-0">Email</Label>
+          <EmailInput value={v(keys.email)} onValueChange={(val) => sv(keys.email, val)} disabled={disabled || extraDisabled} className="h-7 text-sm" />
+        </div>
+      </DirtyFieldWrapper>
+    </div>
+  );
+
   const getFieldKey = (rowKey: string, colKey: string) => 
     `loan_terms.servicing.${rowKey}.${colKey}`;
 
   return (
     <div className="p-6 space-y-6">
+      {/* Servicing Agent Section */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Servicing Agent</h3>
+        <DirtyFieldWrapper fieldKey={AGENT_FK.servicing_agent}>
+          <div className="flex items-center gap-2 max-w-xs">
+            <Label className="w-[120px] text-sm shrink-0">Servicing Agent</Label>
+            <Select value={v(AGENT_FK.servicing_agent)} onValueChange={(val) => sv(AGENT_FK.servicing_agent, val)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm">
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                {SERVICING_AGENT_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </DirtyFieldWrapper>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-6">
+        {/* Complete if 3rd Party */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Complete if 3rd Party</h3>
+          {renderAddressBlock({ name: AGENT_FK.tp_name, street: AGENT_FK.tp_street, city: AGENT_FK.tp_city, state: AGENT_FK.tp_state, zip: AGENT_FK.tp_zip, phone: AGENT_FK.tp_phone, email: AGENT_FK.tp_email })}
+        </div>
+
+        {/* Send Payments To */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between border-b border-border pb-1">
+            <h3 className="text-sm font-semibold text-foreground">Send Payments To</h3>
+            <DirtyFieldWrapper fieldKey={AGENT_FK.sp_same_as_tp}>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={sameAsTP} onCheckedChange={(c) => sbv(AGENT_FK.sp_same_as_tp, !!c)} disabled={disabled} />
+                <Label className="text-sm cursor-pointer">Same as 3rd Party</Label>
+              </div>
+            </DirtyFieldWrapper>
+          </div>
+          {renderAddressBlock({ name: AGENT_FK.sp_name, street: AGENT_FK.sp_street, city: AGENT_FK.sp_city, state: AGENT_FK.sp_state, zip: AGENT_FK.sp_zip, phone: AGENT_FK.sp_phone, email: AGENT_FK.sp_email }, sameAsTP)}
+        </div>
+      </div>
+
+      {/* Separator */}
+      <div className="border-t border-border" />
+
+      {/* Services and Rates heading */}
+      <h3 className="text-sm font-semibold text-foreground">Services and Rates</h3>
       {/* Override and Lender Split Dropdown */}
       <div className="flex items-center justify-between gap-8">
         <DirtyFieldWrapper fieldKey="loan_terms.servicing.override">
