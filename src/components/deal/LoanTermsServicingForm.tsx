@@ -422,7 +422,19 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
       <div className="border-t border-border" />
 
       {/* Services and Rates heading */}
-      <h3 className="text-sm font-semibold text-foreground">Services and Rates</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-foreground">Services and Rates</h3>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs gap-1"
+          onClick={() => setAddServiceModalOpen(true)}
+          disabled={disabled}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add Service
+        </Button>
+      </div>
       {/* Override, Per, Payable controls */}
       <div className="flex items-center gap-6 flex-wrap">
         <DirtyFieldWrapper fieldKey="loan_terms.servicing.override">
