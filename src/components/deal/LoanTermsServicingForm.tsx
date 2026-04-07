@@ -192,11 +192,39 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
   showValidation = false,
   disabled = false,
   calculationResults = {},
+  dealId = '',
 }) => {
   const v = (key: string) => values[key] || '';
   const sv = (key: string, val: string) => onValueChange(key, val);
   const bv = (key: string) => values[key] === 'true';
   const sbv = (key: string, val: boolean) => onValueChange(key, String(val));
+
+  // Override Individual state
+  const [overridePopoverOpen, setOverridePopoverOpen] = useState(false);
+  const [participants, setParticipants] = useState<Array<{ id: string; name: string; role: string; contact_id: string | null }>>([]);
+  const [selectedParticipant, setSelectedParticipant] = useState<{ id: string; name: string; role: string } | null>(null);
+  const [fundingModalOpen, setFundingModalOpen] = useState(false);
+
+  // Fetch broker/lender participants for the deal
+  useEffect(() => {
+    if (!dealId) return;
+    const fetchParticipants = async () => {
+      const { data } = await supabase
+        .from('deal_participants')
+        .select('id, name, email, role, contact_id')
+        .eq('deal_id', dealId)
+        .in('role', ['broker', 'lender']);
+      if (data) {
+        setParticipants(data.map(p => ({
+          id: p.id,
+          name: p.name || p.email || 'Unknown',
+          role: p.role,
+          contact_id: p.contact_id,
+        })));
+      }
+    };
+    fetchParticipants();
+  }, [dealId]);
 
   const agentValue = v(AGENT_FK.servicing_agent);
   const sameAsTP = bv(AGENT_FK.sp_same_as_tp);
