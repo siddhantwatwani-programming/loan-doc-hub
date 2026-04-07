@@ -135,6 +135,7 @@ const formatDate = (val: string) => {
 
 const renderCellValue = (tax: PropertyTaxData, columnId: string) => {
   switch (columnId) {
+    case 'property': return tax.property || '-';
     case 'authority': return tax.authority || '-';
     case 'address': return tax.address || '-';
     case 'type': return tax.type || '-';
