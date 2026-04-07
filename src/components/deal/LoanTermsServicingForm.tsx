@@ -371,8 +371,8 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
 
       {/* Services and Rates heading */}
       <h3 className="text-sm font-semibold text-foreground">Services and Rates</h3>
-      {/* Override and Lender Split Dropdown */}
-      <div className="flex items-center gap-6">
+      {/* Override, Per, Payable controls */}
+      <div className="flex items-center gap-6 flex-wrap">
         <DirtyFieldWrapper fieldKey="loan_terms.servicing.override">
           <div className="flex items-center gap-3">
             <Label className="text-sm font-medium">Override All</Label>
@@ -421,6 +421,71 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
             )}
           </PopoverContent>
         </Popover>
+
+        {/* Per ($ / %) */}
+        <div className="flex items-center gap-2 border-l border-border pl-4">
+          <Label className="text-sm font-medium shrink-0">Per ($ / %):</Label>
+          <DirtyFieldWrapper fieldKey="loan_terms.servicing.per_month">
+            <div className="flex items-center gap-1.5">
+              <Checkbox
+                checked={bv('loan_terms.servicing.per_month')}
+                onCheckedChange={(c) => sbv('loan_terms.servicing.per_month', !!c)}
+                disabled={disabled}
+                className="h-4 w-4"
+              />
+              <Label className="text-xs cursor-pointer">Month</Label>
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey="loan_terms.servicing.per_year">
+            <div className="flex items-center gap-1.5">
+              <Checkbox
+                checked={bv('loan_terms.servicing.per_year')}
+                onCheckedChange={(c) => sbv('loan_terms.servicing.per_year', !!c)}
+                disabled={disabled}
+                className="h-4 w-4"
+              />
+              <Label className="text-xs cursor-pointer">Year</Label>
+            </div>
+          </DirtyFieldWrapper>
+        </div>
+
+        {/* Payable */}
+        <div className="flex items-center gap-2 border-l border-border pl-4">
+          <Label className="text-sm font-medium shrink-0">Payable:</Label>
+          <DirtyFieldWrapper fieldKey="loan_terms.servicing.payable_monthly">
+            <div className="flex items-center gap-1.5">
+              <Checkbox
+                checked={bv('loan_terms.servicing.payable_monthly')}
+                onCheckedChange={(c) => sbv('loan_terms.servicing.payable_monthly', !!c)}
+                disabled={disabled}
+                className="h-4 w-4"
+              />
+              <Label className="text-xs cursor-pointer">Monthly</Label>
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey="loan_terms.servicing.payable_annually">
+            <div className="flex items-center gap-1.5">
+              <Checkbox
+                checked={bv('loan_terms.servicing.payable_annually')}
+                onCheckedChange={(c) => sbv('loan_terms.servicing.payable_annually', !!c)}
+                disabled={disabled}
+                className="h-4 w-4"
+              />
+              <Label className="text-xs cursor-pointer">Annually</Label>
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey="loan_terms.servicing.payable_quarterly">
+            <div className="flex items-center gap-1.5">
+              <Checkbox
+                checked={bv('loan_terms.servicing.payable_quarterly')}
+                onCheckedChange={(c) => sbv('loan_terms.servicing.payable_quarterly', !!c)}
+                disabled={disabled}
+                className="h-4 w-4"
+              />
+              <Label className="text-xs cursor-pointer">Quarterly</Label>
+            </div>
+          </DirtyFieldWrapper>
+        </div>
       </div>
 
       {/* Individual Funding Modal */}
