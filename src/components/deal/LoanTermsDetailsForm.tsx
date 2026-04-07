@@ -423,6 +423,10 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
             <Checkbox id={FIELD_KEYS.balloonPayment} checked={getBoolValue(FIELD_KEYS.balloonPayment)} onCheckedChange={(checked) => setBoolValue(FIELD_KEYS.balloonPayment, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
             <Label htmlFor={FIELD_KEYS.balloonPayment} className="font-normal cursor-pointer text-xs">Balloon Payment</Label>
           </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id={FIELD_KEYS.loanProvisions} checked={getBoolValue(FIELD_KEYS.loanProvisions)} onCheckedChange={(checked) => setBoolValue(FIELD_KEYS.loanProvisions, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+            <Label htmlFor={FIELD_KEYS.loanProvisions} className="font-normal cursor-pointer text-xs">Loan Provisions</Label>
+          </div>
           <div className="flex items-start gap-2">
             <Checkbox id={FIELD_KEYS.parentAccount} checked={getBoolValue(FIELD_KEYS.parentAccount)} onCheckedChange={(checked) => {
               setBoolValue(FIELD_KEYS.parentAccount, !!checked);

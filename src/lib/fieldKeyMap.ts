@@ -444,6 +444,7 @@ export const LOAN_TERMS_DETAILS_KEYS = {
   adjFinalPaymentMonths: 'loan_terms.adj_final_payment_months',
   loanToValueRatio: 'loan_terms.loan_to_value_ratio',
   months: 'loan_terms.months',
+  loanProvisions: 'loan_terms.loan_provisions',
 } as const;
 
 export const LOAN_TERMS_FUNDING_KEYS = {
