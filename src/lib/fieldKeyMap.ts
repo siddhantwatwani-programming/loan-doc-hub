@@ -445,6 +445,7 @@ export const LOAN_TERMS_DETAILS_KEYS = {
   loanToValueRatio: 'loan_terms.loan_to_value_ratio',
   months: 'loan_terms.months',
   loanProvisions: 'loan_terms.loan_provisions',
+  rateStructureOther: 'loan_terms.rate_structure_other',
 } as const;
 
 export const LOAN_TERMS_FUNDING_KEYS = {
