@@ -322,7 +322,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 <div className="space-y-2 pl-5">
                   <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateCompany}>
                     <div className="flex items-center gap-3">
-                      <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">
+                      <Label className="text-sm text-muted-foreground min-w-[155px] max-w-[155px] text-left shrink-0">
                         Company
                       </Label>
                       <div className="relative flex-1">
@@ -338,7 +338,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   </DirtyFieldWrapper>
                   <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient1}>
                     <div className="flex items-center gap-3">
-                      <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">
+                      <Label className="text-sm text-muted-foreground min-w-[155px] max-w-[155px] text-left shrink-0">
                         Other - Client List
                       </Label>
                       <div className="relative flex-1">
@@ -354,7 +354,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   </DirtyFieldWrapper>
                   <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient2}>
                     <div className="flex items-center gap-3">
-                      <Label className="text-sm text-muted-foreground min-w-[135px] max-w-[135px] text-left shrink-0">
+                      <Label className="text-sm text-muted-foreground min-w-[155px] max-w-[155px] text-left shrink-0">
                         Other - Client List
                       </Label>
                       <div className="relative flex-1">
