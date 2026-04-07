@@ -259,14 +259,13 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Appraisal Information</span></div>
-                  {renderInlineField('appraisedDate', 'Appraisal Date', 'date')}
+                  <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Property Valuation</span></div>
+                  {renderInlineField('appraisedDate', 'Valuation Date', 'date')}
+                  {renderCurrencyField('appraisedValue', 'Appraised Value')}
                   {renderInlineSelect('propertyType', 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
                   {renderInlineSelect('occupancy', 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
                   {renderInlineField('zoning', 'Zoning')}
-                  {renderCurrencyField('appraisedValue', 'Estimate of Value')}
                   {renderCurrencyField('pledgedEquity', 'Pledged Equity')}
-                  {renderCheckboxField('floodZone', 'Flood Zone')}
                   {renderCheckboxField('floodZone', 'Flood Zone')}
 
                   {renderCheckboxField('propertyGeneratesIncome', 'Property Generates Income')}
@@ -344,7 +343,8 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                   {renderCurrencyField('lienProtectiveEquity', 'Lien (Protective Equity)')}
                   {renderInlineSelect('sourceLienInfo', 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
 
-                  {renderInlineField('recordingNumber', 'Recording number')}
+                  {renderCurrencyField('lienProtectiveEquity', 'Lien (Protective Equity)')}
+                  {renderInlineSelect('sourceLienInfo', 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
                 </div>
               </div>
 
