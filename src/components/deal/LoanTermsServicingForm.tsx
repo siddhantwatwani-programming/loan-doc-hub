@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { EmailInput } from '@/components/ui/email-input';
+import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { US_STATES } from '@/lib/usStates';
 import {
   numericKeyDown,
   numericPaste,
@@ -14,6 +18,58 @@ import {
   formatPercentageDisplay,
   unformatPercentageDisplay,
 } from '@/lib/numericInputFilter';
+
+const SERVICING_AGENT_OPTIONS = ['Company', 'Other Servicer', 'Lender', 'Broker'];
+
+const AGENT_FK = {
+  servicing_agent: 'origination_svc.servicing_agent',
+  tp_name: 'origination_svc.third_party.name',
+  tp_street: 'origination_svc.third_party.street',
+  tp_city: 'origination_svc.third_party.city',
+  tp_state: 'origination_svc.third_party.state',
+  tp_zip: 'origination_svc.third_party.zip',
+  tp_phone: 'origination_svc.third_party.phone',
+  tp_email: 'origination_svc.third_party.email',
+  sp_same_as_tp: 'origination_svc.send_payments.same_as_third_party',
+  sp_name: 'origination_svc.send_payments.name',
+  sp_street: 'origination_svc.send_payments.street',
+  sp_city: 'origination_svc.send_payments.city',
+  sp_state: 'origination_svc.send_payments.state',
+  sp_zip: 'origination_svc.send_payments.zip',
+  sp_phone: 'origination_svc.send_payments.phone',
+  sp_email: 'origination_svc.send_payments.email',
+};
+
+// Source field keys for auto-populate by agent type
+const COMPANY_SOURCE_KEYS = {
+  name: 'loan_terms.details_company',
+  street: 'borrower.address.street',
+  city: 'borrower.address.city',
+  state: 'borrower.state',
+  zip: 'borrower.address.zip',
+  phone: 'borrower.phone.work',
+  email: 'borrower.email',
+};
+
+const BROKER_SOURCE_KEYS = {
+  name: 'broker.company_name',
+  street: 'broker.address.street',
+  city: 'broker.address.city',
+  state: 'broker.state',
+  zip: 'broker.address.zip',
+  phone: 'broker.phone',
+  email: 'broker.email',
+};
+
+const LENDER_SOURCE_KEYS = {
+  name: 'lender.name',
+  street: 'lender.address.street',
+  city: 'lender.address.city',
+  state: 'lender.state',
+  zip: 'lender.address.zip',
+  phone: 'lender.phone',
+  email: 'lender.email',
+};
 
 interface LoanTermsServicingFormProps {
   fields: FieldDefinition[];

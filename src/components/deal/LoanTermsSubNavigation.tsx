@@ -12,7 +12,7 @@ const LOAN_TERMS_SECTIONS: { key: LoanTermsSubSection; label: string }[] = [
   { key: 'balances_loan_details', label: 'Terms & Balances' },
   { key: 'details', label: 'Details' },
   { key: 'penalties', label: 'Penalties' },
-  { key: 'servicing', label: 'Servicing' },
+  { key: 'servicing', label: 'Servicing Details' },
   { key: 'history', label: 'History' },
   { key: 'trust_ledger', label: 'Trust Ledger' },
   { key: 'escrow_impound', label: 'Escrow Impound' },
