@@ -361,7 +361,7 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
             Total Properties: {totalCount ?? properties.length} | 
-            Total Appraised Value: {formatCurrency(
+            Total Estimate of Value: {formatCurrency(
               properties.reduce((sum, p) => sum + (parseFloat(p.appraisedValue) || 0), 0).toString()
             )}
           </div>
