@@ -106,7 +106,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'floodZone', label: 'Flood Zone', visible: true },
 ];
 
-const SEARCH_FIELDS = ['street', 'city', 'state', 'zipCode', 'county', 'propertyType', 'description', 'apn'];
+const SEARCH_FIELDS = ['description', 'street', 'city', 'state', 'zipCode', 'county', 'propertyType', 'apn'];
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
