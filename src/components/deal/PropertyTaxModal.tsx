@@ -26,6 +26,7 @@ interface PropertyTaxModalProps {
   propertyTax: PropertyTaxData | null;
   onSave: (data: PropertyTaxData) => void;
   isEdit: boolean;
+  propertyOptions?: string[];
 }
 
 const TYPE_OPTIONS = ['Current Property Tax', 'Delinquent Property Tax', 'Other'];
