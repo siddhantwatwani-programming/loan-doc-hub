@@ -151,6 +151,8 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 py-4">
             {/* Left column */}
             <div className="space-y-3">
+              {propertyOptions.length > 0 && renderDropdownField('property', 'Property', propertyOptions)}
+
               <div className="flex items-center gap-2">
                 <Label className="w-[120px] shrink-0 text-xs text-foreground">Tax Authority</Label>
                 <Input value={formData.authority} onChange={(e) => handleChange('authority', e.target.value)} className="h-7 text-xs flex-1" />
