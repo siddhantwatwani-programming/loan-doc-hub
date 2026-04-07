@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -35,8 +36,8 @@ const FREQUENCY_OPTIONS = [
 ];
 
 const TYPE_OPTIONS = ['Current Property Tax', 'Delinquent Property Tax', 'Other'];
+const SOURCE_OPTIONS = ['Borrower', 'Title Report', 'Tax Records'];
 
-// Use propertytax1.* prefix for form keys (remapped by parent)
 const PREFIX = 'propertytax1';
 
 export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
@@ -104,9 +105,20 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
     </div>
   );
 
+  const renderDropdownField = (field: string, label: string, options: string[]) => (
+    <div className="flex items-center gap-3">
+      <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">{label}</Label>
+      <Select value={getValue(field)} onValueChange={(value) => handleChange(field, value)} disabled={disabled}>
+        <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
+        <SelectContent className="bg-background z-50">
+          {options.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
   return (
     <div className="p-6">
-      {/* Header */}
       <div className="border-b border-border pb-2 mb-4">
         <span className="font-semibold text-base text-foreground">Property Tax</span>
       </div>
@@ -122,15 +134,28 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               </div>
             </DirtyFieldWrapper>
 
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.address`}>
+              <div className="flex items-start gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px] pt-1">Address</Label>
+                <Textarea value={getValue('address')} onChange={(e) => handleChange('address', e.target.value)} disabled={disabled} className="text-sm flex-1 min-h-[50px]" />
+              </div>
+            </DirtyFieldWrapper>
+
             <DirtyFieldWrapper fieldKey={`${PREFIX}.type`}>
+              {renderDropdownField('type', 'Type', TYPE_OPTIONS)}
+            </DirtyFieldWrapper>
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.apn`}>
               <div className="flex items-center gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Type</Label>
-                <Select value={getValue('type')} onValueChange={(value) => handleChange('type', value)} disabled={disabled}>
-                  <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    {TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-                  </SelectContent>
-                </Select>
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">APN</Label>
+                <Input value={getValue('apn')} onChange={(e) => handleChange('apn', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              </div>
+            </DirtyFieldWrapper>
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.memo`}>
+              <div className="flex items-start gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px] pt-1">Memo</Label>
+                <Textarea value={getValue('memo')} onChange={(e) => handleChange('memo', e.target.value)} disabled={disabled} className="text-sm flex-1 min-h-[50px]" />
               </div>
             </DirtyFieldWrapper>
 
@@ -138,16 +163,28 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               {renderCurrencyField('annual_payment', 'Annual Payment (est.)')}
             </DirtyFieldWrapper>
 
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.amount`}>
+              {renderCurrencyField('amount', 'Amount')}
+            </DirtyFieldWrapper>
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.next_due`}>
+              {renderDateField('next_due', 'Next Due')}
+            </DirtyFieldWrapper>
+
             <DirtyFieldWrapper fieldKey={`${PREFIX}.frequency`}>
-              <div className="flex items-center gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Frequency</Label>
-                <Select value={getValue('frequency')} onValueChange={(value) => handleChange('frequency', value)} disabled={disabled}>
-                  <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    {FREQUENCY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {renderDropdownField('frequency', 'Frequency', FREQUENCY_OPTIONS)}
+            </DirtyFieldWrapper>
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.escrow_impounds`}>
+              {renderDropdownField('escrow_impounds', 'Escrow Impounds', SOURCE_OPTIONS)}
+            </DirtyFieldWrapper>
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.pass_through`}>
+              {renderDropdownField('pass_through', 'Pass Through', SOURCE_OPTIONS)}
+            </DirtyFieldWrapper>
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.source_of_information`}>
+              {renderDropdownField('source_of_information', 'Source of Information', SOURCE_OPTIONS)}
             </DirtyFieldWrapper>
           </div>
 

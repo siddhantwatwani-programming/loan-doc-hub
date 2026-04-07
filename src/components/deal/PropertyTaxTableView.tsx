@@ -9,15 +9,25 @@ import {
 import { GridToolbar, FilterOption } from './GridToolbar';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
+import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
+import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
 
 export interface PropertyTaxData {
   id: string;
   authority: string;
+  address: string;
   type: string;
+  apn: string;
+  memo: string;
   annualPayment: string;
+  amount: string;
+  nextDue: string;
   frequency: string;
+  escrowImpounds: string;
+  passThrough: string;
+  sourceOfInformation: string;
   active: boolean;
   lastVerified: string;
   lenderNotified: string;
@@ -44,7 +54,7 @@ interface PropertyTaxTableViewProps {
   onPageChange?: (page: number) => void;
 }
 
-const SEARCH_FIELDS = ['authority', 'type', 'frequency'];
+const SEARCH_FIELDS = ['authority', 'type', 'frequency', 'apn', 'address'];
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
@@ -60,9 +70,17 @@ const FILTER_OPTIONS: FilterOption[] = [
 
 const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'authority', label: 'Tax Authority' },
+  { id: 'address', label: 'Address' },
   { id: 'type', label: 'Type' },
+  { id: 'apn', label: 'APN' },
+  { id: 'memo', label: 'Memo' },
   { id: 'annualPayment', label: 'Annual Payment (est.)' },
+  { id: 'amount', label: 'Amount' },
+  { id: 'nextDue', label: 'Next Due' },
   { id: 'frequency', label: 'Frequency' },
+  { id: 'escrowImpounds', label: 'Escrow Impounds' },
+  { id: 'passThrough', label: 'Pass Through' },
+  { id: 'sourceOfInformation', label: 'Source of Information' },
   { id: 'active', label: 'Active' },
   { id: 'lastVerified', label: 'Last Verified' },
   { id: 'lenderNotified', label: 'Lender Notified' },
@@ -72,6 +90,71 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'borrowerNotifiedDate', label: 'Borrower Notified Date' },
   { id: 'lenderNotifiedDate', label: 'Lender Notified Date' },
 ];
+
+const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'authority', label: 'Tax Authority', visible: true },
+  { id: 'address', label: 'Address', visible: false },
+  { id: 'type', label: 'Type', visible: true },
+  { id: 'apn', label: 'APN', visible: false },
+  { id: 'memo', label: 'Memo', visible: false },
+  { id: 'annualPayment', label: 'Annual Payment (est.)', visible: true },
+  { id: 'amount', label: 'Amount', visible: true },
+  { id: 'nextDue', label: 'Next Due', visible: true },
+  { id: 'frequency', label: 'Frequency', visible: true },
+  { id: 'escrowImpounds', label: 'Escrow Impounds', visible: false },
+  { id: 'passThrough', label: 'Pass Through', visible: false },
+  { id: 'sourceOfInformation', label: 'Source of Information', visible: false },
+  { id: 'active', label: 'Active', visible: true },
+  { id: 'lastVerified', label: 'Last Verified', visible: true },
+  { id: 'lenderNotified', label: 'Lender Notified', visible: true },
+  { id: 'current', label: 'Current', visible: true },
+  { id: 'delinquent', label: 'Delinquent', visible: true },
+  { id: 'borrowerNotified', label: 'Borrower Notified', visible: false },
+  { id: 'borrowerNotifiedDate', label: 'Borrower Notified Date', visible: false },
+  { id: 'lenderNotifiedDate', label: 'Lender Notified Date', visible: false },
+];
+
+const formatCurrency = (value: string) => {
+  if (!value) return '';
+  const num = parseFloat(value.replace(/[^0-9.-]/g, ''));
+  if (isNaN(num)) return value;
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(num);
+};
+
+const formatDate = (val: string) => {
+  if (!val) return '-';
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return val;
+    return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+  } catch { return val; }
+};
+
+const renderCellValue = (tax: PropertyTaxData, columnId: string) => {
+  switch (columnId) {
+    case 'authority': return tax.authority || '-';
+    case 'address': return tax.address || '-';
+    case 'type': return tax.type || '-';
+    case 'apn': return tax.apn || '-';
+    case 'memo': return tax.memo || '-';
+    case 'annualPayment': return formatCurrency(tax.annualPayment) || '-';
+    case 'amount': return formatCurrency(tax.amount) || '-';
+    case 'nextDue': return formatDate(tax.nextDue);
+    case 'frequency': return tax.frequency || '-';
+    case 'escrowImpounds': return tax.escrowImpounds || '-';
+    case 'passThrough': return tax.passThrough || '-';
+    case 'sourceOfInformation': return tax.sourceOfInformation || '-';
+    case 'active': return tax.active ? '✓' : '-';
+    case 'lastVerified': return formatDate(tax.lastVerified);
+    case 'lenderNotified': return formatDate(tax.lenderNotified);
+    case 'current': return tax.current ? '✓' : '-';
+    case 'delinquent': return tax.delinquent ? (formatCurrency(tax.delinquentAmount) || '✓') : '-';
+    case 'borrowerNotified': return tax.borrowerNotified ? '✓' : '-';
+    case 'borrowerNotifiedDate': return formatDate(tax.borrowerNotifiedDate);
+    case 'lenderNotifiedDate': return formatDate(tax.lenderNotifiedDate);
+    default: return '-';
+  }
+};
 
 export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
   taxes,
@@ -88,13 +171,14 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
 }) => {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('property_tax', DEFAULT_COLUMNS);
+  const visibleColumns = columns.filter((col) => col.visible);
 
   const {
     searchQuery, setSearchQuery, sortState, toggleSort,
     activeFilters, setFilter, clearFilters, activeFilterCount, filteredData,
   } = useGridSortFilter(taxes, SEARCH_FIELDS);
 
-  // Clear search when list changes
   const prevCountRef = React.useRef(taxes.length);
   React.useEffect(() => {
     if (taxes.length !== prevCountRef.current) {
@@ -107,22 +191,6 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
     selectedIds, selectedItems, toggleOne, toggleAll, clearSelection,
     isAllSelected, isSomeSelected, selectedCount,
   } = useGridSelection(filteredData);
-
-  const formatCurrency = (value: string) => {
-    if (!value) return '';
-    const num = parseFloat(value.replace(/[^0-9.-]/g, ''));
-    if (isNaN(num)) return value;
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(num);
-  };
-
-  const formatDate = (val: string) => {
-    if (!val) return '-';
-    try {
-      const d = new Date(val);
-      if (isNaN(d.getTime())) return val;
-      return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
-    } catch { return val; }
-  };
 
   const handleBulkDelete = () => {
     if (onBulkDelete) {
@@ -138,10 +206,18 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground">Property Tax</h3>
-        <Button size="sm" onClick={onAddTax} disabled={disabled} className="gap-1">
-          <Plus className="h-4 w-4" />
-          Add Property Tax
-        </Button>
+        <div className="flex items-center gap-2">
+          <ColumnConfigPopover
+            columns={columns}
+            onColumnsChange={setColumns}
+            onResetColumns={resetColumns}
+            disabled={disabled}
+          />
+          <Button size="sm" onClick={onAddTax} disabled={disabled} className="gap-1">
+            <Plus className="h-4 w-4" />
+            Add Property Tax
+          </Button>
+        </div>
       </div>
 
       <GridToolbar
@@ -172,24 +248,23 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
                     disabled={disabled || filteredData.length === 0}
                   />
                 </TableHead>
-                <SortableTableHead columnId="authority" label="Tax Authority" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[150px]" />
-                <SortableTableHead columnId="type" label="Type" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[150px]" />
-                <SortableTableHead columnId="annualPayment" label="Annual Payment (est.)" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[150px] text-right" />
-                <SortableTableHead columnId="frequency" label="Frequency" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
-                <SortableTableHead columnId="active" label="Active" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[70px]" />
-                <SortableTableHead columnId="lastVerified" label="Last Verified" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[110px]" />
-                <SortableTableHead columnId="lenderNotified" label="Lender Notified" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
-                <SortableTableHead columnId="current" label="Current" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[80px]" />
-                <SortableTableHead columnId="delinquent" label="Delinquent" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[100px]" />
-                <SortableTableHead columnId="borrowerNotified" label="Borrower Notified" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[120px]" />
-                <SortableTableHead columnId="borrowerNotifiedDate" label="Borrower Notified Date" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[140px]" />
-                <SortableTableHead columnId="lenderNotifiedDate" label="Lender Notified Date" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="min-w-[140px]" />
+                {visibleColumns.map((col) => (
+                  <SortableTableHead
+                    key={col.id}
+                    columnId={col.id}
+                    label={col.label}
+                    sortColumnId={sortState.columnId}
+                    sortDirection={sortState.direction}
+                    onSort={toggleSort}
+                    className={col.id === 'annualPayment' || col.id === 'amount' ? 'min-w-[120px] text-right' : 'min-w-[100px]'}
+                  />
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
                     {taxes.length === 0 ? 'No property tax records added. Click "Add Property Tax" to create one.' : 'No property tax records match your search or filters.'}
                   </TableCell>
                 </TableRow>
@@ -199,22 +274,11 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selectedIds.has(tax.id)} onCheckedChange={() => toggleOne(tax.id)} disabled={disabled} />
                     </TableCell>
-                    <TableCell className="font-medium">{tax.authority || '-'}</TableCell>
-                    <TableCell>{tax.type || '-'}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(tax.annualPayment) || '-'}</TableCell>
-                    <TableCell>{tax.frequency || '-'}</TableCell>
-                    <TableCell>{tax.active ? '✓' : '-'}</TableCell>
-                    <TableCell>{formatDate(tax.lastVerified)}</TableCell>
-                    <TableCell>{formatDate(tax.lenderNotified)}</TableCell>
-                    <TableCell>{tax.current ? '✓' : '-'}</TableCell>
-                    <TableCell>
-                      {tax.delinquent ? (
-                        <span>{formatCurrency(tax.delinquentAmount) || '✓'}</span>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell>{tax.borrowerNotified ? '✓' : '-'}</TableCell>
-                    <TableCell>{formatDate(tax.borrowerNotifiedDate)}</TableCell>
-                    <TableCell>{formatDate(tax.lenderNotifiedDate)}</TableCell>
+                    {visibleColumns.map((col) => (
+                      <TableCell key={col.id} className={col.id === 'annualPayment' || col.id === 'amount' ? 'text-right' : col.id === 'authority' ? 'font-medium' : ''}>
+                        {renderCellValue(tax, col.id)}
+                      </TableCell>
+                    ))}
                   </TableRow>
                 ))
               )}
@@ -223,7 +287,6 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
         </div>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
@@ -239,7 +302,6 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
         </div>
       )}
 
-      {/* Footer */}
       {taxes.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
