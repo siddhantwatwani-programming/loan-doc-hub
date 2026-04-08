@@ -53,7 +53,7 @@ export interface FundingRecord {
   brokerParticipates?: boolean;
   interestFrom?: string;
   roundingAdjustment?: boolean;
-  disbursements?: Array<{accountId: string; name: string; amount: string; percentage: string; comments: string}>;
+  disbursements?: Array<{type: string; accountId: string; name: string; amount: string; percentage: string; comments: string}>;
   // Servicing fees
   overrideServicingFees?: boolean;
   companyServicingFee?: string;
