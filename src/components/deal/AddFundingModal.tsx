@@ -506,33 +506,16 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
             </RadioGroup>
           </div>
 
-          <div className="flex items-center gap-6 flex-wrap mt-1">
-            <div className="flex items-center gap-2">
-              <Label className={cn("text-sm shrink-0", percentOwnedError ? "text-destructive font-medium" : "text-muted-foreground")}>Percent Owned</Label>
-              <div className="relative w-28">
-                <Input type="text" inputMode="decimal" value={formData.percentOwned} disabled className={cn("h-7 text-sm pr-6 opacity-50 bg-muted", percentOwnedError && "border-destructive")} placeholder="0.000" />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
-              </div>
-            </div>
-            {percentOwnedError && (
-              <span className="text-xs text-destructive font-medium">Percent Owned cannot exceed 100%</span>
-            )}
-            {!percentOwnedError && totalPercentError && (
-              <span className="text-xs text-destructive font-medium">Total ownership across all lenders cannot exceed 100% (currently {projectedTotal.toFixed(3)}%)</span>
-            )}
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground shrink-0">Regular Payment</Label>
-              <div className="relative w-28">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-                <Input type="text" inputMode="decimal" value={formData.regularPayment ? formatCurrencyDisplay(formData.regularPayment) : ''} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
-              </div>
-            </div>
+          {/* Percent Owned & Regular Payment - hidden from UI, kept for backend */}
+          <div className="hidden">
+            <Input value={formData.percentOwned} readOnly />
+            <Input value={formData.regularPayment} readOnly />
           </div>
         </div>
 
         <DialogFooter className="shrink-0 border-t border-border pt-3">
           <Button variant="outline" size="sm" onClick={handleCancel}>Cancel</Button>
-          <Button size="sm" onClick={handleSaveClick} disabled={percentOwnedError || totalPercentError || !isFormFilled}>{isEditing ? 'Update Funding' : 'Save Funding'}</Button>
+          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>{isEditing ? 'Update Funding' : 'Save Funding'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
