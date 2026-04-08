@@ -255,6 +255,23 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     });
   };
 
+  const handleAddDisbursement = () => {
+    setFormData(prev => ({ ...prev, disbursements: [...prev.disbursements, emptyDisbursementRow()] }));
+  };
+
+  const handleRemoveDisbursement = (index: number) => {
+    setFormData(prev => {
+      const updated = prev.disbursements.filter((_, i) => i !== index);
+      return { ...prev, disbursements: updated.length ? updated : [emptyDisbursementRow()] };
+    });
+  };
+
+  // Disbursement totals
+  const totalDisbursementAmount = formData.disbursements.reduce((sum, row) => sum + (parseFloat((row.amount || '').replace(/[$,]/g, '')) || 0), 0);
+  const fundingAmountNum = parseFloat((formData.fundingAmount || '').replace(/[$,]/g, '')) || 0;
+  const netPaymentToLender = fundingAmountNum - totalDisbursementAmount;
+  const disbursementExceedsTotal = totalDisbursementAmount > fundingAmountNum && fundingAmountNum > 0;
+
   const isFormFilled = hasModalFormData(formData, ['loan', 'borrower', 'rateSelection', 'rateNoteValue', 'rateSoldValue', 'rateLenderValue', 'percentOwned', 'regularPayment', 'lenderRate', 'disbursements'], { brokerParticipates: false, overrideServicingFees: false, overrideDefaultFees: false, roundingAdjustment: false });
 
   const handleSaveClick = () => setShowConfirm(true);
