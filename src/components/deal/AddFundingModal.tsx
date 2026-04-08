@@ -409,7 +409,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
             {/* Right Column: Disbursements */}
             <div className="space-y-1">
-              
+              <p className="text-xs text-destructive font-medium">Note: Disbursements will be for payments deducted from outgoing lender payments</p>
               <div className="border-b border-border pb-1">
                 <span className="font-semibold text-sm text-foreground">Disbursements</span>
               </div>
