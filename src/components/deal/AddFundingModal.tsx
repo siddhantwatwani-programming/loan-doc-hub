@@ -386,6 +386,19 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 </Popover>
               </div>
               <div className="flex items-center gap-3">
+                <Label className={cn("text-sm min-w-[110px] text-left shrink-0", percentOwnedError ? "text-destructive font-medium" : "text-muted-foreground")}>Percent Owned</Label>
+                <div className="relative flex-1">
+                  <Input type="text" inputMode="decimal" value={formData.percentOwned || ''} disabled className={cn("h-7 text-sm pr-6 opacity-50 bg-muted", percentOwnedError && "border-destructive")} placeholder="0.000" />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+                </div>
+              </div>
+              {percentOwnedError && (
+                <p className="text-xs text-destructive font-medium ml-[122px]">Percent Owned cannot exceed 100%</p>
+              )}
+              {totalPercentError && !percentOwnedError && (
+                <p className="text-xs text-destructive font-medium ml-[122px]">Total ownership across all lenders exceeds 100%</p>
+              )}
+              <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Interest From</Label>
                 <Popover open={interestFromOpen} onOpenChange={setInterestFromOpen} modal={false}>
                   <PopoverTrigger asChild>
