@@ -38,7 +38,11 @@ interface AddFundingModalProps {
   editingRecordId?: string;
 }
 
+export const DISBURSEMENT_TYPES = ['Fee', 'Charge', 'Adjustment'] as const;
+export type DisbursementType = typeof DISBURSEMENT_TYPES[number] | '';
+
 export interface DisbursementRow {
+  type: DisbursementType;
   accountId: string;
   name: string;
   amount: string;
@@ -46,7 +50,7 @@ export interface DisbursementRow {
   comments: string;
 }
 
-const emptyDisbursementRow = (): DisbursementRow => ({ accountId: '', name: '', amount: '', percentage: '', comments: '' });
+const emptyDisbursementRow = (): DisbursementRow => ({ type: '', accountId: '', name: '', amount: '', percentage: '', comments: '' });
 const defaultDisbursements = (): DisbursementRow[] => [emptyDisbursementRow(), emptyDisbursementRow(), emptyDisbursementRow(), emptyDisbursementRow()];
 
 export interface FundingFormData {
