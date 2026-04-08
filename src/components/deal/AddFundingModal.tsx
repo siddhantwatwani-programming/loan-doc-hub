@@ -497,36 +497,12 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
             </div>
           </div>
 
-          {/* Rate Selection - kept for calculation logic */}
-          <div className="space-y-2 mt-2">
-            <div className="border-b border-border pb-1">
-              <span className="font-semibold text-sm text-primary">Rate Selection</span>
-            </div>
-            <RadioGroup value={formData.rateSelection} onValueChange={(val) => handleChange('rateSelection', val)} className="flex items-center gap-6 flex-wrap">
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="note_rate" id="rate-note" />
-                <Label htmlFor="rate-note" className="text-sm">Note Rate</Label>
-                <div className="relative w-28">
-                  <Input type="text" inputMode="decimal" value={formData.rateNoteValue} onChange={(e) => handleChange('rateNoteValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", formData.rateSelection !== 'note_rate' && 'opacity-50 bg-muted')} disabled={formData.rateSelection !== 'note_rate'} placeholder="0.000" />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="sold_rate" id="rate-sold" />
-                <Label htmlFor="rate-sold" className="text-sm">Sold Rate</Label>
-                <div className="relative w-28">
-                  <Input type="text" inputMode="decimal" value={formData.rateSoldValue} onChange={(e) => handleChange('rateSoldValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", formData.rateSelection !== 'sold_rate' && 'opacity-50 bg-muted')} disabled={formData.rateSelection !== 'sold_rate'} placeholder="0.000" />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="lender_rate" id="rate-lender" />
-                <Label htmlFor="rate-lender" className="text-sm">Lender Rate</Label>
-                <div className="relative w-28">
-                  <Input type="text" inputMode="decimal" value={formData.rateLenderValue} onChange={(e) => handleChange('rateLenderValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", formData.rateSelection !== 'lender_rate' && 'opacity-50 bg-muted')} disabled={formData.rateSelection !== 'lender_rate'} placeholder="0.000" />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
-                </div>
-              </div>
+          {/* Rate Selection - hidden from UI, kept for calculation logic */}
+          <div className="hidden">
+            <RadioGroup value={formData.rateSelection} onValueChange={(val) => handleChange('rateSelection', val)}>
+              <RadioGroupItem value="note_rate" id="rate-note" />
+              <RadioGroupItem value="sold_rate" id="rate-sold" />
+              <RadioGroupItem value="lender_rate" id="rate-lender" />
             </RadioGroup>
           </div>
 
