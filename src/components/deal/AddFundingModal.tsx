@@ -37,6 +37,17 @@ interface AddFundingModalProps {
   editingRecordId?: string;
 }
 
+export interface DisbursementRow {
+  accountId: string;
+  name: string;
+  amount: string;
+  percentage: string;
+  comments: string;
+}
+
+const emptyDisbursementRow = (): DisbursementRow => ({ accountId: '', name: '', amount: '', percentage: '', comments: '' });
+const defaultDisbursements = (): DisbursementRow[] => [emptyDisbursementRow(), emptyDisbursementRow(), emptyDisbursementRow(), emptyDisbursementRow()];
+
 export interface FundingFormData {
   loan: string;
   borrower: string;
@@ -55,6 +66,8 @@ export interface FundingFormData {
   rateNoteValue: string;
   rateSoldValue: string;
   rateLenderValue: string;
+  roundingAdjustment: boolean;
+  disbursements: DisbursementRow[];
   // Servicing fees section
   overrideServicingFees: boolean;
   companyServicingFee: string;
@@ -75,26 +88,32 @@ export interface FundingFormData {
   lateFee1Company: string;
   lateFee1Broker: string;
   lateFee1Total: string;
+  lateFee1Maximum: string;
   lateFee2Lender: string;
   lateFee2Company: string;
   lateFee2Broker: string;
   lateFee2Total: string;
+  lateFee2Maximum: string;
   defaultInterestLender: string;
   defaultInterestCompany: string;
   defaultInterestBroker: string;
   defaultInterestTotal: string;
+  defaultInterestMaximum: string;
   interestGuaranteeLender: string;
   interestGuaranteeCompany: string;
   interestGuaranteeBroker: string;
   interestGuaranteeTotal: string;
+  interestGuaranteeMaximum: string;
   prepaymentLender: string;
   prepaymentCompany: string;
   prepaymentBroker: string;
   prepaymentTotal: string;
+  prepaymentMaximum: string;
   maturityLender: string;
   maturityCompany: string;
   maturityBroker: string;
   maturityTotal: string;
+  maturityMaximum: string;
 }
 
 const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: string, soldRate: string): FundingFormData => ({
@@ -102,17 +121,19 @@ const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: 
   lenderRate: '', fundingAmount: '', fundingDate: '', interestFrom: '', notes: '', brokerParticipates: false,
   percentOwned: '', regularPayment: '', lenderShare: '',
   rateSelection: 'note_rate', rateNoteValue: noteRate, rateSoldValue: soldRate, rateLenderValue: '',
+  roundingAdjustment: false,
+  disbursements: defaultDisbursements(),
   overrideServicingFees: false,
   companyServicingFee: '', companyServicingFeePct: '', companyMaxFee: '', companyMaxFeePct: '',
   companyMinFee: '', companyMinFeePct: '', brokerServicingFee: '', brokerServicingFeePct: '',
   brokerMaxFee: '', brokerMaxFeePct: '', brokerMinFee: '', brokerMinFeePct: '',
   overrideDefaultFees: false,
-  lateFee1Lender: '', lateFee1Company: '', lateFee1Broker: '', lateFee1Total: '',
-  lateFee2Lender: '', lateFee2Company: '', lateFee2Broker: '', lateFee2Total: '',
-  defaultInterestLender: '', defaultInterestCompany: '', defaultInterestBroker: '', defaultInterestTotal: '',
-  interestGuaranteeLender: '', interestGuaranteeCompany: '', interestGuaranteeBroker: '', interestGuaranteeTotal: '',
-  prepaymentLender: '', prepaymentCompany: '', prepaymentBroker: '', prepaymentTotal: '',
-  maturityLender: '', maturityCompany: '', maturityBroker: '', maturityTotal: '',
+  lateFee1Lender: '', lateFee1Company: '', lateFee1Broker: '', lateFee1Total: '', lateFee1Maximum: '',
+  lateFee2Lender: '', lateFee2Company: '', lateFee2Broker: '', lateFee2Total: '', lateFee2Maximum: '',
+  defaultInterestLender: '', defaultInterestCompany: '', defaultInterestBroker: '', defaultInterestTotal: '', defaultInterestMaximum: '',
+  interestGuaranteeLender: '', interestGuaranteeCompany: '', interestGuaranteeBroker: '', interestGuaranteeTotal: '', interestGuaranteeMaximum: '',
+  prepaymentLender: '', prepaymentCompany: '', prepaymentBroker: '', prepaymentTotal: '', prepaymentMaximum: '',
+  maturityLender: '', maturityCompany: '', maturityBroker: '', maturityTotal: '', maturityMaximum: '',
 });
 
 export const AddFundingModal: React.FC<AddFundingModalProps> = ({
@@ -131,7 +152,21 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   editingRecordId,
 }) => {
   const getInitialFormData = (): FundingFormData => {
-    if (editData) return { ...editData, loan: loanNumber || editData.loan, borrower: borrowerName || editData.borrower };
+    if (editData) {
+      return {
+        ...editData,
+        loan: loanNumber || editData.loan,
+        borrower: borrowerName || editData.borrower,
+        roundingAdjustment: editData.roundingAdjustment ?? false,
+        disbursements: editData.disbursements?.length ? editData.disbursements : defaultDisbursements(),
+        lateFee1Maximum: editData.lateFee1Maximum ?? '',
+        lateFee2Maximum: editData.lateFee2Maximum ?? '',
+        defaultInterestMaximum: editData.defaultInterestMaximum ?? '',
+        interestGuaranteeMaximum: editData.interestGuaranteeMaximum ?? '',
+        prepaymentMaximum: editData.prepaymentMaximum ?? '',
+        maturityMaximum: editData.maturityMaximum ?? '',
+      };
+    }
     return getDefaultFormData(loanNumber, borrowerName, noteRate, soldRate);
   };
 
@@ -207,7 +242,15 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const isFormFilled = hasModalFormData(formData, ['loan', 'borrower', 'rateSelection', 'rateNoteValue', 'rateSoldValue', 'percentOwned', 'regularPayment', 'lenderRate'], { brokerParticipates: false, overrideServicingFees: false, overrideDefaultFees: false });
+  const handleDisbursementChange = (index: number, field: keyof DisbursementRow, value: string) => {
+    setFormData(prev => {
+      const updated = [...prev.disbursements];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, disbursements: updated };
+    });
+  };
+
+  const isFormFilled = hasModalFormData(formData, ['loan', 'borrower', 'rateSelection', 'rateNoteValue', 'rateSoldValue', 'percentOwned', 'regularPayment', 'lenderRate', 'disbursements'], { brokerParticipates: false, overrideServicingFees: false, overrideDefaultFees: false, roundingAdjustment: false });
 
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = () => {
@@ -255,39 +298,39 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     formData.maturityLender, formData.maturityCompany, formData.maturityBroker,
   ]);
 
-  const renderServicingRow = (label: string, feeField: keyof FundingFormData, pctField: keyof FundingFormData) => (
+  const renderServicingRow = (label: string, feeField: keyof FundingFormData, pctField?: keyof FundingFormData) => (
     <div className="flex items-center gap-2">
-      <Label className="text-xs text-foreground font-medium min-w-[140px] shrink-0">{label}</Label>
+      <Label className="text-xs text-foreground font-medium min-w-[100px] shrink-0">{label}</Label>
       <div className="relative w-24">
         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
         <Input value={formData[feeField] as string} onChange={(e) => handleChange(feeField, e.target.value.replace(/[^0-9.]/g, ''))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => handleChange(feeField, val))} onBlur={() => { const raw = formData[feeField] as string; if (raw) handleChange(feeField, formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = formData[feeField] as string; if (raw) handleChange(feeField, unformatCurrencyDisplay(raw)); }} className="h-7 text-xs pl-5" inputMode="decimal" placeholder="-" />
       </div>
-      <span className="text-xs text-muted-foreground">Plus</span>
-      <div className="relative w-20">
-        <Input value={formData[pctField] as string} onChange={(e) => handleChange(pctField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs pr-5" inputMode="decimal" placeholder="0%" />
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
-      </div>
+      {pctField && (
+        <div className="relative w-20">
+          <Input value={formData[pctField] as string} onChange={(e) => handleChange(pctField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs pr-5" inputMode="decimal" placeholder="0%" />
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+        </div>
+      )}
     </div>
   );
 
-  const renderDefaultFeeRow = (label: string, lenderField: keyof FundingFormData, companyField: keyof FundingFormData, brokerField: keyof FundingFormData, totalField: keyof FundingFormData) => (
-    <div className="flex items-center gap-2">
-      <Label className="text-xs text-foreground font-medium min-w-[120px] shrink-0">{label}</Label>
-      <div className="relative w-16">
-        <Input value={formData[lenderField] as string} onChange={(e) => handleChange(lenderField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs pr-4 text-right" inputMode="decimal" placeholder="0%" />
-        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+  const renderDefaultFeeRow = (label: string, lenderField: keyof FundingFormData, companyField: keyof FundingFormData, brokerField: keyof FundingFormData, totalField: keyof FundingFormData, maximumField: keyof FundingFormData) => (
+    <div className="flex items-center gap-1.5">
+      <Label className="text-xs text-foreground font-medium min-w-[110px] shrink-0">{label}</Label>
+      <div className="relative w-14">
+        <Input value={formData[lenderField] as string} onChange={(e) => handleChange(lenderField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs text-right" inputMode="decimal" placeholder="" />
       </div>
-      <div className="relative w-16">
-        <Input value={formData[companyField] as string} onChange={(e) => handleChange(companyField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs pr-4 text-right" inputMode="decimal" placeholder="0%" />
-        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+      <div className="relative w-14">
+        <Input value={formData[companyField] as string} onChange={(e) => handleChange(companyField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs text-right" inputMode="decimal" placeholder="" />
       </div>
-      <div className="relative w-16">
-        <Input value={formData[brokerField] as string} onChange={(e) => handleChange(brokerField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs pr-4 text-right" inputMode="decimal" placeholder="0%" />
-        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+      <div className="relative w-14">
+        <Input value={formData[brokerField] as string} onChange={(e) => handleChange(brokerField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs text-right" inputMode="decimal" placeholder="" />
       </div>
-      <div className="relative w-16">
-        <Input value={formData[totalField] as string} disabled className="h-7 text-xs pr-4 text-right opacity-50 bg-muted" placeholder="0%" />
-        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+      <div className="relative w-14">
+        <Input value={formData[totalField] as string} disabled className="h-7 text-xs text-right opacity-50 bg-muted" placeholder="" />
+      </div>
+      <div className="relative w-14">
+        <Input value={formData[maximumField] as string} onChange={(e) => handleChange(maximumField, e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs text-right" inputMode="decimal" placeholder="" />
       </div>
     </div>
   );
@@ -295,27 +338,17 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader className="shrink-0">
-          <DialogTitle>{isEditing ? 'Edit Funding' : 'Add Funding'}</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Funding' : 'Add / Edit Funding'}</DialogTitle>
+          <div className="text-sm text-muted-foreground">Account: {loanNumber || formData.loan}</div>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto min-h-0 space-y-3 py-3 sleek-scrollbar">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-              {/* Loan Account - auto-populated, read-only */}
-              <div className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Loan Account</Label>
-                <Input value={loanNumber || formData.loan} disabled className="h-7 text-sm opacity-50 bg-muted" />
-              </div>
-              {/* Borrower - auto-populated input with borrower name from Loan Details */}
-              <div className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Borrower</Label>
-                <Input
-                  value={borrowerName || formData.borrower}
-                  disabled
-                  className="h-8 bg-muted opacity-50"
-                />
-              </div>
+          {/* Top Section: Two columns - Fields left, Disbursements right */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-3">
+            {/* Left Column: Basic Fields */}
+            <div className="space-y-2">
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender ID</Label>
                 <LenderIdSearch
@@ -330,15 +363,15 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 />
               </div>
               <div className="flex items-center gap-3">
+                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender Name</Label>
+                <Input value={formData.lenderFullName} readOnly disabled className="h-7 text-sm bg-muted opacity-50" />
+              </div>
+              <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Funding Amount</Label>
                 <div className="relative flex-1">
                   <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
                   <Input type="text" inputMode="decimal" value={formData.fundingAmount} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); handleChange('fundingAmount', v); }} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => handleChange('fundingAmount', val))} onBlur={() => { const raw = formData.fundingAmount; if (raw) handleChange('fundingAmount', formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = formData.fundingAmount; if (raw) handleChange('fundingAmount', unformatCurrencyDisplay(raw)); }} placeholder="0.00" className="h-7 text-sm pl-6" />
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Lender Name</Label>
-                <Input value={formData.lenderFullName} readOnly disabled className="h-7 text-sm opacity-50 bg-muted" />
               </div>
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Funding Date</Label>
@@ -352,7 +385,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   <PopoverContent className="w-auto p-0 z-[9999]" align="start"><EnhancedCalendar mode="single" selected={fundingDate} onSelect={(d) => { setFundingDate(d); setFundingDateOpen(false); }} onClear={() => { setFundingDate(undefined); setFundingDateOpen(false); }} onToday={() => { setFundingDate(new Date()); setFundingDateOpen(false); }} initialFocus /></PopoverContent>
                 </Popover>
               </div>
-
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Interest From</Label>
                 <Popover open={interestFromOpen} onOpenChange={setInterestFromOpen} modal={false}>
@@ -365,114 +397,161 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   <PopoverContent className="w-auto p-0 z-[9999]" align="start"><EnhancedCalendar mode="single" selected={interestFromDate} onSelect={(d) => { setInterestFromDate(d); setInterestFromOpen(false); }} onClear={() => { setInterestFromDate(undefined); setInterestFromOpen(false); }} onToday={() => { setInterestFromDate(new Date()); setInterestFromOpen(false); }} initialFocus /></PopoverContent>
                 </Popover>
               </div>
-            </div>
-
-            {/* Rate Selection */}
-            <div className="space-y-2 mt-2">
-              <div className="border-b border-border pb-1">
-                <span className="font-semibold text-sm text-primary">Rate Selection</span>
-              </div>
-              <RadioGroup value={formData.rateSelection} onValueChange={(val) => handleChange('rateSelection', val)} className="flex items-center gap-6 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="note_rate" id="rate-note" />
-                  <Label htmlFor="rate-note" className="text-sm">Note Rate</Label>
-                  <div className="relative w-28">
-                    <Input type="text" inputMode="decimal" value={formData.rateNoteValue} onChange={(e) => handleChange('rateNoteValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", formData.rateSelection !== 'note_rate' && 'opacity-50 bg-muted')} disabled={formData.rateSelection !== 'note_rate'} placeholder="0.000" />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="sold_rate" id="rate-sold" />
-                  <Label htmlFor="rate-sold" className="text-sm">Sold Rate</Label>
-                  <div className="relative w-28">
-                    <Input type="text" inputMode="decimal" value={formData.rateSoldValue} onChange={(e) => handleChange('rateSoldValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", formData.rateSelection !== 'sold_rate' && 'opacity-50 bg-muted')} disabled={formData.rateSelection !== 'sold_rate'} placeholder="0.000" />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="lender_rate" id="rate-lender" />
-                  <Label htmlFor="rate-lender" className="text-sm">Lender Rate</Label>
-                  <div className="relative w-28">
-                    <Input type="text" inputMode="decimal" value={formData.rateLenderValue} onChange={(e) => handleChange('rateLenderValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", formData.rateSelection !== 'lender_rate' && 'opacity-50 bg-muted')} disabled={formData.rateSelection !== 'lender_rate'} placeholder="0.000" />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
-                  </div>
-                </div>
-              </RadioGroup>
-            </div>
-
-             <div className="flex items-center gap-6 flex-wrap mt-1">
               <div className="flex items-center gap-2">
-                <Label className={cn("text-sm shrink-0", percentOwnedError ? "text-destructive font-medium" : "text-muted-foreground")}>Percent Owned</Label>
+                <Checkbox id="roundingAdjustment" checked={formData.roundingAdjustment} onCheckedChange={(checked) => handleChange('roundingAdjustment', !!checked)} />
+                <Label htmlFor="roundingAdjustment" className="text-sm font-medium leading-tight cursor-pointer">Rounding Adjustment</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="brokerParticipates" checked={formData.brokerParticipates} onCheckedChange={(checked) => handleChange('brokerParticipates', !!checked)} />
+                <Label htmlFor="brokerParticipates" className="text-sm font-medium leading-tight cursor-pointer">Lender is the Broker or Employee, Family Member of Broker</Label>
+              </div>
+            </div>
+
+            {/* Right Column: Disbursements */}
+            <div className="space-y-1">
+              <p className="text-xs text-destructive font-medium">Note: Disbursements will be for payments deducted from outgoing lender payments</p>
+              <div className="border-b border-border pb-1">
+                <span className="font-semibold text-sm text-foreground">Disbursements</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Account ID</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Name</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">$</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[50px]">%</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Comments</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {formData.disbursements.map((row, idx) => (
+                      <tr key={idx}>
+                        <td className="py-0.5 px-1">
+                          <Input value={row.accountId} onChange={(e) => handleDisbursementChange(idx, 'accountId', e.target.value)} className="h-7 text-xs" placeholder="" />
+                        </td>
+                        <td className="py-0.5 px-1">
+                          <Input value={row.name} onChange={(e) => handleDisbursementChange(idx, 'name', e.target.value)} className="h-7 text-xs" placeholder="" />
+                        </td>
+                        <td className="py-0.5 px-1">
+                          <Input value={row.amount} onChange={(e) => handleDisbursementChange(idx, 'amount', e.target.value.replace(/[^0-9.]/g, ''))} onKeyDown={numericKeyDown} className="h-7 text-xs" inputMode="decimal" placeholder="" />
+                        </td>
+                        <td className="py-0.5 px-1">
+                          <Input value={row.percentage} onChange={(e) => handleDisbursementChange(idx, 'percentage', e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs" inputMode="decimal" placeholder="" />
+                        </td>
+                        <td className="py-0.5 px-1">
+                          <Input value={row.comments} onChange={(e) => handleDisbursementChange(idx, 'comments', e.target.value)} className="h-7 text-xs" placeholder="" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-border" />
+
+          {/* Bottom Section: Override Fees and Splits + Override Default Fees */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
+            {/* Left: Override Fees and Splits */}
+            <div className="space-y-2">
+              <div className="border-b border-border pb-1">
+                <span className="font-semibold text-sm text-foreground">Override Fees and Splits</span>
+              </div>
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-muted-foreground underline">Company</div>
+                {renderServicingRow('Servicing Fee', 'companyServicingFee', 'companyServicingFeePct')}
+                {renderServicingRow('Minimum', 'companyMinFee')}
+                {renderServicingRow('Maximum', 'companyMaxFee')}
+                <div className="text-xs font-semibold text-muted-foreground underline mt-2">Broker</div>
+                {renderServicingRow('Servicing Fee', 'brokerServicingFee', 'brokerServicingFeePct')}
+                {renderServicingRow('Minimum', 'brokerMinFee')}
+                {renderServicingRow('Maximum', 'brokerMaxFee')}
+              </div>
+            </div>
+
+            {/* Right: Override Default Fees */}
+            <div className="space-y-2">
+              <div className="border-b border-border pb-1">
+                <span className="font-semibold text-sm text-foreground">Override Default Fees</span>
+              </div>
+              <div className="space-y-1.5">
+                {/* Column headers */}
+                <div className="flex items-center gap-1.5">
+                  <div className="min-w-[110px]" />
+                  <span className="text-[10px] font-semibold text-muted-foreground w-14 text-center">Lender</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground w-14 text-center">Company</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground w-14 text-center">Broker</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground w-14 text-center">Total %</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground w-14 text-center">Maximum</span>
+                </div>
+                {renderDefaultFeeRow('Late Fee 1', 'lateFee1Lender', 'lateFee1Company', 'lateFee1Broker', 'lateFee1Total', 'lateFee1Maximum')}
+                {renderDefaultFeeRow('Late Fee 2', 'lateFee2Lender', 'lateFee2Company', 'lateFee2Broker', 'lateFee2Total', 'lateFee2Maximum')}
+                {renderDefaultFeeRow('Default Interest', 'defaultInterestLender', 'defaultInterestCompany', 'defaultInterestBroker', 'defaultInterestTotal', 'defaultInterestMaximum')}
+                {renderDefaultFeeRow('Interest Guarantee', 'interestGuaranteeLender', 'interestGuaranteeCompany', 'interestGuaranteeBroker', 'interestGuaranteeTotal', 'interestGuaranteeMaximum')}
+                {renderDefaultFeeRow('Prepayment', 'prepaymentLender', 'prepaymentCompany', 'prepaymentBroker', 'prepaymentTotal', 'prepaymentMaximum')}
+                {renderDefaultFeeRow('Maturity', 'maturityLender', 'maturityCompany', 'maturityBroker', 'maturityTotal', 'maturityMaximum')}
+              </div>
+            </div>
+          </div>
+
+          {/* Rate Selection - kept for calculation logic */}
+          <div className="space-y-2 mt-2">
+            <div className="border-b border-border pb-1">
+              <span className="font-semibold text-sm text-primary">Rate Selection</span>
+            </div>
+            <RadioGroup value={formData.rateSelection} onValueChange={(val) => handleChange('rateSelection', val)} className="flex items-center gap-6 flex-wrap">
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="note_rate" id="rate-note" />
+                <Label htmlFor="rate-note" className="text-sm">Note Rate</Label>
                 <div className="relative w-28">
-                  <Input type="text" inputMode="decimal" value={formData.percentOwned} disabled className={cn("h-7 text-sm pr-6 opacity-50 bg-muted", percentOwnedError && "border-destructive")} placeholder="0.000" />
+                  <Input type="text" inputMode="decimal" value={formData.rateNoteValue} onChange={(e) => handleChange('rateNoteValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", formData.rateSelection !== 'note_rate' && 'opacity-50 bg-muted')} disabled={formData.rateSelection !== 'note_rate'} placeholder="0.000" />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
                 </div>
               </div>
-              {percentOwnedError && (
-                <span className="text-xs text-destructive font-medium">Percent Owned cannot exceed 100%</span>
-              )}
-              {!percentOwnedError && totalPercentError && (
-                <span className="text-xs text-destructive font-medium">Total ownership across all lenders cannot exceed 100% (currently {projectedTotal.toFixed(3)}%)</span>
-              )}
               <div className="flex items-center gap-2">
-                <Label className="text-sm text-muted-foreground shrink-0">Regular Payment</Label>
+                <RadioGroupItem value="sold_rate" id="rate-sold" />
+                <Label htmlFor="rate-sold" className="text-sm">Sold Rate</Label>
                 <div className="relative w-28">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-                  <Input type="text" inputMode="decimal" value={formData.regularPayment ? formatCurrencyDisplay(formData.regularPayment) : ''} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
+                  <Input type="text" inputMode="decimal" value={formData.rateSoldValue} onChange={(e) => handleChange('rateSoldValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", formData.rateSelection !== 'sold_rate' && 'opacity-50 bg-muted')} disabled={formData.rateSelection !== 'sold_rate'} placeholder="0.000" />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
                 </div>
               </div>
-            </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="lender_rate" id="rate-lender" />
+                <Label htmlFor="rate-lender" className="text-sm">Lender Rate</Label>
+                <div className="relative w-28">
+                  <Input type="text" inputMode="decimal" value={formData.rateLenderValue} onChange={(e) => handleChange('rateLenderValue', e.target.value.replace(/[^0-9.]/g, ''))} className={cn("h-7 text-sm pr-6", formData.rateSelection !== 'lender_rate' && 'opacity-50 bg-muted')} disabled={formData.rateSelection !== 'lender_rate'} placeholder="0.000" />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+                </div>
+              </div>
+            </RadioGroup>
+          </div>
 
-            {/* Broker checkbox */}
+          <div className="flex items-center gap-6 flex-wrap mt-1">
             <div className="flex items-center gap-2">
-              <Checkbox id="brokerParticipates" checked={formData.brokerParticipates} onCheckedChange={(checked) => handleChange('brokerParticipates', !!checked)} />
-              <Label htmlFor="brokerParticipates" className="text-sm font-medium leading-tight cursor-pointer">Lender is: The Broker, Employee or Family of Broker</Label>
-            </div>
-
-            {/* Servicing Fees & Default Fees Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4 mt-4">
-              {/* Left: Override Standard Servicing Fees */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Checkbox id="overrideServicingFees" checked={formData.overrideServicingFees} onCheckedChange={(c) => handleChange('overrideServicingFees', !!c)} />
-                  <Label htmlFor="overrideServicingFees" className="text-sm font-semibold text-foreground">Override Standard Servicing Fees</Label>
-                </div>
-                <div className="space-y-2 pl-2">
-                    <div className="text-xs font-semibold text-muted-foreground mb-1 ml-[140px]">To Company</div>
-                    {renderServicingRow('Monthly Servicing Fee', 'companyServicingFee', 'companyServicingFeePct')}
-                    {renderServicingRow('Maximum', 'companyMaxFee', 'companyMaxFeePct')}
-                    {renderServicingRow('Minimum', 'companyMinFee', 'companyMinFeePct')}
-                    <div className="text-xs font-semibold text-muted-foreground mt-2 mb-1 ml-[140px]">To Broker</div>
-                    {renderServicingRow('Monthly Servicing Fee', 'brokerServicingFee', 'brokerServicingFeePct')}
-                    {renderServicingRow('Maximum', 'brokerMaxFee', 'brokerMaxFeePct')}
-                    {renderServicingRow('Minimum', 'brokerMinFee', 'brokerMinFeePct')}
-                </div>
-              </div>
-
-              {/* Right: Override Default Fees */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Checkbox id="overrideDefaultFees" checked={formData.overrideDefaultFees} onCheckedChange={(c) => handleChange('overrideDefaultFees', !!c)} />
-                  <Label htmlFor="overrideDefaultFees" className="text-sm font-semibold text-foreground">Override Default Fees Fees</Label>
-                </div>
-                <div className="space-y-1.5 pl-2">
-                    {/* Column headers */}
-                    <div className="flex items-center gap-2">
-                      <div className="min-w-[120px]" />
-                      <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Lender</span>
-                      <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Company</span>
-                      <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Broker</span>
-                      <span className="text-[10px] font-semibold text-muted-foreground w-16 text-center">Total</span>
-                    </div>
-                    {renderDefaultFeeRow('Late Fee 1', 'lateFee1Lender', 'lateFee1Company', 'lateFee1Broker', 'lateFee1Total')}
-                    {renderDefaultFeeRow('Late Fee 2', 'lateFee2Lender', 'lateFee2Company', 'lateFee2Broker', 'lateFee2Total')}
-                    {renderDefaultFeeRow('Default Interest', 'defaultInterestLender', 'defaultInterestCompany', 'defaultInterestBroker', 'defaultInterestTotal')}
-                    {renderDefaultFeeRow('Interest Guarantee', 'interestGuaranteeLender', 'interestGuaranteeCompany', 'interestGuaranteeBroker', 'interestGuaranteeTotal')}
-                    {renderDefaultFeeRow('Prepayment', 'prepaymentLender', 'prepaymentCompany', 'prepaymentBroker', 'prepaymentTotal')}
-                    {renderDefaultFeeRow('Maturity', 'maturityLender', 'maturityCompany', 'maturityBroker', 'maturityTotal')}
-                </div>
+              <Label className={cn("text-sm shrink-0", percentOwnedError ? "text-destructive font-medium" : "text-muted-foreground")}>Percent Owned</Label>
+              <div className="relative w-28">
+                <Input type="text" inputMode="decimal" value={formData.percentOwned} disabled className={cn("h-7 text-sm pr-6 opacity-50 bg-muted", percentOwnedError && "border-destructive")} placeholder="0.000" />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
               </div>
             </div>
+            {percentOwnedError && (
+              <span className="text-xs text-destructive font-medium">Percent Owned cannot exceed 100%</span>
+            )}
+            {!percentOwnedError && totalPercentError && (
+              <span className="text-xs text-destructive font-medium">Total ownership across all lenders cannot exceed 100% (currently {projectedTotal.toFixed(3)}%)</span>
+            )}
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground shrink-0">Regular Payment</Label>
+              <div className="relative w-28">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
+                <Input type="text" inputMode="decimal" value={formData.regularPayment ? formatCurrencyDisplay(formData.regularPayment) : ''} disabled className="h-7 text-sm pl-6 opacity-50 bg-muted" placeholder="0.00" />
+              </div>
+            </div>
+          </div>
         </div>
 
         <DialogFooter className="shrink-0 border-t border-border pt-3">
