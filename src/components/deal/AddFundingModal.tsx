@@ -15,8 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CalendarIcon, Plus, Trash2 } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { LenderIdSearch } from './LenderIdSearch';
@@ -38,11 +37,7 @@ interface AddFundingModalProps {
   editingRecordId?: string;
 }
 
-export const DISBURSEMENT_TYPES = ['Fee', 'Charge', 'Adjustment'] as const;
-export type DisbursementType = typeof DISBURSEMENT_TYPES[number] | '';
-
 export interface DisbursementRow {
-  type: DisbursementType;
   accountId: string;
   name: string;
   amount: string;
@@ -50,7 +45,7 @@ export interface DisbursementRow {
   comments: string;
 }
 
-const emptyDisbursementRow = (): DisbursementRow => ({ type: '', accountId: '', name: '', amount: '', percentage: '', comments: '' });
+const emptyDisbursementRow = (): DisbursementRow => ({ accountId: '', name: '', amount: '', percentage: '', comments: '' });
 const defaultDisbursements = (): DisbursementRow[] => [emptyDisbursementRow(), emptyDisbursementRow(), emptyDisbursementRow(), emptyDisbursementRow()];
 
 export interface FundingFormData {
@@ -255,23 +250,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     });
   };
 
-  const handleAddDisbursement = () => {
-    setFormData(prev => ({ ...prev, disbursements: [...prev.disbursements, emptyDisbursementRow()] }));
-  };
-
-  const handleRemoveDisbursement = (index: number) => {
-    setFormData(prev => {
-      const updated = prev.disbursements.filter((_, i) => i !== index);
-      return { ...prev, disbursements: updated.length ? updated : [emptyDisbursementRow()] };
-    });
-  };
-
-  // Disbursement totals
-  const totalDisbursementAmount = formData.disbursements.reduce((sum, row) => sum + (parseFloat((row.amount || '').replace(/[$,]/g, '')) || 0), 0);
-  const fundingAmountNum = parseFloat((formData.fundingAmount || '').replace(/[$,]/g, '')) || 0;
-  const netPaymentToLender = fundingAmountNum - totalDisbursementAmount;
-  const disbursementExceedsTotal = totalDisbursementAmount > fundingAmountNum && fundingAmountNum > 0;
-
   const isFormFilled = hasModalFormData(formData, ['loan', 'borrower', 'rateSelection', 'rateNoteValue', 'rateSoldValue', 'rateLenderValue', 'percentOwned', 'regularPayment', 'lenderRate', 'disbursements'], { brokerParticipates: false, overrideServicingFees: false, overrideDefaultFees: false, roundingAdjustment: false });
 
   const handleSaveClick = () => setShowConfirm(true);
@@ -432,40 +410,23 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
             {/* Right Column: Disbursements */}
             <div className="space-y-1">
               <p className="text-xs text-destructive font-medium">Note: Disbursements will be for payments deducted from outgoing lender payments</p>
-              <div className="border-b border-border pb-1 flex items-center justify-between">
+              <div className="border-b border-border pb-1">
                 <span className="font-semibold text-sm text-foreground">Disbursements</span>
-                <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={handleAddDisbursement}>
-                  <Plus className="h-3 w-3 mr-1" /> Add Row
-                </Button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[90px]">Type</th>
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Account ID</th>
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Name</th>
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">$</th>
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[50px]">%</th>
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Comments</th>
-                      <th className="w-6"></th>
                     </tr>
                   </thead>
                   <tbody>
                     {formData.disbursements.map((row, idx) => (
                       <tr key={idx}>
-                        <td className="py-0.5 px-1">
-                          <Select value={row.type || ''} onValueChange={(val) => handleDisbursementChange(idx, 'type', val)}>
-                            <SelectTrigger className="h-7 text-xs">
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {DISBURSEMENT_TYPES.map(t => (
-                                <SelectItem key={t} value={t}>{t}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </td>
                         <td className="py-0.5 px-1">
                           <Input value={row.accountId} onChange={(e) => handleDisbursementChange(idx, 'accountId', e.target.value)} className="h-7 text-xs" placeholder="" />
                         </td>
@@ -473,7 +434,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                           <Input value={row.name} onChange={(e) => handleDisbursementChange(idx, 'name', e.target.value)} className="h-7 text-xs" placeholder="" />
                         </td>
                         <td className="py-0.5 px-1">
-                          <Input value={row.amount} onChange={(e) => handleDisbursementChange(idx, 'amount', e.target.value.replace(/[^0-9.]/g, ''))} onKeyDown={numericKeyDown} onBlur={() => { if (row.amount) handleDisbursementChange(idx, 'amount', formatCurrencyDisplay(row.amount)); }} onFocus={() => { if (row.amount) handleDisbursementChange(idx, 'amount', unformatCurrencyDisplay(row.amount)); }} className="h-7 text-xs" inputMode="decimal" placeholder="" />
+                          <Input value={row.amount} onChange={(e) => handleDisbursementChange(idx, 'amount', e.target.value.replace(/[^0-9.]/g, ''))} onKeyDown={numericKeyDown} className="h-7 text-xs" inputMode="decimal" placeholder="" />
                         </td>
                         <td className="py-0.5 px-1">
                           <Input value={row.percentage} onChange={(e) => handleDisbursementChange(idx, 'percentage', e.target.value.replace(/[^0-9.]/g, ''))} className="h-7 text-xs" inputMode="decimal" placeholder="" />
@@ -481,37 +442,10 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                         <td className="py-0.5 px-1">
                           <Input value={row.comments} onChange={(e) => handleDisbursementChange(idx, 'comments', e.target.value)} className="h-7 text-xs" placeholder="" />
                         </td>
-                        <td className="py-0.5 px-0.5">
-                          <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive" onClick={() => handleRemoveDisbursement(idx)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
-              {/* Summary Section */}
-              <div className="border-t border-border pt-2 mt-1 space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground font-medium">Total Payment (Funding Amount)</span>
-                  <span className="font-semibold text-foreground">${fundingAmountNum > 0 ? formatCurrencyDisplay(String(fundingAmountNum)) : '0.00'}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground font-medium">Total Disbursements</span>
-                  <span className={cn("font-semibold", disbursementExceedsTotal ? "text-destructive" : "text-foreground")}>
-                    -${totalDisbursementAmount > 0 ? formatCurrencyDisplay(String(totalDisbursementAmount)) : '0.00'}
-                  </span>
-                </div>
-                {disbursementExceedsTotal && (
-                  <p className="text-xs text-destructive">Disbursements cannot exceed funding amount</p>
-                )}
-                <div className="flex justify-between text-xs border-t border-border pt-1">
-                  <span className="text-foreground font-semibold">Net Payment to Lender</span>
-                  <span className={cn("font-bold", netPaymentToLender < 0 ? "text-destructive" : "text-foreground")}>
-                    ${formatCurrencyDisplay(String(Math.max(netPaymentToLender, 0).toFixed(2)))}
-                  </span>
-                </div>
               </div>
             </div>
           </div>
@@ -581,7 +515,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
         <DialogFooter className="shrink-0 border-t border-border pt-3">
           <Button variant="outline" size="sm" onClick={handleCancel}>Cancel</Button>
-          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || disbursementExceedsTotal}>{isEditing ? 'Update Funding' : 'Save Funding'}</Button>
+          <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>{isEditing ? 'Update Funding' : 'Save Funding'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
