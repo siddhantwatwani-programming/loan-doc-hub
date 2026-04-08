@@ -311,6 +311,8 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       rateLenderValue: data.rateLenderValue,
       brokerParticipates: data.brokerParticipates,
       interestFrom: data.interestFrom,
+      roundingAdjustment: data.roundingAdjustment,
+      disbursements: data.disbursements,
       overrideServicingFees: data.overrideServicingFees,
       companyServicingFee: data.companyServicingFee, companyServicingFeePct: data.companyServicingFeePct,
       companyMaxFee: data.companyMaxFee, companyMaxFeePct: data.companyMaxFeePct,
@@ -319,12 +321,12 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       brokerMaxFee: data.brokerMaxFee, brokerMaxFeePct: data.brokerMaxFeePct,
       brokerMinFee: data.brokerMinFee, brokerMinFeePct: data.brokerMinFeePct,
       overrideDefaultFees: data.overrideDefaultFees,
-      lateFee1Lender: data.lateFee1Lender, lateFee1Company: data.lateFee1Company, lateFee1Broker: data.lateFee1Broker, lateFee1Total: data.lateFee1Total,
-      lateFee2Lender: data.lateFee2Lender, lateFee2Company: data.lateFee2Company, lateFee2Broker: data.lateFee2Broker, lateFee2Total: data.lateFee2Total,
-      defaultInterestLender: data.defaultInterestLender, defaultInterestCompany: data.defaultInterestCompany, defaultInterestBroker: data.defaultInterestBroker, defaultInterestTotal: data.defaultInterestTotal,
-      interestGuaranteeLender: data.interestGuaranteeLender, interestGuaranteeCompany: data.interestGuaranteeCompany, interestGuaranteeBroker: data.interestGuaranteeBroker, interestGuaranteeTotal: data.interestGuaranteeTotal,
-      prepaymentLender: data.prepaymentLender, prepaymentCompany: data.prepaymentCompany, prepaymentBroker: data.prepaymentBroker, prepaymentTotal: data.prepaymentTotal,
-      maturityLender: data.maturityLender, maturityCompany: data.maturityCompany, maturityBroker: data.maturityBroker, maturityTotal: data.maturityTotal,
+      lateFee1Lender: data.lateFee1Lender, lateFee1Company: data.lateFee1Company, lateFee1Broker: data.lateFee1Broker, lateFee1Total: data.lateFee1Total, lateFee1Maximum: data.lateFee1Maximum,
+      lateFee2Lender: data.lateFee2Lender, lateFee2Company: data.lateFee2Company, lateFee2Broker: data.lateFee2Broker, lateFee2Total: data.lateFee2Total, lateFee2Maximum: data.lateFee2Maximum,
+      defaultInterestLender: data.defaultInterestLender, defaultInterestCompany: data.defaultInterestCompany, defaultInterestBroker: data.defaultInterestBroker, defaultInterestTotal: data.defaultInterestTotal, defaultInterestMaximum: data.defaultInterestMaximum,
+      interestGuaranteeLender: data.interestGuaranteeLender, interestGuaranteeCompany: data.interestGuaranteeCompany, interestGuaranteeBroker: data.interestGuaranteeBroker, interestGuaranteeTotal: data.interestGuaranteeTotal, interestGuaranteeMaximum: data.interestGuaranteeMaximum,
+      prepaymentLender: data.prepaymentLender, prepaymentCompany: data.prepaymentCompany, prepaymentBroker: data.prepaymentBroker, prepaymentTotal: data.prepaymentTotal, prepaymentMaximum: data.prepaymentMaximum,
+      maturityLender: data.maturityLender, maturityCompany: data.maturityCompany, maturityBroker: data.maturityBroker, maturityTotal: data.maturityTotal, maturityMaximum: data.maturityMaximum,
     };
 
     const updatedRecords = [...fundingRecords, newRecord];
