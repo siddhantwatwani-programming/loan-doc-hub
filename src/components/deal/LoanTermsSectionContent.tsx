@@ -6,6 +6,7 @@ import { LoanTermsDetailsForm } from './LoanTermsDetailsForm';
 import { LoanTermsPenaltiesForm } from './LoanTermsPenaltiesForm';
 import { LoanTermsServicingForm } from './LoanTermsServicingForm';
 import { DealSectionTab } from './DealSectionTab';
+import { EventJournalViewer } from './EventJournalViewer';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
