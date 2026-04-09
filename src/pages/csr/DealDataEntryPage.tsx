@@ -29,6 +29,7 @@ import { ChargesSectionContent } from "@/components/deal/ChargesSectionContent";
 import { OriginationFeesSectionContent } from "@/components/deal/OriginationFeesSectionContent";
 import { NotesSectionContent } from "@/components/deal/NotesSectionContent";
 import { EventJournalViewer } from "@/components/deal/EventJournalViewer";
+import { LoanHistoryViewer } from "@/components/deal/LoanHistoryViewer";
 import { ParticipantsSectionContent } from "@/components/deal/ParticipantsSectionContent";
 import { logDealUpdated, logDealMarkedReady, logDealRevertedToDraft } from "@/hooks/useActivityLog";
 import {
@@ -63,7 +64,7 @@ interface Deal {
 
 // Section labels for display (partial - only includes displayable main sections)
 const SECTION_LABELS: Partial<
-  Record<FieldSection | "origination_fees" | "funding" | "event_journal" | "liens" | "participants", string>
+  Record<FieldSection | "origination_fees" | "funding" | "event_journal" | "liens" | "participants" | "history", string>
 > = {
   participants: "Participants",
   property: "Property",
@@ -74,6 +75,7 @@ const SECTION_LABELS: Partial<
   
   notes: "Conversation Log",
   event_journal: "Events Journal",
+  history: "History",
   seller: "Seller",
   other: "Other",
   origination_fees: "Other Origination",
@@ -89,6 +91,7 @@ const SECTION_ORDER: string[] = [
   "funding",
   "charges",
   "notes",
+  "history",
   "event_journal",
   "other",
   "origination_fees",
@@ -872,6 +875,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                   if (!allTabs.includes("liens" as any)) allTabs.push("liens" as any);
                   if (!allTabs.includes("funding" as any)) allTabs.push("funding" as any);
                   
+                  if (!allTabs.includes("history" as any)) allTabs.push("history" as any);
                   if (!allTabs.includes("event_journal" as any)) allTabs.push("event_journal" as any);
                 }
 
@@ -1124,6 +1128,11 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                 calculationResults={calculationResults}
                 dealId={id || ""}
               />
+            </TabsContent>
+
+            {/* Loan History */}
+            <TabsContent value="history" forceMount className={cn("animate-fade-in", activeTab !== "history" && "hidden")}>
+              <LoanHistoryViewer dealId={id || ""} disabled={isSectionDisabledByFormPerm("history")} />
             </TabsContent>
 
             {/* Event Journal */}
