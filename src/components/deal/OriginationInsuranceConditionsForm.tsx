@@ -143,12 +143,17 @@ export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceCo
               <Label className="text-xs shrink-0">Minimum Carrier Rating:</Label>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
-              {renderCheckbox('A-', FK.carrier_a_minus)}
-              {renderCheckbox('A', FK.carrier_a)}
-              {renderCheckbox('A+', FK.carrier_a_plus)}
+              <DirtyFieldWrapper fieldKey={FK.carrier_a_minus}>
+                <Label className="text-xs cursor-pointer">A-</Label>
+              </DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FK.carrier_a}>
+                <Label className="text-xs cursor-pointer">A</Label>
+              </DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FK.carrier_a_plus}>
+                <Label className="text-xs cursor-pointer">A+</Label>
+              </DirtyFieldWrapper>
               <DirtyFieldWrapper fieldKey={FK.carrier_other}>
                 <div className="flex items-center gap-1">
-                  <Checkbox checked={bv(FK.carrier_other)} onCheckedChange={(c) => sbv(FK.carrier_other, !!c)} disabled={disabled} />
                   <Label className="text-xs">Other:</Label>
                   <Input value={v(FK.carrier_other_text)} onChange={(e) => sv(FK.carrier_other_text, e.target.value)}
                     disabled={disabled} className="h-6 text-xs w-[70px]" />
