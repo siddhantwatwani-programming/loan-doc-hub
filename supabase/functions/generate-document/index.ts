@@ -486,7 +486,22 @@ async function generateSingleDocument(
         const lc = contactRowsByUuid.get(primaryLender.contact_id);
         if (lc) {
           injectContact(lc, ["lender1", "lender"], "ld_p");
-          debugLog(`[generate-document] Injected lender contact fields from participant (contact ${lc.contact_id})`);
+
+          // Bridge lender name to ld_p_lenderName / lender.name so template tags
+          // like «Lender_Name» (which resolve via alias to lender.name → ld_p_lenderName)
+          // can find the value.
+          const lcd = lc.contact_data || {};
+          const lFirstName = lcd.first_name || lc.first_name || "";
+          const lMiddleName = lcd.middle_initial || "";
+          const lLastName = lcd.last_name || lc.last_name || "";
+          const lAssembledName = [lFirstName, lMiddleName, lLastName].filter(Boolean).join(" ");
+          const lFullName = lAssembledName || lcd.full_name || lc.full_name || "";
+          setIfEmpty("ld_p_lenderName", lFullName);
+          setIfEmpty("lender.name", lFullName);
+          setIfEmpty("Lender.Name", lFullName);
+          setIfEmpty("ld_p_fullNameIfEntity", lFullName);
+
+          debugLog(`[generate-document] Injected lender contact fields from participant (contact ${lc.contact_id}), lenderName="${lFullName}"`);
         }
       }
 
