@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
-import { numericKeyDown, numericPaste, integerKeyDown, integerPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
+import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationInsuranceConditionsFormProps {
@@ -54,6 +54,45 @@ const FK = {
   coverage_loss_rents_per_month: 'origination_ins.coverage_loss_rents_per_month',
   coverage_loss_rents_months: 'origination_ins.coverage_loss_rents_months',
   coverage_loss_rents_total: 'origination_ins.coverage_loss_rents_total',
+
+  // Other Coverage
+  oc_general_liability: 'origination_ins.oc_general_liability',
+  oc_general_liability_amount: 'origination_ins.oc_general_liability_amount',
+  oc_flood: 'origination_ins.oc_flood',
+  oc_earthquake: 'origination_ins.oc_earthquake',
+  oc_wind_hail: 'origination_ins.oc_wind_hail',
+  oc_wind_hail_amount: 'origination_ins.oc_wind_hail_amount',
+  oc_umbrella: 'origination_ins.oc_umbrella',
+  oc_umbrella_months: 'origination_ins.oc_umbrella_months',
+  oc_umbrella_per: 'origination_ins.oc_umbrella_per',
+  oc_loss_of_rents: 'origination_ins.oc_loss_of_rents',
+  oc_vacancy: 'origination_ins.oc_vacancy',
+  oc_other: 'origination_ins.oc_other',
+  oc_other_amount: 'origination_ins.oc_other_amount',
+
+  // Required Endorsement
+  re_mortgagee: 'origination_ins.re_mortgagee',
+  re_loss_payee: 'origination_ins.re_loss_payee',
+  re_additional_insured: 'origination_ins.re_additional_insured',
+  re_builders_risk: 'origination_ins.re_builders_risk',
+
+  // Send Notices
+  sn_lenders: 'origination_ins.sn_lenders',
+  sn_servicing_agent: 'origination_ins.sn_servicing_agent',
+  sn_broker: 'origination_ins.sn_broker',
+
+  // Multiple Lenders
+  ml_endorse_behalf: 'origination_ins.ml_endorse_behalf',
+  ml_authorized_endorse: 'origination_ins.ml_authorized_endorse',
+
+  // Special Endorsement
+  special_endorsement: 'origination_ins.special_endorsement',
+
+  // Policy - Other & Replacement Cost & Dollar amount
+  policy_other: 'origination_ins.policy_other',
+  policy_other_text: 'origination_ins.policy_other_text',
+  policy_replacement_cost: 'origination_ins.policy_replacement_cost',
+  policy_dollar_amount: 'origination_ins.policy_dollar_amount',
 };
 
 export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceConditionsFormProps> = ({
@@ -70,139 +109,174 @@ export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceCo
     <DirtyFieldWrapper fieldKey={key}>
       <div className="flex items-center gap-2">
         <Checkbox checked={bv(key)} onCheckedChange={(c) => sbv(key, !!c)} disabled={disabled} />
-        <Label className="text-sm cursor-pointer">{label}</Label>
+        <Label className="text-xs cursor-pointer">{label}</Label>
       </div>
     </DirtyFieldWrapper>
   );
 
-  const renderCurrencyInline = (key: string, placeholder?: string) => (
-    <div className="relative inline-flex w-[120px]">
-      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-      <Input
-        type="text" inputMode="decimal" value={v(key)}
-        onChange={(e) => sv(key, unformatCurrencyDisplay(e.target.value))}
-        onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => sv(key, val))}
-        onBlur={() => { const raw = v(key); if (raw) sv(key, formatCurrencyDisplay(raw)); }}
-        onFocus={() => { const raw = v(key); if (raw) sv(key, unformatCurrencyDisplay(raw)); }}
-        disabled={disabled} placeholder={placeholder || '0.00'} className="h-7 text-sm pl-6 text-right"
-      />
-    </div>
+  const renderCurrencyInline = (key: string, width = 'w-[90px]', placeholder = '0.00') => (
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className={`relative inline-flex ${width}`}>
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+        <Input
+          type="text" inputMode="decimal" value={v(key)}
+          onChange={(e) => sv(key, unformatCurrencyDisplay(e.target.value))}
+          onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => sv(key, val))}
+          onBlur={() => { const raw = v(key); if (raw) sv(key, formatCurrencyDisplay(raw)); }}
+          onFocus={() => { const raw = v(key); if (raw) sv(key, unformatCurrencyDisplay(raw)); }}
+          disabled={disabled} placeholder={placeholder} className="h-6 text-xs pl-5 text-right"
+        />
+      </div>
+    </DirtyFieldWrapper>
   );
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-6">
-        {/* Column 1: Insurance */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Insurance</h3>
-          <div>
-            <Label className="text-sm">Minimum Carrier Rating:</Label>
-            <div className="flex items-center gap-4 mt-1 flex-wrap">
+    <div className="p-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-0">
+
+        {/* ===== LEFT COLUMN ===== */}
+        <div className="space-y-2 border-r border-border pr-4">
+          {/* Coverage Details */}
+          <h3 className="text-xs font-bold text-foreground border-b border-foreground pb-0.5 underline">Coverage Details</h3>
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center gap-1">
+              <Label className="text-xs shrink-0">Minimum Carrier Rating:</Label>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
               {renderCheckbox('A-', FK.carrier_a_minus)}
               {renderCheckbox('A', FK.carrier_a)}
               {renderCheckbox('A+', FK.carrier_a_plus)}
               <DirtyFieldWrapper fieldKey={FK.carrier_other}>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <Checkbox checked={bv(FK.carrier_other)} onCheckedChange={(c) => sbv(FK.carrier_other, !!c)} disabled={disabled} />
-                  <Label className="text-sm">Other:</Label>
+                  <Label className="text-xs">Other:</Label>
                   <Input value={v(FK.carrier_other_text)} onChange={(e) => sv(FK.carrier_other_text, e.target.value)}
-                    disabled={disabled} className="h-7 text-sm w-[100px]" />
+                    disabled={disabled} className="h-6 text-xs w-[70px]" />
                 </div>
               </DirtyFieldWrapper>
             </div>
-          </div>
-          <div className="space-y-2 pt-1">
-            {renderCheckbox('Lender to control insurance proceeds', FK.lender_control_proceeds)}
             <DirtyFieldWrapper fieldKey={FK.max_deductible}>
               <div className="flex items-center gap-2">
-                <Label className="text-sm shrink-0">Max Allowable Deductible:</Label>
-                {renderCurrencyInline(FK.max_deductible)}
+                <Label className="text-xs shrink-0">Maximum Deductible Allowed</Label>
+                {renderCurrencyInline(FK.max_deductible, 'w-[100px]')}
               </div>
             </DirtyFieldWrapper>
-            {renderCheckbox('Additional Insured on Liability Policy', FK.additional_insured_liability)}
-            {renderCheckbox("Additional Insured on Builder's Risk", FK.additional_insured_builders_risk)}
-            {renderCheckbox('Mortgagee', FK.mortgagee)}
           </div>
-          <DirtyFieldWrapper fieldKey={FK.mortgage_clause}>
-            <div className="pt-1">
-              <Label className="text-sm">Mortgage Clause</Label>
-              <Textarea value={v(FK.mortgage_clause)} onChange={(e) => sv(FK.mortgage_clause, e.target.value)}
-                disabled={disabled} className="mt-1 text-sm min-h-[60px]" />
-            </div>
-          </DirtyFieldWrapper>
-        </div>
 
-        {/* Column 2: Policy Types / Endorsements */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Policy Types / Endorsements</h3>
-          <div className="space-y-2">
-            {renderCheckbox('Property (Hazard) / Homeowners', FK.policy_property_hazard)}
-            {renderCheckbox('Dwelling Fire / Landlord Policy', FK.policy_dwelling_fire)}
-            {renderCheckbox("Builder's Risk Construction, Rehab, Ground-up", FK.policy_builders_risk)}
+          {/* Policy Endorsements and Coverage */}
+          <h3 className="text-xs font-bold text-foreground border-b border-foreground pb-0.5 underline pt-2">Policy Endorsements and Coverage</h3>
+          <div className="space-y-1 pt-1">
+            {renderCheckbox("Homeowner's Hazard Coverage", FK.policy_property_hazard)}
+            {renderCheckbox('Dwelling Fire', FK.policy_dwelling_fire)}
             {renderCheckbox('General Liability', FK.policy_general_liability)}
-            {renderCheckbox('Flood', FK.policy_flood)}
-            {renderCheckbox('Earthquake', FK.policy_earthquake)}
-            {renderCheckbox('Wind/Hail Named Storm', FK.policy_wind_hail)}
-            {renderCheckbox('Umbrella / Excess Liability', FK.policy_umbrella)}
-            {renderCheckbox('Loss of Rents / Business Income', FK.policy_loss_of_rents)}
-            {renderCheckbox('Vacancy Endorsement', FK.policy_vacancy)}
-            <div className="flex items-center gap-2 pt-1">
-              {renderCheckbox('Course-of-Construction Coverage Amount:', 'origination_ins.coverage_construction_checkbox')}
-              <DirtyFieldWrapper fieldKey={FK.policy_construction_amount}>
-                {renderCurrencyInline(FK.policy_construction_amount)}
-              </DirtyFieldWrapper>
-            </div>
+            {renderCheckbox("Builder's Risk (Construction, Rehab)", FK.policy_builders_risk)}
+            {renderCheckbox('Course of Construction', 'origination_ins.coverage_construction_checkbox')}
+            <DirtyFieldWrapper fieldKey={FK.policy_other}>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={bv(FK.policy_other)} onCheckedChange={(c) => sbv(FK.policy_other, !!c)} disabled={disabled} />
+                <Label className="text-xs">Other</Label>
+                <Input value={v(FK.policy_other_text)} onChange={(e) => sv(FK.policy_other_text, e.target.value)}
+                  disabled={disabled} className="h-6 text-xs flex-1" />
+              </div>
+            </DirtyFieldWrapper>
+            {renderCheckbox('Replacement Cost of Improvements, or', FK.coverage_replacement_cost)}
+            <DirtyFieldWrapper fieldKey={FK.policy_dollar_amount}>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={bv(FK.coverage_specific_dollar)} onCheckedChange={(c) => sbv(FK.coverage_specific_dollar, !!c)} disabled={disabled} />
+                {renderCurrencyInline(FK.coverage_specific_dollar_amount, 'w-[100px]')}
+              </div>
+            </DirtyFieldWrapper>
           </div>
         </div>
 
-        {/* Column 3: Coverage Limits */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Coverage Limits</h3>
-          <div className="space-y-2">
-            {renderCheckbox('At least the loan amount', FK.coverage_loan_amount)}
-            {renderCheckbox('Replacement cost estimate (from insurer)', FK.coverage_replacement_cost)}
-            <DirtyFieldWrapper fieldKey={FK.coverage_specific_dollar}>
-              <div className="flex items-center gap-2">
-                {renderCheckbox('A specific dollar amount:', FK.coverage_specific_dollar)}
-                {renderCurrencyInline(FK.coverage_specific_dollar_amount)}
-              </div>
-            </DirtyFieldWrapper>
-            <DirtyFieldWrapper fieldKey="origination_ins.coverage_flood_checkbox">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Checkbox checked={bv('origination_ins.coverage_flood_checkbox')} onCheckedChange={(c) => sbv('origination_ins.coverage_flood_checkbox', !!c)} disabled={disabled} />
-                <Label className="text-sm shrink-0">Flood: Building</Label>
-                {renderCurrencyInline(FK.coverage_flood_building)}
-                <Label className="text-sm shrink-0">/ Contents</Label>
-                {renderCurrencyInline(FK.coverage_flood_contents)}
-              </div>
-            </DirtyFieldWrapper>
-            <DirtyFieldWrapper fieldKey="origination_ins.coverage_earthquake_checkbox">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Checkbox checked={bv('origination_ins.coverage_earthquake_checkbox')} onCheckedChange={(c) => sbv('origination_ins.coverage_earthquake_checkbox', !!c)} disabled={disabled} />
-                <Label className="text-sm shrink-0">Earthquake:</Label>
-                {renderCurrencyInline(FK.coverage_earthquake_amount)}
-                <Label className="text-sm shrink-0">or</Label>
-                <Input value={v(FK.coverage_earthquake_percent)} onChange={(e) => sv(FK.coverage_earthquake_percent, e.target.value)}
-                  onKeyDown={integerKeyDown} onPaste={(e) => integerPaste(e, (val) => sv(FK.coverage_earthquake_percent, val))}
-                  disabled={disabled} placeholder="0" inputMode="numeric" className="h-7 text-sm w-[60px] text-right" />
-                <Label className="text-sm shrink-0">% of value</Label>
-              </div>
-            </DirtyFieldWrapper>
-            <DirtyFieldWrapper fieldKey="origination_ins.coverage_loss_rents_checkbox">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Checkbox checked={bv('origination_ins.coverage_loss_rents_checkbox')} onCheckedChange={(c) => sbv('origination_ins.coverage_loss_rents_checkbox', !!c)} disabled={disabled} />
-                <Label className="text-sm shrink-0">Loss of Rents:</Label>
-                {renderCurrencyInline(FK.coverage_loss_rents_per_month)}
-                <Label className="text-sm shrink-0">per month for</Label>
-                <Input value={v(FK.coverage_loss_rents_months)} onChange={(e) => sv(FK.coverage_loss_rents_months, e.target.value)}
-                  onKeyDown={integerKeyDown} onPaste={(e) => integerPaste(e, (val) => sv(FK.coverage_loss_rents_months, val))}
-                  disabled={disabled} placeholder="0" inputMode="numeric" className="h-7 text-sm w-[50px] text-right" />
-                <Label className="text-sm shrink-0">months or</Label>
-                {renderCurrencyInline(FK.coverage_loss_rents_total)}
-                <Label className="text-sm shrink-0">total</Label>
-              </div>
-            </DirtyFieldWrapper>
+        {/* ===== MIDDLE COLUMN ===== */}
+        <div className="space-y-2 border-r border-border pr-4">
+          {/* Other Coverage */}
+          <h3 className="text-xs font-bold text-foreground border-b border-foreground pb-0.5 underline">Other Coverage</h3>
+          <div className="space-y-1.5 pt-1">
+            {/* General Liability */}
+            <div className="flex items-center gap-2">
+              <Label className="text-xs shrink-0 min-w-[160px]">General Liability</Label>
+              {renderCurrencyInline(FK.oc_general_liability_amount)}
+            </div>
+            {/* Flood */}
+            <div className="flex items-center gap-1 flex-wrap">
+              <Label className="text-xs shrink-0">Flood</Label>
+              <Label className="text-xs shrink-0 ml-auto">Building</Label>
+              {renderCurrencyInline(FK.coverage_flood_building, 'w-[70px]')}
+              <Label className="text-xs shrink-0">Contents</Label>
+              {renderCurrencyInline(FK.coverage_flood_contents, 'w-[70px]')}
+            </div>
+            {/* Earthquake */}
+            <div className="flex items-center gap-2">
+              <Label className="text-xs shrink-0 min-w-[160px]">Earthquake</Label>
+              {renderCurrencyInline(FK.coverage_earthquake_amount)}
+            </div>
+            {/* Wind / Hail / Named Storm */}
+            <div className="flex items-center gap-2">
+              <Label className="text-xs shrink-0 min-w-[160px]">Wind / Hail / Named Storm</Label>
+              {renderCurrencyInline(FK.oc_wind_hail_amount)}
+            </div>
+            {/* Umbrella / Excess Coverage */}
+            <div className="flex items-center gap-1 flex-wrap">
+              <Label className="text-xs shrink-0">Umbrella / Excess Coverage</Label>
+              <DirtyFieldWrapper fieldKey={FK.oc_umbrella_months}>
+                <Input value={v(FK.oc_umbrella_months)} onChange={(e) => sv(FK.oc_umbrella_months, e.target.value)}
+                  onKeyDown={numericKeyDown} disabled={disabled} placeholder="0" inputMode="numeric"
+                  className="h-6 text-xs w-[40px] text-right" />
+              </DirtyFieldWrapper>
+              <Label className="text-xs shrink-0">months of</Label>
+              {renderCurrencyInline(FK.oc_umbrella_per, 'w-[70px]')}
+              <Label className="text-xs shrink-0">per</Label>
+            </div>
+            {/* Loss of Rents */}
+            <div className="flex items-center gap-2">
+              <Label className="text-xs shrink-0">Loss of Rents</Label>
+            </div>
+            {/* Vacancy Endorsement Required */}
+            <div className="flex items-center gap-2">
+              <Label className="text-xs shrink-0">Vacancy Endorsement Required</Label>
+            </div>
+            {/* Other */}
+            <div className="flex items-center gap-2">
+              <Label className="text-xs shrink-0">Other</Label>
+              {renderCurrencyInline(FK.oc_other_amount)}
+            </div>
           </div>
+
+          {/* Required Endorsement */}
+          <h3 className="text-xs font-bold text-foreground border-b border-foreground pb-0.5 underline pt-2">Required Endorsement (Check All Applicable)</h3>
+          <div className="space-y-1 pt-1">
+            {renderCheckbox("Lender(s) as Mortgagee", FK.re_mortgagee)}
+            {renderCheckbox("Lender(s) as Loss Payee", FK.re_loss_payee)}
+            {renderCheckbox("Lender(s) as Additional Insured", FK.re_additional_insured)}
+            {renderCheckbox("Additional Insured on Builder's Risk", FK.re_builders_risk)}
+          </div>
+        </div>
+
+        {/* ===== RIGHT COLUMN ===== */}
+        <div className="space-y-2">
+          {/* Send Notices To */}
+          <h3 className="text-xs font-bold text-foreground border-b border-foreground pb-0.5 underline">Send Notices to:</h3>
+          <div className="space-y-1 pt-1">
+            {renderCheckbox('Send Notices to Lender(s)', FK.sn_lenders)}
+            {renderCheckbox('Servicing Agent', FK.sn_servicing_agent)}
+            {renderCheckbox('Broker', FK.sn_broker)}
+          </div>
+
+          {/* If Multiple Lenders Servicing Agent */}
+          <h3 className="text-xs font-bold text-foreground border-b border-foreground pb-0.5 underline pt-2">If Multiple Lenders Servicing Agent:</h3>
+          <div className="space-y-1 pt-1">
+            {renderCheckbox('Will Endorse on behalf of Lender(s)', FK.ml_endorse_behalf)}
+            {renderCheckbox('Is Authorized to Endorse Proceeds', FK.ml_authorized_endorse)}
+          </div>
+
+          {/* Special Endorsement Verbiage */}
+          <h3 className="text-xs font-bold text-foreground border-b border-foreground pb-0.5 underline pt-2">Special Endorsement Verbiage</h3>
+          <DirtyFieldWrapper fieldKey={FK.special_endorsement}>
+            <Textarea value={v(FK.special_endorsement)} onChange={(e) => sv(FK.special_endorsement, e.target.value)}
+              disabled={disabled} className="mt-1 text-xs min-h-[80px]" />
+          </DirtyFieldWrapper>
         </div>
       </div>
     </div>
