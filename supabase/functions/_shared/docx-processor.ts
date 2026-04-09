@@ -89,9 +89,21 @@ export async function processDocx(
 
         let processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
 
-        // Post-process: ensure Signature paragraph has a page break before it
+        // Post-process: ensure Signature paragraph has a page break before it,
+        // but ONLY if the original template already contains page breaks or section
+        // breaks. Single-page templates (like Addendum to LPDS) must not have
+        // page breaks injected, as that would push content to a second page.
         if (filename === "word/document.xml") {
-          processedXml = ensureSignaturePageBreak(processedXml);
+          const hasExistingPageBreaks = originalXml.includes('w:pageBreakBefore') ||
+            originalXml.includes('<w:br w:type="page"') ||
+            originalXml.includes('w:type="nextPage"') ||
+            originalXml.includes('w:type="oddPage"') ||
+            originalXml.includes('w:type="evenPage"');
+          if (hasExistingPageBreaks) {
+            processedXml = ensureSignaturePageBreak(processedXml);
+          } else {
+            debugLog("[docx-processor] Skipping signature page-break injection (single-page template — no existing page breaks).");
+          }
         }
 
         if (processedXml === originalXml) {
