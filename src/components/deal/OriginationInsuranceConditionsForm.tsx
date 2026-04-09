@@ -195,53 +195,77 @@ export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceCo
           <h3 className="text-xs font-bold text-foreground border-b border-foreground pb-0.5 underline">Other Coverage</h3>
           <div className="space-y-1.5 pt-1">
             {/* General Liability */}
-            <div className="flex items-center gap-2">
-              <Label className="text-xs shrink-0 min-w-[160px]">General Liability</Label>
-              {renderCurrencyInline(FK.oc_general_liability_amount)}
-            </div>
+            <DirtyFieldWrapper fieldKey={FK.oc_general_liability}>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={bv(FK.oc_general_liability)} onCheckedChange={(c) => sbv(FK.oc_general_liability, !!c)} disabled={disabled} />
+                <Label className="text-xs shrink-0 min-w-[140px]">General Liability</Label>
+                {renderCurrencyInline(FK.oc_general_liability_amount, 'w-[90px]', '0.00')}
+              </div>
+            </DirtyFieldWrapper>
             {/* Flood */}
-            <div className="flex items-center gap-1 flex-wrap">
-              <Label className="text-xs shrink-0">Flood</Label>
-              <Label className="text-xs shrink-0 ml-auto">Building</Label>
-              {renderCurrencyInline(FK.coverage_flood_building, 'w-[70px]')}
-              <Label className="text-xs shrink-0">Contents</Label>
-              {renderCurrencyInline(FK.coverage_flood_contents, 'w-[70px]')}
-            </div>
+            <DirtyFieldWrapper fieldKey={FK.oc_flood}>
+              <div className="flex items-center gap-1 flex-wrap">
+                <Checkbox checked={bv(FK.oc_flood)} onCheckedChange={(c) => sbv(FK.oc_flood, !!c)} disabled={disabled} />
+                <Label className="text-xs shrink-0">Flood</Label>
+                <Label className="text-xs shrink-0 ml-auto">Building</Label>
+                {renderCurrencyInline(FK.coverage_flood_building, 'w-[70px]')}
+                <Label className="text-xs shrink-0">Contents</Label>
+                {renderCurrencyInline(FK.coverage_flood_contents, 'w-[70px]')}
+              </div>
+            </DirtyFieldWrapper>
             {/* Earthquake */}
-            <div className="flex items-center gap-2">
-              <Label className="text-xs shrink-0 min-w-[160px]">Earthquake</Label>
-              {renderCurrencyInline(FK.coverage_earthquake_amount)}
-            </div>
+            <DirtyFieldWrapper fieldKey={FK.oc_earthquake}>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={bv(FK.oc_earthquake)} onCheckedChange={(c) => sbv(FK.oc_earthquake, !!c)} disabled={disabled} />
+                <Label className="text-xs shrink-0 min-w-[140px]">Earthquake</Label>
+                {renderCurrencyInline(FK.coverage_earthquake_amount)}
+              </div>
+            </DirtyFieldWrapper>
             {/* Wind / Hail / Named Storm */}
-            <div className="flex items-center gap-2">
-              <Label className="text-xs shrink-0 min-w-[160px]">Wind / Hail / Named Storm</Label>
-              {renderCurrencyInline(FK.oc_wind_hail_amount)}
-            </div>
+            <DirtyFieldWrapper fieldKey={FK.oc_wind_hail}>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={bv(FK.oc_wind_hail)} onCheckedChange={(c) => sbv(FK.oc_wind_hail, !!c)} disabled={disabled} />
+                <Label className="text-xs shrink-0 min-w-[140px]">Wind / Hail / Named Storm</Label>
+                {renderCurrencyInline(FK.oc_wind_hail_amount)}
+              </div>
+            </DirtyFieldWrapper>
             {/* Umbrella / Excess Coverage */}
-            <div className="flex items-center gap-1 flex-wrap">
-              <Label className="text-xs shrink-0">Umbrella / Excess Coverage</Label>
-              <DirtyFieldWrapper fieldKey={FK.oc_umbrella_months}>
-                <Input value={v(FK.oc_umbrella_months)} onChange={(e) => sv(FK.oc_umbrella_months, e.target.value)}
-                  onKeyDown={numericKeyDown} disabled={disabled} placeholder="0" inputMode="numeric"
-                  className="h-6 text-xs w-[40px] text-right" />
-              </DirtyFieldWrapper>
-              <Label className="text-xs shrink-0">months of</Label>
-              {renderCurrencyInline(FK.oc_umbrella_per, 'w-[70px]')}
-              <Label className="text-xs shrink-0">per</Label>
-            </div>
+            <DirtyFieldWrapper fieldKey={FK.oc_umbrella}>
+              <div className="flex items-center gap-1 flex-wrap">
+                <Checkbox checked={bv(FK.oc_umbrella)} onCheckedChange={(c) => sbv(FK.oc_umbrella, !!c)} disabled={disabled} />
+                <Label className="text-xs shrink-0">Umbrella / Excess Coverage</Label>
+                <DirtyFieldWrapper fieldKey={FK.oc_umbrella_months}>
+                  <Input value={v(FK.oc_umbrella_months)} onChange={(e) => sv(FK.oc_umbrella_months, e.target.value)}
+                    onKeyDown={numericKeyDown} disabled={disabled || !bv(FK.oc_umbrella)} placeholder="0" inputMode="numeric"
+                    className="h-6 text-xs w-[40px] text-right" />
+                </DirtyFieldWrapper>
+                <Label className="text-xs shrink-0">months of</Label>
+                {renderCurrencyInline(FK.oc_umbrella_per, 'w-[70px]')}
+                <Label className="text-xs shrink-0">per</Label>
+              </div>
+            </DirtyFieldWrapper>
             {/* Loss of Rents */}
-            <div className="flex items-center gap-2">
-              <Label className="text-xs shrink-0">Loss of Rents</Label>
-            </div>
+            <DirtyFieldWrapper fieldKey={FK.oc_loss_of_rents}>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={bv(FK.oc_loss_of_rents)} onCheckedChange={(c) => sbv(FK.oc_loss_of_rents, !!c)} disabled={disabled} />
+                <Label className="text-xs shrink-0">Loss of Rents</Label>
+              </div>
+            </DirtyFieldWrapper>
             {/* Vacancy Endorsement Required */}
-            <div className="flex items-center gap-2">
-              <Label className="text-xs shrink-0">Vacancy Endorsement Required</Label>
-            </div>
+            <DirtyFieldWrapper fieldKey={FK.oc_vacancy}>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={bv(FK.oc_vacancy)} onCheckedChange={(c) => sbv(FK.oc_vacancy, !!c)} disabled={disabled} />
+                <Label className="text-xs shrink-0">Vacancy Endorsement Required</Label>
+              </div>
+            </DirtyFieldWrapper>
             {/* Other */}
-            <div className="flex items-center gap-2">
-              <Label className="text-xs shrink-0">Other</Label>
-              {renderCurrencyInline(FK.oc_other_amount)}
-            </div>
+            <DirtyFieldWrapper fieldKey={FK.oc_other}>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={bv(FK.oc_other)} onCheckedChange={(c) => sbv(FK.oc_other, !!c)} disabled={disabled} />
+                <Label className="text-xs shrink-0">Other</Label>
+                {renderCurrencyInline(FK.oc_other_amount)}
+              </div>
+            </DirtyFieldWrapper>
           </div>
 
           {/* Required Endorsement */}
