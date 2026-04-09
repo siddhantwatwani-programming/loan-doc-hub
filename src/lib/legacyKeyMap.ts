@@ -461,6 +461,7 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'loan_terms.hold_days': 'ln_p_holdDays',
   'loan_terms.override_funds_held': 'ln_p_overrideFundsHeld',
   'loan_terms.sales_tax_enabled': 'ln_p_salesTax',
+  'loan_terms.sales_tax_percent': 'ln_p_salesTaxPercent',
   'loan_terms.details_company': 'ln_p_company',
   'Terms.LoanNumber': 'ln_p_loanNumber',
   'loan_terms.assigned_csr': 'ln_p_assignedCsr',
