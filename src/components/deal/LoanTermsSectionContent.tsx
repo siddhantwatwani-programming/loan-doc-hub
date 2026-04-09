@@ -99,7 +99,11 @@ export const LoanTermsSectionContent: React.FC<LoanTermsSectionContentProps> = (
           />
         );
       case 'history':
-        return <ComingSoonInline label="History" />;
+        return (
+          <div className="p-4">
+            <EventJournalViewer dealId={dealId} disabled={disabled} />
+          </div>
+        );
       case 'trust_ledger':
         return <ComingSoonInline label="Trust Ledger" />;
       case 'escrow_impound':
