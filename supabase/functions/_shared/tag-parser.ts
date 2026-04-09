@@ -1399,6 +1399,30 @@ export function replaceMergeTags(
     }
   }
 
+  // Post-replacement cleanup: remove paragraphs that now contain only empty
+  // text runs (their merge tags were replaced with "" by no-data cleanup).
+  // This prevents blank lines / extra spacing in the generated document.
+  {
+    let emptyParaCount = 0;
+    result = processParaByPara(result, (para) => {
+      // Extract all text content from the paragraph
+      const textContent = para.replace(/<[^>]*>/g, '').trim();
+      if (textContent !== '') return para;
+
+      // Paragraph has no visible text — but only remove it if it previously
+      // contained a merge tag (i.e., has empty <w:t> elements that likely
+      // held tags). Paragraphs that were always empty are intentional spacing.
+      if (/<w:t[^>]*>\s*<\/w:t>/.test(para) && /<w:r\b/.test(para)) {
+        emptyParaCount++;
+        return '';
+      }
+      return para;
+    });
+    if (emptyParaCount > 0) {
+      debugLog(`[tag-parser] Removed ${emptyParaCount} empty paragraphs after tag replacement`);
+    }
+  }
+
   // Clean up orphaned {{ that remain as literal text after tag replacement.
   // These are artifacts of Word XML fragmentation where {{ was in a separate run
   // from the field code structure. The tag was resolved but {{ survived as text.
