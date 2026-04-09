@@ -6,6 +6,7 @@ import { LoanTermsDetailsForm } from './LoanTermsDetailsForm';
 import { LoanTermsPenaltiesForm } from './LoanTermsPenaltiesForm';
 import { LoanTermsServicingForm } from './LoanTermsServicingForm';
 import { LoanHistoryViewer } from './LoanHistoryViewer';
+import { LoanTrustLedger } from './LoanTrustLedger';
 import { DealSectionTab } from './DealSectionTab';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
@@ -105,7 +106,15 @@ export const LoanTermsSectionContent: React.FC<LoanTermsSectionContentProps> = (
           </div>
         );
       case 'trust_ledger':
-        return <ComingSoonInline label="Trust Ledger" />;
+        return (
+          <div className="p-4">
+            <LoanTrustLedger
+              values={values}
+              onValueChange={onValueChange}
+              disabled={disabled}
+            />
+          </div>
+        );
       case 'escrow_impound':
         return (
           <div className="p-4">
