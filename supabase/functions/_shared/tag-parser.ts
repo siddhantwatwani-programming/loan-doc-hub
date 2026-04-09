@@ -878,6 +878,37 @@ function isConditionTruthy(
 }
 
 /**
+ * Clean up paragraphs that contain no visible text content after tag removal.
+ * Targets paragraphs whose <w:t> elements are all empty or whitespace-only,
+ * removing them to prevent blank gaps in the generated document.
+ * Only cleans within a localized region around `centerIndex` to avoid
+ * stripping intentional spacing paragraphs elsewhere.
+ */
+function cleanEmptyParagraphsNear(content: string, centerIndex: number, radius = 500): string {
+  const cleanupStart = Math.max(0, centerIndex - radius);
+  const cleanupEnd = Math.min(content.length, centerIndex + radius);
+  const before = content.substring(0, cleanupStart);
+  const region = content.substring(cleanupStart, cleanupEnd);
+  const after = content.substring(cleanupEnd);
+
+  // Match paragraphs that have NO text content (all <w:t> elements are empty/whitespace)
+  const cleanedRegion = region.replace(
+    /<w:p\b[^>]*>(?:\s*<w:pPr>[\s\S]*?<\/w:pPr>)?(?:\s*<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t[^>]*>\s*<\/w:t>\s*<\/w:r>)*\s*<\/w:p>/g,
+    (paraMatch) => {
+      // Double-check: extract all text from <w:t> elements
+      const textContent = paraMatch.replace(/<[^>]*>/g, '').trim();
+      if (textContent === '') {
+        debugLog(`[tag-parser] Removing empty paragraph after tag cleanup (${paraMatch.length} bytes)`);
+        return '';
+      }
+      return paraMatch;
+    }
+  );
+
+  return before + cleanedRegion + after;
+}
+
+/**
  * Process conditional blocks: {{#if field_key}}...{{/if}} and {{#unless field_key}}...{{/unless}}
  * 
  * Removes entire XML paragraphs (<w:p>...</w:p>) when conditions are false,
@@ -914,12 +945,18 @@ export function processConditionalBlocks(
       if (truthy) {
         // Keep the true branch (content before {{else}}, or all if no else)
         const keepContent = elseIndex !== -1 ? blockContent.substring(0, elseIndex) : blockContent;
+        const insertionPoint = ifMatch.index;
         result = result.substring(0, ifMatch.index) + keepContent + result.substring(ifMatch.index + ifMatch[0].length);
+        // Clean up empty paragraphs left behind by the removed {{#if}} and {{/if}} tags
+        result = cleanEmptyParagraphsNear(result, insertionPoint);
       } else {
         if (elseIndex !== -1) {
           // Keep the else branch (content after {{else}})
           const elseContent = blockContent.substring(elseIndex + '{{else}}'.length);
+          const insertionPoint = ifMatch.index;
           result = result.substring(0, ifMatch.index) + elseContent + result.substring(ifMatch.index + ifMatch[0].length);
+          // Clean up empty paragraphs left behind by removed {{else}} / {{/if}} tags
+          result = cleanEmptyParagraphsNear(result, insertionPoint);
         } else {
           // No else branch — remove block and clean up surrounding empty paragraphs
           result = removeConditionalBlock(result, ifMatch.index, ifMatch[0].length);
@@ -936,11 +973,15 @@ export function processConditionalBlocks(
 
       if (!truthy) {
         const keepContent = elseIndex !== -1 ? blockContent.substring(0, elseIndex) : blockContent;
+        const insertionPoint = unlessMatch.index;
         result = result.substring(0, unlessMatch.index) + keepContent + result.substring(unlessMatch.index + unlessMatch[0].length);
+        result = cleanEmptyParagraphsNear(result, insertionPoint);
       } else {
         if (elseIndex !== -1) {
           const elseContent = blockContent.substring(elseIndex + '{{else}}'.length);
+          const insertionPoint = unlessMatch.index;
           result = result.substring(0, unlessMatch.index) + elseContent + result.substring(unlessMatch.index + unlessMatch[0].length);
+          result = cleanEmptyParagraphsNear(result, insertionPoint);
         } else {
           result = removeConditionalBlock(result, unlessMatch.index, unlessMatch[0].length);
         }
@@ -1355,6 +1396,30 @@ export function replaceMergeTags(
       debugLog(`[tag-parser] Cleaning ${noDataPatterns.length} no-data tags`);
       const noDataRegex = new RegExp(noDataPatterns.join('|'), 'g');
       result = result.replace(noDataRegex, '');
+    }
+  }
+
+  // Post-replacement cleanup: remove paragraphs that now contain only empty
+  // text runs (their merge tags were replaced with "" by no-data cleanup).
+  // This prevents blank lines / extra spacing in the generated document.
+  {
+    let emptyParaCount = 0;
+    result = processParaByPara(result, (para) => {
+      // Extract all text content from the paragraph
+      const textContent = para.replace(/<[^>]*>/g, '').trim();
+      if (textContent !== '') return para;
+
+      // Paragraph has no visible text — but only remove it if it previously
+      // contained a merge tag (i.e., has empty <w:t> elements that likely
+      // held tags). Paragraphs that were always empty are intentional spacing.
+      if (/<w:t[^>]*>\s*<\/w:t>/.test(para) && /<w:r\b/.test(para)) {
+        emptyParaCount++;
+        return '';
+      }
+      return para;
+    });
+    if (emptyParaCount > 0) {
+      debugLog(`[tag-parser] Removed ${emptyParaCount} empty paragraphs after tag replacement`);
     }
   }
 
