@@ -42,7 +42,7 @@ const FK = {
   policy_vacancy: 'origination_ins.policy_vacancy',
   policy_construction_amount: 'origination_ins.policy_construction_amount',
 
-  // Coverage Limits
+  // Coverage Limits / Other Coverage
   coverage_loan_amount: 'origination_ins.coverage_loan_amount',
   coverage_replacement_cost: 'origination_ins.coverage_replacement_cost',
   coverage_specific_dollar: 'origination_ins.coverage_specific_dollar',
@@ -54,6 +54,18 @@ const FK = {
   coverage_loss_rents_per_month: 'origination_ins.coverage_loss_rents_per_month',
   coverage_loss_rents_months: 'origination_ins.coverage_loss_rents_months',
   coverage_loss_rents_total: 'origination_ins.coverage_loss_rents_total',
+
+  // Other Coverage additional fields
+  oc_general_liability_checkbox: 'origination_ins.oc_general_liability_checkbox',
+  oc_general_liability_amount: 'origination_ins.oc_general_liability_amount',
+  oc_wind_hail_checkbox: 'origination_ins.oc_wind_hail_checkbox',
+  oc_wind_hail_amount: 'origination_ins.oc_wind_hail_amount',
+  oc_umbrella_months_amount: 'origination_ins.oc_umbrella_months_amount',
+  oc_umbrella_per: 'origination_ins.oc_umbrella_per',
+  oc_vacancy_checkbox: 'origination_ins.oc_vacancy_checkbox',
+  oc_other_checkbox: 'origination_ins.oc_other_checkbox',
+  oc_other_text: 'origination_ins.oc_other_text',
+  oc_other_amount: 'origination_ins.oc_other_amount',
 };
 
 export const OriginationInsuranceConditionsForm: React.FC<OriginationInsuranceConditionsFormProps> = ({
