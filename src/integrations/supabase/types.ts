@@ -771,6 +771,80 @@ export type Database = {
           },
         ]
       }
+      loan_history: {
+        Row: {
+          applied_to_impound: number | null
+          applied_to_interest: number | null
+          applied_to_late_charges: number | null
+          applied_to_principal: number | null
+          applied_to_reserve: number | null
+          charges_interest: number | null
+          charges_principal: number | null
+          created_at: string
+          date_due: string | null
+          date_received: string | null
+          deal_id: string
+          fees_paid_to_broker: number | null
+          fees_paid_to_lenders: number | null
+          id: string
+          payment_code: string | null
+          prepayment_penalty: number | null
+          reference: string | null
+          total_amount_received: number | null
+          updated_at: string
+        }
+        Insert: {
+          applied_to_impound?: number | null
+          applied_to_interest?: number | null
+          applied_to_late_charges?: number | null
+          applied_to_principal?: number | null
+          applied_to_reserve?: number | null
+          charges_interest?: number | null
+          charges_principal?: number | null
+          created_at?: string
+          date_due?: string | null
+          date_received?: string | null
+          deal_id: string
+          fees_paid_to_broker?: number | null
+          fees_paid_to_lenders?: number | null
+          id?: string
+          payment_code?: string | null
+          prepayment_penalty?: number | null
+          reference?: string | null
+          total_amount_received?: number | null
+          updated_at?: string
+        }
+        Update: {
+          applied_to_impound?: number | null
+          applied_to_interest?: number | null
+          applied_to_late_charges?: number | null
+          applied_to_principal?: number | null
+          applied_to_reserve?: number | null
+          charges_interest?: number | null
+          charges_principal?: number | null
+          created_at?: string
+          date_due?: string | null
+          date_received?: string | null
+          deal_id?: string
+          fees_paid_to_broker?: number | null
+          fees_paid_to_lenders?: number | null
+          id?: string
+          payment_code?: string | null
+          prepayment_penalty?: number | null
+          reference?: string | null
+          total_amount_received?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_history_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       magic_links: {
         Row: {
           created_at: string
