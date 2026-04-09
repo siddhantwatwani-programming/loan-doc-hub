@@ -364,6 +364,7 @@ export const LOAN_TERMS_BALANCES_KEYS = {
   additionalPrincipal: 'loan_terms.additional_principal',
   servicingFees: 'loan_terms.servicing_fees',
   salesTaxEnabled: 'loan_terms.sales_tax_enabled',
+  salesTaxPercent: 'loan_terms.sales_tax_percent',
   otherScheduledPayments: 'loan_terms.other_scheduled_payments',
   toEscrowImpounds: 'loan_terms.to_escrow_impounds',
   defaultInterest: 'loan_terms.default_interest',

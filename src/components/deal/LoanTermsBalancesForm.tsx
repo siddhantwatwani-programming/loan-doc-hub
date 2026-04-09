@@ -690,22 +690,46 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {/* Servicing Fees - always currency, independent of Sales Tax */}
             {renderCurrencyField(FIELD_KEYS.servicingFees, "Servicing Fees")}
 
-            {/* Sales Tax checkbox */}
-            <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0">
-                Sales Tax
-              </Label>
-              <Checkbox
-                id={`${FIELD_KEYS.salesTaxEnabled}-cb`}
-                checked={isChecked(FIELD_KEYS.salesTaxEnabled)}
-                onCheckedChange={() => toggleCheck(FIELD_KEYS.salesTaxEnabled)}
-                disabled={disabled}
-                className="h-3.5 w-3.5"
-              />
-              <Label htmlFor={`${FIELD_KEYS.salesTaxEnabled}-cb`} className="text-sm text-muted-foreground">
-                Percent of Servicing Fees
-              </Label>
-            </div>
+            {/* Sales Tax - percentage input */}
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.salesTaxPercent}>
+              <div className="flex items-center gap-3">
+                <Label className={LABEL_CLASS}>Sales Tax</Label>
+                <div className="relative flex-1">
+                  <Input
+                    id={FIELD_KEYS.salesTaxPercent}
+                    value={getValue(FIELD_KEYS.salesTaxPercent)}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^0-9.]/g, '');
+                      const num = parseFloat(raw);
+                      if (raw === '' || raw === '.' || (!isNaN(num) && num <= 100)) {
+                        setValue(FIELD_KEYS.salesTaxPercent, raw);
+                        // Keep enabled flag in sync
+                        if (raw && parseFloat(raw) > 0) {
+                          if (!isChecked(FIELD_KEYS.salesTaxEnabled)) setValue(FIELD_KEYS.salesTaxEnabled, 'true');
+                        } else {
+                          if (isChecked(FIELD_KEYS.salesTaxEnabled)) setValue(FIELD_KEYS.salesTaxEnabled, '');
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      const v = getValue(FIELD_KEYS.salesTaxPercent);
+                      if (!v) return;
+                      const num = parseFloat(v);
+                      if (!isNaN(num)) {
+                        const clamped = Math.min(Math.max(num, 0), 100);
+                        setValue(FIELD_KEYS.salesTaxPercent, clamped.toFixed(2));
+                      }
+                    }}
+                    disabled={disabled}
+                    className="h-8 text-sm pr-7"
+                    placeholder="0.00"
+                    inputMode="decimal"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+                </div>
+              </div>
+            </DirtyFieldWrapper>
+            <p className="text-xs text-muted-foreground pl-[152px]">Percent of Servicing Fees</p>
 
             {/* Other Scheduled Payments - clickable label opens modal */}
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.otherScheduledPayments}>
