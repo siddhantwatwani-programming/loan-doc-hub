@@ -106,7 +106,15 @@ export const LoanTermsSectionContent: React.FC<LoanTermsSectionContentProps> = (
           </div>
         );
       case 'trust_ledger':
-        return <ComingSoonInline label="Trust Ledger" />;
+        return (
+          <div className="p-4">
+            <LoanTrustLedger
+              values={values}
+              onValueChange={onValueChange}
+              disabled={disabled}
+            />
+          </div>
+        );
       case 'escrow_impound':
         return (
           <div className="p-4">
