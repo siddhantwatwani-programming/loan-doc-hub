@@ -10,6 +10,11 @@ const PROPERTY_DETAIL_SECTIONS: { key: PropertySubSection; label: string }[] = [
   { key: 'property_tax_detail', label: 'Property Tax' },
 ];
 
+const TOP_LEVEL_SECTIONS: { key: PropertySubSection; label: string }[] = [
+  { key: 'properties', label: 'Properties' },
+  { key: 'property_tax_detail', label: 'Property Tax' },
+];
+
 interface PropertySubNavigationProps {
   activeSubSection: PropertySubSection;
   onSubSectionChange: (subSection: PropertySubSection) => void;
@@ -21,14 +26,11 @@ export const PropertySubNavigation: React.FC<PropertySubNavigationProps> = ({
   onSubSectionChange,
   isDetailView = false,
 }) => {
-  // Only show navigation when in detail view (matching Lender pattern)
-  if (!isDetailView) {
-    return null;
-  }
+  const sections = isDetailView ? PROPERTY_DETAIL_SECTIONS : TOP_LEVEL_SECTIONS;
 
   return (
     <div className="flex flex-col border-r border-border bg-background min-w-[180px]">
-      {PROPERTY_DETAIL_SECTIONS.map((section) => (
+      {sections.map((section) => (
         <button
           key={section.key}
           onClick={() => onSubSectionChange(section.key)}
