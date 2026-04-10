@@ -42,6 +42,8 @@ const extractNotesFromValues = (values: Record<string, string>): NoteData[] => {
     notes.push({
       id: prefix,
       highPriority: values[`${prefix}.high_priority`] === 'true',
+      incoming: values[`${prefix}.incoming`] === 'true',
+      outgoing: values[`${prefix}.outgoing`] === 'true',
       date: values[`${prefix}.date`] || '',
       asOfDate: values[`${prefix}.as_of_date`] || '',
       account: values[`${prefix}.account`] || '',
@@ -50,6 +52,16 @@ const extractNotesFromValues = (values: Record<string, string>): NoteData[] => {
       content: values[`${prefix}.content`] || '',
       type: values[`${prefix}.type`] || '',
       attachments,
+      followupReminder: values[`${prefix}.followup_reminder`] || '',
+      completed: values[`${prefix}.completed`] || '',
+      assignedOn: values[`${prefix}.assigned_on`] || '',
+      assignedTo: values[`${prefix}.assigned_to`] || '',
+      assignedDepartment: values[`${prefix}.assigned_department`] || '',
+      assignedBy: values[`${prefix}.assigned_by`] || '',
+      completedBy: values[`${prefix}.completed_by`] || '',
+      completedOn: values[`${prefix}.completed_on`] || '',
+      publish: values[`${prefix}.publish`] === 'true',
+      addToParticipants: values[`${prefix}.add_to_participants`] === 'true',
     });
   });
 
