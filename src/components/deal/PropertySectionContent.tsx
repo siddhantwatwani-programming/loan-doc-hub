@@ -734,4 +734,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         propertyOptions={propertyOptions.map(p => p.label)}
       />
     </>
+  );
+};
+
 export default PropertySectionContent;
