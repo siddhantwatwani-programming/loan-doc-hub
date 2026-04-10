@@ -313,6 +313,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       interestFrom: data.interestFrom,
       roundingAdjustment: data.roundingAdjustment,
       disbursements: data.disbursements,
+      payments: data.payments,
       overrideServicingFees: data.overrideServicingFees,
       companyServicingFee: data.companyServicingFee, companyServicingFeePct: data.companyServicingFeePct,
       companyMaxFee: data.companyMaxFee, companyMaxFeePct: data.companyMaxFeePct,

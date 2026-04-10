@@ -66,6 +66,7 @@ export interface FundingRecord {
   interestFrom?: string;
   roundingAdjustment?: boolean;
   disbursements?: Array<{accountId: string; name: string; amount: string; percentage: string; comments: string}>;
+  payments?: Array<{active: boolean; accountId: string; name: string; amount: string; percentage: string; comment: string; from: string}>;
   overrideServicingFees?: boolean;
   companyServicingFee?: string;
   companyServicingFeePct?: string;
@@ -564,6 +565,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               brokerParticipates: data.brokerParticipates,
               interestFrom: data.interestFrom,
               roundingAdjustment: data.roundingAdjustment,
+              disbursements: data.disbursements,
+              payments: data.payments,
               overrideServicingFees: data.overrideServicingFees,
               companyServicingFee: data.companyServicingFee, companyServicingFeePct: data.companyServicingFeePct,
               companyMaxFee: data.companyMaxFee, companyMaxFeePct: data.companyMaxFeePct,
