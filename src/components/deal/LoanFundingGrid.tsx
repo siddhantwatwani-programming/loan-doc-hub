@@ -381,11 +381,11 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   return (
     <div className="p-4 space-y-3">
       <div className="border border-border rounded-lg">
-        <div className="px-3 py-1.5 border-b-2 border-[hsl(var(--destructive))]">
+        <div className="px-3 py-1.5 border-b border-border">
           <span className="font-semibold text-sm text-foreground">Loan Funding</span>
         </div>
 
-        <div className="flex items-center gap-4 px-3 py-2 flex-wrap border-b-2 border-[hsl(var(--destructive))]">
+        <div className="flex items-center gap-4 px-3 py-2 flex-wrap border-b border-border">
           <div className="flex items-center gap-1.5">
             <Label className="text-xs text-foreground font-medium shrink-0">Account</Label>
             <Input value={loanNumber || ''} readOnly className="h-7 text-xs w-28 bg-muted/30" />
