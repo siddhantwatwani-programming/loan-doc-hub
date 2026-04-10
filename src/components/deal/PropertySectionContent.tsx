@@ -596,7 +596,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             <PropertySubNavigation
               activeSubSection={activeSubSection}
               onSubSectionChange={setActiveSubSection}
-              isDetailView={false}
+              isDetailView={true}
             />
             <div className="flex-1 min-w-0 overflow-auto">
               <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
