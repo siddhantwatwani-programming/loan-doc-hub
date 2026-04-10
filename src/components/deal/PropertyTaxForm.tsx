@@ -264,6 +264,9 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
             </div>
 
             {/* Tax Tracking */}
+            <div className="border-b border-border pb-1 mb-2 mt-2">
+              <span className="text-sm font-semibold text-foreground">Tax Tracking</span>
+            </div>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.active`}>
               <div className="flex items-center gap-3">
