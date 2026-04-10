@@ -59,7 +59,7 @@ interface PropertyTaxTableViewProps {
   onPageChange?: (page: number) => void;
 }
 
-const SEARCH_FIELDS = ['property', 'authority', 'type', 'frequency', 'apn', 'address'];
+const SEARCH_FIELDS = ['property', 'authority', 'type', 'frequency', 'apn', 'pmaStreet', 'pmaCity'];
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
@@ -76,7 +76,6 @@ const FILTER_OPTIONS: FilterOption[] = [
 const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'property', label: 'Property' },
   { id: 'authority', label: 'Tax Authority' },
-  { id: 'address', label: 'Address' },
   { id: 'type', label: 'Type' },
   { id: 'apn', label: 'APN' },
   { id: 'memo', label: 'Memo' },
@@ -87,10 +86,10 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'escrowImpounds', label: 'Escrow Impounds' },
   { id: 'passThrough', label: 'Pass Through' },
   { id: 'sourceOfInformation', label: 'Source of Information' },
-  { id: 'pmaStreet', label: 'PMA Street' },
-  { id: 'pmaCity', label: 'PMA City' },
-  { id: 'pmaState', label: 'PMA State' },
-  { id: 'pmaZip', label: 'PMA ZIP' },
+  { id: 'pmaStreet', label: 'Street' },
+  { id: 'pmaCity', label: 'City' },
+  { id: 'pmaState', label: 'State' },
+  { id: 'pmaZip', label: 'ZIP' },
   { id: 'active', label: 'Active' },
   { id: 'lastVerified', label: 'Last Verified' },
   { id: 'lenderNotified', label: 'Lender Notified' },
@@ -104,7 +103,6 @@ const EXPORT_COLUMNS: ExportColumn[] = [
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'property', label: 'Property', visible: true },
   { id: 'authority', label: 'Tax Authority', visible: true },
-  { id: 'address', label: 'Address', visible: false },
   { id: 'type', label: 'Type', visible: true },
   { id: 'apn', label: 'APN', visible: false },
   { id: 'memo', label: 'Memo', visible: false },
@@ -115,10 +113,10 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'escrowImpounds', label: 'Escrow Impounds', visible: false },
   { id: 'passThrough', label: 'Pass Through', visible: false },
   { id: 'sourceOfInformation', label: 'Source of Information', visible: false },
-  { id: 'pmaStreet', label: 'PMA Street', visible: false },
-  { id: 'pmaCity', label: 'PMA City', visible: false },
-  { id: 'pmaState', label: 'PMA State', visible: false },
-  { id: 'pmaZip', label: 'PMA ZIP', visible: false },
+  { id: 'pmaStreet', label: 'Street', visible: false },
+  { id: 'pmaCity', label: 'City', visible: false },
+  { id: 'pmaState', label: 'State', visible: false },
+  { id: 'pmaZip', label: 'ZIP', visible: false },
   { id: 'active', label: 'Active', visible: true },
   { id: 'lastVerified', label: 'Last Verified', visible: true },
   { id: 'lenderNotified', label: 'Lender Notified', visible: true },
@@ -149,7 +147,7 @@ const renderCellValue = (tax: PropertyTaxData, columnId: string) => {
   switch (columnId) {
     case 'property': return tax.property || '-';
     case 'authority': return tax.authority || '-';
-    case 'address': return tax.address || '-';
+    
     case 'type': return tax.type || '-';
     case 'apn': return tax.apn || '-';
     case 'memo': return tax.memo || '-';
