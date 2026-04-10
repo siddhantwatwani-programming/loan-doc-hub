@@ -583,7 +583,103 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     );
   }
 
-  return (
+  // Render Property Tax section separately (has its own table/detail view pattern like insurance)
+  if (isPropertyTaxSection) {
+    const renderPropertyTaxContent = () => {
+      if (!selectedTaxPrefix) {
+        return (
+          <PropertyTaxTableView
+            taxes={paginatedTaxes}
+            onAddTax={handleAddTax}
+            onEditTax={handleEditTax}
+            onRowClick={handleRowClickTaxDetail}
+            onDeleteTax={handleDeleteTax}
+            onRefresh={onRefresh}
+            disabled={disabled}
+            currentPage={taxSafePage}
+            totalPages={taxTotalPages}
+            totalCount={totalTaxes}
+            onPageChange={setTaxCurrentPage}
+          />
+        );
+      }
+
+      // A tax record is selected — show back button + detail form
+      const taxSpecificValues: Record<string, string> = {};
+      Object.entries(values).forEach(([key, value]) => {
+        if (key.startsWith(`${selectedTaxPrefix}.`)) {
+          taxSpecificValues[key.replace(`${selectedTaxPrefix}.`, 'propertytax1.')] = value;
+        } else {
+          taxSpecificValues[key] = value;
+        }
+      });
+      const handleTaxValueChange = (fieldKey: string, value: string) => {
+        const actualKey = fieldKey.replace('propertytax1.', `${selectedTaxPrefix}.`);
+        onValueChange(actualKey, value);
+      };
+      return (
+        <div className="flex flex-col">
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/20">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBackToTaxTable}
+              className="gap-1 h-8"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <span className="text-sm font-medium text-foreground">
+              Property Tax {selectedTaxPrefix.replace('propertytax', '')}
+            </span>
+          </div>
+          <PropertyTaxForm
+            fields={fields}
+            values={taxSpecificValues}
+            onValueChange={handleTaxValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+            propertyOptions={propertyOptions.map(p => p.label)}
+          />
+        </div>
+      );
+    };
+
+    return (
+      <>
+        <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
+          <div className="flex flex-1">
+            {/* Sub-navigation tabs on the left */}
+            <PropertySubNavigation
+              activeSubSection={activeSubSection}
+              onSubSectionChange={setActiveSubSection}
+              isDetailView={false}
+            />
+
+            {/* Property Tax content */}
+            <div className="flex-1 min-w-0 overflow-auto">
+              <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+                {renderPropertyTaxContent()}
+              </DirtyFieldsProvider>
+            </div>
+          </div>
+        </div>
+
+        {/* Add/Edit Property Tax Modal */}
+        <PropertyTaxModal
+          open={taxModalOpen}
+          onOpenChange={setTaxModalOpen}
+          propertyTax={editingTax}
+          onSave={handleSaveTax}
+          isEdit={!!editingTax}
+          propertyOptions={propertyOptions.map(p => p.label)}
+        />
+      </>
+    );
+  }
+
+
     <>
       <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
         {/* Full-width breadcrumb header when in detail view */}
