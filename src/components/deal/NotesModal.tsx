@@ -557,7 +557,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                   onCheckedChange={(checked) => setFormData(prev => ({ ...prev, publish: !!checked }))}
                 />
                 <Label className="text-xs text-foreground">Publish</Label>
-                <span className="text-xs text-muted-foreground italic ml-2">How determine who to notify? A popup of Participants?</span>
+                <span className="text-xs text-muted-foreground italic ml-2"></span>
               </div>
               <div className="flex items-center gap-2">
                 <Checkbox
