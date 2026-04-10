@@ -69,6 +69,7 @@ interface NotesTableViewProps {
   onBulkDelete?: (notes: NoteData[]) => void;
   onExport?: () => void;
   onRefresh?: () => void;
+  onSave?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
   asOfFilter?: string;
