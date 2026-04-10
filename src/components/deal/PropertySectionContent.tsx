@@ -587,6 +587,37 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     );
   }
 
+  // Render Liens section separately (has its own table/detail view pattern like insurance)
+  if (isLiensSection) {
+    return (
+      <>
+        <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
+          <div className="flex flex-1">
+            <PropertySubNavigation
+              activeSubSection={activeSubSection}
+              onSubSectionChange={setActiveSubSection}
+              isDetailView={false}
+            />
+            <div className="flex-1 min-w-0 overflow-auto">
+              <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+                <LienSectionContent
+                  values={values}
+                  onValueChange={onValueChange}
+                  onRemoveValuesByPrefix={onRemoveValuesByPrefix}
+                  onPersist={onPersist}
+                  disabled={disabled}
+                  propertyOptions={propertyOptions}
+                  onBack={handleBackToTable}
+                  onRefresh={onRefresh}
+                />
+              </DirtyFieldsProvider>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   // Render Property Tax section separately (has its own table/detail view pattern like insurance)
   if (isPropertyTaxSection) {
     const renderPropertyTaxContent = () => {
