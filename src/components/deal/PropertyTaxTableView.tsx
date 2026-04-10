@@ -51,6 +51,7 @@ interface PropertyTaxTableViewProps {
   onRowClick: (tax: PropertyTaxData) => void;
   onDeleteTax?: (tax: PropertyTaxData) => void;
   onBulkDelete?: (taxes: PropertyTaxData[]) => void;
+  onBack?: () => void;
   onRefresh?: () => void;
   disabled?: boolean;
   currentPage?: number;
