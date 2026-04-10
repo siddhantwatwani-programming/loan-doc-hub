@@ -412,7 +412,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.print()} disabled={disabled} title="Print"><Printer className="h-3.5 w-3.5" /></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsHistoryOpen(true)} disabled={disabled} title="History"><History className="h-3.5 w-3.5" /></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleAddFundingClick} disabled={disabled} title="Add"><Plus className="h-3.5 w-3.5" /></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { if (selectedCount > 0) setBulkDeleteOpen(true); }} disabled={disabled || selectedCount === 0} title="Delete Selected"><Trash2 className="h-3.5 w-3.5" /></Button>
+            
             <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
           </div>
         </div>
