@@ -594,6 +594,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             onEditTax={handleEditTax}
             onRowClick={handleRowClickTaxDetail}
             onDeleteTax={handleDeleteTax}
+            onBack={handleBackToTable}
             onRefresh={onRefresh}
             disabled={disabled}
             currentPage={taxSafePage}
