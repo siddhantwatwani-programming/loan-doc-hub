@@ -226,9 +226,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const PAGE_SIZE = 10;
   const { dirtyFieldKeys } = useDirtyFields();
   
-  // Check if we're in detail view (property_tax_detail at grid level is NOT a detail view)
-  const isDetailView = ['property_details', 'legal_description'].includes(activeSubSection) || 
-    (activeSubSection === 'property_tax_detail' && selectedTaxPrefix !== null);
+  // Check if we're in detail view
+  const isDetailView = ['property_details', 'legal_description', 'property_tax_detail'].includes(activeSubSection);
   
   // Check if insurance section is active (rendered separately)
   const isInsuranceSection = activeSubSection === 'insurance';
