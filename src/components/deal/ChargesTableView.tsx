@@ -55,6 +55,16 @@ export interface ChargeData {
   amountOwedByBorrower: string;
   accruedInterest: string;
   distributeBetweenAllLenders: string;
+  department: string;
+  category: string;
+  details: string;
+  currentBalance: string;
+  balanceDueAsOf: string;
+  balanceDue: string;
+  advancedByDeferred: string;
+  advancedByTotal: string;
+  onBehalfOfBilling: string;
+  onBehalfOfTotal: string;
 }
 
 interface ChargesTableViewProps {
