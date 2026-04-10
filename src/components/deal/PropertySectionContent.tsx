@@ -542,64 +542,9 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
       case 'insurance':
         // Insurance section is handled separately below
         return null;
-      case 'property_tax_detail': {
-        // If no tax record is selected, show the table (like Properties table view)
-        if (!selectedTaxPrefix) {
-          return (
-            <PropertyTaxTableView
-              taxes={paginatedTaxes}
-              onAddTax={handleAddTax}
-              onEditTax={handleEditTax}
-              onRowClick={handleRowClickTaxDetail}
-              onDeleteTax={handleDeleteTax}
-              onRefresh={onRefresh}
-              disabled={disabled}
-              currentPage={taxSafePage}
-              totalPages={taxTotalPages}
-              totalCount={totalTaxes}
-              onPageChange={setTaxCurrentPage}
-            />
-          );
-        }
-
-        // A tax record is selected — show back button + detail form
-        const taxSpecificValues: Record<string, string> = {};
-        Object.entries(values).forEach(([key, value]) => {
-          if (key.startsWith(`${selectedTaxPrefix}.`)) {
-            taxSpecificValues[key.replace(`${selectedTaxPrefix}.`, 'propertytax1.')] = value;
-          } else {
-            taxSpecificValues[key] = value;
-          }
-        });
-        const handleTaxValueChange = (fieldKey: string, value: string) => {
-          const actualKey = fieldKey.replace('propertytax1.', `${selectedTaxPrefix}.`);
-          onValueChange(actualKey, value);
-        };
-        return (
-          <div className="flex flex-col">
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/20">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBackToTaxTable}
-                className="gap-1 h-8"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Property Tax
-              </Button>
-            </div>
-            <PropertyTaxForm
-              fields={fields}
-              values={taxSpecificValues}
-              onValueChange={handleTaxValueChange}
-              showValidation={showValidation}
-              disabled={disabled}
-              calculationResults={calculationResults}
-              propertyOptions={propertyOptions.map(p => p.label)}
-            />
-          </div>
-        );
-      }
+      case 'property_tax_detail':
+        // Property Tax section is handled separately below (like insurance)
+        return null;
       default:
         return null;
     }
