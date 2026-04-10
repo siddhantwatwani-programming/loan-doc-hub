@@ -42,6 +42,8 @@ export interface AttachmentMeta {
 export interface NoteData {
   id: string;
   highPriority: boolean;
+  incoming: boolean;
+  outgoing: boolean;
   date: string;
   asOfDate: string;
   account: string;
@@ -50,6 +52,16 @@ export interface NoteData {
   content: string;
   type: string;
   attachments: (string | AttachmentMeta)[];
+  followupReminder: string;
+  completed: string;
+  assignedOn: string;
+  assignedTo: string;
+  assignedDepartment: string;
+  assignedBy: string;
+  completedBy: string;
+  completedOn: string;
+  publish: boolean;
+  addToParticipants: boolean;
 }
 
 export const getAttachmentName = (att: string | AttachmentMeta): string => {
