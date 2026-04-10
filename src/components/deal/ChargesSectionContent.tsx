@@ -207,9 +207,19 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
       { key: 'onBehalfOfAmount', dbField: 'on_behalf_of_amount' },
       { key: 'amountOwedByBorrower', dbField: 'amount_owed_by_borrower' },
       { key: 'accruedInterest', dbField: 'accrued_interest' },
+      { key: 'department', dbField: 'department' },
+      { key: 'category', dbField: 'category' },
+      { key: 'details', dbField: 'details' },
+      { key: 'currentBalance', dbField: 'current_balance' },
+      { key: 'balanceDueAsOf', dbField: 'balance_due_as_of' },
+      { key: 'balanceDue', dbField: 'balance_due' },
+      { key: 'advancedByDeferred', dbField: 'advanced_by_deferred' },
+      { key: 'advancedByTotal', dbField: 'advanced_by_total' },
+      { key: 'onBehalfOfBilling', dbField: 'on_behalf_of_billing' },
+      { key: 'onBehalfOfTotal', dbField: 'on_behalf_of_total' },
     ];
 
-    const currencyKeys: (keyof ChargeData)[] = ['unpaidBalance', 'totalDue', 'originalAmount', 'advancedByAmount', 'onBehalfOfAmount', 'amountOwedByBorrower', 'accruedInterest'];
+    const currencyKeys: (keyof ChargeData)[] = ['unpaidBalance', 'totalDue', 'originalAmount', 'advancedByAmount', 'onBehalfOfAmount', 'amountOwedByBorrower', 'accruedInterest', 'currentBalance', 'balanceDue', 'advancedByTotal', 'onBehalfOfTotal'];
 
     fieldEntries.forEach(({ key, dbField }) => {
       let val = chargeData[key] || '';
