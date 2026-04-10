@@ -150,6 +150,10 @@ const extractPropertyTaxesFromValues = (values: Record<string, string>): Propert
       borrowerNotified: values[`${prefix}.borrower_notified`] === 'true',
       borrowerNotifiedDate: values[`${prefix}.borrower_notified_date`] || '',
       lenderNotifiedDate: values[`${prefix}.lender_notified_date`] || '',
+      pmaStreet: values[`${prefix}.pma_street`] || '',
+      pmaCity: values[`${prefix}.pma_city`] || '',
+      pmaState: values[`${prefix}.pma_state`] || '',
+      pmaZip: values[`${prefix}.pma_zip`] || '',
     };
     const hasData = Object.keys(tax).some(key => {
       if (key === 'id' || key === 'active' || key === 'current' || key === 'delinquent' || key === 'borrowerNotified') return false;
@@ -444,6 +448,10 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
       { key: 'borrowerNotified', dbField: 'borrower_notified' },
       { key: 'borrowerNotifiedDate', dbField: 'borrower_notified_date' },
       { key: 'lenderNotifiedDate', dbField: 'lender_notified_date' },
+      { key: 'pmaStreet', dbField: 'pma_street' },
+      { key: 'pmaCity', dbField: 'pma_city' },
+      { key: 'pmaState', dbField: 'pma_state' },
+      { key: 'pmaZip', dbField: 'pma_zip' },
     ];
     fieldEntries.forEach(({ key, dbField }) => {
       onValueChange(`${prefix}.${dbField}`, String(taxData[key] ?? ''));
