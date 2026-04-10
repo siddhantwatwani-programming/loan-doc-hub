@@ -564,11 +564,11 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                         <Input value={row.comment} onChange={(e) => handlePaymentChange(idx, 'comment', e.target.value)} className="h-6 text-xs" />
                       </td>
                       <td className="py-0.5 px-1.5">
-                        <Select value={row.from} onValueChange={(val) => handlePaymentChange(idx, 'from', val)}>
+                        <Select value={row.from || undefined} onValueChange={(val) => handlePaymentChange(idx, 'from', val)}>
                           <SelectTrigger className="h-6 text-xs">
                             <SelectValue placeholder="Dropdown" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="!z-[9999]" position="popper" sideOffset={4}>
                             <SelectItem value="Interest">Interest</SelectItem>
                             <SelectItem value="Principal">Principal</SelectItem>
                           </SelectContent>
