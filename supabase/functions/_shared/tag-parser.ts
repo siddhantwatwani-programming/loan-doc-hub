@@ -576,12 +576,17 @@ function replaceStaticCheckboxLabel(
 
   if (glyphInWtPattern.test(content)) {
     glyphInWtPattern.lastIndex = 0;
-    return {
-      content: content.replace(glyphInWtPattern, (_match, wtOpen, pre, _glyph, wtTail, labelPart) => {
-        return `${wtOpen}${pre}${checkboxValue}${wtTail}${labelPart}`;
-      }),
-      replaced: true,
-    };
+    let result = content.replace(glyphInWtPattern, (_match, wtOpen, pre, _glyph, wtTail, labelPart) => {
+      return `${wtOpen}${pre}${checkboxValue}${wtTail}${labelPart}`;
+    });
+    // Remove duplicate adjacent checkbox glyphs that arise when a merge tag
+    // already resolved to ☑/☐ AND the template had a static glyph.
+    // Pattern: two checkbox glyphs separated only by XML tags / whitespace.
+    result = result.replace(
+      /([☐☑☒])((?:\s|<[^>]*>)*?)([☐☑☒])((?:\s|<[^>]*>)*?)/g,
+      (_m, g1, mid, _g2, trail) => `${g1}${mid}${trail}`
+    );
+    return { content: result, replaced: true };
   }
 
   // Fallback: plain-text glyph adjacent to label (no <w:t> wrapper)
@@ -590,12 +595,15 @@ function replaceStaticCheckboxLabel(
     return { content, replaced: false };
   }
   plainPattern.lastIndex = 0;
-  return {
-    content: content.replace(plainPattern, (_match, _glyph, spacing, labelText) => {
-      return `${checkboxValue}${spacing}${labelText}`;
-    }),
-    replaced: true,
-  };
+  let result = content.replace(plainPattern, (_match, _glyph, spacing, labelText) => {
+    return `${checkboxValue}${spacing}${labelText}`;
+  });
+  // Same dedup for plain-text path
+  result = result.replace(
+    /([☐☑☒])((?:\s|<[^>]*>)*?)([☐☑☒])((?:\s|<[^>]*>)*?)/g,
+    (_m, g1, mid, _g2, trail) => `${g1}${mid}${trail}`
+  );
+  return { content: result, replaced: true };
 }
 
 
@@ -1372,6 +1380,14 @@ export function replaceMergeTags(
     );
     const combinedRegex = new RegExp(escapedPatterns.join('|'), 'g');
     result = result.replace(combinedRegex, (match) => tagReplacementMap.get(match) ?? match);
+
+    // Dedup: after merge tag replacement, collapse adjacent duplicate checkbox
+    // glyphs that arise when a merge tag resolves to ☑/☐ next to a static ☐
+    // already present in the template (e.g., "☑☐ Label" → "☑ Label").
+    result = result.replace(
+      /([☐☑☒])((?:\s|<[^>]*>)*?)([☐☑☒])/g,
+      (_m, g1, mid, _g2) => `${g1}${mid}`
+    );
   }
   
   // Always run label-based replacement after merge tag replacement
