@@ -548,7 +548,6 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                   </Select>
                   <Label className="shrink-0 text-xs text-foreground">on</Label>
                   {renderDatePickerField('completedOn')}
-                  />
                 </div>
               </div>
             </div>
