@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
-import { Plus, History, Loader2 } from 'lucide-react';
+import { Plus, RefreshCw, Printer, Trash2, Pencil, Loader2, History, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
@@ -22,16 +21,16 @@ import { useGridSelection } from '@/hooks/useGridSelection';
 import { formatCurrencyDisplay } from '@/lib/numericInputFilter';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'lenderAccount', label: 'Lender ID', visible: true },
+  { id: 'lenderName', label: 'Name', visible: true },
+  { id: 'originalAmount', label: 'Funding Amount', visible: true },
+  { id: 'principalBalance', label: 'Current Balance', visible: true },
+  { id: 'pctOwned', label: 'Pro Rata', visible: true },
   { id: 'fundingDate', label: 'Funding Date', visible: true },
-  { id: 'lenderAccount', label: 'Lender Account', visible: true },
-  { id: 'lenderName', label: 'Lender Name', visible: true },
-  { id: 'pctOwned', label: 'Pct Owned', visible: true },
-  { id: 'lenderRate', label: 'Lender Rate', visible: true },
-  { id: 'principalBalance', label: 'Principal Balance', visible: true },
-  { id: 'originalAmount', label: 'Original Amount', visible: true },
-  { id: 'regularPayment', label: 'Regular Payment', visible: true },
-  
-  { id: 'roundingError', label: 'Rounding Error', visible: true },
+  { id: 'interestFrom', label: 'Interest From', visible: true },
+  { id: 'lenderRate', label: 'Rate', visible: true },
+  { id: 'regularPayment', label: 'Payment', visible: true },
+  { id: 'roundingError', label: 'Rounding', visible: true },
 ];
 
 export interface FundingRecord {
@@ -152,6 +151,15 @@ const buildFundingFilterOptions = (records: FundingRecord[]): FilterOption[] => 
   ];
 };
 
+const formatDate = (val: string | undefined): string => {
+  if (!val) return '';
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return val;
+    return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+  } catch { return val; }
+};
+
 export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   dealId,
   loanNumber,
@@ -179,6 +187,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<FundingRecord | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [deleteRowRecord, setDeleteRowRecord] = useState<FundingRecord | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [editFundingData, setEditFundingData] = useState<FundingFormData | null>(null);
   const [columns, setColumns, resetColumns] = useTableColumnConfig('funding', DEFAULT_COLUMNS);
@@ -197,23 +206,13 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const totalOwnership = fundingRecords.reduce((sum, r) => sum + r.pctOwned, 0);
   const totalPrincipalBalance = fundingRecords.reduce((sum, r) => sum + r.principalBalance, 0);
   const totalPaymentSum = fundingRecords.reduce((sum, r) => sum + r.regularPayment, 0);
-  
   const totalFundingAmount = fundingRecords.reduce((sum, r) => sum + r.originalAmount, 0);
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   const formatPercentage = (value: number) => `${value.toFixed(3)}%`;
 
-  // Find which record has roundingError set
-  const roundingErrorId = fundingRecords.find(r => r.roundingError)?.id || '';
-
-  const handleRoundingErrorChange = (selectedId: string) => {
-    // Clear all, then set the selected one
-    fundingRecords.forEach((record) => {
-      if (record.roundingError && record.id !== selectedId) {
-        onUpdateRecord(record.id, { roundingError: false });
-      }
-    });
-    onUpdateRecord(selectedId, { roundingError: true });
+  const handleRoundingChange = (recordId: string, checked: boolean) => {
+    onUpdateRecord(recordId, { roundingError: checked });
   };
 
   const handleRowClick = (record: FundingRecord) => {
@@ -262,42 +261,57 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   };
 
   const handleAddFundingClick = () => {
-    // Explicitly clear edit state when adding new
     setSelectedRecord(null);
     setEditFundingData(null);
     setIsAddModalOpen(true);
   };
 
+  const handleDeleteRowClick = (e: React.MouseEvent, record: FundingRecord) => {
+    e.stopPropagation();
+    setDeleteRowRecord(record);
+  };
+
+  const handleConfirmDeleteRow = () => {
+    if (deleteRowRecord && onDeleteRecord) {
+      onDeleteRecord(deleteRowRecord);
+    }
+    setDeleteRowRecord(null);
+  };
+
+  const handleEditClick = (e: React.MouseEvent, record: FundingRecord) => {
+    e.stopPropagation();
+    handleRowClick(record);
+  };
+
   const renderCellValue = (record: FundingRecord, columnId: string) => {
     switch (columnId) {
-      case 'fundingDate': {
-        if (!record.fundingDate) return '-';
-        try {
-          const d = new Date(record.fundingDate);
-          if (isNaN(d.getTime())) return record.fundingDate;
-          return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
-        } catch { return record.fundingDate; }
-      }
       case 'lenderAccount':
         return <span className="font-medium">{record.lenderAccount || '-'}</span>;
       case 'lenderName':
         return record.lenderName || '-';
-      case 'pctOwned':
-        return <span>{formatPercentage(record.pctOwned)}</span>;
-      case 'lenderRate':
-        return <span>{formatPercentage(record.lenderRate)}</span>;
-      case 'principalBalance':
-        return <span>{formatCurrency(record.principalBalance)}</span>;
       case 'originalAmount':
         return <span>{formatCurrency(record.originalAmount)}</span>;
+      case 'principalBalance':
+        return <span>{formatCurrency(record.principalBalance)}</span>;
+      case 'pctOwned':
+        return <span>{formatPercentage(record.pctOwned)}</span>;
+      case 'fundingDate':
+        return formatDate(record.fundingDate) || '-';
+      case 'interestFrom':
+        return formatDate(record.interestFrom) || '-';
+      case 'lenderRate':
+        return <span>{formatPercentage(record.lenderRate)}</span>;
       case 'regularPayment':
         return <span>{formatCurrency(record.regularPayment)}</span>;
       case 'roundingError':
         return (
-          <div className="text-center" onClick={(e) => e.stopPropagation()}>
-            <RadioGroup value={roundingErrorId} onValueChange={handleRoundingErrorChange} className="inline-flex">
-              <RadioGroupItem value={record.id} className="h-3.5 w-3.5" />
-            </RadioGroup>
+          <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+            <Checkbox
+              checked={record.roundingError}
+              onCheckedChange={(checked) => handleRoundingChange(record.id, checked === true)}
+              disabled={disabled}
+              className="h-3.5 w-3.5"
+            />
           </div>
         );
       default:
@@ -317,21 +331,132 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
 
   const exportColumns: ExportColumn[] = DEFAULT_COLUMNS.map(c => ({ id: c.id, label: c.label }));
 
+  // Totals row helper
+  const renderTotalCell = (columnId: string) => {
+    switch (columnId) {
+      case 'lenderAccount':
+        return '';
+      case 'lenderName':
+        return <span className="font-semibold">Total</span>;
+      case 'originalAmount':
+        return <span className="font-semibold">{formatCurrency(totalFundingAmount)}</span>;
+      case 'principalBalance':
+        return <span className="font-semibold">{formatCurrency(totalPrincipalBalance)}</span>;
+      case 'pctOwned':
+        return '';
+      case 'regularPayment':
+        return <span className="font-semibold">{formatCurrency(totalPaymentSum)}</span>;
+      default:
+        return '';
+    }
+  };
+
   return (
-    <div className="p-6 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-lg text-foreground">Loan Funding</h3>
-        <div className="flex items-center gap-2">
-          <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
-          <Button variant="outline" size="sm" onClick={handleAddFundingClick} className="gap-1" disabled={disabled}>
-            <Plus className="h-4 w-4" />
-            Add Funding
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(true)} className="gap-1" disabled={disabled}>
-            <History className="h-4 w-4" />
-            History
-          </Button>
+    <div className="p-4 space-y-3">
+      {/* Header: Loan Funding title + Account/Borrower/Balance + Action icons */}
+      <div className="border border-border rounded-lg">
+        {/* Title bar */}
+        <div className="bg-muted/50 px-3 py-1.5 border-b border-border">
+          <span className="font-semibold text-sm text-foreground">Loan Funding</span>
+        </div>
+
+        {/* Header fields row */}
+        <div className="flex items-center gap-4 px-3 py-2 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <Label className="text-xs text-foreground font-medium shrink-0">Account</Label>
+            <Input
+              value={loanNumber || ''}
+              readOnly
+              className="h-7 text-xs w-28 bg-muted/30"
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Label className="text-xs text-foreground font-medium shrink-0">Borrower</Label>
+            <Input
+              value={borrowerName || ''}
+              readOnly
+              className="h-7 text-xs w-40 bg-muted/30"
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Label className="text-xs text-foreground font-medium shrink-0">Balance</Label>
+            <div className="relative">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+              <Input
+                value={totalPrincipalBalance > 0 ? new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalPrincipalBalance) : '-'}
+                readOnly
+                className="h-7 text-xs w-28 pl-5 bg-muted/30"
+              />
+            </div>
+          </div>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Action icons */}
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={onRefresh}
+              disabled={disabled}
+              title="Refresh"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setExportOpen(true)}
+              disabled={disabled}
+              title="Export"
+            >
+              <Download className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => window.print()}
+              disabled={disabled}
+              title="Print"
+            >
+              <Printer className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setIsHistoryOpen(true)}
+              disabled={disabled}
+              title="History"
+            >
+              <History className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={handleAddFundingClick}
+              disabled={disabled}
+              title="Add"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => { if (selectedCount > 0) setBulkDeleteOpen(true); }}
+              disabled={disabled || selectedCount === 0}
+              title="Delete Selected"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+            <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
+          </div>
         </div>
       </div>
 
@@ -361,37 +486,29 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
           <Table className="min-w-[900px]">
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="w-[40px]">
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    ref={(el) => { if (el) el.indeterminate = isSomeSelected; }}
-                    onChange={() => toggleAll()}
-                    disabled={filteredData.length === 0}
-                    className="h-4 w-4"
-                  />
-                </TableHead>
+                <TableHead className="w-[30px]" />
                 {visibleColumns.map((col) => (
                   col.id === 'roundingError' ? (
-                    <TableHead key={col.id} className="text-center">{col.label.toUpperCase()}</TableHead>
+                    <TableHead key={col.id} className="text-center text-xs">{col.label}</TableHead>
                   ) : (
                     <SortableTableHead
                       key={col.id}
                       columnId={col.id}
-                      label={col.label.toUpperCase()}
+                      label={col.label}
                       sortColumnId={sortState.columnId}
                       sortDirection={sortState.direction}
                       onSort={toggleSort}
                     />
                   )
                 ))}
+                <TableHead className="w-[50px] text-center text-xs"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={visibleColumns.length + 1} className="text-center text-muted-foreground py-8">
-                    {fundingRecords.length === 0 ? 'No funding records found. Click "Add Funding" to add a new funding record.' : 'No funding records match your search.'}
+                  <TableCell colSpan={visibleColumns.length + 2} className="text-center text-muted-foreground py-8">
+                    {fundingRecords.length === 0 ? 'No funding records found. Click "+" to add a new funding record.' : 'No funding records match your search.'}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -401,33 +518,47 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                     className={cn(!disabled && 'cursor-pointer hover:bg-muted/30', selectedRecord?.id === record.id && 'bg-primary/10')}
                     onClick={() => !disabled && handleRowClick(record)}
                   >
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(record.id)}
-                        onChange={() => toggleOne(record.id)}
+                    <TableCell className="px-1" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={(e) => handleEditClick(e, record)}
                         disabled={disabled}
-                        className="h-4 w-4"
-                      />
+                        title="Edit"
+                      >
+                        <Pencil className="h-3 w-3 text-muted-foreground" />
+                      </Button>
                     </TableCell>
-                     {visibleColumns.map((col) => (
-                      <TableCell key={col.id} className="text-left">{renderCellValue(record, col.id)}</TableCell>
+                    {visibleColumns.map((col) => (
+                      <TableCell key={col.id} className="text-left text-xs py-1.5">{renderCellValue(record, col.id)}</TableCell>
                     ))}
+                    <TableCell className="text-center px-1" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-destructive hover:text-destructive"
+                        onClick={(e) => handleDeleteRowClick(e, record)}
+                        disabled={disabled}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
+
+              {/* Totals row */}
               {fundingRecords.length > 0 && (
                 <TableRow className="bg-muted/30 font-semibold border-t-2">
                   <TableCell />
-                  {visibleColumns.map((col, idx) => {
-                    if (col.id === 'pctOwned') return <TableCell key={col.id} className="text-left"><span className="text-foreground">{formatPercentage(totalOwnership)}</span></TableCell>;
-                    if (col.id === 'principalBalance') return <TableCell key={col.id} className="text-left">{formatCurrency(totalPrincipalBalance)}</TableCell>;
-                    if (col.id === 'regularPayment') return <TableCell key={col.id} className="text-left">{formatCurrency(totalPaymentSum)}</TableCell>;
-                    
-                    if (col.id === 'originalAmount') return <TableCell key={col.id} className="text-left">{formatCurrency(totalFundingAmount)}</TableCell>;
-                    if (idx === 0) return <TableCell key={col.id} className="font-semibold">Totals:</TableCell>;
-                    return <TableCell key={col.id}></TableCell>;
-                  })}
+                  {visibleColumns.map((col) => (
+                    <TableCell key={col.id} className="text-left text-xs py-1.5">
+                      {renderTotalCell(col.id)}
+                    </TableCell>
+                  ))}
+                  <TableCell />
                 </TableRow>
               )}
             </TableBody>
@@ -454,9 +585,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       {totalOwnership > 100 && fundingRecords.length > 0 && (
         <p className="text-sm text-destructive font-medium">⚠ Total ownership exceeds 100% ({formatPercentage(totalOwnership)}). Cannot save new funding until resolved.</p>
       )}
-      {totalOwnership !== 100 && totalOwnership <= 100 && fundingRecords.length > 0 && (
-        <p className="text-sm text-foreground">Total ownership must equal 100% (currently {formatPercentage(totalOwnership)})</p>
-      )}
 
       {fundingRecords.length > 0 && (
         <div className="flex justify-end">
@@ -474,7 +602,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         borrowerName={borrowerName}
         onSubmit={(data) => {
           if (selectedRecord) {
-            // Determine lender rate from rate selection
             let lenderRate = 0;
             if (data.rateSelection === 'note_rate') lenderRate = parseFloat(data.rateNoteValue) || 0;
             else if (data.rateSelection === 'sold_rate') lenderRate = parseFloat(data.rateSoldValue) || 0;
@@ -496,6 +623,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               rateLenderValue: data.rateLenderValue,
               brokerParticipates: data.brokerParticipates,
               interestFrom: data.interestFrom,
+              roundingAdjustment: data.roundingAdjustment,
               overrideServicingFees: data.overrideServicingFees,
               companyServicingFee: data.companyServicingFee, companyServicingFeePct: data.companyServicingFeePct,
               companyMaxFee: data.companyMaxFee, companyMaxFeePct: data.companyMaxFeePct,
@@ -504,12 +632,12 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               brokerMaxFee: data.brokerMaxFee, brokerMaxFeePct: data.brokerMaxFeePct,
               brokerMinFee: data.brokerMinFee, brokerMinFeePct: data.brokerMinFeePct,
               overrideDefaultFees: data.overrideDefaultFees,
-              lateFee1Lender: data.lateFee1Lender, lateFee1Company: data.lateFee1Company, lateFee1Broker: data.lateFee1Broker, lateFee1Total: data.lateFee1Total,
-              lateFee2Lender: data.lateFee2Lender, lateFee2Company: data.lateFee2Company, lateFee2Broker: data.lateFee2Broker, lateFee2Total: data.lateFee2Total,
-              defaultInterestLender: data.defaultInterestLender, defaultInterestCompany: data.defaultInterestCompany, defaultInterestBroker: data.defaultInterestBroker, defaultInterestTotal: data.defaultInterestTotal,
-              interestGuaranteeLender: data.interestGuaranteeLender, interestGuaranteeCompany: data.interestGuaranteeCompany, interestGuaranteeBroker: data.interestGuaranteeBroker, interestGuaranteeTotal: data.interestGuaranteeTotal,
-              prepaymentLender: data.prepaymentLender, prepaymentCompany: data.prepaymentCompany, prepaymentBroker: data.prepaymentBroker, prepaymentTotal: data.prepaymentTotal,
-              maturityLender: data.maturityLender, maturityCompany: data.maturityCompany, maturityBroker: data.maturityBroker, maturityTotal: data.maturityTotal,
+              lateFee1Lender: data.lateFee1Lender, lateFee1Company: data.lateFee1Company, lateFee1Broker: data.lateFee1Broker, lateFee1Total: data.lateFee1Total, lateFee1Maximum: data.lateFee1Maximum,
+              lateFee2Lender: data.lateFee2Lender, lateFee2Company: data.lateFee2Company, lateFee2Broker: data.lateFee2Broker, lateFee2Total: data.lateFee2Total, lateFee2Maximum: data.lateFee2Maximum,
+              defaultInterestLender: data.defaultInterestLender, defaultInterestCompany: data.defaultInterestCompany, defaultInterestBroker: data.defaultInterestBroker, defaultInterestTotal: data.defaultInterestTotal, defaultInterestMaximum: data.defaultInterestMaximum,
+              interestGuaranteeLender: data.interestGuaranteeLender, interestGuaranteeCompany: data.interestGuaranteeCompany, interestGuaranteeBroker: data.interestGuaranteeBroker, interestGuaranteeTotal: data.interestGuaranteeTotal, interestGuaranteeMaximum: data.interestGuaranteeMaximum,
+              prepaymentLender: data.prepaymentLender, prepaymentCompany: data.prepaymentCompany, prepaymentBroker: data.prepaymentBroker, prepaymentTotal: data.prepaymentTotal, prepaymentMaximum: data.prepaymentMaximum,
+              maturityLender: data.maturityLender, maturityCompany: data.maturityCompany, maturityBroker: data.maturityBroker, maturityTotal: data.maturityTotal, maturityMaximum: data.maturityMaximum,
             });
           } else {
             onAddFunding(data);
@@ -527,6 +655,16 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
 
       <FundingHistoryDialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen} dealId={dealId} historyRecords={historyRecords} />
 
+      {/* Row-level delete confirmation */}
+      <DeleteConfirmationDialog
+        open={!!deleteRowRecord}
+        onOpenChange={(open) => { if (!open) setDeleteRowRecord(null); }}
+        onConfirm={handleConfirmDeleteRow}
+        title="Delete Funding Record"
+        description={`Are you sure you want to delete the funding record for "${deleteRowRecord?.lenderName || 'this lender'}"? This action cannot be undone.`}
+      />
+
+      {/* Bulk delete confirmation */}
       <DeleteConfirmationDialog
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
