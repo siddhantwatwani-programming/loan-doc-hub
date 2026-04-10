@@ -21,7 +21,7 @@ import { DealSectionTab } from "@/components/deal/DealSectionTab";
 import { BorrowerSectionContent } from "@/components/deal/BorrowerSectionContent";
 import { LenderSectionContent } from "@/components/deal/LenderSectionContent";
 import { PropertySectionContent } from "@/components/deal/PropertySectionContent";
-import { LienSectionContent } from "@/components/deal/LienSectionContent";
+
 import { BrokerSectionContent } from "@/components/deal/BrokerSectionContent";
 import { LoanTermsSectionContent } from "@/components/deal/LoanTermsSectionContent";
 import { LoanTermsFundingForm } from "@/components/deal/LoanTermsFundingForm";
@@ -64,12 +64,12 @@ interface Deal {
 
 // Section labels for display (partial - only includes displayable main sections)
 const SECTION_LABELS: Partial<
-  Record<FieldSection | "origination_fees" | "funding" | "event_journal" | "liens" | "participants", string>
+  Record<FieldSection | "origination_fees" | "funding" | "event_journal" | "participants", string>
 > = {
   participants: "Participants",
   property: "Property",
   loan_terms: "Loan",
-  liens: "Liens",
+  
   funding: "Funding",
   charges: "Charges",
   
@@ -86,7 +86,7 @@ const SECTION_ORDER: string[] = [
   "participants",
   "loan_terms",
   "property",
-  "liens",
+  
   "funding",
   "charges",
   "notes",
@@ -870,7 +870,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                 const allTabs = [...baseSections];
                 if (isInternalUser) {
                   if (!allTabs.includes("participants" as any)) allTabs.push("participants" as any);
-                  if (!allTabs.includes("liens" as any)) allTabs.push("liens" as any);
+                  
                   if (!allTabs.includes("funding" as any)) allTabs.push("funding" as any);
                   
                   
@@ -908,8 +908,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                   // For multi-entity sections: check prefixed dirty keys (e.g., borrower1.xxx, property2.xxx)
                   const SECTION_PREFIX_MAP: Record<string, string[]> = {
                     borrower: ['borrower', 'coborrower', 'trust_ledger'],
-                    property: ['property', 'insurance'],
-                    liens: ['lien'],
+                    property: ['property', 'insurance', 'lien'],
                     charges: ['charge'],
                     lender: ['lender'],
                     broker: ['broker'],
@@ -1077,42 +1076,6 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
               />
             </TabsContent>
 
-            {/* Liens - standalone top-level tab */}
-            <TabsContent value="liens" forceMount className={cn("animate-fade-in", activeTab !== "liens" && "hidden")}>
-              <LienSectionContent
-                values={values}
-                onValueChange={updateValue}
-                onRemoveValuesByPrefix={removeValuesByPrefix}
-                onPersist={async () => {
-                  computeCalculatedFields();
-                  const success = await saveDraft();
-                  if (success) resetDirty();
-                  return success;
-                }}
-                disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm("liens")}
-                propertyOptions={(() => {
-                  // Build property options from values
-                  const opts: { id: string; label: string }[] = [];
-                  const prefixes = new Set<string>();
-                  Object.keys(values).forEach(k => {
-                    const m = k.match(/^(property\d+)\./);
-                    if (m) prefixes.add(m[1]);
-                  });
-                  prefixes.forEach(p => {
-                    const street = values[`${p}.street`] || '';
-                    const desc = values[`${p}.description`] || '';
-                    opts.push({ id: p, label: desc || street || `Property ${p.replace('property', '')}` });
-                  });
-                  opts.sort((a, b) => {
-                    const nA = parseInt(a.id.replace('property', ''));
-                    const nB = parseInt(b.id.replace('property', ''));
-                    return nA - nB;
-                  });
-                  return opts;
-                })()}
-                onRefresh={handleGridRefresh}
-              />
-            </TabsContent>
 
             {/* Funding - standalone top-level tab */}
             <TabsContent value="funding" forceMount className={cn("animate-fade-in", activeTab !== "funding" && "hidden")}>

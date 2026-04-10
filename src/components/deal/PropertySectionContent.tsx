@@ -12,6 +12,7 @@ import { PropertyTaxModal } from './PropertyTaxModal';
 import { PropertiesTableView, type PropertyData } from './PropertiesTableView';
 import { PropertyModal } from './PropertyModal';
 import { InsuranceSectionContent } from './InsuranceSectionContent';
+import { LienSectionContent } from './LienSectionContent';
 import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
 import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { FieldDefinition } from '@/hooks/useDealFields';
@@ -234,6 +235,9 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
 
   // Check if property tax section is active (rendered separately like insurance)
   const isPropertyTaxSection = activeSubSection === 'property_tax_detail';
+
+  // Check if liens section is active (rendered separately like insurance)
+  const isLiensSection = activeSubSection === 'liens';
 
   // Remap dirty field keys: propertyN.xxx → property1.xxx for selected prefix
   // Also pass through lien/insurance keys for sub-sections
@@ -574,6 +578,37 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
                   disabled={disabled}
                   propertyOptions={propertyOptions}
                   onBack={handleBackToTable}
+                />
+              </DirtyFieldsProvider>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // Render Liens section separately (has its own table/detail view pattern like insurance)
+  if (isLiensSection) {
+    return (
+      <>
+        <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
+          <div className="flex flex-1">
+            <PropertySubNavigation
+              activeSubSection={activeSubSection}
+              onSubSectionChange={setActiveSubSection}
+              isDetailView={true}
+            />
+            <div className="flex-1 min-w-0 overflow-auto">
+              <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
+                <LienSectionContent
+                  values={values}
+                  onValueChange={onValueChange}
+                  onRemoveValuesByPrefix={onRemoveValuesByPrefix}
+                  onPersist={onPersist}
+                  disabled={disabled}
+                  propertyOptions={propertyOptions}
+                  onBack={handleBackToTable}
+                  onRefresh={onRefresh}
                 />
               </DirtyFieldsProvider>
             </div>

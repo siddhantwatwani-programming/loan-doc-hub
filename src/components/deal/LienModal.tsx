@@ -43,12 +43,23 @@ const getThisLoanAutofillValues = (loanValues: Record<string, string>) => ({
 
 const getDefaultLien = (): LienData => ({
   id: '', property: '', priority: '1st', holder: '', account: '', contact: '', phone: '', fax: '', email: '',
-  loanType: '', anticipated: 'false', existingRemain: 'false', existingPaydown: 'false', existingPayoff: 'false',
-  existingPaydownAmount: '', existingPayoffAmount: '', lienPriorityNow: '', lienPriorityAfter: '', interestRate: '',
+  loanType: '', loanTypeDropdown: '', anticipated: 'false', anticipatedAmount: '', existingRemain: 'false', existingPaydown: 'false', existingPayoff: 'false',
+  existingPaydownAmount: '', existingPayoffAmount: '', lienPriorityNow: '', lienPriorityAfter: '',
+  remainingNewLienPriority: '', newRemainingBalance: '',
+  interestRate: '',
   maturityDate: '', originalBalance: '', balanceAfter: '', currentBalance: '', regularPayment: '',
+  balloon: 'false', balloonAmount: '',
   recordingNumber: '', recordingNumberFlag: 'false', recordingDate: '', seniorLienTracking: 'false',
-  lastVerified: '', lastChecked: '', note: '', thisLoan: 'false', estimate: 'false', status: '',
-  delinquencies60day: 'false', delinquenciesHowMany: '', currentlyDelinquent: 'false', paidByLoan: 'false', sourceOfPayment: '',
+  sltActive: 'false',
+  lastVerified: '', lastChecked: '',
+  sltCurrent: 'false', sltDelinquent: 'false', sltDelinquentDays: '', sltUnderModification: 'false',
+  sltForeclosure: 'false', sltForeclosureDate: '', sltPaidOff: 'false',
+  sltLastPaymentMade: '', sltNextPaymentDue: '', sltCurrentBalance: '',
+  sltRequestSubmitted: '', sltResponseReceived: '', sltUnableToVerify: 'false',
+  sltLenderNotified: 'false', sltLenderNotifiedDate: '',
+  note: '', thisLoan: 'false', estimate: 'false', status: '',
+  delinquencies60day: 'false', delinquenciesHowMany: '', currentlyDelinquent: 'false', currentlyDelinquentAmount: '',
+  paidByLoan: 'false', sourceOfPayment: '',
   sourceOfInformation: '',
 });
 
