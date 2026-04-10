@@ -681,6 +681,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
 
 
   return (
+    <>
       <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
         {/* Full-width breadcrumb header when in detail view */}
         {isDetailView && (
@@ -733,7 +734,4 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         propertyOptions={propertyOptions.map(p => p.label)}
       />
     </>
-  );
-};
-
 export default PropertySectionContent;
