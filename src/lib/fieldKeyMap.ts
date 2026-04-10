@@ -566,6 +566,7 @@ export const PROPERTY_LIENS_KEYS = {
 export const PROPERTY_TAX_KEYS = {
   authority: 'propertytax1.authority',
   type: 'propertytax1.type',
+  paymentMailingAddress: 'propertytax1.payment_mailing_address',
   annualPayment: 'propertytax1.annual_payment',
   frequency: 'propertytax1.frequency',
   active: 'propertytax1.active',
