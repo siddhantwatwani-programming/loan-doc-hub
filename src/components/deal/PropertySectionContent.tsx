@@ -236,6 +236,9 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   // Check if property tax section is active (rendered separately like insurance)
   const isPropertyTaxSection = activeSubSection === 'property_tax_detail';
 
+  // Check if liens section is active (rendered separately like insurance)
+  const isLiensSection = activeSubSection === 'liens';
+
   // Remap dirty field keys: propertyN.xxx → property1.xxx for selected prefix
   // Also pass through lien/insurance keys for sub-sections
   const remappedDirtyKeys = useMemo(() => {
