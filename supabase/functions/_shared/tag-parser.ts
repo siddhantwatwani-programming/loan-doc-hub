@@ -1380,6 +1380,14 @@ export function replaceMergeTags(
     );
     const combinedRegex = new RegExp(escapedPatterns.join('|'), 'g');
     result = result.replace(combinedRegex, (match) => tagReplacementMap.get(match) ?? match);
+
+    // Dedup: after merge tag replacement, collapse adjacent duplicate checkbox
+    // glyphs that arise when a merge tag resolves to ☑/☐ next to a static ☐
+    // already present in the template (e.g., "☑☐ Label" → "☑ Label").
+    result = result.replace(
+      /([☐☑☒])((?:\s|<[^>]*>)*?)([☐☑☒])/g,
+      (_m, g1, mid, _g2) => `${g1}${mid}`
+    );
   }
   
   // Always run label-based replacement after merge tag replacement
