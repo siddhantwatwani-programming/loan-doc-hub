@@ -161,22 +161,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
                 <Input value={formData.authority} onChange={(e) => handleChange('authority', e.target.value)} className="h-7 text-xs flex-1" />
               </div>
 
-              <div className="flex items-start gap-2">
-                <Label className="w-[120px] shrink-0 text-xs text-foreground pt-1">Address</Label>
-                <Textarea value={formData.address} onChange={(e) => handleChange('address', e.target.value)} className="text-xs flex-1 min-h-[50px]" />
-              </div>
-
               {renderDropdownField('type', 'Type', TYPE_OPTIONS)}
-
-              <div className="flex items-center gap-2">
-                <Label className="w-[120px] shrink-0 text-xs text-foreground">APN</Label>
-                <Input value={formData.apn} onChange={(e) => handleChange('apn', e.target.value)} className="h-7 text-xs flex-1" />
-              </div>
-
-              <div className="flex items-start gap-2">
-                <Label className="w-[120px] shrink-0 text-xs text-foreground pt-1">Memo</Label>
-                <Textarea value={formData.memo} onChange={(e) => handleChange('memo', e.target.value)} className="text-xs flex-1 min-h-[50px]" />
-              </div>
 
               {renderCurrencyField('annualPayment', 'Annual Payment (est.)')}
               {renderCurrencyField('amount', 'Amount')}
