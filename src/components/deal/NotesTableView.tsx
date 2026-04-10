@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Plus, Download, Paperclip, FileDown, CalendarIcon } from 'lucide-react';
+import { Search, X, Paperclip, FileDown, CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -11,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
-import { GridToolbar, FilterOption } from './GridToolbar';
+import { FilterOption } from './GridToolbar';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
@@ -20,6 +21,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { format, parse, isValid } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
@@ -60,6 +69,7 @@ interface NotesTableViewProps {
   onBulkDelete?: (notes: NoteData[]) => void;
   onExport?: () => void;
   onRefresh?: () => void;
+  onSave?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
   asOfFilter?: string;
@@ -126,7 +136,7 @@ const formatDate = (dateStr: string) => {
 };
 
 export const NotesTableView: React.FC<NotesTableViewProps> = ({
-  notes, onAddNote, onEditNote, onRowClick, onDeleteNote, onBulkDelete, onExport, onRefresh, disabled = false, isLoading = false,
+  notes, onAddNote, onEditNote, onRowClick, onDeleteNote, onBulkDelete, onExport, onRefresh, onSave, disabled = false, isLoading = false,
   asOfFilter, onAsOfFilterChange,
   currentPage = 1, totalPages = 1, totalCount, onPageChange,
 }) => {
@@ -134,6 +144,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [viewingNote, setViewingNote] = useState<NoteData | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const {
@@ -212,50 +223,109 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
 
   const exportColumns: ExportColumn[] = DEFAULT_COLUMNS.filter(c => c.id !== 'attachments').map(c => ({ id: c.id, label: c.label }));
 
+  const filterOptions = buildFilterOptions(notes);
+
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h3 className="font-semibold text-lg text-foreground">Conversation Log</h3>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <label className="text-xs text-muted-foreground whitespace-nowrap">As Of:</label>
-            <Popover>
+      {/* Title */}
+      <h3 className="font-semibold text-lg text-foreground">Conversation Log</h3>
+
+      {/* Toolbar: Search left, text-link actions right */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Search */}
+        <div className="relative min-w-[140px] max-w-[180px]">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-8 pl-8 text-xs"
+            disabled={disabled}
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5"
+              onClick={() => setSearchQuery('')}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+
+        {/* As Of filter */}
+        <div className="flex items-center gap-1">
+          <label className="text-xs text-muted-foreground whitespace-nowrap">As Of:</label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn('h-8 text-xs gap-1 w-[130px] justify-start', !asOfFilter && 'text-muted-foreground')} disabled={disabled}>
+                {asOfFilter ? (() => { try { const d = parse(asOfFilter, 'yyyy-MM-dd', new Date()); return isValid(d) ? format(d, 'MM/dd/yyyy') : asOfFilter; } catch { return asOfFilter; } })() : 'mm/dd/yyyy'}
+                <CalendarIcon className="h-3 w-3 ml-auto" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 z-[9999]" align="end">
+              <EnhancedCalendar mode="single" selected={asOfFilter ? (() => { try { const d = parse(asOfFilter, 'yyyy-MM-dd', new Date()); return isValid(d) ? d : undefined; } catch { return undefined; } })() : undefined} onSelect={(d) => { onAsOfFilterChange?.(d ? format(d, 'yyyy-MM-dd') : ''); }} onClear={() => { onAsOfFilterChange?.(''); }} onToday={() => { onAsOfFilterChange?.(format(new Date(), 'yyyy-MM-dd')); }} initialFocus />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Text-link action buttons */}
+        <div className="flex items-center gap-1 flex-wrap">
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" onClick={onAddNote} disabled={disabled}>Add</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" onClick={() => { if (selectedCount === 1) onEditNote(selectedItems[0]); }} disabled={disabled || selectedCount !== 1}>Edit</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" onClick={onSave} disabled={disabled}>Save</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" onClick={onRefresh} disabled={disabled}>Refresh</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" onClick={() => setExportOpen(true)} disabled={disabled}>Export</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" onClick={() => window.print()} disabled={disabled}>Print</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" onClick={() => { if (selectedCount > 0) setBulkDeleteOpen(true); }} disabled={disabled || selectedCount === 0}>Delete</Button>
+          <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} disabled={disabled} />
+          {/* Filter popover */}
+          {filterOptions.length > 0 && (
+            <Popover open={filterOpen} onOpenChange={setFilterOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className={cn('h-8 text-xs gap-1 w-[130px] justify-start', !asOfFilter && 'text-muted-foreground')} disabled={disabled}>
-                  {asOfFilter ? (() => { try { const d = parse(asOfFilter, 'yyyy-MM-dd', new Date()); return isValid(d) ? format(d, 'MM/dd/yyyy') : asOfFilter; } catch { return asOfFilter; } })() : 'mm/dd/yyyy'}
-                  <CalendarIcon className="h-3 w-3 ml-auto" />
+                <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2 gap-1" disabled={disabled}>
+                  Filter
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary" className="ml-0.5 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
+                      {activeFilterCount}
+                    </Badge>
+                  )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 z-[9999]" align="end">
-                <EnhancedCalendar mode="single" selected={asOfFilter ? (() => { try { const d = parse(asOfFilter, 'yyyy-MM-dd', new Date()); return isValid(d) ? d : undefined; } catch { return undefined; } })() : undefined} onSelect={(d) => { onAsOfFilterChange?.(d ? format(d, 'yyyy-MM-dd') : ''); }} onClear={() => { onAsOfFilterChange?.(''); }} onToday={() => { onAsOfFilterChange?.(format(new Date(), 'yyyy-MM-dd')); }} initialFocus />
+              <PopoverContent className="w-72 p-3" align="end">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Filters</span>
+                    {activeFilterCount > 0 && (
+                      <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={clearFilters}>Clear All</Button>
+                    )}
+                  </div>
+                  {filterOptions.map((filter) => (
+                    <div key={filter.id} className="space-y-1">
+                      <label className="text-xs text-muted-foreground">{filter.label}</label>
+                      <Select value={activeFilters[filter.id] || 'all'} onValueChange={(value) => setFilter(filter.id, value)}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder={`All ${filter.label}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All</SelectItem>
+                          {filter.options.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
               </PopoverContent>
             </Popover>
-          </div>
-          <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} disabled={disabled} />
-          <Button variant="outline" size="sm" onClick={onAddNote} disabled={disabled} className="gap-1">
-            <Plus className="h-4 w-4" />
-            Add Conversation Logs
-          </Button>
+          )}
         </div>
       </div>
-
-      {/* Grid Toolbar */}
-      <GridToolbar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onRefresh={onRefresh}
-        filterOptions={buildFilterOptions(notes)}
-        activeFilters={activeFilters}
-        onFilterChange={setFilter}
-        onClearFilters={clearFilters}
-        activeFilterCount={activeFilterCount}
-        disabled={disabled}
-        selectedCount={selectedCount}
-        onBulkDelete={() => setBulkDeleteOpen(true)}
-        onExport={() => setExportOpen(true)}
-        searchPlaceholder="Search conversations..."
-      />
 
       {/* Table */}
       <div className="border border-border rounded-lg overflow-x-auto">

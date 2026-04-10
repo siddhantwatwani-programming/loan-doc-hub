@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -9,11 +10,24 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
-import { GridToolbar, FilterOption } from './GridToolbar';
+import { FilterOption } from './GridToolbar';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 export interface ChargeData {
   id: string;
@@ -51,6 +65,7 @@ interface ChargesTableViewProps {
   onDeleteCharge?: (charge: ChargeData) => void;
   onBulkDelete?: (charges: ChargeData[]) => void;
   onRefresh?: () => void;
+  onSave?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
   currentPage?: number;
@@ -141,6 +156,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   onDeleteCharge,
   onBulkDelete,
   onRefresh,
+  onSave,
   disabled = false,
   isLoading = false,
   currentPage = 1,
@@ -151,6 +167,8 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   const [columns, setColumns, resetColumns] = useTableColumnConfig('charges_v6', DEFAULT_COLUMNS);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [showPaid, setShowPaid] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const {
@@ -224,33 +242,91 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
 
   return (
     <div className="p-6 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-lg text-foreground">Charges</h3>
-        <div className="flex items-center gap-2">
+      {/* Title */}
+      <h3 className="font-semibold text-lg text-foreground">Charges</h3>
+
+      {/* Toolbar: Search left, text-link actions right */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Search */}
+        <div className="relative min-w-[140px] max-w-[180px]">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-8 pl-8 text-xs"
+            disabled={disabled}
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5"
+              onClick={() => setSearchQuery('')}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Text-link action buttons */}
+        <div className="flex items-center gap-1 flex-wrap">
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" onClick={onAddCharge} disabled={disabled}>Add</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" onClick={() => { if (selectedCount === 1) onEditCharge(selectedItems[0]); }} disabled={disabled || selectedCount !== 1}>Edit</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" disabled={disabled}>History</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" onClick={onSave} disabled={disabled}>Save</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" onClick={onRefresh} disabled={disabled}>Refresh</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" onClick={() => setShowPaid(!showPaid)} disabled={disabled}>{showPaid ? 'Hide Paid' : 'Show Paid'}</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" onClick={() => setExportOpen(true)} disabled={disabled}>Export</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" onClick={() => window.print()} disabled={disabled}>Print</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2" onClick={() => { if (selectedCount > 0) setBulkDeleteOpen(true); }} disabled={disabled || selectedCount === 0}>Delete</Button>
           <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} disabled={disabled} />
-          <Button variant="outline" size="sm" onClick={onAddCharge} disabled={disabled} className="gap-1">
-            <Plus className="h-4 w-4" />
-            Add Charge
-          </Button>
+          {/* Filter popover */}
+          {FILTER_OPTIONS.length > 0 && (
+            <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold text-primary px-2 gap-1" disabled={disabled}>
+                  Filter
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary" className="ml-0.5 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
+                      {activeFilterCount}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-3" align="end">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Filters</span>
+                    {activeFilterCount > 0 && (
+                      <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={clearFilters}>Clear All</Button>
+                    )}
+                  </div>
+                  {FILTER_OPTIONS.map((filter) => (
+                    <div key={filter.id} className="space-y-1">
+                      <label className="text-xs text-muted-foreground">{filter.label}</label>
+                      <Select value={activeFilters[filter.id] || 'all'} onValueChange={(value) => setFilter(filter.id, value)}>
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder={`All ${filter.label}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All</SelectItem>
+                          {filter.options.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
       </div>
-
-      {/* Grid Toolbar */}
-      <GridToolbar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onRefresh={onRefresh}
-        filterOptions={FILTER_OPTIONS}
-        activeFilters={activeFilters}
-        onFilterChange={setFilter}
-        onClearFilters={clearFilters}
-        activeFilterCount={activeFilterCount}
-        disabled={disabled}
-        selectedCount={selectedCount}
-        onBulkDelete={() => setBulkDeleteOpen(true)}
-        onExport={() => setExportOpen(true)}
-      />
 
       {/* Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
