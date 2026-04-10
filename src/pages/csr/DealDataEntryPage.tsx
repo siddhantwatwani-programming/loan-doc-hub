@@ -64,12 +64,12 @@ interface Deal {
 
 // Section labels for display (partial - only includes displayable main sections)
 const SECTION_LABELS: Partial<
-  Record<FieldSection | "origination_fees" | "funding" | "event_journal" | "liens" | "participants", string>
+  Record<FieldSection | "origination_fees" | "funding" | "event_journal" | "participants", string>
 > = {
   participants: "Participants",
   property: "Property",
   loan_terms: "Loan",
-  liens: "Liens",
+  
   funding: "Funding",
   charges: "Charges",
   
@@ -86,7 +86,7 @@ const SECTION_ORDER: string[] = [
   "participants",
   "loan_terms",
   "property",
-  "liens",
+  
   "funding",
   "charges",
   "notes",
@@ -870,7 +870,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                 const allTabs = [...baseSections];
                 if (isInternalUser) {
                   if (!allTabs.includes("participants" as any)) allTabs.push("participants" as any);
-                  if (!allTabs.includes("liens" as any)) allTabs.push("liens" as any);
+                  
                   if (!allTabs.includes("funding" as any)) allTabs.push("funding" as any);
                   
                   
