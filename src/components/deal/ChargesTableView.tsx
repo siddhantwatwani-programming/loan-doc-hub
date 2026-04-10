@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -9,11 +10,24 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
-import { GridToolbar, FilterOption } from './GridToolbar';
+import { FilterOption } from './GridToolbar';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 export interface ChargeData {
   id: string;
@@ -51,6 +65,7 @@ interface ChargesTableViewProps {
   onDeleteCharge?: (charge: ChargeData) => void;
   onBulkDelete?: (charges: ChargeData[]) => void;
   onRefresh?: () => void;
+  onSave?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
   currentPage?: number;
