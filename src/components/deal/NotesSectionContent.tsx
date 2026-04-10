@@ -123,6 +123,8 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
   const handleSaveNote = useCallback((noteData: NoteData) => {
     const prefix = editingNote ? editingNote.id : getNextNotePrefix(values);
     onValueChange(`${prefix}.high_priority`, noteData.highPriority ? 'true' : 'false');
+    onValueChange(`${prefix}.incoming`, noteData.incoming ? 'true' : 'false');
+    onValueChange(`${prefix}.outgoing`, noteData.outgoing ? 'true' : 'false');
     onValueChange(`${prefix}.date`, noteData.date);
     onValueChange(`${prefix}.as_of_date`, noteData.asOfDate || '');
     onValueChange(`${prefix}.account`, noteData.account);
@@ -131,6 +133,16 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
     onValueChange(`${prefix}.content`, noteData.content);
     onValueChange(`${prefix}.type`, noteData.type);
     onValueChange(`${prefix}.attachments`, JSON.stringify(noteData.attachments || []));
+    onValueChange(`${prefix}.followup_reminder`, noteData.followupReminder || '');
+    onValueChange(`${prefix}.completed`, noteData.completed || '');
+    onValueChange(`${prefix}.assigned_on`, noteData.assignedOn || '');
+    onValueChange(`${prefix}.assigned_to`, noteData.assignedTo || '');
+    onValueChange(`${prefix}.assigned_department`, noteData.assignedDepartment || '');
+    onValueChange(`${prefix}.assigned_by`, noteData.assignedBy || '');
+    onValueChange(`${prefix}.completed_by`, noteData.completedBy || '');
+    onValueChange(`${prefix}.completed_on`, noteData.completedOn || '');
+    onValueChange(`${prefix}.publish`, noteData.publish ? 'true' : 'false');
+    onValueChange(`${prefix}.add_to_participants`, noteData.addToParticipants ? 'true' : 'false');
     setModalOpen(false);
   }, [editingNote, values, onValueChange]);
 
