@@ -164,7 +164,7 @@ const renderCellValue = (tax: PropertyTaxData, columnId: string) => {
     case 'pmaZip': return tax.pmaZip || '-';
     case 'active': return tax.active ? '✓' : '-';
     case 'lastVerified': return formatDate(tax.lastVerified);
-    case 'lenderNotified': return formatDate(tax.lenderNotified);
+    case 'lenderNotified': return formatDate(tax.lenderNotified || tax.lenderNotifiedDate);
     case 'current': return tax.current ? '✓' : '-';
     case 'delinquent': return tax.delinquent ? (formatCurrency(tax.delinquentAmount) || '✓') : '-';
     case 'borrowerNotified': return tax.borrowerNotified ? '✓' : '-';
