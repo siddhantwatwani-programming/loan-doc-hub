@@ -222,7 +222,6 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
             </DirtyFieldWrapper>
 
             {renderDateField('last_verified', 'Last Verified')}
-            {renderDateField('lender_notified', 'Lender Notified')}
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.current`}>
               <div className="flex items-center gap-3">
@@ -271,6 +270,20 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.lender_notified_date`}>
               {renderDateField('lender_notified_date', 'Lender Notified')}
+            </DirtyFieldWrapper>
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.apn`}>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">APN</Label>
+                <Input value={getValue('apn')} onChange={(e) => handleChange('apn', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              </div>
+            </DirtyFieldWrapper>
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.memo`}>
+              <div className="flex items-start gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px] pt-1">Memo</Label>
+                <Textarea value={getValue('memo')} onChange={(e) => handleChange('memo', e.target.value)} disabled={disabled} className="text-sm flex-1 min-h-[50px]" />
+              </div>
             </DirtyFieldWrapper>
           </div>
         </div>
