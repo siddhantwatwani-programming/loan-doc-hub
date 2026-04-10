@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus } from 'lucide-react';
+import { Plus, ArrowLeft } from 'lucide-react';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -51,6 +51,7 @@ interface PropertyTaxTableViewProps {
   onRowClick: (tax: PropertyTaxData) => void;
   onDeleteTax?: (tax: PropertyTaxData) => void;
   onBulkDelete?: (taxes: PropertyTaxData[]) => void;
+  onBack?: () => void;
   onRefresh?: () => void;
   disabled?: boolean;
   currentPage?: number;
@@ -180,6 +181,7 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
   onRowClick,
   onDeleteTax,
   onBulkDelete,
+  onBack,
   onRefresh,
   disabled = false,
   currentPage = 1,
@@ -223,7 +225,15 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground">Property Tax</h3>
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 h-8">
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          )}
+          <h3 className="text-lg font-semibold text-foreground">Property Tax</h3>
+        </div>
         <div className="flex items-center gap-2">
           <ColumnConfigPopover
             columns={columns}
