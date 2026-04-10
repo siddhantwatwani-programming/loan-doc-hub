@@ -72,6 +72,16 @@ const extractChargesFromValues = (values: Record<string, string>): ChargeData[] 
       amountOwedByBorrower: getVal(prefix, 'amount_owed_by_borrower'),
       accruedInterest: getVal(prefix, 'accrued_interest'),
       distributeBetweenAllLenders: values[`${prefix}.distribute_between_all_lenders`] || '',
+      department: values[`${prefix}.department`] || '',
+      category: values[`${prefix}.category`] || '',
+      details: values[`${prefix}.details`] || '',
+      currentBalance: getVal(prefix, 'current_balance'),
+      balanceDueAsOf: values[`${prefix}.balance_due_as_of`] || '',
+      balanceDue: getVal(prefix, 'balance_due'),
+      advancedByDeferred: values[`${prefix}.advanced_by_deferred`] || '',
+      advancedByTotal: getVal(prefix, 'advanced_by_total'),
+      onBehalfOfBilling: values[`${prefix}.on_behalf_of_billing`] || '',
+      onBehalfOfTotal: getVal(prefix, 'on_behalf_of_total'),
     };
     charges.push(charge);
   });
@@ -197,9 +207,19 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
       { key: 'onBehalfOfAmount', dbField: 'on_behalf_of_amount' },
       { key: 'amountOwedByBorrower', dbField: 'amount_owed_by_borrower' },
       { key: 'accruedInterest', dbField: 'accrued_interest' },
+      { key: 'department', dbField: 'department' },
+      { key: 'category', dbField: 'category' },
+      { key: 'details', dbField: 'details' },
+      { key: 'currentBalance', dbField: 'current_balance' },
+      { key: 'balanceDueAsOf', dbField: 'balance_due_as_of' },
+      { key: 'balanceDue', dbField: 'balance_due' },
+      { key: 'advancedByDeferred', dbField: 'advanced_by_deferred' },
+      { key: 'advancedByTotal', dbField: 'advanced_by_total' },
+      { key: 'onBehalfOfBilling', dbField: 'on_behalf_of_billing' },
+      { key: 'onBehalfOfTotal', dbField: 'on_behalf_of_total' },
     ];
 
-    const currencyKeys: (keyof ChargeData)[] = ['unpaidBalance', 'totalDue', 'originalAmount', 'advancedByAmount', 'onBehalfOfAmount', 'amountOwedByBorrower', 'accruedInterest'];
+    const currencyKeys: (keyof ChargeData)[] = ['unpaidBalance', 'totalDue', 'originalAmount', 'advancedByAmount', 'onBehalfOfAmount', 'amountOwedByBorrower', 'accruedInterest', 'currentBalance', 'balanceDue', 'advancedByTotal', 'onBehalfOfTotal'];
 
     fieldEntries.forEach(({ key, dbField }) => {
       let val = chargeData[key] || '';
