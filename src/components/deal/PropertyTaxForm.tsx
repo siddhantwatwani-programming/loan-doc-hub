@@ -208,11 +208,54 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
             </DirtyFieldWrapper>
           </div>
 
-          {/* Right column - Tax Tracking */}
+          {/* Right column */}
           <div className="space-y-3">
-            <div className="border-b border-border pb-1 mb-2">
-              <span className="font-semibold text-sm text-foreground">Tax Tracking</span>
+            {/* Payment Mailing Address sub-section */}
+            <div className="space-y-2.5">
+              <div className="border-b border-border pb-1 mb-2">
+                <span className="text-sm font-semibold text-foreground">Payment Mailing Address</span>
+              </div>
+
+              <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_street`}>
+                <div className="flex items-center gap-3">
+                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[70px]">Street</Label>
+                  <Input value={getValue('pma_street')} onChange={(e) => handleChange('pma_street', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+                </div>
+              </DirtyFieldWrapper>
+
+              <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_city`}>
+                <div className="flex items-center gap-3">
+                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[70px]">City</Label>
+                  <Input value={getValue('pma_city')} onChange={(e) => handleChange('pma_city', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+                </div>
+              </DirtyFieldWrapper>
+
+              <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_state`}>
+                <div className="flex items-center gap-3">
+                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[70px]">State</Label>
+                  <Select value={getValue('pma_state')} onValueChange={(value) => handleChange('pma_state', value)} disabled={disabled}>
+                    <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select state" /></SelectTrigger>
+                    <SelectContent className="bg-background z-50 max-h-[200px]">
+                      {STATE_OPTIONS.map((st) => (<SelectItem key={st} value={st}>{st}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </DirtyFieldWrapper>
+
+              <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_zip`}>
+                <div className="flex items-center gap-3">
+                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[70px]">ZIP</Label>
+                  <ZipInput
+                    value={getValue('pma_zip')}
+                    onValueChange={(v) => handleChange('pma_zip', v)}
+                    disabled={disabled}
+                    className="h-7 text-sm"
+                  />
+                </div>
+              </DirtyFieldWrapper>
             </div>
+
+            {/* Tax Tracking */}
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.active`}>
               <div className="flex items-center gap-3">
