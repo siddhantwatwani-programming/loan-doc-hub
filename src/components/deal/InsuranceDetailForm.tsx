@@ -225,12 +225,6 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.active}>
-            <div className="flex items-center gap-2 pt-1">
-              <Checkbox id="detail-insurance-active" checked={insurance.active} onCheckedChange={(checked) => onChange('active', !!checked)} disabled={disabled} className="h-4 w-4" />
-              <Label htmlFor="detail-insurance-active" className="text-sm text-foreground">Active</Label>
-            </div>
-          </DirtyFieldWrapper>
         </div>
 
         {/* Right Column */}
@@ -300,6 +294,7 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
                   <SelectItem value="Not Paid">Not Paid</SelectItem>
                   <SelectItem value="Pending Cancellation">Pending Cancellation</SelectItem>
                   <SelectItem value="Cancelled">Cancelled</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -332,14 +327,14 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.attemptBorrower}>
             <div className="flex items-center gap-2">
               <Checkbox id="detail-attempt-borrower" checked={insurance.attemptBorrower} onCheckedChange={(checked) => onChange('attemptBorrower', !!checked)} disabled={disabled} className="h-4 w-4" />
-              <Label htmlFor="detail-attempt-borrower" className="text-sm text-foreground">Attempt Borrower</Label>
+              <Label htmlFor="detail-attempt-borrower" className="text-sm text-foreground">Attempted Borrower</Label>
             </div>
           </DirtyFieldWrapper>
 
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.lenderNotified}>
             <div className="flex items-center gap-2">
               <Checkbox id="detail-lender-notified" checked={insurance.lenderNotified} onCheckedChange={(checked) => onChange('lenderNotified', !!checked)} disabled={disabled} className="h-4 w-4" />
-              <Label htmlFor="detail-lender-notified" className="text-sm text-foreground">Lender Notified</Label>
+              <Label htmlFor="detail-lender-notified" className="text-sm text-foreground">Notified Lender</Label>
             </div>
           </DirtyFieldWrapper>
 
