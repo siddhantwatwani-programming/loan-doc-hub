@@ -17,7 +17,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LenderIdSearch } from './LenderIdSearch';
-import { PaymentAccountSearch } from './PaymentAccountSearch';
 import { formatCurrencyDisplay, unformatCurrencyDisplay, numericKeyDown, numericPaste } from '@/lib/numericInputFilter';
 
 interface AddFundingModalProps {
@@ -550,13 +549,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                         />
                       </td>
                       <td className="py-0.5 px-1.5">
-                        <PaymentAccountSearch
-                          value={row.accountId}
-                          onChange={(accountId, name) => {
-                            handlePaymentChange(idx, 'accountId', accountId);
-                            handlePaymentChange(idx, 'name', name);
-                          }}
-                        />
+                        <Input value={row.accountId} onChange={(e) => handlePaymentChange(idx, 'accountId', e.target.value)} className="h-6 text-xs" placeholder="Search" />
                       </td>
                       <td className="py-0.5 px-1.5">
                         <Input value={row.name} onChange={(e) => handlePaymentChange(idx, 'name', e.target.value)} className="h-6 text-xs" placeholder="Name" />
