@@ -13,10 +13,12 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Search } from 'lucide-react';
 import { format, parse, isValid } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
+import { ZipInput } from '@/components/ui/zip-input';
+import { STATE_OPTIONS } from '@/lib/usStates';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
@@ -138,14 +140,22 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
             <DirtyFieldWrapper fieldKey={`${PREFIX}.authority`}>
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Tax Authority</Label>
-                <Input value={getValue('authority')} onChange={(e) => handleChange('authority', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-              </div>
-            </DirtyFieldWrapper>
-
-            <DirtyFieldWrapper fieldKey={`${PREFIX}.address`}>
-              <div className="flex items-start gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px] pt-1">Address</Label>
-                <Textarea value={getValue('address')} onChange={(e) => handleChange('address', e.target.value)} disabled={disabled} className="text-sm flex-1 min-h-[50px]" />
+                <div className="flex flex-1 gap-1.5">
+                  <Input value={getValue('authority')} onChange={(e) => handleChange('authority', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs whitespace-nowrap px-2 gap-1"
+                    disabled={disabled}
+                    onClick={() => {
+                      /* Search / Add placeholder — opens inline search */
+                    }}
+                  >
+                    <Search className="h-3 w-3" />
+                    Search / Add
+                  </Button>
+                </div>
               </div>
             </DirtyFieldWrapper>
 
@@ -153,12 +163,48 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               {renderDropdownField('type', 'Type', TYPE_OPTIONS)}
             </DirtyFieldWrapper>
 
-            <DirtyFieldWrapper fieldKey={`${PREFIX}.payment_mailing_address`}>
-              <div className="flex items-start gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px] pt-1">Payment Mailing<br />Address</Label>
-                <Textarea value={getValue('payment_mailing_address')} onChange={(e) => handleChange('payment_mailing_address', e.target.value)} disabled={disabled} className="text-sm flex-1 min-h-[50px]" />
-              </div>
-            </DirtyFieldWrapper>
+            {/* Payment Mailing Address sub-section */}
+            <div className="border border-border rounded p-3 space-y-2.5">
+              <span className="text-sm font-semibold text-foreground">Payment Mailing Address</span>
+
+              <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_street`}>
+                <div className="flex items-center gap-3">
+                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[70px]">Street</Label>
+                  <Input value={getValue('pma_street')} onChange={(e) => handleChange('pma_street', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+                </div>
+              </DirtyFieldWrapper>
+
+              <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_city`}>
+                <div className="flex items-center gap-3">
+                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[70px]">City</Label>
+                  <Input value={getValue('pma_city')} onChange={(e) => handleChange('pma_city', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+                </div>
+              </DirtyFieldWrapper>
+
+              <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_state`}>
+                <div className="flex items-center gap-3">
+                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[70px]">State</Label>
+                  <Select value={getValue('pma_state')} onValueChange={(value) => handleChange('pma_state', value)} disabled={disabled}>
+                    <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select state" /></SelectTrigger>
+                    <SelectContent className="bg-background z-50 max-h-[200px]">
+                      {STATE_OPTIONS.map((st) => (<SelectItem key={st.value} value={st.value}>{st.value}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </DirtyFieldWrapper>
+
+              <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_zip`}>
+                <div className="flex items-center gap-3">
+                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[70px]">ZIP</Label>
+                  <ZipInput
+                    value={getValue('pma_zip')}
+                    onValueChange={(v) => handleChange('pma_zip', v)}
+                    disabled={disabled}
+                    className="h-7 text-sm"
+                  />
+                </div>
+              </DirtyFieldWrapper>
+            </div>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.annual_payment`}>
               <div className="flex items-center gap-3">
