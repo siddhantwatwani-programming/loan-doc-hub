@@ -66,7 +66,6 @@ export interface FundingRecord {
   interestFrom?: string;
   roundingAdjustment?: boolean;
   disbursements?: Array<{accountId: string; name: string; amount: string; percentage: string; comments: string}>;
-  // Servicing fees
   overrideServicingFees?: boolean;
   companyServicingFee?: string;
   companyServicingFeePct?: string;
@@ -80,7 +79,6 @@ export interface FundingRecord {
   brokerMaxFeePct?: string;
   brokerMinFee?: string;
   brokerMinFeePct?: string;
-  // Default fees
   overrideDefaultFees?: boolean;
   lateFee1Lender?: string;
   lateFee1Company?: string;
@@ -254,7 +252,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         { accountId: '', name: '', amount: '', percentage: '', comments: '' },
         { accountId: '', name: '', amount: '', percentage: '', comments: '' },
       ],
-      // New screenshot fields
       principalBalance: formatCurrencyDisplay(String(record.principalBalance)),
       noteRateDisplay: noteRate,
       overrideServicing: record.overrideServicingFees || false,
@@ -269,7 +266,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       vendorMinimum: record.brokerMinFee || '',
       vendorMaximum: record.brokerMaxFee || '',
       payments: (record as any).payments?.length ? (record as any).payments : undefined,
-      // Legacy fields
       overrideServicingFees: record.overrideServicingFees || false,
       companyServicingFee: record.companyServicingFee || '', companyServicingFeePct: record.companyServicingFeePct || '',
       companyMaxFee: record.companyMaxFee || '', companyMaxFeePct: record.companyMaxFeePct || '',
@@ -360,7 +356,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
 
   const exportColumns: ExportColumn[] = DEFAULT_COLUMNS.map(c => ({ id: c.id, label: c.label }));
 
-  // Totals row helper
   const renderTotalCell = (columnId: string) => {
     switch (columnId) {
       case 'lenderAccount':
@@ -385,14 +380,12 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
 
   return (
     <div className="p-4 space-y-3">
-      {/* Title */}
       <div className="border border-border rounded-lg">
-        <div className="bg-muted/50 px-3 py-1.5 border-b border-border">
+        <div className="px-3 py-1.5 border-b-2 border-[hsl(var(--destructive))]">
           <span className="font-semibold text-sm text-foreground">Loan Funding</span>
         </div>
 
-        {/* Header fields row: Account / Borrower / Balance + action icons */}
-        <div className="flex items-center gap-4 px-3 py-2 flex-wrap">
+        <div className="flex items-center gap-4 px-3 py-2 flex-wrap border-b-2 border-[hsl(var(--destructive))]">
           <div className="flex items-center gap-1.5">
             <Label className="text-xs text-foreground font-medium shrink-0">Account</Label>
             <Input value={loanNumber || ''} readOnly className="h-7 text-xs w-28 bg-muted/30" />
@@ -423,165 +416,96 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
             <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
           </div>
         </div>
-      </div>
 
-      {/* Toolbar: Search + Filters + Export */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative min-w-[140px] max-w-[200px]">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-8 pl-8 text-xs"
-            disabled={disabled}
-          />
-          {searchQuery && (
-            <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5" onClick={() => setSearchQuery('')}>
-              <X className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-
-        {fundingFilterOptions.length > 0 && (
-          <Popover open={filterOpen} onOpenChange={setFilterOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 gap-1 text-xs" disabled={disabled}>
-                <Filter className="h-3.5 w-3.5" />
-                Filters
-                {activeFilterCount > 0 && (
-                  <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
-                    {activeFilterCount}
-                  </Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-72 p-3" align="start">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Filters</span>
-                  {activeFilterCount > 0 && (
-                    <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={clearFilters}>Clear All</Button>
-                  )}
-                </div>
-                {fundingFilterOptions.map((filter) => (
-                  <div key={filter.id} className="space-y-1">
-                    <label className="text-xs text-muted-foreground">{filter.label}</label>
-                    <Select value={activeFilters[filter.id] || 'all'} onValueChange={(value) => setFilter(filter.id, value)}>
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue placeholder={`All ${filter.label}`} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All</SelectItem>
-                        {filter.options.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-        )}
-
-        <Button variant="outline" size="sm" className="h-8 gap-1 text-xs" onClick={() => setExportOpen(true)} disabled={disabled}>
-          <Download className="h-3.5 w-3.5" />
-          Export
-        </Button>
-      </div>
-
-      {/* Grid */}
-      <div className="border border-border rounded-lg overflow-x-auto">
-        {isLoading ? (
-          <div className="flex items-center justify-center min-h-[200px]">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <Table className="min-w-[900px]">
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="w-[30px]" />
-                {visibleColumns.map((col) => (
-                  col.id === 'roundingError' ? (
-                    <TableHead key={col.id} className="text-center text-xs">{col.label}</TableHead>
-                  ) : (
-                    <SortableTableHead
-                      key={col.id}
-                      columnId={col.id}
-                      label={col.label}
-                      sortColumnId={sortState.columnId}
-                      sortDirection={sortState.direction}
-                      onSort={toggleSort}
-                    />
-                  )
-                ))}
-                <TableHead className="w-[50px] text-center text-xs"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredData.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={visibleColumns.length + 2} className="text-center text-muted-foreground py-8">
-                    {fundingRecords.length === 0 ? 'No funding records found. Click "+" to add a new funding record.' : 'No funding records match your search.'}
-                  </TableCell>
+        <div className="overflow-x-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center min-h-[200px]">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <Table className="min-w-[900px]">
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="w-[30px]" />
+                  {visibleColumns.map((col) => (
+                    col.id === 'roundingError' ? (
+                      <TableHead key={col.id} className="text-center text-xs">{col.label}</TableHead>
+                    ) : (
+                      <SortableTableHead
+                        key={col.id}
+                        columnId={col.id}
+                        label={col.label}
+                        sortColumnId={sortState.columnId}
+                        sortDirection={sortState.direction}
+                        onSort={toggleSort}
+                      />
+                    )
+                  ))}
+                  <TableHead className="w-[50px] text-center text-xs"></TableHead>
                 </TableRow>
-              ) : (
-                filteredData.map((record) => (
-                  <TableRow
-                    key={record.id}
-                    className={cn(!disabled && 'cursor-pointer hover:bg-muted/30', selectedRecord?.id === record.id && 'bg-primary/10')}
-                    onClick={() => !disabled && handleRowClick(record)}
-                  >
-                    <TableCell className="px-1" onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5"
-                        onClick={(e) => handleEditClick(e, record)}
-                        disabled={disabled}
-                        title="Edit"
-                      >
-                        <Pencil className="h-3 w-3 text-muted-foreground" />
-                      </Button>
-                    </TableCell>
-                    {visibleColumns.map((col) => (
-                      <TableCell key={col.id} className="text-left text-xs py-1.5">{renderCellValue(record, col.id)}</TableCell>
-                    ))}
-                    <TableCell className="text-center px-1" onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5 text-destructive hover:text-destructive"
-                        onClick={(e) => handleDeleteRowClick(e, record)}
-                        disabled={disabled}
-                        title="Delete"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+              </TableHeader>
+              <TableBody>
+                {filteredData.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={visibleColumns.length + 2} className="text-center text-muted-foreground py-8">
+                      {fundingRecords.length === 0 ? 'No funding records found. Click "+" to add a new funding record.' : 'No funding records match your search.'}
                     </TableCell>
                   </TableRow>
-                ))
-              )}
+                ) : (
+                  filteredData.map((record) => (
+                    <TableRow
+                      key={record.id}
+                      className={cn(!disabled && 'cursor-pointer hover:bg-muted/30', selectedRecord?.id === record.id && 'bg-primary/10')}
+                      onClick={() => !disabled && handleRowClick(record)}
+                    >
+                      <TableCell className="px-1" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5"
+                          onClick={(e) => handleEditClick(e, record)}
+                          disabled={disabled}
+                          title="Edit"
+                        >
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                      </TableCell>
+                      {visibleColumns.map((col) => (
+                        <TableCell key={col.id} className="text-left text-xs py-1.5">{renderCellValue(record, col.id)}</TableCell>
+                      ))}
+                      <TableCell className="text-center px-1" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 text-destructive hover:text-destructive"
+                          onClick={(e) => handleDeleteRowClick(e, record)}
+                          disabled={disabled}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
 
-              {/* Totals row */}
-              {fundingRecords.length > 0 && (
-                <TableRow className="bg-muted/30 font-semibold border-t-2">
-                  <TableCell />
-                  {visibleColumns.map((col) => (
-                    <TableCell key={col.id} className="text-left text-xs py-1.5">
-                      {renderTotalCell(col.id)}
-                    </TableCell>
-                  ))}
-                  <TableCell />
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        )}
+                {fundingRecords.length > 0 && (
+                  <TableRow className="bg-muted/30 font-semibold border-t-2">
+                    <TableCell />
+                    {visibleColumns.map((col) => (
+                      <TableCell key={col.id} className="text-left text-xs py-1.5">
+                        {renderTotalCell(col.id)}
+                      </TableCell>
+                    ))}
+                    <TableCell />
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </div>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
@@ -670,7 +594,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
 
       <FundingHistoryDialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen} dealId={dealId} historyRecords={historyRecords} />
 
-      {/* Row-level delete confirmation */}
       <DeleteConfirmationDialog
         open={!!deleteRowRecord}
         onOpenChange={(open) => { if (!open) setDeleteRowRecord(null); }}
@@ -679,7 +602,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         description={`Are you sure you want to delete the funding record for "${deleteRowRecord?.lenderName || 'this lender'}"? This action cannot be undone.`}
       />
 
-      {/* Bulk delete confirmation */}
       <DeleteConfirmationDialog
         open={bulkDeleteOpen}
         onOpenChange={setBulkDeleteOpen}
