@@ -480,18 +480,6 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                   <Label className="w-[100px] shrink-0 text-xs text-foreground">Completed</Label>
                   {renderDatePickerField('completed')}
                 </div>
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Completed</Label>
-                  <Input
-                    type="text"
-                    placeholder="MM/DD/YYYY"
-                    value={formData.completed}
-                    onChange={(e) => setFormData(prev => ({ ...prev, completed: e.target.value }))}
-                    className="h-7 text-xs flex-1"
-                  />
-                </div>
               </div>
             </div>
 
