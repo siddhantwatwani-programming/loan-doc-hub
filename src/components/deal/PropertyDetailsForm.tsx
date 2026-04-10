@@ -34,12 +34,8 @@ interface PropertyDetailsFormProps {
 }
 
 const PROPERTY_TYPE_OPTIONS = [
-  'Aircraft', 'Apartment Complex', 'Automobile', 'Commercial', 'Coop', 'Farm',
-  'Four Family Res', 'Industrial', 'Land', 'Mix Use', 'Mobile Home', 'Office Condo',
-  'Other', 'PUD', 'Ranch', 'Raw Land', 'Residential Condo', 'Residential Income 1-4',
-  'Residential Income 5+', 'Resort', 'SFR', 'Single Family Res', 'Townhouse',
-  'Two Family Res', 'Two to Four Family Res', 'Unsecured', 'Vacant', 'Industrial Condo',
-  'Restaurant/Bar'
+  'SFR 1-4', 'Multi-family', 'Condo / Townhouse', 'Mobile Home', 'Commercial',
+  'Mixed-use', 'Land', 'Farm', 'Restaurant / Bar', 'Group Housing'
 ];
 
 const OCCUPANCY_OPTIONS = ['Investor', 'Other', 'Owner', 'Primary Borrower', 'Secondary Borrower', 'Tenant', 'Unknown', 'Vacant', 'Non Owner Occupied'];
@@ -234,10 +230,6 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             </div>
           </DirtyFieldWrapper>
           {renderInlineField(FIELD_KEYS.county, 'County')}
-          <div className="flex items-center gap-2 pt-1">
-            <Checkbox id="primary-property" checked={getFieldValue(FIELD_KEYS.primaryProperty) === 'true'} onCheckedChange={(checked) => onValueChange(FIELD_KEYS.primaryProperty, String(!!checked))} disabled={disabled} className="h-3.5 w-3.5" />
-            <Label htmlFor="primary-property" className="text-xs text-foreground">Primary Property</Label>
-          </div>
 
           <div className="pt-2">
             <span className="text-xs font-medium text-primary">Purchase Information</span>
@@ -296,23 +288,27 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
         <div className="space-y-1.5">
           {renderCurrencyField(FIELD_KEYS.delinquentTaxes, 'Delinquent Taxes')}
 
-          <p className="text-xs italic text-foreground pt-3 pb-1">Appraiser Contact</p>
-          {renderInlineField(FIELD_KEYS.appraiserStreet, 'Street')}
-          {renderInlineField(FIELD_KEYS.appraiserCity, 'City')}
-          {renderInlineSelect(FIELD_KEYS.appraiserState, 'State', US_STATES, 'Select state')}
-          {renderInlineField(FIELD_KEYS.appraiserZip, 'ZIP')}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.appraiserPhone}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[110px] shrink-0 text-xs text-foreground">Phone</Label>
-              <PhoneInput value={getFieldValue(FIELD_KEYS.appraiserPhone)} onValueChange={(v) => onValueChange(FIELD_KEYS.appraiserPhone, v)} disabled={disabled} className="h-7 text-xs" />
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.appraiserEmail}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[110px] shrink-0 text-xs text-foreground">Email</Label>
-              <EmailInput value={getFieldValue(FIELD_KEYS.appraiserEmail)} onValueChange={(v) => onValueChange(FIELD_KEYS.appraiserEmail, v)} disabled={disabled} className="h-7 text-xs" />
-            </div>
-          </DirtyFieldWrapper>
+          {getFieldValue(FIELD_KEYS.performedBy) === 'Third Party' && (
+            <>
+              <p className="text-xs italic text-foreground pt-3 pb-1">Appraiser Contact</p>
+              {renderInlineField(FIELD_KEYS.appraiserStreet, 'Street')}
+              {renderInlineField(FIELD_KEYS.appraiserCity, 'City')}
+              {renderInlineSelect(FIELD_KEYS.appraiserState, 'State', US_STATES, 'Select state')}
+              {renderInlineField(FIELD_KEYS.appraiserZip, 'ZIP')}
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.appraiserPhone}>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[110px] shrink-0 text-xs text-foreground">Phone</Label>
+                  <PhoneInput value={getFieldValue(FIELD_KEYS.appraiserPhone)} onValueChange={(v) => onValueChange(FIELD_KEYS.appraiserPhone, v)} disabled={disabled} className="h-7 text-xs" />
+                </div>
+              </DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.appraiserEmail}>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[110px] shrink-0 text-xs text-foreground">Email</Label>
+                  <EmailInput value={getFieldValue(FIELD_KEYS.appraiserEmail)} onValueChange={(v) => onValueChange(FIELD_KEYS.appraiserEmail, v)} disabled={disabled} className="h-7 text-xs" />
+                </div>
+              </DirtyFieldWrapper>
+            </>
+          )}
         </div>
 
         {/* Right Column - Construction & Delinquency */}

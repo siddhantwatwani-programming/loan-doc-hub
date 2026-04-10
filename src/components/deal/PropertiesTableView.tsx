@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Check } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -113,12 +113,16 @@ const FILTER_OPTIONS: FilterOption[] = [
     id: 'propertyType',
     label: 'Property Type',
     options: [
-      { value: 'single_family', label: 'Single Family' },
-      { value: 'multi_family', label: 'Multi Family' },
-      { value: 'commercial', label: 'Commercial' },
-      { value: 'land', label: 'Land' },
-      { value: 'condo', label: 'Condo' },
-      { value: 'townhouse', label: 'Townhouse' },
+      { value: 'SFR 1-4', label: 'SFR 1-4' },
+      { value: 'Multi-family', label: 'Multi-family' },
+      { value: 'Condo / Townhouse', label: 'Condo / Townhouse' },
+      { value: 'Mobile Home', label: 'Mobile Home' },
+      { value: 'Commercial', label: 'Commercial' },
+      { value: 'Mixed-use', label: 'Mixed-use' },
+      { value: 'Land', label: 'Land' },
+      { value: 'Farm', label: 'Farm' },
+      { value: 'Restaurant / Bar', label: 'Restaurant / Bar' },
+      { value: 'Group Housing', label: 'Group Housing' },
     ],
   },
   {
@@ -191,9 +195,14 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   const renderCellValue = (property: PropertyData, columnId: string) => {
     switch (columnId) {
       case 'isPrimary':
-        return property.isPrimary ? (
-          <Check className="h-4 w-4 text-primary" />
-        ) : null;
+        return (
+          <Checkbox
+            checked={property.isPrimary}
+            onCheckedChange={(checked) => onPrimaryChange(property.id, !!checked)}
+            disabled={disabled || property.isPrimary}
+            className="h-3.5 w-3.5"
+          />
+        );
       case 'appraisedValue':
         return formatCurrency(property.appraisedValue);
       case 'purchasePrice':

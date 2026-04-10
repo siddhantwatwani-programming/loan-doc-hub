@@ -32,12 +32,8 @@ interface PropertyModalProps {
 }
 
 const PROPERTY_TYPE_OPTIONS = [
-  'Aircraft', 'Apartment Complex', 'Automobile', 'Commercial', 'Coop', 'Farm',
-  'Four Family Res', 'Industrial', 'Land', 'Mix Use', 'Mobile Home', 'Office Condo',
-  'Other', 'PUD', 'Ranch', 'Raw Land', 'Residential Condo', 'Residential Income 1-4',
-  'Residential Income 5+', 'Resort', 'SFR', 'Single Family Res', 'Townhouse',
-  'Two Family Res', 'Two to Four Family Res', 'Unsecured', 'Vacant', 'Industrial Condo',
-  'Restaurant/Bar'
+  'SFR 1-4', 'Multi-family', 'Condo / Townhouse', 'Mobile Home', 'Commercial',
+  'Mixed-use', 'Land', 'Farm', 'Restaurant / Bar', 'Group Housing'
 ];
 const OCCUPANCY_OPTIONS = ['Investor', 'Other', 'Owner', 'Primary Borrower', 'Secondary Borrower', 'Tenant', 'Unknown', 'Vacant', 'Non Owner Occupied'];
 const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
@@ -283,22 +279,26 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                 <div className="space-y-1.5">
                   {renderCurrencyField('delinquentTaxes', 'Delinquent Taxes')}
 
-                  <p className="text-xs italic text-foreground pt-3 pb-1">Appraiser Contact</p>
-                  {renderInlineField('appraiserStreet', 'Street')}
-                  {renderInlineField('appraiserCity', 'City')}
-                  {renderInlineSelect('appraiserState', 'State', US_STATES, 'Select state')}
-                  <div className="flex items-center gap-2">
-                    <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP</Label>
-                    <ZipInput value={String(formData.appraiserZip || '')} onValueChange={(v) => handleFieldChange('appraiserZip', v)} className="h-7 text-xs" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="w-[100px] shrink-0 text-xs text-foreground">Phone</Label>
-                    <PhoneInput value={String(formData.appraiserPhone || '')} onValueChange={(v) => handleFieldChange('appraiserPhone', v)} className="h-7 text-xs flex-1" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="w-[100px] shrink-0 text-xs text-foreground">Email</Label>
-                    <EmailInput value={String(formData.appraiserEmail || '')} onValueChange={(v) => handleFieldChange('appraiserEmail', v)} className="h-7 text-xs" />
-                  </div>
+                  {formData.performedBy === 'Third Party' && (
+                    <>
+                      <p className="text-xs italic text-foreground pt-3 pb-1">Appraiser Contact</p>
+                      {renderInlineField('appraiserStreet', 'Street')}
+                      {renderInlineField('appraiserCity', 'City')}
+                      {renderInlineSelect('appraiserState', 'State', US_STATES, 'Select state')}
+                      <div className="flex items-center gap-2">
+                        <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP</Label>
+                        <ZipInput value={String(formData.appraiserZip || '')} onValueChange={(v) => handleFieldChange('appraiserZip', v)} className="h-7 text-xs" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Label className="w-[100px] shrink-0 text-xs text-foreground">Phone</Label>
+                        <PhoneInput value={String(formData.appraiserPhone || '')} onValueChange={(v) => handleFieldChange('appraiserPhone', v)} className="h-7 text-xs flex-1" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Label className="w-[100px] shrink-0 text-xs text-foreground">Email</Label>
+                        <EmailInput value={String(formData.appraiserEmail || '')} onValueChange={(v) => handleFieldChange('appraiserEmail', v)} className="h-7 text-xs" />
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
