@@ -369,128 +369,63 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
 
   return (
     <div className="p-4 space-y-3">
-      {/* Header: Loan Funding title + Account/Borrower/Balance + Action icons */}
+      {/* Header: Loan Funding */}
       <div className="border border-border rounded-lg">
         {/* Title bar */}
-        <div className="bg-muted/50 px-3 py-1.5 border-b border-border">
+        <div className="bg-muted/50 px-3 py-1.5 border-b border-border flex items-center justify-between">
           <span className="font-semibold text-sm text-foreground">Loan Funding</span>
-        </div>
-
-        {/* Header fields row */}
-        <div className="flex items-center gap-4 px-3 py-2 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <Label className="text-xs text-foreground font-medium shrink-0">Account</Label>
-            <Input
-              value={loanNumber || ''}
-              readOnly
-              className="h-7 text-xs w-28 bg-muted/30"
-            />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Label className="text-xs text-foreground font-medium shrink-0">Borrower</Label>
-            <Input
-              value={borrowerName || ''}
-              readOnly
-              className="h-7 text-xs w-40 bg-muted/30"
-            />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Label className="text-xs text-foreground font-medium shrink-0">Balance</Label>
-            <div className="relative">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
-              <Input
-                value={totalPrincipalBalance > 0 ? new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalPrincipalBalance) : '-'}
-                readOnly
-                className="h-7 text-xs w-28 pl-5 bg-muted/30"
-              />
-            </div>
-          </div>
-
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Action icons */}
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={onRefresh}
-              disabled={disabled}
-              title="Refresh"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => setExportOpen(true)}
-              disabled={disabled}
-              title="Export"
-            >
-              <Download className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => window.print()}
-              disabled={disabled}
-              title="Print"
-            >
-              <Printer className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => setIsHistoryOpen(true)}
-              disabled={disabled}
-              title="History"
-            >
-              <History className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={handleAddFundingClick}
-              disabled={disabled}
-              title="Add"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => { if (selectedCount > 0) setBulkDeleteOpen(true); }}
-              disabled={disabled || selectedCount === 0}
-              title="Delete Selected"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRefresh} disabled={disabled} title="Refresh"><RefreshCw className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setExportOpen(true)} disabled={disabled} title="Export"><Download className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.print()} disabled={disabled} title="Print"><Printer className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsHistoryOpen(true)} disabled={disabled} title="History"><History className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleAddFundingClick} disabled={disabled} title="Add"><Plus className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { if (selectedCount > 0) setBulkDeleteOpen(true); }} disabled={disabled || selectedCount === 0} title="Delete Selected"><Trash2 className="h-3.5 w-3.5" /></Button>
             <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
           </div>
         </div>
-      </div>
 
-      {/* Grid Toolbar */}
-      <GridToolbar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onRefresh={onRefresh}
-        filterOptions={buildFundingFilterOptions(fundingRecords)}
-        activeFilters={activeFilters}
-        onFilterChange={setFilter}
-        onClearFilters={clearFilters}
-        activeFilterCount={activeFilterCount}
-        disabled={disabled}
-        selectedCount={selectedCount}
-        onBulkDelete={() => setBulkDeleteOpen(true)}
-        onExport={() => setExportOpen(true)}
-      />
+        {/* Account / Borrower / Balance + Search/Filters/Export row */}
+        <div className="px-3 py-2 space-y-2">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs text-foreground font-medium shrink-0">Account</Label>
+              <Input value={loanNumber || ''} readOnly className="h-7 text-xs w-28 bg-muted/30" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs text-foreground font-medium shrink-0">Borrower</Label>
+              <Input value={borrowerName || ''} readOnly className="h-7 text-xs w-40 bg-muted/30" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs text-foreground font-medium shrink-0">Balance</Label>
+              <div className="relative">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                <Input
+                  value={totalPrincipalBalance > 0 ? new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalPrincipalBalance) : '-'}
+                  readOnly
+                  className="h-7 text-xs w-28 pl-5 bg-muted/30"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Search / Filters / Export */}
+          <GridToolbar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onRefresh={onRefresh}
+            filterOptions={buildFundingFilterOptions(fundingRecords)}
+            activeFilters={activeFilters}
+            onFilterChange={setFilter}
+            onClearFilters={clearFilters}
+            activeFilterCount={activeFilterCount}
+            disabled={disabled}
+            selectedCount={selectedCount}
+            onBulkDelete={() => setBulkDeleteOpen(true)}
+            onExport={() => setExportOpen(true)}
+          />
+        </div>
+      </div>
 
       {/* Grid */}
       <div className="border border-border rounded-lg overflow-x-auto">
@@ -600,15 +535,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
 
       {totalOwnership > 100 && fundingRecords.length > 0 && (
         <p className="text-sm text-destructive font-medium">⚠ Total ownership exceeds 100% ({formatPercentage(totalOwnership)}). Cannot save new funding until resolved.</p>
-      )}
-
-      {fundingRecords.length > 0 && (
-        <div className="flex justify-end">
-          <div className="text-sm text-muted-foreground">
-            {filteredData.length !== fundingRecords.length && `Showing ${filteredData.length} of `}
-            Total Funding Records: {fundingRecords.length} | Total Funding Amount: {formatCurrency(totalFundingAmount)}
-          </div>
-        </div>
       )}
 
       <AddFundingModal
