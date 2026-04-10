@@ -53,6 +53,8 @@ const getEmptyNote = (defaultAccount: string, defaultName: string): NoteData => 
   return {
     id: `notes_entry_${Date.now()}`,
     highPriority: false,
+    incoming: false,
+    outgoing: false,
     date: now.toISOString(),
     asOfDate: now.toISOString(),
     account: defaultAccount,
@@ -61,6 +63,16 @@ const getEmptyNote = (defaultAccount: string, defaultName: string): NoteData => 
     content: '',
     type: '',
     attachments: [],
+    followupReminder: '',
+    completed: '',
+    assignedOn: '',
+    assignedTo: '',
+    assignedDepartment: '',
+    assignedBy: defaultName,
+    completedBy: '',
+    completedOn: '',
+    publish: false,
+    addToParticipants: false,
   };
 };
 
@@ -226,14 +238,32 @@ export const NotesModal: React.FC<NotesModalProps> = ({
           </DialogHeader>
 
           <div className="space-y-3 mt-3 min-w-0">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={formData.highPriority}
-                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, highPriority: !!checked }))}
-              />
-              <Label className="text-xs text-foreground">High Priority</Label>
+            {/* High Priority + Incoming/Outgoing row */}
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={formData.highPriority}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, highPriority: !!checked }))}
+                />
+                <Label className="text-xs text-foreground">High Priority</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={formData.incoming}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, incoming: !!checked }))}
+                />
+                <Label className="text-xs text-foreground">Incoming</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={formData.outgoing}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, outgoing: !!checked }))}
+                />
+                <Label className="text-xs text-foreground">Outgoing</Label>
+              </div>
             </div>
 
+            {/* Date-Time / As Of row */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs text-foreground">Date - Time</Label>
@@ -315,11 +345,13 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               </div>
             </div>
 
+            {/* Account / Contact row */}
             <div className="grid grid-cols-2 gap-4">
               {renderInlineField('account', 'Account')}
-              {renderInlineField('name', 'Name')}
+              {renderInlineField('name', 'Contact')}
             </div>
 
+            {/* Type / Reference row */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs text-foreground">Type</Label>
@@ -342,7 +374,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               {renderInlineField('reference', 'Reference')}
             </div>
 
-
+            {/* Conversation Log */}
             <div className="space-y-1 shrink-0">
               <Label className="text-xs text-foreground">Conversation Log</Label>
               <div className="h-[200px] border border-border rounded-md overflow-hidden">
@@ -355,6 +387,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               </div>
             </div>
 
+            {/* Attachments */}
             <div className="space-y-2 overflow-hidden min-w-0">
               <div className="flex items-center gap-2">
                 <Label className="text-xs text-foreground">Attachments</Label>
@@ -407,6 +440,133 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               ) : (
                 <p className="text-xs text-muted-foreground italic">No attachments available</p>
               )}
+            </div>
+
+            {/* Followup Reminder / Completed */}
+            <div className="border-t border-border pt-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[120px] shrink-0 text-xs text-foreground">Followup Reminder</Label>
+                  <Input
+                    type="text"
+                    placeholder="MM/DD/YYYY"
+                    value={formData.followupReminder}
+                    onChange={(e) => setFormData(prev => ({ ...prev, followupReminder: e.target.value }))}
+                    className="h-7 text-xs flex-1"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Completed</Label>
+                  <Input
+                    type="text"
+                    placeholder="MM/DD/YYYY"
+                    value={formData.completed}
+                    onChange={(e) => setFormData(prev => ({ ...prev, completed: e.target.value }))}
+                    className="h-7 text-xs flex-1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Create Action Item */}
+            <div className="border-t border-border pt-3">
+              <Label className="text-xs font-semibold text-foreground">Create Action Item</Label>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Assigned on</Label>
+                  <Input
+                    type="text"
+                    placeholder="MM/DD/YYYY"
+                    value={formData.assignedOn}
+                    onChange={(e) => setFormData(prev => ({ ...prev, assignedOn: e.target.value }))}
+                    className="h-7 text-xs flex-1"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="shrink-0 text-xs text-foreground">to</Label>
+                  <Select
+                    value={formData.assignedTo || undefined}
+                    onValueChange={(val) => setFormData(prev => ({ ...prev, assignedTo: val }))}
+                  >
+                    <SelectTrigger className="h-7 text-xs flex-1">
+                      <SelectValue placeholder="CSR Dropdown" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[9999]">
+                      <SelectItem value="csr1" className="text-xs">CSR 1</SelectItem>
+                      <SelectItem value="csr2" className="text-xs">CSR 2</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Label className="shrink-0 text-xs text-foreground">or</Label>
+                  <Select
+                    value={formData.assignedDepartment || undefined}
+                    onValueChange={(val) => setFormData(prev => ({ ...prev, assignedDepartment: val }))}
+                  >
+                    <SelectTrigger className="h-7 text-xs flex-1">
+                      <SelectValue placeholder="Department" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[9999]">
+                      <SelectItem value="servicing" className="text-xs">Servicing</SelectItem>
+                      <SelectItem value="origination" className="text-xs">Origination</SelectItem>
+                      <SelectItem value="accounting" className="text-xs">Accounting</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">By</Label>
+                  <Input
+                    value={formData.assignedBy}
+                    readOnly
+                    disabled
+                    className="h-7 text-xs flex-1 bg-muted"
+                    placeholder="Auto-populates"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="shrink-0 text-xs text-foreground">Completed By</Label>
+                  <Select
+                    value={formData.completedBy || undefined}
+                    onValueChange={(val) => setFormData(prev => ({ ...prev, completedBy: val }))}
+                  >
+                    <SelectTrigger className="h-7 text-xs flex-1">
+                      <SelectValue placeholder="CSR Dropdown" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[9999]">
+                      <SelectItem value="csr1" className="text-xs">CSR 1</SelectItem>
+                      <SelectItem value="csr2" className="text-xs">CSR 2</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Label className="shrink-0 text-xs text-foreground">on</Label>
+                  <Input
+                    type="text"
+                    placeholder="MM/DD/YYYY"
+                    value={formData.completedOn}
+                    onChange={(e) => setFormData(prev => ({ ...prev, completedOn: e.target.value }))}
+                    className="h-7 text-xs flex-1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Publish / Add to Participants */}
+            <div className="border-t border-border pt-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={formData.publish}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, publish: !!checked }))}
+                />
+                <Label className="text-xs text-foreground">Publish</Label>
+                <span className="text-xs text-muted-foreground italic ml-2">How determine who to notify? A popup of Participants?</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={formData.addToParticipants}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, addToParticipants: !!checked }))}
+                />
+                <Label className="text-xs text-foreground">Add to Participants</Label>
+                <span className="text-xs text-muted-foreground italic ml-2">Adds conversation to all participants individual Conversation Log</span>
+              </div>
             </div>
           </div>
 
