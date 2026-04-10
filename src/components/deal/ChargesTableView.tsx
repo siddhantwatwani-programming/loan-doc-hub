@@ -156,6 +156,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   onDeleteCharge,
   onBulkDelete,
   onRefresh,
+  onSave,
   disabled = false,
   isLoading = false,
   currentPage = 1,
@@ -166,6 +167,8 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   const [columns, setColumns, resetColumns] = useTableColumnConfig('charges_v6', DEFAULT_COLUMNS);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [showPaid, setShowPaid] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const {
