@@ -53,6 +53,8 @@ const getEmptyNote = (defaultAccount: string, defaultName: string): NoteData => 
   return {
     id: `notes_entry_${Date.now()}`,
     highPriority: false,
+    incoming: false,
+    outgoing: false,
     date: now.toISOString(),
     asOfDate: now.toISOString(),
     account: defaultAccount,
@@ -61,6 +63,16 @@ const getEmptyNote = (defaultAccount: string, defaultName: string): NoteData => 
     content: '',
     type: '',
     attachments: [],
+    followupReminder: '',
+    completed: '',
+    assignedOn: '',
+    assignedTo: '',
+    assignedDepartment: '',
+    assignedBy: defaultName,
+    completedBy: '',
+    completedOn: '',
+    publish: false,
+    addToParticipants: false,
   };
 };
 
