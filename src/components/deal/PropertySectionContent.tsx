@@ -12,6 +12,7 @@ import { PropertyTaxModal } from './PropertyTaxModal';
 import { PropertiesTableView, type PropertyData } from './PropertiesTableView';
 import { PropertyModal } from './PropertyModal';
 import { InsuranceSectionContent } from './InsuranceSectionContent';
+import { LienSectionContent } from './LienSectionContent';
 import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
 import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { FieldDefinition } from '@/hooks/useDealFields';
