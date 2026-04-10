@@ -546,16 +546,17 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
             else if (data.rateSelection === 'sold_rate') lenderRate = parseFloat(data.rateSoldValue) || 0;
             else if (data.rateSelection === 'lender_rate') lenderRate = parseFloat(data.rateLenderValue) || 0;
 
+            const safeParse = (v: string) => parseFloat((v || '').replace(/[$,]/g, '')) || 0;
             onUpdateRecord(selectedRecord.id, {
               fundingDate: data.fundingDate || '',
               lenderAccount: data.lenderId,
               lenderName: data.lenderFullName,
               lenderRate,
-              originalAmount: parseFloat(data.fundingAmount) || 0,
-              principalBalance: parseFloat(data.fundingAmount) || 0,
-              pctOwned: parseFloat(data.percentOwned) || 0,
-              regularPayment: parseFloat(data.regularPayment) || 0,
-              lenderShare: parseFloat(data.lenderShare) || 0,
+              originalAmount: safeParse(data.fundingAmount),
+              principalBalance: safeParse(data.fundingAmount),
+              pctOwned: safeParse(data.percentOwned),
+              regularPayment: safeParse(data.regularPayment),
+              lenderShare: safeParse(data.lenderShare),
               rateSelection: data.rateSelection,
               rateNoteValue: data.rateNoteValue,
               rateSoldValue: data.rateSoldValue,
