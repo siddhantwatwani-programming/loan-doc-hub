@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Home, CalendarIcon } from 'lucide-react';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
@@ -30,7 +29,8 @@ interface LienDetailFormProps {
   loanValues?: Record<string, string>;
 }
 
-const STATUS_OPTIONS = ['Current', 'Unable to Verify', '30-90', '90+', 'Foreclosure', 'Modification', 'Paid'];
+const SOURCE_OF_INFORMATION_OPTIONS = ['Borrower', 'Title / Prelim', 'Lender', 'Broker'];
+const LOAN_TYPE_DROPDOWN_OPTIONS = ['Conventional', 'Private Lender', 'Judgement', 'Other'];
 
 const getThisLoanAutofillValues = (loanValues: Record<string, string>) => ({
   account: loanValues['Terms.LoanNumber'] || loanValues['loan_terms.loan_number'] || '',
@@ -38,7 +38,6 @@ const getThisLoanAutofillValues = (loanValues: Record<string, string>) => ({
   regularPayment: loanValues['loan_terms.regular_payment'] || '',
 });
 
-// Map from LienData keys to db field keys used in dirty tracking
 const DIRTY_KEY_MAP: Record<string, string> = {
   property: 'lien1.property',
   priority: 'lien1.priority',
@@ -49,7 +48,9 @@ const DIRTY_KEY_MAP: Record<string, string> = {
   fax: 'lien1.fax',
   email: 'lien1.email',
   loanType: 'lien1.loan_type',
+  loanTypeDropdown: 'lien1.loan_type_dropdown',
   anticipated: 'lien1.anticipated',
+  anticipatedAmount: 'lien1.anticipated_amount',
   existingRemain: 'lien1.existing_remain',
   existingPaydown: 'lien1.existing_paydown',
   existingPayoff: 'lien1.existing_payoff',
@@ -57,18 +58,38 @@ const DIRTY_KEY_MAP: Record<string, string> = {
   existingPayoffAmount: 'lien1.existing_payoff_amount',
   lienPriorityNow: 'lien1.lien_priority_now',
   lienPriorityAfter: 'lien1.lien_priority_after',
+  remainingNewLienPriority: 'lien1.remaining_new_lien_priority',
+  newRemainingBalance: 'lien1.new_remaining_balance',
   interestRate: 'lien1.interest_rate',
   maturityDate: 'lien1.maturity_date',
   originalBalance: 'lien1.original_balance',
   balanceAfter: 'lien1.balance_after',
   currentBalance: 'lien1.current_balance',
   regularPayment: 'lien1.regular_payment',
+  balloon: 'lien1.balloon',
+  balloonAmount: 'lien1.balloon_amount',
   recordingNumber: 'lien1.recording_number',
   recordingNumberFlag: 'lien1.recording_number_flag',
   recordingDate: 'lien1.recording_date',
   seniorLienTracking: 'lien1.senior_lien_tracking',
+  sltActive: 'lien1.slt_active',
   lastVerified: 'lien1.last_verified',
   lastChecked: 'lien1.last_checked',
+  sltCurrent: 'lien1.slt_current',
+  sltDelinquent: 'lien1.slt_delinquent',
+  sltDelinquentDays: 'lien1.slt_delinquent_days',
+  sltUnderModification: 'lien1.slt_under_modification',
+  sltForeclosure: 'lien1.slt_foreclosure',
+  sltForeclosureDate: 'lien1.slt_foreclosure_date',
+  sltPaidOff: 'lien1.slt_paid_off',
+  sltLastPaymentMade: 'lien1.slt_last_payment_made',
+  sltNextPaymentDue: 'lien1.slt_next_payment_due',
+  sltCurrentBalance: 'lien1.slt_current_balance',
+  sltRequestSubmitted: 'lien1.slt_request_submitted',
+  sltResponseReceived: 'lien1.slt_response_received',
+  sltUnableToVerify: 'lien1.slt_unable_to_verify',
+  sltLenderNotified: 'lien1.slt_lender_notified',
+  sltLenderNotifiedDate: 'lien1.slt_lender_notified_date',
   note: 'lien1.note',
   thisLoan: 'lien1.this_loan',
   estimate: 'lien1.estimate',
@@ -76,20 +97,10 @@ const DIRTY_KEY_MAP: Record<string, string> = {
   delinquencies60day: 'lien1.delinquencies_60day',
   delinquenciesHowMany: 'lien1.delinquencies_how_many',
   currentlyDelinquent: 'lien1.currently_delinquent',
+  currentlyDelinquentAmount: 'lien1.currently_delinquent_amount',
   paidByLoan: 'lien1.paid_by_loan',
   sourceOfPayment: 'lien1.source_of_payment',
   sourceOfInformation: 'lien1.source_of_information',
-};
-
-// Determine the active loan type radio value
-const getLoanTypeRadio = (lien: LienData): string => {
-  if (lien.anticipated === 'true') return 'anticipated';
-  if (lien.existingRemain === 'true') return 'existing_remain';
-  if (lien.existingPaydown === 'true') return 'existing_paydown';
-  if (lien.existingPayoff === 'true') return 'existing_payoff';
-  // Fallback: use the persisted loanType string if booleans aren't set
-  if (lien.loanType && lien.loanType !== '') return lien.loanType;
-  return '';
 };
 
 export const LienDetailForm: React.FC<LienDetailFormProps> = ({
@@ -100,10 +111,6 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
   loanValues = {},
 }) => {
   const isThisLoan = lien.thisLoan === 'true';
-  const isAnticipated = lien.anticipated === 'true';
-  const isPayoff = lien.existingPayoff === 'true';
-  const isPaydown = lien.existingPaydown === 'true';
-  const isSeniorTracking = lien.seniorLienTracking === 'true';
   const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
 
   const safeParseDateStr = (val: string): Date | undefined => {
@@ -114,7 +121,6 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
     } catch { return undefined; }
   };
 
-  // Handle "This Loan" checkbox — auto-populate from Loan data
   const handleThisLoanChange = (checked: boolean) => {
     onChange('thisLoan', checked ? 'true' : 'false');
     if (checked) {
@@ -127,39 +133,11 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
 
   useEffect(() => {
     if (!isThisLoan) return;
-
     const { account, balanceAfter, regularPayment } = getThisLoanAutofillValues(loanValues);
-
     if (lien.account !== account) onChange('account', account);
     if (lien.balanceAfter !== balanceAfter) onChange('balanceAfter', balanceAfter);
     if (lien.regularPayment !== regularPayment) onChange('regularPayment', regularPayment);
-  }, [
-    isThisLoan,
-    loanValues,
-    lien.account,
-    lien.balanceAfter,
-    lien.regularPayment,
-    onChange,
-  ]);
-
-  // Handle loan type radio change — clear all, set selected, also persist the string value
-  const handleLoanTypeChange = (value: string) => {
-    onChange('loanType', value);
-    onChange('anticipated', value === 'anticipated' ? 'true' : 'false');
-    onChange('existingRemain', value === 'existing_remain' ? 'true' : 'false');
-    onChange('existingPaydown', value === 'existing_paydown' ? 'true' : 'false');
-    onChange('existingPayoff', value === 'existing_payoff' ? 'true' : 'false');
-
-    // If payoff selected, set balance after to 0
-    if (value === 'existing_payoff') {
-      onChange('balanceAfter', '0.00');
-    }
-    // If anticipated, clear original/current balance
-    if (value === 'anticipated') {
-      onChange('originalBalance', '');
-      onChange('currentBalance', '');
-    }
-  };
+  }, [isThisLoan, loanValues, lien.account, lien.balanceAfter, lien.regularPayment, onChange]);
 
   const renderField = (field: keyof LienData, label: string, props: Record<string, any> = {}, forceDisabled = false) => {
     if (props.type === 'date') {
@@ -205,24 +183,42 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
     </DirtyFieldWrapper>
   );
 
-  const loanTypeRadio = getLoanTypeRadio(lien);
+  const renderCheckbox = (field: keyof LienData, label: string, forceDisabled = false) => (
+    <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP[field] || `lien1.${field}`}>
+      <div className="flex items-center gap-2">
+        <Checkbox id={field} checked={lien[field] === 'true'} onCheckedChange={(checked) => onChange(field, checked ? 'true' : 'false')} disabled={disabled || forceDisabled} />
+        <Label htmlFor={field} className="text-sm text-foreground">{label}</Label>
+      </div>
+    </DirtyFieldWrapper>
+  );
 
   return (
     <div className="p-4 space-y-5">
-      {/* Header */}
       <div className="flex items-center gap-2">
         <Home className="h-5 w-5 text-primary" />
         <span className="font-semibold text-lg text-foreground">Lien Details</span>
       </div>
 
-      {/* Property Lien Information */}
-      <div className="space-y-3">
-        <div className="border-b border-border pb-2">
-          <span className="font-semibold text-sm text-primary">Property Lien Information</span>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-6 gap-y-0">
+        <div className="space-y-3">
+          <div className="border-b border-border pb-2">
+            <span className="font-semibold text-sm text-primary">Lien Details</span>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-          {/* Related Property — dropdown */}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sourceOfInformation}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Source of Information</Label>
+              <Select value={lien.sourceOfInformation || undefined} onValueChange={(val) => onChange('sourceOfInformation', val)} disabled={disabled}>
+                <SelectTrigger className="h-7 text-sm flex-1"><SelectValue placeholder="Select source" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  {SOURCE_OF_INFORMATION_OPTIONS.map(opt => (
+                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
+
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.property}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Related Property</Label>
@@ -238,35 +234,8 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          {renderField('lienPriorityNow', 'Lien Priority Now', { placeholder: 'Enter priority' })}
-
-          {/* This Loan checkbox */}
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.thisLoan}>
-            <div className="flex items-center gap-2">
-              <Checkbox id="thisLoan" checked={isThisLoan} onCheckedChange={(checked) => handleThisLoanChange(!!checked)} disabled={disabled} />
-              <Label htmlFor="thisLoan" className="text-sm text-foreground font-medium">This Loan</Label>
-            </div>
-          </DirtyFieldWrapper>
-
-          {renderField('lienPriorityAfter', 'Lien Priority After', { placeholder: 'Enter priority' })}
-
           {renderField('holder', 'Lien Holder', {}, isThisLoan)}
-
-          {/* Interest Rate */}
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.interestRate}>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Interest Rate</Label>
-              <div className="relative flex-1">
-                <Input value={lien.interestRate} onChange={(e) => onChange('interestRate', sanitizeInterestInput(e.target.value))} onBlur={() => { const v = normalizeInterestOnBlur(lien.interestRate, 3); if (v !== lien.interestRate) onChange('interestRate', v); }} disabled={disabled || isThisLoan} className={`h-7 text-sm text-right pr-6 ${isThisLoan ? 'opacity-50 bg-muted cursor-not-allowed' : ''}`} inputMode="decimal" placeholder="0.000" />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
-              </div>
-            </div>
-          </DirtyFieldWrapper>
-
           {renderField('account', 'Account Number', {}, isThisLoan)}
-          {renderField('maturityDate', 'Maturity Date', { type: 'date' }, isThisLoan)}
-
-          {renderField('contact', 'Contact', {})}
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.phone}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Phone</Label>
@@ -279,143 +248,181 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
               <PhoneInput value={lien.fax} onValueChange={(val) => onChange('fax', val)} disabled={disabled} className="h-7 text-sm flex-1" />
             </div>
           </DirtyFieldWrapper>
-          {renderField('email', 'Email', {})}
-        </div>
-      </div>
 
-      {/* Loan Type Section */}
-      <div className="space-y-3">
-        <div className="border-b border-border pb-2">
-          <span className="font-semibold text-sm text-primary">Loan Type</span>
+          {renderCheckbox('existingPayoff', 'Existing - Payoff')}
+          {renderCheckbox('existingRemain', 'Existing - Remain')}
+          {renderCheckbox('existingPaydown', 'Existing - Paydown')}
+
+          {renderField('lienPriorityNow', 'Lien Priority Now', { placeholder: 'e.g. 1st' })}
+
+          <div className="flex items-center gap-3">
+            {renderCheckbox('currentlyDelinquent', 'Currently Delinquent')}
+          </div>
+          {lien.currentlyDelinquent === 'true' && renderCurrency('currentlyDelinquentAmount', 'Amount')}
+
+          {renderCheckbox('paidByLoan', 'Delinquency to be Paid by This Loan')}
+
+          {renderField('sourceOfPayment', 'If No, Provide Source')}
+
+          {renderField('delinquenciesHowMany', 'Number of 60-day in 12 months')}
         </div>
 
-        <RadioGroup value={loanTypeRadio} onValueChange={handleLoanTypeChange} disabled={disabled} className="flex flex-wrap gap-6">
-          <div className="flex items-center gap-2">
-            <RadioGroupItem value="anticipated" id="radio-anticipated" />
-            <Label htmlFor="radio-anticipated" className="text-sm text-foreground">Anticipated</Label>
+        <div className="space-y-3">
+          <div className="border-b border-border pb-2">
+            <span className="font-semibold text-sm text-primary">&nbsp;</span>
           </div>
-          <div className="flex items-center gap-2">
-            <RadioGroupItem value="existing_remain" id="radio-existing-remain" />
-            <Label htmlFor="radio-existing-remain" className="text-sm text-foreground">Existing – Remain</Label>
+
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.loanTypeDropdown}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Loan Type</Label>
+              <Select value={lien.loanTypeDropdown || undefined} onValueChange={(val) => onChange('loanTypeDropdown', val)} disabled={disabled}>
+                <SelectTrigger className="h-7 text-sm flex-1"><SelectValue placeholder="Select type" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  {LOAN_TYPE_DROPDOWN_OPTIONS.map(opt => (
+                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
+
+          <div className="flex items-center gap-3">
+            {renderCheckbox('anticipated', 'Anticipated')}
           </div>
-          <div className="flex items-center gap-2 min-w-[200px]">
-            <RadioGroupItem value="existing_paydown" id="radio-existing-paydown" />
-            <Label htmlFor="radio-existing-paydown" className="text-sm text-foreground">Existing – Paydown</Label>
-            {isPaydown && (
-              <div className="flex items-center gap-1 ml-2">
-                <span className="text-sm text-muted-foreground">$</span>
-                <Input value={lien.existingPaydownAmount} onChange={(e) => onChange('existingPaydownAmount', e.target.value)} disabled={disabled} className="h-7 text-sm text-right w-28" inputMode="decimal" placeholder="0.00" />
+          {lien.anticipated === 'true' && renderCurrency('anticipatedAmount', 'Amount')}
+
+          {renderField('remainingNewLienPriority', 'Remaining / New Lien Priority', { placeholder: '' })}
+
+          {renderCurrency('newRemainingBalance', 'New / Remaining Balance')}
+
+          {renderCurrency('originalBalance', 'Original Balance', isThisLoan)}
+          {renderCurrency('currentBalance', 'Current Balance')}
+
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.interestRate}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Interest Rate</Label>
+              <div className="relative flex-1">
+                <Input value={lien.interestRate} onChange={(e) => onChange('interestRate', sanitizeInterestInput(e.target.value))} onBlur={() => { const v = normalizeInterestOnBlur(lien.interestRate, 3); if (v !== lien.interestRate) onChange('interestRate', v); }} disabled={disabled || isThisLoan} className={`h-7 text-sm text-right pr-6 ${isThisLoan ? 'opacity-50 bg-muted cursor-not-allowed' : ''}`} inputMode="decimal" placeholder="0.000" />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
               </div>
-            )}
-          </div>
-          <div className="flex items-center gap-2 min-w-[200px]">
-            <RadioGroupItem value="existing_payoff" id="radio-existing-payoff" />
-            <Label htmlFor="radio-existing-payoff" className="text-sm text-foreground">Existing – Payoff</Label>
-            {isPayoff && (
-              <>
-                <div className="flex items-center gap-1 ml-2">
-                  <span className="text-sm text-muted-foreground">$</span>
-                  <Input value={lien.existingPayoffAmount} onChange={(e) => onChange('existingPayoffAmount', e.target.value)} disabled={disabled} className="h-7 text-sm text-right w-28" inputMode="decimal" placeholder="0.00" />
-                </div>
-                <div className="flex items-center gap-2 ml-2">
-                  <Checkbox id="estimate" checked={lien.estimate === 'true'} onCheckedChange={(checked) => onChange('estimate', checked ? 'true' : 'false')} disabled={disabled} />
-                  <Label htmlFor="estimate" className="text-sm text-foreground">Estimate</Label>
-                </div>
-              </>
-            )}
-          </div>
-        </RadioGroup>
-      </div>
+            </div>
+          </DirtyFieldWrapper>
 
-      {/* Balance & Payment Fields */}
-      <div className="space-y-3">
-        <div className="border-b border-border pb-2">
-          <span className="font-semibold text-sm text-primary">Balance & Payment</span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-          {renderCurrency('originalBalance', 'Original Balance', isThisLoan || isAnticipated)}
-          {renderCurrency('currentBalance', 'Current Balance', isAnticipated)}
-          {renderCurrency('balanceAfter', 'Balance After', isThisLoan || isPayoff)}
           {renderCurrency('regularPayment', 'Regular Payment', isThisLoan)}
-        </div>
-      </div>
+          {renderField('maturityDate', 'Maturity Date', { type: 'date' }, isThisLoan)}
 
-      {/* Recording & Tracking */}
-      <div className="space-y-3">
-        <div className="border-b border-border pb-2">
-          <span className="font-semibold text-sm text-primary">Recording & Tracking</span>
-        </div>
+          <div className="flex items-center gap-3">
+            {renderCheckbox('balloon', 'Balloon')}
+          </div>
+          {lien.balloon === 'true' && renderCurrency('balloonAmount', 'Amount of Balloon')}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+          {renderField('recordingDate', 'Recording Date', { type: 'date' })}
+
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.recordingNumber}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Recording Number</Label>
               <div className="flex items-center gap-2 flex-1">
                 <Input value={lien.recordingNumber} onChange={(e) => onChange('recordingNumber', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-                <Checkbox id="recordingNumberFlag" checked={lien.recordingNumberFlag === 'true'} onCheckedChange={(checked) => onChange('recordingNumberFlag', checked ? 'true' : 'false')} disabled={disabled} />
               </div>
             </div>
           </DirtyFieldWrapper>
+        </div>
 
-          {renderField('recordingDate', 'Recording Date', { type: 'date' })}
+        <div className="space-y-3">
+          <div className="border-b border-border pb-2">
+            <span className="font-semibold text-sm text-primary">Senior Lien Tracking</span>
+          </div>
 
-          {/* Senior Lien Tracking */}
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.seniorLienTracking}>
-            <div className="flex items-center gap-2">
-              <Checkbox id="seniorLienTracking" checked={isSeniorTracking} onCheckedChange={(checked) => onChange('seniorLienTracking', checked ? 'true' : 'false')} disabled={disabled} />
-              <Label htmlFor="seniorLienTracking" className="text-sm text-foreground font-medium">Senior Lien Tracking</Label>
-            </div>
-          </DirtyFieldWrapper>
-          <div /> {/* spacer */}
+          {renderCheckbox('sltActive', 'Active')}
+          {renderField('lastVerified', 'Last Verified', { type: 'date' })}
 
-          {/* Conditionally visible fields */}
-          {isSeniorTracking && (
-            <>
-              {renderField('lastVerified', 'Last Verified', { type: 'date' })}
-              <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.status}>
-                <div className="flex items-center gap-3">
-                  <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Status</Label>
-                  <Select value={lien.status || undefined} onValueChange={(val) => onChange('status', val)} disabled={disabled}>
-                    <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select status" /></SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-[200]">
-                      {STATUS_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm font-semibold text-foreground min-w-[140px] text-left shrink-0">Status</Label>
+          </div>
+
+          {renderCheckbox('sltCurrent', 'Current')}
+
+          <div className="flex items-center gap-3">
+            <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sltDelinquent}>
+              <div className="flex items-center gap-2">
+                <Checkbox id="sltDelinquent" checked={lien.sltDelinquent === 'true'} onCheckedChange={(checked) => onChange('sltDelinquent', checked ? 'true' : 'false')} disabled={disabled} />
+                <Label htmlFor="sltDelinquent" className="text-sm text-foreground">Delinquent</Label>
+              </div>
+            </DirtyFieldWrapper>
+            {lien.sltDelinquent === 'true' && (
+              <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sltDelinquentDays}>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs text-muted-foreground"># of Days</Label>
+                  <Input value={lien.sltDelinquentDays} onChange={(e) => onChange('sltDelinquentDays', e.target.value)} disabled={disabled} className="h-7 text-sm w-20" />
                 </div>
               </DirtyFieldWrapper>
-            </>
-          )}
+            )}
+          </div>
+
+          {renderCheckbox('sltUnderModification', 'Under Modification / FB Plan')}
+
+          <div className="flex items-center gap-3">
+            <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sltForeclosure}>
+              <div className="flex items-center gap-2">
+                <Checkbox id="sltForeclosure" checked={lien.sltForeclosure === 'true'} onCheckedChange={(checked) => onChange('sltForeclosure', checked ? 'true' : 'false')} disabled={disabled} />
+                <Label htmlFor="sltForeclosure" className="text-sm text-foreground">Foreclosure: Date Filed</Label>
+              </div>
+            </DirtyFieldWrapper>
+            {lien.sltForeclosure === 'true' && (
+              <div className="flex-1">
+                {renderField('sltForeclosureDate', '', { type: 'date' })}
+              </div>
+            )}
+          </div>
+
+          {renderCheckbox('sltPaidOff', 'Paid Off')}
+
+          {renderField('sltLastPaymentMade', 'Last Payment Made', { type: 'date' })}
+          {renderField('sltNextPaymentDue', 'Next Payment Due', { type: 'date' })}
+          {renderCurrency('sltCurrentBalance', 'Current Balance')}
+
+          {renderField('sltRequestSubmitted', 'Request Submitted', { type: 'date' })}
+          {renderField('sltResponseReceived', 'Response Received', { type: 'date' })}
+
+          {renderCheckbox('sltUnableToVerify', 'Unable to Verify')}
+
+          <div className="flex items-center gap-3">
+            <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sltLenderNotified}>
+              <div className="flex items-center gap-2">
+                <Checkbox id="sltLenderNotified" checked={lien.sltLenderNotified === 'true'} onCheckedChange={(checked) => onChange('sltLenderNotified', checked ? 'true' : 'false')} disabled={disabled} />
+                <Label htmlFor="sltLenderNotified" className="text-sm text-foreground">Lender Notified</Label>
+              </div>
+            </DirtyFieldWrapper>
+            {lien.sltLenderNotified === 'true' && (
+              <div className="flex-1">
+                {renderField('sltLenderNotifiedDate', '', { type: 'date' })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* During Previous 12 Months */}
       <div className="space-y-3">
         <div className="border-b border-border pb-2">
-          <span className="font-semibold text-sm text-primary">During Previous 12 Months</span>
+          <span className="font-semibold text-sm text-primary">Additional Info</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.delinquencies60day}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-3">
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.thisLoan}>
             <div className="flex items-center gap-2">
-              <Checkbox id="delinquencies60day" checked={lien.delinquencies60day === 'true'} onCheckedChange={(checked) => onChange('delinquencies60day', checked ? 'true' : 'false')} disabled={disabled} />
-              <Label htmlFor="delinquencies60day" className="text-sm text-foreground">60-day + Delinquencies</Label>
+              <Checkbox id="thisLoan" checked={isThisLoan} onCheckedChange={(checked) => handleThisLoanChange(!!checked)} disabled={disabled} />
+              <Label htmlFor="thisLoan" className="text-sm text-foreground font-medium">This Loan</Label>
             </div>
           </DirtyFieldWrapper>
-          {renderField('delinquenciesHowMany', 'How Many')}
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.currentlyDelinquent}>
-            <div className="flex items-center gap-2">
-              <Checkbox id="currentlyDelinquent" checked={lien.currentlyDelinquent === 'true'} onCheckedChange={(checked) => onChange('currentlyDelinquent', checked ? 'true' : 'false')} disabled={disabled} />
-              <Label htmlFor="currentlyDelinquent" className="text-sm text-foreground">Currently Delinquent</Label>
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.paidByLoan}>
-            <div className="flex items-center gap-2">
-              <Checkbox id="paidByLoan" checked={lien.paidByLoan === 'true'} onCheckedChange={(checked) => onChange('paidByLoan', checked ? 'true' : 'false')} disabled={disabled} />
-              <Label htmlFor="paidByLoan" className="text-sm text-foreground">Will be Paid by this Loan</Label>
-            </div>
-          </DirtyFieldWrapper>
-          {renderField('sourceOfPayment', 'If No, List Source of Payment')}
-          {renderField('sourceOfInformation', 'Source of Information')}
+
+          {renderCurrency('balanceAfter', 'Balance After', isThisLoan)}
+          {renderField('email', 'Email', {})}
+          {renderField('contact', 'Contact', {})}
+
+          {renderCheckbox('estimate', 'Estimate')}
+
+          {renderCheckbox('recordingNumberFlag', 'Recording Number Flag')}
+
+          {renderField('note', 'Note')}
         </div>
       </div>
     </div>
