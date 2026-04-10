@@ -204,7 +204,15 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.source_of_information`}>
-              {renderDropdownField('source_of_information', 'Source of Information', SOURCE_OPTIONS)}
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Source of<br />Information</Label>
+                <Select value={getValue('source_of_information')} onValueChange={(value) => handleChange('source_of_information', value)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {SOURCE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
             </DirtyFieldWrapper>
           </div>
 
