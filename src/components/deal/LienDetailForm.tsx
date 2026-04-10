@@ -386,18 +386,16 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
 
           {renderCheckbox('sltUnableToVerify', 'Unable to Verify')}
 
-          <div className="flex items-center gap-3">
+          <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-0">
             <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sltLenderNotified}>
               <div className="flex items-center gap-2">
                 <Checkbox id="sltLenderNotified" checked={lien.sltLenderNotified === 'true'} onCheckedChange={(checked) => onChange('sltLenderNotified', checked ? 'true' : 'false')} disabled={disabled} />
                 <Label htmlFor="sltLenderNotified" className="text-sm text-foreground">Lender Notified</Label>
               </div>
             </DirtyFieldWrapper>
-            {lien.sltLenderNotified === 'true' && (
-              <div className="flex-1">
-                {renderField('sltLenderNotifiedDate', '', { type: 'date' })}
-              </div>
-            )}
+            <div className="w-40">
+              {lien.sltLenderNotified === 'true' && renderField('sltLenderNotifiedDate', '', { type: 'date' })}
+            </div>
           </div>
         </div>
       </div>
