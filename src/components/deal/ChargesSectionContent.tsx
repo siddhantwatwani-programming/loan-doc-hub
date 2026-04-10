@@ -72,6 +72,16 @@ const extractChargesFromValues = (values: Record<string, string>): ChargeData[] 
       amountOwedByBorrower: getVal(prefix, 'amount_owed_by_borrower'),
       accruedInterest: getVal(prefix, 'accrued_interest'),
       distributeBetweenAllLenders: values[`${prefix}.distribute_between_all_lenders`] || '',
+      department: values[`${prefix}.department`] || '',
+      category: values[`${prefix}.category`] || '',
+      details: values[`${prefix}.details`] || '',
+      currentBalance: getVal(prefix, 'current_balance'),
+      balanceDueAsOf: values[`${prefix}.balance_due_as_of`] || '',
+      balanceDue: getVal(prefix, 'balance_due'),
+      advancedByDeferred: values[`${prefix}.advanced_by_deferred`] || '',
+      advancedByTotal: getVal(prefix, 'advanced_by_total'),
+      onBehalfOfBilling: values[`${prefix}.on_behalf_of_billing`] || '',
+      onBehalfOfTotal: getVal(prefix, 'on_behalf_of_total'),
     };
     charges.push(charge);
   });
