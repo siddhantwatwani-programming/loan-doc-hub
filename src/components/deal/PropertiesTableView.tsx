@@ -195,9 +195,14 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   const renderCellValue = (property: PropertyData, columnId: string) => {
     switch (columnId) {
       case 'isPrimary':
-        return property.isPrimary ? (
-          <Check className="h-4 w-4 text-primary" />
-        ) : null;
+        return (
+          <Checkbox
+            checked={property.isPrimary}
+            onCheckedChange={(checked) => onPrimaryChange(property.id, !!checked)}
+            disabled={disabled || property.isPrimary}
+            className="h-3.5 w-3.5"
+          />
+        );
       case 'appraisedValue':
         return formatCurrency(property.appraisedValue);
       case 'purchasePrice':
