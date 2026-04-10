@@ -38,6 +38,10 @@ export interface PropertyTaxData {
   borrowerNotified: boolean;
   borrowerNotifiedDate: string;
   lenderNotifiedDate: string;
+  pmaStreet: string;
+  pmaCity: string;
+  pmaState: string;
+  pmaZip: string;
 }
 
 interface PropertyTaxTableViewProps {
@@ -83,6 +87,10 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'escrowImpounds', label: 'Escrow Impounds' },
   { id: 'passThrough', label: 'Pass Through' },
   { id: 'sourceOfInformation', label: 'Source of Information' },
+  { id: 'pmaStreet', label: 'PMA Street' },
+  { id: 'pmaCity', label: 'PMA City' },
+  { id: 'pmaState', label: 'PMA State' },
+  { id: 'pmaZip', label: 'PMA ZIP' },
   { id: 'active', label: 'Active' },
   { id: 'lastVerified', label: 'Last Verified' },
   { id: 'lenderNotified', label: 'Lender Notified' },
@@ -107,6 +115,10 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'escrowImpounds', label: 'Escrow Impounds', visible: false },
   { id: 'passThrough', label: 'Pass Through', visible: false },
   { id: 'sourceOfInformation', label: 'Source of Information', visible: false },
+  { id: 'pmaStreet', label: 'PMA Street', visible: false },
+  { id: 'pmaCity', label: 'PMA City', visible: false },
+  { id: 'pmaState', label: 'PMA State', visible: false },
+  { id: 'pmaZip', label: 'PMA ZIP', visible: false },
   { id: 'active', label: 'Active', visible: true },
   { id: 'lastVerified', label: 'Last Verified', visible: true },
   { id: 'lenderNotified', label: 'Lender Notified', visible: true },
@@ -148,6 +160,10 @@ const renderCellValue = (tax: PropertyTaxData, columnId: string) => {
     case 'escrowImpounds': return tax.escrowImpounds || '-';
     case 'passThrough': return tax.passThrough || '-';
     case 'sourceOfInformation': return tax.sourceOfInformation || '-';
+    case 'pmaStreet': return tax.pmaStreet || '-';
+    case 'pmaCity': return tax.pmaCity || '-';
+    case 'pmaState': return tax.pmaState || '-';
+    case 'pmaZip': return tax.pmaZip || '-';
     case 'active': return tax.active ? '✓' : '-';
     case 'lastVerified': return formatDate(tax.lastVerified);
     case 'lenderNotified': return formatDate(tax.lenderNotified);

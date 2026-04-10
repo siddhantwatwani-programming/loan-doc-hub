@@ -18,6 +18,8 @@ import { format, parse, isValid } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
 import { hasModalFormData } from '@/lib/modalFormValidation';
+import { ZipInput } from '@/components/ui/zip-input';
+import { STATE_OPTIONS } from '@/lib/usStates';
 import type { PropertyTaxData } from './PropertyTaxTableView';
 
 interface PropertyTaxModalProps {
@@ -40,6 +42,7 @@ const getDefaultTax = (): PropertyTaxData => ({
   active: false, lastVerified: '', lenderNotified: '',
   current: false, delinquent: false, delinquentAmount: '',
   borrowerNotified: false, borrowerNotifiedDate: '', lenderNotifiedDate: '',
+  pmaStreet: '', pmaCity: '', pmaState: '', pmaZip: '',
 });
 
 export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
@@ -158,22 +161,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
                 <Input value={formData.authority} onChange={(e) => handleChange('authority', e.target.value)} className="h-7 text-xs flex-1" />
               </div>
 
-              <div className="flex items-start gap-2">
-                <Label className="w-[120px] shrink-0 text-xs text-foreground pt-1">Address</Label>
-                <Textarea value={formData.address} onChange={(e) => handleChange('address', e.target.value)} className="text-xs flex-1 min-h-[50px]" />
-              </div>
-
               {renderDropdownField('type', 'Type', TYPE_OPTIONS)}
-
-              <div className="flex items-center gap-2">
-                <Label className="w-[120px] shrink-0 text-xs text-foreground">APN</Label>
-                <Input value={formData.apn} onChange={(e) => handleChange('apn', e.target.value)} className="h-7 text-xs flex-1" />
-              </div>
-
-              <div className="flex items-start gap-2">
-                <Label className="w-[120px] shrink-0 text-xs text-foreground pt-1">Memo</Label>
-                <Textarea value={formData.memo} onChange={(e) => handleChange('memo', e.target.value)} className="text-xs flex-1 min-h-[50px]" />
-              </div>
 
               {renderCurrencyField('annualPayment', 'Annual Payment (est.)')}
               {renderCurrencyField('amount', 'Amount')}
@@ -186,9 +174,44 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
               {renderDropdownField('sourceOfInformation', 'Source of Information', SOURCE_OPTIONS)}
             </div>
 
-            {/* Right column - Tax Tracking */}
+            {/* Right column */}
             <div className="space-y-3">
+              {/* Payment Mailing Address */}
               <div className="border-b border-border pb-1 mb-2">
+                <span className="font-semibold text-xs text-foreground">Payment Mailing Address</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] shrink-0 text-xs text-foreground">Street</Label>
+                <Input value={formData.pmaStreet} onChange={(e) => handleChange('pmaStreet', e.target.value)} className="h-7 text-xs flex-1" />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] shrink-0 text-xs text-foreground">City</Label>
+                <Input value={formData.pmaCity} onChange={(e) => handleChange('pmaCity', e.target.value)} className="h-7 text-xs flex-1" />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] shrink-0 text-xs text-foreground">State</Label>
+                <Select value={formData.pmaState} onValueChange={(v) => handleChange('pmaState', v)}>
+                  <SelectTrigger className="h-7 text-xs flex-1 bg-background"><SelectValue placeholder="Select state" /></SelectTrigger>
+                  <SelectContent className="bg-background z-[9999] max-h-[200px]">
+                    {STATE_OPTIONS.map((st) => (<SelectItem key={st} value={st}>{st}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] shrink-0 text-xs text-foreground">ZIP</Label>
+                <ZipInput
+                  value={formData.pmaZip}
+                  onValueChange={(v) => handleChange('pmaZip', v)}
+                  className="h-7 text-xs"
+                />
+              </div>
+
+              {/* Tax Tracking */}
+              <div className="border-b border-border pb-1 mb-2 mt-2">
                 <span className="font-semibold text-xs text-foreground">Tax Tracking</span>
               </div>
 
@@ -236,6 +259,16 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
               )}
 
               {renderDateField('lenderNotifiedDate', 'Lender Notified')}
+
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] shrink-0 text-xs text-foreground">APN</Label>
+                <Input value={formData.apn} onChange={(e) => handleChange('apn', e.target.value)} className="h-7 text-xs flex-1" />
+              </div>
+
+              <div className="flex items-start gap-2">
+                <Label className="w-[120px] shrink-0 text-xs text-foreground pt-1">Memo</Label>
+                <Textarea value={formData.memo} onChange={(e) => handleChange('memo', e.target.value)} className="text-xs flex-1 min-h-[50px]" />
+              </div>
             </div>
           </div>
 
