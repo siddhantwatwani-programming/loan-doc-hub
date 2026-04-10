@@ -489,13 +489,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2">
                 <div className="flex items-center gap-2">
                   <Label className="w-[100px] shrink-0 text-xs text-foreground">Assigned on</Label>
-                  <Input
-                    type="text"
-                    placeholder="MM/DD/YYYY"
-                    value={formData.assignedOn}
-                    onChange={(e) => setFormData(prev => ({ ...prev, assignedOn: e.target.value }))}
-                    className="h-7 text-xs flex-1"
-                  />
+                  {renderDatePickerField('assignedOn')}
                 </div>
                 <div className="flex items-center gap-2">
                   <Label className="shrink-0 text-xs text-foreground">to</Label>
@@ -553,12 +547,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                     </SelectContent>
                   </Select>
                   <Label className="shrink-0 text-xs text-foreground">on</Label>
-                  <Input
-                    type="text"
-                    placeholder="MM/DD/YYYY"
-                    value={formData.completedOn}
-                    onChange={(e) => setFormData(prev => ({ ...prev, completedOn: e.target.value }))}
-                    className="h-7 text-xs flex-1"
+                  {renderDatePickerField('completedOn')}
                   />
                 </div>
               </div>
