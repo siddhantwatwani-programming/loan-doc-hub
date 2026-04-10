@@ -206,6 +206,33 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     setFormData(prev => ({ ...prev, attachments: prev.attachments.filter((_, i) => i !== index) }));
   };
 
+  const renderDatePickerField = (field: 'followupReminder' | 'completed' | 'assignedOn' | 'completedOn') => {
+    const rawVal = formData[field];
+    const dateObj = rawVal ? (() => { try { const d = new Date(rawVal); return isNaN(d.getTime()) ? undefined : d; } catch { return undefined; } })() : undefined;
+    const displayVal = dateObj ? format(dateObj, 'MM/dd/yyyy') : '';
+    return (
+      <Popover modal={true}>
+        <PopoverTrigger asChild>
+          <div className="relative flex-1 cursor-pointer">
+            <Input value={displayVal} readOnly placeholder="MM/DD/YYYY" className="h-7 text-xs flex-1 pr-7 cursor-pointer" />
+            <CalendarIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+          </div>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0 pointer-events-auto z-[9999]" align="start">
+          <EnhancedCalendar
+            mode="single"
+            selected={dateObj}
+            onSelect={(d: Date | undefined) => {
+              setFormData(prev => ({ ...prev, [field]: d ? d.toISOString() : '' }));
+            }}
+            showClearToday={true}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
   const renderInlineField = (field: keyof NoteData, label: string, props: Record<string, any> = {}) => (
     <div className="flex items-center gap-2">
       <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
@@ -447,23 +474,11 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-2">
                   <Label className="w-[120px] shrink-0 text-xs text-foreground">Followup Reminder</Label>
-                  <Input
-                    type="text"
-                    placeholder="MM/DD/YYYY"
-                    value={formData.followupReminder}
-                    onChange={(e) => setFormData(prev => ({ ...prev, followupReminder: e.target.value }))}
-                    className="h-7 text-xs flex-1"
-                  />
+                  {renderDatePickerField('followupReminder')}
                 </div>
                 <div className="flex items-center gap-2">
                   <Label className="w-[100px] shrink-0 text-xs text-foreground">Completed</Label>
-                  <Input
-                    type="text"
-                    placeholder="MM/DD/YYYY"
-                    value={formData.completed}
-                    onChange={(e) => setFormData(prev => ({ ...prev, completed: e.target.value }))}
-                    className="h-7 text-xs flex-1"
-                  />
+                  {renderDatePickerField('completed')}
                 </div>
               </div>
             </div>
@@ -474,13 +489,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2">
                 <div className="flex items-center gap-2">
                   <Label className="w-[100px] shrink-0 text-xs text-foreground">Assigned on</Label>
-                  <Input
-                    type="text"
-                    placeholder="MM/DD/YYYY"
-                    value={formData.assignedOn}
-                    onChange={(e) => setFormData(prev => ({ ...prev, assignedOn: e.target.value }))}
-                    className="h-7 text-xs flex-1"
-                  />
+                  {renderDatePickerField('assignedOn')}
                 </div>
                 <div className="flex items-center gap-2">
                   <Label className="shrink-0 text-xs text-foreground">to</Label>
@@ -538,13 +547,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
                     </SelectContent>
                   </Select>
                   <Label className="shrink-0 text-xs text-foreground">on</Label>
-                  <Input
-                    type="text"
-                    placeholder="MM/DD/YYYY"
-                    value={formData.completedOn}
-                    onChange={(e) => setFormData(prev => ({ ...prev, completedOn: e.target.value }))}
-                    className="h-7 text-xs flex-1"
-                  />
+                  {renderDatePickerField('completedOn')}
                 </div>
               </div>
             </div>
