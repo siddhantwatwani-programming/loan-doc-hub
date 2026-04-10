@@ -197,10 +197,6 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
                   <ZipInput value={String(formData.paymentMailingZip || '')} onValueChange={(v) => handleChange('paymentMailingZip', v)} className="h-7 text-xs" />
                 </div>
 
-                <div className="flex items-center gap-2 pt-1">
-                  <Checkbox id="modal-insurance-active" checked={formData.active} onCheckedChange={(checked) => handleChange('active', !!checked)} className="h-3.5 w-3.5" />
-                  <Label htmlFor="modal-insurance-active" className="text-xs text-foreground">Active</Label>
-                </div>
               </div>
 
               <div className="space-y-1.5">
@@ -245,11 +241,11 @@ export const InsuranceModal: React.FC<InsuranceModalProps> = ({ open, onOpenChan
                 </div>
                 <div className="flex items-center gap-2">
                   <Checkbox id="modal-attempt-borrower" checked={formData.attemptBorrower} onCheckedChange={(checked) => handleChange('attemptBorrower', !!checked)} className="h-3.5 w-3.5" />
-                  <Label htmlFor="modal-attempt-borrower" className="text-xs text-foreground">Attempt Borrower</Label>
+                  <Label htmlFor="modal-attempt-borrower" className="text-xs text-foreground">Attempted Borrower</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <Checkbox id="modal-lender-notified" checked={formData.lenderNotified} onCheckedChange={(checked) => handleChange('lenderNotified', !!checked)} className="h-3.5 w-3.5" />
-                  <Label htmlFor="modal-lender-notified" className="text-xs text-foreground">Lender Notified</Label>
+                  <Label htmlFor="modal-lender-notified" className="text-xs text-foreground">Notified Lender</Label>
                 </div>
                 {formData.lenderNotified && renderInlineField('lenderNotifiedDate', 'Date', { type: 'date' })}
               </div>

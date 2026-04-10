@@ -103,8 +103,8 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'lastVerified', label: 'Last Verified' },
   { id: 'trackingStatus', label: 'Tracking Status' },
   { id: 'attemptAgent', label: 'Attempt Agent' },
-  { id: 'attemptBorrower', label: 'Attempt Borrower' },
-  { id: 'lenderNotified', label: 'Lender Notified' },
+  { id: 'attemptBorrower', label: 'Attempted Borrower' },
+  { id: 'lenderNotified', label: 'Notified Lender' },
   { id: 'lenderNotifiedDate', label: 'Lender Notified Date' },
 ];
 
@@ -133,8 +133,8 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'lastVerified', label: 'Last Verified', visible: false },
   { id: 'trackingStatus', label: 'Tracking Status', visible: false },
   { id: 'attemptAgent', label: 'Attempt Agent', visible: false },
-  { id: 'attemptBorrower', label: 'Attempt Borrower', visible: false },
-  { id: 'lenderNotified', label: 'Lender Notified', visible: false },
+  { id: 'attemptBorrower', label: 'Attempted Borrower', visible: false },
+  { id: 'lenderNotified', label: 'Notified Lender', visible: false },
   { id: 'lenderNotifiedDate', label: 'Lender Notified Date', visible: false },
 ];
 
