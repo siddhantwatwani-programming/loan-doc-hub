@@ -153,22 +153,30 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               {renderDropdownField('type', 'Type', TYPE_OPTIONS)}
             </DirtyFieldWrapper>
 
-            <DirtyFieldWrapper fieldKey={`${PREFIX}.apn`}>
-              <div className="flex items-center gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">APN</Label>
-                <Input value={getValue('apn')} onChange={(e) => handleChange('apn', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-              </div>
-            </DirtyFieldWrapper>
-
-            <DirtyFieldWrapper fieldKey={`${PREFIX}.memo`}>
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.payment_mailing_address`}>
               <div className="flex items-start gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px] pt-1">Memo</Label>
-                <Textarea value={getValue('memo')} onChange={(e) => handleChange('memo', e.target.value)} disabled={disabled} className="text-sm flex-1 min-h-[50px]" />
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px] pt-1">Payment Mailing<br />Address</Label>
+                <Textarea value={getValue('payment_mailing_address')} onChange={(e) => handleChange('payment_mailing_address', e.target.value)} disabled={disabled} className="text-sm flex-1 min-h-[50px]" />
               </div>
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.annual_payment`}>
-              {renderCurrencyField('annual_payment', 'Annual Payment (est.)')}
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Annual Payment<br /><span className="text-xs text-muted-foreground">(est.)</span></Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                  <Input
+                    value={getValue('annual_payment')}
+                    onChange={(e) => handleChange('annual_payment', e.target.value)}
+                    onKeyDown={numericKeyDown}
+                    onPaste={(e) => numericPaste(e, (v) => handleChange('annual_payment', v))}
+                    onFocus={(e) => { const v = unformatCurrencyDisplay(e.target.value); handleChange('annual_payment', v); }}
+                    onBlur={(e) => { const v = formatCurrencyDisplay(e.target.value); handleChange('annual_payment', v); }}
+                    disabled={disabled}
+                    className="h-7 text-sm flex-1 pl-5"
+                  />
+                </div>
+              </div>
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.amount`}>
