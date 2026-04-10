@@ -474,12 +474,12 @@ export const NotesModal: React.FC<NotesModalProps> = ({
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-2">
                   <Label className="w-[120px] shrink-0 text-xs text-foreground">Followup Reminder</Label>
-                  <Input
-                    type="text"
-                    placeholder="MM/DD/YYYY"
-                    value={formData.followupReminder}
-                    onChange={(e) => setFormData(prev => ({ ...prev, followupReminder: e.target.value }))}
-                    className="h-7 text-xs flex-1"
+                  {renderDatePickerField('followupReminder')}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[100px] shrink-0 text-xs text-foreground">Completed</Label>
+                  {renderDatePickerField('completed')}
+                </div>
                   />
                 </div>
                 <div className="flex items-center gap-2">
