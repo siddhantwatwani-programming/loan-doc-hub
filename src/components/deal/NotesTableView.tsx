@@ -136,7 +136,7 @@ const formatDate = (dateStr: string) => {
 };
 
 export const NotesTableView: React.FC<NotesTableViewProps> = ({
-  notes, onAddNote, onEditNote, onRowClick, onDeleteNote, onBulkDelete, onExport, onRefresh, disabled = false, isLoading = false,
+  notes, onAddNote, onEditNote, onRowClick, onDeleteNote, onBulkDelete, onExport, onRefresh, onSave, disabled = false, isLoading = false,
   asOfFilter, onAsOfFilterChange,
   currentPage = 1, totalPages = 1, totalCount, onPageChange,
 }) => {
@@ -144,6 +144,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [viewingNote, setViewingNote] = useState<NoteData | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const {
