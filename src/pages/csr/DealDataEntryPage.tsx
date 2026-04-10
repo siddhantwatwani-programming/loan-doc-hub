@@ -1077,42 +1077,6 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
               />
             </TabsContent>
 
-            {/* Liens - standalone top-level tab */}
-            <TabsContent value="liens" forceMount className={cn("animate-fade-in", activeTab !== "liens" && "hidden")}>
-              <LienSectionContent
-                values={values}
-                onValueChange={updateValue}
-                onRemoveValuesByPrefix={removeValuesByPrefix}
-                onPersist={async () => {
-                  computeCalculatedFields();
-                  const success = await saveDraft();
-                  if (success) resetDirty();
-                  return success;
-                }}
-                disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm("liens")}
-                propertyOptions={(() => {
-                  // Build property options from values
-                  const opts: { id: string; label: string }[] = [];
-                  const prefixes = new Set<string>();
-                  Object.keys(values).forEach(k => {
-                    const m = k.match(/^(property\d+)\./);
-                    if (m) prefixes.add(m[1]);
-                  });
-                  prefixes.forEach(p => {
-                    const street = values[`${p}.street`] || '';
-                    const desc = values[`${p}.description`] || '';
-                    opts.push({ id: p, label: desc || street || `Property ${p.replace('property', '')}` });
-                  });
-                  opts.sort((a, b) => {
-                    const nA = parseInt(a.id.replace('property', ''));
-                    const nB = parseInt(b.id.replace('property', ''));
-                    return nA - nB;
-                  });
-                  return opts;
-                })()}
-                onRefresh={handleGridRefresh}
-              />
-            </TabsContent>
 
             {/* Funding - standalone top-level tab */}
             <TabsContent value="funding" forceMount className={cn("animate-fade-in", activeTab !== "funding" && "hidden")}>
