@@ -380,32 +380,26 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
     }
   };
 
+  const fundingFilterOptions = buildFundingFilterOptions(fundingRecords);
+  const [filterOpen, setFilterOpen] = useState(false);
+
   return (
     <div className="p-4 space-y-3">
-      {/* Header: Loan Funding title + Account/Borrower/Balance + Action icons */}
+      {/* Title */}
       <div className="border border-border rounded-lg">
-        {/* Title bar */}
         <div className="bg-muted/50 px-3 py-1.5 border-b border-border">
           <span className="font-semibold text-sm text-foreground">Loan Funding</span>
         </div>
 
-        {/* Header fields row */}
+        {/* Header fields row: Account / Borrower / Balance + action icons */}
         <div className="flex items-center gap-4 px-3 py-2 flex-wrap">
           <div className="flex items-center gap-1.5">
             <Label className="text-xs text-foreground font-medium shrink-0">Account</Label>
-            <Input
-              value={loanNumber || ''}
-              readOnly
-              className="h-7 text-xs w-28 bg-muted/30"
-            />
+            <Input value={loanNumber || ''} readOnly className="h-7 text-xs w-28 bg-muted/30" />
           </div>
           <div className="flex items-center gap-1.5">
             <Label className="text-xs text-foreground font-medium shrink-0">Borrower</Label>
-            <Input
-              value={borrowerName || ''}
-              readOnly
-              className="h-7 text-xs w-40 bg-muted/30"
-            />
+            <Input value={borrowerName || ''} readOnly className="h-7 text-xs w-40 bg-muted/30" />
           </div>
           <div className="flex items-center gap-1.5">
             <Label className="text-xs text-foreground font-medium shrink-0">Balance</Label>
@@ -418,92 +412,84 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               />
             </div>
           </div>
-
-          {/* Spacer */}
           <div className="flex-1" />
-
-          {/* Action icons */}
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={onRefresh}
-              disabled={disabled}
-              title="Refresh"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => setExportOpen(true)}
-              disabled={disabled}
-              title="Export"
-            >
-              <Download className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => window.print()}
-              disabled={disabled}
-              title="Print"
-            >
-              <Printer className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => setIsHistoryOpen(true)}
-              disabled={disabled}
-              title="History"
-            >
-              <History className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={handleAddFundingClick}
-              disabled={disabled}
-              title="Add"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => { if (selectedCount > 0) setBulkDeleteOpen(true); }}
-              disabled={disabled || selectedCount === 0}
-              title="Delete Selected"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRefresh} disabled={disabled} title="Refresh"><RefreshCw className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setExportOpen(true)} disabled={disabled} title="Export"><Download className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.print()} disabled={disabled} title="Print"><Printer className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsHistoryOpen(true)} disabled={disabled} title="History"><History className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleAddFundingClick} disabled={disabled} title="Add"><Plus className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { if (selectedCount > 0) setBulkDeleteOpen(true); }} disabled={disabled || selectedCount === 0} title="Delete Selected"><Trash2 className="h-3.5 w-3.5" /></Button>
             <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
           </div>
         </div>
       </div>
 
-      {/* Grid Toolbar */}
-      <GridToolbar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onRefresh={onRefresh}
-        filterOptions={buildFundingFilterOptions(fundingRecords)}
-        activeFilters={activeFilters}
-        onFilterChange={setFilter}
-        onClearFilters={clearFilters}
-        activeFilterCount={activeFilterCount}
-        disabled={disabled}
-        selectedCount={selectedCount}
-        onBulkDelete={() => setBulkDeleteOpen(true)}
-        onExport={() => setExportOpen(true)}
-      />
+      {/* Toolbar: Search + Filters + Export */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative min-w-[140px] max-w-[200px]">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-8 pl-8 text-xs"
+            disabled={disabled}
+          />
+          {searchQuery && (
+            <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5" onClick={() => setSearchQuery('')}>
+              <X className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+
+        {fundingFilterOptions.length > 0 && (
+          <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 gap-1 text-xs" disabled={disabled}>
+                <Filter className="h-3.5 w-3.5" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-3" align="start">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Filters</span>
+                  {activeFilterCount > 0 && (
+                    <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={clearFilters}>Clear All</Button>
+                  )}
+                </div>
+                {fundingFilterOptions.map((filter) => (
+                  <div key={filter.id} className="space-y-1">
+                    <label className="text-xs text-muted-foreground">{filter.label}</label>
+                    <Select value={activeFilters[filter.id] || 'all'} onValueChange={(value) => setFilter(filter.id, value)}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder={`All ${filter.label}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        {filter.options.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+
+        <Button variant="outline" size="sm" className="h-8 gap-1 text-xs" onClick={() => setExportOpen(true)} disabled={disabled}>
+          <Download className="h-3.5 w-3.5" />
+          Export
+        </Button>
+      </div>
 
       {/* Grid */}
       <div className="border border-border rounded-lg overflow-x-auto">
