@@ -187,7 +187,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
                   <Select value={getValue('pma_state')} onValueChange={(value) => handleChange('pma_state', value)} disabled={disabled}>
                     <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select state" /></SelectTrigger>
                     <SelectContent className="bg-background z-50 max-h-[200px]">
-                      {STATE_OPTIONS.map((st) => (<SelectItem key={st.value} value={st.value}>{st.value}</SelectItem>))}
+                      {STATE_OPTIONS.map((st) => (<SelectItem key={st} value={st}>{st}</SelectItem>))}
                     </SelectContent>
                   </Select>
                 </div>
