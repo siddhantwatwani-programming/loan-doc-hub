@@ -6,18 +6,31 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Plus, RefreshCw, Printer, Trash2, Pencil, Loader2, History, Download } from 'lucide-react';
+import { Plus, RefreshCw, Printer, Trash2, Pencil, Loader2, History, Download, Search, X, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { FundingHistoryDialog } from './FundingHistoryDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
-import { GridToolbar, FilterOption } from './GridToolbar';
+import { FilterOption } from './GridToolbar';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { formatCurrencyDisplay } from '@/lib/numericInputFilter';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
