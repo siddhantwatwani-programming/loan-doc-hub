@@ -558,19 +558,32 @@ function getLabelQuickNeedle(label: string, mapping: LabelMapping): string {
   return label.toLowerCase();
 }
 
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildXmlFlexibleLabelPattern(label: string): string {
+  const parts = label.split(/\s+/).filter(Boolean).map(escapeRegex);
+  if (parts.length === 0) return '';
+  return parts.join('(?:\\s|<[^>]+>)*');
+}
+
 function replaceStaticCheckboxLabel(
   content: string,
   label: string,
   checkboxValue: string,
 ): { content: string; replaced: boolean } {
-  const labelEscaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const labelPattern = buildXmlFlexibleLabelPattern(label);
+  if (!labelPattern) {
+    return { content, replaced: false };
+  }
 
   // Strategy: find a <w:t> containing a checkbox glyph that is followed
   // (possibly with intervening XML tags / whitespace) by the label text,
   // then ONLY replace the glyph character inside its <w:t> element.
   // This preserves font styling (<w:rPr>) and run boundaries.
   const glyphInWtPattern = new RegExp(
-    `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)((?:\s|<[^>]+>)*?${labelEscaped})(?![A-Za-z])`,
+    `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)((?:\\s|<[^>]+>)*?${labelPattern})(?![A-Za-z])`,
     'gi'
   );
 
@@ -589,8 +602,27 @@ function replaceStaticCheckboxLabel(
     return { content: result, replaced: true };
   }
 
+  // Support templates where the visible checkbox glyph appears after the label
+  // (e.g. "Lender(s) as Additional Insured☑") rather than before it.
+  const trailingGlyphPattern = new RegExp(
+    `(${labelPattern})((?:\\s|<[^>]+>)*)([☐☑☒])`,
+    'gi'
+  );
+
+  if (trailingGlyphPattern.test(content)) {
+    trailingGlyphPattern.lastIndex = 0;
+    let result = content.replace(trailingGlyphPattern, (_match, labelText, spacing) => {
+      return `${labelText}${spacing}${checkboxValue}`;
+    });
+    result = result.replace(
+      /([☐☑☒])((?:\s|<[^>]*>)*?)([☐☑☒])((?:\s|<[^>]*>)*?)/g,
+      (_m, g1, mid, _g2, trail) => `${g1}${mid}${trail}`
+    );
+    return { content: result, replaced: true };
+  }
+
   // Fallback: plain-text glyph adjacent to label (no <w:t> wrapper)
-  const plainPattern = new RegExp(`([☐☑☒])((?:\\s|<[^>]+>)*)(${labelEscaped})(?![A-Za-z])`, 'gi');
+  const plainPattern = new RegExp(`([☐☑☒])((?:\\s|<[^>]+>)*)(${labelPattern})(?![A-Za-z])`, 'gi');
   if (!plainPattern.test(content)) {
     return { content, replaced: false };
   }
@@ -636,7 +668,8 @@ export function replaceLabelBasedFields(
       mapping,
       quickNeedle: getLabelQuickNeedle(label, mapping),
     }))
-    .filter(({ quickNeedle }) => !quickNeedle || contentLower.includes(quickNeedle));
+    .filter(({ quickNeedle }) => !quickNeedle || contentLower.includes(quickNeedle))
+    .sort((a, b) => b.label.length - a.label.length);
 
   if (candidateLabels.length === 0) {
     return { content, replacementCount };
@@ -1101,11 +1134,17 @@ export function processSdtCheckboxes(
       const plainText = textFragments
         .map((t) => t.replace(/<[^>]+>/g, ''))
         .join(' ')
+        .replace(/\s+/g, ' ')
         .trim();
 
       // Try to find a matching label
-      for (const [label, mapping] of Object.entries(labelMap)) {
-        if (plainText.toLowerCase().includes(label.toLowerCase())) {
+      const normalizedPlainText = plainText.toLowerCase();
+      const sortedLabelEntries = Object.entries(labelMap)
+        .sort((a, b) => b[0].length - a[0].length);
+
+      for (const [label, mapping] of sortedLabelEntries) {
+        const normalizedLabel = label.toLowerCase().replace(/\s+/g, ' ').trim();
+        if (normalizedPlainText.includes(normalizedLabel)) {
           canonicalKey = mapping.fieldKey;
           debugLog(`[tag-parser] Tagless SDT checkbox matched label "${label}" -> ${canonicalKey}`);
           break;
