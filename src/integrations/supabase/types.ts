@@ -773,6 +773,7 @@ export type Database = {
       }
       loan_history: {
         Row: {
+          account_number: string | null
           applied_to_impound: number | null
           applied_to_interest: number | null
           applied_to_late_charges: number | null
@@ -784,16 +785,22 @@ export type Database = {
           date_due: string | null
           date_received: string | null
           deal_id: string
+          description: string | null
           fees_paid_to_broker: number | null
           fees_paid_to_lenders: number | null
           id: string
+          next_due_date: string | null
+          other_amount: number | null
           payment_code: string | null
           prepayment_penalty: number | null
+          principal_balance: number | null
           reference: string | null
+          servicing_fees: number | null
           total_amount_received: number | null
           updated_at: string
         }
         Insert: {
+          account_number?: string | null
           applied_to_impound?: number | null
           applied_to_interest?: number | null
           applied_to_late_charges?: number | null
@@ -805,16 +812,22 @@ export type Database = {
           date_due?: string | null
           date_received?: string | null
           deal_id: string
+          description?: string | null
           fees_paid_to_broker?: number | null
           fees_paid_to_lenders?: number | null
           id?: string
+          next_due_date?: string | null
+          other_amount?: number | null
           payment_code?: string | null
           prepayment_penalty?: number | null
+          principal_balance?: number | null
           reference?: string | null
+          servicing_fees?: number | null
           total_amount_received?: number | null
           updated_at?: string
         }
         Update: {
+          account_number?: string | null
           applied_to_impound?: number | null
           applied_to_interest?: number | null
           applied_to_late_charges?: number | null
@@ -826,12 +839,17 @@ export type Database = {
           date_due?: string | null
           date_received?: string | null
           deal_id?: string
+          description?: string | null
           fees_paid_to_broker?: number | null
           fees_paid_to_lenders?: number | null
           id?: string
+          next_due_date?: string | null
+          other_amount?: number | null
           payment_code?: string | null
           prepayment_penalty?: number | null
+          principal_balance?: number | null
           reference?: string | null
+          servicing_fees?: number | null
           total_amount_received?: number | null
           updated_at?: string
         }
@@ -841,6 +859,47 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loan_history_lenders: {
+        Row: {
+          created_at: string
+          id: string
+          lender_name: string
+          loan_history_id: string
+          percentage: number | null
+          principal_balance: number | null
+          release_date: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lender_name: string
+          loan_history_id: string
+          percentage?: number | null
+          principal_balance?: number | null
+          release_date?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lender_name?: string
+          loan_history_id?: string
+          percentage?: number | null
+          principal_balance?: number | null
+          release_date?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_history_lenders_loan_history_id_fkey"
+            columns: ["loan_history_id"]
+            isOneToOne: false
+            referencedRelation: "loan_history"
             referencedColumns: ["id"]
           },
         ]
