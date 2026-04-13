@@ -1,66 +1,42 @@
 
 
-# Borrower History Table Update
+# Lender History Table Update
 
 ## Summary
-Replace the current loan-level summary table in Contacts → Borrower → History with a payment-level history table matching the screenshot layout. This requires database schema changes (new columns on `loan_history`, new `loan_history_lenders` table) and a full rewrite of the `BorrowerHistory.tsx` component.
+Update the Lender History table columns and data mapping to match the screenshot format, sourcing data from `loan_history` records (like the recently updated Borrower History) instead of deal-level summaries from `deal_section_values`.
 
-## Database Changes
+## What Changes
 
-### 1. Add missing columns to `loan_history`
-- `description` (text) — maps to the "Description" column
-- `next_due_date` (date) — maps to "Next Due Date"
-- `servicing_fees` (numeric, default 0) — maps to "Servicing Fees"
-- `other_amount` (numeric, default 0) — maps to "Other"
-- `principal_balance` (numeric, default 0) — running principal balance after this payment
-- `account_number` (text) — to display the Account Number header
+### File: `src/components/contacts/lender-detail/LenderHistory.tsx`
 
-### 2. Create `loan_history_lenders` table
-For the expandable lender sub-rows shown in the screenshot:
-- `id` (uuid, PK)
-- `loan_history_id` (uuid, FK → loan_history.id ON DELETE CASCADE)
-- `lender_name` (text)
-- `percentage` (numeric)
-- `release_date` (date)
-- `status` (text) — e.g. "Pending"
-- `principal_balance` (numeric, default 0)
-- `created_at` (timestamptz, default now())
+**Data source change**: Replace the current deal_section_values-based approach with `loan_history` table queries (same pattern as BorrowerHistory).
 
-RLS policies: Same pattern as `loan_history` — CSRs/Admins can CRUD, external users can view via `has_deal_access` on the parent `loan_history` row's `deal_id`.
+**New columns** (in order):
+1. Transaction Date → `loan_history.date_received` (fallback `date_due`)
+2. Account Number → `deals.deal_number`
+3. Address → `deals.property_address`
+4. Borrower → `deals.borrower_name`
+5. Status → `loan_history.payment_code` or deal status
+6. Total → `loan_history.total_amount_received`
+7. Principal → `loan_history.applied_to_principal`
+8. Interest → `loan_history.applied_to_interest`
+9. Late Fee Paid → `loan_history.applied_to_late_charges`
+10. Servicing Fees → `loan_history.servicing_fees`
+11. Other → `loan_history.other_amount`
+12. Principal Balance → `loan_history.principal_balance`
 
-## UI Changes — `BorrowerHistory.tsx`
+**Header**: "Lender History" title bar with dark primary background (matching screenshot).
 
-### 3. Replace the component
-- **Remove** the current loan-level summary cards and loan-summary grid
-- **New data source**: Query `loan_history` joined with `loan_history_lenders` for all deals linked to this borrower (via `deal_participants`)
-- **Header bar**: Show "Account Number: {deal_number}" and "Borrower: {name}" above the table (per screenshot)
-- **Table columns**: Lenders, Due Date, Date Received, Description, Next Due Date, Total, Principal, Interest, Late Fee Paid, Servicing Fees, Reserves, Other, Principal Balance
-- **Column mappings**:
-  - Lenders → expand/collapse arrow (▶/▼)
-  - Due Date → `date_due`
-  - Date Received → `date_received`
-  - Description → `description` (fallback to `payment_code` or `reference`)
-  - Next Due Date → `next_due_date`
-  - Total → `total_amount_received`
-  - Principal → `applied_to_principal`
-  - Interest → `applied_to_interest`
-  - Late Fee Paid → `applied_to_late_charges`
-  - Servicing Fees → `servicing_fees`
-  - Reserves → `applied_to_reserve`
-  - Other → `other_amount`
-  - Principal Balance → `principal_balance`
-- **Expandable sub-rows**: Clicking the arrow expands to show lender breakdown from `loan_history_lenders` with columns: Lender, Percentage, Release Date, Status, and Principal Balance
-- **Styling**: Dark blue/teal header row matching screenshot; currency values in standard format; `$0.00` styling in red for zero/special values as shown
-- **Pagination**: "Items per page" selector + "X - Y of Z" display at bottom right (matching screenshot pattern)
-- **Preserve**: Search, sort, filter, and export toolbar functionality
+**Preserved**: Search, sort, pagination, export, column toggle functionality. Same toolbar layout and UI patterns.
 
-## Files Modified
-1. **Migration SQL** — Add columns to `loan_history`, create `loan_history_lenders` table with RLS
-2. **`src/components/contacts/borrower-detail/BorrowerHistory.tsx`** — Full rewrite to payment-level history grid with expandable lender rows
+**Styling**: Dark blue/teal header row matching screenshot. Currency values formatted as `$X.XX`. Alternating row backgrounds.
+
+## No Database Changes
+All required columns already exist on `loan_history` from the previous migration. No schema changes needed.
 
 ## What Will NOT Change
-- No changes to other borrower detail tabs
-- No changes to the deal-level `LoanHistoryViewer.tsx`
+- No changes to other lender tabs (Dashboard, Portfolio, etc.)
+- No changes to BorrowerHistory or BrokerHistory
 - No changes to navigation, sidebar, or other components
-- No changes to document generation or APIs
+- No changes to document generation
 
