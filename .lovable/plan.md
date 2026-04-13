@@ -1,42 +1,37 @@
 
 
-# Lender History Table Update
+# Make Generated Checkboxes Editable and Consistent
 
-## Summary
-Update the Lender History table columns and data mapping to match the screenshot format, sourcing data from `loan_history` records (like the recently updated Borrower History) instead of deal-level summaries from `deal_section_values`.
+## Problem
+Checkboxes generated from merge tags (e.g., `{{ln_p_amortized}}`) are rendered as plain Unicode glyphs (☑/☐) — static text that cannot be clicked or toggled in Word. Other checkboxes in the document use native Word SDT (Structured Document Tag) checkboxes, which are interactive and editable.
 
-## What Changes
+## Solution
+When a merge tag or label-based replacement resolves to a boolean/checkbox value, replace the entire `<w:r>` containing the tag with a proper Word SDT checkbox XML structure instead of a plain glyph. This makes all generated checkboxes:
+- Editable (clickable in Word)
+- Visually consistent with existing SDT checkboxes in the document
 
-### File: `src/components/contacts/lender-detail/LenderHistory.tsx`
+## Technical Details
 
-**Data source change**: Replace the current deal_section_values-based approach with `loan_history` table queries (same pattern as BorrowerHistory).
+### File: `supabase/functions/_shared/tag-parser.ts`
 
-**New columns** (in order):
-1. Transaction Date → `loan_history.date_received` (fallback `date_due`)
-2. Account Number → `deals.deal_number`
-3. Address → `deals.property_address`
-4. Borrower → `deals.borrower_name`
-5. Status → `loan_history.payment_code` or deal status
-6. Total → `loan_history.total_amount_received`
-7. Principal → `loan_history.applied_to_principal`
-8. Interest → `loan_history.applied_to_interest`
-9. Late Fee Paid → `loan_history.applied_to_late_charges`
-10. Servicing Fees → `loan_history.servicing_fees`
-11. Other → `loan_history.other_amount`
-12. Principal Balance → `loan_history.principal_balance`
+1. **Add a helper function** `buildSdtCheckboxXml(isChecked: boolean, rPr?: string): string` that generates the correct Word OOXML for an interactive checkbox:
+   - `<w:sdt>` wrapper with `<w:sdtPr>` containing `<w14:checkbox>`, `<w14:checked>`, and `<w14:checkedState>`/`<w14:uncheckedState>` elements
+   - Display character in `<w:sdtContent>` using the same font and glyph codes as existing checkboxes in the document (MS Gothic font, `☒` = 2612, `☐` = 2610)
+   - Preserves the original run's formatting (`<w:rPr>`) where possible
 
-**Header**: "Lender History" title bar with dark primary background (matching screenshot).
+2. **Modify merge tag replacement** (around line 1426-1434): When `fieldData.dataType === 'boolean'` or the tag has a `checkbox` transform, instead of calling `formatCheckbox()` which returns a plain glyph, set a flag so the replacement injects the full SDT XML structure rather than just text within the existing `<w:t>`.
 
-**Preserved**: Search, sort, pagination, export, column toggle functionality. Same toolbar layout and UI patterns.
+3. **Modify label-based checkbox replacement** (`replaceStaticCheckboxLabel`, line 571): When replacing a static glyph (☐/☑/☒) next to a label, replace the entire `<w:r>` containing the glyph with an SDT checkbox XML block instead of just swapping the character.
 
-**Styling**: Dark blue/teal header row matching screenshot. Currency values formatted as `$X.XX`. Alternating row backgrounds.
+4. **Update `formatCheckbox()`** usage: The function itself stays unchanged (still used for non-document contexts), but in the document generation path, boolean fields route through the new SDT builder.
 
-## No Database Changes
-All required columns already exist on `loan_history` from the previous migration. No schema changes needed.
+### File: `supabase/functions/_shared/formatting.ts`
+No changes needed — `formatCheckbox` remains as-is for non-document uses.
 
 ## What Will NOT Change
-- No changes to other lender tabs (Dashboard, Portfolio, etc.)
-- No changes to BorrowerHistory or BrokerHistory
-- No changes to navigation, sidebar, or other components
-- No changes to document generation
+- SDT checkbox processing (`processSdtCheckboxes`) — already working correctly
+- Document generation pipeline, templates, or field resolution logic
+- Any UI components or database schema
+- Non-checkbox merge tag replacement
+- Template upload or validation logic
 
