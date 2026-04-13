@@ -102,6 +102,7 @@ const extractPropertiesFromValues = (values: Record<string, string>): PropertyDa
       thirdPartyZip: values[`${prefix}.third_party_zip`] || '',
       protectiveEquity: values[`${prefix}.protective_equity`] || '',
       cltv: values[`${prefix}.cltv`] || '',
+      informationProvidedBy: values[`${prefix}.info_provided_by`] || '',
     };
     properties.push(property);
   });
@@ -369,6 +370,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     onValueChange(`${prefix}.valuation_type`, propertyData.valuationType || '');
     onValueChange(`${prefix}.third_party_full_name`, propertyData.thirdPartyFullName || '');
     onValueChange(`${prefix}.third_party_street`, propertyData.thirdPartyStreet || '');
+    onValueChange(`${prefix}.info_provided_by`, propertyData.informationProvidedBy || '');
     onValueChange(`${prefix}.third_party_city`, propertyData.thirdPartyCity || '');
     onValueChange(`${prefix}.third_party_state`, propertyData.thirdPartyState || '');
     onValueChange(`${prefix}.third_party_zip`, propertyData.thirdPartyZip || '');

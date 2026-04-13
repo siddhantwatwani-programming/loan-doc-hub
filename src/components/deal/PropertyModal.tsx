@@ -60,6 +60,7 @@ const getEmptyProperty = (): PropertyData => ({
   netMonthlyIncome: '', fromRent: '', fromOtherDescribe: '',
   valuationDate: '', valuationType: '', thirdPartyFullName: '', thirdPartyStreet: '', thirdPartyCity: '',
   thirdPartyState: '', thirdPartyZip: '', protectiveEquity: '', cltv: '',
+  informationProvidedBy: '',
 });
 
 export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange, property, onSave, isEdit = false }) => {

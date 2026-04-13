@@ -518,6 +518,7 @@ export const PROPERTY_DETAILS_KEYS = {
   thirdPartyZip: 'property1.third_party_zip',
   protectiveEquity: 'property1.protective_equity',
   cltv: 'property1.cltv',
+  informationProvidedBy: 'property1.info_provided_by',
 } as const;
 
 export const PROPERTY_LEGAL_KEYS = {

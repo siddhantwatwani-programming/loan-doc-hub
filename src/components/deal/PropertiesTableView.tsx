@@ -71,6 +71,7 @@ export interface PropertyData {
   thirdPartyZip?: string;
   protectiveEquity?: string;
   cltv?: string;
+  informationProvidedBy?: string;
 }
 
 interface PropertiesTableViewProps {
