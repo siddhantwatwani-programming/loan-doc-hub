@@ -1331,7 +1331,7 @@ export function replaceMergeTags(
   }
 
   if (result.includes('<w14:checkbox') && result.includes('<w:sdt')) {
-    result = processSdtCheckboxes(result, fieldValues, mergeTagMap, validFieldKeys);
+    result = processSdtCheckboxes(result, fieldValues, mergeTagMap, validFieldKeys, labelMap);
   }
 
   if (result.includes('{{') || result.includes('}}')) {
