@@ -1,37 +1,54 @@
 
 
-# Make Generated Checkboxes Editable and Consistent
+# Property Details Form — Match Screenshot Layout
 
-## Problem
-Checkboxes generated from merge tags (e.g., `{{ln_p_amortized}}`) are rendered as plain Unicode glyphs (☑/☐) — static text that cannot be clicked or toggled in Word. Other checkboxes in the document use native Word SDT (Structured Document Tag) checkboxes, which are interactive and editable.
+## Summary
+Rearrange the Property Details form from its current 2-column + separate Valuation layout to a **3-column layout** matching the screenshot, and add the new **"Information Provided By"** dropdown field.
 
-## Solution
-When a merge tag or label-based replacement resolves to a boolean/checkbox value, replace the entire `<w:r>` containing the tag with a proper Word SDT checkbox XML structure instead of a plain glyph. This makes all generated checkboxes:
-- Editable (clickable in Word)
-- Visually consistent with existing SDT checkboxes in the document
+## Changes Required
 
-## Technical Details
+### 1. Add field_dictionary entry (migration)
+Insert one new row for `pr_p_infoProvidedBy` (label: "Information Provided By", section: property, data_type: dropdown) so the field persists via the existing save flow.
 
-### File: `supabase/functions/_shared/tag-parser.ts`
+### 2. File: `src/lib/fieldKeyMap.ts`
+Add `informationProvidedBy: 'property1.info_provided_by'` to `PROPERTY_DETAILS_KEYS`.
 
-1. **Add a helper function** `buildSdtCheckboxXml(isChecked: boolean, rPr?: string): string` that generates the correct Word OOXML for an interactive checkbox:
-   - `<w:sdt>` wrapper with `<w:sdtPr>` containing `<w14:checkbox>`, `<w14:checked>`, and `<w14:checkedState>`/`<w14:uncheckedState>` elements
-   - Display character in `<w:sdtContent>` using the same font and glyph codes as existing checkboxes in the document (MS Gothic font, `☒` = 2612, `☐` = 2610)
-   - Preserves the original run's formatting (`<w:rPr>`) where possible
+### 3. File: `src/components/deal/PropertyDetailsForm.tsx`
+Rearrange into a **3-column grid** matching the screenshot:
 
-2. **Modify merge tag replacement** (around line 1426-1434): When `fieldData.dataType === 'boolean'` or the tag has a `checkbox` transform, instead of calling `formatCheckbox()` which returns a plain glyph, set a flag so the replacement injects the full SDT XML structure rather than just text within the existing `<w:t>`.
+**Column 1 — Property Details:**
+- Information Provided By (new dropdown: Broker, Borrower, Third Party, Other)
+- Primary Property (checkbox — uses existing `primaryCollateral` key, label changed)
+- Description (Nickname)
+- Address block (Copy Borrower's Address, Street, City, State, ZIP, County)
+- Purchase Information (Purchase Date, Purchase Price, Down Payment)
 
-3. **Modify label-based checkbox replacement** (`replaceStaticCheckboxLabel`, line 571): When replacing a static glyph (☐/☑/☒) next to a label, replace the entire `<w:r>` containing the glyph with an SDT checkbox XML block instead of just swapping the character.
+**Column 2 — Middle:**
+- Property Type, Occupancy, Year Built, Square Feet, Type of Construction, Zoning
+- Flood Zone (checkbox)
+- Property Generates Income (checkbox) + conditional fields (Net Monthly Income, From Rent, From Other)
 
-4. **Update `formatCheckbox()`** usage: The function itself stays unchanged (still used for non-document contexts), but in the document generation path, boolean fields route through the new SDT builder.
+**Column 3 — Valuation:**
+- Estimate of Value ($)
+- Valuation Date, Valuation Type, Performed By
+- Conditional Third Party block: Full Name, Street, City, State, ZIP, Phone, Email
+- Pledged Equity ($), Protective Equity ($)
+- Loan to Value (%), CLTV (If a Junior Lien) (%)
 
-### File: `supabase/functions/_shared/formatting.ts`
-No changes needed — `formatCheckbox` remains as-is for non-document uses.
+Fields currently on the form but not in the screenshot (Delinquent Taxes, Generates Monthly Income, Annual Income, Lien Protective Equity, Source of Lien Info) will be removed from the visible form layout — they remain in the database and field dictionary and are not deleted.
+
+### 4. File: `src/components/deal/PropertySectionContent.tsx`
+- Add `informationProvidedBy` to `extractPropertiesFromValues` and `handleSaveProperty`
+
+### 5. File: `src/components/deal/PropertiesTableView.tsx` (if needed)
+- Add `informationProvidedBy` to the `PropertyData` type
+
+### 6. File: `src/components/deal/PropertyModal.tsx` (if needed)
+- Add `informationProvidedBy` to modal data extraction if the modal also uses PropertyData type
 
 ## What Will NOT Change
-- SDT checkbox processing (`processSdtCheckboxes`) — already working correctly
-- Document generation pipeline, templates, or field resolution logic
-- Any UI components or database schema
-- Non-checkbox merge tag replacement
-- Template upload or validation logic
+- No database schema changes (only one field_dictionary row insert)
+- No changes to save/load APIs, document generation, or other sections
+- No changes to navigation, sidebar, or other property sub-tabs
+- No changes to PropertyLegalDescriptionForm, PropertyInsuranceForm, etc.
 
