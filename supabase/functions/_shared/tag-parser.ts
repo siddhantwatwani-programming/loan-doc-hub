@@ -1609,5 +1609,9 @@ export function replaceMergeTags(
     }
   }
 
+  // Final pass: convert any remaining checkbox glyphs (☐/☑/☒) in <w:r>
+  // elements into native Word SDT checkboxes so they are editable/clickable.
+  result = convertGlyphsToSdtCheckboxes(result);
+
   return result;
 }
