@@ -729,7 +729,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 </div>
               </div>
             </DirtyFieldWrapper>
-            <p className="text-xs text-muted-foreground pl-[152px]">Percent of Servicing Fees</p>
+            <p className="text-xs text-muted-foreground ml-auto" style={{ maxWidth: 'calc(100% - 152px)', paddingLeft: '0' }}>Percent of Servicing Fees</p>
 
             {/* Other Scheduled Payments - clickable label opens modal */}
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.otherScheduledPayments}>
