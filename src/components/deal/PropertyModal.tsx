@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -36,12 +35,10 @@ const PROPERTY_TYPE_OPTIONS = [
   'Mixed-use', 'Land', 'Farm', 'Restaurant / Bar', 'Group Housing'
 ];
 const OCCUPANCY_OPTIONS = ['Investor', 'Other', 'Owner', 'Primary Borrower', 'Secondary Borrower', 'Tenant', 'Unknown', 'Vacant', 'Non Owner Occupied'];
-const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
-const FLOOD_ZONE_OPTIONS = ['Zone A', 'Zone AE', 'Zone AO', 'Zone X', 'Zone V', 'Zone VE', 'Zone D', 'Unknown'];
-const VALUATION_TYPE_OPTIONS = ['Appraisal', 'Broker Determined Value (BPO)'];
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
 const CONSTRUCTION_TYPES = ['Wood/Stucco', 'Stick', 'Concrete Block'];
-const LIEN_SOURCES = ['Broker', 'Borrower', 'Other'];
+const VALUATION_TYPE_OPTIONS = ['Appraisal', 'Broker Determined Value (BPO)'];
+const INFO_PROVIDED_BY_OPTIONS = ['Broker', 'Borrower', 'Third Party', 'Other'];
 
 import { US_STATES } from '@/lib/usStates';
 
@@ -65,21 +62,17 @@ const getEmptyProperty = (): PropertyData => ({
 
 export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange, property, onSave, isEdit = false }) => {
   const [formData, setFormData] = useState<PropertyData>(getEmptyProperty());
-  const [activeTab, setActiveTab] = useState('general');
-  const [yearBuiltOpen, setYearBuiltOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const CURRENCY_MODAL_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'pledgedEquity', 'monthlyIncome', 'lienProtectiveEquity', 'netMonthlyIncome', 'fromRent', 'fromOtherDescribe', 'protectiveEquity'];
   useEffect(() => {
     if (open) {
       const base = property ? { ...getEmptyProperty(), ...property } : getEmptyProperty();
-      // Format currency fields for display on load
       CURRENCY_MODAL_FIELDS.forEach(f => {
         const v = String(base[f] || '');
         if (v) (base as any)[f] = formatCurrencyDisplay(v);
       });
       setFormData(base);
-      setActiveTab('general');
     }
   }, [open, property]);
 
@@ -111,7 +104,6 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   const CURRENCY_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'pledgedEquity', 'monthlyIncome', 'lienProtectiveEquity', 'netMonthlyIncome', 'fromRent', 'fromOtherDescribe', 'protectiveEquity'];
   const handleConfirmSave = () => {
     setShowConfirm(false);
-    // Strip commas from currency fields before persisting
     const cleaned = { ...formData };
     CURRENCY_FIELDS.forEach(f => {
       const v = String(cleaned[f] || '');
@@ -128,7 +120,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
       const val = String(formData[field] || '');
       return (
         <div className="flex items-center gap-2">
-          <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+          <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
           <Popover open={datePickerStates[field] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [field]: open }))}>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn('h-7 text-xs flex-1 justify-start text-left font-normal', !val && 'text-muted-foreground')}>
@@ -152,7 +144,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
     }
     return (
       <div className="flex items-center gap-2">
-        <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+        <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
         <Input value={String(formData[field] || '')} onChange={(e) => handleFieldChange(field, e.target.value)} className="h-7 text-xs flex-1" type={type} />
       </div>
     );
@@ -163,7 +155,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
     const selectVal = rawVal === '' ? '__none__' : rawVal;
     return (
       <div className="flex items-center gap-2">
-        <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+        <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
         <Select value={selectVal} onValueChange={(val) => handleFieldChange(field, val)}>
           <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder={placeholder} /></SelectTrigger>
           <SelectContent className="bg-background border border-border z-[200] max-h-60">
@@ -181,7 +173,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
 
   const renderCurrencyField = (field: keyof PropertyData, label: string) => (
     <div className="flex items-center gap-2">
-      <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
+      <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
       <div className="relative flex-1">
         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
         <Input
@@ -201,15 +193,25 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
 
   const renderCheckboxField = (field: keyof PropertyData, label: string) => (
     <div className="flex items-center gap-2">
-      <Label className="w-[100px] shrink-0 text-xs text-foreground">{label}</Label>
       <Checkbox checked={!!formData[field]} onCheckedChange={(c) => handleFieldChange(field, !!c)} className="h-3.5 w-3.5" />
+      <Label className="text-xs text-foreground">{label}</Label>
+    </div>
+  );
+
+  const renderPercentageField = (field: keyof PropertyData, label: string) => (
+    <div className="flex items-center gap-2">
+      <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
+      <div className="relative flex-1">
+        <Input value={String(formData[field] || '')} onChange={(e) => handlePercentageChange(field, e.target.value)} className="h-7 text-xs pr-6" inputMode="decimal" />
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
+      </div>
     </div>
   );
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2 text-sm">
               <Home className="h-4 w-4 text-primary" />
@@ -217,191 +219,102 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto min-h-0 sleek-scrollbar">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-1"><TabsTrigger value="general" className="text-xs">General</TabsTrigger></TabsList>
-
-            <TabsContent value="general" className="mt-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
-                <div className="space-y-1.5">
-                  <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Property Information</span></div>
-                  {renderInlineField('description', 'Description (Nick Name)')}
-                  {renderCheckboxField('primaryCollateral', 'Primary Collateral')}
-                  <div className="pt-1">
-                    <span className="text-xs font-medium text-primary">Address</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox id="modal-copy-borrower-address" checked={!!formData.copyBorrowerAddress} onCheckedChange={(checked) => handleFieldChange('copyBorrowerAddress', !!checked)} className="h-3.5 w-3.5" />
-                    <Label htmlFor="modal-copy-borrower-address" className="text-xs text-primary">Copy Borrower's Address</Label>
-                  </div>
-                  {renderInlineField('street', 'Street')}
-                  {renderInlineField('city', 'City')}
-                  {renderInlineSelect('state', 'State', US_STATES, 'Select state')}
-                  <div className="flex items-center gap-2">
-                    <Label className="w-[100px] shrink-0 text-xs text-foreground">Zip Code</Label>
-                    <ZipInput value={String(formData.zipCode || '')} onValueChange={(v) => handleFieldChange('zipCode', v)} className="h-7 text-xs" />
-                  </div>
-                  {renderInlineField('county', 'County')}
-                  <div className="flex items-center gap-2 pt-1">
-                    <Checkbox id="modal-primary-property" checked={formData.isPrimary} onCheckedChange={(checked) => handleFieldChange('isPrimary', !!checked)} className="h-3.5 w-3.5" />
-                    <Label htmlFor="modal-primary-property" className="text-xs text-foreground">Primary Property</Label>
-                  </div>
-
-                  <div className="pt-2">
-                    <span className="text-xs font-medium text-primary">Purchase Information</span>
-                  </div>
-                  {renderInlineField('purchaseDate', 'Purchase Date', 'date')}
-                  {renderCurrencyField('purchasePrice', 'Purchase Price')}
-                  {renderCurrencyField('downPayment', 'Down Payment')}
+          <div className="flex-1 overflow-y-auto min-h-0 sleek-scrollbar p-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-0">
+              {/* Column 1 — Property Details */}
+              <div className="space-y-1.5">
+                <div className="border-b border-border pb-1 mb-2">
+                  <span className="font-semibold text-xs text-primary">Property Details</span>
                 </div>
+                {renderInlineSelect('informationProvidedBy', 'Information Provided By', INFO_PROVIDED_BY_OPTIONS, 'Select...')}
+                {renderCheckboxField('primaryCollateral', 'Primary Property')}
+                {renderInlineField('description', 'Description (Nickname)')}
 
-                <div className="space-y-1.5">
-                  <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Property Valuation</span></div>
-                  {renderInlineField('appraisedDate', 'Valuation Date', 'date')}
-                  {renderCurrencyField('appraisedValue', 'Estimate of Value')}
-                  {renderInlineSelect('propertyType', 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
-                  {renderInlineSelect('occupancy', 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
-                  {renderInlineField('zoning', 'Zoning')}
-                  {renderCurrencyField('pledgedEquity', 'Pledged Equity')}
-                  {renderCheckboxField('floodZone', 'Flood Zone')}
-
-                  {renderCheckboxField('propertyGeneratesIncome', 'Property Generates Income')}
-                  {formData.propertyGeneratesIncome && (
-                    <>
-                      {renderCurrencyField('netMonthlyIncome', 'Net Monthly Income')}
-                      {renderCurrencyField('fromRent', 'From Rent')}
-                      {renderCurrencyField('fromOtherDescribe', 'From Other (Describe)')}
-                    </>
-                  )}
+                <div className="pt-1">
+                  <span className="text-xs font-medium text-primary">Address</span>
                 </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="modal-copy-borrower-address" checked={!!formData.copyBorrowerAddress} onCheckedChange={(checked) => handleFieldChange('copyBorrowerAddress', !!checked)} className="h-3.5 w-3.5" />
+                  <Label htmlFor="modal-copy-borrower-address" className="text-xs text-primary">Copy Borrower's Address</Label>
+                </div>
+                {renderInlineField('street', 'Street')}
+                {renderInlineField('city', 'City')}
+                {renderInlineSelect('state', 'State', US_STATES, 'Select state')}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[110px] shrink-0 text-xs text-foreground">ZIP Code</Label>
+                  <ZipInput value={String(formData.zipCode || '')} onValueChange={(v) => handleFieldChange('zipCode', v)} className="h-7 text-xs" />
+                </div>
+                {renderInlineField('county', 'County')}
+
+                <div className="pt-2">
+                  <span className="text-xs font-medium text-primary">Purchase Information</span>
+                </div>
+                {renderInlineField('purchaseDate', 'Purchase Date', 'date')}
+                {renderCurrencyField('purchasePrice', 'Purchase Price')}
+                {renderCurrencyField('downPayment', 'Down Payment')}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0 mt-4">
-                <div className="space-y-1.5">
-                  {renderCurrencyField('delinquentTaxes', 'Delinquent Taxes')}
-
-                  {formData.performedBy === 'Third Party' && (
-                    <>
-                      <p className="text-xs italic text-foreground pt-3 pb-1">Appraiser Contact</p>
-                      {renderInlineField('appraiserStreet', 'Street')}
-                      {renderInlineField('appraiserCity', 'City')}
-                      {renderInlineSelect('appraiserState', 'State', US_STATES, 'Select state')}
-                      <div className="flex items-center gap-2">
-                        <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP</Label>
-                        <ZipInput value={String(formData.appraiserZip || '')} onValueChange={(v) => handleFieldChange('appraiserZip', v)} className="h-7 text-xs" />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Label className="w-[100px] shrink-0 text-xs text-foreground">Phone</Label>
-                        <PhoneInput value={String(formData.appraiserPhone || '')} onValueChange={(v) => handleFieldChange('appraiserPhone', v)} className="h-7 text-xs flex-1" />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Label className="w-[100px] shrink-0 text-xs text-foreground">Email</Label>
-                        <EmailInput value={String(formData.appraiserEmail || '')} onValueChange={(v) => handleFieldChange('appraiserEmail', v)} className="h-7 text-xs" />
-                      </div>
-                    </>
-                  )}
+              {/* Column 2 — Characteristics */}
+              <div className="space-y-1.5">
+                <div className="border-b border-border pb-1 mb-2">
+                  <span className="font-semibold text-xs text-primary">&nbsp;</span>
                 </div>
+                {renderInlineSelect('propertyType', 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
+                {renderInlineSelect('occupancy', 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
+                {renderInlineField('yearBuilt', 'Year Built', 'date')}
+                {renderInlineField('squareFeet', 'Square Feet')}
+                {renderInlineSelect('constructionType', 'Type of Construction', CONSTRUCTION_TYPES, 'Select...')}
+                {renderInlineField('zoning', 'Zoning')}
 
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <Label className="w-[100px] shrink-0 text-xs text-foreground">Year Built</Label>
-                    <Popover open={yearBuiltOpen} onOpenChange={setYearBuiltOpen}>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !formData.yearBuilt && 'text-muted-foreground')}>
-                          {formData.yearBuilt ? format(parseDate(formData.yearBuilt)!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
-                          <CalendarIcon className="ml-auto h-3.5 w-3.5" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-                        <EnhancedCalendar mode="single" selected={parseDate(formData.yearBuilt || '')}
-                          onSelect={(date) => { if (date) { handleFieldChange('yearBuilt', format(date, 'yyyy-MM-dd')); setYearBuiltOpen(false); } }}
-                          onClear={() => { handleFieldChange('yearBuilt', ''); setYearBuiltOpen(false); }}
-                          onToday={() => { handleFieldChange('yearBuilt', format(new Date(), 'yyyy-MM-dd')); setYearBuiltOpen(false); }}
-                          initialFocus />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  {renderInlineField('squareFeet', 'Square Feet')}
-                  {renderInlineSelect('constructionType', 'Type of Construction', CONSTRUCTION_TYPES, 'Select...')}
-                  {renderCurrencyField('monthlyIncome', 'Generates Monthly Income')}
-                  <div className="flex items-center gap-2">
-                    <Label className="w-[110px] shrink-0 text-xs text-foreground">Annual Income</Label>
-                    <div className="relative flex-1">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-                      <Input
-                        value={(() => {
-                          const monthly = formData.monthlyIncome || '';
-                          const num = parseFloat(monthly.replace(/[,$]/g, ''));
-                          if (isNaN(num) || !monthly) return '';
-                          return (num * 12).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                        })()}
-                        disabled
-                        className="h-7 text-xs pl-6 bg-muted"
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </div>
-                  {renderCurrencyField('lienProtectiveEquity', 'Lien (Protective Equity)')}
-                  {renderInlineSelect('sourceLienInfo', 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
+                {renderCheckboxField('floodZone', 'Flood Zone')}
 
-                  {renderCurrencyField('lienProtectiveEquity', 'Lien (Protective Equity)')}
-                  {renderInlineSelect('sourceLienInfo', 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
-                </div>
+                {renderCheckboxField('propertyGeneratesIncome', 'Property Generates Income')}
+                {formData.propertyGeneratesIncome && (
+                  <>
+                    {renderCurrencyField('netMonthlyIncome', 'Net Monthly Income')}
+                    {renderCurrencyField('fromRent', 'From Rent')}
+                    {renderCurrencyField('fromOtherDescribe', 'From Other (Describe)')}
+                  </>
+                )}
               </div>
 
-              {/* Valuation Section */}
-              <div className="mt-4">
-                <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Valuation:</span></div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">
-                  <div className="space-y-1.5">
-                    {renderInlineField('valuationDate', 'Valuation Date', 'date')}
-                    {renderInlineSelect('valuationType', 'Valuation Type', VALUATION_TYPE_OPTIONS, 'Select')}
-                    {renderInlineSelect('performedBy', 'Performed By', PERFORMED_BY_OPTIONS, 'Select')}
-                    {formData.valuationType === 'Broker Determined Value (BPO)' && formData.valuationDate && (
-                      <p className="text-xs italic text-foreground pl-[108px]">
-                        property valuation performed on {(() => {
-                          try {
-                            const d = parseDate(formData.valuationDate);
-                            return d ? format(d, 'MM/dd/yyyy') : formData.valuationDate;
-                          } catch { return formData.valuationDate; }
-                        })()}
-                      </p>
-                    )}
-                    {formData.performedBy === 'Third Party' && (
-                      <>
-                        {renderInlineField('thirdPartyFullName', 'Full Name')}
-                        {renderInlineField('thirdPartyStreet', 'Street')}
-                        {renderInlineField('thirdPartyCity', 'City')}
-                        {renderInlineSelect('thirdPartyState', 'State', US_STATES, 'Select state')}
-                        <div className="flex items-center gap-2">
-                          <Label className="w-[100px] shrink-0 text-xs text-foreground">ZIP Code</Label>
-                          <ZipInput value={String(formData.thirdPartyZip || '')} onValueChange={(v) => handleFieldChange('thirdPartyZip', v)} className="h-7 text-xs" />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    {renderCurrencyField('protectiveEquity', 'Protective Equity')}
+              {/* Column 3 — Valuation */}
+              <div className="space-y-1.5">
+                <div className="border-b border-border pb-1 mb-2">
+                  <span className="font-semibold text-xs text-primary">Valuation:</span>
+                </div>
+                {renderCurrencyField('appraisedValue', 'Estimate of Value')}
+                {renderInlineField('appraisedDate', 'Valuation Date', 'date')}
+                {renderInlineSelect('valuationType', 'Valuation Type', VALUATION_TYPE_OPTIONS, 'Select')}
+                {renderInlineSelect('performedBy', 'Performed By', PERFORMED_BY_OPTIONS, 'Select...')}
+
+                {formData.performedBy === 'Third Party' && (
+                  <>
+                    {renderInlineField('thirdPartyFullName', 'Full Name')}
+                    {renderInlineField('thirdPartyStreet', 'Street')}
+                    {renderInlineField('thirdPartyCity', 'City')}
+                    {renderInlineSelect('thirdPartyState', 'State', US_STATES, 'Select state')}
                     <div className="flex items-center gap-2">
-                      <Label className="w-[100px] shrink-0 text-xs text-foreground">Loan to Value</Label>
-                      <div className="relative flex-1">
-                        <Input value={formData.ltv} onChange={(e) => handlePercentageChange('ltv', e.target.value)} className="h-7 text-xs pr-6" inputMode="decimal" />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
-                      </div>
+                      <Label className="w-[110px] shrink-0 text-xs text-foreground">ZIP Code</Label>
+                      <ZipInput value={String(formData.thirdPartyZip || '')} onValueChange={(v) => handleFieldChange('thirdPartyZip', v)} className="h-7 text-xs" />
                     </div>
                     <div className="flex items-center gap-2">
-                      <Label className="w-[100px] shrink-0 text-xs text-foreground">CLTV (If a Junior Lien)</Label>
-                      <div className="relative flex-1">
-                        <Input value={String(formData.cltv || '')} onChange={(e) => handlePercentageChange('cltv', e.target.value)} className="h-7 text-xs pr-6" inputMode="decimal" />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
-                      </div>
+                      <Label className="w-[110px] shrink-0 text-xs text-foreground">Phone</Label>
+                      <PhoneInput value={String(formData.appraiserPhone || '')} onValueChange={(v) => handleFieldChange('appraiserPhone', v)} className="h-7 text-xs flex-1" />
                     </div>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+                    <div className="flex items-center gap-2">
+                      <Label className="w-[110px] shrink-0 text-xs text-foreground">Email</Label>
+                      <EmailInput value={String(formData.appraiserEmail || '')} onValueChange={(v) => handleFieldChange('appraiserEmail', v)} className="h-7 text-xs" />
+                    </div>
+                  </>
+                )}
 
+                {renderCurrencyField('pledgedEquity', 'Pledged Equity')}
+                {renderCurrencyField('protectiveEquity', 'Protective Equity')}
+                {renderPercentageField('ltv', 'Loan To Value')}
+                {renderPercentageField('cltv', 'CLTV (If a Junior Lien)')}
+              </div>
+            </div>
           </div>
 
           <DialogFooter className="shrink-0 border-t border-border pt-3">
