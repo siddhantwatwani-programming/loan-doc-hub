@@ -39,15 +39,13 @@ const PROPERTY_TYPE_OPTIONS = [
 ];
 
 const OCCUPANCY_OPTIONS = ['Investor', 'Other', 'Owner', 'Primary Borrower', 'Secondary Borrower', 'Tenant', 'Unknown', 'Vacant', 'Non Owner Occupied'];
-const PRIORITY_OPTIONS = ['1st', '2nd', '3rd', '4th', '5th'];
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
 const CONSTRUCTION_TYPES = ['Wood/Stucco', 'Stick', 'Concrete Block'];
-const LIEN_SOURCES = ['Broker', 'Borrower', 'Other'];
 const VALUATION_TYPE_OPTIONS = ['Appraisal', 'Broker Determined Value (BPO)'];
+const INFO_PROVIDED_BY_OPTIONS = ['Broker', 'Borrower', 'Third Party', 'Other'];
 
 import { PROPERTY_DETAILS_KEYS } from '@/lib/fieldKeyMap';
 
-// Use central field key map
 const FIELD_KEYS = PROPERTY_DETAILS_KEYS;
 
 export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
@@ -120,41 +118,47 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   );
 
   const renderCurrencyField = (fieldKey: string, label: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
-      <div className="relative flex-1">
-        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-        <Input
-          value={getFieldValue(fieldKey)}
-          onChange={(e) => handleCurrencyChange(fieldKey, e.target.value)}
-          onBlur={() => { const raw = getFieldValue(fieldKey); if (raw) onValueChange(fieldKey, formatCurrencyDisplay(raw)); }}
-          onFocus={() => { const raw = getFieldValue(fieldKey); if (raw) onValueChange(fieldKey, unformatCurrencyDisplay(raw)); }}
-          onKeyDown={numericKeyDown}
-          onPaste={(e) => numericPaste(e, (val) => onValueChange(fieldKey, val))}
-          disabled={disabled}
-          className="h-7 text-xs pl-6"
-          inputMode="decimal"
-          placeholder="0.00"
-        />
+    <DirtyFieldWrapper fieldKey={fieldKey}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
+        <div className="relative flex-1">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+          <Input
+            value={getFieldValue(fieldKey)}
+            onChange={(e) => handleCurrencyChange(fieldKey, e.target.value)}
+            onBlur={() => { const raw = getFieldValue(fieldKey); if (raw) onValueChange(fieldKey, formatCurrencyDisplay(raw)); }}
+            onFocus={() => { const raw = getFieldValue(fieldKey); if (raw) onValueChange(fieldKey, unformatCurrencyDisplay(raw)); }}
+            onKeyDown={numericKeyDown}
+            onPaste={(e) => numericPaste(e, (val) => onValueChange(fieldKey, val))}
+            disabled={disabled}
+            className="h-7 text-xs pl-6"
+            inputMode="decimal"
+            placeholder="0.00"
+          />
+        </div>
       </div>
-    </div>
+    </DirtyFieldWrapper>
   );
 
   const renderPercentageField = (fieldKey: string, label: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
-      <div className="relative flex-1">
-        <Input value={getFieldValue(fieldKey)} onChange={(e) => handlePercentageChange(fieldKey, e.target.value)} disabled={disabled} className="h-7 text-xs pr-6" inputMode="decimal" />
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
+    <DirtyFieldWrapper fieldKey={fieldKey}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
+        <div className="relative flex-1">
+          <Input value={getFieldValue(fieldKey)} onChange={(e) => handlePercentageChange(fieldKey, e.target.value)} disabled={disabled} className="h-7 text-xs pr-6" inputMode="decimal" />
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
+        </div>
       </div>
-    </div>
+    </DirtyFieldWrapper>
   );
 
   const renderCheckboxField = (fieldKey: string, label: string) => (
-    <div className="flex items-center gap-2">
-      <Label className="w-[110px] shrink-0 text-xs text-foreground">{label}</Label>
-      <Checkbox checked={getFieldValue(fieldKey) === 'true'} onCheckedChange={(c) => onValueChange(fieldKey, String(!!c))} disabled={disabled} className="h-3.5 w-3.5" />
-    </div>
+    <DirtyFieldWrapper fieldKey={fieldKey}>
+      <div className="flex items-center gap-2">
+        <Checkbox checked={getFieldValue(fieldKey) === 'true'} onCheckedChange={(c) => onValueChange(fieldKey, String(!!c))} disabled={disabled} className="h-3.5 w-3.5" />
+        <Label className="text-xs text-foreground">{label}</Label>
+      </div>
+    </DirtyFieldWrapper>
   );
 
   const renderDateField = (fieldKey: string, label: string) => {
@@ -185,14 +189,16 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
 
   return (
     <div className="p-4">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-0">
-        {/* Left Column - Property Information */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-0">
+        {/* Column 1 — Property Details */}
         <div className="space-y-1.5">
           <div className="border-b border-border pb-1 mb-2">
-            <span className="font-semibold text-xs text-primary">Property Information</span>
+            <span className="font-semibold text-xs text-primary">Property Details</span>
           </div>
-          {renderInlineField(FIELD_KEYS.description, 'Description (Nick Name)')}
-          {renderCheckboxField(FIELD_KEYS.primaryCollateral, 'Primary Collateral')}
+          {renderInlineSelect(FIELD_KEYS.informationProvidedBy, 'Information Provided By', INFO_PROVIDED_BY_OPTIONS, 'Select...')}
+          {renderCheckboxField(FIELD_KEYS.primaryCollateral, 'Primary Property')}
+          {renderInlineField(FIELD_KEYS.description, 'Description (Nickname)')}
+
           <div className="pt-1">
             <span className="text-xs font-medium text-primary">Address</span>
           </div>
@@ -225,7 +231,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.zip}>
             <div className="flex items-center gap-2">
-              <Label className="w-[110px] shrink-0 text-xs text-foreground">Zip Code</Label>
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">ZIP Code</Label>
               <ZipInput value={getFieldValue(FIELD_KEYS.zip)} onValueChange={(v) => onValueChange(FIELD_KEYS.zip, v)} disabled={disabled || isCopyBorrower} className="h-7 text-xs" />
             </div>
           </DirtyFieldWrapper>
@@ -239,36 +245,18 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           {renderCurrencyField(FIELD_KEYS.downPayment, 'Down Payment')}
         </div>
 
-        {/* Right Column - Appraisal Information */}
+        {/* Column 2 — Characteristics */}
         <div className="space-y-1.5">
           <div className="border-b border-border pb-1 mb-2">
-            <span className="font-semibold text-xs text-primary">Property Valuation</span>
+            <span className="font-semibold text-xs text-primary">&nbsp;</span>
           </div>
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.appraisedDate}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[110px] shrink-0 text-xs text-foreground">Valuation Date</Label>
-              <Popover open={datePickerStates[FIELD_KEYS.appraisedDate] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.appraisedDate]: open }))}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !getFieldValue(FIELD_KEYS.appraisedDate) && 'text-muted-foreground')} disabled={disabled}>
-                    {getFieldValue(FIELD_KEYS.appraisedDate) ? format(parseDate(getFieldValue(FIELD_KEYS.appraisedDate))!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
-                    <CalendarIcon className="ml-auto h-3.5 w-3.5" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-                  <EnhancedCalendar mode="single" selected={parseDate(getFieldValue(FIELD_KEYS.appraisedDate))}
-                    onSelect={(date) => { if (date) onValueChange(FIELD_KEYS.appraisedDate, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.appraisedDate]: false })); }}
-                    onClear={() => { onValueChange(FIELD_KEYS.appraisedDate, ''); setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.appraisedDate]: false })); }}
-                    onToday={() => { onValueChange(FIELD_KEYS.appraisedDate, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.appraisedDate]: false })); }}
-                    initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </DirtyFieldWrapper>
-          {renderCurrencyField(FIELD_KEYS.appraisedValue, 'Estimate of Value')}
           {renderInlineSelect(FIELD_KEYS.propertyType, 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
           {renderInlineSelect(FIELD_KEYS.occupancy, 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
+          {renderDateField(FIELD_KEYS.yearBuilt, 'Year Built')}
+          {renderInlineField(FIELD_KEYS.squareFeet, 'Square Feet')}
+          {renderInlineSelect(FIELD_KEYS.constructionType, 'Type of Construction', CONSTRUCTION_TYPES, 'Select...')}
           {renderInlineField(FIELD_KEYS.zoning, 'Zoning')}
-          {renderCurrencyField(FIELD_KEYS.pledgedEquity, 'Pledged Equity')}
+
           {renderCheckboxField(FIELD_KEYS.floodZone, 'Flood Zone')}
 
           {renderCheckboxField(FIELD_KEYS.propertyGeneratesIncome, 'Property Generates Income')}
@@ -280,21 +268,29 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             </>
           )}
         </div>
-      </div>
 
-      {/* Additional Property Fields */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-0 mt-4">
-        {/* Left Column - Purchase & Tax */}
+        {/* Column 3 — Valuation */}
         <div className="space-y-1.5">
-          {renderCurrencyField(FIELD_KEYS.delinquentTaxes, 'Delinquent Taxes')}
+          <div className="border-b border-border pb-1 mb-2">
+            <span className="font-semibold text-xs text-primary">Valuation:</span>
+          </div>
+          {renderCurrencyField(FIELD_KEYS.appraisedValue, 'Estimate of Value')}
+          {renderDateField(FIELD_KEYS.appraisedDate, 'Valuation Date')}
+          {renderInlineSelect(FIELD_KEYS.valuationType, 'Valuation Type', VALUATION_TYPE_OPTIONS, 'Select')}
+          {renderInlineSelect(FIELD_KEYS.performedBy, 'Performed By', PERFORMED_BY_OPTIONS, 'Select...')}
 
           {getFieldValue(FIELD_KEYS.performedBy) === 'Third Party' && (
             <>
-              <p className="text-xs italic text-foreground pt-3 pb-1">Appraiser Contact</p>
-              {renderInlineField(FIELD_KEYS.appraiserStreet, 'Street')}
-              {renderInlineField(FIELD_KEYS.appraiserCity, 'City')}
-              {renderInlineSelect(FIELD_KEYS.appraiserState, 'State', US_STATES, 'Select state')}
-              {renderInlineField(FIELD_KEYS.appraiserZip, 'ZIP')}
+              {renderInlineField(FIELD_KEYS.thirdPartyFullName, 'Full Name')}
+              {renderInlineField(FIELD_KEYS.thirdPartyStreet, 'Street')}
+              {renderInlineField(FIELD_KEYS.thirdPartyCity, 'City')}
+              {renderInlineSelect(FIELD_KEYS.thirdPartyState, 'State', US_STATES, 'Select state')}
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.thirdPartyZip}>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[110px] shrink-0 text-xs text-foreground">ZIP Code</Label>
+                  <ZipInput value={getFieldValue(FIELD_KEYS.thirdPartyZip)} onValueChange={(v) => onValueChange(FIELD_KEYS.thirdPartyZip, v)} disabled={disabled} className="h-7 text-xs" />
+                </div>
+              </DirtyFieldWrapper>
               <DirtyFieldWrapper fieldKey={FIELD_KEYS.appraiserPhone}>
                 <div className="flex items-center gap-2">
                   <Label className="w-[110px] shrink-0 text-xs text-foreground">Phone</Label>
@@ -309,93 +305,11 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
               </DirtyFieldWrapper>
             </>
           )}
-        </div>
 
-        {/* Right Column - Construction & Delinquency */}
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <Label className="w-[110px] shrink-0 text-xs text-foreground">Year Built</Label>
-            <Popover open={datePickerStates[FIELD_KEYS.yearBuilt] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.yearBuilt]: open }))}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !getFieldValue(FIELD_KEYS.yearBuilt) && 'text-muted-foreground')} disabled={disabled}>
-                  {getFieldValue(FIELD_KEYS.yearBuilt) ? format(parseDate(getFieldValue(FIELD_KEYS.yearBuilt))!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
-                  <CalendarIcon className="ml-auto h-3.5 w-3.5" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-                <EnhancedCalendar mode="single" selected={parseDate(getFieldValue(FIELD_KEYS.yearBuilt))}
-                  onSelect={(date) => { if (date) onValueChange(FIELD_KEYS.yearBuilt, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.yearBuilt]: false })); }}
-                  onClear={() => { onValueChange(FIELD_KEYS.yearBuilt, ''); setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.yearBuilt]: false })); }}
-                  onToday={() => { onValueChange(FIELD_KEYS.yearBuilt, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [FIELD_KEYS.yearBuilt]: false })); }}
-                  initialFocus />
-              </PopoverContent>
-            </Popover>
-          </div>
-          {renderInlineField(FIELD_KEYS.squareFeet, 'Square Feet')}
-          {renderInlineSelect(FIELD_KEYS.constructionType, 'Type of Construction', CONSTRUCTION_TYPES, 'Select...')}
-          {renderCurrencyField(FIELD_KEYS.monthlyIncome, 'Generates Monthly Income')}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.annualIncome}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[110px] shrink-0 text-xs text-foreground">Annual Income</Label>
-              <div className="relative flex-1">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-                <Input
-                  value={(() => {
-                    const monthly = getFieldValue(FIELD_KEYS.monthlyIncome);
-                    const num = parseFloat((monthly || '').replace(/[,$]/g, ''));
-                    if (isNaN(num) || !monthly) return '';
-                    return (num * 12).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                  })()}
-                  disabled
-                  className="h-7 text-xs pl-6 bg-muted"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-          </DirtyFieldWrapper>
-          {renderCurrencyField(FIELD_KEYS.lienProtectiveEquity, 'Lien (Protective Equity)')}
-          {renderInlineSelect(FIELD_KEYS.sourceLienInfo, 'Source of Lien Information', LIEN_SOURCES, 'Select...')}
-
-          
-        </div>
-      </div>
-
-      {/* Valuation Section */}
-      <div className="mt-4">
-        <div className="border-b border-border pb-1 mb-2"><span className="font-semibold text-xs text-primary">Valuation:</span></div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-0">
-          <div className="space-y-1.5">
-            {renderDateField(FIELD_KEYS.valuationDate, 'Valuation Date')}
-            {renderInlineSelect(FIELD_KEYS.valuationType, 'Valuation Type', VALUATION_TYPE_OPTIONS, 'Select')}
-            {renderInlineSelect(FIELD_KEYS.performedBy, 'Performed By', PERFORMED_BY_OPTIONS, 'Select...')}
-            {getFieldValue(FIELD_KEYS.valuationType) === 'Broker Determined Value (BPO)' && getFieldValue(FIELD_KEYS.valuationDate) && (
-              <p className="text-xs italic text-foreground pl-[118px]">
-                property valuation performed on {(() => {
-                  const d = parseDate(getFieldValue(FIELD_KEYS.valuationDate));
-                  return d ? format(d, 'MM/dd/yyyy') : getFieldValue(FIELD_KEYS.valuationDate);
-                })()}
-              </p>
-            )}
-            {getFieldValue(FIELD_KEYS.performedBy) === 'Third Party' && (
-              <>
-                {renderInlineField(FIELD_KEYS.thirdPartyFullName, 'Full Name')}
-                {renderInlineField(FIELD_KEYS.thirdPartyStreet, 'Street')}
-                {renderInlineField(FIELD_KEYS.thirdPartyCity, 'City')}
-                {renderInlineSelect(FIELD_KEYS.thirdPartyState, 'State', US_STATES, 'Select state')}
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.thirdPartyZip}>
-                  <div className="flex items-center gap-2">
-                    <Label className="w-[110px] shrink-0 text-xs text-foreground">ZIP Code</Label>
-                    <ZipInput value={getFieldValue(FIELD_KEYS.thirdPartyZip)} onValueChange={(v) => onValueChange(FIELD_KEYS.thirdPartyZip, v)} disabled={disabled} className="h-7 text-xs" />
-                  </div>
-                </DirtyFieldWrapper>
-              </>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            {renderCurrencyField(FIELD_KEYS.protectiveEquity, 'Protective Equity')}
-            {renderPercentageField(FIELD_KEYS.ltv, 'Loan To Value')}
-            {renderPercentageField(FIELD_KEYS.cltv, 'CLTV (If a Junior Lien)')}
-          </div>
+          {renderCurrencyField(FIELD_KEYS.pledgedEquity, 'Pledged Equity')}
+          {renderCurrencyField(FIELD_KEYS.protectiveEquity, 'Protective Equity')}
+          {renderPercentageField(FIELD_KEYS.ltv, 'Loan To Value')}
+          {renderPercentageField(FIELD_KEYS.cltv, 'CLTV (If a Junior Lien)')}
         </div>
       </div>
     </div>
