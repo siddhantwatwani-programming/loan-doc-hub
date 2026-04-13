@@ -1,133 +1,91 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Download, Filter } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
+import { Search, Download, Filter, ChevronRight, ChevronDown, X } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import SortableTableHead from '@/components/deal/SortableTableHead';
 import { type SortDirection } from '@/hooks/useGridSortFilter';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
-import { US_STATES } from '@/lib/usStates';
 
-interface HistoryLoan {
+interface LenderSubRow {
   id: string;
-  dealId: string;
-  loanAccount: string;
-  borrowerName: string;
-  propertyAddress: string;
-  loanAmount: number;
-  loanAmountDisplay: string;
-  noteRate: string;
-  originationDate: string;
-  originationDateRaw: string;
-  maturityDate: string;
-  currentBalance: string;
-  currentBalanceNum: number;
-  loanStatus: string;
-  nextPaymentDate: string;
-  productType: string;
-  state: string;
-  csrOwner: string;
+  lender_name: string;
+  percentage: number;
+  release_date: string | null;
+  status: string;
+  principal_balance: number;
 }
 
-const ALL_COLUMNS = [
-  { id: 'loanAccount', label: 'Loan Account' },
-  { id: 'borrowerName', label: 'Borrower Name' },
-  { id: 'propertyAddress', label: 'Property Address' },
-  { id: 'loanAmountDisplay', label: 'Loan Amount' },
-  { id: 'noteRate', label: 'Note Rate' },
-  { id: 'originationDate', label: 'Origination Date' },
-  { id: 'maturityDate', label: 'Maturity Date' },
-  { id: 'currentBalance', label: 'Current Balance' },
-  { id: 'loanStatus', label: 'Loan Status' },
-  { id: 'nextPaymentDate', label: 'Next Payment Date' },
-  { id: 'productType', label: 'Product Type' },
-  { id: 'state', label: 'State' },
-  { id: 'csrOwner', label: 'CSR Owner' },
-];
+interface HistoryRow {
+  id: string;
+  dealId: string;
+  dealNumber: string;
+  borrowerName: string;
+  dateDue: string | null;
+  dateReceived: string | null;
+  description: string;
+  nextDueDate: string | null;
+  total: number;
+  principal: number;
+  interest: number;
+  lateFeePaid: number;
+  servicingFees: number;
+  reserves: number;
+  other: number;
+  principalBalance: number;
+  lenders: LenderSubRow[];
+}
 
-const STATUS_OPTIONS = ['Active', 'Paid Off', 'Default', 'Closed'];
-
-const FIELD_IDS = {
-  loanAmount: '163cd0b4-7cc0-4975-bcfb-43aa4be9c5c8',
-  noteRate: '969b2029-d56f-4789-8d77-1f9aecc88f2b',
-  principalBalance: '27c1bee2-05d4-46e5-a16b-e10c1e38cafd',
-  maturityDate: '33fadfcb-b70c-4425-944e-23044f21a06b',
-  nextPaymentDate: '384a8113-5d6d-47fd-9146-b3b1e9f65037',
-  nextPayment: '18cff33e-9553-4860-becf-e6c4b54f2a20',
+const formatCurrency = (val: number | null | undefined): string => {
+  if (val == null) return '$0.00';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(val);
 };
 
-const formatCurrency = (val: any) => {
-  if (val == null || val === '') return '-';
-  const num = typeof val === 'number' ? val : parseFloat(String(val));
-  if (isNaN(num)) return '-';
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
-};
-
-const formatDate = (val: any) => {
+const formatDate = (val: string | null | undefined): string => {
   if (!val) return '-';
   try {
-    const d = new Date(String(val));
+    const d = new Date(val);
     if (isNaN(d.getTime())) return '-';
-    return d.toLocaleDateString('en-US');
+    return d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
   } catch { return '-'; }
 };
 
-const formatPercent = (val: any) => {
-  if (val == null || val === '') return '-';
-  const num = typeof val === 'number' ? val : parseFloat(String(val));
-  if (isNaN(num)) return '-';
-  return `${num}%`;
-};
-
-const extractFieldValue = (fieldValues: Record<string, any>, fieldId: string, valueKey: string): any => {
-  const entry = fieldValues[fieldId];
-  if (!entry) return null;
-  if (typeof entry === 'object' && entry !== null) return entry[valueKey] ?? null;
-  return entry;
-};
-
-const formatSummaryCurrency = (val: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 interface Props { borrowerId: string; contactDbId?: string; }
 
 const BorrowerHistory: React.FC<Props> = ({ borrowerId, contactDbId }) => {
-  
-  const [rows, setRows] = useState<HistoryLoan[]>([]);
+  const [rows, setRows] = useState<HistoryRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [sortCol, setSortCol] = useState<string | null>('originationDate');
+  const [sortCol, setSortCol] = useState<string | null>('dateDue');
   const [sortDir, setSortDir] = useState<SortDirection>('desc');
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Filters
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [stateFilter, setStateFilter] = useState('all');
-  const [productTypeFilter, setProductTypeFilter] = useState('all');
-  const [showFilters, setShowFilters] = useState(false);
-  const [minAmount, setMinAmount] = useState('');
-  const [maxAmount, setMaxAmount] = useState('');
+  // Header info
+  const [headerAccountNumber, setHeaderAccountNumber] = useState('');
+  const [headerBorrowerName, setHeaderBorrowerName] = useState('');
 
   useEffect(() => {
     const lookupId = contactDbId || borrowerId;
     if (!lookupId) return;
+
     const load = async () => {
       setIsLoading(true);
       try {
-        // 1. Find all deal_participants for this contact as borrower
-        const { data: participants, error: pErr } = await supabase
+        // 1. Find deal_participants for this contact as borrower
+        const { data: participants } = await supabase
           .from('deal_participants')
           .select('deal_id, name')
           .eq('contact_id', contactDbId || '')
           .eq('role', 'borrower');
 
-        // Also try by borrower contact_id string if contactDbId didn't match
         let allParticipants = participants || [];
-        if ((!participants || participants.length === 0) && borrowerId) {
-          // Search via deal_section_values borrower section for borrower_id match
+
+        if (allParticipants.length === 0 && borrowerId) {
           const { data: borrowerSections } = await supabase
             .from('deal_section_values')
             .select('deal_id, field_values')
@@ -139,11 +97,9 @@ const BorrowerHistory: React.FC<Props> = ({ borrowerId, contactDbId }) => {
             if (fv) {
               const vals = Object.values(fv);
               for (const v of vals) {
-                if (typeof v === 'object' && v !== null) {
-                  if (v.value_text === borrowerId) {
-                    matchedDealIds.push(bs.deal_id);
-                    break;
-                  }
+                if (typeof v === 'object' && v !== null && v.value_text === borrowerId) {
+                  matchedDealIds.push(bs.deal_id);
+                  break;
                 }
                 if (typeof v === 'string' && v === borrowerId) {
                   matchedDealIds.push(bs.deal_id);
@@ -166,128 +122,76 @@ const BorrowerHistory: React.FC<Props> = ({ borrowerId, contactDbId }) => {
 
         const dealIds = [...new Set(allParticipants.map(p => p.deal_id))];
 
-        // 2. Fetch deals
-        const { data: deals, error: dErr } = await supabase
+        // 2. Fetch deals for header info
+        const { data: deals } = await supabase
           .from('deals')
-          .select('id, deal_number, loan_amount, status, borrower_name, property_address, product_type, state, created_by')
+          .select('id, deal_number, borrower_name')
           .in('id', dealIds);
 
-        if (dErr) throw dErr;
+        if (deals && deals.length > 0) {
+          setHeaderAccountNumber(deals[0].deal_number || '');
+          setHeaderBorrowerName(deals[0].borrower_name || allParticipants[0]?.name || '');
+        }
 
-        // 3. Fetch loan_terms section values
-        const { data: loanTermsSections } = await supabase
-          .from('deal_section_values')
-          .select('deal_id, field_values')
+        // 3. Fetch loan_history for these deals
+        const { data: historyData, error: hErr } = await supabase
+          .from('loan_history')
+          .select('*')
           .in('deal_id', dealIds)
-          .eq('section', 'loan_terms');
+          .order('date_due', { ascending: false });
 
-        const loanTermsMap = new Map<string, Record<string, any>>();
-        (loanTermsSections || []).forEach(sv => {
-          loanTermsMap.set(sv.deal_id, sv.field_values as Record<string, any>);
-        });
+        if (hErr) throw hErr;
 
-        // 4. Fetch borrower section values for origination date
-        const { data: borrowerSections } = await supabase
-          .from('deal_section_values')
-          .select('deal_id, field_values')
-          .in('deal_id', dealIds)
-          .eq('section', 'borrower');
+        const historyRecords = historyData || [];
+        const historyIds = historyRecords.map(h => h.id);
 
-        const borrowerMap = new Map<string, Record<string, any>>();
-        (borrowerSections || []).forEach(sv => {
-          borrowerMap.set(sv.deal_id, sv.field_values as Record<string, any>);
-        });
+        // 4. Fetch lender sub-rows
+        let lenderMap = new Map<string, LenderSubRow[]>();
+        if (historyIds.length > 0) {
+          const { data: lenderData } = await supabase
+            .from('loan_history_lenders')
+            .select('*')
+            .in('loan_history_id', historyIds);
 
-        // 5. Fetch CSR owner profiles
-        const creatorIds = [...new Set((deals || []).map(d => d.created_by).filter(Boolean))];
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, full_name')
-          .in('user_id', creatorIds);
-
-        const profileMap = new Map<string, string>();
-        (profiles || []).forEach(p => { profileMap.set(p.user_id, p.full_name || ''); });
+          (lenderData || []).forEach(lr => {
+            const existing = lenderMap.get(lr.loan_history_id) || [];
+            existing.push({
+              id: lr.id,
+              lender_name: lr.lender_name,
+              percentage: lr.percentage || 0,
+              release_date: lr.release_date,
+              status: lr.status || 'Pending',
+              principal_balance: lr.principal_balance || 0,
+            });
+            lenderMap.set(lr.loan_history_id, existing);
+          });
+        }
 
         const dealsMap = new Map((deals || []).map(d => [d.id, d]));
 
-        // Build rows
-        const seenDeals = new Set<string>();
-        const historyRows: HistoryLoan[] = [];
-
-        for (const p of allParticipants) {
-          if (seenDeals.has(p.deal_id)) continue;
-          seenDeals.add(p.deal_id);
-
-          const deal = dealsMap.get(p.deal_id);
-          if (!deal) continue;
-
-          const loanTerms = loanTermsMap.get(p.deal_id) || {};
-          const borrowerData = borrowerMap.get(p.deal_id) || {};
-
-          // Extract field values
-          const loanAmountVal = extractFieldValue(loanTerms, FIELD_IDS.loanAmount, 'value_number');
-          const noteRateVal = extractFieldValue(loanTerms, FIELD_IDS.noteRate, 'value_number');
-          const principalBalanceVal = extractFieldValue(loanTerms, FIELD_IDS.principalBalance, 'value_number');
-          const maturityDateVal = extractFieldValue(loanTerms, FIELD_IDS.maturityDate, 'value_date')
-                               || extractFieldValue(loanTerms, FIELD_IDS.maturityDate, 'value_text');
-          const nextPaymentDateVal = extractFieldValue(loanTerms, FIELD_IDS.nextPaymentDate, 'value_date')
-                                   || extractFieldValue(loanTerms, FIELD_IDS.nextPaymentDate, 'value_text')
-                                   || extractFieldValue(loanTerms, FIELD_IDS.nextPayment, 'value_date')
-                                   || extractFieldValue(loanTerms, FIELD_IDS.nextPayment, 'value_text');
-
-          // Try to find origination date from loan_terms or borrower section
-          let originationDateVal: any = null;
-          // Check common origination date keys in loan terms
-          for (const [, val] of Object.entries(loanTerms)) {
-            if (typeof val === 'object' && val !== null && val.label) {
-              const label = String(val.label).toLowerCase();
-              if (label.includes('origination') && label.includes('date')) {
-                originationDateVal = val.value_date || val.value_text;
-                break;
-              }
-            }
-          }
-          // Fallback to deal created_at
-          if (!originationDateVal) {
-            originationDateVal = deal.created_by ? null : null;
-          }
-
-          // Determine loan status
-          let loanStatus = 'Active';
-          const storedStatus = loanTerms['loan_status'] || loanTerms['status'];
-          if (typeof storedStatus === 'string') {
-            const lower = storedStatus.toLowerCase();
-            if (lower.includes('closed') || lower.includes('paid')) loanStatus = lower.includes('paid') ? 'Paid Off' : 'Closed';
-            if (lower.includes('default')) loanStatus = 'Default';
-          }
-          if (deal.status === 'generated') loanStatus = loanStatus; // keep derived
-
-          const displayLoanAmount = loanAmountVal ?? deal.loan_amount;
-          const displayBalance = principalBalanceVal ?? loanAmountVal ?? deal.loan_amount;
-          const loanAmountNum = typeof displayLoanAmount === 'number' ? displayLoanAmount : parseFloat(String(displayLoanAmount || '0')) || 0;
-          const balanceNum = typeof displayBalance === 'number' ? displayBalance : parseFloat(String(displayBalance || '0')) || 0;
-
-          historyRows.push({
-            id: p.deal_id,
-            dealId: p.deal_id,
-            loanAccount: deal.deal_number || '-',
-            borrowerName: deal.borrower_name || p.name || '-',
-            propertyAddress: deal.property_address || '-',
-            loanAmount: loanAmountNum,
-            loanAmountDisplay: formatCurrency(displayLoanAmount),
-            noteRate: formatPercent(noteRateVal),
-            originationDate: formatDate(originationDateVal),
-            originationDateRaw: originationDateVal ? String(originationDateVal) : '',
-            maturityDate: formatDate(maturityDateVal),
-            currentBalance: formatCurrency(displayBalance),
-            currentBalanceNum: balanceNum,
-            loanStatus,
-            nextPaymentDate: formatDate(nextPaymentDateVal),
-            productType: deal.product_type || '-',
-            state: deal.state || '-',
-            csrOwner: profileMap.get(deal.created_by) || '-',
-          });
-        }
+        // 5. Build rows
+        const historyRows: HistoryRow[] = historyRecords.map(h => {
+          const deal = dealsMap.get(h.deal_id);
+          return {
+            id: h.id,
+            dealId: h.deal_id,
+            dealNumber: deal?.deal_number || h.account_number || '',
+            borrowerName: deal?.borrower_name || '',
+            dateDue: h.date_due,
+            dateReceived: h.date_received,
+            description: h.description || h.payment_code || h.reference || '',
+            nextDueDate: h.next_due_date,
+            total: h.total_amount_received || 0,
+            principal: h.applied_to_principal || 0,
+            interest: h.applied_to_interest || 0,
+            lateFeePaid: h.applied_to_late_charges || 0,
+            servicingFees: h.servicing_fees || 0,
+            reserves: h.applied_to_reserve || 0,
+            other: h.other_amount || 0,
+            principalBalance: h.principal_balance || 0,
+            lenders: lenderMap.get(h.id) || [],
+          };
+        });
 
         setRows(historyRows);
       } catch (err) {
@@ -300,27 +204,14 @@ const BorrowerHistory: React.FC<Props> = ({ borrowerId, contactDbId }) => {
     load();
   }, [contactDbId, borrowerId]);
 
-  // Summary metrics
-  const summary = useMemo(() => {
-    const totalLoans = rows.length;
-    const activeLoans = rows.filter(r => r.loanStatus === 'Active').length;
-    const closedLoans = rows.filter(r => r.loanStatus === 'Closed' || r.loanStatus === 'Paid Off').length;
-    const totalVolume = rows.reduce((s, r) => s + r.loanAmount, 0);
-    const avgSize = totalLoans > 0 ? totalVolume / totalLoans : 0;
-    return { totalLoans, activeLoans, closedLoans, totalVolume, avgSize };
-  }, [rows]);
-
-  // Product types from data
-  const productTypes = useMemo(() => {
-    const set = new Set(rows.map(r => r.productType).filter(p => p && p !== '-'));
-    return Array.from(set).sort();
-  }, [rows]);
-
-  // States from data
-  const statesInData = useMemo(() => {
-    const set = new Set(rows.map(r => r.state).filter(s => s && s !== '-'));
-    return Array.from(set).sort();
-  }, [rows]);
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
 
   const handleSort = useCallback((col: string) => {
     if (sortCol === col) {
@@ -335,46 +226,26 @@ const BorrowerHistory: React.FC<Props> = ({ borrowerId, contactDbId }) => {
   const filtered = useMemo(() => {
     let result = rows;
 
-    // Global search
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(r =>
-        r.loanAccount.toLowerCase().includes(q) ||
-        r.borrowerName.toLowerCase().includes(q) ||
-        r.propertyAddress.toLowerCase().includes(q) ||
-        r.productType.toLowerCase().includes(q) ||
-        r.state.toLowerCase().includes(q)
+        r.description.toLowerCase().includes(q) ||
+        r.dealNumber.toLowerCase().includes(q) ||
+        r.borrowerName.toLowerCase().includes(q)
       );
     }
 
-    // Filters
-    if (statusFilter !== 'all') {
-      result = result.filter(r => r.loanStatus === statusFilter);
-    }
-    if (stateFilter !== 'all') {
-      result = result.filter(r => r.state === stateFilter);
-    }
-    if (productTypeFilter !== 'all') {
-      result = result.filter(r => r.productType === productTypeFilter);
-    }
-    if (minAmount) {
-      const min = parseFloat(minAmount);
-      if (!isNaN(min)) result = result.filter(r => r.loanAmount >= min);
-    }
-    if (maxAmount) {
-      const max = parseFloat(maxAmount);
-      if (!isNaN(max)) result = result.filter(r => r.loanAmount <= max);
-    }
-
-    // Sort
     if (sortCol && sortDir) {
       result = [...result].sort((a, b) => {
         let av: any, bv: any;
-        if (sortCol === 'loanAmountDisplay') { av = a.loanAmount; bv = b.loanAmount; }
-        else if (sortCol === 'currentBalance') { av = a.currentBalanceNum; bv = b.currentBalanceNum; }
-        else if (sortCol === 'originationDate') { av = a.originationDateRaw; bv = b.originationDateRaw; }
-        else { av = (a as any)[sortCol] || ''; bv = (b as any)[sortCol] || ''; }
-
+        const numCols = ['total', 'principal', 'interest', 'lateFeePaid', 'servicingFees', 'reserves', 'other', 'principalBalance'];
+        if (numCols.includes(sortCol)) {
+          av = (a as any)[sortCol] || 0;
+          bv = (b as any)[sortCol] || 0;
+        } else {
+          av = (a as any)[sortCol] || '';
+          bv = (b as any)[sortCol] || '';
+        }
         if (typeof av === 'number' && typeof bv === 'number') {
           return sortDir === 'asc' ? av - bv : bv - av;
         }
@@ -383,15 +254,27 @@ const BorrowerHistory: React.FC<Props> = ({ borrowerId, contactDbId }) => {
     }
 
     return result;
-  }, [rows, search, statusFilter, stateFilter, productTypeFilter, minAmount, maxAmount, sortCol, sortDir]);
+  }, [rows, search, sortCol, sortDir]);
 
+  // Pagination
+  const totalItems = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIdx = (safeCurrentPage - 1) * pageSize;
+  const endIdx = Math.min(startIdx + pageSize, totalItems);
+  const paginatedRows = filtered.slice(startIdx, endIdx);
+
+  useEffect(() => { setCurrentPage(1); }, [search, pageSize]);
 
   const handleExport = () => {
-    const headers = ALL_COLUMNS.map(c => c.label).join(',');
+    const headers = ['Due Date', 'Date Received', 'Description', 'Next Due Date', 'Total', 'Principal', 'Interest', 'Late Fee Paid', 'Servicing Fees', 'Reserves', 'Other', 'Principal Balance'];
     const csvRows = filtered.map(r =>
-      ALL_COLUMNS.map(c => `"${String((r as any)[c.id] || '').replace(/"/g, '""')}"`).join(',')
+      [
+        formatDate(r.dateDue), formatDate(r.dateReceived), r.description, formatDate(r.nextDueDate),
+        r.total, r.principal, r.interest, r.lateFeePaid, r.servicingFees, r.reserves, r.other, r.principalBalance,
+      ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
     );
-    const csv = [headers, ...csvRows].join('\n');
+    const csv = [headers.join(','), ...csvRows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -401,167 +284,177 @@ const BorrowerHistory: React.FC<Props> = ({ borrowerId, contactDbId }) => {
     URL.revokeObjectURL(url);
   };
 
-  const activeFilterCount = [statusFilter, stateFilter, productTypeFilter].filter(f => f !== 'all').length
-    + (minAmount ? 1 : 0) + (maxAmount ? 1 : 0);
-
-  const clearFilters = () => {
-    setStatusFilter('all');
-    setStateFilter('all');
-    setProductTypeFilter('all');
-    setMinAmount('');
-    setMaxAmount('');
-  };
+  const COLUMNS = [
+    { id: 'lenders', label: 'Lenders' },
+    { id: 'dateDue', label: 'Due Date' },
+    { id: 'dateReceived', label: 'Date Received' },
+    { id: 'description', label: 'Description' },
+    { id: 'nextDueDate', label: 'Next Due Date' },
+    { id: 'total', label: 'Total' },
+    { id: 'principal', label: 'Principal' },
+    { id: 'interest', label: 'Interest' },
+    { id: 'lateFeePaid', label: 'Late Fee Paid' },
+    { id: 'servicingFees', label: 'Servicing Fees' },
+    { id: 'reserves', label: 'Reserves' },
+    { id: 'other', label: 'Other' },
+    { id: 'principalBalance', label: 'Principal Balance' },
+  ];
 
   return (
-    <div className="space-y-4">
-      <h4 className="text-lg font-semibold text-foreground">History</h4>
-
-      {/* Summary Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="border border-border rounded-lg p-3 bg-muted/30">
-          <p className="text-xs text-muted-foreground">Total Loans</p>
-          <p className="text-xl font-semibold text-foreground">{summary.totalLoans}</p>
-        </div>
-        <div className="border border-border rounded-lg p-3 bg-muted/30">
-          <p className="text-xs text-muted-foreground">Total Loan Volume</p>
-          <p className="text-xl font-semibold text-foreground">{formatSummaryCurrency(summary.totalVolume)}</p>
-        </div>
-        <div className="border border-border rounded-lg p-3 bg-muted/30">
-          <p className="text-xs text-muted-foreground">Active Loans</p>
-          <p className="text-xl font-semibold text-foreground">{summary.activeLoans}</p>
-        </div>
-        <div className="border border-border rounded-lg p-3 bg-muted/30">
-          <p className="text-xs text-muted-foreground">Closed Loans</p>
-          <p className="text-xl font-semibold text-foreground">{summary.closedLoans}</p>
-        </div>
-        <div className="border border-border rounded-lg p-3 bg-muted/30">
-          <p className="text-xs text-muted-foreground">Average Loan Size</p>
-          <p className="text-xl font-semibold text-foreground">{formatSummaryCurrency(summary.avgSize)}</p>
+    <div className="space-y-3">
+      {/* Header bar */}
+      <div className="flex items-center justify-between bg-[hsl(var(--primary))] text-primary-foreground px-4 py-2 rounded-t-md">
+        <div className="flex items-center gap-6 text-sm font-medium">
+          {headerAccountNumber && <span>Account Number: {headerAccountNumber}</span>}
+          {headerBorrowerName && <span>Borrower: {headerBorrowerName}</span>}
+          {!headerAccountNumber && !headerBorrowerName && <span>History</span>}
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Popover open={showFilters} onOpenChange={setShowFilters}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1">
-                <Filter className="h-4 w-4" />
-                Filters
-                {activeFilterCount > 0 && (
-                  <span className="ml-1 bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 space-y-3" align="start">
-              <div className="space-y-1">
-                <Label className="text-xs">Loan Status</Label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    {STATUS_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">State</Label>
-                <Select value={stateFilter} onValueChange={setStateFilter}>
-                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All States</SelectItem>
-                    {statesInData.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Product Type</Label>
-                <Select value={productTypeFilter} onValueChange={setProductTypeFilter}>
-                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    {productTypes.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Loan Amount Range</Label>
-                <div className="flex gap-2">
-                  <Input placeholder="Min" value={minAmount} onChange={e => setMinAmount(e.target.value)} className="h-8" type="number" min="0" />
-                  <Input placeholder="Max" value={maxAmount} onChange={e => setMaxAmount(e.target.value)} className="h-8" type="number" min="0" />
-                </div>
-              </div>
-              {activeFilterCount > 0 && (
-                <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full text-xs">
-                  Clear All Filters
-                </Button>
-              )}
-            </PopoverContent>
-          </Popover>
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search loans..." value={search} onChange={e => setSearch(e.target.value)} className="pl-8 h-9 w-[220px]" />
-          </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[180px] max-w-[280px]">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search history..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 pl-8 text-xs"
+          />
+          {search && (
+            <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5" onClick={() => setSearch('')}>
+              <X className="h-3 w-3" />
+            </Button>
+          )}
         </div>
-        <Button variant="outline" size="sm" onClick={handleExport} className="gap-1">
-          <Download className="h-4 w-4" /> Export
+        <Button variant="outline" size="sm" className="h-8 gap-1 text-xs" onClick={handleExport}>
+          <Download className="h-3.5 w-3.5" /> Export
         </Button>
       </div>
 
-      {/* Data Grid */}
-      <div className="border border-border rounded-lg overflow-x-auto">
-        <Table className="min-w-[1800px]">
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              {ALL_COLUMNS.map(c => (
-                <SortableTableHead
-                  key={c.id}
-                  columnId={c.id}
-                  label={c.label}
-                  sortColumnId={sortCol}
-                  sortDirection={sortDir}
-                  onSort={handleSort}
-                />
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={ALL_COLUMNS.length} className="text-center py-8 text-muted-foreground">
-                  Loading history...
-                </TableCell>
-              </TableRow>
-            ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={ALL_COLUMNS.length} className="text-center py-8 text-muted-foreground">
-                  No loan history found for this borrower.
-                </TableCell>
-              </TableRow>
-            ) : filtered.map(r => (
-              <TableRow key={r.id}>
-                {ALL_COLUMNS.map(c => (
-                  <TableCell key={c.id} className="whitespace-nowrap">
-                    {c.id === 'loanStatus' ? (
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        r.loanStatus === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                        r.loanStatus === 'Default' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
-                        'bg-muted text-muted-foreground'
-                      }`}>
-                        {r.loanStatus}
-                      </span>
-                    ) : (
-                      (r as any)[c.id] || '-'
-                    )}
-                  </TableCell>
+      {/* Table */}
+      <div className="border border-border rounded-md overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]">
+                {COLUMNS.map(col => (
+                  col.id === 'lenders' ? (
+                    <TableHead key={col.id} className="text-primary-foreground text-xs font-semibold whitespace-nowrap px-3 py-2 w-[80px]">
+                      {col.label}
+                    </TableHead>
+                  ) : (
+                    <SortableTableHead
+                      key={col.id}
+                      columnId={col.id}
+                      label={col.label}
+                      sortColumnId={sortCol}
+                      sortDirection={sortDir}
+                      onSort={handleSort}
+                      className="text-primary-foreground text-xs font-semibold whitespace-nowrap px-3 py-2 [&_svg]:text-primary-foreground/60"
+                    />
+                  )
                 ))}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={COLUMNS.length} className="text-center py-8 text-sm text-muted-foreground">
+                    Loading history...
+                  </TableCell>
+                </TableRow>
+              ) : paginatedRows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={COLUMNS.length} className="text-center py-8 text-sm text-muted-foreground">
+                    No history records found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedRows.map((row, idx) => {
+                  const isExpanded = expandedRows.has(row.id);
+                  const hasLenders = row.lenders.length > 0;
+                  return (
+                    <React.Fragment key={row.id}>
+                      <TableRow className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/30'}>
+                        <TableCell className="px-3 py-1.5 text-xs">
+                          {hasLenders ? (
+                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => toggleExpand(row.id)}>
+                              {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                            </Button>
+                          ) : (
+                            <span className="inline-block w-5" />
+                          )}
+                        </TableCell>
+                        <TableCell className="px-3 py-1.5 text-xs whitespace-nowrap">{formatDate(row.dateDue)}</TableCell>
+                        <TableCell className="px-3 py-1.5 text-xs whitespace-nowrap">{formatDate(row.dateReceived)}</TableCell>
+                        <TableCell className="px-3 py-1.5 text-xs whitespace-nowrap">{row.description || '-'}</TableCell>
+                        <TableCell className="px-3 py-1.5 text-xs whitespace-nowrap">{formatDate(row.nextDueDate)}</TableCell>
+                        <TableCell className="px-3 py-1.5 text-xs whitespace-nowrap text-right">{formatCurrency(row.total)}</TableCell>
+                        <TableCell className="px-3 py-1.5 text-xs whitespace-nowrap text-right">{formatCurrency(row.principal)}</TableCell>
+                        <TableCell className="px-3 py-1.5 text-xs whitespace-nowrap text-right">{formatCurrency(row.interest)}</TableCell>
+                        <TableCell className="px-3 py-1.5 text-xs whitespace-nowrap text-right">{formatCurrency(row.lateFeePaid)}</TableCell>
+                        <TableCell className="px-3 py-1.5 text-xs whitespace-nowrap text-right">{formatCurrency(row.servicingFees)}</TableCell>
+                        <TableCell className="px-3 py-1.5 text-xs whitespace-nowrap text-right">{formatCurrency(row.reserves)}</TableCell>
+                        <TableCell className="px-3 py-1.5 text-xs whitespace-nowrap text-right">{formatCurrency(row.other)}</TableCell>
+                        <TableCell className="px-3 py-1.5 text-xs whitespace-nowrap text-right font-medium">{formatCurrency(row.principalBalance)}</TableCell>
+                      </TableRow>
+                      {/* Expanded lender sub-rows */}
+                      {isExpanded && row.lenders.map(lr => (
+                        <TableRow key={lr.id} className="bg-muted/50">
+                          <TableCell className="px-3 py-1 text-xs" />
+                          <TableCell colSpan={2} className="px-3 py-1 text-xs font-medium text-muted-foreground pl-8">
+                            {lr.lender_name}
+                          </TableCell>
+                          <TableCell className="px-3 py-1 text-xs text-muted-foreground">
+                            {lr.percentage > 0 ? `${lr.percentage}%` : '-'}
+                          </TableCell>
+                          <TableCell className="px-3 py-1 text-xs text-muted-foreground whitespace-nowrap">
+                            {formatDate(lr.release_date)}
+                          </TableCell>
+                          <TableCell className="px-3 py-1 text-xs text-muted-foreground">
+                            {lr.status}
+                          </TableCell>
+                          <TableCell colSpan={6} />
+                          <TableCell className="px-3 py-1 text-xs text-right text-muted-foreground">
+                            {formatCurrency(lr.principal_balance)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </React.Fragment>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
+
+      {/* Pagination footer */}
+      {totalItems > 0 && (
+        <div className="flex items-center justify-end gap-4 text-xs text-muted-foreground px-1">
+          <div className="flex items-center gap-2">
+            <span>Items per page:</span>
+            <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+              <SelectTrigger className="h-7 w-[65px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZE_OPTIONS.map(s => (
+                  <SelectItem key={s} value={String(s)}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <span>{startIdx + 1} - {endIdx} of {totalItems}</span>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" disabled={safeCurrentPage <= 1} onClick={() => setCurrentPage(1)}>First</Button>
+            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" disabled={safeCurrentPage <= 1} onClick={() => setCurrentPage(p => p - 1)}>Prev</Button>
+            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" disabled={safeCurrentPage >= totalPages} onClick={() => setCurrentPage(p => p + 1)}>Next</Button>
+            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" disabled={safeCurrentPage >= totalPages} onClick={() => setCurrentPage(totalPages)}>Last</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
