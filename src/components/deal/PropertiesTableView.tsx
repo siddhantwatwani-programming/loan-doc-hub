@@ -92,19 +92,31 @@ interface PropertiesTableViewProps {
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'isPrimary', label: 'Primary', visible: true },
+  { id: 'informationProvidedBy', label: 'Info Provided By', visible: true },
   { id: 'description', label: 'Description', visible: true },
   { id: 'street', label: 'Street', visible: true },
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
   { id: 'zipCode', label: 'Zip Code', visible: true },
   { id: 'county', label: 'County', visible: true },
+  { id: 'purchaseDate', label: 'Purchase Date', visible: false },
+  { id: 'purchasePrice', label: 'Purchase Price', visible: true },
+  { id: 'downPayment', label: 'Down Payment', visible: false },
   { id: 'propertyType', label: 'Property Type', visible: true },
   { id: 'occupancy', label: 'Occupancy', visible: true },
+  { id: 'yearBuilt', label: 'Year Built', visible: false },
+  { id: 'squareFeet', label: 'Square Feet', visible: false },
+  { id: 'constructionType', label: 'Construction Type', visible: false },
+  { id: 'zoning', label: 'Zoning', visible: false },
+  { id: 'floodZone', label: 'Flood Zone', visible: true },
   { id: 'appraisedValue', label: 'Estimate of Value', visible: true },
   { id: 'appraisedDate', label: 'Valuation Date', visible: true },
-  { id: 'purchasePrice', label: 'Purchase Price', visible: true },
+  { id: 'valuationType', label: 'Valuation Type', visible: false },
+  { id: 'performedBy', label: 'Performed By', visible: false },
+  { id: 'pledgedEquity', label: 'Pledged Equity', visible: false },
+  { id: 'protectiveEquity', label: 'Protective Equity', visible: false },
   { id: 'ltv', label: 'Loan To Value', visible: true },
-  { id: 'floodZone', label: 'Flood Zone', visible: true },
+  { id: 'cltv', label: 'CLTV', visible: false },
 ];
 
 const SEARCH_FIELDS = ['description', 'street', 'city', 'state', 'zipCode', 'county', 'propertyType', 'apn'];
@@ -193,6 +205,15 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
     return `${num.toFixed(3)}%`;
   };
 
+  const formatDate = (val: string) => {
+    if (!val) return '-';
+    try {
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return val;
+      return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+    } catch { return val; }
+  };
+
   const renderCellValue = (property: PropertyData, columnId: string) => {
     switch (columnId) {
       case 'isPrimary':
@@ -205,22 +226,20 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
           />
         );
       case 'appraisedValue':
-        return formatCurrency(property.appraisedValue);
       case 'purchasePrice':
-        return formatCurrency(property.purchasePrice || '');
+      case 'downPayment':
+      case 'pledgedEquity':
+      case 'protectiveEquity':
+        return formatCurrency(String(property[columnId as keyof PropertyData] || ''));
       case 'ltv':
-        return formatPercentage(property.ltv);
+      case 'cltv':
+        return formatPercentage(String(property[columnId as keyof PropertyData] || ''));
       case 'floodZone':
         return property.floodZone ? 'Yes' : 'No';
-      case 'appraisedDate': {
-        const val = property.appraisedDate;
-        if (!val) return '-';
-        try {
-          const d = new Date(val);
-          if (isNaN(d.getTime())) return val;
-          return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
-        } catch { return val; }
-      }
+      case 'appraisedDate':
+      case 'purchaseDate':
+      case 'yearBuilt':
+        return formatDate(String(property[columnId as keyof PropertyData] || ''));
       default:
         return property[columnId as keyof PropertyData] || '-';
     }
