@@ -558,6 +558,50 @@ function getLabelQuickNeedle(label: string, mapping: LabelMapping): string {
   return label.toLowerCase();
 }
 
+/**
+ * Build a native Word SDT (Structured Document Tag) checkbox XML block.
+ * This produces an interactive, clickable checkbox in Word — matching the
+ * appearance and behaviour of existing SDT checkboxes in the template.
+ *
+ * @param isChecked  Whether the checkbox should be in the checked state
+ * @param rPr        Optional run-property XML string to preserve font/size styling
+ */
+function buildSdtCheckboxXml(isChecked: boolean, rPr?: string): string {
+  const checkedVal = isChecked ? '1' : '0';
+  const displayChar = isChecked ? '\u2612' : '\u2610'; // ☒ or ☐
+  const displayHex = isChecked ? '2612' : '2610';
+  const rPrBlock = rPr || '<w:rFonts w:ascii="MS Gothic" w:hAnsi="MS Gothic" w:eastAsia="MS Gothic" w:hint="eastAsia"/>';
+  const rPrXml = rPr ? rPr : `<w:rPr>${rPrBlock}</w:rPr>`;
+  const wrappedRPr = rPr
+    ? (rPr.startsWith('<w:rPr>') ? rPr : `<w:rPr>${rPr}</w:rPr>`)
+    : `<w:rPr><w:rFonts w:ascii="MS Gothic" w:hAnsi="MS Gothic" w:eastAsia="MS Gothic" w:hint="eastAsia"/></w:rPr>`;
+
+  return `<w:sdt><w:sdtPr>${wrappedRPr}<w14:checkbox><w14:checked w14:val="${checkedVal}"/><w14:checkedState w14:val="2612" w14:font="MS Gothic"/><w14:uncheckedState w14:val="2610" w14:font="MS Gothic"/></w14:checkbox></w:sdtPr><w:sdtContent><w:r>${wrappedRPr}<w:t>${displayChar}</w:t></w:r></w:sdtContent></w:sdt>`;
+}
+
+/**
+ * Post-processing pass: convert any <w:r> whose <w:t> contains ONLY a
+ * checkbox glyph (☐, ☑, or ☒) into a native Word SDT checkbox.
+ * This runs after all merge-tag and label-based replacements are complete,
+ * so every checkbox glyph — regardless of origin — becomes interactive.
+ */
+function convertGlyphsToSdtCheckboxes(xml: string): string {
+  let count = 0;
+  // Match a <w:r> that contains an optional <w:rPr> and a <w:t> with only a checkbox glyph
+  const runWithGlyphOnly = /<w:r\b[^>]*>((?:\s*<w:rPr>([\s\S]*?)<\/w:rPr>)?)\s*<w:t[^>]*>([☐☑☒])<\/w:t>\s*<\/w:r>/g;
+
+  const result = xml.replace(runWithGlyphOnly, (_match, _rPrGroup, innerRPr, glyph) => {
+    const isChecked = glyph === '☑' || glyph === '☒';
+    count++;
+    return buildSdtCheckboxXml(isChecked, innerRPr || undefined);
+  });
+
+  if (count > 0) {
+    debugLog(`[tag-parser] Converted ${count} checkbox glyphs to SDT checkboxes`);
+  }
+  return result;
+}
+
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -1564,6 +1608,10 @@ export function replaceMergeTags(
       debugLog(`[tag-parser] Cleaned ${orphanCount} orphaned }} from text runs`);
     }
   }
+
+  // Final pass: convert any remaining checkbox glyphs (☐/☑/☒) in <w:r>
+  // elements into native Word SDT checkboxes so they are editable/clickable.
+  result = convertGlyphsToSdtCheckboxes(result);
 
   return result;
 }
