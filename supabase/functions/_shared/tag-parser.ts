@@ -1059,32 +1059,71 @@ function removeConditionalBlock(content: string, startIndex: number, matchLength
  * Process native Word SDT (Structured Document Tag) checkboxes.
  * Finds <w:sdt> blocks containing <w14:checkbox>, reads the <w:tag> value,
  * resolves it to a field key, and toggles the checked state + display glyph.
+ * For tagless SDT checkboxes, attempts to match nearby label text from labelMap.
  */
 export function processSdtCheckboxes(
   content: string,
   fieldValues: Map<string, FieldValueData>,
   mergeTagMap: Record<string, string>,
-  validFieldKeys?: Set<string>
+  validFieldKeys?: Set<string>,
+  labelMap?: Record<string, LabelMapping>
 ): string {
   // Match entire <w:sdt>…</w:sdt> blocks that contain a w14:checkbox element
   const sdtPattern = /<w:sdt\b[\s\S]*?<\/w:sdt>/g;
 
-  return content.replace(sdtPattern, (sdtBlock) => {
+  return content.replace(sdtPattern, (sdtBlock, offset) => {
     // Only process SDTs that are checkboxes
     if (!/<w14:checkbox\b/.test(sdtBlock)) return sdtBlock;
 
     // Extract the tag value (the mapping key)
     const tagMatch = /<w:tag\s+w:val="([^"]+)"/i.exec(sdtBlock);
-    if (!tagMatch) {
+
+    let canonicalKey: string | null = null;
+
+    if (tagMatch) {
+      // Tagged SDT — resolve via tag name
+      const tagName = tagMatch[1];
+      canonicalKey = resolveFieldKeyWithMap(tagName, mergeTagMap, validFieldKeys);
+    } else if (labelMap) {
+      // Tagless SDT — look at surrounding text in the same table row or paragraph
+      // to find a matching label from the labelMap
+      const afterSdt = content.substring(offset + sdtBlock.length, offset + sdtBlock.length + 1000);
+      // Extract plain text from the region after this SDT (same row / paragraph)
+      const rowEnd = afterSdt.indexOf('</w:tr>');
+      const paraEnd = afterSdt.indexOf('</w:p>');
+      const searchEnd = Math.min(
+        rowEnd >= 0 ? rowEnd : afterSdt.length,
+        paraEnd >= 0 ? paraEnd : afterSdt.length,
+        500
+      );
+      const searchRegion = afterSdt.substring(0, searchEnd);
+      const textFragments = searchRegion.match(/<w:t[^>]*>([^<]+)<\/w:t>/g) || [];
+      const plainText = textFragments
+        .map((t) => t.replace(/<[^>]+>/g, ''))
+        .join(' ')
+        .trim();
+
+      // Try to find a matching label
+      for (const [label, mapping] of Object.entries(labelMap)) {
+        if (plainText.toLowerCase().includes(label.toLowerCase())) {
+          canonicalKey = mapping.fieldKey;
+          debugLog(`[tag-parser] Tagless SDT checkbox matched label "${label}" -> ${canonicalKey}`);
+          break;
+        }
+      }
+
+      if (!canonicalKey) {
+        debugLog("[tag-parser] SDT checkbox found but no <w:tag> and no label match — skipping");
+        return sdtBlock;
+      }
+    } else {
       debugLog("[tag-parser] SDT checkbox found but no <w:tag> — skipping");
       return sdtBlock;
     }
 
-    const tagName = tagMatch[1];
-    const canonicalKey = resolveFieldKeyWithMap(tagName, mergeTagMap, validFieldKeys);
     const resolved = getFieldData(canonicalKey, fieldValues);
 
-    // Determine boolean state
+    // Determine boolean state — default to unchecked when no data exists
     let isChecked = false;
     if (resolved?.data) {
       const raw = resolved.data.rawValue;
@@ -1100,7 +1139,7 @@ export function processSdtCheckboxes(
     const checkedVal = isChecked ? "1" : "0";
     const displayChar = isChecked ? "\u2612" : "\u2610"; // ☒ or ☐
 
-    debugLog(`[tag-parser] SDT checkbox "${tagName}" -> ${canonicalKey} = ${isChecked} (${displayChar})`);
+    debugLog(`[tag-parser] SDT checkbox "${tagMatch?.[1] || '(tagless)'}" -> ${canonicalKey} = ${isChecked} (${displayChar})`);
 
     // 1. Toggle <w14:checked w14:val="..."/>
     let result = sdtBlock.replace(
@@ -1292,7 +1331,7 @@ export function replaceMergeTags(
   }
 
   if (result.includes('<w14:checkbox') && result.includes('<w:sdt')) {
-    result = processSdtCheckboxes(result, fieldValues, mergeTagMap, validFieldKeys);
+    result = processSdtCheckboxes(result, fieldValues, mergeTagMap, validFieldKeys, labelMap);
   }
 
   if (result.includes('{{') || result.includes('}}')) {
