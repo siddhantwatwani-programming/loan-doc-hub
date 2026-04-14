@@ -352,12 +352,21 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
   const handleAddDisbursement = () => {
     setEditingDisbursementIdx(null);
+    setFundingHidden(true);
     setDisbursementModalOpen(true);
   };
 
   const handleEditDisbursement = (index: number) => {
     setEditingDisbursementIdx(index);
+    setFundingHidden(true);
     setDisbursementModalOpen(true);
+  };
+
+  const handleDisbursementModalClose = (openState: boolean) => {
+    setDisbursementModalOpen(openState);
+    if (!openState) {
+      setFundingHidden(false);
+    }
   };
 
   const handleDisbursementModalSubmit = (data: DisbursementFormData) => {
