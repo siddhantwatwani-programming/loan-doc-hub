@@ -264,10 +264,14 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   
   // Build property options for liens dropdown
   const propertyOptions = useMemo(() => {
-    return allProperties.map(p => ({
-      id: p.id,
-      label: p.description || p.street || `Property ${p.id.replace('property', '')}`,
-    }));
+    return allProperties.map(p => {
+      const addressParts = [p.street, p.city, p.state, p.zipCode].filter(Boolean);
+      const addressStr = addressParts.length > 0 ? addressParts.join(', ') : '';
+      const label = p.description
+        ? (addressStr ? `${p.description} - ${addressStr}` : p.description)
+        : (addressStr || `Property ${p.id.replace('property', '')}`);
+      return { id: p.id, label };
+    });
   }, [allProperties]);
 
   // Get the selected property name for detail view header
