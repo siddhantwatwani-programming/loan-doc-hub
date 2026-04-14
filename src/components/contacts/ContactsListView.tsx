@@ -194,7 +194,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
   }, [sortedContacts, visibleColumns]);
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-6 space-y-4 border border-border rounded-xl bg-card">
       {/* Breadcrumb */}
       {breadcrumbLabel && (
         <Breadcrumb>
