@@ -279,35 +279,6 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
     window.print();
   };
 
-  const handleMap = () => {
-    // Open Google Maps for the first selected property or first property
-    const target = selectedItems.length > 0 ? selectedItems[0] : properties[0];
-    if (target) {
-      const address = [target.street, target.city, target.state, target.zipCode].filter(Boolean).join(', ');
-      if (address) {
-        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
-      }
-    }
-  };
-
-  const handleValuation = () => {
-    // Show valuation summary in export dialog with valuation-specific columns
-    setValuationOpen(true);
-  };
-
-  const valuationColumns: ExportColumn[] = [
-    { id: 'description', label: 'Description' },
-    { id: 'street', label: 'Street' },
-    { id: 'city', label: 'City' },
-    { id: 'state', label: 'State' },
-    { id: 'appraisedValue', label: 'Estimate of Value' },
-    { id: 'appraisedDate', label: 'Valuation Date' },
-    { id: 'valuationType', label: 'Valuation Type' },
-    { id: 'performedBy', label: 'Performed By' },
-    { id: 'ltv', label: 'Loan To Value' },
-    { id: 'cltv', label: 'CLTV' },
-    { id: 'pledgedEquity', label: 'Pledged Equity' },
-    { id: 'protectiveEquity', label: 'Protective Equity' },
   ];
 
   return (
@@ -482,14 +453,6 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         fileName="properties"
       />
 
-      {/* Valuation Export Dialog */}
-      <GridExportDialog
-        open={valuationOpen}
-        onOpenChange={setValuationOpen}
-        columns={valuationColumns}
-        data={properties}
-        fileName="property_valuation"
-      />
     </div>
   );
 };
