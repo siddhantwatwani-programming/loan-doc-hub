@@ -196,6 +196,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   totalPayment = '',
   loanAmount = '',
 }) => {
+  const navigate = useNavigate();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<FundingRecord | null>(null);
@@ -391,8 +392,16 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   return (
     <div className="p-4 space-y-3">
       <div className="border border-border rounded-lg">
-        <div className="px-3 py-1.5 border-b border-border">
+        <div className="px-3 py-1.5 border-b border-border flex items-center justify-between">
           <span className="font-semibold text-sm text-foreground">Loan Funding</span>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={handleAddFundingClick} disabled={disabled}>
+              <Plus className="h-3.5 w-3.5" /> Add Funding
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={() => navigate('/contacts/lenders')} disabled={disabled}>
+              <Plus className="h-3.5 w-3.5" /> Add New Lender
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center gap-4 px-3 py-2 flex-wrap border-b border-border">
