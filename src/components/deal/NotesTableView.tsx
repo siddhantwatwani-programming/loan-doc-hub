@@ -280,7 +280,88 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
         onExport={() => setExportOpen(true)}
       />
 
-      {/* View Detail Dialog */}
+      {/* Table */}
+      <div className="border border-border rounded-lg overflow-x-auto">
+        <Table className="min-w-[600px]">
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={isAllSelected}
+                  ref={(el) => { if (el) (el as any).indeterminate = isSomeSelected; }}
+                  onCheckedChange={toggleAll}
+                  disabled={disabled || filteredData.length === 0}
+                />
+              </TableHead>
+              {visibleColumns.map((col) => (
+                <SortableTableHead
+                  key={col.id}
+                  columnId={col.id}
+                  label={col.label.toUpperCase()}
+                  sortColumnId={sortState.columnId}
+                  sortDirection={sortState.direction}
+                  onSort={toggleSort}
+                />
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <TableRow key={`skeleton-${i}`}>
+                  <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                  {Array.from({ length: visibleColumns.length }).map((_, ci) => (
+                    <TableCell key={`sc-${ci}`}><Skeleton className="h-4 w-full" /></TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : filteredData.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
+                  {notes.length === 0 ? 'No conversation logs added. Click "Add Conversation Log" to add one.' : 'No conversation logs match your search or filters.'}
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredData.map((note) => (
+                <TableRow key={note.id} className="cursor-pointer hover:bg-muted/30" onClick={() => handleRowClick(note)}>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox checked={selectedIds.has(note.id)} onCheckedChange={() => toggleOne(note.id)} disabled={disabled} />
+                  </TableCell>
+                  {visibleColumns.map((col) => (
+                    <TableCell key={col.id}>{renderCellValue(note, col.id)}</TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {(currentPage - 1) * 10 + 1}–{Math.min(currentPage * 10, totalCount ?? notes.length)} of {totalCount ?? notes.length} conversation logs
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(1)} disabled={currentPage <= 1 || disabled}>First</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage - 1)} disabled={currentPage <= 1 || disabled}>Previous</Button>
+            <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">{currentPage}</span>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage + 1)} disabled={currentPage >= totalPages || disabled}>Next</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(totalPages)} disabled={currentPage >= totalPages || disabled}>Last</Button>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      {notes.length > 0 && (
+        <div className="flex justify-end">
+          <div className="text-sm text-muted-foreground">
+            Total Conversation Logs: {totalCount ?? notes.length}
+          </div>
+        </div>
+      )}
+
       <Dialog open={!!viewingNote} onOpenChange={(open) => { if (!open) setViewingNote(null); }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-4">
           <DialogHeader>
