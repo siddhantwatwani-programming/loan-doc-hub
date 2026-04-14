@@ -350,17 +350,51 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   };
 
   const handleAddDisbursement = () => {
-    setFormData(prev => ({
-      ...prev,
-      disbursements: [...prev.disbursements, emptyDisbursementRow()],
-    }));
+    setEditingDisbursementIdx(null);
+    setDisbursementModalOpen(true);
+  };
+
+  const handleEditDisbursement = (index: number) => {
+    setEditingDisbursementIdx(index);
+    setDisbursementModalOpen(true);
+  };
+
+  const handleDisbursementModalSubmit = (data: DisbursementFormData) => {
+    setFormData(prev => {
+      const updated = [...prev.disbursements];
+      const row: DisbursementRow = {
+        accountId: data.accountId,
+        name: data.name,
+        startDate: data.debitThroughDate || '',
+        endDate: '',
+        amount: data.plusAmount || data.debitThroughAmount || '',
+        percentage: data.debitPercent || '',
+        from: data.from || '',
+        comments: '',
+        debitPercent: data.debitPercent,
+        debitOf: data.debitOf,
+        plusAmount: data.plusAmount,
+        minimumAmount: data.minimumAmount,
+        debitThrough: data.debitThrough,
+        debitThroughDate: data.debitThroughDate,
+        debitThroughAmount: data.debitThroughAmount,
+        debitThroughPayments: data.debitThroughPayments,
+      };
+      if (editingDisbursementIdx !== null && editingDisbursementIdx < updated.length) {
+        updated[editingDisbursementIdx] = row;
+      } else {
+        updated.push(row);
+      }
+      return { ...prev, disbursements: updated };
+    });
+    setEditingDisbursementIdx(null);
   };
 
   const handleDeleteDisbursement = (index: number) => {
     setFormData(prev => {
       const updated = [...prev.disbursements];
       updated.splice(index, 1);
-      return { ...prev, disbursements: updated.length > 0 ? updated : defaultDisbursements() };
+      return { ...prev, disbursements: updated };
     });
   };
 
