@@ -593,7 +593,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               </div>
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Pro Rata</Label>
-                {renderPercentInput('percentOwned', '%', true)}
+                {renderPercentInput('percentOwned', '%')}
               </div>
             </div>
 
