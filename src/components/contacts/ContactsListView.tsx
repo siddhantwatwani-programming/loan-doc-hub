@@ -328,9 +328,9 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
 
       {/* Footer summary */}
       <div className="flex justify-end">
-        <span className="text-xs text-muted-foreground">
+        <div className="text-sm text-muted-foreground">
           Total {title}: {totalCount}
-        </span>
+        </div>
       </div>
 
       {/* Delete Confirmation */}
