@@ -35,6 +35,8 @@ interface GridToolbarProps {
   // Bulk delete
   selectedCount?: number;
   onBulkDelete?: () => void;
+  // Edit
+  onEdit?: () => void;
   // Export
   onExport?: () => void;
   searchPlaceholder?: string;
