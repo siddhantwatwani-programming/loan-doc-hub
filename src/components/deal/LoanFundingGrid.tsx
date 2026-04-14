@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Plus, RefreshCw, Printer, Trash2, Pencil, Loader2, History, Download, Search, X, Filter } from 'lucide-react';
+import { Plus, Trash2, Pencil, Loader2, Download, Search, X, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
@@ -427,10 +428,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
           </div>
           <div className="flex-1" />
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRefresh} disabled={disabled} title="Refresh"><RefreshCw className="h-3.5 w-3.5" /></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setExportOpen(true)} disabled={disabled} title="Export"><Download className="h-3.5 w-3.5" /></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.print()} disabled={disabled} title="Print"><Printer className="h-3.5 w-3.5" /></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsHistoryOpen(true)} disabled={disabled} title="History"><History className="h-3.5 w-3.5" /></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleAddFundingClick} disabled={disabled} title="Add"><Plus className="h-3.5 w-3.5" /></Button>
             
             <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
