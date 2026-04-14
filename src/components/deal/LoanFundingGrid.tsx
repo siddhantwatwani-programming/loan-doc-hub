@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Plus, RefreshCw, Printer, Trash2, Pencil, Loader2, History, Download, Search, X, Filter } from 'lucide-react';
+import { Plus, RefreshCw, Printer, Trash2, Pencil, Loader2, History, Download, ExternalLink, Minus, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
