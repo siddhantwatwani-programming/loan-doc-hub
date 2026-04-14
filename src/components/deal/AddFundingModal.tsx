@@ -529,7 +529,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
   return (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open && !fundingModalHidden} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0 [&>button.absolute]:hidden">
         {/* Header bar */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30">
@@ -804,7 +804,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
           {/* Lender Disbursement Modal */}
           <LenderDisbursementModal
             open={disbursementModalOpen}
-            onOpenChange={setDisbursementModalOpen}
+            onOpenChange={(v) => { setDisbursementModalOpen(v); if (!v) setFundingModalHidden(false); }}
             onSubmit={handleDisbursementModalSubmit}
             editData={editingDisbursementIdx !== null && formData.disbursements[editingDisbursementIdx] ? {
               accountId: formData.disbursements[editingDisbursementIdx].accountId,
