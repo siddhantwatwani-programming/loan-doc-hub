@@ -243,11 +243,14 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const [interestFromOpen, setInterestFromOpen] = useState(false);
   const [disbursementModalOpen, setDisbursementModalOpen] = useState(false);
   const [editingDisbursementIdx, setEditingDisbursementIdx] = useState<number | null>(null);
+  // Track which field the user last edited to drive bidirectional calculation
+  const [lastEditedField, setLastEditedField] = useState<'fundingAmount' | 'percentOwned' | null>(null);
 
   React.useEffect(() => {
     if (open) {
       const data = getInitialFormData();
       setFormData(data);
+      setLastEditedField(null);
     }
   }, [open, editData]);
 
@@ -262,32 +265,49 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     }
   }, [formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
 
-  // Auto-compute Percent Owned
+  // Bidirectional: Funding Amount → Pro Rata
   React.useEffect(() => {
+    if (lastEditedField !== 'fundingAmount') return;
     const fa = parseFloat((formData.fundingAmount || '').replace(/[$,]/g, '')) || 0;
     const la = parseFloat((loanAmount || '').replace(/[$,]/g, '')) || 0;
     if (la > 0 && fa > 0) {
-      const computed = (fa / la * 100).toFixed(3);
+      const computed = ((fa / la) * 100).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
       if (computed !== formData.percentOwned) {
         setFormData(prev => ({ ...prev, percentOwned: computed }));
       }
     } else if (fa === 0 && formData.percentOwned !== '') {
       setFormData(prev => ({ ...prev, percentOwned: '' }));
     }
-  }, [formData.fundingAmount, loanAmount]);
+  }, [formData.fundingAmount, loanAmount, lastEditedField]);
 
-  // Regular Payment calculation
+  // Bidirectional: Pro Rata → Funding Amount
   React.useEffect(() => {
-    const la = parseFloat(loanAmount) || 0;
+    if (lastEditedField !== 'percentOwned') return;
+    const pct = parseFloat(formData.percentOwned) || 0;
+    const la = parseFloat((loanAmount || '').replace(/[$,]/g, '')) || 0;
+    if (la > 0 && pct > 0) {
+      const computed = ((pct / 100) * la).toFixed(2);
+      const formatted = formatCurrencyDisplay(computed);
+      if (formatted !== formData.fundingAmount) {
+        setFormData(prev => ({ ...prev, fundingAmount: formatted }));
+      }
+    } else if (pct === 0 && formData.fundingAmount !== '') {
+      setFormData(prev => ({ ...prev, fundingAmount: '' }));
+    }
+  }, [formData.percentOwned, loanAmount, lastEditedField]);
+
+  // Regular Payment calculation based on lender's funding amount (not total loan)
+  React.useEffect(() => {
+    const fa = parseFloat((formData.fundingAmount || '').replace(/[$,]/g, '')) || 0;
     let rate = 0;
     if (formData.rateSelection === 'note_rate') rate = parseFloat(formData.rateNoteValue) || 0;
     else if (formData.rateSelection === 'sold_rate') rate = parseFloat(formData.rateSoldValue) || 0;
     else if (formData.rateSelection === 'lender_rate') rate = parseFloat(formData.rateLenderValue) || 0;
-    const payment = la > 0 && rate > 0 ? (la * (rate / 100) / 12).toFixed(2) : '';
+    const payment = fa > 0 && rate > 0 ? ((fa * (rate / 100)) / 12).toFixed(2) : '';
     if (payment !== formData.regularPayment) {
       setFormData(prev => ({ ...prev, regularPayment: payment }));
     }
-  }, [loanAmount, formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
+  }, [formData.fundingAmount, formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
 
   // Auto-compute total columns for default fees
   const computeTotal = (lender: string, company: string, broker: string): string => {
@@ -338,6 +358,9 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const totalPercentError = projectedTotal > 100;
 
   const handleChange = (field: keyof FundingFormData, value: string | boolean) => {
+    // Track which bidirectional field the user is editing
+    if (field === 'fundingAmount') setLastEditedField('fundingAmount');
+    else if (field === 'percentOwned') setLastEditedField('percentOwned');
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -570,7 +593,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               </div>
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Pro Rata</Label>
-                {renderPercentInput('percentOwned', '%', true)}
+                {renderPercentInput('percentOwned', '%')}
               </div>
             </div>
 
