@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Plus, Loader2 } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, RefreshCw, Printer, Trash2, Pencil, Loader2, History, Download, ExternalLink, Minus, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
@@ -12,10 +13,9 @@ import { FundingHistoryDialog } from './FundingHistoryDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
-import { GridToolbar, FilterOption } from './GridToolbar';
-import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
+import { FilterOption } from './GridToolbar';
 import { formatCurrencyDisplay } from '@/lib/numericInputFilter';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -360,12 +360,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
     setBulkDeleteOpen(false);
   };
 
-  const handleEditSelected = () => {
-    if (selectedItems.length === 1) {
-      handleRowClick(selectedItems[0]);
-    }
-  };
-
   const exportColumns: ExportColumn[] = DEFAULT_COLUMNS.map(c => ({ id: c.id, label: c.label }));
 
   const renderTotalCell = (columnId: string) => {
@@ -388,168 +382,165 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   };
 
   const fundingFilterOptions = buildFundingFilterOptions(fundingRecords);
-  const totalCount = fundingRecords.length;
+  const [filterOpen, setFilterOpen] = useState(false);
 
   return (
-    <div className="p-6 space-y-4">
-      {/* Header with title and actions */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-semibold text-lg text-foreground">Funding</h3>
+    <div className="p-4 space-y-3">
+      <div className="border border-border rounded-lg">
+        <div className="px-3 py-1.5 border-b border-border bg-muted/30">
+          <span className="font-semibold text-sm text-foreground">Loan Funding</span>
         </div>
-        <div className="flex items-center gap-2">
-          <ColumnConfigPopover
-            columns={columns}
-            onColumnsChange={setColumns}
-            onResetColumns={resetColumns}
-            disabled={disabled}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAddFundingClick}
-            disabled={disabled}
-            className="gap-1"
-          >
-            <Plus className="h-4 w-4" />
-            Add Funding
-          </Button>
-        </div>
-      </div>
 
-      {/* Grid Toolbar */}
-      <GridToolbar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        filterOptions={fundingFilterOptions}
-        activeFilters={activeFilters}
-        onFilterChange={setFilter}
-        onClearFilters={clearFilters}
-        activeFilterCount={activeFilterCount}
-        disabled={disabled}
-        selectedCount={selectedCount}
-        onBulkDelete={() => setBulkDeleteOpen(true)}
-        onEdit={handleEditSelected}
-        onExport={() => setExportOpen(true)}
-      />
-
-      {/* Funding Table */}
-      <div className="border border-border rounded-lg overflow-x-auto">
-        {isLoading ? (
-          <div className="flex items-center justify-center min-h-[200px]">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex items-center gap-4 px-3 py-2 flex-wrap border-b border-border">
+          <div className="flex items-center gap-1.5">
+            <Label className="text-xs text-foreground font-medium shrink-0">Account</Label>
+            <Input value={loanNumber || ''} readOnly className="h-7 text-xs w-28 bg-muted/30" />
           </div>
-        ) : (
-          <Table className="min-w-[1400px]">
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="w-[40px]">
-                  <Checkbox
-                    checked={isAllSelected}
-                    ref={(el) => {
-                      if (el) (el as any).indeterminate = isSomeSelected;
-                    }}
-                    onCheckedChange={toggleAll}
-                    disabled={disabled || filteredData.length === 0}
-                  />
-                </TableHead>
-                {visibleColumns.map((col) => (
-                  col.id === 'roundingError' ? (
-                    <TableHead key={col.id} className="w-[80px]">{col.label.toUpperCase()}</TableHead>
-                  ) : (
-                    <SortableTableHead
-                      key={col.id}
-                      columnId={col.id}
-                      label={col.label.toUpperCase()}
-                      sortColumnId={sortState.columnId}
-                      sortDirection={sortState.direction}
-                      onSort={toggleSort}
-                    />
-                  )
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredData.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
-                    {fundingRecords.length === 0
-                      ? 'No funding records found. Click "Add Funding" to add one.'
-                      : 'No funding records match your search or filters.'}
-                  </TableCell>
+          <div className="flex items-center gap-1.5">
+            <Label className="text-xs text-foreground font-medium shrink-0">Borrower</Label>
+            <Input value={borrowerName || ''} readOnly className="h-7 text-xs w-40 bg-muted/30" />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Label className="text-xs text-foreground font-medium shrink-0">Balance</Label>
+            <div className="relative">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+              <Input
+                value={totalPrincipalBalance > 0 ? new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalPrincipalBalance) : '-'}
+                readOnly
+                className="h-7 text-xs w-28 pl-5 bg-muted/30"
+              />
+            </div>
+          </div>
+          <div className="flex-1" />
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRefresh} disabled={disabled} title="Refresh"><RefreshCw className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {}} disabled={disabled} title="Open"><ExternalLink className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.print()} disabled={disabled} title="Print"><Printer className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleAddFundingClick} disabled={disabled} title="Add"><Plus className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { if (selectedCount > 0) setBulkDeleteOpen(true); }} disabled={disabled || selectedCount === 0} title="Remove"><Minus className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setExportOpen(true)} disabled={disabled} title="Export"><Download className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsHistoryOpen(true)} disabled={disabled} title="History"><History className="h-3.5 w-3.5" /></Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 text-xs font-medium text-primary"
+              onClick={handleAddFundingClick}
+              disabled={disabled}
+            >
+              <Users className="h-3.5 w-3.5" />
+              Add New Lender
+            </Button>
+            <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center min-h-[200px]">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <Table className="min-w-[1100px]">
+              <TableHeader>
+                <TableRow className="bg-[hsl(0,60%,30%)] border-b-2 border-[hsl(0,60%,25%)]">
+                  {visibleColumns.map((col) => (
+                    <TableHead key={col.id} className="text-white text-xs font-semibold py-1.5 whitespace-nowrap">
+                      {col.label}
+                    </TableHead>
+                  ))}
+                  <TableHead className="w-[40px] text-white text-xs font-semibold text-center">Edit</TableHead>
+                  <TableHead className="w-[40px] text-white text-xs font-semibold text-center">Delete</TableHead>
                 </TableRow>
-              ) : (
-                filteredData.map((record) => (
-                  <TableRow
-                    key={record.id}
-                    className="cursor-pointer hover:bg-muted/30"
-                    onClick={() => handleRowClick(record)}
-                  >
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Checkbox
-                        checked={selectedIds.has(record.id)}
-                        onCheckedChange={() => toggleOne(record.id)}
-                        disabled={disabled}
-                      />
+              </TableHeader>
+              <TableBody>
+                {filteredData.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={visibleColumns.length + 2} className="text-center text-muted-foreground py-8">
+                      {fundingRecords.length === 0 ? 'No funding records found. Click "Add New Lender" to add one.' : 'No funding records match your search.'}
                     </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredData.map((record) => (
+                    <TableRow
+                      key={record.id}
+                      className={cn('hover:bg-muted/30', selectedRecord?.id === record.id && 'bg-primary/10')}
+                    >
+                      {visibleColumns.map((col) => (
+                        <TableCell key={col.id} className="text-left text-xs py-1.5">{renderCellValue(record, col.id)}</TableCell>
+                      ))}
+                      <TableCell className="text-center px-1" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5"
+                          onClick={(e) => handleEditClick(e, record)}
+                          disabled={disabled}
+                          title="Edit"
+                        >
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                      </TableCell>
+                      <TableCell className="text-center px-1" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 text-destructive hover:text-destructive"
+                          onClick={(e) => handleDeleteRowClick(e, record)}
+                          disabled={disabled}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+
+                {fundingRecords.length > 0 && (
+                  <TableRow className="bg-muted/30 font-semibold border-t-2">
                     {visibleColumns.map((col) => (
-                      <TableCell
-                        key={col.id}
-                        onClick={col.id === 'roundingError' ? (e) => e.stopPropagation() : undefined}
-                      >
-                        {renderCellValue(record, col.id)}
+                      <TableCell key={col.id} className="text-left text-xs py-1.5">
+                        {renderTotalCell(col.id)}
                       </TableCell>
                     ))}
+                    <TableCell />
+                    <TableCell />
                   </TableRow>
-                ))
-              )}
-
-              {fundingRecords.length > 0 && (
-                <TableRow className="bg-muted/30 font-semibold border-t-2">
-                  <TableCell />
-                  {visibleColumns.map((col) => (
-                    <TableCell key={col.id}>
-                      {renderTotalCell(col.id)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        )}
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </div>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount} funding
+            Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, fundingRecords.length)} of {fundingRecords.length} records
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => onPageChange(1)} disabled={currentPage <= 1 || disabled}>First</Button>
-            <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage <= 1 || disabled}>Previous</Button>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" onClick={() => onPageChange(1)} disabled={currentPage === 1}>First</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}>Previous</Button>
             <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">{currentPage}</span>
-            <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage >= totalPages || disabled}>Next</Button>
-            <Button variant="outline" size="sm" onClick={() => onPageChange(totalPages)} disabled={currentPage >= totalPages || disabled}>Last</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage >= totalPages}>Next</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange(totalPages)} disabled={currentPage >= totalPages}>Last</Button>
           </div>
         </div>
       )}
 
-      {/* Ownership warning */}
       {totalOwnership > 100 && fundingRecords.length > 0 && (
         <p className="text-sm text-destructive font-medium">⚠ Total ownership exceeds 100% ({formatPercentage(totalOwnership)}). Cannot save new funding until resolved.</p>
       )}
 
-      {/* Footer with totals */}
       {fundingRecords.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
-            Total Funding Records: {totalCount} | Total Funding Amount: {formatCurrency(totalFundingAmount)}
+            {filteredData.length !== fundingRecords.length && `Showing ${filteredData.length} of `}
+            Total Funding Records: {fundingRecords.length} | Total Funding Amount: {formatCurrency(totalFundingAmount)}
           </div>
         </div>
       )}
 
-      {/* Modals */}
       <AddFundingModal
         open={isAddModalOpen}
         onOpenChange={(open) => { setIsAddModalOpen(open); if (!open) { setEditFundingData(null); setSelectedRecord(null); } }}
