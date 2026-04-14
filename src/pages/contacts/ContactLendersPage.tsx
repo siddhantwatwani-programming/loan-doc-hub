@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import type { FilterOption } from '@/components/deal/GridToolbar';
 
 // Re-export for backward compatibility with existing components
@@ -96,12 +96,23 @@ const LENDER_FILTER_OPTIONS: FilterOption[] = [
 const ContactLendersPage: React.FC = () => {
   const { contactId } = useParams<{ contactId?: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const crud = useContactsCrud({ contactType: 'lender' });
   const { loading: permissionsLoading, isFormViewOnly } = useFormPermissions();
   const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const deepLinkLoaded = useRef(false);
+  const createTriggered = useRef(false);
   const isReadOnly = permissionsLoading || isFormViewOnly('lender');
+
+  // Auto-open create modal when navigated with ?create=true
+  useEffect(() => {
+    if (searchParams.get('create') === 'true' && !createTriggered.current) {
+      createTriggered.current = true;
+      setModalOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Deep-link: auto-load contact by URL param
   useEffect(() => {
