@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, X, Paperclip, FileDown, CalendarIcon } from 'lucide-react';
+import { Plus, Paperclip, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
