@@ -144,6 +144,14 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
     if (!dealId) return;
     setLoading(true);
     try {
+      // Get total count
+      const { count: rowCount } = await supabase
+        .from('deal_participants')
+        .select('id', { count: 'exact', head: true })
+        .eq('deal_id', dealId);
+
+      setTotalCount(rowCount || 0);
+
       const { data, error } = await supabase
         .from('deal_participants')
         .select('id, name, email, phone, role, status, contact_id, created_at')
