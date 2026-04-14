@@ -35,6 +35,8 @@ interface GridToolbarProps {
   // Bulk delete
   selectedCount?: number;
   onBulkDelete?: () => void;
+  // Edit
+  onEdit?: () => void;
   // Export
   onExport?: () => void;
   searchPlaceholder?: string;
@@ -52,6 +54,7 @@ export const GridToolbar: React.FC<GridToolbarProps> = ({
   disabled = false,
   selectedCount = 0,
   onBulkDelete,
+  onEdit,
   onExport,
   searchPlaceholder = 'Search...',
 }) => {
@@ -154,6 +157,19 @@ export const GridToolbar: React.FC<GridToolbarProps> = ({
         >
           <Trash2 className="h-3.5 w-3.5" />
           Delete ({selectedCount})
+        </Button>
+      )}
+
+      {/* Edit */}
+      {onEdit && selectedCount === 1 && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1 text-xs"
+          onClick={onEdit}
+          disabled={disabled}
+        >
+          Edit
         </Button>
       )}
 
