@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Plus, RefreshCw, Printer, Trash2, Pencil, Loader2, History, Download, ExternalLink, Minus, Users } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
@@ -13,6 +12,8 @@ import { FundingHistoryDialog } from './FundingHistoryDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
+import { GridToolbar } from './GridToolbar';
+import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
 import { FilterOption } from './GridToolbar';
