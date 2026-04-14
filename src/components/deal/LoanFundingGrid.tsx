@@ -256,9 +256,11 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       disbursements: record.disbursements?.length ? record.disbursements.map(d => ({
         accountId: d.accountId || '', name: d.name || '', startDate: (d as any).startDate || '', endDate: (d as any).endDate || '',
         amount: d.amount || '', percentage: d.percentage || '', from: (d as any).from || '' as const, comments: d.comments || '',
-      })) : [
-        { accountId: '', name: '', startDate: '', endDate: '', amount: '', percentage: '', from: '' as const, comments: '' },
-      ],
+        debitPercent: (d as any).debitPercent || '', debitOf: (d as any).debitOf || '' as const,
+        plusAmount: (d as any).plusAmount || '', minimumAmount: (d as any).minimumAmount || '',
+        debitThrough: (d as any).debitThrough || '' as const, debitThroughDate: (d as any).debitThroughDate || '',
+        debitThroughAmount: (d as any).debitThroughAmount || '', debitThroughPayments: (d as any).debitThroughPayments || '',
+      })) : [],
       principalBalance: formatCurrencyDisplay(String(record.principalBalance)),
       noteRateDisplay: noteRate,
       overrideServicing: record.overrideServicingFees || false,
