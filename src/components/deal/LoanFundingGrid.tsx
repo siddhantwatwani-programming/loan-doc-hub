@@ -336,6 +336,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         return formatDate(record.fundingDate) || '-';
       case 'interestFrom':
         return formatDate(record.interestFrom) || '-';
+      case 'noteRate':
+        return <span>{record.rateNoteValue ? `${parseFloat(record.rateNoteValue).toFixed(3)}%` : (noteRate ? `${parseFloat(noteRate).toFixed(3)}%` : '-')}</span>;
       case 'lenderRate':
         return <span>{formatPercentage(record.lenderRate)}</span>;
       case 'regularPayment':
