@@ -160,6 +160,19 @@ export const GridToolbar: React.FC<GridToolbarProps> = ({
         </Button>
       )}
 
+      {/* Edit */}
+      {onEdit && selectedCount === 1 && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1 text-xs"
+          onClick={onEdit}
+          disabled={disabled}
+        >
+          Edit
+        </Button>
+      )}
+
       {/* Export */}
       {onExport && (
         <Button
