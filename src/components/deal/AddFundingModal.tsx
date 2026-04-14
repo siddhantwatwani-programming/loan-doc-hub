@@ -801,27 +801,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
             )}
           </div>
 
-          {/* Lender Disbursement Modal */}
-          <LenderDisbursementModal
-            open={disbursementModalOpen}
-            onOpenChange={(v) => { setDisbursementModalOpen(v); if (!v) setFundingModalHidden(false); }}
-            onSubmit={handleDisbursementModalSubmit}
-            editData={editingDisbursementIdx !== null && formData.disbursements[editingDisbursementIdx] ? {
-              accountId: formData.disbursements[editingDisbursementIdx].accountId,
-              name: formData.disbursements[editingDisbursementIdx].name,
-              debitPercent: formData.disbursements[editingDisbursementIdx].debitPercent,
-              debitOf: formData.disbursements[editingDisbursementIdx].debitOf,
-              plusAmount: formData.disbursements[editingDisbursementIdx].plusAmount,
-              minimumAmount: formData.disbursements[editingDisbursementIdx].minimumAmount,
-              debitThrough: formData.disbursements[editingDisbursementIdx].debitThrough,
-              debitThroughDate: formData.disbursements[editingDisbursementIdx].debitThroughDate,
-              debitThroughAmount: formData.disbursements[editingDisbursementIdx].debitThroughAmount,
-              debitThroughPayments: formData.disbursements[editingDisbursementIdx].debitThroughPayments,
-              from: formData.disbursements[editingDisbursementIdx].from as any,
-            } : null}
-            isEditing={editingDisbursementIdx !== null}
-          />
-
           {/* Hidden fields for backward-compat calculations */}
           <div className="hidden">
             <RadioGroup value={formData.rateSelection} onValueChange={(val) => handleChange('rateSelection', val)}>
@@ -842,6 +821,26 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {/* Lender Disbursement Modal - rendered outside funding dialog */}
+    <LenderDisbursementModal
+      open={disbursementModalOpen}
+      onOpenChange={(v) => { setDisbursementModalOpen(v); if (!v) setFundingModalHidden(false); }}
+      onSubmit={handleDisbursementModalSubmit}
+      editData={editingDisbursementIdx !== null && formData.disbursements[editingDisbursementIdx] ? {
+        accountId: formData.disbursements[editingDisbursementIdx].accountId,
+        name: formData.disbursements[editingDisbursementIdx].name,
+        debitPercent: formData.disbursements[editingDisbursementIdx].debitPercent,
+        debitOf: formData.disbursements[editingDisbursementIdx].debitOf,
+        plusAmount: formData.disbursements[editingDisbursementIdx].plusAmount,
+        minimumAmount: formData.disbursements[editingDisbursementIdx].minimumAmount,
+        debitThrough: formData.disbursements[editingDisbursementIdx].debitThrough,
+        debitThroughDate: formData.disbursements[editingDisbursementIdx].debitThroughDate,
+        debitThroughAmount: formData.disbursements[editingDisbursementIdx].debitThroughAmount,
+        debitThroughPayments: formData.disbursements[editingDisbursementIdx].debitThroughPayments,
+        from: formData.disbursements[editingDisbursementIdx].from as any,
+      } : null}
+      isEditing={editingDisbursementIdx !== null}
+    />
     <ModalSaveConfirmation open={showConfirm} onConfirm={handleConfirmSave} onCancel={() => setShowConfirm(false)} />
     </>
   );
