@@ -237,12 +237,6 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           </DirtyFieldWrapper>
           {renderInlineField(FIELD_KEYS.county, 'County')}
 
-          <div className="pt-2">
-            <span className="text-xs font-medium text-primary">Purchase Information</span>
-          </div>
-          {renderDateField(FIELD_KEYS.purchaseDate, 'Purchase Date')}
-          {renderCurrencyField(FIELD_KEYS.purchasePrice, 'Purchase Price')}
-          {renderCurrencyField(FIELD_KEYS.downPayment, 'Down Payment')}
         </div>
 
         {/* Column 2 — Characteristics */}
@@ -250,6 +244,14 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           <div className="border-b border-border pb-1 mb-2">
             <span className="font-semibold text-xs text-primary">&nbsp;</span>
           </div>
+
+          <div className="pt-1">
+            <span className="text-xs font-medium text-primary">Purchase Information</span>
+          </div>
+          {renderDateField(FIELD_KEYS.purchaseDate, 'Purchase Date')}
+          {renderCurrencyField(FIELD_KEYS.purchasePrice, 'Purchase Price')}
+          {renderCurrencyField(FIELD_KEYS.downPayment, 'Down Payment')}
+
           {renderInlineSelect(FIELD_KEYS.propertyType, 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
           {renderInlineSelect(FIELD_KEYS.occupancy, 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
           {renderDateField(FIELD_KEYS.yearBuilt, 'Year Built')}
