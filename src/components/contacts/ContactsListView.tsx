@@ -210,137 +210,139 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
         </Breadcrumb>
       )}
 
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-lg text-foreground">{title}</h3>
-        <div className="flex items-center gap-2">
-          <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
-          <Button variant="outline" size="sm" onClick={onCreateNew} className="gap-1" disabled={createDisabled}>
-            <Plus className="h-4 w-4" /> {addButtonLabel || 'Create New'}
-          </Button>
-        </div>
-      </div>
-
-      {/* GridToolbar - same pattern as deal grids */}
-      <GridToolbar
-        searchQuery={searchQuery}
-        onSearchChange={onSearchChange}
-        filterOptions={filterOptions}
-        activeFilters={activeFilters}
-        onFilterChange={setFilter}
-        onClearFilters={clearAllFilters}
-        activeFilterCount={activeFilterCount}
-        disabled={isLoading}
-        selectedCount={selectedCount}
-        onBulkDelete={onDeleteSelected ? () => setDeleteDialogOpen(true) : undefined}
-        onExport={() => setExportOpen(true)}
-        searchPlaceholder={searchPlaceholder || `Search ${title.toLowerCase()}...`}
-      />
-
-      <div className="border border-border rounded-lg overflow-x-auto">
-        <Table className="min-w-[1000px]">
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="w-[40px]">
-                <Checkbox
-                  checked={isAllSelected}
-                  ref={(el) => {
-                    if (el) (el as any).indeterminate = isSomeSelected;
-                  }}
-                  onCheckedChange={toggleAll}
-                  disabled={isLoading || sortedContacts.length === 0}
-                  aria-label="Select all"
-                  className="h-4 w-4"
-                />
-              </TableHead>
-              {visibleColumns.map((col) => (
-                <SortableTableHead
-                  key={col.id}
-                  columnId={col.id}
-                  label={col.label.toUpperCase()}
-                  sortColumnId={sortColumn}
-                  sortDirection={sortDir}
-                  onSort={handleSort}
-                />
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8">
-                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading...
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : sortedContacts.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
-                  {totalCount === 0
-                    ? `No contacts yet. Click "${addButtonLabel || 'Create New'}" to add one.`
-                    : 'No contacts match your search or filters.'}
-                </TableCell>
-              </TableRow>
-            ) : (
-              sortedContacts.map((contact) => (
-                <TableRow
-                  key={contact.id}
-                  className={`cursor-pointer hover:bg-muted/30 ${selectedIds.has(contact.id) ? 'bg-muted/40' : ''}`}
-                >
-                  <TableCell className="w-[40px]" onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                      checked={selectedIds.has(contact.id)}
-                      onCheckedChange={() => toggleOne(contact.id)}
-                      aria-label={`Select ${contact.full_name}`}
-                      className="h-4 w-4"
-                    />
-                  </TableCell>
-                  {visibleColumns.map((col) => (
-                    <TableCell key={col.id} onClick={() => onRowClick(contact)}>
-                      {renderCellValue
-                        ? renderCellValue(contact, col.id)
-                        : defaultRenderCell(contact, col.id)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          {filteredContacts.length !== contacts.length && `Showing ${filteredContacts.length} of `}
-          Total: {totalCount}{selectedCount > 0 && ` · ${selectedCount} selected`}
-        </div>
-        {totalPages > 1 && (
+      <div className="border border-border rounded-lg bg-background p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-lg text-foreground">{title}</h3>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1}
-              onClick={() => onPageChange(currentPage - 1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages}
-              onClick={() => onPageChange(currentPage + 1)}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
+            <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
+            <Button variant="outline" size="sm" onClick={onCreateNew} className="gap-1" disabled={createDisabled}>
+              <Plus className="h-4 w-4" /> {addButtonLabel || 'Create New'}
             </Button>
           </div>
-        )}
+        </div>
+
+        {/* GridToolbar - same pattern as deal grids */}
+        <GridToolbar
+          searchQuery={searchQuery}
+          onSearchChange={onSearchChange}
+          filterOptions={filterOptions}
+          activeFilters={activeFilters}
+          onFilterChange={setFilter}
+          onClearFilters={clearAllFilters}
+          activeFilterCount={activeFilterCount}
+          disabled={isLoading}
+          selectedCount={selectedCount}
+          onBulkDelete={onDeleteSelected ? () => setDeleteDialogOpen(true) : undefined}
+          onExport={() => setExportOpen(true)}
+          searchPlaceholder={searchPlaceholder || `Search ${title.toLowerCase()}...`}
+        />
+
+        <div className="border border-border rounded-lg overflow-x-auto">
+          <Table className="min-w-[1000px]">
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="w-[40px]">
+                  <Checkbox
+                    checked={isAllSelected}
+                    ref={(el) => {
+                      if (el) (el as any).indeterminate = isSomeSelected;
+                    }}
+                    onCheckedChange={toggleAll}
+                    disabled={isLoading || sortedContacts.length === 0}
+                    aria-label="Select all"
+                    className="h-4 w-4"
+                  />
+                </TableHead>
+                {visibleColumns.map((col) => (
+                  <SortableTableHead
+                    key={col.id}
+                    columnId={col.id}
+                    label={col.label.toUpperCase()}
+                    sortColumnId={sortColumn}
+                    sortDirection={sortDir}
+                    onSort={handleSort}
+                  />
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8">
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading...
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : sortedContacts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={visibleColumns.length + 1} className="text-center py-8 text-muted-foreground">
+                    {totalCount === 0
+                      ? `No contacts yet. Click "${addButtonLabel || 'Create New'}" to add one.`
+                      : 'No contacts match your search or filters.'}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                sortedContacts.map((contact) => (
+                  <TableRow
+                    key={contact.id}
+                    className={`cursor-pointer hover:bg-muted/30 ${selectedIds.has(contact.id) ? 'bg-muted/40' : ''}`}
+                  >
+                    <TableCell className="w-[40px]" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedIds.has(contact.id)}
+                        onCheckedChange={() => toggleOne(contact.id)}
+                        aria-label={`Select ${contact.full_name}`}
+                        className="h-4 w-4"
+                      />
+                    </TableCell>
+                    {visibleColumns.map((col) => (
+                      <TableCell key={col.id} onClick={() => onRowClick(contact)}>
+                        {renderCellValue
+                          ? renderCellValue(contact, col.id)
+                          : defaultRenderCell(contact, col.id)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            {filteredContacts.length !== contacts.length && `Showing ${filteredContacts.length} of `}
+            Total: {totalCount}{selectedCount > 0 && ` · ${selectedCount} selected`}
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage <= 1}
+                onClick={() => onPageChange(currentPage - 1)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage >= totalPages}
+                onClick={() => onPageChange(currentPage + 1)}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Delete Confirmation */}
