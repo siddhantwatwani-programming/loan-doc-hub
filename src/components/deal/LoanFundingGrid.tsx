@@ -72,6 +72,30 @@ export interface FundingRecord {
   roundingAdjustment?: boolean;
   disbursements?: Array<{accountId: string; name: string; amount: string; percentage: string; comments: string}>;
   payments?: Array<{active: boolean; accountId: string; name: string; amount: string; percentage: string; comment: string; from: string}>;
+  // Fees to Company
+  overrideServicing?: boolean;
+  companyBaseFee?: string;
+  companyBaseFeePct?: string;
+  companyAdditionalServices?: string;
+  companyMinimum?: string;
+  companyMaximum?: string;
+  companyNrSitSplitPct?: string;
+  companyNrSitSplit?: string;
+  companyTotal?: string;
+  // Fees to Vendor
+  vendorId?: string;
+  vendorName?: string;
+  vendorBaseFee?: string;
+  vendorBaseFeePct?: string;
+  vendorAdditionalServices?: string;
+  vendorMinimum?: string;
+  vendorMaximum?: string;
+  vendorNrSitSplitPct?: string;
+  vendorNrSitSplit?: string;
+  vendorTotal?: string;
+  // Note rate display
+  noteRateDisplay?: string;
+  // Legacy servicing fees
   overrideServicingFees?: boolean;
   companyServicingFee?: string;
   companyServicingFeePct?: string;
@@ -85,6 +109,7 @@ export interface FundingRecord {
   brokerMaxFeePct?: string;
   brokerMinFee?: string;
   brokerMinFeePct?: string;
+  // Default fees
   overrideDefaultFees?: boolean;
   lateFee1Lender?: string;
   lateFee1Company?: string;
@@ -269,18 +294,26 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         debitThroughAmount: (d as any).debitThroughAmount || '', debitThroughPayments: (d as any).debitThroughPayments || '',
       })) : [],
       principalBalance: formatCurrencyDisplay(String(record.principalBalance)),
-      noteRateDisplay: noteRate,
-      overrideServicing: record.overrideServicingFees || false,
-      companyBaseFee: record.companyServicingFee || '',
-      companyBaseFeePct: record.companyServicingFeePct || '',
-      companyAdditionalServices: '',
-      companyMinimum: record.companyMinFee || '',
-      companyMaximum: record.companyMaxFee || '',
-      vendorBaseFee: record.brokerServicingFee || '',
-      vendorBaseFeePct: record.brokerServicingFeePct || '',
-      vendorAdditionalServices: '',
-      vendorMinimum: record.brokerMinFee || '',
-      vendorMaximum: record.brokerMaxFee || '',
+      noteRateDisplay: record.noteRateDisplay || noteRate,
+      overrideServicing: record.overrideServicing ?? record.overrideServicingFees ?? false,
+      companyBaseFee: record.companyBaseFee || record.companyServicingFee || '',
+      companyBaseFeePct: record.companyBaseFeePct || record.companyServicingFeePct || '',
+      companyAdditionalServices: record.companyAdditionalServices || '',
+      companyMinimum: record.companyMinimum || record.companyMinFee || '',
+      companyMaximum: record.companyMaximum || record.companyMaxFee || '',
+      companyNrSitSplitPct: record.companyNrSitSplitPct || '',
+      companyNrSitSplit: record.companyNrSitSplit || '',
+      companyTotal: record.companyTotal || '',
+      vendorId: record.vendorId || '',
+      vendorName: record.vendorName || '',
+      vendorBaseFee: record.vendorBaseFee || record.brokerServicingFee || '',
+      vendorBaseFeePct: record.vendorBaseFeePct || record.brokerServicingFeePct || '',
+      vendorAdditionalServices: record.vendorAdditionalServices || '',
+      vendorMinimum: record.vendorMinimum || record.brokerMinFee || '',
+      vendorMaximum: record.vendorMaximum || record.brokerMaxFee || '',
+      vendorNrSitSplitPct: record.vendorNrSitSplitPct || '',
+      vendorNrSitSplit: record.vendorNrSitSplit || '',
+      vendorTotal: record.vendorTotal || '',
       payments: (record as any).payments?.length ? (record as any).payments : undefined,
       overrideServicingFees: record.overrideServicingFees || false,
       companyServicingFee: record.companyServicingFee || '', companyServicingFeePct: record.companyServicingFeePct || '',
@@ -589,7 +622,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               lenderName: data.lenderFullName,
               lenderRate,
               originalAmount: safeParse(data.fundingAmount),
-              principalBalance: safeParse(data.fundingAmount),
+              principalBalance: safeParse(data.principalBalance || data.fundingAmount),
               pctOwned: safeParse(data.percentOwned),
               regularPayment: safeParse(data.regularPayment),
               lenderShare: safeParse(data.lenderShare),
@@ -602,6 +635,22 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               roundingAdjustment: data.roundingAdjustment,
               disbursements: data.disbursements,
               payments: data.payments,
+              noteRateDisplay: data.noteRateDisplay,
+              // Fees to Company
+              overrideServicing: data.overrideServicing,
+              companyBaseFee: data.companyBaseFee, companyBaseFeePct: data.companyBaseFeePct,
+              companyAdditionalServices: data.companyAdditionalServices,
+              companyMinimum: data.companyMinimum, companyMaximum: data.companyMaximum,
+              companyNrSitSplitPct: data.companyNrSitSplitPct, companyNrSitSplit: data.companyNrSitSplit,
+              companyTotal: data.companyTotal,
+              // Fees to Vendor
+              vendorId: data.vendorId, vendorName: data.vendorName,
+              vendorBaseFee: data.vendorBaseFee, vendorBaseFeePct: data.vendorBaseFeePct,
+              vendorAdditionalServices: data.vendorAdditionalServices,
+              vendorMinimum: data.vendorMinimum, vendorMaximum: data.vendorMaximum,
+              vendorNrSitSplitPct: data.vendorNrSitSplitPct, vendorNrSitSplit: data.vendorNrSitSplit,
+              vendorTotal: data.vendorTotal,
+              // Legacy servicing fees
               overrideServicingFees: data.overrideServicingFees,
               companyServicingFee: data.companyServicingFee, companyServicingFeePct: data.companyServicingFeePct,
               companyMaxFee: data.companyMaxFee, companyMaxFeePct: data.companyMaxFeePct,
