@@ -102,6 +102,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const pageSize = 10;
 
   const [columns, setColumns, resetColumns] = useTableColumnConfig('participants_v3', DEFAULT_COLUMNS);
@@ -119,7 +120,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
     filteredData,
   } = useGridSortFilter<Participant>(participants, SEARCHABLE_FIELDS);
 
-  const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -143,6 +144,14 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
     if (!dealId) return;
     setLoading(true);
     try {
+      // Get total count
+      const { count: rowCount } = await supabase
+        .from('deal_participants')
+        .select('id', { count: 'exact', head: true })
+        .eq('deal_id', dealId);
+
+      setTotalCount(rowCount || 0);
+
       const { data, error } = await supabase
         .from('deal_participants')
         .select('id, name, email, phone, role, status, contact_id, created_at')
@@ -607,7 +616,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length} participants
+            Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount} participants
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setCurrentPage(1)} disabled={currentPage <= 1 || disabled}>First</Button>
