@@ -324,20 +324,12 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
             )}
 
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 mt-2">
-              <div className="flex items-center gap-2">
-                <Label className="w-[110px] shrink-0 text-xs text-foreground">Recording Number</Label>
-                <div className="flex items-center gap-1 flex-1">
-                  <Input value={formData.recordingNumber} onChange={(e) => handleChange('recordingNumber', e.target.value)} className="h-7 text-xs" />
-                  <Checkbox id="modal-recFlag" checked={formData.recordingNumberFlag === 'true'} onCheckedChange={(c) => handleChange('recordingNumberFlag', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
-                </div>
-              </div>
               {renderInlineField('recordingDate', 'Recording Date', 'date')}
 
               <div className="flex items-center gap-2">
                 <Checkbox id="modal-seniorLien" checked={formData.seniorLienTracking === 'true'} onCheckedChange={(c) => handleChange('seniorLienTracking', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
                 <Label htmlFor="modal-seniorLien" className="text-xs text-foreground">Senior Lien Tracking</Label>
               </div>
-              <div />
             </div>
 
             {formData.seniorLienTracking === 'true' && (

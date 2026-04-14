@@ -317,15 +317,6 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           {lien.balloon === 'true' && renderCurrency('balloonAmount', 'Amount of Balloon')}
 
           {renderField('recordingDate', 'Recording Date', { type: 'date' })}
-
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.recordingNumber}>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Recording Number</Label>
-              <div className="flex items-center gap-2 flex-1">
-                <Input value={lien.recordingNumber} onChange={(e) => onChange('recordingNumber', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-              </div>
-            </div>
-          </DirtyFieldWrapper>
         </div>
 
         <div className="space-y-3">
@@ -391,29 +382,6 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
         </div>
       </div>
 
-      <div className="space-y-3">
-        <div className="border-b border-border pb-2">
-          <span className="font-semibold text-sm text-primary">Additional Info</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-3">
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.thisLoan}>
-            <div className="flex items-center gap-2">
-              <Checkbox id="thisLoan" checked={isThisLoan} onCheckedChange={(checked) => handleThisLoanChange(!!checked)} disabled={disabled} />
-              <Label htmlFor="thisLoan" className="text-sm text-foreground font-medium">This Loan</Label>
-            </div>
-          </DirtyFieldWrapper>
-
-          {renderCurrency('balanceAfter', 'Balance After', isThisLoan)}
-          {renderField('email', 'Email', {})}
-          {renderField('contact', 'Contact', {})}
-
-          {renderCheckbox('estimate', 'Estimate')}
-
-          {renderCheckbox('recordingNumberFlag', 'Recording Number Flag')}
-
-          {renderField('note', 'Note')}
-        </div>
-      </div>
     </div>
   );
 };

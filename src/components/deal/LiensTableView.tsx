@@ -96,7 +96,7 @@ interface LiensTableViewProps {
   onPageChange?: (page: number) => void;
 }
 
-const SEARCHABLE_FIELDS = ['property', 'holder', 'loanType', 'lienPriorityNow', 'lienPriorityAfter', 'recordingNumber', 'lastVerified'];
+const SEARCHABLE_FIELDS = ['property', 'holder', 'loanType', 'lienPriorityNow', 'lienPriorityAfter', 'lastVerified'];
 
 const FILTER_OPTIONS = [
   {
@@ -122,7 +122,6 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'originalBalance', label: 'Original Balance' },
   { id: 'balanceAfter', label: 'Balance After' },
   { id: 'regularPayment', label: 'Regular Payment' },
-  { id: 'recordingNumber', label: 'Recording Number' },
   { id: 'lastVerified', label: 'Last Verified' },
 ];
 
@@ -136,7 +135,6 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'originalBalance', label: 'Original Balance', visible: true },
   { id: 'balanceAfter', label: 'Balance After', visible: true },
   { id: 'regularPayment', label: 'Regular Payment', visible: true },
-  { id: 'recordingNumber', label: 'Recording Number', visible: true },
   { id: 'lastVerified', label: 'Last Verified', visible: true },
 ];
 
@@ -187,7 +185,6 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
       case 'originalBalance': return formatCurrency(lien.originalBalance) || '-';
       case 'balanceAfter': return formatCurrency(lien.balanceAfter) || '-';
       case 'regularPayment': return formatCurrency(lien.regularPayment) || '-';
-      case 'recordingNumber': return lien.recordingNumber || '-';
       case 'lastVerified': {
         if (!lien.lastVerified) return '-';
         try {
