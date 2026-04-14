@@ -109,10 +109,17 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'constructionType', label: 'Construction Type', visible: false },
   { id: 'zoning', label: 'Zoning', visible: false },
   { id: 'floodZone', label: 'Flood Zone', visible: true },
+  { id: 'propertyGeneratesIncome', label: 'Generates Income', visible: false },
+  { id: 'netMonthlyIncome', label: 'Net Monthly Income', visible: false },
+  { id: 'fromRent', label: 'From Rent', visible: false },
+  { id: 'fromOtherDescribe', label: 'From Other', visible: false },
   { id: 'appraisedValue', label: 'Estimate of Value', visible: true },
   { id: 'appraisedDate', label: 'Valuation Date', visible: true },
   { id: 'valuationType', label: 'Valuation Type', visible: false },
   { id: 'performedBy', label: 'Performed By', visible: false },
+  { id: 'thirdPartyFullName', label: 'Appraiser Name', visible: false },
+  { id: 'appraiserPhone', label: 'Appraiser Phone', visible: false },
+  { id: 'appraiserEmail', label: 'Appraiser Email', visible: false },
   { id: 'pledgedEquity', label: 'Pledged Equity', visible: false },
   { id: 'protectiveEquity', label: 'Protective Equity', visible: false },
   { id: 'ltv', label: 'Loan To Value', visible: true },
@@ -240,6 +247,16 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
       case 'purchaseDate':
       case 'yearBuilt':
         return formatDate(String(property[columnId as keyof PropertyData] || ''));
+      case 'propertyGeneratesIncome':
+        return property.propertyGeneratesIncome ? 'Yes' : 'No';
+      case 'netMonthlyIncome':
+      case 'fromRent':
+      case 'fromOtherDescribe':
+        return formatCurrency(String(property[columnId as keyof PropertyData] || ''));
+      case 'thirdPartyFullName':
+      case 'appraiserPhone':
+      case 'appraiserEmail':
+        return property[columnId as keyof PropertyData] || '-';
       default:
         return property[columnId as keyof PropertyData] || '-';
     }
