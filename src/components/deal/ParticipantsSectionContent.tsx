@@ -102,6 +102,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const pageSize = 10;
 
   const [columns, setColumns, resetColumns] = useTableColumnConfig('participants_v3', DEFAULT_COLUMNS);
@@ -119,7 +120,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
     filteredData,
   } = useGridSortFilter<Participant>(participants, SEARCHABLE_FIELDS);
 
-  const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
