@@ -2,35 +2,20 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Plus, RefreshCw, Printer, Trash2, Pencil, Loader2, History, Download, Search, X, Filter } from 'lucide-react';
+import { Plus, RefreshCw, Printer, Trash2, Pencil, Loader2, History, Download, ExternalLink, Minus, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { FundingHistoryDialog } from './FundingHistoryDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
-import { FilterOption } from './GridToolbar';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
-import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
+import { FilterOption } from './GridToolbar';
 import { formatCurrencyDisplay } from '@/lib/numericInputFilter';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -41,7 +26,8 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'pctOwned', label: 'Pro Rata', visible: true },
   { id: 'fundingDate', label: 'Funding Date', visible: true },
   { id: 'interestFrom', label: 'Interest From', visible: true },
-  { id: 'lenderRate', label: 'Rate', visible: true },
+  { id: 'noteRate', label: 'Note Rate', visible: true },
+  { id: 'lenderRate', label: 'Lender Rate', visible: true },
   { id: 'regularPayment', label: 'Payment', visible: true },
   { id: 'roundingError', label: 'Rounding', visible: true },
 ];
@@ -333,6 +319,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         return formatDate(record.fundingDate) || '-';
       case 'interestFrom':
         return formatDate(record.interestFrom) || '-';
+      case 'noteRate':
+        return <span>{formatPercentage(parseFloat(record.rateNoteValue || noteRate || '0') || 0)}</span>;
       case 'lenderRate':
         return <span>{formatPercentage(record.lenderRate)}</span>;
       case 'regularPayment':
@@ -340,11 +328,20 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       case 'roundingError':
         return (
           <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
-            <Checkbox
+            <input
+              type="radio"
+              name="rounding-selection"
               checked={record.roundingError}
-              onCheckedChange={(checked) => handleRoundingChange(record.id, checked === true)}
+              onChange={() => {
+                fundingRecords.forEach(r => {
+                  if (r.id !== record.id && r.roundingError) {
+                    onUpdateRecord(r.id, { roundingError: false });
+                  }
+                });
+                handleRoundingChange(record.id, true);
+              }}
               disabled={disabled}
-              className="h-3.5 w-3.5"
+              className="h-3.5 w-3.5 accent-destructive cursor-pointer"
             />
           </div>
         );
@@ -390,7 +387,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   return (
     <div className="p-4 space-y-3">
       <div className="border border-border rounded-lg">
-        <div className="px-3 py-1.5 border-b border-border">
+        <div className="px-3 py-1.5 border-b border-border bg-muted/30">
           <span className="font-semibold text-sm text-foreground">Loan Funding</span>
         </div>
 
@@ -414,25 +411,25 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               />
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Label className="text-xs text-foreground font-medium shrink-0">Payment</Label>
-            <div className="relative">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
-              <Input
-                value={totalPaymentSum > 0 ? new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalPaymentSum) : '-'}
-                readOnly
-                className="h-7 text-xs w-28 pl-5 bg-muted/30"
-              />
-            </div>
-          </div>
           <div className="flex-1" />
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRefresh} disabled={disabled} title="Refresh"><RefreshCw className="h-3.5 w-3.5" /></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setExportOpen(true)} disabled={disabled} title="Export"><Download className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {}} disabled={disabled} title="Open"><ExternalLink className="h-3.5 w-3.5" /></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.print()} disabled={disabled} title="Print"><Printer className="h-3.5 w-3.5" /></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsHistoryOpen(true)} disabled={disabled} title="History"><History className="h-3.5 w-3.5" /></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleAddFundingClick} disabled={disabled} title="Add"><Plus className="h-3.5 w-3.5" /></Button>
-            
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { if (selectedCount > 0) setBulkDeleteOpen(true); }} disabled={disabled || selectedCount === 0} title="Remove"><Minus className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setExportOpen(true)} disabled={disabled} title="Export"><Download className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsHistoryOpen(true)} disabled={disabled} title="History"><History className="h-3.5 w-3.5" /></Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 text-xs font-medium text-primary"
+              onClick={handleAddFundingClick}
+              disabled={disabled}
+            >
+              <Users className="h-3.5 w-3.5" />
+              Add New Lender
+            </Button>
             <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
           </div>
         </div>
@@ -443,42 +440,35 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
-            <Table className="min-w-[900px]">
+            <Table className="min-w-[1100px]">
               <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-[30px]" />
+                <TableRow className="bg-[hsl(0,60%,30%)] border-b-2 border-[hsl(0,60%,25%)]">
                   {visibleColumns.map((col) => (
-                    col.id === 'roundingError' ? (
-                      <TableHead key={col.id} className="text-center text-xs">{col.label}</TableHead>
-                    ) : (
-                      <SortableTableHead
-                        key={col.id}
-                        columnId={col.id}
-                        label={col.label}
-                        sortColumnId={sortState.columnId}
-                        sortDirection={sortState.direction}
-                        onSort={toggleSort}
-                      />
-                    )
+                    <TableHead key={col.id} className="text-white text-xs font-semibold py-1.5 whitespace-nowrap">
+                      {col.label}
+                    </TableHead>
                   ))}
-                  <TableHead className="w-[50px] text-center text-xs"></TableHead>
+                  <TableHead className="w-[40px] text-white text-xs font-semibold text-center">Edit</TableHead>
+                  <TableHead className="w-[40px] text-white text-xs font-semibold text-center">Delete</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredData.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={visibleColumns.length + 2} className="text-center text-muted-foreground py-8">
-                      {fundingRecords.length === 0 ? 'No funding records found. Click "+" to add a new funding record.' : 'No funding records match your search.'}
+                      {fundingRecords.length === 0 ? 'No funding records found. Click "Add New Lender" to add one.' : 'No funding records match your search.'}
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredData.map((record) => (
                     <TableRow
                       key={record.id}
-                      className={cn(!disabled && 'cursor-pointer hover:bg-muted/30', selectedRecord?.id === record.id && 'bg-primary/10')}
-                      onClick={() => !disabled && handleRowClick(record)}
+                      className={cn('hover:bg-muted/30', selectedRecord?.id === record.id && 'bg-primary/10')}
                     >
-                      <TableCell className="px-1" onClick={(e) => e.stopPropagation()}>
+                      {visibleColumns.map((col) => (
+                        <TableCell key={col.id} className="text-left text-xs py-1.5">{renderCellValue(record, col.id)}</TableCell>
+                      ))}
+                      <TableCell className="text-center px-1" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -490,9 +480,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                           <Pencil className="h-3 w-3 text-muted-foreground" />
                         </Button>
                       </TableCell>
-                      {visibleColumns.map((col) => (
-                        <TableCell key={col.id} className="text-left text-xs py-1.5">{renderCellValue(record, col.id)}</TableCell>
-                      ))}
                       <TableCell className="text-center px-1" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
@@ -511,12 +498,12 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
 
                 {fundingRecords.length > 0 && (
                   <TableRow className="bg-muted/30 font-semibold border-t-2">
-                    <TableCell />
                     {visibleColumns.map((col) => (
                       <TableCell key={col.id} className="text-left text-xs py-1.5">
                         {renderTotalCell(col.id)}
                       </TableCell>
                     ))}
+                    <TableCell />
                     <TableCell />
                   </TableRow>
                 )}
