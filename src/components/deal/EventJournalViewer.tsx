@@ -120,11 +120,15 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
   }
 
   return (
-    <div className="space-y-4">
+    <div className="p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-lg text-foreground">Events Journal</h3>
+      </div>
+
       <GridToolbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        
+        onRefresh={handleRefresh}
         filterOptions={FILTER_OPTIONS}
         activeFilters={activeFilters}
         onFilterChange={setFilter}
@@ -134,64 +138,62 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
         onExport={() => setExportOpen(true)}
       />
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <SortableTableHead columnId="event_number" label="Event #" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[80px]" />
-            <SortableTableHead columnId="actor_name" label="User" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[150px]" />
-            <SortableTableHead columnId="section" label="Section" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[120px]" />
-            <TableHead>Details</TableHead>
-            <SortableTableHead columnId="ip_address" label="IP Address" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[130px]" />
-            <SortableTableHead columnId="created_at" label="Timestamp" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[160px]" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredData.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                {isLoading ? 'Loading…' : 'No events match your search or filters.'}
-              </TableCell>
+      <div className="border border-border rounded-lg overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <SortableTableHead columnId="event_number" label="EVENT #" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[80px]" />
+              <SortableTableHead columnId="actor_name" label="USER" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[150px]" />
+              <SortableTableHead columnId="section" label="SECTION" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[120px]" />
+              <TableHead>DETAILS</TableHead>
+              <SortableTableHead columnId="ip_address" label="IP ADDRESS" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[130px]" />
+              <SortableTableHead columnId="created_at" label="TIMESTAMP" sortColumnId={sortState.columnId} sortDirection={sortState.direction} onSort={toggleSort} className="w-[160px]" />
             </TableRow>
-          ) : (
-            filteredData.map((entry) => (
-              <TableRow key={entry.id}>
-                <TableCell className="font-mono">{entry.event_number}</TableCell>
-                <TableCell>{entry.actor_name}</TableCell>
-                <TableCell className="capitalize">{entry.section.replace(/_/g, ' ')}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground truncate max-w-[300px]">
-                      {formatDetailsPreview(entry.details)}
-                    </span>
-                    {entry.details.length > 0 && (
-                      <Button variant="link" size="sm" className="shrink-0 px-1 h-auto" onClick={() => setSelectedEntry(entry)}>
-                        Show More
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground font-mono">
-                  {entry.ip_address || '—'}
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
+          </TableHeader>
+          <TableBody>
+            {filteredData.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  {isLoading ? 'Loading…' : 'No events match your search or filters.'}
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              filteredData.map((entry) => (
+                <TableRow key={entry.id} className="hover:bg-muted/30">
+                  <TableCell className="font-mono">{entry.event_number}</TableCell>
+                  <TableCell>{entry.actor_name}</TableCell>
+                  <TableCell className="capitalize">{entry.section.replace(/_/g, ' ')}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground truncate max-w-[300px]">
+                        {formatDetailsPreview(entry.details)}
+                      </span>
+                      {entry.details.length > 0 && (
+                        <Button variant="link" size="sm" className="shrink-0 px-1 h-auto" onClick={() => setSelectedEntry(entry)}>
+                          Show More
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground font-mono">
+                    {entry.ip_address || '—'}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {format(new Date(entry.created_at), 'MMM d, yyyy h:mm a')}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       {/* Pagination Footer */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          {totalCount > 0 && (
-            <>
-              Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount)} of {totalCount} events
-            </>
-          )}
-        </div>
-        {totalPages > 1 && (
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount)} of {totalCount} events
+          </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setCurrentPage(1)} disabled={currentPage <= 1 || isLoading}>
               First
@@ -202,7 +204,6 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
             <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">
               {currentPage}
             </span>
-            <span className="text-sm text-muted-foreground">of {totalPages}</span>
             <Button variant="outline" size="sm" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage >= totalPages || isLoading}>
               Next
             </Button>
@@ -210,8 +211,8 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
               Last
             </Button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <Dialog open={!!selectedEntry} onOpenChange={() => setSelectedEntry(null)}>
         <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto">
