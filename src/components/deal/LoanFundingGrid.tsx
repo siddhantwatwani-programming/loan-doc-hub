@@ -200,6 +200,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   totalPayment = '',
   loanAmount = '',
 }) => {
+  const { user } = useAuth();
   const [createLenderModalOpen, setCreateLenderModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
