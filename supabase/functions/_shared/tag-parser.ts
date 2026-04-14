@@ -462,7 +462,7 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
     const joined = tTexts.join('');
 
     // Find complete merge tags in the joined text
-    const tagPattern = /\{\{[A-Za-z0-9_.| ]+\}\}|\u00AB[A-Za-z0-9_.]+\u00BB/g;
+    const tagPattern = /\{\{[A-Za-z0-9_.#/| ]+\}\}|\u00AB[A-Za-z0-9_.]+\u00BB/g;
     const joinedTags = joined.match(tagPattern) || [];
 
     if (joinedTags.length === 0) { parasSkippedNoTags++; return para; }
