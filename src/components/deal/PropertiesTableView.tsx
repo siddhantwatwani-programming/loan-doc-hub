@@ -501,6 +501,15 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         data={properties}
         fileName="properties"
       />
+
+      {/* Valuation Export Dialog */}
+      <GridExportDialog
+        open={valuationOpen}
+        onOpenChange={setValuationOpen}
+        columns={valuationColumns}
+        data={properties}
+        fileName="property_valuation"
+      />
     </div>
   );
 };
