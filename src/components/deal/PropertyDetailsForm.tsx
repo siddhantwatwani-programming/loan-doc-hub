@@ -242,11 +242,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
         {/* Column 2 — Characteristics */}
         <div className="space-y-1.5">
           <div className="border-b border-border pb-1 mb-2">
-            <span className="font-semibold text-xs text-primary">&nbsp;</span>
-          </div>
-
-          <div className="pt-1">
-            <span className="text-xs font-medium text-primary">Purchase Information</span>
+            <span className="font-semibold text-xs text-primary">Purchase Information</span>
           </div>
           {renderDateField(FIELD_KEYS.purchaseDate, 'Purchase Date')}
           {renderCurrencyField(FIELD_KEYS.purchasePrice, 'Purchase Price')}
