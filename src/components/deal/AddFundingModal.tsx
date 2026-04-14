@@ -527,7 +527,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0 [&>button.absolute]:hidden">
         {/* Header bar */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30">
           <span className="text-xs font-bold">Add / Edit Lender Funding</span>
