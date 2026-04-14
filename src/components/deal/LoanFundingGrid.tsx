@@ -655,6 +655,42 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         data={fundingRecords}
         fileName="funding_records"
       />
+
+      <CreateContactModal
+        open={createLenderModalOpen}
+        onOpenChange={setCreateLenderModalOpen}
+        contactType="lender"
+        onSubmit={async (data) => {
+          if (!user) return;
+          try {
+            const fullName = data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim();
+            const { data: idData, error: idError } = await supabase.rpc('generate_contact_id', { p_type: 'lender' });
+            if (idError) throw idError;
+            const contactId = idData as string;
+            const insertPayload = {
+              contact_type: 'lender' as const,
+              contact_id: contactId,
+              created_by: user.id,
+              full_name: fullName,
+              first_name: data.first_name || '',
+              last_name: data.last_name || '',
+              email: data.email || '',
+              phone: data.phone || data['phone.cell'] || data['phone.home'] || data['phone.work'] || '',
+              city: data['primary_address.city'] || data.city || '',
+              state: data['primary_address.state'] || data.state || '',
+              company: data.company || '',
+              contact_data: data,
+            };
+            const { error } = await supabase.from('contacts').insert(insertPayload);
+            if (error) throw error;
+            toast.success('Lender created successfully');
+            setCreateLenderModalOpen(false);
+          } catch (err: any) {
+            console.error('Error creating lender:', err);
+            toast.error('Failed to create lender');
+          }
+        }}
+      />
     </div>
   );
 };
