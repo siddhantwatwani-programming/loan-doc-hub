@@ -506,7 +506,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0">
         {/* Header bar */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30 pr-10">
           <span className="text-xs font-bold">Add / Edit Lender Funding</span>
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold">Principal Balance</span>
@@ -519,9 +519,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 placeholder="-"
               />
             </div>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCancel}>
-              <X className="h-3.5 w-3.5" />
-            </Button>
           </div>
         </div>
 
