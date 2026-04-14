@@ -404,6 +404,26 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
           </div>
         </div>
 
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-7 text-xs w-40 pl-7 pr-2"
+              disabled={disabled}
+            />
+          </div>
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setFilterOpen(!filterOpen)} disabled={disabled}>
+            <Filter className="h-3.5 w-3.5" /> Filters
+          </Button>
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setExportOpen(true)} disabled={disabled}>
+            <Download className="h-3.5 w-3.5" /> Export
+          </Button>
+          <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
+        </div>
+
         <div className="flex items-center gap-4 px-3 py-2 flex-wrap border-b border-border">
           <div className="flex items-center gap-1.5">
             <Label className="text-xs text-foreground font-medium shrink-0">Account</Label>
@@ -434,26 +454,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                 className="h-7 text-xs w-28 pl-5 bg-muted/30"
               />
             </div>
-          </div>
-          <div className="flex-1" />
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-7 text-xs w-40 pl-7 pr-2"
-                disabled={disabled}
-              />
-            </div>
-            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setFilterOpen(!filterOpen)} disabled={disabled}>
-              <Filter className="h-3.5 w-3.5" /> Filters
-            </Button>
-            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setExportOpen(true)} disabled={disabled}>
-              <Download className="h-3.5 w-3.5" /> Export
-            </Button>
-            <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
           </div>
         </div>
 
