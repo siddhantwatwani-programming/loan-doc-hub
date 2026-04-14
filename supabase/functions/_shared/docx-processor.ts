@@ -88,7 +88,6 @@ export async function processDocx(
         }
 
         let processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
-        processedXml = ensureWordCheckboxNamespaces(processedXml);
 
         // Post-process: ensure Signature paragraph has a page break before it,
         // but ONLY if the original template already contains page breaks or section
@@ -204,39 +203,6 @@ function ensureSignaturePageBreak(xml: string): string {
   }
 
   return updatedXml;
-}
-
-function ensureWordCheckboxNamespaces(xml: string): string {
-  if (!xml.includes('<w14:checkbox')) return xml;
-
-  let result = xml;
-
-  result = result.replace(/<w:document\b([^>]*)>/, (match, attrs) => {
-    let nextAttrs = attrs;
-
-    if (!/\sxmlns:w14=/.test(nextAttrs)) {
-      nextAttrs += ' xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"';
-    }
-
-    const ignorableMatch = nextAttrs.match(/\smc:Ignorable="([^"]*)"/);
-    if (ignorableMatch) {
-      const tokens = ignorableMatch[1].split(/\s+/).filter(Boolean);
-      if (!tokens.includes('w14')) {
-        const updated = [...tokens, 'w14'].join(' ');
-        nextAttrs = nextAttrs.replace(/\smc:Ignorable="([^"]*)"/, ` mc:Ignorable="${updated}"`);
-      }
-    } else {
-      nextAttrs += ' mc:Ignorable="w14"';
-    }
-
-    if (!/\sxmlns:mc=/.test(nextAttrs)) {
-      nextAttrs += ' xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"';
-    }
-
-    return `<w:document${nextAttrs}>`;
-  });
-
-  return result;
 }
 
 /**

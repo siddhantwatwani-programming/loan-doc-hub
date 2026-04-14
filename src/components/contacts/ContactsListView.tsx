@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Plus, Loader2, Trash2 } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -194,7 +194,7 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
   }, [sortedContacts, visibleColumns]);
 
   return (
-    <div className="p-6 space-y-4 border border-border rounded-xl bg-card">
+    <div className="p-6 space-y-4">
       {/* Breadcrumb */}
       {breadcrumbLabel && (
         <Breadcrumb>
@@ -310,27 +310,37 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
         </Table>
       </div>
 
-      {/* Pagination - matches Properties table */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {((currentPage - 1) * 10) + 1}–{Math.min(currentPage * 10, totalCount)} of {totalCount} {title.toLowerCase()}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => onPageChange(1)}>First</Button>
-            <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => onPageChange(currentPage - 1)}>Previous</Button>
-            <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">{currentPage}</span>
-            <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => onPageChange(currentPage + 1)}>Next</Button>
-            <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => onPageChange(totalPages)}>Last</Button>
-          </div>
-        </div>
-      )}
-
-      {/* Footer summary */}
-      <div className="flex justify-end">
+      {/* Pagination */}
+      <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Total {title}: {totalCount}
+          {filteredContacts.length !== contacts.length && `Showing ${filteredContacts.length} of `}
+          Total: {totalCount}{selectedCount > 0 && ` · ${selectedCount} selected`}
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage <= 1}
+              onClick={() => onPageChange(currentPage - 1)}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => onPageChange(currentPage + 1)}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Delete Confirmation */}

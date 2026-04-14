@@ -1,21 +1,36 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, RefreshCw, Printer, Trash2, Pencil, Loader2, History, Download, Search, X, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { FundingHistoryDialog } from './FundingHistoryDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
+import { FilterOption } from './GridToolbar';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
-import { GridToolbar, FilterOption } from './GridToolbar';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { formatCurrencyDisplay } from '@/lib/numericInputFilter';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -26,8 +41,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'pctOwned', label: 'Pro Rata', visible: true },
   { id: 'fundingDate', label: 'Funding Date', visible: true },
   { id: 'interestFrom', label: 'Interest From', visible: true },
-  { id: 'noteRate', label: 'Note Rate', visible: true },
-  { id: 'lenderRate', label: 'Lender Rate', visible: true },
+  { id: 'lenderRate', label: 'Rate', visible: true },
   { id: 'regularPayment', label: 'Payment', visible: true },
   { id: 'roundingError', label: 'Rounding', visible: true },
 ];
@@ -303,12 +317,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
     handleRowClick(record);
   };
 
-  const handleEditSelected = () => {
-    if (selectedItems.length === 1) {
-      handleRowClick(selectedItems[0]);
-    }
-  };
-
   const renderCellValue = (record: FundingRecord, columnId: string) => {
     switch (columnId) {
       case 'lenderAccount':
@@ -325,8 +333,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         return formatDate(record.fundingDate) || '-';
       case 'interestFrom':
         return formatDate(record.interestFrom) || '-';
-      case 'noteRate':
-        return <span>{formatPercentage(parseFloat(record.rateNoteValue || noteRate || '0') || 0)}</span>;
       case 'lenderRate':
         return <span>{formatPercentage(record.lenderRate)}</span>;
       case 'regularPayment':
@@ -334,20 +340,11 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       case 'roundingError':
         return (
           <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
-            <input
-              type="radio"
-              name="rounding-selection"
+            <Checkbox
               checked={record.roundingError}
-              onChange={() => {
-                fundingRecords.forEach(r => {
-                  if (r.id !== record.id && r.roundingError) {
-                    onUpdateRecord(r.id, { roundingError: false });
-                  }
-                });
-                handleRoundingChange(record.id, true);
-              }}
+              onCheckedChange={(checked) => handleRoundingChange(record.id, checked === true)}
               disabled={disabled}
-              className="h-3.5 w-3.5 accent-destructive cursor-pointer"
+              className="h-3.5 w-3.5"
             />
           </div>
         );
@@ -388,187 +385,158 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   };
 
   const fundingFilterOptions = buildFundingFilterOptions(fundingRecords);
-  const totalCount = fundingRecords.length;
+  const [filterOpen, setFilterOpen] = useState(false);
 
   return (
-    <div className="p-6 space-y-4">
-      {/* Header with title and actions */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-semibold text-lg text-foreground">Funding</h3>
+    <div className="p-4 space-y-3">
+      <div className="border border-border rounded-lg">
+        <div className="px-3 py-1.5 border-b border-border">
+          <span className="font-semibold text-sm text-foreground">Loan Funding</span>
         </div>
-        <div className="flex items-center gap-2">
-          <ColumnConfigPopover
-            columns={columns}
-            onColumnsChange={setColumns}
-            onResetColumns={resetColumns}
-            disabled={disabled}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAddFundingClick}
-            disabled={disabled}
-            className="gap-1"
-          >
-            <Plus className="h-4 w-4" />
-            Add Funding
-          </Button>
-        </div>
-      </div>
 
-      {/* Grid Toolbar */}
-      <GridToolbar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        filterOptions={fundingFilterOptions}
-        activeFilters={activeFilters}
-        onFilterChange={setFilter}
-        onClearFilters={clearFilters}
-        activeFilterCount={activeFilterCount}
-        disabled={disabled}
-        selectedCount={selectedCount}
-        
-        onEdit={handleEditSelected}
-        onExport={() => setExportOpen(true)}
-      />
-
-      {/* Funding Table */}
-      <div className="border border-border rounded-lg overflow-x-auto">
-        {isLoading ? (
-          <div className="flex items-center justify-center min-h-[200px]">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex items-center gap-4 px-3 py-2 flex-wrap border-b border-border">
+          <div className="flex items-center gap-1.5">
+            <Label className="text-xs text-foreground font-medium shrink-0">Account</Label>
+            <Input value={loanNumber || ''} readOnly className="h-7 text-xs w-28 bg-muted/30" />
           </div>
-        ) : (
-          <Table className="min-w-[1400px]">
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="w-[40px]">
-                  <Checkbox
-                    checked={isAllSelected}
-                    ref={(el) => {
-                      if (el) (el as any).indeterminate = isSomeSelected;
-                    }}
-                    onCheckedChange={toggleAll}
-                    disabled={disabled || filteredData.length === 0}
-                  />
-                </TableHead>
-                {visibleColumns.map((col) => (
-                  col.id === 'roundingError' ? (
-                    <TableHead key={col.id} className="w-[80px]">{col.label.toUpperCase()}</TableHead>
-                  ) : (
-                    <SortableTableHead
-                      key={col.id}
-                      columnId={col.id}
-                      label={col.label.toUpperCase()}
-                      sortColumnId={sortState.columnId}
-                      sortDirection={sortState.direction}
-                      onSort={toggleSort}
-                    />
-                  )
-                ))}
-                {selectedCount > 0 && (
-                  <>
-                    <TableHead className="w-[50px]">EDIT</TableHead>
-                    <TableHead className="w-[50px]">DELETE</TableHead>
-                  </>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredData.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={visibleColumns.length + 1 + (selectedCount > 0 ? 2 : 0)} className="text-center py-8 text-muted-foreground">
-                    {fundingRecords.length === 0
-                      ? 'No funding records found. Click "Add Funding" to add one.'
-                      : 'No funding records match your search or filters.'}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredData.map((record) => (
-                  <TableRow
-                    key={record.id}
-                    className={cn('cursor-pointer hover:bg-muted/30', selectedIds.has(record.id) && 'bg-primary/10')}
-                    onClick={() => toggleOne(record.id)}
-                  >
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Checkbox
-                        checked={selectedIds.has(record.id)}
-                        onCheckedChange={() => toggleOne(record.id)}
-                        disabled={disabled}
-                      />
-                    </TableCell>
-                    {visibleColumns.map((col) => (
-                      <TableCell
+          <div className="flex items-center gap-1.5">
+            <Label className="text-xs text-foreground font-medium shrink-0">Borrower</Label>
+            <Input value={borrowerName || ''} readOnly className="h-7 text-xs w-40 bg-muted/30" />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Label className="text-xs text-foreground font-medium shrink-0">Balance</Label>
+            <div className="relative">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+              <Input
+                value={totalPrincipalBalance > 0 ? new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalPrincipalBalance) : '-'}
+                readOnly
+                className="h-7 text-xs w-28 pl-5 bg-muted/30"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Label className="text-xs text-foreground font-medium shrink-0">Payment</Label>
+            <div className="relative">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+              <Input
+                value={totalPaymentSum > 0 ? new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalPaymentSum) : '-'}
+                readOnly
+                className="h-7 text-xs w-28 pl-5 bg-muted/30"
+              />
+            </div>
+          </div>
+          <div className="flex-1" />
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRefresh} disabled={disabled} title="Refresh"><RefreshCw className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setExportOpen(true)} disabled={disabled} title="Export"><Download className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.print()} disabled={disabled} title="Print"><Printer className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsHistoryOpen(true)} disabled={disabled} title="History"><History className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleAddFundingClick} disabled={disabled} title="Add"><Plus className="h-3.5 w-3.5" /></Button>
+            
+            <ColumnConfigPopover columns={columns} onColumnsChange={setColumns} onResetColumns={resetColumns} />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center min-h-[200px]">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <Table className="min-w-[900px]">
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="w-[30px]" />
+                  {visibleColumns.map((col) => (
+                    col.id === 'roundingError' ? (
+                      <TableHead key={col.id} className="text-center text-xs">{col.label}</TableHead>
+                    ) : (
+                      <SortableTableHead
                         key={col.id}
-                        onClick={col.id === 'roundingError' ? (e) => e.stopPropagation() : undefined}
-                      >
-                        {renderCellValue(record, col.id)}
+                        columnId={col.id}
+                        label={col.label}
+                        sortColumnId={sortState.columnId}
+                        sortDirection={sortState.direction}
+                        onSort={toggleSort}
+                      />
+                    )
+                  ))}
+                  <TableHead className="w-[50px] text-center text-xs"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredData.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={visibleColumns.length + 2} className="text-center text-muted-foreground py-8">
+                      {fundingRecords.length === 0 ? 'No funding records found. Click "+" to add a new funding record.' : 'No funding records match your search.'}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredData.map((record) => (
+                    <TableRow
+                      key={record.id}
+                      className={cn(!disabled && 'cursor-pointer hover:bg-muted/30', selectedRecord?.id === record.id && 'bg-primary/10')}
+                      onClick={() => !disabled && handleRowClick(record)}
+                    >
+                      <TableCell className="px-1" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5"
+                          onClick={(e) => handleEditClick(e, record)}
+                          disabled={disabled}
+                          title="Edit"
+                        >
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                      </TableCell>
+                      {visibleColumns.map((col) => (
+                        <TableCell key={col.id} className="text-left text-xs py-1.5">{renderCellValue(record, col.id)}</TableCell>
+                      ))}
+                      <TableCell className="text-center px-1" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 text-destructive hover:text-destructive"
+                          onClick={(e) => handleDeleteRowClick(e, record)}
+                          disabled={disabled}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+
+                {fundingRecords.length > 0 && (
+                  <TableRow className="bg-muted/30 font-semibold border-t-2">
+                    <TableCell />
+                    {visibleColumns.map((col) => (
+                      <TableCell key={col.id} className="text-left text-xs py-1.5">
+                        {renderTotalCell(col.id)}
                       </TableCell>
                     ))}
-                    {selectedCount > 0 && (
-                      <>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={(e) => handleEditClick(e, record)}
-                            disabled={disabled}
-                          >
-                            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                          </Button>
-                        </TableCell>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-destructive hover:text-destructive"
-                            onClick={(e) => handleDeleteRowClick(e, record)}
-                            disabled={disabled}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </TableCell>
-                      </>
-                    )}
+                    <TableCell />
                   </TableRow>
-                ))
-              )}
-
-              {fundingRecords.length > 0 && (
-                <TableRow className="bg-muted/30 font-semibold border-t-2">
-                  <TableCell />
-                  {visibleColumns.map((col) => (
-                    <TableCell key={col.id}>
-                      {renderTotalCell(col.id)}
-                    </TableCell>
-                  ))}
-                  {selectedCount > 0 && (
-                    <>
-                      <TableCell />
-                      <TableCell />
-                    </>
-                  )}
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        )}
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </div>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount} funding
+            Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, fundingRecords.length)} of {fundingRecords.length} records
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => onPageChange(1)} disabled={currentPage <= 1 || disabled}>First</Button>
-            <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage <= 1 || disabled}>Previous</Button>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" onClick={() => onPageChange(1)} disabled={currentPage === 1}>First</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}>Previous</Button>
             <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">{currentPage}</span>
-            <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage >= totalPages || disabled}>Next</Button>
-            <Button variant="outline" size="sm" onClick={() => onPageChange(totalPages)} disabled={currentPage >= totalPages || disabled}>Last</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage >= totalPages}>Next</Button>
+            <Button variant="outline" size="sm" onClick={() => onPageChange(totalPages)} disabled={currentPage >= totalPages}>Last</Button>
           </div>
         </div>
       )}
@@ -577,11 +545,11 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         <p className="text-sm text-destructive font-medium">⚠ Total ownership exceeds 100% ({formatPercentage(totalOwnership)}). Cannot save new funding until resolved.</p>
       )}
 
-      {/* Footer with totals */}
       {fundingRecords.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
-            Total Funding Records: {totalCount} | Total Funding Amount: {formatCurrency(totalFundingAmount)}
+            {filteredData.length !== fundingRecords.length && `Showing ${filteredData.length} of `}
+            Total Funding Records: {fundingRecords.length} | Total Funding Amount: {formatCurrency(totalFundingAmount)}
           </div>
         </div>
       )}

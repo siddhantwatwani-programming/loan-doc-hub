@@ -651,16 +651,6 @@ function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function sanitizeXmlTextValue(value: string): string {
-  return value
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u0084\u0086-\u009F\uFFFE\uFFFF]/g, '')
-    .replace(/&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
-}
-
 function buildXmlFlexibleLabelPattern(label: string): string {
   const parts = label.split(/\s+/).filter(Boolean).map(escapeRegex);
   if (parts.length === 0) return '';
@@ -870,7 +860,12 @@ export function replaceLabelBasedFields(
       }
 
       // XML-escape and convert newlines to DOCX line breaks for label-based values
-      formattedValue = sanitizeXmlTextValue(formattedValue);
+      formattedValue = formattedValue
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
 
       if (label === "as of _") {
         const asOfPattern = /as of\s*_+/gi;
@@ -1535,7 +1530,13 @@ export function replaceMergeTags(
       console.log(`[tag-parser] No data for ${tag.tagName} (canonical: ${canonicalKey}, ultimate: ${ultimateKey})`);
     }
     
-    const xmlSafeValue = sanitizeXmlTextValue(resolvedValue);
+    // XML-escape the value to prevent corruption from &, <, >, " characters
+    const xmlSafeValue = resolvedValue
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
     tagReplacementMap.set(tag.fullMatch, xmlSafeValue);
   }
 

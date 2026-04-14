@@ -354,16 +354,10 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     onValueChange(FIELD_KEYS.fundingHistory, updatedHistoryJson);
 
     // Direct-persist both fields to DB
-    const [recOk, histOk] = await Promise.all([
+    await Promise.all([
       directPersistFundingField(dealId, FIELD_KEYS.fundingRecords, updatedRecordsJson, dictCacheRef.current),
       directPersistFundingField(dealId, FIELD_KEYS.fundingHistory, updatedHistoryJson, dictCacheRef.current),
     ]);
-
-    if (recOk) {
-      toast.success('Funding record saved successfully');
-    } else {
-      toast.error('Failed to persist funding record. Please save the deal manually.');
-    }
 
     // Auto-add lender to deal_participants if not already present
     if (data.lenderFullName) {
@@ -420,12 +414,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     onValueChange(FIELD_KEYS.fundingRecords, updatedRecordsJson);
 
     // Direct-persist to DB
-    const ok = await directPersistFundingField(dealId, FIELD_KEYS.fundingRecords, updatedRecordsJson, dictCacheRef.current);
-    if (ok) {
-      toast.success('Funding record updated successfully');
-    } else {
-      toast.error('Failed to persist funding update. Please save the deal manually.');
-    }
+    await directPersistFundingField(dealId, FIELD_KEYS.fundingRecords, updatedRecordsJson, dictCacheRef.current);
   }, [fundingRecords, onValueChange, dealId]);
 
   const handleDeleteRecord = async (record: FundingRecord) => {

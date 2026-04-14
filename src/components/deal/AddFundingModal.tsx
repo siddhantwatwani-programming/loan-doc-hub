@@ -242,16 +242,12 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const [fundingDateOpen, setFundingDateOpen] = useState(false);
   const [interestFromOpen, setInterestFromOpen] = useState(false);
   const [disbursementModalOpen, setDisbursementModalOpen] = useState(false);
-  const [fundingModalHidden, setFundingModalHidden] = useState(false);
   const [editingDisbursementIdx, setEditingDisbursementIdx] = useState<number | null>(null);
-  // Track which field the user last edited to drive bidirectional calculation
-  const [lastEditedField, setLastEditedField] = useState<'fundingAmount' | 'percentOwned' | null>(null);
 
   React.useEffect(() => {
     if (open) {
       const data = getInitialFormData();
       setFormData(data);
-      setLastEditedField(null);
     }
   }, [open, editData]);
 
@@ -266,49 +262,32 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     }
   }, [formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
 
-  // Bidirectional: Funding Amount → Pro Rata
+  // Auto-compute Percent Owned
   React.useEffect(() => {
-    if (lastEditedField !== 'fundingAmount') return;
     const fa = parseFloat((formData.fundingAmount || '').replace(/[$,]/g, '')) || 0;
     const la = parseFloat((loanAmount || '').replace(/[$,]/g, '')) || 0;
     if (la > 0 && fa > 0) {
-      const computed = ((fa / la) * 100).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+      const computed = (fa / la * 100).toFixed(3);
       if (computed !== formData.percentOwned) {
         setFormData(prev => ({ ...prev, percentOwned: computed }));
       }
     } else if (fa === 0 && formData.percentOwned !== '') {
       setFormData(prev => ({ ...prev, percentOwned: '' }));
     }
-  }, [formData.fundingAmount, loanAmount, lastEditedField]);
+  }, [formData.fundingAmount, loanAmount]);
 
-  // Bidirectional: Pro Rata → Funding Amount
+  // Regular Payment calculation
   React.useEffect(() => {
-    if (lastEditedField !== 'percentOwned') return;
-    const pct = parseFloat(formData.percentOwned) || 0;
-    const la = parseFloat((loanAmount || '').replace(/[$,]/g, '')) || 0;
-    if (la > 0 && pct > 0) {
-      const computed = ((pct / 100) * la).toFixed(2);
-      const formatted = formatCurrencyDisplay(computed);
-      if (formatted !== formData.fundingAmount) {
-        setFormData(prev => ({ ...prev, fundingAmount: formatted }));
-      }
-    } else if (pct === 0 && formData.fundingAmount !== '') {
-      setFormData(prev => ({ ...prev, fundingAmount: '' }));
-    }
-  }, [formData.percentOwned, loanAmount, lastEditedField]);
-
-  // Regular Payment calculation based on lender's funding amount (not total loan)
-  React.useEffect(() => {
-    const fa = parseFloat((formData.fundingAmount || '').replace(/[$,]/g, '')) || 0;
+    const la = parseFloat(loanAmount) || 0;
     let rate = 0;
     if (formData.rateSelection === 'note_rate') rate = parseFloat(formData.rateNoteValue) || 0;
     else if (formData.rateSelection === 'sold_rate') rate = parseFloat(formData.rateSoldValue) || 0;
     else if (formData.rateSelection === 'lender_rate') rate = parseFloat(formData.rateLenderValue) || 0;
-    const payment = fa > 0 && rate > 0 ? ((fa * (rate / 100)) / 12).toFixed(2) : '';
+    const payment = la > 0 && rate > 0 ? (la * (rate / 100) / 12).toFixed(2) : '';
     if (payment !== formData.regularPayment) {
       setFormData(prev => ({ ...prev, regularPayment: payment }));
     }
-  }, [formData.fundingAmount, formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
+  }, [loanAmount, formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
 
   // Auto-compute total columns for default fees
   const computeTotal = (lender: string, company: string, broker: string): string => {
@@ -359,9 +338,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const totalPercentError = projectedTotal > 100;
 
   const handleChange = (field: keyof FundingFormData, value: string | boolean) => {
-    // Track which bidirectional field the user is editing
-    if (field === 'fundingAmount') setLastEditedField('fundingAmount');
-    else if (field === 'percentOwned') setLastEditedField('percentOwned');
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -375,13 +351,11 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
   const handleAddDisbursement = () => {
     setEditingDisbursementIdx(null);
-    setFundingModalHidden(true);
     setDisbursementModalOpen(true);
   };
 
   const handleEditDisbursement = (index: number) => {
     setEditingDisbursementIdx(index);
-    setFundingModalHidden(true);
     setDisbursementModalOpen(true);
   };
 
@@ -529,8 +503,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
   return (
     <>
-    <Dialog open={open && !fundingModalHidden} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0 [&>button.absolute]:hidden">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0">
         {/* Header bar */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30">
           <span className="text-xs font-bold">Add / Edit Lender Funding</span>
@@ -596,7 +570,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               </div>
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Pro Rata</Label>
-                {renderPercentInput('percentOwned', '%')}
+                {renderPercentInput('percentOwned', '%', true)}
               </div>
             </div>
 
@@ -801,6 +775,27 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
             )}
           </div>
 
+          {/* Lender Disbursement Modal */}
+          <LenderDisbursementModal
+            open={disbursementModalOpen}
+            onOpenChange={setDisbursementModalOpen}
+            onSubmit={handleDisbursementModalSubmit}
+            editData={editingDisbursementIdx !== null && formData.disbursements[editingDisbursementIdx] ? {
+              accountId: formData.disbursements[editingDisbursementIdx].accountId,
+              name: formData.disbursements[editingDisbursementIdx].name,
+              debitPercent: formData.disbursements[editingDisbursementIdx].debitPercent,
+              debitOf: formData.disbursements[editingDisbursementIdx].debitOf,
+              plusAmount: formData.disbursements[editingDisbursementIdx].plusAmount,
+              minimumAmount: formData.disbursements[editingDisbursementIdx].minimumAmount,
+              debitThrough: formData.disbursements[editingDisbursementIdx].debitThrough,
+              debitThroughDate: formData.disbursements[editingDisbursementIdx].debitThroughDate,
+              debitThroughAmount: formData.disbursements[editingDisbursementIdx].debitThroughAmount,
+              debitThroughPayments: formData.disbursements[editingDisbursementIdx].debitThroughPayments,
+              from: formData.disbursements[editingDisbursementIdx].from as any,
+            } : null}
+            isEditing={editingDisbursementIdx !== null}
+          />
+
           {/* Hidden fields for backward-compat calculations */}
           <div className="hidden">
             <RadioGroup value={formData.rateSelection} onValueChange={(val) => handleChange('rateSelection', val)}>
@@ -821,26 +816,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-    {/* Lender Disbursement Modal - rendered outside funding dialog */}
-    <LenderDisbursementModal
-      open={disbursementModalOpen}
-      onOpenChange={(v) => { setDisbursementModalOpen(v); if (!v) setFundingModalHidden(false); }}
-      onSubmit={handleDisbursementModalSubmit}
-      editData={editingDisbursementIdx !== null && formData.disbursements[editingDisbursementIdx] ? {
-        accountId: formData.disbursements[editingDisbursementIdx].accountId,
-        name: formData.disbursements[editingDisbursementIdx].name,
-        debitPercent: formData.disbursements[editingDisbursementIdx].debitPercent,
-        debitOf: formData.disbursements[editingDisbursementIdx].debitOf,
-        plusAmount: formData.disbursements[editingDisbursementIdx].plusAmount,
-        minimumAmount: formData.disbursements[editingDisbursementIdx].minimumAmount,
-        debitThrough: formData.disbursements[editingDisbursementIdx].debitThrough,
-        debitThroughDate: formData.disbursements[editingDisbursementIdx].debitThroughDate,
-        debitThroughAmount: formData.disbursements[editingDisbursementIdx].debitThroughAmount,
-        debitThroughPayments: formData.disbursements[editingDisbursementIdx].debitThroughPayments,
-        from: formData.disbursements[editingDisbursementIdx].from as any,
-      } : null}
-      isEditing={editingDisbursementIdx !== null}
-    />
     <ModalSaveConfirmation open={showConfirm} onConfirm={handleConfirmSave} onCancel={() => setShowConfirm(false)} />
     </>
   );
