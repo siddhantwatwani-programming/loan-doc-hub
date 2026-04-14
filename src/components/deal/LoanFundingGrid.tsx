@@ -469,7 +469,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
             <Table className="min-w-[900px]">
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="w-[30px]" />
                   {visibleColumns.map((col) => (
                     col.id === 'roundingError' ? (
                       <TableHead key={col.id} className="text-center text-xs">{col.label}</TableHead>
@@ -484,7 +483,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                       />
                     )
                   ))}
-                  <TableHead className="w-[50px] text-center text-xs"></TableHead>
+                  <TableHead className="w-[40px] text-center text-xs">Edit</TableHead>
+                  <TableHead className="w-[50px] text-center text-xs">Delete</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -501,7 +501,10 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                       className={cn(!disabled && 'cursor-pointer hover:bg-muted/30', selectedRecord?.id === record.id && 'bg-primary/10')}
                       onClick={() => !disabled && handleRowClick(record)}
                     >
-                      <TableCell className="px-1" onClick={(e) => e.stopPropagation()}>
+                      {visibleColumns.map((col) => (
+                        <TableCell key={col.id} className="text-left text-xs py-1.5">{renderCellValue(record, col.id)}</TableCell>
+                      ))}
+                      <TableCell className="text-center px-1" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -513,9 +516,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                           <Pencil className="h-3 w-3 text-muted-foreground" />
                         </Button>
                       </TableCell>
-                      {visibleColumns.map((col) => (
-                        <TableCell key={col.id} className="text-left text-xs py-1.5">{renderCellValue(record, col.id)}</TableCell>
-                      ))}
                       <TableCell className="text-center px-1" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
@@ -534,12 +534,12 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
 
                 {fundingRecords.length > 0 && (
                   <TableRow className="bg-muted/30 font-semibold border-t-2">
-                    <TableCell />
                     {visibleColumns.map((col) => (
                       <TableCell key={col.id} className="text-left text-xs py-1.5">
                         {renderTotalCell(col.id)}
                       </TableCell>
                     ))}
+                    <TableCell />
                     <TableCell />
                   </TableRow>
                 )}
