@@ -40,6 +40,24 @@ const INSURANCE_DESCRIPTION_OPTIONS = [
   'Wind'
 ];
 
+const US_HOME_INSURANCE_COMPANIES = [
+  'Allstate', 'American Family', 'American National', 'Amica Mutual',
+  'ASI (Progressive Home)', 'Auto-Owners', 'Chubb', 'Cincinnati Financial',
+  'Citizens Property Insurance', 'Country Financial', 'CSAA Insurance',
+  'Donegal', 'Erie Insurance', 'Farmers', 'Florida Peninsula',
+  'Foremost (Farmers)', 'GEICO (Homeowners)', 'Grange Insurance',
+  'Hanover Insurance', 'Hartford', 'Heritage Insurance', 'Hippo',
+  'Homeowners Choice', 'Homesite (American Family)', 'ICW Group',
+  'Kemper', 'Lemonade', 'Liberty Mutual', 'Lighthouse Property',
+  'Mercury Insurance', 'MetLife', 'Nationwide', 'NJM Insurance',
+  'Pacific Specialty', 'Plymouth Rock', 'Progressive', 'Pure Insurance',
+  'Safeco (Liberty Mutual)', 'Security First', 'Shelter Insurance',
+  'Southern Oak', 'State Farm', 'Stillwater', 'Swyfft',
+  'The General', 'Tower Hill', 'Travelers', 'TWFG Insurance',
+  'United Property & Casualty', 'Universal Insurance', 'Universal Property',
+  'USAA', 'Westfield', 'Weston Insurance', 'Zurich',
+];
+
 const TRACKING_STATUS_OPTIONS = [
   'Unable to Verify',
   'Current - Active',
