@@ -1022,7 +1022,7 @@ export function processConditionalBlocks(
 ): string {
   let result = content;
   let iterations = 0;
-  const MAX_ITERATIONS = 20;
+  const MAX_ITERATIONS = 100;
 
   while (iterations < MAX_ITERATIONS) {
     const ifPattern = /\{\{#if\s+([A-Za-z0-9_.]+)\}\}([\s\S]*?)\{\{\/if\}\}/;
