@@ -651,6 +651,16 @@ function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function sanitizeXmlTextValue(value: string): string {
+  return value
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u0084\u0086-\u009F\uFFFE\uFFFF]/g, '')
+    .replace(/&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
+}
+
 function buildXmlFlexibleLabelPattern(label: string): string {
   const parts = label.split(/\s+/).filter(Boolean).map(escapeRegex);
   if (parts.length === 0) return '';
