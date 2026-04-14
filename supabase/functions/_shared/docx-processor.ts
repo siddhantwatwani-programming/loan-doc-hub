@@ -203,6 +203,7 @@ function ensureSignaturePageBreak(xml: string): string {
     debugLog("[docx-processor] Signature paragraph already has pageBreakBefore.");
   }
 
+  return updatedXml;
 }
 
 function ensureWordCheckboxNamespaces(xml: string): string {
