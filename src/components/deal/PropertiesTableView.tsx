@@ -353,6 +353,40 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         onExport={() => setExportOpen(true)}
       />
 
+      {/* Print, Map, Valuation action buttons */}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1 text-xs"
+          onClick={handlePrint}
+          disabled={disabled}
+        >
+          <Printer className="h-3.5 w-3.5" />
+          Print
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1 text-xs"
+          onClick={handleMap}
+          disabled={disabled || properties.length === 0}
+        >
+          <MapPin className="h-3.5 w-3.5" />
+          Map
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1 text-xs"
+          onClick={handleValuation}
+          disabled={disabled || properties.length === 0}
+        >
+          <BarChart3 className="h-3.5 w-3.5" />
+          Valuation
+        </Button>
+      </div>
+
       {/* Properties Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
         <Table className="min-w-[1400px]">
