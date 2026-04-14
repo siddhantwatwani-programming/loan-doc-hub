@@ -469,7 +469,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
             <Table className="min-w-[900px]">
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="w-[30px]" />
                   {visibleColumns.map((col) => (
                     col.id === 'roundingError' ? (
                       <TableHead key={col.id} className="text-center text-xs">{col.label}</TableHead>
@@ -484,7 +483,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                       />
                     )
                   ))}
-                  <TableHead className="w-[50px] text-center text-xs"></TableHead>
+                  <TableHead className="w-[40px] text-center text-xs">Edit</TableHead>
+                  <TableHead className="w-[50px] text-center text-xs">Delete</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
