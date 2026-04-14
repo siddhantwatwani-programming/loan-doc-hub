@@ -392,28 +392,45 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
 
   return (
     <div className="p-6 space-y-4">
-      {/* Header with title and actions */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-semibold text-lg text-foreground">Funding</h3>
+      {/* Header: Title */}
+      <div className="border border-border rounded-lg overflow-hidden">
+        <div className="bg-muted/50 px-4 py-2 border-b border-border">
+          <h3 className="font-semibold text-sm text-foreground">Loan Funding</h3>
         </div>
-        <div className="flex items-center gap-2">
-          <ColumnConfigPopover
-            columns={columns}
-            onColumnsChange={setColumns}
-            onResetColumns={resetColumns}
-            disabled={disabled}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAddFundingClick}
-            disabled={disabled}
-            className="gap-1"
-          >
-            <Plus className="h-4 w-4" />
-            Add Funding
-          </Button>
+        {/* Header bar: Account, Borrower, Balance + toolbar */}
+        <div className="flex items-center justify-between px-4 py-2 bg-background flex-wrap gap-2">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">Account</span>
+              <span className="text-sm text-foreground bg-muted border border-border rounded px-2 py-0.5 min-w-[100px]">{loanNumber || ''}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">Borrower</span>
+              <span className="text-sm text-foreground bg-muted border border-border rounded px-2 py-0.5 min-w-[120px]">{borrowerName || ''}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">Balance</span>
+              <span className="text-sm text-foreground bg-muted border border-border rounded px-2 py-0.5 min-w-[80px]">{formatCurrency(totalPrincipalBalance)}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <ColumnConfigPopover
+              columns={columns}
+              onColumnsChange={setColumns}
+              onResetColumns={resetColumns}
+              disabled={disabled}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddFundingClick}
+              disabled={disabled}
+              className="gap-1"
+            >
+              <Plus className="h-4 w-4" />
+              Add New Lender
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -442,7 +459,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         ) : (
           <Table className="min-w-[1400px]">
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow className="bg-[hsl(0,50%,25%)] [&>th]:text-white">
                 <TableHead className="w-[40px]">
                   <Checkbox
                     checked={isAllSelected}
@@ -451,34 +468,31 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                     }}
                     onCheckedChange={toggleAll}
                     disabled={disabled || filteredData.length === 0}
+                    className="border-white data-[state=checked]:bg-white data-[state=checked]:text-[hsl(0,50%,25%)]"
                   />
                 </TableHead>
                 {visibleColumns.map((col) => (
                   col.id === 'roundingError' ? (
-                    <TableHead key={col.id} className="w-[80px]">{col.label.toUpperCase()}</TableHead>
+                    <TableHead key={col.id} className="w-[80px] text-white">{col.label}</TableHead>
                   ) : (
                     <SortableTableHead
                       key={col.id}
                       columnId={col.id}
-                      label={col.label.toUpperCase()}
+                      label={col.label}
                       sortColumnId={sortState.columnId}
                       sortDirection={sortState.direction}
                       onSort={toggleSort}
                     />
                   )
                 ))}
-                {selectedCount > 0 && (
-                  <>
-                    <TableHead className="w-[50px]">EDIT</TableHead>
-                    <TableHead className="w-[50px]">DELETE</TableHead>
-                  </>
-                )}
+                <TableHead className="w-[50px] text-white">Edit</TableHead>
+                <TableHead className="w-[50px] text-white">Delete</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={visibleColumns.length + 1 + (selectedCount > 0 ? 2 : 0)} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={visibleColumns.length + 3} className="text-center py-8 text-muted-foreground">
                     {fundingRecords.length === 0
                       ? 'No funding records found. Click "Add Funding" to add one.'
                       : 'No funding records match your search or filters.'}
@@ -506,32 +520,28 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                         {renderCellValue(record, col.id)}
                       </TableCell>
                     ))}
-                    {selectedCount > 0 && (
-                      <>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={(e) => handleEditClick(e, record)}
-                            disabled={disabled}
-                          >
-                            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                          </Button>
-                        </TableCell>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-destructive hover:text-destructive"
-                            onClick={(e) => handleDeleteRowClick(e, record)}
-                            disabled={disabled}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </TableCell>
-                      </>
-                    )}
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={(e) => handleEditClick(e, record)}
+                        disabled={disabled}
+                      >
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-destructive hover:text-destructive"
+                        onClick={(e) => handleDeleteRowClick(e, record)}
+                        disabled={disabled}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -544,12 +554,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                       {renderTotalCell(col.id)}
                     </TableCell>
                   ))}
-                  {selectedCount > 0 && (
-                    <>
-                      <TableCell />
-                      <TableCell />
-                    </>
-                  )}
+                  <TableCell />
+                  <TableCell />
                 </TableRow>
               )}
             </TableBody>
