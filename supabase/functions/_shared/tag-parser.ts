@@ -462,7 +462,7 @@ function consolidateFragmentedTagsInParagraphs(xml: string): string {
     const joined = tTexts.join('');
 
     // Find complete merge tags in the joined text
-    const tagPattern = /\{\{[A-Za-z0-9_.| ]+\}\}|\u00AB[A-Za-z0-9_.]+\u00BB/g;
+    const tagPattern = /\{\{[A-Za-z0-9_.#/| ]+\}\}|\u00AB[A-Za-z0-9_.]+\u00BB/g;
     const joinedTags = joined.match(tagPattern) || [];
 
     if (joinedTags.length === 0) { parasSkippedNoTags++; return para; }
@@ -519,11 +519,16 @@ export function parseWordMergeFields(content: string): ParsedMergeTag[] {
   if (content.includes('{{') && content.includes('}}')) {
     const curlyPattern = /\{\{([^{}<|]+)(?:\s*\|\s*([^{}<]+))?\}\}/g;
     while ((match = curlyPattern.exec(content)) !== null) {
+      const tagName = match[1].trim();
+      // Skip conditional/control tags — these are handled by processConditionalBlocks
+      if (/^#if\s|^#unless\s|^#each\s|^\/if$|^\/unless$|^\/each$|^else$/.test(tagName)) {
+        continue;
+      }
       if (!seenTags.has(match[0])) {
         seenTags.add(match[0]);
         tags.push({
           fullMatch: match[0],
-          tagName: match[1].trim(),
+          tagName,
           inlineTransform: match[2]?.trim() || null,
         });
       }
@@ -590,10 +595,25 @@ function convertGlyphsToSdtCheckboxes(xml: string): string {
   // Match a <w:r> that contains an optional <w:rPr> and a <w:t> with only a checkbox glyph
   const runWithGlyphOnly = /<w:r\b[^>]*>((?:\s*<w:rPr>([\s\S]*?)<\/w:rPr>)?)\s*<w:t[^>]*>([☐☑☒])<\/w:t>\s*<\/w:r>/g;
 
-  const result = xml.replace(runWithGlyphOnly, (_match, _rPrGroup, innerRPr, glyph) => {
+  // To avoid nesting <w:sdt> inside existing <w:sdt> (which corrupts the document),
+  // first extract existing SDT blocks, process the remaining content, then restore them.
+  const sdtPlaceholders: string[] = [];
+  const sdtMarker = '\uFFFE_SDT_';
+  let safeguardedXml = xml.replace(/<w:sdt\b[\s\S]*?<\/w:sdt>/g, (sdtBlock) => {
+    const idx = sdtPlaceholders.length;
+    sdtPlaceholders.push(sdtBlock);
+    return `${sdtMarker}${idx}_`;
+  });
+
+  safeguardedXml = safeguardedXml.replace(runWithGlyphOnly, (_match, _rPrGroup, innerRPr, glyph) => {
     const isChecked = glyph === '☑' || glyph === '☒';
     count++;
     return buildSdtCheckboxXml(isChecked, innerRPr || undefined);
+  });
+
+  // Restore SDT blocks
+  const result = safeguardedXml.replace(new RegExp(`${sdtMarker.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}(\\d+)_`, 'g'), (_m, idx) => {
+    return sdtPlaceholders[parseInt(idx, 10)] || '';
   });
 
   if (count > 0) {
@@ -1007,7 +1027,7 @@ export function processConditionalBlocks(
 ): string {
   let result = content;
   let iterations = 0;
-  const MAX_ITERATIONS = 20;
+  const MAX_ITERATIONS = 100;
 
   while (iterations < MAX_ITERATIONS) {
     const ifPattern = /\{\{#if\s+([A-Za-z0-9_.]+)\}\}([\s\S]*?)\{\{\/if\}\}/;
