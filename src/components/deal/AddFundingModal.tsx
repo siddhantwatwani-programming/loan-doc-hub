@@ -374,11 +374,13 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
   const handleAddDisbursement = () => {
     setEditingDisbursementIdx(null);
+    setFundingModalHidden(true);
     setDisbursementModalOpen(true);
   };
 
   const handleEditDisbursement = (index: number) => {
     setEditingDisbursementIdx(index);
+    setFundingModalHidden(true);
     setDisbursementModalOpen(true);
   };
 
