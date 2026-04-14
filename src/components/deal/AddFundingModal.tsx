@@ -358,6 +358,9 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const totalPercentError = projectedTotal > 100;
 
   const handleChange = (field: keyof FundingFormData, value: string | boolean) => {
+    // Track which bidirectional field the user is editing
+    if (field === 'fundingAmount') setLastEditedField('fundingAmount');
+    else if (field === 'percentOwned') setLastEditedField('percentOwned');
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
