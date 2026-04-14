@@ -189,6 +189,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const [deleteRowRecord, setDeleteRowRecord] = useState<FundingRecord | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [editFundingData, setEditFundingData] = useState<FundingFormData | null>(null);
+  const PAGE_SIZE = 10;
+  const [localPage, setLocalPage] = useState(1);
   const [columns, setColumns, resetColumns] = useTableColumnConfig('funding', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
 
