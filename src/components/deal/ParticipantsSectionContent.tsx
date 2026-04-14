@@ -3,13 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Plus, Loader2, Users } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -109,7 +102,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const pageSize = 10;
 
   const [columns, setColumns, resetColumns] = useTableColumnConfig('participants_v3', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((c) => c.visible);
@@ -610,49 +603,23 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         </div>
       )}
 
-      {/* Pagination + Footer */}
-      {participants.length > 0 && (
+      {/* Pagination */}
+      {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Show</span>
-            <Select
-              value={pageSize.toString()}
-              onValueChange={(value) => {
-                setPageSize(Number(value));
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[70px] h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
-            <span>entries</span>
+          <div className="text-sm text-muted-foreground">
+            Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length} participants
           </div>
-          <div className="flex items-center gap-1">
-            <Button variant="outline" size="sm" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
-              First
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => p - 1)} disabled={currentPage === 1}>
-              Previous
-            </Button>
-            <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">
-              {currentPage}
-            </span>
-            <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => p + 1)} disabled={currentPage >= totalPages}>
-              Next
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setCurrentPage(totalPages)} disabled={currentPage >= totalPages}>
-              Last
-            </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(1)} disabled={currentPage <= 1 || disabled}>First</Button>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => p - 1)} disabled={currentPage <= 1 || disabled}>Previous</Button>
+            <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">{currentPage}</span>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => p + 1)} disabled={currentPage >= totalPages || disabled}>Next</Button>
+            <Button variant="outline" size="sm" onClick={() => setCurrentPage(totalPages)} disabled={currentPage >= totalPages || disabled}>Last</Button>
           </div>
         </div>
       )}
+
+      {/* Footer */}
       {participants.length > 0 && (
         <div className="flex justify-end">
           <div className="text-sm text-muted-foreground">
