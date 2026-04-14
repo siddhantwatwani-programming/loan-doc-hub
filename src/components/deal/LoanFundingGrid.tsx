@@ -42,7 +42,8 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'pctOwned', label: 'Pro Rata', visible: true },
   { id: 'fundingDate', label: 'Funding Date', visible: true },
   { id: 'interestFrom', label: 'Interest From', visible: true },
-  { id: 'lenderRate', label: 'Rate', visible: true },
+  { id: 'noteRate', label: 'Note Rate', visible: true },
+  { id: 'lenderRate', label: 'Lender Rate', visible: true },
   { id: 'regularPayment', label: 'Payment', visible: true },
   { id: 'roundingError', label: 'Rounding', visible: true },
 ];
@@ -335,6 +336,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         return formatDate(record.fundingDate) || '-';
       case 'interestFrom':
         return formatDate(record.interestFrom) || '-';
+      case 'noteRate':
+        return <span>{record.rateNoteValue ? `${parseFloat(record.rateNoteValue).toFixed(3)}%` : (noteRate ? `${parseFloat(noteRate).toFixed(3)}%` : '-')}</span>;
       case 'lenderRate':
         return <span>{formatPercentage(record.lenderRate)}</span>;
       case 'regularPayment':
