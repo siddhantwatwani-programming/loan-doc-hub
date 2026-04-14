@@ -310,37 +310,27 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
         </Table>
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          {filteredContacts.length !== contacts.length && `Showing ${filteredContacts.length} of `}
-          Total: {totalCount}{selectedCount > 0 && ` · ${selectedCount} selected`}
-        </div>
-        {totalPages > 1 && (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1}
-              onClick={() => onPageChange(currentPage - 1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= totalPages}
-              onClick={() => onPageChange(currentPage + 1)}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+      {/* Pagination - matches Properties table */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-xs text-muted-foreground">
+            Showing {((currentPage - 1) * 10) + 1}–{Math.min(currentPage * 10, totalCount)} of {totalCount} {title.toLowerCase()}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" className="h-7 text-xs px-2" disabled={currentPage <= 1} onClick={() => onPageChange(1)}>First</Button>
+            <Button variant="outline" size="sm" className="h-7 text-xs px-2" disabled={currentPage <= 1} onClick={() => onPageChange(currentPage - 1)}>Previous</Button>
+            <Button variant="default" size="sm" className="h-7 text-xs px-2 min-w-[28px]">{currentPage}</Button>
+            <Button variant="outline" size="sm" className="h-7 text-xs px-2" disabled={currentPage >= totalPages} onClick={() => onPageChange(currentPage + 1)}>Next</Button>
+            <Button variant="outline" size="sm" className="h-7 text-xs px-2" disabled={currentPage >= totalPages} onClick={() => onPageChange(totalPages)}>Last</Button>
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Footer summary */}
+      <div className="flex justify-end">
+        <span className="text-xs text-muted-foreground">
+          Total {title}: {totalCount}
+        </span>
       </div>
 
       {/* Delete Confirmation */}
