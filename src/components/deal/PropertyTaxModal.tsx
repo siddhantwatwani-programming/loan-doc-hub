@@ -152,7 +152,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
           </DialogHeader>
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 py-4">
-            {/* Left column */}
+            {/* Left column - 50% */}
             <div className="space-y-3">
               {propertyOptions.length > 0 && renderDropdownField('property', 'Property', propertyOptions)}
 
@@ -172,9 +172,19 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
               {renderDropdownField('escrowImpounds', 'Escrow Impounds', SOURCE_OPTIONS)}
               {renderDropdownField('passThrough', 'Pass Through', SOURCE_OPTIONS)}
               {renderDropdownField('sourceOfInformation', 'Source of Information', SOURCE_OPTIONS)}
+
+              <div className="flex items-center gap-2">
+                <Label className="w-[120px] shrink-0 text-xs text-foreground">APN</Label>
+                <Input value={formData.apn} onChange={(e) => handleChange('apn', e.target.value)} className="h-7 text-xs flex-1" />
+              </div>
+
+              <div className="flex items-start gap-2">
+                <Label className="w-[120px] shrink-0 text-xs text-foreground pt-1">Memo</Label>
+                <Textarea value={formData.memo} onChange={(e) => handleChange('memo', e.target.value)} className="text-xs flex-1 min-h-[50px]" />
+              </div>
             </div>
 
-            {/* Right column */}
+            {/* Right column - 50% */}
             <div className="space-y-3">
               {/* Payment Mailing Address */}
               <div className="border-b border-border pb-1 mb-2">
@@ -259,16 +269,6 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
               )}
 
               {renderDateField('lenderNotifiedDate', 'Lender Notified')}
-
-              <div className="flex items-center gap-2">
-                <Label className="w-[120px] shrink-0 text-xs text-foreground">APN</Label>
-                <Input value={formData.apn} onChange={(e) => handleChange('apn', e.target.value)} className="h-7 text-xs flex-1" />
-              </div>
-
-              <div className="flex items-start gap-2">
-                <Label className="w-[120px] shrink-0 text-xs text-foreground pt-1">Memo</Label>
-                <Textarea value={formData.memo} onChange={(e) => handleChange('memo', e.target.value)} className="text-xs flex-1 min-h-[50px]" />
-              </div>
             </div>
           </div>
 
