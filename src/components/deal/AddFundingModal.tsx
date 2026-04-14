@@ -243,6 +243,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const [interestFromOpen, setInterestFromOpen] = useState(false);
   const [disbursementModalOpen, setDisbursementModalOpen] = useState(false);
   const [editingDisbursementIdx, setEditingDisbursementIdx] = useState<number | null>(null);
+  const [fundingHidden, setFundingHidden] = useState(false);
 
   React.useEffect(() => {
     if (open) {
@@ -351,12 +352,21 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
   const handleAddDisbursement = () => {
     setEditingDisbursementIdx(null);
+    setFundingHidden(true);
     setDisbursementModalOpen(true);
   };
 
   const handleEditDisbursement = (index: number) => {
     setEditingDisbursementIdx(index);
+    setFundingHidden(true);
     setDisbursementModalOpen(true);
+  };
+
+  const handleDisbursementModalClose = (openState: boolean) => {
+    setDisbursementModalOpen(openState);
+    if (!openState) {
+      setFundingHidden(false);
+    }
   };
 
   const handleDisbursementModalSubmit = (data: DisbursementFormData) => {
@@ -503,10 +513,10 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
   return (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open && !fundingHidden} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0">
         {/* Header bar */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30 pr-10">
           <span className="text-xs font-bold">Add / Edit Lender Funding</span>
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold">Principal Balance</span>
@@ -519,9 +529,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 placeholder="-"
               />
             </div>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCancel}>
-              <X className="h-3.5 w-3.5" />
-            </Button>
           </div>
         </div>
 
@@ -775,27 +782,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
             )}
           </div>
 
-          {/* Lender Disbursement Modal */}
-          <LenderDisbursementModal
-            open={disbursementModalOpen}
-            onOpenChange={setDisbursementModalOpen}
-            onSubmit={handleDisbursementModalSubmit}
-            editData={editingDisbursementIdx !== null && formData.disbursements[editingDisbursementIdx] ? {
-              accountId: formData.disbursements[editingDisbursementIdx].accountId,
-              name: formData.disbursements[editingDisbursementIdx].name,
-              debitPercent: formData.disbursements[editingDisbursementIdx].debitPercent,
-              debitOf: formData.disbursements[editingDisbursementIdx].debitOf,
-              plusAmount: formData.disbursements[editingDisbursementIdx].plusAmount,
-              minimumAmount: formData.disbursements[editingDisbursementIdx].minimumAmount,
-              debitThrough: formData.disbursements[editingDisbursementIdx].debitThrough,
-              debitThroughDate: formData.disbursements[editingDisbursementIdx].debitThroughDate,
-              debitThroughAmount: formData.disbursements[editingDisbursementIdx].debitThroughAmount,
-              debitThroughPayments: formData.disbursements[editingDisbursementIdx].debitThroughPayments,
-              from: formData.disbursements[editingDisbursementIdx].from as any,
-            } : null}
-            isEditing={editingDisbursementIdx !== null}
-          />
-
           {/* Hidden fields for backward-compat calculations */}
           <div className="hidden">
             <RadioGroup value={formData.rateSelection} onValueChange={(val) => handleChange('rateSelection', val)}>
@@ -816,6 +802,26 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {/* Lender Disbursement Modal - rendered outside funding dialog */}
+    <LenderDisbursementModal
+      open={disbursementModalOpen}
+      onOpenChange={handleDisbursementModalClose}
+      onSubmit={handleDisbursementModalSubmit}
+      editData={editingDisbursementIdx !== null && formData.disbursements[editingDisbursementIdx] ? {
+        accountId: formData.disbursements[editingDisbursementIdx].accountId,
+        name: formData.disbursements[editingDisbursementIdx].name,
+        debitPercent: formData.disbursements[editingDisbursementIdx].debitPercent,
+        debitOf: formData.disbursements[editingDisbursementIdx].debitOf,
+        plusAmount: formData.disbursements[editingDisbursementIdx].plusAmount,
+        minimumAmount: formData.disbursements[editingDisbursementIdx].minimumAmount,
+        debitThrough: formData.disbursements[editingDisbursementIdx].debitThrough,
+        debitThroughDate: formData.disbursements[editingDisbursementIdx].debitThroughDate,
+        debitThroughAmount: formData.disbursements[editingDisbursementIdx].debitThroughAmount,
+        debitThroughPayments: formData.disbursements[editingDisbursementIdx].debitThroughPayments,
+        from: formData.disbursements[editingDisbursementIdx].from as any,
+      } : null}
+      isEditing={editingDisbursementIdx !== null}
+    />
     <ModalSaveConfirmation open={showConfirm} onConfirm={handleConfirmSave} onCancel={() => setShowConfirm(false)} />
     </>
   );
