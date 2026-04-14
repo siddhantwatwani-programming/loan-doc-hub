@@ -722,118 +722,79 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 Add Disbursement
               </Button>
             </div>
-            <div className="overflow-x-auto border border-border rounded">
-              <table className="w-full text-[11px]">
-                <thead>
-                  <tr className="bg-muted/50 border-b border-border">
-                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground w-[40px]">Active</th>
-                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Account ID</th>
-                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">Name</th>
-                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">Start Date</th>
-                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">End Date</th>
-                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[60px]">Amount</th>
-                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[55px]">Percentage</th>
-                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">From</th>
-                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">Comment</th>
-                    <th className="w-[50px]"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {formData.disbursements.map((row, idx) => (
-                    <tr key={idx} className="border-b border-border last:border-b-0">
-                      <td className="py-0.5 px-1">
-                        <Checkbox
-                          checked={true}
-                          className="h-3 w-3"
-                          disabled
-                        />
-                      </td>
-                      <td className="py-0.5 px-1">
-                        <AccountIdSearch
-                          value={row.accountId}
-                          onChange={(accountId, name) => {
-                            const updated = [...formData.disbursements];
-                            updated[idx] = { ...updated[idx], accountId, ...(name ? { name } : {}) };
-                            setFormData(prev => ({ ...prev, disbursements: updated }));
-                          }}
-                          className="h-5 text-[10px]"
-                        />
-                      </td>
-                      <td className="py-0.5 px-1">
-                        <Input value={row.name} onChange={(e) => handleDisbursementChange(idx, 'name', e.target.value)} className="h-5 text-[10px]" placeholder="Name" />
-                      </td>
-                      <td className="py-0.5 px-1">
-                        <Input
-                          type="date"
-                          value={row.startDate || ''}
-                          onChange={(e) => handleDisbursementChange(idx, 'startDate', e.target.value)}
-                          className="h-5 text-[10px]"
-                        />
-                      </td>
-                      <td className="py-0.5 px-1">
-                        <Input
-                          type="date"
-                          value={row.endDate || ''}
-                          onChange={(e) => handleDisbursementChange(idx, 'endDate', e.target.value)}
-                          className="h-5 text-[10px]"
-                        />
-                      </td>
-                      <td className="py-0.5 px-1">
-                        <div className="relative">
-                          <span className="absolute left-1 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground">$</span>
-                          <Input
-                            value={row.amount}
-                            onChange={(e) => handleDisbursementChange(idx, 'amount', e.target.value.replace(/[^0-9.]/g, ''))}
-                            onKeyDown={numericKeyDown}
-                            className="h-5 text-[10px] pl-3"
-                            inputMode="decimal"
-                            placeholder="-"
-                          />
-                        </div>
-                      </td>
-                      <td className="py-0.5 px-1">
-                        <div className="relative">
-                          <Input
-                            value={row.percentage}
-                            onChange={(e) => handleDisbursementChange(idx, 'percentage', e.target.value.replace(/[^0-9.]/g, ''))}
-                            onKeyDown={numericKeyDown}
-                            className="h-5 text-[10px] pr-3"
-                            inputMode="decimal"
-                            placeholder="%"
-                          />
-                          <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground">%</span>
-                        </div>
-                      </td>
-                      <td className="py-0.5 px-1">
-                        <Select value={row.from || undefined} onValueChange={(val) => handleDisbursementChange(idx, 'from', val)}>
-                          <SelectTrigger className="h-5 text-[10px]">
-                            <SelectValue placeholder="Dropdown" />
-                          </SelectTrigger>
-                          <SelectContent className="!z-[9999]" position="popper" sideOffset={4}>
-                            <SelectItem value="Interest">Interest</SelectItem>
-                            <SelectItem value="Principal">Principal</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="py-0.5 px-1">
-                        <Input value={row.comments} onChange={(e) => handleDisbursementChange(idx, 'comments', e.target.value)} className="h-5 text-[10px]" />
-                      </td>
-                      <td className="py-0.5 px-1 text-center">
-                        <div className="flex items-center gap-0.5 justify-center">
-                          <Button variant="ghost" size="icon" className="h-5 w-5" title="Edit">
-                            <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleDeleteDisbursement(idx)} title="Delete">
-                            <Trash2 className="h-2.5 w-2.5 text-destructive" />
-                          </Button>
-                        </div>
-                      </td>
+            {formData.disbursements.length > 0 && (
+              <div className="overflow-x-auto border border-border rounded">
+                <table className="w-full text-[11px]">
+                  <thead>
+                    <tr className="bg-muted/50 border-b border-border">
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Payee</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Name</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[55px]">Debit %</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[60px]">Debit Of</th>
+                      <th className="text-right py-1 px-1 font-semibold text-muted-foreground min-w-[60px]">Plus</th>
+                      <th className="text-right py-1 px-1 font-semibold text-muted-foreground min-w-[60px]">Minimum</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">Debit Through</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[60px]">From</th>
+                      <th className="w-[50px]"></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {formData.disbursements.map((row, idx) => (
+                      <tr key={idx} className="border-b border-border last:border-b-0 hover:bg-muted/20">
+                        <td className="py-0.5 px-1 text-[10px]">{row.accountId || '-'}</td>
+                        <td className="py-0.5 px-1 text-[10px]">{row.name || '-'}</td>
+                        <td className="py-0.5 px-1 text-[10px]">{row.debitPercent ? `${row.debitPercent}%` : '-'}</td>
+                        <td className="py-0.5 px-1 text-[10px]">{row.debitOf || '-'}</td>
+                        <td className="py-0.5 px-1 text-[10px] text-right">{row.plusAmount ? `$${row.plusAmount}` : '-'}</td>
+                        <td className="py-0.5 px-1 text-[10px] text-right">{row.minimumAmount ? `$${row.minimumAmount}` : '-'}</td>
+                        <td className="py-0.5 px-1 text-[10px]">
+                          {row.debitThrough === 'date' ? row.debitThroughDate || 'Date' :
+                           row.debitThrough === 'amount' ? `$${row.debitThroughAmount}` :
+                           row.debitThrough === 'payments' ? `${row.debitThroughPayments} Payments` :
+                           row.debitThrough === 'payoff' ? 'Payoff' : '-'}
+                        </td>
+                        <td className="py-0.5 px-1 text-[10px]">{row.from || '-'}</td>
+                        <td className="py-0.5 px-1 text-center">
+                          <div className="flex items-center gap-0.5 justify-center">
+                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleEditDisbursement(idx)} title="Edit">
+                              <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleDeleteDisbursement(idx)} title="Delete">
+                              <Trash2 className="h-2.5 w-2.5 text-destructive" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {formData.disbursements.length === 0 && (
+              <p className="text-[10px] text-muted-foreground italic py-1">No disbursements added.</p>
+            )}
           </div>
+
+          {/* Lender Disbursement Modal */}
+          <LenderDisbursementModal
+            open={disbursementModalOpen}
+            onOpenChange={setDisbursementModalOpen}
+            onSubmit={handleDisbursementModalSubmit}
+            editData={editingDisbursementIdx !== null && formData.disbursements[editingDisbursementIdx] ? {
+              accountId: formData.disbursements[editingDisbursementIdx].accountId,
+              name: formData.disbursements[editingDisbursementIdx].name,
+              debitPercent: formData.disbursements[editingDisbursementIdx].debitPercent,
+              debitOf: formData.disbursements[editingDisbursementIdx].debitOf,
+              plusAmount: formData.disbursements[editingDisbursementIdx].plusAmount,
+              minimumAmount: formData.disbursements[editingDisbursementIdx].minimumAmount,
+              debitThrough: formData.disbursements[editingDisbursementIdx].debitThrough,
+              debitThroughDate: formData.disbursements[editingDisbursementIdx].debitThroughDate,
+              debitThroughAmount: formData.disbursements[editingDisbursementIdx].debitThroughAmount,
+              debitThroughPayments: formData.disbursements[editingDisbursementIdx].debitThroughPayments,
+              from: formData.disbursements[editingDisbursementIdx].from as any,
+            } : null}
+            isEditing={editingDisbursementIdx !== null}
+          />
 
           {/* Hidden fields for backward-compat calculations */}
           <div className="hidden">
