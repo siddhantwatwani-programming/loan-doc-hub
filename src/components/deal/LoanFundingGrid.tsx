@@ -447,17 +447,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               />
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Label className="text-xs text-foreground font-medium shrink-0">Payment</Label>
-            <div className="relative">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
-              <Input
-                value={totalPaymentSum > 0 ? new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalPaymentSum) : '-'}
-                readOnly
-                className="h-7 text-xs w-28 pl-5 bg-muted/30"
-              />
-            </div>
-          </div>
         </div>
 
         <div className="overflow-x-auto">
