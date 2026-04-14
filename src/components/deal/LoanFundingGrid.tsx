@@ -253,11 +253,11 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       rateSoldValue: record.rateSoldValue || soldRate,
       rateLenderValue: record.rateLenderValue || '',
       roundingAdjustment: record.roundingAdjustment || false,
-      disbursements: record.disbursements?.length ? record.disbursements : [
-        { accountId: '', name: '', amount: '', percentage: '', comments: '' },
-        { accountId: '', name: '', amount: '', percentage: '', comments: '' },
-        { accountId: '', name: '', amount: '', percentage: '', comments: '' },
-        { accountId: '', name: '', amount: '', percentage: '', comments: '' },
+      disbursements: record.disbursements?.length ? record.disbursements.map(d => ({
+        accountId: d.accountId || '', name: d.name || '', startDate: (d as any).startDate || '', endDate: (d as any).endDate || '',
+        amount: d.amount || '', percentage: d.percentage || '', from: (d as any).from || '' as const, comments: d.comments || '',
+      })) : [
+        { accountId: '', name: '', startDate: '', endDate: '', amount: '', percentage: '', from: '' as const, comments: '' },
       ],
       principalBalance: formatCurrencyDisplay(String(record.principalBalance)),
       noteRateDisplay: noteRate,
