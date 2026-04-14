@@ -333,6 +333,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         return formatDate(record.fundingDate) || '-';
       case 'interestFrom':
         return formatDate(record.interestFrom) || '-';
+      case 'noteRate':
+        return <span>{formatPercentage(parseFloat(record.rateNoteValue || noteRate || '0') || 0)}</span>;
       case 'lenderRate':
         return <span>{formatPercentage(record.lenderRate)}</span>;
       case 'regularPayment':
@@ -340,11 +342,20 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       case 'roundingError':
         return (
           <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
-            <Checkbox
+            <input
+              type="radio"
+              name="rounding-selection"
               checked={record.roundingError}
-              onCheckedChange={(checked) => handleRoundingChange(record.id, checked === true)}
+              onChange={() => {
+                fundingRecords.forEach(r => {
+                  if (r.id !== record.id && r.roundingError) {
+                    onUpdateRecord(r.id, { roundingError: false });
+                  }
+                });
+                handleRoundingChange(record.id, true);
+              }}
               disabled={disabled}
-              className="h-3.5 w-3.5"
+              className="h-3.5 w-3.5 accent-destructive cursor-pointer"
             />
           </div>
         );
