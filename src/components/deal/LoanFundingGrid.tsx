@@ -405,7 +405,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
             <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={handleAddFundingClick} disabled={disabled}>
               <Plus className="h-3.5 w-3.5" /> Add Funding
             </Button>
-            <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={() => navigate('/contacts/lenders')} disabled={disabled}>
+            <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={() => setCreateLenderModalOpen(true)} disabled={disabled}>
               <Plus className="h-3.5 w-3.5" /> Add New Lender
             </Button>
           </div>
