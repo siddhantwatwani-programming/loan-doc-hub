@@ -85,7 +85,7 @@ export const LenderDisbursementModal: React.FC<LenderDisbursementModalProps> = (
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[520px] p-0 gap-0 overflow-hidden">
+        <DialogContent className="max-w-[520px] p-0 gap-0 overflow-hidden [&>button.absolute]:hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30">
             <span className="text-xs font-bold">Lender Disbursements</span>
