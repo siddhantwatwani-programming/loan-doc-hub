@@ -72,6 +72,30 @@ export interface FundingRecord {
   roundingAdjustment?: boolean;
   disbursements?: Array<{accountId: string; name: string; amount: string; percentage: string; comments: string}>;
   payments?: Array<{active: boolean; accountId: string; name: string; amount: string; percentage: string; comment: string; from: string}>;
+  // Fees to Company
+  overrideServicing?: boolean;
+  companyBaseFee?: string;
+  companyBaseFeePct?: string;
+  companyAdditionalServices?: string;
+  companyMinimum?: string;
+  companyMaximum?: string;
+  companyNrSitSplitPct?: string;
+  companyNrSitSplit?: string;
+  companyTotal?: string;
+  // Fees to Vendor
+  vendorId?: string;
+  vendorName?: string;
+  vendorBaseFee?: string;
+  vendorBaseFeePct?: string;
+  vendorAdditionalServices?: string;
+  vendorMinimum?: string;
+  vendorMaximum?: string;
+  vendorNrSitSplitPct?: string;
+  vendorNrSitSplit?: string;
+  vendorTotal?: string;
+  // Note rate display
+  noteRateDisplay?: string;
+  // Legacy servicing fees
   overrideServicingFees?: boolean;
   companyServicingFee?: string;
   companyServicingFeePct?: string;
@@ -85,6 +109,7 @@ export interface FundingRecord {
   brokerMaxFeePct?: string;
   brokerMinFee?: string;
   brokerMinFeePct?: string;
+  // Default fees
   overrideDefaultFees?: boolean;
   lateFee1Lender?: string;
   lateFee1Company?: string;
