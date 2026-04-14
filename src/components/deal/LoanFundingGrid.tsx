@@ -454,42 +454,35 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
-            <Table className="min-w-[900px]">
+            <Table className="min-w-[1100px]">
               <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="w-[30px]" />
+                <TableRow className="bg-[hsl(0,60%,30%)] border-b-2 border-[hsl(0,60%,25%)]">
                   {visibleColumns.map((col) => (
-                    col.id === 'roundingError' ? (
-                      <TableHead key={col.id} className="text-center text-xs">{col.label}</TableHead>
-                    ) : (
-                      <SortableTableHead
-                        key={col.id}
-                        columnId={col.id}
-                        label={col.label}
-                        sortColumnId={sortState.columnId}
-                        sortDirection={sortState.direction}
-                        onSort={toggleSort}
-                      />
-                    )
+                    <TableHead key={col.id} className="text-white text-xs font-semibold py-1.5 whitespace-nowrap">
+                      {col.label}
+                    </TableHead>
                   ))}
-                  <TableHead className="w-[50px] text-center text-xs"></TableHead>
+                  <TableHead className="w-[40px] text-white text-xs font-semibold text-center">Edit</TableHead>
+                  <TableHead className="w-[40px] text-white text-xs font-semibold text-center">Delete</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredData.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={visibleColumns.length + 2} className="text-center text-muted-foreground py-8">
-                      {fundingRecords.length === 0 ? 'No funding records found. Click "+" to add a new funding record.' : 'No funding records match your search.'}
+                      {fundingRecords.length === 0 ? 'No funding records found. Click "Add New Lender" to add one.' : 'No funding records match your search.'}
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredData.map((record) => (
                     <TableRow
                       key={record.id}
-                      className={cn(!disabled && 'cursor-pointer hover:bg-muted/30', selectedRecord?.id === record.id && 'bg-primary/10')}
-                      onClick={() => !disabled && handleRowClick(record)}
+                      className={cn('hover:bg-muted/30', selectedRecord?.id === record.id && 'bg-primary/10')}
                     >
-                      <TableCell className="px-1" onClick={(e) => e.stopPropagation()}>
+                      {visibleColumns.map((col) => (
+                        <TableCell key={col.id} className="text-left text-xs py-1.5">{renderCellValue(record, col.id)}</TableCell>
+                      ))}
+                      <TableCell className="text-center px-1" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -501,9 +494,6 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                           <Pencil className="h-3 w-3 text-muted-foreground" />
                         </Button>
                       </TableCell>
-                      {visibleColumns.map((col) => (
-                        <TableCell key={col.id} className="text-left text-xs py-1.5">{renderCellValue(record, col.id)}</TableCell>
-                      ))}
                       <TableCell className="text-center px-1" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="ghost"
@@ -522,12 +512,12 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
 
                 {fundingRecords.length > 0 && (
                   <TableRow className="bg-muted/30 font-semibold border-t-2">
-                    <TableCell />
                     {visibleColumns.map((col) => (
                       <TableCell key={col.id} className="text-left text-xs py-1.5">
                         {renderTotalCell(col.id)}
                       </TableCell>
                     ))}
+                    <TableCell />
                     <TableCell />
                   </TableRow>
                 )}
