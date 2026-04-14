@@ -40,6 +40,24 @@ const INSURANCE_DESCRIPTION_OPTIONS = [
   'Wind'
 ];
 
+const US_HOME_INSURANCE_COMPANIES = [
+  'Allstate', 'American Family', 'American National', 'Amica Mutual',
+  'ASI (Progressive Home)', 'Auto-Owners', 'Chubb', 'Cincinnati Financial',
+  'Citizens Property Insurance', 'Country Financial', 'CSAA Insurance',
+  'Donegal', 'Erie Insurance', 'Farmers', 'Florida Peninsula',
+  'Foremost (Farmers)', 'GEICO (Homeowners)', 'Grange Insurance',
+  'Hanover Insurance', 'Hartford', 'Heritage Insurance', 'Hippo',
+  'Homeowners Choice', 'Homesite (American Family)', 'ICW Group',
+  'Kemper', 'Lemonade', 'Liberty Mutual', 'Lighthouse Property',
+  'Mercury Insurance', 'MetLife', 'Nationwide', 'NJM Insurance',
+  'Pacific Specialty', 'Plymouth Rock', 'Progressive', 'Pure Insurance',
+  'Safeco (Liberty Mutual)', 'Security First', 'Shelter Insurance',
+  'Southern Oak', 'State Farm', 'Stillwater', 'Swyfft',
+  'The General', 'Tower Hill', 'Travelers', 'TWFG Insurance',
+  'United Property & Casualty', 'Universal Insurance', 'Universal Property',
+  'USAA', 'Westfield', 'Weston Insurance', 'Zurich',
+];
+
 const TRACKING_STATUS_OPTIONS = [
   'Unable to Verify',
   'Current - Active',
@@ -172,7 +190,17 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          {renderField('companyName', 'Ins. Company')}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.companyName}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Ins. Company</Label>
+              <Select value={insurance.companyName || undefined} onValueChange={(val) => onChange('companyName', val)} disabled={disabled}>
+                <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select company" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50 max-h-60">
+                  {US_HOME_INSURANCE_COMPANIES.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
           {renderField('policyNumber', 'Policy Number')}
           {renderField('expiration', 'Expiration', { type: 'date' })}
 
