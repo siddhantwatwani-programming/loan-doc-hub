@@ -22,13 +22,21 @@ import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDi
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
 const US_INSURANCE_COMPANIES = [
-  'State Farm', 'Allstate', 'GEICO', 'Progressive', 'Liberty Mutual',
-  'Nationwide', 'Farmers', 'USAA', 'Travelers', 'American Family',
-  'Erie Insurance', 'Auto-Owners', 'Hartford', 'Chubb', 'MetLife',
-  'AIG', 'Zurich', 'Cincinnati Financial', 'Hanover', 'Safeco',
-  'Amica Mutual', 'Country Financial', 'Shelter Insurance', 'CSAA',
-  'Mercury Insurance', 'Kemper', 'Westfield', 'Grange Insurance',
-  'Donegal', 'Plymouth Rock',
+  'Allstate', 'American Family', 'American National', 'Amica Mutual',
+  'ASI (Progressive Home)', 'Auto-Owners', 'Chubb', 'Cincinnati Financial',
+  'Citizens Property Insurance', 'Country Financial', 'CSAA Insurance',
+  'Donegal', 'Erie Insurance', 'Farmers', 'Florida Peninsula',
+  'Foremost (Farmers)', 'GEICO (Homeowners)', 'Grange Insurance',
+  'Hanover Insurance', 'Hartford', 'Heritage Insurance', 'Hippo',
+  'Homeowners Choice', 'Homesite (American Family)', 'ICW Group',
+  'Kemper', 'Lemonade', 'Liberty Mutual', 'Lighthouse Property',
+  'Mercury Insurance', 'MetLife', 'Nationwide', 'NJM Insurance',
+  'Pacific Specialty', 'Plymouth Rock', 'Progressive', 'Pure Insurance',
+  'Safeco (Liberty Mutual)', 'Security First', 'Shelter Insurance',
+  'Southern Oak', 'State Farm', 'Stillwater', 'Swyfft',
+  'The General', 'Tower Hill', 'Travelers', 'TWFG Insurance',
+  'United Property & Casualty', 'Universal Insurance', 'Universal Property',
+  'USAA', 'Westfield', 'Weston Insurance', 'Zurich',
 ];
 
 interface PropertyInsuranceFormProps {
