@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Printer, MapPin, BarChart3 } from 'lucide-react';
+import { Plus, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -186,7 +186,7 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   const [columns, setColumns, resetColumns] = useTableColumnConfig('properties', DEFAULT_COLUMNS);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
-  const [valuationOpen, setValuationOpen] = useState(false);
+  
   const visibleColumns = columns.filter((col) => col.visible);
 
   const {
@@ -279,36 +279,6 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
     window.print();
   };
 
-  const handleMap = () => {
-    // Open Google Maps for the first selected property or first property
-    const target = selectedItems.length > 0 ? selectedItems[0] : properties[0];
-    if (target) {
-      const address = [target.street, target.city, target.state, target.zipCode].filter(Boolean).join(', ');
-      if (address) {
-        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
-      }
-    }
-  };
-
-  const handleValuation = () => {
-    // Show valuation summary in export dialog with valuation-specific columns
-    setValuationOpen(true);
-  };
-
-  const valuationColumns: ExportColumn[] = [
-    { id: 'description', label: 'Description' },
-    { id: 'street', label: 'Street' },
-    { id: 'city', label: 'City' },
-    { id: 'state', label: 'State' },
-    { id: 'appraisedValue', label: 'Estimate of Value' },
-    { id: 'appraisedDate', label: 'Valuation Date' },
-    { id: 'valuationType', label: 'Valuation Type' },
-    { id: 'performedBy', label: 'Performed By' },
-    { id: 'ltv', label: 'Loan To Value' },
-    { id: 'cltv', label: 'CLTV' },
-    { id: 'pledgedEquity', label: 'Pledged Equity' },
-    { id: 'protectiveEquity', label: 'Protective Equity' },
-  ];
 
   return (
     <div className="p-6 space-y-4">
@@ -337,24 +307,24 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         </div>
       </div>
 
-      {/* Grid Toolbar */}
-      <GridToolbar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onRefresh={onRefresh}
-        filterOptions={FILTER_OPTIONS}
-        activeFilters={activeFilters}
-        onFilterChange={setFilter}
-        onClearFilters={clearFilters}
-        activeFilterCount={activeFilterCount}
-        disabled={disabled}
-        selectedCount={selectedCount}
-        onBulkDelete={() => setBulkDeleteOpen(true)}
-        onExport={() => setExportOpen(true)}
-      />
-
-      {/* Print, Map, Valuation action buttons */}
-      <div className="flex items-center gap-2">
+      {/* Grid Toolbar with Print next to Export */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex-1">
+          <GridToolbar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onRefresh={onRefresh}
+            filterOptions={FILTER_OPTIONS}
+            activeFilters={activeFilters}
+            onFilterChange={setFilter}
+            onClearFilters={clearFilters}
+            activeFilterCount={activeFilterCount}
+            disabled={disabled}
+            selectedCount={selectedCount}
+            onBulkDelete={() => setBulkDeleteOpen(true)}
+            onExport={() => setExportOpen(true)}
+          />
+        </div>
         <Button
           variant="outline"
           size="sm"
@@ -364,26 +334,6 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         >
           <Printer className="h-3.5 w-3.5" />
           Print
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1 text-xs"
-          onClick={handleMap}
-          disabled={disabled || properties.length === 0}
-        >
-          <MapPin className="h-3.5 w-3.5" />
-          Map
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1 text-xs"
-          onClick={handleValuation}
-          disabled={disabled || properties.length === 0}
-        >
-          <BarChart3 className="h-3.5 w-3.5" />
-          Valuation
         </Button>
       </div>
 
@@ -502,14 +452,6 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         fileName="properties"
       />
 
-      {/* Valuation Export Dialog */}
-      <GridExportDialog
-        open={valuationOpen}
-        onOpenChange={setValuationOpen}
-        columns={valuationColumns}
-        data={properties}
-        fileName="property_valuation"
-      />
     </div>
   );
 };
