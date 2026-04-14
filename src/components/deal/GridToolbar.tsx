@@ -54,6 +54,7 @@ export const GridToolbar: React.FC<GridToolbarProps> = ({
   disabled = false,
   selectedCount = 0,
   onBulkDelete,
+  onEdit,
   onExport,
   searchPlaceholder = 'Search...',
 }) => {
