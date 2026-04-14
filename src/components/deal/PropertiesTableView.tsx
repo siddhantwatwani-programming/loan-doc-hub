@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Printer, MapPin, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -109,10 +109,17 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'constructionType', label: 'Construction Type', visible: false },
   { id: 'zoning', label: 'Zoning', visible: false },
   { id: 'floodZone', label: 'Flood Zone', visible: true },
+  { id: 'propertyGeneratesIncome', label: 'Generates Income', visible: false },
+  { id: 'netMonthlyIncome', label: 'Net Monthly Income', visible: false },
+  { id: 'fromRent', label: 'From Rent', visible: false },
+  { id: 'fromOtherDescribe', label: 'From Other', visible: false },
   { id: 'appraisedValue', label: 'Estimate of Value', visible: true },
   { id: 'appraisedDate', label: 'Valuation Date', visible: true },
   { id: 'valuationType', label: 'Valuation Type', visible: false },
   { id: 'performedBy', label: 'Performed By', visible: false },
+  { id: 'thirdPartyFullName', label: 'Appraiser Name', visible: false },
+  { id: 'appraiserPhone', label: 'Appraiser Phone', visible: false },
+  { id: 'appraiserEmail', label: 'Appraiser Email', visible: false },
   { id: 'pledgedEquity', label: 'Pledged Equity', visible: false },
   { id: 'protectiveEquity', label: 'Protective Equity', visible: false },
   { id: 'ltv', label: 'Loan To Value', visible: true },
@@ -179,6 +186,7 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   const [columns, setColumns, resetColumns] = useTableColumnConfig('properties', DEFAULT_COLUMNS);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [valuationOpen, setValuationOpen] = useState(false);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const {
@@ -240,6 +248,16 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
       case 'purchaseDate':
       case 'yearBuilt':
         return formatDate(String(property[columnId as keyof PropertyData] || ''));
+      case 'propertyGeneratesIncome':
+        return property.propertyGeneratesIncome ? 'Yes' : 'No';
+      case 'netMonthlyIncome':
+      case 'fromRent':
+      case 'fromOtherDescribe':
+        return formatCurrency(String(property[columnId as keyof PropertyData] || ''));
+      case 'thirdPartyFullName':
+      case 'appraiserPhone':
+      case 'appraiserEmail':
+        return property[columnId as keyof PropertyData] || '-';
       default:
         return property[columnId as keyof PropertyData] || '-';
     }
@@ -256,6 +274,41 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   };
 
   const exportColumns: ExportColumn[] = DEFAULT_COLUMNS.filter(c => c.id !== 'isPrimary').map(c => ({ id: c.id, label: c.label }));
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleMap = () => {
+    // Open Google Maps for the first selected property or first property
+    const target = selectedItems.length > 0 ? selectedItems[0] : properties[0];
+    if (target) {
+      const address = [target.street, target.city, target.state, target.zipCode].filter(Boolean).join(', ');
+      if (address) {
+        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
+      }
+    }
+  };
+
+  const handleValuation = () => {
+    // Show valuation summary in export dialog with valuation-specific columns
+    setValuationOpen(true);
+  };
+
+  const valuationColumns: ExportColumn[] = [
+    { id: 'description', label: 'Description' },
+    { id: 'street', label: 'Street' },
+    { id: 'city', label: 'City' },
+    { id: 'state', label: 'State' },
+    { id: 'appraisedValue', label: 'Estimate of Value' },
+    { id: 'appraisedDate', label: 'Valuation Date' },
+    { id: 'valuationType', label: 'Valuation Type' },
+    { id: 'performedBy', label: 'Performed By' },
+    { id: 'ltv', label: 'Loan To Value' },
+    { id: 'cltv', label: 'CLTV' },
+    { id: 'pledgedEquity', label: 'Pledged Equity' },
+    { id: 'protectiveEquity', label: 'Protective Equity' },
+  ];
 
   return (
     <div className="p-6 space-y-4">
@@ -299,6 +352,40 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         onBulkDelete={() => setBulkDeleteOpen(true)}
         onExport={() => setExportOpen(true)}
       />
+
+      {/* Print, Map, Valuation action buttons */}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1 text-xs"
+          onClick={handlePrint}
+          disabled={disabled}
+        >
+          <Printer className="h-3.5 w-3.5" />
+          Print
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1 text-xs"
+          onClick={handleMap}
+          disabled={disabled || properties.length === 0}
+        >
+          <MapPin className="h-3.5 w-3.5" />
+          Map
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1 text-xs"
+          onClick={handleValuation}
+          disabled={disabled || properties.length === 0}
+        >
+          <BarChart3 className="h-3.5 w-3.5" />
+          Valuation
+        </Button>
+      </div>
 
       {/* Properties Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
@@ -413,6 +500,15 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         columns={exportColumns}
         data={properties}
         fileName="properties"
+      />
+
+      {/* Valuation Export Dialog */}
+      <GridExportDialog
+        open={valuationOpen}
+        onOpenChange={setValuationOpen}
+        columns={valuationColumns}
+        data={properties}
+        fileName="property_valuation"
       />
     </div>
   );
