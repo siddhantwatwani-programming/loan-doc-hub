@@ -590,10 +590,25 @@ function convertGlyphsToSdtCheckboxes(xml: string): string {
   // Match a <w:r> that contains an optional <w:rPr> and a <w:t> with only a checkbox glyph
   const runWithGlyphOnly = /<w:r\b[^>]*>((?:\s*<w:rPr>([\s\S]*?)<\/w:rPr>)?)\s*<w:t[^>]*>([☐☑☒])<\/w:t>\s*<\/w:r>/g;
 
-  const result = xml.replace(runWithGlyphOnly, (_match, _rPrGroup, innerRPr, glyph) => {
+  // To avoid nesting <w:sdt> inside existing <w:sdt> (which corrupts the document),
+  // first extract existing SDT blocks, process the remaining content, then restore them.
+  const sdtPlaceholders: string[] = [];
+  const sdtMarker = '\uFFFE_SDT_';
+  let safeguardedXml = xml.replace(/<w:sdt\b[\s\S]*?<\/w:sdt>/g, (sdtBlock) => {
+    const idx = sdtPlaceholders.length;
+    sdtPlaceholders.push(sdtBlock);
+    return `${sdtMarker}${idx}_`;
+  });
+
+  safeguardedXml = safeguardedXml.replace(runWithGlyphOnly, (_match, _rPrGroup, innerRPr, glyph) => {
     const isChecked = glyph === '☑' || glyph === '☒';
     count++;
     return buildSdtCheckboxXml(isChecked, innerRPr || undefined);
+  });
+
+  // Restore SDT blocks
+  const result = safeguardedXml.replace(new RegExp(`${sdtMarker.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}(\\d+)_`, 'g'), (_m, idx) => {
+    return sdtPlaceholders[parseInt(idx, 10)] || '';
   });
 
   if (count > 0) {
