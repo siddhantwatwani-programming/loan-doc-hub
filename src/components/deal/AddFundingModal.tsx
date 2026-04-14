@@ -242,6 +242,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const [fundingDateOpen, setFundingDateOpen] = useState(false);
   const [interestFromOpen, setInterestFromOpen] = useState(false);
   const [disbursementModalOpen, setDisbursementModalOpen] = useState(false);
+  const [fundingModalHidden, setFundingModalHidden] = useState(false);
   const [editingDisbursementIdx, setEditingDisbursementIdx] = useState<number | null>(null);
   // Track which field the user last edited to drive bidirectional calculation
   const [lastEditedField, setLastEditedField] = useState<'fundingAmount' | 'percentOwned' | null>(null);
