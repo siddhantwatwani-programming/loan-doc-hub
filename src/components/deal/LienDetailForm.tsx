@@ -269,7 +269,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
 
         <div className="space-y-3">
           <div className="border-b border-border pb-2">
-            <span className="font-semibold text-sm text-primary">&nbsp;</span>
+            <span className="font-semibold text-sm text-primary">Purchase Information</span>
           </div>
 
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.loanTypeDropdown}>
