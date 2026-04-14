@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +15,10 @@ import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
 import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { FilterOption } from './GridToolbar';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
+import { CreateContactModal } from '@/components/contacts/CreateContactModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { SortableTableHead } from './SortableTableHead';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
@@ -197,7 +200,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   totalPayment = '',
   loanAmount = '',
 }) => {
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [createLenderModalOpen, setCreateLenderModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<FundingRecord | null>(null);
@@ -401,7 +405,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
             <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={handleAddFundingClick} disabled={disabled}>
               <Plus className="h-3.5 w-3.5" /> Add Funding
             </Button>
-            <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={() => navigate('/contacts/lenders')} disabled={disabled}>
+            <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={() => setCreateLenderModalOpen(true)} disabled={disabled}>
               <Plus className="h-3.5 w-3.5" /> Add New Lender
             </Button>
           </div>
@@ -650,6 +654,42 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         columns={exportColumns}
         data={fundingRecords}
         fileName="funding_records"
+      />
+
+      <CreateContactModal
+        open={createLenderModalOpen}
+        onOpenChange={setCreateLenderModalOpen}
+        contactType="lender"
+        onSubmit={async (data) => {
+          if (!user) return;
+          try {
+            const fullName = data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim();
+            const { data: idData, error: idError } = await supabase.rpc('generate_contact_id', { p_type: 'lender' });
+            if (idError) throw idError;
+            const contactId = idData as string;
+            const insertPayload = {
+              contact_type: 'lender' as const,
+              contact_id: contactId,
+              created_by: user.id,
+              full_name: fullName,
+              first_name: data.first_name || '',
+              last_name: data.last_name || '',
+              email: data.email || '',
+              phone: data.phone || data['phone.cell'] || data['phone.home'] || data['phone.work'] || '',
+              city: data['primary_address.city'] || data.city || '',
+              state: data['primary_address.state'] || data.state || '',
+              company: data.company || '',
+              contact_data: data,
+            };
+            const { error } = await supabase.from('contacts').insert(insertPayload);
+            if (error) throw error;
+            toast.success('Lender created successfully');
+            setCreateLenderModalOpen(false);
+          } catch (err: any) {
+            console.error('Error creating lender:', err);
+            toast.error('Failed to create lender');
+          }
+        }}
       />
     </div>
   );
