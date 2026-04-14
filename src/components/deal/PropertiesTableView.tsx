@@ -186,7 +186,7 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   const [columns, setColumns, resetColumns] = useTableColumnConfig('properties', DEFAULT_COLUMNS);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
-  const [valuationOpen, setValuationOpen] = useState(false);
+  
   const visibleColumns = columns.filter((col) => col.visible);
 
   const {
