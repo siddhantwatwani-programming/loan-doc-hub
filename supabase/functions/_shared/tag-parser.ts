@@ -596,14 +596,31 @@ function convertGlyphsToSdtCheckboxes(xml: string): string {
   const runWithGlyphOnly = /<w:r\b[^>]*>((?:\s*<w:rPr>([\s\S]*?)<\/w:rPr>)?)\s*<w:t[^>]*>([☐☑☒])<\/w:t>\s*<\/w:r>/g;
 
   // To avoid nesting <w:sdt> inside existing <w:sdt> (which corrupts the document),
-  // first extract existing SDT blocks, process the remaining content, then restore them.
+  // extract existing SDT blocks using depth-aware matching, process the remaining
+  // content, then restore them. Uses a valid XML placeholder character (\uFFFD)
+  // instead of \uFFFE (which is illegal in XML 1.0 and causes document corruption).
   const sdtPlaceholders: string[] = [];
-  const sdtMarker = '\uFFFE_SDT_';
-  let safeguardedXml = xml.replace(/<w:sdt\b[\s\S]*?<\/w:sdt>/g, (sdtBlock) => {
-    const idx = sdtPlaceholders.length;
-    sdtPlaceholders.push(sdtBlock);
-    return `${sdtMarker}${idx}_`;
-  });
+  const sdtMarkerPrefix = '\uFFFD_SDT_PLACEHOLDER_';
+  const sdtMarkerSuffix = '_END';
+
+  // Depth-aware SDT extraction: handle nested <w:sdt> blocks correctly
+  // by finding matching open/close pairs from innermost outward.
+  let safeguardedXml = xml;
+  let extractionPass = 0;
+  const MAX_EXTRACTION_PASSES = 20;
+  while (extractionPass < MAX_EXTRACTION_PASSES) {
+    // Find SDT blocks that do NOT contain other <w:sdt> (i.e., innermost first)
+    const innerSdtPattern = /<w:sdt\b[^>]*>(?:(?!<w:sdt\b)[\s\S])*?<\/w:sdt>/g;
+    let foundAny = false;
+    safeguardedXml = safeguardedXml.replace(innerSdtPattern, (sdtBlock) => {
+      foundAny = true;
+      const idx = sdtPlaceholders.length;
+      sdtPlaceholders.push(sdtBlock);
+      return `${sdtMarkerPrefix}${idx}${sdtMarkerSuffix}`;
+    });
+    if (!foundAny) break;
+    extractionPass++;
+  }
 
   safeguardedXml = safeguardedXml.replace(runWithGlyphOnly, (_match, _rPrGroup, innerRPr, glyph) => {
     const isChecked = glyph === '☑' || glyph === '☒';
@@ -611,15 +628,23 @@ function convertGlyphsToSdtCheckboxes(xml: string): string {
     return buildSdtCheckboxXml(isChecked, innerRPr || undefined);
   });
 
-  // Restore SDT blocks
-  const result = safeguardedXml.replace(new RegExp(`${sdtMarker.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}(\\d+)_`, 'g'), (_m, idx) => {
-    return sdtPlaceholders[parseInt(idx, 10)] || '';
-  });
+  // Restore SDT blocks (reverse order to handle nesting correctly — inner restored first)
+  for (let pass = 0; pass < MAX_EXTRACTION_PASSES; pass++) {
+    const markerPattern = new RegExp(
+      escapeRegex(sdtMarkerPrefix) + '(\\d+)' + escapeRegex(sdtMarkerSuffix),
+      'g'
+    );
+    if (!markerPattern.test(safeguardedXml)) break;
+    safeguardedXml = safeguardedXml.replace(
+      new RegExp(escapeRegex(sdtMarkerPrefix) + '(\\d+)' + escapeRegex(sdtMarkerSuffix), 'g'),
+      (_m, idx) => sdtPlaceholders[parseInt(idx, 10)] || ''
+    );
+  }
 
   if (count > 0) {
     debugLog(`[tag-parser] Converted ${count} checkbox glyphs to SDT checkboxes`);
   }
-  return result;
+  return safeguardedXml;
 }
 
 function escapeRegex(value: string): string {
