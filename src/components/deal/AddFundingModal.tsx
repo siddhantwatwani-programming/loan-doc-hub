@@ -14,10 +14,14 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LenderIdSearch } from './LenderIdSearch';
 import { AccountIdSearch } from './AccountIdSearch';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
 import { formatCurrencyDisplay, unformatCurrencyDisplay, numericKeyDown, numericPaste } from '@/lib/numericInputFilter';
 
 interface AddFundingModalProps {
@@ -39,8 +43,11 @@ interface AddFundingModalProps {
 export interface DisbursementRow {
   accountId: string;
   name: string;
+  startDate: string;
+  endDate: string;
   amount: string;
   percentage: string;
+  from: 'Interest' | 'Principal' | '';
   comments: string;
 }
 
@@ -54,8 +61,8 @@ export interface PaymentRow {
   from: 'Interest' | 'Principal' | '';
 }
 
-const emptyDisbursementRow = (): DisbursementRow => ({ accountId: '', name: '', amount: '', percentage: '', comments: '' });
-const defaultDisbursements = (): DisbursementRow[] => [emptyDisbursementRow(), emptyDisbursementRow(), emptyDisbursementRow(), emptyDisbursementRow()];
+const emptyDisbursementRow = (): DisbursementRow => ({ accountId: '', name: '', startDate: '', endDate: '', amount: '', percentage: '', from: '', comments: '' });
+const defaultDisbursements = (): DisbursementRow[] => [emptyDisbursementRow()];
 
 const emptyPaymentRow = (): PaymentRow => ({ active: false, accountId: '', name: '', amount: '', percentage: '', comment: '', from: '' });
 const defaultPayments = (): PaymentRow[] => [emptyPaymentRow(), emptyPaymentRow()];
@@ -80,24 +87,27 @@ export interface FundingFormData {
   rateLenderValue: string;
   roundingAdjustment: boolean;
   disbursements: DisbursementRow[];
-  // New: principal balance and note rate for display
   principalBalance?: string;
   noteRateDisplay?: string;
-  // Override servicing
   overrideServicing?: boolean;
-  // Company Servicing Fees
   companyBaseFee?: string;
   companyBaseFeePct?: string;
   companyAdditionalServices?: string;
   companyMinimum?: string;
   companyMaximum?: string;
-  // Originating Vendor Fee
+  companyNrSitSplitPct?: string;
+  companyNrSitSplit?: string;
+  companyTotal?: string;
+  vendorId?: string;
+  vendorName?: string;
   vendorBaseFee?: string;
   vendorBaseFeePct?: string;
   vendorAdditionalServices?: string;
   vendorMinimum?: string;
   vendorMaximum?: string;
-  // Payments table
+  vendorNrSitSplitPct?: string;
+  vendorNrSitSplit?: string;
+  vendorTotal?: string;
   payments?: PaymentRow[];
   // Legacy servicing fees (kept for backward compatibility)
   overrideServicingFees: boolean;
@@ -157,7 +167,10 @@ const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: 
   principalBalance: '', noteRateDisplay: noteRate,
   overrideServicing: false,
   companyBaseFee: '', companyBaseFeePct: '', companyAdditionalServices: '', companyMinimum: '', companyMaximum: '',
+  companyNrSitSplitPct: '', companyNrSitSplit: '', companyTotal: '',
+  vendorId: '', vendorName: '',
   vendorBaseFee: '', vendorBaseFeePct: '', vendorAdditionalServices: '', vendorMinimum: '', vendorMaximum: '',
+  vendorNrSitSplitPct: '', vendorNrSitSplit: '', vendorTotal: '',
   payments: defaultPayments(),
   overrideServicingFees: false,
   companyServicingFee: '', companyServicingFeePct: '', companyMaxFee: '', companyMaxFeePct: '',
@@ -195,7 +208,10 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
         loan: loanNumber || editData.loan,
         borrower: borrowerName || editData.borrower,
         roundingAdjustment: editData.roundingAdjustment ?? false,
-        disbursements: editData.disbursements?.length ? editData.disbursements : defaultDisbursements(),
+        disbursements: editData.disbursements?.length ? editData.disbursements.map(d => ({
+          ...emptyDisbursementRow(),
+          ...d,
+        })) : defaultDisbursements(),
         payments: editData.payments?.length ? editData.payments : defaultPayments(),
         lateFee1Maximum: editData.lateFee1Maximum ?? '',
         lateFee2Maximum: editData.lateFee2Maximum ?? '',
@@ -210,6 +226,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
   const [formData, setFormData] = useState<FundingFormData>(getInitialFormData());
   const [showConfirm, setShowConfirm] = useState(false);
+  const [fundingDateOpen, setFundingDateOpen] = useState(false);
+  const [interestFromOpen, setInterestFromOpen] = useState(false);
 
   React.useEffect(() => {
     if (open) {
@@ -283,6 +301,19 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     formData.maturityLender, formData.maturityCompany, formData.maturityBroker,
   ]);
 
+  // Auto-compute company and vendor totals
+  React.useEffect(() => {
+    const sum = (vals: (string | undefined)[]) => vals.reduce((s, v) => s + (parseFloat((v || '').replace(/[$,]/g, '')) || 0), 0);
+    const companyTotal = sum([formData.companyBaseFee, formData.companyAdditionalServices, formData.companyMinimum, formData.companyMaximum, formData.companyNrSitSplit]);
+    const vendorTotal = sum([formData.vendorBaseFee, formData.vendorAdditionalServices, formData.vendorMinimum, formData.vendorMaximum, formData.vendorNrSitSplit]);
+    setFormData(prev => ({
+      ...prev,
+      companyTotal: companyTotal > 0 ? formatCurrencyDisplay(companyTotal.toFixed(2)) : '',
+      vendorTotal: vendorTotal > 0 ? formatCurrencyDisplay(vendorTotal.toFixed(2)) : '',
+    }));
+  }, [formData.companyBaseFee, formData.companyAdditionalServices, formData.companyMinimum, formData.companyMaximum, formData.companyNrSitSplit,
+      formData.vendorBaseFee, formData.vendorAdditionalServices, formData.vendorMinimum, formData.vendorMaximum, formData.vendorNrSitSplit]);
+
   const percentOwnedNum = parseFloat(formData.percentOwned) || 0;
   const percentOwnedError = percentOwnedNum > 100;
   const otherLendersTotal = existingRecords
@@ -295,11 +326,26 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleDisbursementChange = (index: number, field: keyof DisbursementRow, value: string) => {
+  const handleDisbursementChange = (index: number, field: keyof DisbursementRow, value: string | boolean) => {
     setFormData(prev => {
       const updated = [...prev.disbursements];
       updated[index] = { ...updated[index], [field]: value };
       return { ...prev, disbursements: updated };
+    });
+  };
+
+  const handleAddDisbursement = () => {
+    setFormData(prev => ({
+      ...prev,
+      disbursements: [...prev.disbursements, emptyDisbursementRow()],
+    }));
+  };
+
+  const handleDeleteDisbursement = (index: number) => {
+    setFormData(prev => {
+      const updated = [...prev.disbursements];
+      updated.splice(index, 1);
+      return { ...prev, disbursements: updated.length > 0 ? updated : defaultDisbursements() };
     });
   };
 
@@ -327,7 +373,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     });
   };
 
-  const isFormFilled = hasModalFormData(formData, ['loan', 'borrower', 'rateSelection', 'rateNoteValue', 'rateSoldValue', 'rateLenderValue', 'percentOwned', 'regularPayment', 'lenderRate', 'disbursements', 'payments', 'principalBalance', 'noteRateDisplay', 'overrideServicing', 'companyBaseFee', 'companyBaseFeePct', 'companyAdditionalServices', 'companyMinimum', 'companyMaximum', 'vendorBaseFee', 'vendorBaseFeePct', 'vendorAdditionalServices', 'vendorMinimum', 'vendorMaximum'], { brokerParticipates: false, overrideServicingFees: false, overrideDefaultFees: false, roundingAdjustment: false });
+  const isFormFilled = hasModalFormData(formData, ['loan', 'borrower', 'rateSelection', 'rateNoteValue', 'rateSoldValue', 'rateLenderValue', 'percentOwned', 'regularPayment', 'lenderRate', 'disbursements', 'payments', 'principalBalance', 'noteRateDisplay', 'overrideServicing', 'companyBaseFee', 'companyBaseFeePct', 'companyAdditionalServices', 'companyMinimum', 'companyMaximum', 'companyNrSitSplitPct', 'companyNrSitSplit', 'companyTotal', 'vendorId', 'vendorName', 'vendorBaseFee', 'vendorBaseFeePct', 'vendorAdditionalServices', 'vendorMinimum', 'vendorMaximum', 'vendorNrSitSplitPct', 'vendorNrSitSplit', 'vendorTotal'], { brokerParticipates: false, overrideServicingFees: false, overrideDefaultFees: false, roundingAdjustment: false });
 
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = () => {
@@ -354,9 +400,14 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
   const handleCancel = () => { onOpenChange(false); };
 
-  const renderCurrencyField = (field: keyof FundingFormData, placeholder = '-', disabled = false) => (
+  const servicingDisabled = !(formData.overrideServicing ?? false);
+
+  const fundingDate = formData.fundingDate ? new Date(formData.fundingDate) : undefined;
+  const interestFromDate = formData.interestFrom ? new Date(formData.interestFrom) : undefined;
+
+  const renderCurrencyInput = (field: keyof FundingFormData, placeholder = '-', disabled = false) => (
     <div className="relative flex-1">
-      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+      <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
       <Input
         value={(formData[field] as string) || ''}
         onChange={(e) => handleChange(field, e.target.value.replace(/[^0-9.]/g, ''))}
@@ -364,7 +415,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
         onPaste={(e) => numericPaste(e, (val) => handleChange(field, val))}
         onBlur={() => { const raw = formData[field] as string; if (raw) handleChange(field, formatCurrencyDisplay(raw)); }}
         onFocus={() => { const raw = formData[field] as string; if (raw) handleChange(field, unformatCurrencyDisplay(raw)); }}
-        className="h-7 text-xs pl-5"
+        className="h-6 text-[11px] pl-4"
         inputMode="decimal"
         placeholder={placeholder}
         disabled={disabled}
@@ -372,208 +423,341 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     </div>
   );
 
-  const renderPercentField = (field: keyof FundingFormData, placeholder = '%', disabled = false) => (
+  const renderPercentInput = (field: keyof FundingFormData, placeholder = '%', disabled = false) => (
     <div className="relative flex-1">
       <Input
         value={(formData[field] as string) || ''}
         onChange={(e) => handleChange(field, e.target.value.replace(/[^0-9.]/g, ''))}
         onKeyDown={numericKeyDown}
-        className="h-7 text-xs pr-5"
+        className="h-6 text-[11px] pr-4"
         inputMode="decimal"
         placeholder={placeholder}
         disabled={disabled}
       />
-      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
     </div>
   );
 
-  const servicingDisabled = !(formData.overrideServicing ?? false);
+  const renderDateField = (value: Date | undefined, onSelect: (d: Date | undefined) => void, isOpen: boolean, setOpen: (v: boolean) => void) => (
+    <Popover open={isOpen} onOpenChange={setOpen} modal={false}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className={cn('h-6 text-[11px] w-full justify-start text-left font-normal flex-1', !value && 'text-muted-foreground')}>
+          {value && !isNaN(value.getTime()) ? format(value, 'MM/dd/yyyy') : 'Date'}
+          <CalendarIcon className="ml-auto h-3 w-3" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+        <EnhancedCalendar mode="single" selected={value} onSelect={(d) => { onSelect(d); setOpen(false); }} onClear={() => { onSelect(undefined); setOpen(false); }} onToday={() => { onSelect(new Date()); setOpen(false); }} initialFocus />
+      </PopoverContent>
+    </Popover>
+  );
 
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
-        <DialogHeader className="shrink-0">
-          <DialogTitle className="text-sm font-bold underline">Funding Lender</DialogTitle>
-        </DialogHeader>
-
-        <div className="flex-1 overflow-y-auto min-h-0 space-y-4 py-2 sleek-scrollbar">
-          {/* Section 1: Basic Details - two column layout */}
-          <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
-            {/* Row 1: Lender ID | Name */}
-            <div className="flex items-center gap-2">
-              <Label className="text-xs font-medium min-w-[110px] shrink-0">Lender ID</Label>
-              <LenderIdSearch
-                value={formData.lenderId}
-                onChange={(lenderId, lenderFullName) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    lenderId,
-                    ...(lenderFullName ? { lenderFullName } : {}),
-                  }));
-                }}
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0">
+        {/* Header bar */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30">
+          <span className="text-xs font-bold">Add / Edit Lender Funding</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold">Principal Balance</span>
+            <div className="relative w-24">
+              <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
+              <Input
+                value={(formData.principalBalance as string) || ''}
+                readOnly
+                className="h-6 text-[11px] pl-4 bg-muted/50"
+                placeholder="-"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-xs font-medium min-w-[60px] shrink-0">Name</Label>
-              <Input value={formData.lenderFullName} readOnly className="h-7 text-xs bg-muted/30" />
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCancel}>
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto min-h-0 px-4 py-2 sleek-scrollbar space-y-3">
+          {/* 3-Column Layout: Lender Details | Fees to Company | Fees to Vendor */}
+          <div className="grid grid-cols-3 gap-x-4 gap-y-0">
+            {/* COLUMN 1: Lender Details */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Lender ID</Label>
+                <LenderIdSearch
+                  value={formData.lenderId}
+                  onChange={(lenderId, lenderFullName) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      lenderId,
+                      ...(lenderFullName ? { lenderFullName } : {}),
+                    }));
+                  }}
+                  className="h-6 text-[11px]"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Name</Label>
+                <Input value={formData.lenderFullName} readOnly className="h-6 text-[11px] bg-muted/30" />
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Note Rate</Label>
+                {renderPercentInput('noteRateDisplay', '%', true)}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Lender Rate</Label>
+                {renderPercentInput('lenderRate', '%')}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Funding Date</Label>
+                {renderDateField(fundingDate, (d) => handleChange('fundingDate', d ? format(d, 'yyyy-MM-dd') : ''), fundingDateOpen, setFundingDateOpen)}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Amount</Label>
+                {renderCurrencyInput('fundingAmount', '0.00')}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Interest From</Label>
+                {renderDateField(interestFromDate, (d) => handleChange('interestFrom', d ? format(d, 'yyyy-MM-dd') : ''), interestFromOpen, setInterestFromOpen)}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Pro Rata</Label>
+                {renderPercentInput('percentOwned', '%', true)}
+              </div>
             </div>
 
-            {/* Row 2: Principal Balance | Note Rate */}
-            <div className="flex items-center gap-2">
-              <Label className="text-xs font-medium min-w-[110px] shrink-0">Principal Balance</Label>
-              {renderCurrencyField('principalBalance', '-', true)}
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-xs font-medium min-w-[60px] shrink-0">Note Rate</Label>
-              {renderPercentField('noteRateDisplay', '%', true)}
+            {/* COLUMN 2: Fees to Company */}
+            <div className="space-y-1">
+              <p className="text-[11px] font-bold text-center border-b border-border pb-0.5">Fees to Company</p>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[80px] shrink-0">Override</Label>
+                <Checkbox
+                  checked={formData.overrideServicing ?? false}
+                  onCheckedChange={(checked) => handleChange('overrideServicing', !!checked)}
+                  className="h-3.5 w-3.5"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[80px] shrink-0">Base Fee</Label>
+                {renderCurrencyInput('companyBaseFee', '-', servicingDisabled)}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[80px] shrink-0">% of Principal</Label>
+                {renderPercentInput('companyBaseFeePct', '%', servicingDisabled)}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[80px] shrink-0">Services</Label>
+                {renderCurrencyInput('companyAdditionalServices', '-', servicingDisabled)}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[80px] shrink-0">Minimum</Label>
+                {renderCurrencyInput('companyMinimum', '-', servicingDisabled)}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[80px] shrink-0">Maximum</Label>
+                {renderCurrencyInput('companyMaximum', '-', servicingDisabled)}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[80px] shrink-0">NR / Sit Split</Label>
+                <div className="flex items-center gap-0.5 flex-1">
+                  {renderPercentInput('companyNrSitSplitPct', '%', servicingDisabled)}
+                  {renderCurrencyInput('companyNrSitSplit', '-', servicingDisabled)}
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[80px] shrink-0 font-bold">Total</Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
+                  <Input
+                    value={(formData.companyTotal as string) || ''}
+                    readOnly
+                    className="h-6 text-[11px] pl-4 bg-muted/30 font-semibold"
+                    placeholder="-"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Row 3: Funding Amount | Lender Rate */}
-            <div className="flex items-center gap-2">
-              <Label className="text-xs font-medium min-w-[110px] shrink-0">Funding Amount</Label>
-              {renderCurrencyField('fundingAmount', '0.00')}
-            </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-xs font-medium min-w-[60px] shrink-0">Lender Rate</Label>
-              {renderPercentField('lenderRate', '%')}
+            {/* COLUMN 3: Fees to Vendor */}
+            <div className="space-y-1">
+              <p className="text-[11px] font-bold text-center border-b border-border pb-0.5">Fees to Vendor</p>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[70px] shrink-0">Vendor ID</Label>
+                <AccountIdSearch
+                  value={formData.vendorId || ''}
+                  onChange={(vendorId, vendorName) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      vendorId,
+                      ...(vendorName ? { vendorName } : {}),
+                    }));
+                  }}
+                  className="h-6 text-[11px]"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[70px] shrink-0">Name</Label>
+                <Input value={formData.vendorName || ''} readOnly className="h-6 text-[11px] bg-muted/30" />
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[70px] shrink-0">Base Fee</Label>
+                {renderCurrencyInput('vendorBaseFee', '-', servicingDisabled)}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[70px] shrink-0">Additional</Label>
+                {renderCurrencyInput('vendorAdditionalServices', '-', servicingDisabled)}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[70px] shrink-0">Minimum</Label>
+                {renderCurrencyInput('vendorMinimum', '-', servicingDisabled)}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[70px] shrink-0">Maximum</Label>
+                {renderCurrencyInput('vendorMaximum', '-', servicingDisabled)}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[70px] shrink-0">NR / Sit Split</Label>
+                <div className="flex items-center gap-0.5 flex-1">
+                  {renderPercentInput('vendorNrSitSplitPct', '%', servicingDisabled)}
+                  {renderCurrencyInput('vendorNrSitSplit', '-', servicingDisabled)}
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] min-w-[70px] shrink-0 font-bold">Total</Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
+                  <Input
+                    value={(formData.vendorTotal as string) || ''}
+                    readOnly
+                    className="h-6 text-[11px] pl-4 bg-muted/30 font-semibold"
+                    placeholder="-"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Validation messages */}
           {percentOwnedError && (
-            <p className="text-xs text-destructive font-medium">Percent Owned cannot exceed 100%</p>
+            <p className="text-[10px] text-destructive font-medium">Percent Owned cannot exceed 100%</p>
           )}
           {totalPercentError && !percentOwnedError && (
-            <p className="text-xs text-destructive font-medium">Total ownership across all lenders exceeds 100%</p>
+            <p className="text-[10px] text-destructive font-medium">Total ownership across all lenders exceeds 100%</p>
           )}
 
-          {/* Section 2: Override Servicing */}
-          <div className="flex items-center gap-2 pt-1">
-            <Label className="text-xs font-bold">Override Servicing</Label>
-            <Checkbox
-              checked={formData.overrideServicing ?? false}
-              onCheckedChange={(checked) => handleChange('overrideServicing', !!checked)}
-              className="h-3.5 w-3.5"
-            />
-          </div>
-
-          {/* Section 3: Two-column Fees */}
-          <div className="grid grid-cols-2 gap-x-6">
-            {/* Company Servicing Fees */}
-            <div className="space-y-1.5">
-              <p className="text-xs font-bold underline">Company Servicing Fees</p>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs min-w-[110px] shrink-0">Base Fee</Label>
-                {renderCurrencyField('companyBaseFee', '-', servicingDisabled)}
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs min-w-[110px] shrink-0"></Label>
-                {renderPercentField('companyBaseFeePct', '%', servicingDisabled)}
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs min-w-[110px] shrink-0">Additional Services</Label>
-                {renderCurrencyField('companyAdditionalServices', '-', servicingDisabled)}
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs min-w-[110px] shrink-0">Minimum</Label>
-                {renderCurrencyField('companyMinimum', '-', servicingDisabled)}
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs min-w-[110px] shrink-0">Maximum</Label>
-                {renderCurrencyField('companyMaximum', '-', servicingDisabled)}
-              </div>
-            </div>
-
-            {/* Originating Vendor Fee */}
-            <div className="space-y-1.5">
-              <p className="text-xs font-bold underline">Originating Vendor Fee</p>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs min-w-[110px] shrink-0">Base Fee</Label>
-                {renderCurrencyField('vendorBaseFee', '-', servicingDisabled)}
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs min-w-[110px] shrink-0"></Label>
-                {renderPercentField('vendorBaseFeePct', '%', servicingDisabled)}
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs min-w-[110px] shrink-0">Additional Services</Label>
-                {renderCurrencyField('vendorAdditionalServices', '-', servicingDisabled)}
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs min-w-[110px] shrink-0">Minimum</Label>
-                {renderCurrencyField('vendorMinimum', '-', servicingDisabled)}
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs min-w-[110px] shrink-0">Maximum</Label>
-                {renderCurrencyField('vendorMaximum', '-', servicingDisabled)}
-              </div>
-            </div>
-          </div>
-
-          {/* Section 4: Payments Table */}
-          <div className="space-y-1.5">
+          {/* Checkboxes row */}
+          <div className="space-y-1 pt-1">
             <div className="flex items-center gap-2">
-              <p className="text-xs font-bold">Payments</p>
-              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={handleAddPaymentRow} title="Add payment row">
+              <Checkbox
+                checked={formData.roundingAdjustment}
+                onCheckedChange={(checked) => handleChange('roundingAdjustment', !!checked)}
+                className="h-3.5 w-3.5"
+              />
+              <Label className="text-[11px] font-medium cursor-pointer">Rounding Adjustment</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={formData.brokerParticipates}
+                onCheckedChange={(checked) => handleChange('brokerParticipates', !!checked)}
+                className="h-3.5 w-3.5"
+              />
+              <Label className="text-[11px] font-medium italic cursor-pointer">Lender is Originating Broker, Employee of Broker, or Family Member</Label>
+            </div>
+          </div>
+
+          {/* Disbursements from Lender Proceeds */}
+          <div className="space-y-1 border-t border-border pt-2">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold underline text-foreground">Disbursements from Lender Proceeds</p>
+              <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" onClick={handleAddDisbursement}>
                 <Plus className="h-3 w-3" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-5 w-5" title="Edit">
-                <Pencil className="h-3 w-3" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-5 w-5" title="Delete">
-                <Trash2 className="h-3 w-3" />
+                Add Disbursement
               </Button>
             </div>
             <div className="overflow-x-auto border border-border rounded">
-              <table className="w-full text-xs">
+              <table className="w-full text-[11px]">
                 <thead>
                   <tr className="bg-muted/50 border-b border-border">
-                    <th className="text-left py-1 px-1.5 font-semibold text-muted-foreground w-[50px]">Active</th>
-                    <th className="text-left py-1 px-1.5 font-semibold text-muted-foreground min-w-[90px]">Account ID</th>
-                    <th className="text-left py-1 px-1.5 font-semibold text-muted-foreground min-w-[90px]">Name</th>
-                    <th className="text-left py-1 px-1.5 font-semibold text-muted-foreground min-w-[70px]">Amount</th>
-                    <th className="text-left py-1 px-1.5 font-semibold text-muted-foreground min-w-[70px]">Percentage</th>
-                    <th className="text-left py-1 px-1.5 font-semibold text-muted-foreground min-w-[80px]">Comment</th>
-                    <th className="text-left py-1 px-1.5 font-semibold text-muted-foreground min-w-[90px]">From</th>
-                    <th className="w-[30px]"></th>
+                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground w-[40px]">Active</th>
+                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Account ID</th>
+                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">Name</th>
+                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">Start Date</th>
+                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">End Date</th>
+                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[60px]">Amount</th>
+                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[55px]">Percentage</th>
+                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">From</th>
+                    <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">Comment</th>
+                    <th className="w-[50px]"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(formData.payments || defaultPayments()).map((row, idx) => (
+                  {formData.disbursements.map((row, idx) => (
                     <tr key={idx} className="border-b border-border last:border-b-0">
-                      <td className="py-0.5 px-1.5">
+                      <td className="py-0.5 px-1">
                         <Checkbox
-                          checked={row.active}
-                          onCheckedChange={(checked) => handlePaymentChange(idx, 'active', !!checked)}
-                          className="h-3.5 w-3.5"
+                          checked={true}
+                          className="h-3 w-3"
+                          disabled
                         />
                       </td>
-                      <td className="py-0.5 px-1.5">
+                      <td className="py-0.5 px-1">
                         <AccountIdSearch
                           value={row.accountId}
                           onChange={(accountId, name) => {
-                            const payments = [...(formData.payments || defaultPayments())];
-                            payments[idx] = { ...payments[idx], accountId, ...(name ? { name } : {}) };
-                            setFormData(prev => ({ ...prev, payments }));
+                            const updated = [...formData.disbursements];
+                            updated[idx] = { ...updated[idx], accountId, ...(name ? { name } : {}) };
+                            setFormData(prev => ({ ...prev, disbursements: updated }));
                           }}
+                          className="h-5 text-[10px]"
                         />
                       </td>
-                      <td className="py-0.5 px-1.5">
-                        <Input value={row.name} onChange={(e) => handlePaymentChange(idx, 'name', e.target.value)} className="h-6 text-xs" placeholder="Name" />
+                      <td className="py-0.5 px-1">
+                        <Input value={row.name} onChange={(e) => handleDisbursementChange(idx, 'name', e.target.value)} className="h-5 text-[10px]" placeholder="Name" />
                       </td>
-                      <td className="py-0.5 px-1.5">
-                        <Input value={row.amount} onChange={(e) => handlePaymentChange(idx, 'amount', e.target.value.replace(/[^0-9.]/g, ''))} onKeyDown={numericKeyDown} className="h-6 text-xs" inputMode="decimal" placeholder="##" />
+                      <td className="py-0.5 px-1">
+                        <Input
+                          type="date"
+                          value={row.startDate || ''}
+                          onChange={(e) => handleDisbursementChange(idx, 'startDate', e.target.value)}
+                          className="h-5 text-[10px]"
+                        />
                       </td>
-                      <td className="py-0.5 px-1.5">
-                        <Input value={row.percentage} onChange={(e) => handlePaymentChange(idx, 'percentage', e.target.value.replace(/[^0-9.]/g, ''))} onKeyDown={numericKeyDown} className="h-6 text-xs" inputMode="decimal" placeholder="%" />
+                      <td className="py-0.5 px-1">
+                        <Input
+                          type="date"
+                          value={row.endDate || ''}
+                          onChange={(e) => handleDisbursementChange(idx, 'endDate', e.target.value)}
+                          className="h-5 text-[10px]"
+                        />
                       </td>
-                      <td className="py-0.5 px-1.5">
-                        <Input value={row.comment} onChange={(e) => handlePaymentChange(idx, 'comment', e.target.value)} className="h-6 text-xs" />
+                      <td className="py-0.5 px-1">
+                        <div className="relative">
+                          <span className="absolute left-1 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground">$</span>
+                          <Input
+                            value={row.amount}
+                            onChange={(e) => handleDisbursementChange(idx, 'amount', e.target.value.replace(/[^0-9.]/g, ''))}
+                            onKeyDown={numericKeyDown}
+                            className="h-5 text-[10px] pl-3"
+                            inputMode="decimal"
+                            placeholder="-"
+                          />
+                        </div>
                       </td>
-                      <td className="py-0.5 px-1.5">
-                        <Select value={row.from || undefined} onValueChange={(val) => handlePaymentChange(idx, 'from', val)}>
-                          <SelectTrigger className="h-6 text-xs">
+                      <td className="py-0.5 px-1">
+                        <div className="relative">
+                          <Input
+                            value={row.percentage}
+                            onChange={(e) => handleDisbursementChange(idx, 'percentage', e.target.value.replace(/[^0-9.]/g, ''))}
+                            onKeyDown={numericKeyDown}
+                            className="h-5 text-[10px] pr-3"
+                            inputMode="decimal"
+                            placeholder="%"
+                          />
+                          <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground">%</span>
+                        </div>
+                      </td>
+                      <td className="py-0.5 px-1">
+                        <Select value={row.from || undefined} onValueChange={(val) => handleDisbursementChange(idx, 'from', val)}>
+                          <SelectTrigger className="h-5 text-[10px]">
                             <SelectValue placeholder="Dropdown" />
                           </SelectTrigger>
                           <SelectContent className="!z-[9999]" position="popper" sideOffset={4}>
@@ -582,12 +766,18 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                           </SelectContent>
                         </Select>
                       </td>
-                      <td className="py-0.5 px-1.5">
-                        {(formData.payments || []).length > 1 && (
-                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleDeletePaymentRow(idx)}>
-                            <Trash2 className="h-3 w-3 text-destructive" />
+                      <td className="py-0.5 px-1">
+                        <Input value={row.comments} onChange={(e) => handleDisbursementChange(idx, 'comments', e.target.value)} className="h-5 text-[10px]" />
+                      </td>
+                      <td className="py-0.5 px-1 text-center">
+                        <div className="flex items-center gap-0.5 justify-center">
+                          <Button variant="ghost" size="icon" className="h-5 w-5" title="Edit">
+                            <Pencil className="h-2.5 w-2.5 text-muted-foreground" />
                           </Button>
-                        )}
+                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleDeleteDisbursement(idx)} title="Delete">
+                            <Trash2 className="h-2.5 w-2.5 text-destructive" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -608,7 +798,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
           </div>
         </div>
 
-        <DialogFooter className="shrink-0 border-t border-border pt-3">
+        <DialogFooter className="shrink-0 border-t border-border px-4 py-2">
           <Button variant="outline" size="sm" onClick={handleCancel}>Cancel</Button>
           <Button size="sm" onClick={handleSaveClick} disabled={percentOwnedError || totalPercentError || !isFormFilled}>
             {isEditing ? 'Update Funding' : 'Save Funding'}
