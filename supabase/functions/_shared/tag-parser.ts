@@ -519,11 +519,16 @@ export function parseWordMergeFields(content: string): ParsedMergeTag[] {
   if (content.includes('{{') && content.includes('}}')) {
     const curlyPattern = /\{\{([^{}<|]+)(?:\s*\|\s*([^{}<]+))?\}\}/g;
     while ((match = curlyPattern.exec(content)) !== null) {
+      const tagName = match[1].trim();
+      // Skip conditional/control tags — these are handled by processConditionalBlocks
+      if (/^#if\s|^#unless\s|^#each\s|^\/if$|^\/unless$|^\/each$|^else$/.test(tagName)) {
+        continue;
+      }
       if (!seenTags.has(match[0])) {
         seenTags.add(match[0]);
         tags.push({
           fullMatch: match[0],
-          tagName: match[1].trim(),
+          tagName,
           inlineTransform: match[2]?.trim() || null,
         });
       }
