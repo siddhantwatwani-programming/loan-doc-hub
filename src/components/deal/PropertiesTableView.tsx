@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Printer, MapPin, BarChart3 } from 'lucide-react';
+import { Plus, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -337,24 +337,24 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         </div>
       </div>
 
-      {/* Grid Toolbar */}
-      <GridToolbar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onRefresh={onRefresh}
-        filterOptions={FILTER_OPTIONS}
-        activeFilters={activeFilters}
-        onFilterChange={setFilter}
-        onClearFilters={clearFilters}
-        activeFilterCount={activeFilterCount}
-        disabled={disabled}
-        selectedCount={selectedCount}
-        onBulkDelete={() => setBulkDeleteOpen(true)}
-        onExport={() => setExportOpen(true)}
-      />
-
-      {/* Print, Map, Valuation action buttons */}
-      <div className="flex items-center gap-2">
+      {/* Grid Toolbar with Print next to Export */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex-1">
+          <GridToolbar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onRefresh={onRefresh}
+            filterOptions={FILTER_OPTIONS}
+            activeFilters={activeFilters}
+            onFilterChange={setFilter}
+            onClearFilters={clearFilters}
+            activeFilterCount={activeFilterCount}
+            disabled={disabled}
+            selectedCount={selectedCount}
+            onBulkDelete={() => setBulkDeleteOpen(true)}
+            onExport={() => setExportOpen(true)}
+          />
+        </div>
         <Button
           variant="outline"
           size="sm"
@@ -364,26 +364,6 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         >
           <Printer className="h-3.5 w-3.5" />
           Print
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1 text-xs"
-          onClick={handleMap}
-          disabled={disabled || properties.length === 0}
-        >
-          <MapPin className="h-3.5 w-3.5" />
-          Map
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1 text-xs"
-          onClick={handleValuation}
-          disabled={disabled || properties.length === 0}
-        >
-          <BarChart3 className="h-3.5 w-3.5" />
-          Valuation
         </Button>
       </div>
 
