@@ -15,6 +15,7 @@ import { useTableColumnConfig } from '@/hooks/useTableColumnConfig';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { useGridSortFilter } from '@/hooks/useGridSortFilter';
 import { useGridSelection } from '@/hooks/useGridSelection';
+import { FilterOption } from './GridToolbar';
 import { formatCurrencyDisplay } from '@/lib/numericInputFilter';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
