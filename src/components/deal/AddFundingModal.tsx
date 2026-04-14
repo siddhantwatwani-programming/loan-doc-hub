@@ -48,8 +48,16 @@ export interface DisbursementRow {
   endDate: string;
   amount: string;
   percentage: string;
-  from: 'Interest' | 'Principal' | '';
+  from: 'Interest' | 'Principal' | 'Payment' | '';
   comments: string;
+  debitPercent: string;
+  debitOf: 'Payment' | 'Interest' | 'Principal' | '';
+  plusAmount: string;
+  minimumAmount: string;
+  debitThrough: 'date' | 'amount' | 'payments' | 'payoff' | '';
+  debitThroughDate: string;
+  debitThroughAmount: string;
+  debitThroughPayments: string;
 }
 
 export interface PaymentRow {
@@ -62,8 +70,12 @@ export interface PaymentRow {
   from: 'Interest' | 'Principal' | '';
 }
 
-const emptyDisbursementRow = (): DisbursementRow => ({ accountId: '', name: '', startDate: '', endDate: '', amount: '', percentage: '', from: '', comments: '' });
-const defaultDisbursements = (): DisbursementRow[] => [emptyDisbursementRow()];
+const emptyDisbursementRow = (): DisbursementRow => ({
+  accountId: '', name: '', startDate: '', endDate: '', amount: '', percentage: '', from: '', comments: '',
+  debitPercent: '', debitOf: '', plusAmount: '', minimumAmount: '',
+  debitThrough: '', debitThroughDate: '', debitThroughAmount: '', debitThroughPayments: '',
+});
+const defaultDisbursements = (): DisbursementRow[] => [];
 
 const emptyPaymentRow = (): PaymentRow => ({ active: false, accountId: '', name: '', amount: '', percentage: '', comment: '', from: '' });
 const defaultPayments = (): PaymentRow[] => [emptyPaymentRow(), emptyPaymentRow()];
