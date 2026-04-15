@@ -1017,7 +1017,6 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       values={values}
                       onValueChange={updateValue}
                       onRemoveValuesByPrefix={removeValuesByPrefix}
-                      saveDraft={saveDraft}
                       showValidation={showValidation}
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
