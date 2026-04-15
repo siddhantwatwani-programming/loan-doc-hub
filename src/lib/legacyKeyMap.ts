@@ -800,6 +800,16 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'charges.accrued_interest': 'ch_p_accruedIntere',
   'charges.owed_from': 'ch_p_owedFrom',
   'charges.distribute_between_all_lenders': 'ch_p_distribuBetweenAll',
+  'charges.department': 'ch_p_department',
+  'charges.category': 'ch_p_category',
+  'charges.details': 'ch_p_details',
+  'charges.current_balance': 'ch_p_currentBalance',
+  'charges.balance_due_as_of': 'ch_p_balanceDueAsOf',
+  'charges.balance_due': 'ch_p_balanceDue',
+  'charges.advanced_by_deferred': 'ch_p_advancedByDeferred',
+  'charges.advanced_by_total': 'ch_p_advancedByTotal',
+  'charges.on_behalf_of_billing': 'ch_p_onBehalfOfBilling',
+  'charges.on_behalf_of_total': 'ch_p_onBehalfOfTotal',
 
   // Charge dictionary format keys (used by CHARGE_UI_TO_DICT reverse mapping)
   'charge_date': 'ch_p_dateOfCharge',
