@@ -246,19 +246,17 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                 </div>
                 {renderInlineField('county', 'County')}
 
-                <div className="pt-2">
-                  <span className="text-xs font-medium text-primary">Purchase Information</span>
-                </div>
-                {renderInlineField('purchaseDate', 'Purchase Date', 'date')}
-                {renderCurrencyField('purchasePrice', 'Purchase Price')}
-                {renderCurrencyField('downPayment', 'Down Payment')}
               </div>
 
               {/* Column 2 — Characteristics */}
               <div className="space-y-1.5">
                 <div className="border-b border-border pb-1 mb-2">
-                  <span className="font-semibold text-xs text-primary">&nbsp;</span>
+                  <span className="font-semibold text-xs text-primary">Purchase Information</span>
                 </div>
+                {renderInlineField('purchaseDate', 'Purchase Date', 'date')}
+                {renderCurrencyField('purchasePrice', 'Purchase Price')}
+                {renderCurrencyField('downPayment', 'Down Payment')}
+
                 {renderInlineSelect('propertyType', 'Property Type', PROPERTY_TYPE_OPTIONS, 'Select type')}
                 {renderInlineSelect('occupancy', 'Occupancy', OCCUPANCY_OPTIONS, 'Select')}
                 {renderInlineField('yearBuilt', 'Year Built', 'date')}
