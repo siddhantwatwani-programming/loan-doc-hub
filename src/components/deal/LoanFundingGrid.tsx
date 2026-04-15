@@ -9,6 +9,7 @@ import {
 import { Plus, Trash2, Pencil, Loader2, Download, Search, X, Filter, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
+import { FundingAdjustmentModal, FundingAdjustmentData } from './FundingAdjustmentModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { FundingHistoryDialog } from './FundingHistoryDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
