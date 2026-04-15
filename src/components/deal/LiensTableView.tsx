@@ -144,7 +144,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
 }) => {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
-  const [columns, setColumns, resetColumns] = useTableColumnConfig('liens', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('liens_v2', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const {
@@ -257,7 +257,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                     sortColumnId={sortState.columnId}
                     sortDirection={sortState.direction}
                     onSort={toggleSort}
-                    className={['originalBalance', 'balanceAfter', 'regularPayment'].includes(col.id) ? 'min-w-[120px] text-right' : 'min-w-[100px]'}
+                    className={['originalBalance', 'currentBalance', 'regularPayment'].includes(col.id) ? 'min-w-[120px] text-right' : 'min-w-[100px]'}
                   />
                 ))}
               </TableRow>
@@ -276,7 +276,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                       <Checkbox checked={selectedIds.has(lien.id)} onCheckedChange={() => toggleOne(lien.id)} aria-label={`Select lien`} />
                     </TableCell>
                     {visibleColumns.map((col) => (
-                      <TableCell key={col.id} className={['originalBalance', 'balanceAfter', 'regularPayment'].includes(col.id) ? 'text-right' : ''}>
+                      <TableCell key={col.id} className={['originalBalance', 'currentBalance', 'regularPayment'].includes(col.id) ? 'text-right' : ''}>
                         {renderCellValue(lien, col.id)}
                       </TableCell>
                     ))}
