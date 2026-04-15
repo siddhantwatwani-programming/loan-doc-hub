@@ -166,6 +166,9 @@ interface LoanFundingGridProps {
   soldRate?: string;
   totalPayment?: string;
   loanAmount?: string;
+  // Funding Adjustment
+  fundingAdjustments?: FundingAdjustmentData[];
+  onSaveAdjustment?: (adjustment: FundingAdjustmentData) => void;
 }
 
 const SEARCH_FIELDS = ['lenderAccount', 'lenderName'];
