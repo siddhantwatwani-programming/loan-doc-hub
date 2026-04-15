@@ -547,7 +547,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   const handleLoanNumberChange = useCallback((value: string) => {
     loanNumberEdited.current = true;
     setLocalLoanNumber(value);
-    onValueChange('loan_terms.loan_number', value);
+    onValueChange('Terms.LoanNumber', value);
   }, [onValueChange]);
 
   const handleBorrowerNameChange = useCallback((value: string) => {
