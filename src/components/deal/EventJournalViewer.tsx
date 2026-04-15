@@ -120,6 +120,7 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
   }
 
   return (
+    <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-lg text-foreground">Events Journal</h3>
@@ -239,6 +240,7 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
         data={allEntries || []}
         fileName="event_journal"
       />
+    </div>
     </div>
   );
 };

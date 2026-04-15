@@ -101,7 +101,8 @@ const LenderEventsJournal: React.FC<{ lenderId: string; contactDbId: string }> =
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
+    <div className="p-6 space-y-4">
       <h4 className="text-lg font-semibold text-foreground">Events Journal</h4>
 
       <GridToolbar
@@ -191,6 +192,7 @@ const LenderEventsJournal: React.FC<{ lenderId: string; contactDbId: string }> =
         data={entries}
         fileName="lender_event_journal"
       />
+    </div>
     </div>
   );
 };
