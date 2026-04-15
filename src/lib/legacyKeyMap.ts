@@ -1376,6 +1376,7 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'notes_entry.content': 'nt_p_content',
   'notes_entry.type': 'nt_p_type',
   'notes_entry.attachments': 'nt_p_attachments',
+  'notes_entry.meta': 'nt_p_notes',
 
   // ──────────────────────────────────────────────────
   // ORIGINATION APPLICATION
