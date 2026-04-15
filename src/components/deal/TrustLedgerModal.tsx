@@ -248,7 +248,7 @@ export const TrustLedgerModal: React.FC<TrustLedgerModalProps> = ({
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
-                <SelectContent className="z-[9999]">
+                <SelectContent>
                   <SelectItem value="all">All Transactions</SelectItem>
                   <SelectItem value="reserve">Reserve</SelectItem>
                   <SelectItem value="impound">Impound</SelectItem>
