@@ -191,15 +191,7 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
           </DirtyFieldWrapper>
 
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.companyName}>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Ins. Company</Label>
-              <Select value={insurance.companyName || undefined} onValueChange={(val) => onChange('companyName', val)} disabled={disabled}>
-                <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select company" /></SelectTrigger>
-                <SelectContent className="bg-background border border-border z-50 max-h-60">
-                  {US_HOME_INSURANCE_COMPANIES.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-                </SelectContent>
-              </Select>
-            </div>
+            {renderField('companyName', 'Ins. Company')}
           </DirtyFieldWrapper>
           {renderField('policyNumber', 'Policy Number')}
           {renderField('expiration', 'Expiration', { type: 'date' })}
