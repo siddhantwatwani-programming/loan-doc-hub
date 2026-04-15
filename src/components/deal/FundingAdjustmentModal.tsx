@@ -505,24 +505,16 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
             </div>
           </div>
 
-          {/* Description and Type */}
+          {/* Description */}
           <div className="flex items-end gap-4 justify-end">
             <div className="flex flex-col gap-1">
               <Label className="text-xs text-muted-foreground">Description</Label>
-              <Input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="h-7 text-xs w-44"
-                placeholder="Description"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label className="text-xs text-muted-foreground">Type</Label>
-              <Select value={descriptionType} onValueChange={setDescriptionType}>
+              <Select value={description || '__none__'} onValueChange={(v) => setDescription(v === '__none__' ? '' : v)}>
                 <SelectTrigger className="h-7 text-xs w-44">
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder="Select description" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[9999]">
+                  <SelectItem value="__none__" className="text-xs text-muted-foreground">Select description</SelectItem>
                   {DESCRIPTION_TYPE_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value} className="text-xs">
                       {opt.label}
