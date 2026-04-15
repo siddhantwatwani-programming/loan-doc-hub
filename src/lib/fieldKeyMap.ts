@@ -682,6 +682,16 @@ export const CHARGES_DETAIL_KEYS = {
   amountOwedByBorrower: 'charges.amount_owed_by_borrower',
   accruedInterest: 'charges.accrued_interest',
   distributeBetweenAllLenders: 'charges.distribute_between_all_lenders',
+  department: 'charges.department',
+  category: 'charges.category',
+  details: 'charges.details',
+  currentBalance: 'charges.current_balance',
+  balanceDueAsOf: 'charges.balance_due_as_of',
+  balanceDue: 'charges.balance_due',
+  advancedByDeferred: 'charges.advanced_by_deferred',
+  advancedByTotal: 'charges.advanced_by_total',
+  onBehalfOfBilling: 'charges.on_behalf_of_billing',
+  onBehalfOfTotal: 'charges.on_behalf_of_total',
 } as const;
 
 // ──────────────────────────────────────────────────
