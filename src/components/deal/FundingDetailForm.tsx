@@ -92,14 +92,14 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
         <div className="flex items-center gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0">Loan Account</Label>
-          <Input value={data.loan} disabled className="h-7 text-sm opacity-50 bg-muted" />
+          <Input value={data.loan} onChange={(e) => handleChange('loan', e.target.value)} className="h-7 text-sm" />
         </div>
         <div className="flex items-start gap-3">
           <Label className="text-sm text-muted-foreground min-w-[110px] text-left shrink-0 mt-1">Borrower</Label>
           <textarea
             value={data.borrower}
-            disabled
-            className="flex w-full rounded-md border border-input bg-muted px-3 py-1.5 text-sm opacity-50 resize-none min-h-[48px]"
+            onChange={(e) => handleChange('borrower', e.target.value)}
+            className="flex w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm resize-none min-h-[48px]"
             rows={2}
           />
         </div>
