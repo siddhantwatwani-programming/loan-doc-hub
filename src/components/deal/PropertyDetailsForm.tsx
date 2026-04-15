@@ -61,6 +61,20 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   const handleCurrencyChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value));
   const handlePercentageChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value).replace(/-/g, ''));
 
+  // Auto-calculate Loan To Value = Loan Amount / Purchase Price
+  useEffect(() => {
+    const loanAmountRaw = values['loan_terms.loan_amount'] || '';
+    const purchasePriceRaw = getFieldValue(FIELD_KEYS.purchasePrice);
+    const loanAmount = parseFloat(loanAmountRaw.replace(/[,$]/g, ''));
+    const purchasePrice = parseFloat(purchasePriceRaw.replace(/[,$]/g, ''));
+    if (!isNaN(loanAmount) && !isNaN(purchasePrice) && purchasePrice > 0) {
+      const ltv = ((loanAmount / purchasePrice) * 100).toFixed(2);
+      if (getFieldValue(FIELD_KEYS.ltv) !== ltv) {
+        onValueChange(FIELD_KEYS.ltv, ltv);
+      }
+    }
+  }, [values['loan_terms.loan_amount'], values[FIELD_KEYS.purchasePrice]]);
+
   const isCopyBorrower = getFieldValue(FIELD_KEYS.copyBorrowerAddress) === 'true';
   const borrowerStreet = values['borrower.address.street'] || '';
   const borrowerCity = values['borrower.address.city'] || '';
