@@ -235,6 +235,19 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     return [];
   }, [values]);
 
+  // Parse funding adjustments from stored JSON value
+  const fundingAdjustments: FundingAdjustmentData[] = useMemo(() => {
+    const storedValue = values[FIELD_KEYS.fundingAdjustments];
+    if (storedValue) {
+      try {
+        return JSON.parse(storedValue);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }, [values]);
+
   // ── Fallback hydration: load funding data directly from DB if values are empty ──
   useEffect(() => {
     if (hydrationAttemptedRef.current) return;
@@ -250,7 +263,8 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       try {
         const recId = await resolveFieldDictId(FIELD_KEYS.fundingRecords, dictCacheRef.current);
         const histId = await resolveFieldDictId(FIELD_KEYS.fundingHistory, dictCacheRef.current);
-        if (!recId && !histId) return;
+        const adjId = await resolveFieldDictId(FIELD_KEYS.fundingAdjustments, dictCacheRef.current);
+        if (!recId && !histId && !adjId) return;
 
         const { data: sectionRows, error } = await supabase
           .from('deal_section_values')
@@ -269,6 +283,10 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
           if (histId && fv[histId]) {
             const val = fv[histId].value_text;
             if (val) onValueChange(FIELD_KEYS.fundingHistory, val);
+          }
+          if (adjId && fv[adjId]) {
+            const val = fv[adjId].value_text;
+            if (val) onValueChange(FIELD_KEYS.fundingAdjustments, val);
           }
         }
       } catch (err) {
