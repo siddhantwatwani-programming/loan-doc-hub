@@ -297,7 +297,6 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
                     value={adjustmentAmount}
                     onChange={(e) => setAdjustmentAmount(e.target.value)}
                     onKeyDown={numericKeyDown}
-                    onPaste={numericPaste}
                     onBlur={() => {
                       if (adjustmentAmount) {
                         setAdjustmentAmount(formatCurrencyDisplay(adjustmentAmount));
@@ -390,7 +389,7 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
                           <LenderIdSearch
                             value={lender.lenderId}
                             onChange={(val) => handleLenderChange(lender.id, 'lenderId', val)}
-                            onSelect={(id, name) => handleLenderSelect(lender.id, id, name)}
+                            
                             className="h-6 text-xs"
                           />
                         </TableCell>
@@ -408,7 +407,6 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
                               value={lender.currentBalance}
                               onChange={(e) => handleLenderChange(lender.id, 'currentBalance', e.target.value)}
                               onKeyDown={numericKeyDown}
-                              onPaste={numericPaste}
                               onBlur={() => {
                                 if (lender.currentBalance) {
                                   handleLenderChange(lender.id, 'currentBalance', formatCurrencyDisplay(lender.currentBalance));
@@ -425,7 +423,6 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
                               value={lender.adjustment}
                               onChange={(e) => handleLenderChange(lender.id, 'adjustment', e.target.value)}
                               onKeyDown={numericKeyDown}
-                              onPaste={numericPaste}
                               onBlur={() => {
                                 if (lender.adjustment) {
                                   handleLenderChange(lender.id, 'adjustment', formatCurrencyDisplay(lender.adjustment));
@@ -441,7 +438,6 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
                               value={lender.proRata}
                               onChange={(e) => handleLenderChange(lender.id, 'proRata', e.target.value)}
                               onKeyDown={numericKeyDown}
-                              onPaste={numericPaste}
                               className="h-6 text-xs text-right pr-5"
                             />
                             <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
@@ -453,7 +449,6 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
                               value={lender.lenderRate}
                               onChange={(e) => handleLenderChange(lender.id, 'lenderRate', e.target.value)}
                               onKeyDown={numericKeyDown}
-                              onPaste={numericPaste}
                               className="h-6 text-xs text-right pr-5"
                             />
                             <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
@@ -466,7 +461,6 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
                               value={lender.payment}
                               onChange={(e) => handleLenderChange(lender.id, 'payment', e.target.value)}
                               onKeyDown={numericKeyDown}
-                              onPaste={numericPaste}
                               onBlur={() => {
                                 if (lender.payment) {
                                   handleLenderChange(lender.id, 'payment', formatCurrencyDisplay(lender.payment));
