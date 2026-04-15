@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { LoanFundingGrid } from './LoanFundingGrid';
 import type { FundingRecord } from './LoanFundingGrid';
+import type { FundingAdjustmentData } from './FundingAdjustmentModal';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { FieldDefinition } from '@/hooks/useDealFields';
@@ -19,6 +20,7 @@ const safeParseFloat = (v: string | undefined): number => {
 const FIELD_KEYS = {
   fundingRecords: 'loan_terms.funding_records',
   fundingHistory: 'loan_terms.funding_history',
+  fundingAdjustments: 'loan_terms.funding_adjustments',
 } as const;
 
 interface LoanTermsFundingFormProps {
@@ -233,6 +235,19 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     return [];
   }, [values]);
 
+  // Parse funding adjustments from stored JSON value
+  const fundingAdjustments: FundingAdjustmentData[] = useMemo(() => {
+    const storedValue = values[FIELD_KEYS.fundingAdjustments];
+    if (storedValue) {
+      try {
+        return JSON.parse(storedValue);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }, [values]);
+
   // ── Fallback hydration: load funding data directly from DB if values are empty ──
   useEffect(() => {
     if (hydrationAttemptedRef.current) return;
@@ -248,7 +263,8 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       try {
         const recId = await resolveFieldDictId(FIELD_KEYS.fundingRecords, dictCacheRef.current);
         const histId = await resolveFieldDictId(FIELD_KEYS.fundingHistory, dictCacheRef.current);
-        if (!recId && !histId) return;
+        const adjId = await resolveFieldDictId(FIELD_KEYS.fundingAdjustments, dictCacheRef.current);
+        if (!recId && !histId && !adjId) return;
 
         const { data: sectionRows, error } = await supabase
           .from('deal_section_values')
@@ -267,6 +283,10 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
           if (histId && fv[histId]) {
             const val = fv[histId].value_text;
             if (val) onValueChange(FIELD_KEYS.fundingHistory, val);
+          }
+          if (adjId && fv[adjId]) {
+            const val = fv[adjId].value_text;
+            if (val) onValueChange(FIELD_KEYS.fundingAdjustments, val);
           }
         }
       } catch (err) {
@@ -490,6 +510,17 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     }
   };
 
+  const handleSaveAdjustment = useCallback(async (adjustment: FundingAdjustmentData) => {
+    // Upsert: replace if same id exists, else append
+    const existing = fundingAdjustments.filter((a) => a.id !== adjustment.id);
+    const updated = [...existing, adjustment];
+    const json = JSON.stringify(updated);
+    onValueChange(FIELD_KEYS.fundingAdjustments, json);
+
+    await directPersistFundingField(dealId, FIELD_KEYS.fundingAdjustments, json, dictCacheRef.current);
+    toast.success('Funding adjustment saved');
+  }, [fundingAdjustments, onValueChange, dealId]);
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
@@ -521,6 +552,8 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       soldRate={soldRate}
       totalPayment={totalPayment}
       loanAmount={loanAmount}
+      fundingAdjustments={fundingAdjustments}
+      onSaveAdjustment={handleSaveAdjustment}
     />
   );
 };

@@ -6,9 +6,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Plus, Trash2, Pencil, Loader2, Download, Search, X, Filter } from 'lucide-react';
+import { Plus, Trash2, Pencil, Loader2, Download, Search, X, Filter, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
+import { FundingAdjustmentModal, FundingAdjustmentData } from './FundingAdjustmentModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { FundingHistoryDialog } from './FundingHistoryDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
@@ -165,6 +166,9 @@ interface LoanFundingGridProps {
   soldRate?: string;
   totalPayment?: string;
   loanAmount?: string;
+  // Funding Adjustment
+  fundingAdjustments?: FundingAdjustmentData[];
+  onSaveAdjustment?: (adjustment: FundingAdjustmentData) => void;
 }
 
 const SEARCH_FIELDS = ['lenderAccount', 'lenderName'];
@@ -224,10 +228,13 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   soldRate = '',
   totalPayment = '',
   loanAmount = '',
+  fundingAdjustments = [],
+  onSaveAdjustment,
 }) => {
   const { user } = useAuth();
   const [createLenderModalOpen, setCreateLenderModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<FundingRecord | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -441,6 +448,18 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
             <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={() => setCreateLenderModalOpen(true)} disabled={disabled}>
               <Plus className="h-3.5 w-3.5" /> Add New Lender
             </Button>
+            {onSaveAdjustment && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 h-7 text-xs"
+                onClick={() => setIsAdjustmentOpen(true)}
+                disabled={disabled}
+                title="Funding Adjustment"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" /> Funding Adjustment
+              </Button>
+            )}
           </div>
         </div>
 
@@ -740,6 +759,19 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
           }
         }}
       />
+
+      {onSaveAdjustment && (
+        <FundingAdjustmentModal
+          open={isAdjustmentOpen}
+          onOpenChange={setIsAdjustmentOpen}
+          loanNumber={loanNumber}
+          borrowerName={borrowerName}
+          loanBalance={totalPrincipalBalance}
+          fundingRecords={fundingRecords}
+          existingAdjustments={fundingAdjustments}
+          onSave={onSaveAdjustment}
+        />
+      )}
     </div>
   );
 };
