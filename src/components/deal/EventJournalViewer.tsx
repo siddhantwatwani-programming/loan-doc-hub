@@ -241,5 +241,6 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
         fileName="event_journal"
       />
     </div>
-  );
+    </div>
+    </div>
 };
