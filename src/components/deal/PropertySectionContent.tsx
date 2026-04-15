@@ -617,11 +617,12 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             <PropertySubNavigation
               activeSubSection={activeSubSection}
               onSubSectionChange={setActiveSubSection}
-              isDetailView={false}
+              isDetailView={true}
+              onPrint={handlePrintSection}
             />
 
             {/* Insurance content */}
-            <div className="flex-1 min-w-0 overflow-auto">
+            <div id="property-section-printable" className="flex-1 min-w-0 overflow-auto">
               <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
                 <InsuranceSectionContent
                   values={values}
@@ -650,8 +651,9 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
               activeSubSection={activeSubSection}
               onSubSectionChange={setActiveSubSection}
               isDetailView={true}
+              onPrint={handlePrintSection}
             />
-            <div className="flex-1 min-w-0 overflow-auto">
+            <div id="property-section-printable" className="flex-1 min-w-0 overflow-auto">
               <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
                 <LienSectionContent
                   values={values}
@@ -743,11 +745,12 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             <PropertySubNavigation
               activeSubSection={activeSubSection}
               onSubSectionChange={setActiveSubSection}
-              isDetailView={false}
+              isDetailView={true}
+              onPrint={handlePrintSection}
             />
 
             {/* Property Tax content */}
-            <div className="flex-1 min-w-0 overflow-auto">
+            <div id="property-section-printable" className="flex-1 min-w-0 overflow-auto">
               <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
                 {renderPropertyTaxContent()}
               </DirtyFieldsProvider>
@@ -793,10 +796,11 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             activeSubSection={activeSubSection}
             onSubSectionChange={setActiveSubSection}
             isDetailView={isDetailView}
+            onPrint={isDetailView ? handlePrintSection : undefined}
           />
 
           {/* Sub-section content on the right, with remapped dirty keys */}
-          <div className="flex-1 min-w-0 overflow-auto">
+          <div id="property-section-printable" className="flex-1 min-w-0 overflow-auto">
             <DirtyFieldsProvider dirtyFieldKeys={remappedDirtyKeys}>
               {renderSubSectionContent()}
             </DirtyFieldsProvider>
