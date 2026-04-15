@@ -308,34 +308,21 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
       </div>
 
       {/* Grid Toolbar with Print next to Export */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex-1">
-          <GridToolbar
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onRefresh={onRefresh}
-            filterOptions={FILTER_OPTIONS}
-            activeFilters={activeFilters}
-            onFilterChange={setFilter}
-            onClearFilters={clearFilters}
-            activeFilterCount={activeFilterCount}
-            disabled={disabled}
-            selectedCount={selectedCount}
-            onBulkDelete={() => setBulkDeleteOpen(true)}
-            onExport={() => setExportOpen(true)}
-          />
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1 text-xs"
-          onClick={handlePrint}
-          disabled={disabled}
-        >
-          <Printer className="h-3.5 w-3.5" />
-          Print
-        </Button>
-      </div>
+      <GridToolbar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onRefresh={onRefresh}
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={activeFilters}
+        onFilterChange={setFilter}
+        onClearFilters={clearFilters}
+        activeFilterCount={activeFilterCount}
+        disabled={disabled}
+        selectedCount={selectedCount}
+        onBulkDelete={() => setBulkDeleteOpen(true)}
+        onExport={() => setExportOpen(true)}
+        onPrint={handlePrint}
+      />
 
       {/* Properties Table */}
       <div className="border border-border rounded-lg overflow-x-auto">
