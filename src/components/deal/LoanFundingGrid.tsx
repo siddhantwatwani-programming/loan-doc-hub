@@ -448,6 +448,18 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
             <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={() => setCreateLenderModalOpen(true)} disabled={disabled}>
               <Plus className="h-3.5 w-3.5" /> Add New Lender
             </Button>
+            {onSaveAdjustment && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 h-7 text-xs"
+                onClick={() => setIsAdjustmentOpen(true)}
+                disabled={disabled}
+                title="Funding Adjustment"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" /> Funding Adjustment
+              </Button>
+            )}
           </div>
         </div>
 
