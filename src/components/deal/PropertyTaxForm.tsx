@@ -127,8 +127,8 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
         <span className="font-semibold text-base text-foreground">Property Tax</span>
       </div>
 
-      <div className="max-w-[800px]">
-        <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+      <div className="w-full">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-3">
           {/* Left column */}
           <div className="space-y-3">
             {propertyOptions.length > 0 && (
