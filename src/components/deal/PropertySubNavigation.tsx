@@ -1,7 +1,5 @@
 import React from 'react';
-import { Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 
 export type PropertySubSection = 'properties' | 'property_details' | 'legal_description' | 'insurance' | 'property_tax_detail' | 'liens';
 
@@ -17,14 +15,12 @@ interface PropertySubNavigationProps {
   activeSubSection: PropertySubSection;
   onSubSectionChange: (subSection: PropertySubSection) => void;
   isDetailView?: boolean;
-  onPrint?: () => void;
 }
 
 export const PropertySubNavigation: React.FC<PropertySubNavigationProps> = ({
   activeSubSection,
   onSubSectionChange,
   isDetailView = false,
-  onPrint,
 }) => {
   // Only show navigation when in detail view (matching Lender pattern)
   if (!isDetailView) {
@@ -47,21 +43,6 @@ export const PropertySubNavigation: React.FC<PropertySubNavigationProps> = ({
           {section.label}
         </button>
       ))}
-
-      {/* Print button at the bottom of the sub-navigation */}
-      {onPrint && (
-        <div className="mt-auto px-3 py-3 border-t border-border">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full gap-1 text-xs"
-            onClick={onPrint}
-          >
-            <Printer className="h-3.5 w-3.5" />
-            Print
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
