@@ -193,6 +193,7 @@ const LenderEventsJournal: React.FC<{ lenderId: string; contactDbId: string }> =
         fileName="lender_event_journal"
       />
     </div>
+    </div>
   );
 };
 

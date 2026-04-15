@@ -193,6 +193,7 @@ const BrokerEventsJournal: React.FC<{ brokerId: string; contactDbId: string }> =
         fileName="broker_event_journal"
       />
     </div>
+    </div>
   );
 };
 
