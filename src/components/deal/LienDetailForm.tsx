@@ -264,7 +264,12 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
 
           {renderField('sourceOfPayment', 'If No, Provide Source')}
 
-          {renderField('delinquenciesHowMany', 'Number of 60-day in 12 months')}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.delinquenciesHowMany || 'lien1.delinquenciesHowMany'}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0 leading-tight">Number of 60-day<br />in 12 months</Label>
+              <Input value={lien.delinquenciesHowMany} onChange={(e) => onChange('delinquenciesHowMany', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
         <div className="space-y-3">
