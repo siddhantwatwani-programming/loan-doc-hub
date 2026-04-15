@@ -115,7 +115,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { isExternalUser, isInternalUser } = useAuth();
+  const { user, isExternalUser, isInternalUser, loading: authLoading } = useAuth();
   const { activeTab, setActiveTab } = useDealNavigation();
   const workspace = useWorkspaceOptional();
 
@@ -149,11 +149,12 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
   // Fetch deal info - deferred until tab is first active, then never refetched
   const hasFetchedDealRef = useRef(false);
   useEffect(() => {
+    if (authLoading) return;
     if (id && (isActive || hasEverBeenActive) && !hasFetchedDealRef.current) {
       hasFetchedDealRef.current = true;
       fetchDeal();
     }
-  }, [id, isActive, hasEverBeenActive]);
+  }, [id, isActive, hasEverBeenActive, authLoading]);
 
   const fetchDeal = async () => {
     try {
@@ -228,7 +229,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
     computeCalculatedFields,
     calculationResults,
     refetchData,
-  } = useDealFields(id || "", deal?.packet_id || null, isActive || hasEverBeenActive);
+  } = useDealFields(id || "", deal?.packet_id || null, (isActive || hasEverBeenActive) && !authLoading);
 
   // Field permissions for filtering visible fields/sections
   const { checkCanView, loading: permissionsLoading } = useFieldPermissions();
@@ -1016,11 +1017,13 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       values={values}
                       onValueChange={updateValue}
                       onRemoveValuesByPrefix={removeValuesByPrefix}
+                      saveDraft={saveDraft}
                       showValidation={showValidation}
                       disabled={(isExternalUser && (!orchestrationCanEdit || hasCompleted)) || isSectionDisabledByFormPerm(section)}
                       calculationResults={calculationResults}
                       dealNumber={deal.deal_number}
                       dealId={deal.id}
+                      userName={user?.email || ''}
                     />
                   ) : section === "other" ? (
                     <DealSectionTab
