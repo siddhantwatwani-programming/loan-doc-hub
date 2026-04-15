@@ -101,6 +101,9 @@ const getEmptyLog = (): Omit<LogRow, 'id'> => {
     attachments: [],
     account: '',
     name: '',
+    completed: false,
+    completedBy: '',
+    completedDate: '',
   };
 };
 
@@ -401,12 +404,11 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string; d
                 {activeColumns.map(c => (
                   <TableCell key={c.id} className="text-xs">
                     {c.id === 'date' ? formatDateTimeDisplay((r as any)[c.id] || '') :
-                     c.id === 'asOfDate' ? formatDateDisplay(r.asOfDate || '') :
+                     c.id === 'asOfDate' ? (r.asOfDate ? formatDateDisplay(r.asOfDate) : '--') :
                      c.id === 'highPriority' ? (r.highPriority ? 'Yes' : 'No') :
-                     c.id === 'attachments' ? (r.attachments && r.attachments.length > 0 ? (
-                       <span className="flex items-center gap-1"><Paperclip className="h-3.5 w-3.5 text-primary" /><span>{r.attachments.length}</span></span>
-                     ) : '-') :
-                     (r as any)[c.id] || '-'}
+                     c.id === 'completed' ? (r.completed ? 'Yes' : 'No') :
+                     c.id === 'completedDate' ? (r.completedDate ? formatDateDisplay(r.completedDate) : '--') :
+                     (r as any)[c.id] || '--'}
                   </TableCell>
                 ))}
               </TableRow>
