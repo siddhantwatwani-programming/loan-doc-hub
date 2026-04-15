@@ -410,7 +410,7 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {(currentPage - 1) * 10 + 1}–{Math.min(currentPage * 10, totalCount ?? properties.length)} of {totalCount ?? properties.length} properties
+            Showing {(currentPage - 1) * 5 + 1}–{Math.min(currentPage * 5, totalCount ?? properties.length)} of {totalCount ?? properties.length} properties
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => onPageChange?.(1)} disabled={currentPage <= 1 || disabled}>First</Button>
