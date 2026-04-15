@@ -98,20 +98,26 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
   const [description, setDescription] = useState('');
   const [descriptionType, setDescriptionType] = useState('');
 
-  // Initialize from editData or fundingRecords
+  // Initialize from editData, existing saved adjustments, or fundingRecords
   useEffect(() => {
     if (!open) return;
 
-    if (editData) {
-      setAccount(editData.account);
-      setBorrower(editData.borrower);
-      setBalance(editData.loanBalance);
-      setAdjustmentAmount(editData.adjustmentAmount);
-      setAsOfDate(editData.asOfDate ? new Date(editData.asOfDate) : undefined);
-      setDistributeByProRata(editData.distributeByProRata);
-      setLenders(editData.lenders);
-      setDescription(editData.description);
-      setDescriptionType(editData.descriptionType);
+    const latestSavedAdjustment = existingAdjustments.length > 0
+      ? existingAdjustments[existingAdjustments.length - 1]
+      : null;
+
+    const initialData = editData || latestSavedAdjustment;
+
+    if (initialData) {
+      setAccount(initialData.account);
+      setBorrower(initialData.borrower);
+      setBalance(initialData.loanBalance);
+      setAdjustmentAmount(initialData.adjustmentAmount);
+      setAsOfDate(initialData.asOfDate ? new Date(initialData.asOfDate) : undefined);
+      setDistributeByProRata(initialData.distributeByProRata);
+      setLenders(initialData.lenders);
+      setDescription(initialData.description);
+      setDescriptionType(initialData.descriptionType);
     } else {
       setAccount(loanNumber);
       setBorrower(borrowerName);
@@ -140,7 +146,7 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
         setLenders([]);
       }
     }
-  }, [open, editData, loanNumber, borrowerName, loanBalance, fundingRecords]);
+  }, [open, editData, existingAdjustments, loanNumber, borrowerName, loanBalance, fundingRecords]);
 
   // Distribute by Pro Rata
   useEffect(() => {
