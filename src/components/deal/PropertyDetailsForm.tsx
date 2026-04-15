@@ -42,7 +42,7 @@ const OCCUPANCY_OPTIONS = ['Investor', 'Other', 'Owner', 'Primary Borrower', 'Se
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
 const CONSTRUCTION_TYPES = ['Wood/Stucco', 'Stick', 'Concrete Block'];
 const VALUATION_TYPE_OPTIONS = ['Appraisal', 'Broker Determined Value (BPO)'];
-const INFO_PROVIDED_BY_OPTIONS = ['Broker', 'Borrower', 'Third Party', 'Other'];
+const INFO_PROVIDED_BY_OPTIONS = ['Broker', 'Borrower', 'Public Record', 'Other'];
 
 import { PROPERTY_DETAILS_KEYS } from '@/lib/fieldKeyMap';
 
