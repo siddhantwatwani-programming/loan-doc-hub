@@ -1,6 +1,12 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { NotesSubNavigation, type NotesSubSection } from './NotesSubNavigation';
+import { NotesDetailForm } from './NotesDetailForm';
 import { NotesTableView, type NoteData, type AttachmentMeta } from './NotesTableView';
 import { NotesModal } from './NotesModal';
+import { useDirtyFields, DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
@@ -88,6 +94,12 @@ const getNextNotePrefix = (values: Record<string, string>): string => {
 export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
   values, onValueChange, onRemoveValuesByPrefix, disabled = false, dealNumber = '', dealId = '', userName = '', onRefresh,
 }) => {
+  const nav = useDealNavigationOptional();
+  const activeSubSection = (nav?.getSubSection('notes') ?? 'notes') as NotesSubSection;
+  const setActiveSubSection = (sub: NotesSubSection) => nav?.setSubSection('notes', sub);
+  const selectedNotePrefix = nav?.getSelectedPrefix('notes') ?? 'notes_entry1';
+  const setSelectedNotePrefix = (prefix: string) => nav?.setSelectedPrefix('notes', prefix);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<NoteData | null>(null);
   const [asOfFilter, setAsOfFilter] = useState('');
@@ -106,9 +118,27 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
   const safePage = Math.min(currentPage, totalPages);
   const paginatedNotes = filteredNotes.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
+  const isDetailView = activeSubSection === 'detail';
+
+  const selectedNoteName = useMemo(() => {
+    const note = notes.find(n => n.id === selectedNotePrefix);
+    if (note) {
+      return note.name || note.type || `Entry ${selectedNotePrefix.replace('notes_entry', '')}`;
+    }
+    return 'Conversation Log';
+  }, [notes, selectedNotePrefix]);
+
   const handleAddNote = useCallback(() => { setEditingNote(null); setModalOpen(true); }, []);
   const handleEditNote = useCallback((note: NoteData) => { setEditingNote(note); setModalOpen(true); }, []);
-  const handleRowClick = useCallback((note: NoteData) => { /* row click now handled by NotesTableView detail dialog */ }, []);
+
+  const handleRowClick = useCallback((note: NoteData) => {
+    setSelectedNotePrefix(note.id);
+    setActiveSubSection('detail');
+  }, []);
+
+  const handleBackToTable = useCallback(() => {
+    setActiveSubSection('notes');
+  }, []);
 
   const handleDeleteNote = useCallback((note: NoteData) => {
     if (onRemoveValuesByPrefix) {
@@ -146,6 +176,31 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
     setModalOpen(false);
   }, [editingNote, values, onValueChange]);
 
+  const handleDetailSave = useCallback((noteData: NoteData) => {
+    const prefix = noteData.id;
+    onValueChange(`${prefix}.high_priority`, noteData.highPriority ? 'true' : 'false');
+    onValueChange(`${prefix}.incoming`, noteData.incoming ? 'true' : 'false');
+    onValueChange(`${prefix}.outgoing`, noteData.outgoing ? 'true' : 'false');
+    onValueChange(`${prefix}.date`, noteData.date);
+    onValueChange(`${prefix}.as_of_date`, noteData.asOfDate || '');
+    onValueChange(`${prefix}.account`, noteData.account);
+    onValueChange(`${prefix}.name`, noteData.name);
+    onValueChange(`${prefix}.reference`, noteData.reference);
+    onValueChange(`${prefix}.content`, noteData.content);
+    onValueChange(`${prefix}.type`, noteData.type);
+    onValueChange(`${prefix}.attachments`, JSON.stringify(noteData.attachments || []));
+    onValueChange(`${prefix}.followup_reminder`, noteData.followupReminder || '');
+    onValueChange(`${prefix}.completed`, noteData.completed || '');
+    onValueChange(`${prefix}.assigned_on`, noteData.assignedOn || '');
+    onValueChange(`${prefix}.assigned_to`, noteData.assignedTo || '');
+    onValueChange(`${prefix}.assigned_department`, noteData.assignedDepartment || '');
+    onValueChange(`${prefix}.assigned_by`, noteData.assignedBy || '');
+    onValueChange(`${prefix}.completed_by`, noteData.completedBy || '');
+    onValueChange(`${prefix}.completed_on`, noteData.completedOn || '');
+    onValueChange(`${prefix}.publish`, noteData.publish ? 'true' : 'false');
+    onValueChange(`${prefix}.add_to_participants`, noteData.addToParticipants ? 'true' : 'false');
+  }, [onValueChange]);
+
   const handleExport = useCallback(() => {
     if (notes.length === 0) return;
     const headers = ['Date', 'Account', 'Name', 'Reference', 'High Priority', 'Content'];
@@ -159,24 +214,77 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
     a.click(); URL.revokeObjectURL(url);
   }, [notes]);
 
+  const selectedNote = useMemo(() => {
+    return notes.find(n => n.id === selectedNotePrefix) || null;
+  }, [notes, selectedNotePrefix]);
+
+  const renderSubSectionContent = () => {
+    switch (activeSubSection) {
+      case 'notes':
+        return (
+          <NotesTableView
+            notes={paginatedNotes}
+            onAddNote={handleAddNote}
+            onEditNote={handleEditNote}
+            onRowClick={handleRowClick}
+            onDeleteNote={handleDeleteNote}
+            onExport={handleExport}
+            onRefresh={onRefresh}
+            disabled={disabled}
+            asOfFilter={asOfFilter}
+            onAsOfFilterChange={(v) => { setAsOfFilter(v); setCurrentPage(1); }}
+            currentPage={safePage}
+            totalPages={totalPages}
+            totalCount={totalFiltered}
+            onPageChange={setCurrentPage}
+          />
+        );
+      case 'detail':
+        return (
+          <NotesDetailForm
+            note={selectedNote}
+            onSave={handleDetailSave}
+            disabled={disabled}
+            dealId={dealId}
+            defaultName={userName}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <>
-      <NotesTableView
-        notes={paginatedNotes}
-        onAddNote={handleAddNote}
-        onEditNote={handleEditNote}
-        onRowClick={handleRowClick}
-        onDeleteNote={handleDeleteNote}
-        onExport={handleExport}
-        onRefresh={onRefresh}
-        disabled={disabled}
-        asOfFilter={asOfFilter}
-        onAsOfFilterChange={(v) => { setAsOfFilter(v); setCurrentPage(1); }}
-        currentPage={safePage}
-        totalPages={totalPages}
-        totalCount={totalFiltered}
-        onPageChange={setCurrentPage}
-      />
+      <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
+        {isDetailView && (
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/20">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBackToTable}
+              className="gap-1 h-8"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <span className="text-sm font-medium text-foreground">
+              {selectedNoteName}
+            </span>
+          </div>
+        )}
+
+        <div className="flex flex-1">
+          <NotesSubNavigation
+            activeSubSection={activeSubSection}
+            onSubSectionChange={setActiveSubSection}
+            isDetailView={isDetailView}
+          />
+          <div className="flex-1 min-w-0 overflow-auto">
+            {renderSubSectionContent()}
+          </div>
+        </div>
+      </div>
 
       <NotesModal
         open={modalOpen}

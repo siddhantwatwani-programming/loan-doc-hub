@@ -230,7 +230,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
   };
 
   const handleRowClick = (note: NoteData) => {
-    setViewingNote(note);
+    onRowClick(note);
   };
 
   const exportColumns: ExportColumn[] = DEFAULT_COLUMNS.filter(c => c.id !== 'attachments').map(c => ({ id: c.id, label: c.label }));
