@@ -82,7 +82,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'accruedInterest', label: 'Accrued Interest', visible: true },
 ];
 
-const SEARCH_FIELDS = ['description', 'reference', 'chargeType', 'dateOfCharge', 'owedTo', 'owedFrom'];
+const SEARCH_FIELDS = ['notes', 'department', 'category', 'dateOfCharge', 'owedTo', 'owedFrom'];
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
@@ -157,7 +157,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   totalCount,
   onPageChange,
 }) => {
-  const [columns, setColumns, resetColumns] = useTableColumnConfig('charges_v6', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('charges_v7', DEFAULT_COLUMNS);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const visibleColumns = columns.filter((col) => col.visible);
