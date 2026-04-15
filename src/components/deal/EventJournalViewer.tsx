@@ -242,5 +242,5 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
       />
     </div>
     </div>
-    </div>
+  );
 };
