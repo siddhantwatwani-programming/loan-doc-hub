@@ -89,11 +89,6 @@ export const LenderDisbursementModal: React.FC<LenderDisbursementModalProps> = (
           {/* Header */}
           <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30 pr-10">
             <span className="text-xs font-bold">Lender Disbursements</span>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="h-5 w-5" title="Copy">
-                <Copy className="h-3 w-3" />
-              </Button>
-            </div>
           </div>
 
           <div className="px-3 py-3 space-y-2">
