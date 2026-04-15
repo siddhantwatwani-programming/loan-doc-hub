@@ -5,10 +5,10 @@ export type PropertySubSection = 'properties' | 'property_details' | 'legal_desc
 
 const PROPERTY_DETAIL_SECTIONS: { key: PropertySubSection; label: string }[] = [
   { key: 'property_details', label: 'Property Details' },
-  { key: 'liens', label: 'Liens' },
   { key: 'legal_description', label: 'Legal Description' },
   { key: 'insurance', label: 'Insurance' },
   { key: 'property_tax_detail', label: 'Property Tax' },
+  { key: 'liens', label: 'Liens' },
 ];
 
 interface PropertySubNavigationProps {
