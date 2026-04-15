@@ -665,6 +665,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         description={`Are you sure you want to delete ${selectedIds.size} selected participant(s)? This action cannot be undone.`}
       />
     </div>
+    </div>
   );
 };
 
