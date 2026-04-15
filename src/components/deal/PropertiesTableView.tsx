@@ -298,7 +298,7 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
             variant="outline"
             size="sm"
             onClick={onAddProperty}
-            disabled={disabled}
+            disabled={disabled || properties.length >= 5}
             className="gap-1"
           >
             <Plus className="h-4 w-4" />
@@ -393,21 +393,6 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
         </Table>
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {(currentPage - 1) * 5 + 1}–{Math.min(currentPage * 5, totalCount ?? properties.length)} of {totalCount ?? properties.length} properties
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => onPageChange?.(1)} disabled={currentPage <= 1 || disabled}>First</Button>
-            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage - 1)} disabled={currentPage <= 1 || disabled}>Previous</Button>
-            <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">{currentPage}</span>
-            <Button variant="outline" size="sm" onClick={() => onPageChange?.(currentPage + 1)} disabled={currentPage >= totalPages || disabled}>Next</Button>
-            <Button variant="outline" size="sm" onClick={() => onPageChange?.(totalPages)} disabled={currentPage >= totalPages || disabled}>Last</Button>
-          </div>
-        </div>
-      )}
 
       {/* Footer with totals */}
       {properties.length > 0 && (
