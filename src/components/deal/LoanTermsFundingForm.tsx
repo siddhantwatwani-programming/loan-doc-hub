@@ -19,6 +19,7 @@ const safeParseFloat = (v: string | undefined): number => {
 const FIELD_KEYS = {
   fundingRecords: 'loan_terms.funding_records',
   fundingHistory: 'loan_terms.funding_history',
+  fundingAdjustments: 'loan_terms.funding_adjustments',
 } as const;
 
 interface LoanTermsFundingFormProps {
