@@ -62,7 +62,6 @@ interface FundingAdjustmentModalProps {
 }
 
 const DESCRIPTION_TYPE_OPTIONS = [
-  { value: 'dropdown', label: 'Dropdown' },
   { value: 'correction', label: 'Correction' },
   { value: 'assignment', label: 'Assignment' },
   { value: 'forgiveness', label: 'Forgiveness' },
@@ -336,27 +335,28 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
               </div>
             </div>
 
-            {/* Right side - Distribute checkbox + Add button */}
-            <div className="flex flex-col items-end gap-2">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={distributeByProRata}
-                  onCheckedChange={(checked) => setDistributeByProRata(checked === true)}
-                  id="distribute-pro-rata"
-                />
-                <Label htmlFor="distribute-pro-rata" className="text-xs font-medium cursor-pointer">
-                  Distribute by Pro Rata
-                </Label>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs gap-1"
-                onClick={handleAddLender}
-              >
-                <Plus className="h-3.5 w-3.5" /> Add
-              </Button>
+          </div>
+
+          {/* Distribute checkbox + Add button - top right of table */}
+          <div className="flex items-center justify-end gap-4">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={distributeByProRata}
+                onCheckedChange={(checked) => setDistributeByProRata(checked === true)}
+                id="distribute-pro-rata"
+              />
+              <Label htmlFor="distribute-pro-rata" className="text-xs font-medium cursor-pointer">
+                Distribute by Pro Rata
+              </Label>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={handleAddLender}
+            >
+              <Plus className="h-3.5 w-3.5" /> Add
+            </Button>
           </div>
 
           {/* Lender Grid */}
