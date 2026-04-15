@@ -1401,6 +1401,18 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'notes_entry.type': 'nt_p_type',
   'notes_entry.attachments': 'nt_p_attachments',
   'notes_entry.meta': 'nt_p_notes',
+  'notes_entry.incoming': 'nt_p_incoming',
+  'notes_entry.outgoing': 'nt_p_outgoing',
+  'notes_entry.followup_reminder': 'nt_p_followupReminder',
+  'notes_entry.completed': 'nt_p_completed',
+  'notes_entry.assigned_on': 'nt_p_assignedOn',
+  'notes_entry.assigned_to': 'nt_p_assignedTo',
+  'notes_entry.assigned_department': 'nt_p_assignedDept',
+  'notes_entry.assigned_by': 'nt_p_assignedBy',
+  'notes_entry.completed_by': 'nt_p_completedBy',
+  'notes_entry.completed_on': 'nt_p_completedOn',
+  'notes_entry.publish': 'nt_p_publish',
+  'notes_entry.add_to_participants': 'nt_p_addToParticipants',
 
   // ──────────────────────────────────────────────────
   // ORIGINATION APPLICATION
