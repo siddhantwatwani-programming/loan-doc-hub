@@ -1038,6 +1038,20 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
         }
       }
 
+      // --- Sync denormalized fields to deals table ---
+      try {
+        const dealUpdates: Record<string, any> = {};
+        const borrowerNameKey = 'loan_terms.details_borrower_name';
+        if (finalValues[borrowerNameKey] !== undefined) {
+          dealUpdates.borrower_name = finalValues[borrowerNameKey] || null;
+        }
+        if (Object.keys(dealUpdates).length > 0) {
+          await supabase.from('deals').update(dealUpdates).eq('id', dealId);
+        }
+      } catch (syncErr) {
+        console.warn('[useDealFields] Failed to sync denormalized deal fields:', syncErr);
+      }
+
       // Clear deleted prefixes and sessionStorage cache after successful save
       setDeletedPrefixes([]);
       clearSessionCache(dealId);
