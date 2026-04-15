@@ -476,6 +476,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
         fileName="conversation_log"
       />
     </div>
+    </div>
   );
 };
 
