@@ -292,6 +292,7 @@ export function formatByDataType(value: string | number | null, dataType: string
     }
     case "boolean":
       return formatCheckbox(value);
+    case "dropdown":
     case "text":
     default:
       return String(value);
