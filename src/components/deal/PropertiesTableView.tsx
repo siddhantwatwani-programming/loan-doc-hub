@@ -323,6 +323,7 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
             selectedCount={selectedCount}
             onBulkDelete={() => setBulkDeleteOpen(true)}
             onExport={() => setExportOpen(true)}
+            onPrint={() => window.print()}
           />
         </div>
         <Button
