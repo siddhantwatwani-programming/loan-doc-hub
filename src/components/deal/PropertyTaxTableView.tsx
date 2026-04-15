@@ -261,7 +261,7 @@ export const PropertyTaxTableView: React.FC<PropertyTaxTableViewProps> = ({
         selectedCount={selectedCount}
         onBulkDelete={() => setBulkDeleteOpen(true)}
         onExport={() => setExportOpen(true)}
-      />
+        onPrint={() => window.print()}
 
       <div className="border border-border rounded-lg overflow-hidden">
         <div className="overflow-x-auto" style={{ minWidth: '100%' }}>

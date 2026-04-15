@@ -237,7 +237,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
           selectedCount={selectedCount}
           onBulkDelete={() => setBulkDeleteOpen(true)}
           onExport={() => setExportOpen(true)}
-        />
+          onPrint={() => window.print()}
       </div>
 
       <div className="border border-border rounded-lg overflow-hidden">
