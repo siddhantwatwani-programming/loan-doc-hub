@@ -61,6 +61,20 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   const handleCurrencyChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value));
   const handlePercentageChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value).replace(/-/g, ''));
 
+  // Auto-calculate Loan To Value = Loan Amount / Purchase Price
+  useEffect(() => {
+    const loanAmountRaw = values['loan_terms.loan_amount'] || '';
+    const purchasePriceRaw = getFieldValue(FIELD_KEYS.purchasePrice);
+    const loanAmount = parseFloat(loanAmountRaw.replace(/[,$]/g, ''));
+    const purchasePrice = parseFloat(purchasePriceRaw.replace(/[,$]/g, ''));
+    if (!isNaN(loanAmount) && !isNaN(purchasePrice) && purchasePrice > 0) {
+      const ltv = ((loanAmount / purchasePrice) * 100).toFixed(2);
+      if (getFieldValue(FIELD_KEYS.ltv) !== ltv) {
+        onValueChange(FIELD_KEYS.ltv, ltv);
+      }
+    }
+  }, [values['loan_terms.loan_amount'], values[FIELD_KEYS.purchasePrice]]);
+
   const isCopyBorrower = getFieldValue(FIELD_KEYS.copyBorrowerAddress) === 'true';
   const borrowerStreet = values['borrower.address.street'] || '';
   const borrowerCity = values['borrower.address.city'] || '';
@@ -306,7 +320,20 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
 
           {renderCurrencyField(FIELD_KEYS.pledgedEquity, 'Pledged Equity')}
           {renderCurrencyField(FIELD_KEYS.protectiveEquity, 'Protective Equity')}
-          {renderPercentageField(FIELD_KEYS.ltv, 'Loan To Value')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.ltv}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Loan To Value</Label>
+              <div className="relative flex-1">
+                <Input
+                  value={getFieldValue(FIELD_KEYS.ltv)}
+                  disabled
+                  className="h-7 text-xs pr-6 bg-muted"
+                  readOnly
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
+              </div>
+            </div>
+          </DirtyFieldWrapper>
           {renderPercentageField(FIELD_KEYS.cltv, 'CLTV (If a Junior Lien)')}
         </div>
       </div>
