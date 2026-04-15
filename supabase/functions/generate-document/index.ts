@@ -505,6 +505,20 @@ async function generateSingleDocument(
         }
       }
 
+      // Bridge ld_p_fullNameIfEntity → ld_p_lenderName when the user explicitly
+      // entered a value in the "Full Name (If Entity, Use Entity)" field.
+      // This ensures the deal-level entry takes priority over the contact-injected name.
+      const fullNameEntity = fieldValues.get("ld_p_fullNameIfEntity");
+      if (fullNameEntity?.rawValue) {
+        const existingLenderName = fieldValues.get("ld_p_lenderName");
+        // Only override if lenderName was set from contact injection (not user-entered deal data)
+        if (existingLenderName?.rawValue && existingLenderName.rawValue !== fullNameEntity.rawValue) {
+          fieldValues.set("ld_p_lenderName", { rawValue: String(fullNameEntity.rawValue), dataType: "text" });
+          fieldValues.set("lender.name", { rawValue: String(fullNameEntity.rawValue), dataType: "text" });
+          debugLog(`[generate-document] Bridged ld_p_fullNameIfEntity -> ld_p_lenderName: "${fullNameEntity.rawValue}"`);
+        }
+      }
+
       // Inject broker (force-override since broker data is authoritative from Contacts)
       const primaryBroker = brokerParticipants[0];
       if (primaryBroker?.contact_id) {
