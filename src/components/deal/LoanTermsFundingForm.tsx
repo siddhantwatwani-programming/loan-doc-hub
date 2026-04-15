@@ -156,10 +156,25 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   const hydrationAttemptedRef = useRef(false);
 
   // Get loan number and borrower name from values - auto-populate
-  const loanNumber = values['loan_terms.loan_number'] || values['Terms.LoanNumber'] || '';
+  const derivedLoanNumber = values['loan_terms.loan_number'] || values['Terms.LoanNumber'] || '';
+  const [localLoanNumber, setLocalLoanNumber] = useState(derivedLoanNumber);
+  const loanNumberEdited = useRef(false);
+
+  // Sync from props only if user hasn't locally edited
+  useEffect(() => {
+    if (!loanNumberEdited.current && derivedLoanNumber) {
+      setLocalLoanNumber(derivedLoanNumber);
+    }
+  }, [derivedLoanNumber]);
+
+  const loanNumber = localLoanNumber;
 
   // Borrower Name: auto-populate from Participants table (primary borrower)
   const [participantBorrowerName, setParticipantBorrowerName] = useState('');
+  const derivedBorrowerName = values['loan_terms.details_borrower_name'] || '';
+  const [localBorrowerName, setLocalBorrowerName] = useState('');
+  const borrowerNameEdited = useRef(false);
+
   useEffect(() => {
     if (!dealId) return;
     const fetchBorrower = async () => {
@@ -201,7 +216,15 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     fetchBorrower();
   }, [dealId]);
 
-  const borrowerName = values['loan_terms.details_borrower_name'] || participantBorrowerName || '';
+  // Sync borrower from props/participants only if user hasn't locally edited
+  useEffect(() => {
+    if (!borrowerNameEdited.current) {
+      const name = derivedBorrowerName || participantBorrowerName || '';
+      if (name) setLocalBorrowerName(name);
+    }
+  }, [derivedBorrowerName, participantBorrowerName]);
+
+  const borrowerName = localBorrowerName;
 
   // Get loan rates for Rate Selection
   const noteRate = values['loan_terms.note_rate'] || '';
@@ -522,10 +545,14 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   }, [fundingAdjustments, onValueChange, dealId]);
 
   const handleLoanNumberChange = useCallback((value: string) => {
-    onValueChange('loan_terms.loan_number', value);
+    loanNumberEdited.current = true;
+    setLocalLoanNumber(value);
+    onValueChange('Terms.LoanNumber', value);
   }, [onValueChange]);
 
   const handleBorrowerNameChange = useCallback((value: string) => {
+    borrowerNameEdited.current = true;
+    setLocalBorrowerName(value);
     onValueChange('loan_terms.details_borrower_name', value);
   }, [onValueChange]);
 
