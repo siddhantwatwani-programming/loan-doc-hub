@@ -96,7 +96,7 @@ interface LiensTableViewProps {
   onPageChange?: (page: number) => void;
 }
 
-const SEARCHABLE_FIELDS = ['property', 'holder', 'loanType', 'lienPriorityNow', 'lienPriorityAfter', 'lastVerified'];
+const SEARCHABLE_FIELDS = ['property', 'holder', 'loanTypeDropdown', 'lienPriorityNow', 'remainingNewLienPriority', 'lastVerified'];
 
 const FILTER_OPTIONS = [
   {
@@ -178,12 +178,12 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
     switch (columnId) {
       case 'property': return lien.property || 'Unassigned';
       case 'holder': return lien.holder || '-';
-      case 'loanType': return lien.loanType || '-';
+      case 'loanTypeDropdown': return lien.loanTypeDropdown || '-';
       case 'lienPriorityNow': return lien.lienPriorityNow || '-';
-      case 'lienPriorityAfter': return lien.lienPriorityAfter || '-';
+      case 'remainingNewLienPriority': return lien.remainingNewLienPriority || '-';
       case 'interestRate': return lien.interestRate ? `${lien.interestRate}%` : '-';
       case 'originalBalance': return formatCurrency(lien.originalBalance) || '-';
-      case 'balanceAfter': return formatCurrency(lien.balanceAfter) || '-';
+      case 'currentBalance': return formatCurrency(lien.currentBalance) || '-';
       case 'regularPayment': return formatCurrency(lien.regularPayment) || '-';
       case 'lastVerified': {
         if (!lien.lastVerified) return '-';
