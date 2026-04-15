@@ -252,7 +252,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   useEffect(() => {
     if (hydrationAttemptedRef.current) return;
     if (!dealId) return;
-    if (values[FIELD_KEYS.fundingRecords] || values[FIELD_KEYS.fundingHistory]) {
+    if (values[FIELD_KEYS.fundingRecords] || values[FIELD_KEYS.fundingHistory] || values[FIELD_KEYS.fundingAdjustments]) {
       hydrationAttemptedRef.current = true;
       return;
     }

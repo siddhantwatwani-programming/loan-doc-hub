@@ -62,7 +62,6 @@ interface FundingAdjustmentModalProps {
 }
 
 const DESCRIPTION_TYPE_OPTIONS = [
-  { value: 'dropdown', label: 'Dropdown' },
   { value: 'correction', label: 'Correction' },
   { value: 'assignment', label: 'Assignment' },
   { value: 'forgiveness', label: 'Forgiveness' },
