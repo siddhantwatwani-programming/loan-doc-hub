@@ -501,6 +501,19 @@ async function generateSingleDocument(
           setIfEmpty("Lender.Name", lFullName);
           setIfEmpty("ld_p_fullNameIfEntity", lFullName);
 
+          // Bridge lender type from contact_data
+          if (lcd.type) {
+            setIfEmpty("ld_p_lenderType", lcd.type);
+            setIfEmpty("lender1.type", lcd.type);
+            setIfEmpty("lender.type", lcd.type);
+          }
+
+          // Bridge investor questionnaire due date from contact_data
+          if (lcd.investor_questionnaire_due_date) {
+            setIfEmpty("ld_p_investorQuestiDueDate", lcd.investor_questionnaire_due_date);
+            setIfEmpty("lender1.investor_questionnaire_due_date", lcd.investor_questionnaire_due_date);
+          }
+
           debugLog(`[generate-document] Injected lender contact fields from participant (contact ${lc.contact_id}), lenderName="${lFullName}"`);
         }
       }
