@@ -291,9 +291,22 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           </div>
           {lien.anticipated === 'true' && renderCurrency('anticipatedAmount', 'Amount')}
 
-          {renderField('remainingNewLienPriority', 'Remaining / New Lien Priority', { placeholder: '' })}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.remainingNewLienPriority}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0 leading-tight">Remaining / New<br />Lien Priority</Label>
+              <Input value={lien.remainingNewLienPriority} onChange={(e) => onChange('remainingNewLienPriority', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+            </div>
+          </DirtyFieldWrapper>
 
-          {renderCurrency('newRemainingBalance', 'New / Remaining Balance')}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.newRemainingBalance}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0 leading-tight">New / Remaining<br />Balance</Label>
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                <Input value={lien.newRemainingBalance} onChange={(e) => onChange('newRemainingBalance', unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => onChange('newRemainingBalance', val))} onBlur={() => { const raw = lien.newRemainingBalance; if (raw) onChange('newRemainingBalance', formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = lien.newRemainingBalance; if (raw) onChange('newRemainingBalance', unformatCurrencyDisplay(raw)); }} disabled={disabled} className="h-7 text-sm pl-7" inputMode="decimal" placeholder="0.00" />
+              </div>
+            </div>
+          </DirtyFieldWrapper>
 
           {renderCurrency('originalBalance', 'Original Balance', isThisLoan)}
           {renderCurrency('currentBalance', 'Current Balance')}
