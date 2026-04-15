@@ -508,6 +508,53 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     onValueChange(actualKey, value);
   };
 
+  // Print current section content in a new window
+  const handlePrintSection = useCallback(() => {
+    const contentEl = document.getElementById('property-section-printable');
+    if (!contentEl) return;
+
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    if (!printWindow) return;
+
+    // Get all stylesheets from the current page
+    const styleSheets = Array.from(document.styleSheets);
+    let styles = '';
+    styleSheets.forEach((sheet) => {
+      try {
+        if (sheet.href) {
+          styles += `<link rel="stylesheet" href="${sheet.href}" />`;
+        } else if (sheet.cssRules) {
+          let css = '';
+          Array.from(sheet.cssRules).forEach((rule) => { css += rule.cssText + '\n'; });
+          styles += `<style>${css}</style>`;
+        }
+      } catch (e) { /* skip cross-origin sheets */ }
+    });
+
+    const sectionLabel = activeSubSection === 'property_details' ? 'Property Details'
+      : activeSubSection === 'legal_description' ? 'Legal Description'
+      : activeSubSection === 'insurance' ? 'Insurance'
+      : activeSubSection === 'property_tax_detail' ? 'Property Tax'
+      : activeSubSection === 'liens' ? 'Liens'
+      : 'Property';
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html><head><title>${sectionLabel} - Print</title>${styles}
+      <style>
+        @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+        body { padding: 24px; background: white; }
+      </style>
+      </head><body>
+        <h2 style="margin-bottom:16px;font-size:18px;font-weight:600;">${sectionLabel}</h2>
+        ${contentEl.innerHTML}
+      </body></html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); }, 500);
+  }, [activeSubSection]);
+
   const renderSubSectionContent = () => {
     switch (activeSubSection) {
       case 'properties':
