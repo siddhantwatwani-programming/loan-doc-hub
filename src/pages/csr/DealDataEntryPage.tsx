@@ -1023,6 +1023,13 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
                       dealNumber={deal.deal_number}
                       dealId={deal.id}
                       userName={user?.email || ''}
+                      onRefresh={handleGridRefresh}
+                      onPersist={async () => {
+                        computeCalculatedFields();
+                        const success = await saveDraft({ silent: true });
+                        if (success) resetDirty();
+                        return success;
+                      }}
                     />
                   ) : section === "other" ? (
                     <DealSectionTab
