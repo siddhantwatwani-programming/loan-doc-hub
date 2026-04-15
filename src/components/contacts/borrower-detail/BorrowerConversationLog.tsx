@@ -40,17 +40,23 @@ interface LogRow {
   attachments: (string | AttachmentMeta)[];
   account: string;
   name: string;
+  completed?: boolean;
+  completedBy?: string;
+  completedDate?: string;
 }
 
 const ALL_COLUMNS = [
-  { id: 'date', label: 'Date - Time' },
-  { id: 'asOfDate', label: 'As Of' },
-  { id: 'highPriority', label: 'High Priority' },
-  { id: 'type', label: 'Type' },
   { id: 'account', label: 'Account' },
-  { id: 'name', label: 'Name' },
-  { id: 'reference', label: 'Reference' },
-  { id: 'attachments', label: 'Attachment' },
+  { id: 'date', label: 'Date Called' },
+  { id: 'type', label: 'Call In/Out' },
+  { id: 'name', label: 'Contact Name' },
+  { id: 'subject', label: 'Subject' },
+  { id: 'highPriority', label: 'Follow Up?' },
+  { id: 'to', label: 'Assigned To' },
+  { id: 'asOfDate', label: 'Follow Up Date' },
+  { id: 'completed', label: 'Completed?' },
+  { id: 'completedBy', label: 'Completed By' },
+  { id: 'completedDate', label: 'Completed Date' },
 ];
 
 const LOG_TYPES_FALLBACK = ['Conversation Log', 'Attorney / Client', 'Internal'];
