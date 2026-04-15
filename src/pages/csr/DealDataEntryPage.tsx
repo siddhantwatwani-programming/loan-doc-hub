@@ -432,7 +432,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
     if (success) {
       // Log the save activity
       if (id) {
-        const filledCount = Object.values(values).filter((v) => v && v.trim() !== "").length;
+        const filledCount = Object.values(values).filter((v) => v && String(v).trim() !== "").length;
         await logDealUpdated(id, {
           fieldsUpdated: filledCount,
           fieldsTotal: visibleFieldKeys.length,
