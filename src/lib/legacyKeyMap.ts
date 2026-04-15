@@ -331,8 +331,8 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'lender.mailing_same_as_primary': 'ld_p_mailingSameAsPrimar',
   'lender.servicing_agreement_on_file': 'ld_p_servicinAgreem',
   'lender.freeze_outgoing_disbursements': 'ld_p_freezeOutgoi',
-  'lender.investor_questionnaire_due': 'ld_p_investoQuesti',
-  'lender.investor_questionnaire_due_date': 'ld_p_investoQuestiDueDate',
+  'lender.investor_questionnaire_due': 'ld_p_investorQuestiDue',
+  'lender.investor_questionnaire_due_date': 'ld_p_investorQuestiDueDate',
 
   // LENDER AUTHORIZED PARTY
   'lender.authorized_party.first_name': 'ld_ap_firstName',
