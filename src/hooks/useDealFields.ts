@@ -91,6 +91,13 @@ const CHARGE_UI_TO_DICT: Record<string, string> = {
   'charge.notes': 'charge_notes',
   'charge.original_amount': 'charge_original_amount',
   'charge.deferred': 'charge_is_deferred',
+  'charge.owed_from': 'charge_owed_from',
+  'charge.department': 'charge_department',
+  'charge.category': 'charge_category',
+  'charge.details': 'charge_details',
+  'charge.current_balance': 'charge_current_balance',
+  'charge.balance_due_as_of': 'charge_balance_due_as_of',
+  'charge.balance_due': 'charge_balance_due',
   // Additional charge fields
   'charge.accrued_interest': 'charge_accrued_interest',
   'charge.unpaid_balance': 'charge_unpaid_balance',
@@ -98,13 +105,18 @@ const CHARGE_UI_TO_DICT: Record<string, string> = {
   'charge.owed_to': 'charge_owed_to',
   'charge.account': 'charge_account',
   'charge.borrower_full_name': 'charge_borrower_full_name',
+  'charge.distribute_between_all_lenders': 'charge_distribute_between_all_lenders',
   // Distribution fields
   'charge.advanced_by_account': 'charge_advanced_by_account',
   'charge.advanced_by_lender_name': 'charge_advanced_by_lender_name',
   'charge.advanced_by_amount': 'charge_advanced_by_amount',
+  'charge.advanced_by_deferred': 'charge_advanced_by_deferred',
+  'charge.advanced_by_total': 'charge_advanced_by_total',
   'charge.on_behalf_of_account': 'charge_on_behalf_of_account',
   'charge.on_behalf_of_lender_name': 'charge_on_behalf_of_lender_name',
   'charge.on_behalf_of_amount': 'charge_on_behalf_of_amount',
+  'charge.on_behalf_of_billing': 'charge_on_behalf_of_billing',
+  'charge.on_behalf_of_total': 'charge_on_behalf_of_total',
   'charge.amount_owed_by_borrower': 'charge_amount_owed_by_borrower',
 };
 
