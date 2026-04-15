@@ -352,19 +352,8 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
 
           {renderCheckbox('sltUnderModification', 'Under Modification / FB Plan')}
 
-          <div className="flex items-center gap-3">
-            <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sltForeclosure}>
-              <div className="flex items-center gap-2">
-                <Checkbox id="sltForeclosure" checked={lien.sltForeclosure === 'true'} onCheckedChange={(checked) => onChange('sltForeclosure', checked ? 'true' : 'false')} disabled={disabled} />
-                <Label htmlFor="sltForeclosure" className="text-sm text-foreground">Foreclosure: Date Filed</Label>
-              </div>
-            </DirtyFieldWrapper>
-            {lien.sltForeclosure === 'true' && (
-              <div className="flex-1">
-                {renderField('sltForeclosureDate', '', { type: 'date' })}
-              </div>
-            )}
-          </div>
+          {renderCheckbox('sltForeclosure', 'Foreclosure')}
+          {lien.sltForeclosure === 'true' && renderField('sltForeclosureDate', 'Date Filed', { type: 'date' })}
 
           {renderCheckbox('sltPaidOff', 'Paid Off')}
 
