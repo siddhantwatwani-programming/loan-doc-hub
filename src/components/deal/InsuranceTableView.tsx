@@ -280,6 +280,7 @@ export const InsuranceTableView: React.FC<InsuranceTableViewProps> = ({
         selectedCount={selectedCount}
         onBulkDelete={() => setBulkDeleteOpen(true)}
         onExport={() => setExportOpen(true)}
+        onPrint={() => window.print()}
       />
 
       <div className="border border-border rounded-lg overflow-hidden">
