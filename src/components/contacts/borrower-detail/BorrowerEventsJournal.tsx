@@ -166,7 +166,8 @@ const BorrowerEventsJournal: React.FC<{ borrowerId: string; contactDbId: string 
   const colSpan = ALL_COLUMNS.filter(c => visibleCols.has(c.id)).length;
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
+    <div className="p-6 space-y-4">
       {/* Summary Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
@@ -351,6 +352,7 @@ const BorrowerEventsJournal: React.FC<{ borrowerId: string; contactDbId: string 
         data={events}
         fileName="borrower_event_journal"
       />
+    </div>
     </div>
   );
 };
