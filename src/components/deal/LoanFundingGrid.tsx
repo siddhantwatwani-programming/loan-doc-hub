@@ -166,6 +166,9 @@ interface LoanFundingGridProps {
   soldRate?: string;
   totalPayment?: string;
   loanAmount?: string;
+  onLoanNumberChange?: (value: string) => void;
+  onBorrowerNameChange?: (value: string) => void;
+  onHeaderFieldBlur?: () => void;
   // Funding Adjustment
   fundingAdjustments?: FundingAdjustmentData[];
   onSaveAdjustment?: (adjustment: FundingAdjustmentData) => void;
@@ -228,6 +231,9 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   soldRate = '',
   totalPayment = '',
   loanAmount = '',
+  onLoanNumberChange,
+  onBorrowerNameChange,
+  onHeaderFieldBlur,
   fundingAdjustments = [],
   onSaveAdjustment,
 }) => {
@@ -486,11 +492,23 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         <div className="flex items-center gap-4 px-3 py-2 flex-wrap border-b border-border">
           <div className="flex items-center gap-1.5">
             <Label className="text-xs text-foreground font-medium shrink-0">Account</Label>
-            <Input value={loanNumber || ''} readOnly className="h-7 text-xs w-28 bg-muted/30" />
+            <Input
+              value={loanNumber || ''}
+              onChange={(e) => onLoanNumberChange?.(e.target.value)}
+              onBlur={onHeaderFieldBlur}
+              disabled={disabled}
+              className="h-7 text-xs w-28"
+            />
           </div>
           <div className="flex items-center gap-1.5">
             <Label className="text-xs text-foreground font-medium shrink-0">Borrower</Label>
-            <Input value={borrowerName || ''} readOnly className="h-7 text-xs w-40 bg-muted/30" />
+            <Input
+              value={borrowerName || ''}
+              onChange={(e) => onBorrowerNameChange?.(e.target.value)}
+              onBlur={onHeaderFieldBlur}
+              disabled={disabled}
+              className="h-7 text-xs w-40"
+            />
           </div>
           <div className="flex items-center gap-1.5">
             <Label className="text-xs text-foreground font-medium shrink-0">Balance</Label>

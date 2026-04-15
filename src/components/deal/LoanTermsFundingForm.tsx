@@ -156,7 +156,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   const hydrationAttemptedRef = useRef(false);
 
   // Get loan number and borrower name from values - auto-populate
-  const loanNumber = values['Terms.LoanNumber'] || values['loan_terms.loan_number'] || '';
+  const loanNumber = values['loan_terms.loan_number'] || values['Terms.LoanNumber'] || '';
 
   // Borrower Name: auto-populate from Participants table (primary borrower)
   const [participantBorrowerName, setParticipantBorrowerName] = useState('');
@@ -201,7 +201,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     fetchBorrower();
   }, [dealId]);
 
-  const borrowerName = participantBorrowerName || values['loan_terms.details_borrower_name'] || '';
+  const borrowerName = values['loan_terms.details_borrower_name'] || participantBorrowerName || '';
 
   // Get loan rates for Rate Selection
   const noteRate = values['loan_terms.note_rate'] || '';
@@ -521,6 +521,18 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     toast.success('Funding adjustment saved');
   }, [fundingAdjustments, onValueChange, dealId]);
 
+  const handleLoanNumberChange = useCallback((value: string) => {
+    onValueChange('loan_terms.loan_number', value);
+  }, [onValueChange]);
+
+  const handleBorrowerNameChange = useCallback((value: string) => {
+    onValueChange('loan_terms.details_borrower_name', value);
+  }, [onValueChange]);
+
+  const handleHeaderFieldBlur = useCallback(() => {
+    void saveDraft?.();
+  }, [saveDraft]);
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
@@ -552,6 +564,9 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       soldRate={soldRate}
       totalPayment={totalPayment}
       loanAmount={loanAmount}
+      onLoanNumberChange={handleLoanNumberChange}
+      onBorrowerNameChange={handleBorrowerNameChange}
+      onHeaderFieldBlur={handleHeaderFieldBlur}
       fundingAdjustments={fundingAdjustments}
       onSaveAdjustment={handleSaveAdjustment}
     />
