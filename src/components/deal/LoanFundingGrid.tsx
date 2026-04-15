@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Plus, Trash2, Pencil, Loader2, Download, Search, X, Filter } from 'lucide-react';
+import { Plus, Trash2, Pencil, Loader2, Download, Search, X, Filter, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
