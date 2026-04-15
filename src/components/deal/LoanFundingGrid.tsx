@@ -759,6 +759,19 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
           }
         }}
       />
+
+      {onSaveAdjustment && (
+        <FundingAdjustmentModal
+          open={isAdjustmentOpen}
+          onOpenChange={setIsAdjustmentOpen}
+          loanNumber={loanNumber}
+          borrowerName={borrowerName}
+          loanBalance={totalPrincipalBalance}
+          fundingRecords={fundingRecords}
+          existingAdjustments={fundingAdjustments}
+          onSave={onSaveAdjustment}
+        />
+      )}
     </div>
   );
 };
