@@ -93,7 +93,7 @@ const getNextNotePrefix = (values: Record<string, string>): string => {
 };
 
 export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
-  values, onValueChange, onRemoveValuesByPrefix, disabled = false, dealNumber = '', dealId = '', userName = '', onRefresh,
+  values, onValueChange, onRemoveValuesByPrefix, disabled = false, dealNumber = '', dealId = '', userName = '', onRefresh, onPersist,
 }) => {
   const nav = useDealNavigationOptional();
   const activeSubSection = (nav?.getSubSection('notes') ?? 'notes') as NotesSubSection;
@@ -175,7 +175,11 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
     onValueChange(`${prefix}.publish`, noteData.publish ? 'true' : 'false');
     onValueChange(`${prefix}.add_to_participants`, noteData.addToParticipants ? 'true' : 'false');
     setModalOpen(false);
-  }, [editingNote, values, onValueChange]);
+    // Auto-persist to DB so values survive refresh/navigation
+    if (onPersist) {
+      setTimeout(() => { onPersist(); }, 50);
+    }
+  }, [editingNote, values, onValueChange, onPersist]);
 
   const handleDetailSave = useCallback((noteData: NoteData) => {
     const prefix = noteData.id;
@@ -200,7 +204,11 @@ export const NotesSectionContent: React.FC<NotesSectionContentProps> = ({
     onValueChange(`${prefix}.completed_on`, noteData.completedOn || '');
     onValueChange(`${prefix}.publish`, noteData.publish ? 'true' : 'false');
     onValueChange(`${prefix}.add_to_participants`, noteData.addToParticipants ? 'true' : 'false');
-  }, [onValueChange]);
+    // Auto-persist to DB so values survive refresh/navigation
+    if (onPersist) {
+      setTimeout(() => { onPersist(); }, 50);
+    }
+  }, [onValueChange, onPersist]);
 
   const handleExport = useCallback(() => {
     if (notes.length === 0) return;
