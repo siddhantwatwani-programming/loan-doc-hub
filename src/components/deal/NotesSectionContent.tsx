@@ -22,6 +22,7 @@ interface NotesSectionContentProps {
   dealId?: string;
   userName?: string;
   onRefresh?: () => void;
+  onPersist?: () => Promise<boolean>;
 }
 
 const extractNotesFromValues = (values: Record<string, string>): NoteData[] => {
