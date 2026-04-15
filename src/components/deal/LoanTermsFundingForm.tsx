@@ -510,6 +510,17 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     }
   };
 
+  const handleSaveAdjustment = useCallback(async (adjustment: FundingAdjustmentData) => {
+    // Upsert: replace if same id exists, else append
+    const existing = fundingAdjustments.filter((a) => a.id !== adjustment.id);
+    const updated = [...existing, adjustment];
+    const json = JSON.stringify(updated);
+    onValueChange(FIELD_KEYS.fundingAdjustments, json);
+
+    await directPersistFundingField(dealId, FIELD_KEYS.fundingAdjustments, json, dictCacheRef.current);
+    toast.success('Funding adjustment saved');
+  }, [fundingAdjustments, onValueChange, dealId]);
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
