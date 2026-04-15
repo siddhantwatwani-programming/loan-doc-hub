@@ -96,7 +96,7 @@ interface LiensTableViewProps {
   onPageChange?: (page: number) => void;
 }
 
-const SEARCHABLE_FIELDS = ['property', 'holder', 'loanType', 'lienPriorityNow', 'lienPriorityAfter', 'lastVerified'];
+const SEARCHABLE_FIELDS = ['property', 'holder', 'loanTypeDropdown', 'lienPriorityNow', 'remainingNewLienPriority', 'lastVerified'];
 
 const FILTER_OPTIONS = [
   {
@@ -115,12 +115,12 @@ const FILTER_OPTIONS = [
 const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'property', label: 'Related Property' },
   { id: 'holder', label: 'Lien Holder' },
-  { id: 'loanType', label: 'Loan Type' },
+  { id: 'loanTypeDropdown', label: 'Loan Type' },
   { id: 'lienPriorityNow', label: 'Lien Priority Now' },
-  { id: 'lienPriorityAfter', label: 'Lien Priority After' },
+  { id: 'remainingNewLienPriority', label: 'Remaining / New Lien Priority' },
   { id: 'interestRate', label: 'Interest Rate' },
   { id: 'originalBalance', label: 'Original Balance' },
-  { id: 'balanceAfter', label: 'Balance After' },
+  { id: 'currentBalance', label: 'Current Balance' },
   { id: 'regularPayment', label: 'Regular Payment' },
   { id: 'lastVerified', label: 'Last Verified' },
 ];
@@ -128,12 +128,12 @@ const EXPORT_COLUMNS: ExportColumn[] = [
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'property', label: 'Related Property', visible: true },
   { id: 'holder', label: 'Lien Holder', visible: true },
-  { id: 'loanType', label: 'Loan Type', visible: true },
+  { id: 'loanTypeDropdown', label: 'Loan Type', visible: true },
   { id: 'lienPriorityNow', label: 'Lien Priority Now', visible: true },
-  { id: 'lienPriorityAfter', label: 'Lien Priority After', visible: true },
+  { id: 'remainingNewLienPriority', label: 'Remaining / New Lien Priority', visible: true },
   { id: 'interestRate', label: 'Interest Rate', visible: true },
   { id: 'originalBalance', label: 'Original Balance', visible: true },
-  { id: 'balanceAfter', label: 'Balance After', visible: true },
+  { id: 'currentBalance', label: 'Current Balance', visible: true },
   { id: 'regularPayment', label: 'Regular Payment', visible: true },
   { id: 'lastVerified', label: 'Last Verified', visible: true },
 ];
@@ -144,7 +144,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
 }) => {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
-  const [columns, setColumns, resetColumns] = useTableColumnConfig('liens', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('liens_v2', DEFAULT_COLUMNS);
   const visibleColumns = columns.filter((col) => col.visible);
 
   const {
@@ -178,12 +178,12 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
     switch (columnId) {
       case 'property': return lien.property || 'Unassigned';
       case 'holder': return lien.holder || '-';
-      case 'loanType': return lien.loanType || '-';
+      case 'loanTypeDropdown': return lien.loanTypeDropdown || '-';
       case 'lienPriorityNow': return lien.lienPriorityNow || '-';
-      case 'lienPriorityAfter': return lien.lienPriorityAfter || '-';
+      case 'remainingNewLienPriority': return lien.remainingNewLienPriority || '-';
       case 'interestRate': return lien.interestRate ? `${lien.interestRate}%` : '-';
       case 'originalBalance': return formatCurrency(lien.originalBalance) || '-';
-      case 'balanceAfter': return formatCurrency(lien.balanceAfter) || '-';
+      case 'currentBalance': return formatCurrency(lien.currentBalance) || '-';
       case 'regularPayment': return formatCurrency(lien.regularPayment) || '-';
       case 'lastVerified': {
         if (!lien.lastVerified) return '-';
@@ -257,7 +257,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                     sortColumnId={sortState.columnId}
                     sortDirection={sortState.direction}
                     onSort={toggleSort}
-                    className={['originalBalance', 'balanceAfter', 'regularPayment'].includes(col.id) ? 'min-w-[120px] text-right' : 'min-w-[100px]'}
+                    className={['originalBalance', 'currentBalance', 'regularPayment'].includes(col.id) ? 'min-w-[120px] text-right' : 'min-w-[100px]'}
                   />
                 ))}
               </TableRow>
@@ -276,7 +276,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                       <Checkbox checked={selectedIds.has(lien.id)} onCheckedChange={() => toggleOne(lien.id)} aria-label={`Select lien`} />
                     </TableCell>
                     {visibleColumns.map((col) => (
-                      <TableCell key={col.id} className={['originalBalance', 'balanceAfter', 'regularPayment'].includes(col.id) ? 'text-right' : ''}>
+                      <TableCell key={col.id} className={['originalBalance', 'currentBalance', 'regularPayment'].includes(col.id) ? 'text-right' : ''}>
                         {renderCellValue(lien, col.id)}
                       </TableCell>
                     ))}
