@@ -101,6 +101,7 @@ const BrokerEventsJournal: React.FC<{ brokerId: string; contactDbId: string }> =
   };
 
   return (
+    <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
     <div className="space-y-4">
       <h4 className="text-lg font-semibold text-foreground">Events Journal</h4>
 
