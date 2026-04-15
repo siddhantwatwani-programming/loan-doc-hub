@@ -493,6 +493,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
   };
 
   return (
+    <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
     <div className="p-6 space-y-4">
       {/* Header with title and actions */}
       <div className="flex items-center justify-between">
@@ -663,6 +664,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         title="Delete Participants"
         description={`Are you sure you want to delete ${selectedIds.size} selected participant(s)? This action cannot be undone.`}
       />
+    </div>
     </div>
   );
 };
