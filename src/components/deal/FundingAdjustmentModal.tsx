@@ -388,8 +388,7 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
                         <TableCell className="py-1 px-1">
                           <LenderIdSearch
                             value={lender.lenderId}
-                            onChange={(val) => handleLenderChange(lender.id, 'lenderId', val)}
-                            
+                            onChange={(lenderId, lenderFullName) => handleLenderSelect(lender.id, lenderId, lenderFullName)}
                             className="h-6 text-xs"
                           />
                         </TableCell>
