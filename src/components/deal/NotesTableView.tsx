@@ -238,6 +238,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
   const filterOptions = buildFilterOptions(notes);
 
   return (
+    <div className="flex flex-col border border-border rounded-lg bg-background overflow-hidden">
     <div className="p-6 space-y-4">
       {/* Header with title and actions */}
       <div className="flex items-center justify-between">
