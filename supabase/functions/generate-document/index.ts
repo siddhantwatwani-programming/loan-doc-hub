@@ -1345,6 +1345,24 @@ async function generateSingleDocument(
       console.log(`[generate-document] Auto-computed HUD totals: Others=${totalOthers.toFixed(2)} (${dynamicOthersKeys.size} keys), Broker=${totalBroker.toFixed(2)} (${dynamicBrokerKeys.size} keys), Grand=${grandTotal.toFixed(2)}`);
     }
 
+    // ── Investor Questionnaire field aliases ──
+    // ld_p_firstIfEntityUse, ld_p_middle, ld_p_last are separate field_dictionary
+    // entries that the Investor Questionnaire template references.
+    // Populate them from the primary lender name fields if not already set.
+    {
+      const aliasSetIfEmpty = (targetKey: string, sourceKey: string, dt?: string) => {
+        if (!fieldValues.has(targetKey) || !fieldValues.get(targetKey)?.rawValue) {
+          const src = fieldValues.get(sourceKey);
+          if (src?.rawValue) {
+            fieldValues.set(targetKey, { rawValue: src.rawValue, dataType: dt || src.dataType });
+          }
+        }
+      };
+      aliasSetIfEmpty('ld_p_firstIfEntityUse', 'ld_p_firstName', 'text');
+      aliasSetIfEmpty('ld_p_middle', 'ld_p_middleName', 'text');
+      aliasSetIfEmpty('ld_p_last', 'ld_p_lastName', 'text');
+    }
+
     // Build set of all valid field keys once and reuse it across invocations.
     const validFieldKeys = await getValidFieldKeys(supabase);
 
