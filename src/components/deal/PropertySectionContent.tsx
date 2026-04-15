@@ -225,7 +225,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const [editingTax, setEditingTax] = useState<PropertyTaxData | null>(null);
   const [taxCurrentPage, setTaxCurrentPage] = useState(1);
   const [selectedTaxPrefix, setSelectedTaxPrefix] = useState<string | null>(null);
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 5;
   const { dirtyFieldKeys } = useDirtyFields();
   
   // Check if we're in detail view
