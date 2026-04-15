@@ -19,7 +19,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { LenderIdSearch } from './LenderIdSearch';
-import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
+import { numericKeyDown, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import { toast } from 'sonner';
 import type { FundingRecord } from './LoanFundingGrid';
 
