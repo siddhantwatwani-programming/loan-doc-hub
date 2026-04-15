@@ -557,7 +557,9 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   }, [onValueChange]);
 
   const handleHeaderFieldBlur = useCallback(() => {
-    void saveDraft?.();
+    window.setTimeout(() => {
+      void saveDraft?.();
+    }, 0);
   }, [saveDraft]);
 
   const handlePageChange = (page: number) => {
