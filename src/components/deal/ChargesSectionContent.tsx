@@ -24,7 +24,7 @@ interface ChargesSectionContentProps {
 }
 
 // Helper to extract charges from values based on charge prefix pattern
-const CURRENCY_CHARGE_FIELDS = ['unpaid_balance', 'total_due', 'original_amount', 'advanced_by_amount', 'on_behalf_of_amount', 'amount_owed_by_borrower', 'accrued_interest'];
+const CURRENCY_CHARGE_FIELDS = ['unpaid_balance', 'total_due', 'original_amount', 'advanced_by_amount', 'on_behalf_of_amount', 'amount_owed_by_borrower', 'accrued_interest', 'current_balance', 'balance_due', 'advanced_by_total', 'on_behalf_of_total'];
 
 const extractChargesFromValues = (values: Record<string, string>): ChargeData[] => {
   const charges: ChargeData[] = [];
