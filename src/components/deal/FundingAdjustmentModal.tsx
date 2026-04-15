@@ -322,7 +322,7 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
                       {asOfDate ? format(asOfDate, 'MM/dd/yyyy') : 'Select date'}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start">
                     <EnhancedCalendar
                       mode="single"
                       selected={asOfDate}
