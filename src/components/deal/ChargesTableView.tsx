@@ -72,18 +72,17 @@ interface ChargesTableViewProps {
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'dateOfCharge', label: 'Date', visible: true },
-  { id: 'reference', label: 'Reference', visible: true },
-  { id: 'chargeType', label: 'Type', visible: true },
-  { id: 'description', label: 'Description', visible: true },
+  { id: 'department', label: 'Department', visible: true },
+  { id: 'category', label: 'Category', visible: true },
+  { id: 'notes', label: 'Notes', visible: true },
   { id: 'interestRate', label: 'Interest Rate', visible: true },
   { id: 'interestFrom', label: 'Interest From', visible: true },
-  { id: 'deferred', label: 'Deferred', visible: true },
   { id: 'originalAmount', label: 'Original Balance', visible: true },
   { id: 'unpaidBalance', label: 'Unpaid Balance', visible: true },
   { id: 'accruedInterest', label: 'Accrued Interest', visible: true },
 ];
 
-const SEARCH_FIELDS = ['description', 'reference', 'chargeType', 'dateOfCharge', 'owedTo', 'owedFrom'];
+const SEARCH_FIELDS = ['notes', 'department', 'category', 'dateOfCharge', 'owedTo', 'owedFrom'];
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
@@ -158,7 +157,7 @@ export const ChargesTableView: React.FC<ChargesTableViewProps> = ({
   totalCount,
   onPageChange,
 }) => {
-  const [columns, setColumns, resetColumns] = useTableColumnConfig('charges_v6', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('charges_v7', DEFAULT_COLUMNS);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const visibleColumns = columns.filter((col) => col.visible);
