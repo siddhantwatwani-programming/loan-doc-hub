@@ -93,14 +93,15 @@ interface NotesTableViewProps {
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { id: 'date', label: 'Date - Time', visible: true },
-  { id: 'asOfDate', label: 'As Of', visible: true },
-  { id: 'highPriority', label: 'High Priority', visible: true },
-  { id: 'type', label: 'Type', visible: true },
   { id: 'account', label: 'Account', visible: true },
-  { id: 'name', label: 'Name', visible: true },
-  { id: 'reference', label: 'Reference', visible: true },
-  { id: 'attachments', label: 'Attachment', visible: true },
+  { id: 'date', label: 'Date - Time', visible: true },
+  { id: 'incomingOutgoing', label: 'Incoming/Outgoing', visible: true },
+  { id: 'name', label: 'Contact', visible: true },
+  { id: 'content', label: 'Conversation Log', visible: true },
+  { id: 'assignedTo', label: 'Assigned TO', visible: true },
+  { id: 'followupReminder', label: 'Followup Reminder', visible: true },
+  { id: 'completed', label: 'Completed', visible: true },
+  { id: 'completedBy', label: 'Completed BY', visible: true },
 ];
 
 const SEARCH_FIELDS = ['name', 'account', 'reference', 'type', 'content', 'date', 'asOfDate'];
@@ -152,7 +153,7 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
   asOfFilter, onAsOfFilterChange,
   currentPage = 1, totalPages = 1, totalCount, onPageChange,
 }) => {
-  const [columns, setColumns, resetColumns] = useTableColumnConfig('notes_v4', DEFAULT_COLUMNS);
+  const [columns, setColumns, resetColumns] = useTableColumnConfig('notes_v5', DEFAULT_COLUMNS);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [viewingNote, setViewingNote] = useState<NoteData | null>(null);
@@ -205,17 +206,25 @@ export const NotesTableView: React.FC<NotesTableViewProps> = ({
 
   const renderCellValue = (note: NoteData, columnId: string) => {
     switch (columnId) {
-      case 'date': return formatDateTime(note.date);
-      case 'asOfDate': return formatDate(note.asOfDate);
-      case 'highPriority': return note.highPriority ? 'Yes' : 'No';
-      case 'type': return note.type || '-';
-      case 'account': return note.account || '-';
-      case 'name': return note.name || '-';
-      case 'reference': return note.reference || '-';
-      case 'attachments': return note.attachments && note.attachments.length > 0 ? (
-        <span className="flex items-center gap-1"><Paperclip className="h-3.5 w-3.5 text-primary" /><span>{note.attachments.length}</span></span>
-      ) : '-';
-      default: return '-';
+      case 'account': return note.account || '--';
+      case 'date': return formatDateTime(note.date) || '--';
+      case 'incomingOutgoing': {
+        const parts: string[] = [];
+        if (note.incoming) parts.push('Incoming');
+        if (note.outgoing) parts.push('Outgoing');
+        return parts.length > 0 ? parts.join(' / ') : '--';
+      }
+      case 'name': return note.name || '--';
+      case 'content': {
+        if (!note.content) return '--';
+        const stripped = note.content.replace(/<[^>]*>/g, '').trim();
+        return stripped ? (stripped.length > 60 ? stripped.substring(0, 60) + '…' : stripped) : '--';
+      }
+      case 'assignedTo': return note.assignedTo || '--';
+      case 'followupReminder': return note.followupReminder ? formatDate(note.followupReminder) : '--';
+      case 'completed': return note.completed ? formatDate(note.completed) : '--';
+      case 'completedBy': return note.completedBy || '--';
+      default: return '--';
     }
   };
 
