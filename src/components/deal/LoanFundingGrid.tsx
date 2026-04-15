@@ -228,10 +228,13 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   soldRate = '',
   totalPayment = '',
   loanAmount = '',
+  fundingAdjustments = [],
+  onSaveAdjustment,
 }) => {
   const { user } = useAuth();
   const [createLenderModalOpen, setCreateLenderModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<FundingRecord | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
