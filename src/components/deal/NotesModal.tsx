@@ -249,7 +249,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-4"
+          className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden p-0"
           onInteractOutside={(e) => {
             const target = e.target as HTMLElement | null;
             if (target?.closest('[data-radix-popper-content-wrapper]')) {
@@ -257,14 +257,14 @@ export const NotesModal: React.FC<NotesModalProps> = ({
             }
           }}
         >
-          <DialogHeader>
+          <DialogHeader className="shrink-0 px-4 pt-4 pb-2 border-b border-border">
             <DialogTitle className="flex items-center gap-2 text-sm">
               <StickyNote className="h-4 w-4 text-primary" />
               {isEdit ? 'Edit Conversation Log' : 'Add New Conversation Log'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-3 mt-3 min-w-0">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-4 py-3 space-y-3 min-w-0">
             {/* High Priority + Incoming/Outgoing row */}
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
