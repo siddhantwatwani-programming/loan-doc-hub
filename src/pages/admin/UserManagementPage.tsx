@@ -254,6 +254,67 @@ export const UserManagementPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Role</DialogTitle>
+            <DialogDescription>
+              {selectedUser ? `Assign a role to ${selectedUser.email}` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div>
+              <Label htmlFor="role">Role</Label>
+              <Select
+                value={newRole}
+                onValueChange={(val) => {
+                  setNewRole(val);
+                  if (val !== 'csr') setNewPermissionLevel('full');
+                }}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="csr">CSR</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {newRole === 'csr' && (
+              <div>
+                <Label htmlFor="permission_level">Permission Level</Label>
+                <Select value={newPermissionLevel} onValueChange={setNewPermissionLevel}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Select permission level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full">Full — Can edit all forms</SelectItem>
+                    <SelectItem value="limited">Limited — Edit only allowed forms</SelectItem>
+                    <SelectItem value="view_only">View-Only — Cannot edit any form</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAssignRole} disabled={saving || !newRole}>
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Assign Role'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
