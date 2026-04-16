@@ -255,14 +255,14 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[900px] max-h-[85vh] overflow-y-auto p-0">
-        <DialogHeader className="px-4 py-2 border-b border-border bg-muted/30">
+      <DialogContent className="max-w-[900px] max-h-[85vh] flex flex-col overflow-hidden p-0">
+        <DialogHeader className="shrink-0 px-4 py-2 border-b border-border bg-muted/30">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-sm font-semibold">Funding Adjustment</DialogTitle>
           </div>
         </DialogHeader>
 
-        <div className="p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 p-4 space-y-4">
           {/* Header Fields - Left side and Distribute checkbox */}
           <div className="flex items-start justify-between gap-6">
             {/* Left header fields */}
@@ -531,15 +531,16 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-2 pt-2 border-t border-border">
-            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={handleSave}>
-              Save Adjustment
-            </Button>
-          </div>
+        </div>
+
+        {/* Action Buttons - fixed footer */}
+        <div className="shrink-0 flex justify-end gap-2 px-4 py-3 border-t border-border bg-background">
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button size="sm" onClick={handleSave}>
+            Save Adjustment
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
