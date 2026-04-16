@@ -95,6 +95,31 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
+  const handleInlineRoleChange = async (user: UserWithRole, role: 'admin' | 'csr') => {
+    try {
+      const { error } = await supabase.rpc('assign_user_role_and_permission', {
+        p_user_id: user.id,
+        p_role: role,
+        p_permission_level: role === 'csr' ? (user.permission_level || 'full') : 'full',
+      });
+      if (error) throw error;
+
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role } : u));
+
+      toast({
+        title: 'Role updated',
+        description: `${user.email} is now ${role.toUpperCase()}.`,
+      });
+    } catch (error: any) {
+      console.error('Error updating role:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update role',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleAssignRole = async () => {
     if (!selectedUser || !newRole) return;
 
