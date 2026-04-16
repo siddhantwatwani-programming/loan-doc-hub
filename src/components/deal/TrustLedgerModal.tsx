@@ -123,15 +123,15 @@ export const TrustLedgerModal: React.FC<TrustLedgerModalProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2 text-sm">
               <Building className="h-4 w-4 text-primary" />
               {isEdit ? 'Edit Trust Ledger Entry' : 'Add Trust Ledger Entry'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-3 mt-3">
+          <div className="space-y-3 mt-3 flex-1 overflow-y-auto overflow-x-hidden min-h-0">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs text-foreground">Date <span className="text-destructive">*</span></Label>
@@ -261,7 +261,7 @@ export const TrustLedgerModal: React.FC<TrustLedgerModalProps> = ({
             </div>
           </div>
 
-          <DialogFooter className="mt-4">
+          <DialogFooter className="mt-4 shrink-0">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button size="sm" onClick={handleSaveClick} disabled={!isFormValid()}>OK</Button>
           </DialogFooter>
