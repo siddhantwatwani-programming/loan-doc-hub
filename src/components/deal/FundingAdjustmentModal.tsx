@@ -531,15 +531,16 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-2 pt-2 border-t border-border">
-            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={handleSave}>
-              Save Adjustment
-            </Button>
-          </div>
+        </div>
+
+        {/* Action Buttons - fixed footer */}
+        <div className="shrink-0 flex justify-end gap-2 px-4 py-3 border-t border-border bg-background">
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button size="sm" onClick={handleSave}>
+            Save Adjustment
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
