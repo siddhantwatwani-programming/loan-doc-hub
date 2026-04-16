@@ -312,37 +312,57 @@ export const ContactsListView: React.FC<ContactsListViewProps> = ({
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            {filteredContacts.length !== contacts.length && `Showing ${filteredContacts.length} of `}
-            Total: {totalCount}{selectedCount > 0 && ` · ${selectedCount} selected`}
-          </div>
-          {totalPages > 1 && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage <= 1}
-                onClick={() => onPageChange(currentPage - 1)}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage >= totalPages}
-                onClick={() => onPageChange(currentPage + 1)}
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+        {totalCount > 0 && (
+          <div className="flex items-center justify-end gap-4">
+            <div className="text-sm text-muted-foreground">
+              Showing {Math.min((currentPage - 1) * 10 + 1, totalCount)}–{Math.min(currentPage * 10, totalCount)} of {totalCount} {title.toLowerCase()}
+              {selectedCount > 0 && ` · ${selectedCount} selected`}
             </div>
-          )}
-        </div>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage <= 1}
+                  onClick={() => onPageChange(1)}
+                  className="px-2"
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage <= 1}
+                  onClick={() => onPageChange(currentPage - 1)}
+                  className="px-2"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="inline-flex items-center justify-center h-8 min-w-[32px] px-2 rounded-md bg-primary text-primary-foreground text-sm font-medium">
+                  {currentPage}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => onPageChange(currentPage + 1)}
+                  className="px-2"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => onPageChange(totalPages)}
+                  className="px-2"
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Delete Confirmation */}
