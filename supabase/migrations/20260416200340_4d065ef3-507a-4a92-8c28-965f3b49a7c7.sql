@@ -1,0 +1,1 @@
+SELECT public.assign_user_role_and_permission('b8a28c5a-f129-42b6-ba33-b9075d9d681c'::uuid, 'admin'::public.app_role, NULL);
