@@ -97,29 +97,27 @@ export const OriginationServicingForm: React.FC<OriginationServicingFormProps> =
           });
         });
     } else if (currentAgent === 'Broker') {
-      // Use broker1 data from values
+      // Use broker data from values using correct field keys
+      const brokerName = values['broker.company'] || `${values['broker.first_name'] || ''} ${values['broker.last_name'] || ''}`.trim();
       populateAddress({
-        name: values['broker1.company'] || values['broker1.first_name'] ? `${values['broker1.first_name'] || ''} ${values['broker1.last_name'] || ''}`.trim() : '',
-        street: values['broker1.address.street'] || '',
-        city: values['broker1.address.city'] || '',
-        state: values['broker1.address.state'] || '',
-        zip: values['broker1.address.zip'] || '',
-        phone: values['broker1.phone.work'] || values['broker1.phone.cell'] || '',
-        email: values['broker1.email'] || '',
+        name: brokerName,
+        street: values['broker.address.street'] || '',
+        city: values['broker.address.city'] || '',
+        state: values['broker.address.state'] || '',
+        zip: values['broker.address.zip'] || '',
+        phone: values['broker.phone.work'] || values['broker.phone.cell'] || '',
+        email: values['broker.email'] || '',
       });
-      // Use company name if available, fallback to individual name
-      const brokerName = values['broker1.company'] || `${values['broker1.first_name'] || ''} ${values['broker1.last_name'] || ''}`.trim();
-      if (brokerName) sv(FK.tp_name, brokerName);
     } else if (currentAgent === 'Lender') {
-      // Use lender1 (first/primary lender) data from values
+      // Use lender (primary lender) data from values using correct field keys
       populateAddress({
-        name: values['lender1.full_name'] || `${values['lender1.first_name'] || ''} ${values['lender1.last_name'] || ''}`.trim(),
-        street: values['lender1.primary_address.street'] || values['lender1.street'] || '',
-        city: values['lender1.primary_address.city'] || values['lender1.city'] || '',
-        state: values['lender1.primary_address.state'] || values['lender1.state'] || '',
-        zip: values['lender1.primary_address.zip'] || values['lender1.zip'] || '',
-        phone: values['lender1.phone.work'] || values['lender1.phone.cell'] || values['lender1.phone.home'] || '',
-        email: values['lender1.email'] || '',
+        name: values['lender.full_name'] || `${values['lender.first_name'] || ''} ${values['lender.last_name'] || ''}`.trim(),
+        street: values['lender.primary_address.street'] || '',
+        city: values['lender.primary_address.city'] || '',
+        state: values['lender.primary_address.state'] || '',
+        zip: values['lender.primary_address.zip'] || '',
+        phone: values['lender.phone.work'] || values['lender.phone.cell'] || values['lender.phone.home'] || '',
+        email: values['lender.email'] || '',
       });
     }
   }, [currentAgent]);
