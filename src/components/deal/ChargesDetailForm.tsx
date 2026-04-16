@@ -24,36 +24,7 @@ import { CHARGES_DETAIL_KEYS } from '@/lib/fieldKeyMap';
 
 const FIELD_KEYS = CHARGES_DETAIL_KEYS;
 
-// Department options (same as modal)
-const DEPARTMENT_OPTIONS = ['Servicing', 'Origination', 'Escrow', 'Collections', 'Other'];
-
-// Category options based on department (same as modal)
-const CATEGORY_OPTIONS: Record<string, string[]> = {
-  Servicing: ['Late Fee', 'NSF Fee', 'Inspection Fee', 'Legal Fee', 'Other'],
-  Origination: ['Processing Fee', 'Underwriting Fee', 'Appraisal Fee', 'Other'],
-  Escrow: ['Property Tax', 'Insurance', 'HOA', 'Other'],
-  Collections: ['Attorney Fee', 'Court Cost', 'Filing Fee', 'Other'],
-  Other: ['Miscellaneous', 'Other'],
-};
-
-// Details options based on category (same as modal)
-const DETAILS_OPTIONS: Record<string, string[]> = {
-  'Late Fee': ['Monthly Late Fee', 'Quarterly Late Fee', 'Annual Late Fee'],
-  'NSF Fee': ['Returned Check', 'Returned ACH'],
-  'Inspection Fee': ['Drive-by Inspection', 'Full Inspection'],
-  'Legal Fee': ['Attorney Fees', 'Court Costs', 'Filing Fees'],
-  'Processing Fee': ['Application Fee', 'Credit Report Fee'],
-  'Underwriting Fee': ['Standard', 'Expedited'],
-  'Appraisal Fee': ['Full Appraisal', 'Desktop Appraisal', 'BPO'],
-  'Property Tax': ['Annual Tax', 'Supplemental Tax'],
-  'Insurance': ['Hazard Insurance', 'Flood Insurance'],
-  'HOA': ['Monthly Dues', 'Special Assessment'],
-  'Attorney Fee': ['Retainer', 'Hourly', 'Flat Fee'],
-  'Court Cost': ['Filing', 'Service'],
-  'Filing Fee': ['County', 'State'],
-  Other: ['Other'],
-  Miscellaneous: ['Miscellaneous'],
-};
+import { DEPARTMENT_OPTIONS, getDepartmentCategories, getCategoryDetails } from '@/lib/chargesCategoryData';
 
 const BILLING_OPTIONS = ['Short Payment', 'Debit All Outgoing', 'Credit Card', 'Invoice / Link'];
 
