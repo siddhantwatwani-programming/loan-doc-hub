@@ -16,7 +16,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -92,31 +91,6 @@ export const UserManagementPage: React.FC = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleInlineRoleChange = async (user: UserWithRole, role: 'admin' | 'csr') => {
-    try {
-      const { error } = await supabase.rpc('assign_user_role_and_permission', {
-        p_user_id: user.id,
-        p_role: role,
-        p_permission_level: role === 'csr' ? (user.permission_level || 'full') : 'full',
-      });
-      if (error) throw error;
-
-      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role } : u));
-
-      toast({
-        title: 'Role updated',
-        description: `${user.email} is now ${role.toUpperCase()}.`,
-      });
-    } catch (error: any) {
-      console.error('Error updating role:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to update role',
-        variant: 'destructive',
-      });
     }
   };
 
@@ -226,18 +200,19 @@ export const UserManagementPage: React.FC = () => {
                     </td>
                     <td className="py-4 px-4 text-muted-foreground">{user.email}</td>
                     <td className="py-4 px-4">
-                      <Select
-                        value={user.role || ''}
-                        onValueChange={(val) => handleInlineRoleChange(user, val as 'admin' | 'csr')}
-                      >
-                        <SelectTrigger className="w-[130px] h-8">
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="csr">CSR</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {user.role ? (
+                        <span className={cn(
+                          'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium',
+                          user.role === 'admin' 
+                            ? 'bg-primary/10 text-primary' 
+                            : 'bg-success/10 text-success'
+                        )}>
+                          <Shield className="h-3 w-3" />
+                          {user.role.toUpperCase()}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No role</span>
+                      )}
                     </td>
                     <td className="py-4 px-4">
                       {user.role === 'csr' ? (
@@ -259,75 +234,18 @@ export const UserManagementPage: React.FC = () => {
                       {new Date(user.created_at).toLocaleDateString()}
                     </td>
                     <td className="py-4 px-4 text-right">
-                      <Dialog open={isDialogOpen && selectedUser?.id === user.id} onOpenChange={(open) => {
-                        setIsDialogOpen(open);
-                        if (open) {
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
                           setSelectedUser(user);
                           setNewRole(user.role || '');
                           setNewPermissionLevel(user.permission_level || 'full');
-                        }
-                      }}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            {user.role ? 'Change Role' : 'Assign Role'}
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Assign Role</DialogTitle>
-                            <DialogDescription>
-                              Assign a role to {user.email}
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="py-4 space-y-4">
-                            <div>
-                              <Label htmlFor="role">Role</Label>
-                              <Select value={newRole} onValueChange={(val) => {
-                                setNewRole(val);
-                                if (val !== 'csr') setNewPermissionLevel('full');
-                              }}>
-                                <SelectTrigger className="mt-2">
-                                  <SelectValue placeholder="Select a role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                  <SelectItem value="csr">CSR</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            {newRole === 'csr' && (
-                              <div>
-                                <Label htmlFor="permission_level">Permission Level</Label>
-                                <Select value={newPermissionLevel} onValueChange={setNewPermissionLevel}>
-                                  <SelectTrigger className="mt-2">
-                                    <SelectValue placeholder="Select permission level" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="full">Full — Can edit all forms</SelectItem>
-                                    <SelectItem value="limited">Limited — Edit only allowed forms</SelectItem>
-                                    <SelectItem value="view_only">View-Only — Cannot edit any form</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            )}
-                          </div>
-                          <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                              Cancel
-                            </Button>
-                            <Button onClick={handleAssignRole} disabled={saving || !newRole}>
-                              {saving ? (
-                                <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  Saving...
-                                </>
-                              ) : (
-                                'Assign Role'
-                              )}
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
+                          setIsDialogOpen(true);
+                        }}
+                      >
+                        {user.role ? 'Change Role' : 'Assign Role'}
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -336,6 +254,67 @@ export const UserManagementPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Role</DialogTitle>
+            <DialogDescription>
+              {selectedUser ? `Assign a role to ${selectedUser.email}` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div>
+              <Label htmlFor="role">Role</Label>
+              <Select
+                value={newRole}
+                onValueChange={(val) => {
+                  setNewRole(val);
+                  if (val !== 'csr') setNewPermissionLevel('full');
+                }}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="csr">CSR</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {newRole === 'csr' && (
+              <div>
+                <Label htmlFor="permission_level">Permission Level</Label>
+                <Select value={newPermissionLevel} onValueChange={setNewPermissionLevel}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Select permission level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full">Full — Can edit all forms</SelectItem>
+                    <SelectItem value="limited">Limited — Edit only allowed forms</SelectItem>
+                    <SelectItem value="view_only">View-Only — Cannot edit any form</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAssignRole} disabled={saving || !newRole}>
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Assign Role'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
