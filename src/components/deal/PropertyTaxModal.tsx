@@ -272,7 +272,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-border flex-shrink-0">
+          <div className="flex justify-end gap-2 px-6 py-3 border-t border-border shrink-0">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>
               {isEdit ? 'Update' : 'Save'}
