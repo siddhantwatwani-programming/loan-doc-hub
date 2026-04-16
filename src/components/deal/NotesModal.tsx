@@ -573,7 +573,7 @@ export const NotesModal: React.FC<NotesModalProps> = ({
             </div>
           </div>
 
-          <DialogFooter className="mt-4 flex-shrink-0">
+          <DialogFooter className="shrink-0 px-4 py-3 border-t border-border bg-background">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button size="sm" onClick={handleSaveClick} disabled={uploading || !isFormFilled}>{uploading ? 'Uploading...' : 'OK'}</Button>
           </DialogFooter>
