@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { EmailInput } from '@/components/ui/email-input';
@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 import { US_STATES } from '@/lib/usStates';
+import { supabase } from '@/integrations/supabase/client';
 import type { CalculationResult } from '@/lib/calculationEngine';
 
 interface OriginationServicingFormProps {
@@ -44,8 +45,7 @@ const FK = {
   fee_payable: 'origination_svc.broker_fee.payable',
 };
 
-const AGENT_OPTIONS = ['Company', 'Other Servicer', 'Lender'];
-const PERIOD_OPTIONS = ['Monthly', 'Quarterly', 'Annually', 'Other'];
+const AGENT_OPTIONS = ['Company', 'Broker', 'Lender'];
 
 export const OriginationServicingForm: React.FC<OriginationServicingFormProps> = ({
   values,
@@ -56,6 +56,73 @@ export const OriginationServicingForm: React.FC<OriginationServicingFormProps> =
   const sv = (key: string, val: string) => onValueChange(key, val);
   const bv = (key: string) => values[key] === 'true';
   const sbv = (key: string, val: boolean) => onValueChange(key, String(val));
+
+  // Track previous agent to detect user-initiated changes only
+  const prevAgentRef = useRef<string>(v(FK.servicing_agent));
+
+  // Auto-populate 3rd party address based on Servicing Agent selection
+  const currentAgent = v(FK.servicing_agent);
+  useEffect(() => {
+    if (currentAgent === prevAgentRef.current) return;
+    prevAgentRef.current = currentAgent;
+    if (!currentAgent) return;
+
+    const populateAddress = (data: {
+      name?: string; street?: string; city?: string; state?: string; zip?: string; phone?: string; email?: string;
+    }) => {
+      sv(FK.tp_name, data.name || '');
+      sv(FK.tp_street, data.street || '');
+      sv(FK.tp_city, data.city || '');
+      sv(FK.tp_state, data.state || '');
+      sv(FK.tp_zip, data.zip || '');
+      sv(FK.tp_phone, data.phone || '');
+      sv(FK.tp_email, data.email || '');
+    };
+
+    if (currentAgent === 'Company') {
+      // Fetch company name from system_settings; no address stored yet
+      supabase.from('system_settings').select('setting_key, setting_value')
+        .in('setting_key', ['company_name', 'company_street', 'company_city', 'company_state', 'company_zip', 'company_phone', 'company_email'])
+        .then(({ data }) => {
+          const map: Record<string, string> = {};
+          (data || []).forEach(r => { map[r.setting_key] = r.setting_value || ''; });
+          populateAddress({
+            name: map['company_name'] || '',
+            street: map['company_street'] || '',
+            city: map['company_city'] || '',
+            state: map['company_state'] || '',
+            zip: map['company_zip'] || '',
+            phone: map['company_phone'] || '',
+            email: map['company_email'] || '',
+          });
+        });
+    } else if (currentAgent === 'Broker') {
+      // Use broker1 data from values
+      populateAddress({
+        name: values['broker1.company'] || values['broker1.first_name'] ? `${values['broker1.first_name'] || ''} ${values['broker1.last_name'] || ''}`.trim() : '',
+        street: values['broker1.address.street'] || '',
+        city: values['broker1.address.city'] || '',
+        state: values['broker1.address.state'] || '',
+        zip: values['broker1.address.zip'] || '',
+        phone: values['broker1.phone.work'] || values['broker1.phone.cell'] || '',
+        email: values['broker1.email'] || '',
+      });
+      // Use company name if available, fallback to individual name
+      const brokerName = values['broker1.company'] || `${values['broker1.first_name'] || ''} ${values['broker1.last_name'] || ''}`.trim();
+      if (brokerName) sv(FK.tp_name, brokerName);
+    } else if (currentAgent === 'Lender') {
+      // Use lender1 (first/primary lender) data from values
+      populateAddress({
+        name: values['lender1.full_name'] || `${values['lender1.first_name'] || ''} ${values['lender1.last_name'] || ''}`.trim(),
+        street: values['lender1.primary_address.street'] || values['lender1.street'] || '',
+        city: values['lender1.primary_address.city'] || values['lender1.city'] || '',
+        state: values['lender1.primary_address.state'] || values['lender1.state'] || '',
+        zip: values['lender1.primary_address.zip'] || values['lender1.zip'] || '',
+        phone: values['lender1.phone.work'] || values['lender1.phone.cell'] || values['lender1.phone.home'] || '',
+        email: values['lender1.email'] || '',
+      });
+    }
+  }, [currentAgent]);
 
   // Auto-copy 3rd party values when "Same as 3rd Party" is checked
   const sameAsTP = bv(FK.sp_same_as_tp);
