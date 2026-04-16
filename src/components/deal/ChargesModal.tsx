@@ -225,7 +225,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
                   <Label className="w-[110px] shrink-0 text-xs font-semibold text-foreground">Details</Label>
                   <Select value={formData.details || undefined} onValueChange={(val) => handleFieldChange('details', val)} disabled={detailsOptions.length === 0}>
                     <SelectTrigger className="h-7 text-xs flex-1">
-                      <SelectValue placeholder={detailsOptions.length === 0 ? 'Select category first' : 'Select...'} />
+                      <SelectValue placeholder={!formData.category ? 'Select category first' : detailsOptions.length === 0 ? '--' : 'Select...'} />
                     </SelectTrigger>
                     <SelectContent className="!z-[9999]" position="popper" sideOffset={4}>
                       {detailsOptions.map(opt => (
