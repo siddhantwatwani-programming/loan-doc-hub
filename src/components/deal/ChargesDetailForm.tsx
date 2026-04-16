@@ -192,7 +192,7 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
               <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Details</Label>
               <Select value={values[FIELD_KEYS.details] || undefined} onValueChange={(val) => onValueChange(FIELD_KEYS.details, val)} disabled={disabled || detailsOptions.length === 0}>
                 <SelectTrigger className="h-7 text-sm flex-1">
-                  <SelectValue placeholder={detailsOptions.length === 0 ? 'Select category first' : 'Select...'} />
+                  <SelectValue placeholder={!categoryVal ? 'Select category first' : detailsOptions.length === 0 ? '--' : 'Select...'} />
                 </SelectTrigger>
                 <SelectContent className="z-[9999]">
                   {detailsOptions.map(opt => (
