@@ -95,31 +95,6 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
-  const handleInlineRoleChange = async (user: UserWithRole, role: 'admin' | 'csr') => {
-    try {
-      const { error } = await supabase.rpc('assign_user_role_and_permission', {
-        p_user_id: user.id,
-        p_role: role,
-        p_permission_level: role === 'csr' ? (user.permission_level || 'full') : 'full',
-      });
-      if (error) throw error;
-
-      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role } : u));
-
-      toast({
-        title: 'Role updated',
-        description: `${user.email} is now ${role.toUpperCase()}.`,
-      });
-    } catch (error: any) {
-      console.error('Error updating role:', error);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to update role',
-        variant: 'destructive',
-      });
-    }
-  };
-
   const handleAssignRole = async () => {
     if (!selectedUser || !newRole) return;
 
@@ -226,18 +201,19 @@ export const UserManagementPage: React.FC = () => {
                     </td>
                     <td className="py-4 px-4 text-muted-foreground">{user.email}</td>
                     <td className="py-4 px-4">
-                      <Select
-                        value={user.role || ''}
-                        onValueChange={(val) => handleInlineRoleChange(user, val as 'admin' | 'csr')}
-                      >
-                        <SelectTrigger className="w-[130px] h-8">
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="csr">CSR</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {user.role ? (
+                        <span className={cn(
+                          'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium',
+                          user.role === 'admin' 
+                            ? 'bg-primary/10 text-primary' 
+                            : 'bg-success/10 text-success'
+                        )}>
+                          <Shield className="h-3 w-3" />
+                          {user.role.toUpperCase()}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No role</span>
+                      )}
                     </td>
                     <td className="py-4 px-4">
                       {user.role === 'csr' ? (
