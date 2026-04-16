@@ -61,19 +61,61 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   const handleCurrencyChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value));
   const handlePercentageChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value).replace(/-/g, ''));
 
-  // Auto-calculate Loan To Value = Loan Amount / Purchase Price
+  // Helper: sum all lien new_remaining_balance values
+  const existingLiensTotal = React.useMemo(() => {
+    let total = 0;
+    const lienPrefixes = new Set<string>();
+    Object.keys(values).forEach(key => {
+      const m = key.match(/^(lien\d+)\./);
+      if (m) lienPrefixes.add(m[1]);
+    });
+    lienPrefixes.forEach(prefix => {
+      const raw = values[`${prefix}.new_remaining_balance`] || '';
+      const num = parseFloat(raw.replace(/[,$]/g, ''));
+      if (!isNaN(num)) total += num;
+    });
+    return total;
+  }, [values]);
+
+  // Auto-calculate LTV, Pledged Equity, Protective Equity, CLTV
   useEffect(() => {
     const loanAmountRaw = values['loan_terms.loan_amount'] || '';
     const purchasePriceRaw = getFieldValue(FIELD_KEYS.purchasePrice);
     const loanAmount = parseFloat(loanAmountRaw.replace(/[,$]/g, ''));
     const purchasePrice = parseFloat(purchasePriceRaw.replace(/[,$]/g, ''));
+
+    // LTV = (Loan Amount / Purchase Price) × 100
     if (!isNaN(loanAmount) && !isNaN(purchasePrice) && purchasePrice > 0) {
       const ltv = ((loanAmount / purchasePrice) * 100).toFixed(2);
       if (getFieldValue(FIELD_KEYS.ltv) !== ltv) {
         onValueChange(FIELD_KEYS.ltv, ltv);
       }
     }
-  }, [values['loan_terms.loan_amount'], values[FIELD_KEYS.purchasePrice]]);
+
+    // Pledged Equity = Purchase Price − Existing Liens (sum of lien new_remaining_balance)
+    if (!isNaN(purchasePrice)) {
+      const pe = (purchasePrice - existingLiensTotal).toFixed(2);
+      if (getFieldValue(FIELD_KEYS.pledgedEquity) !== pe) {
+        onValueChange(FIELD_KEYS.pledgedEquity, pe);
+      }
+    }
+
+    // Protective Equity = Purchase Price − (Existing Liens + Loan Amount)
+    if (!isNaN(purchasePrice) && !isNaN(loanAmount)) {
+      const protEq = (purchasePrice - (existingLiensTotal + loanAmount)).toFixed(2);
+      if (getFieldValue(FIELD_KEYS.protectiveEquity) !== protEq) {
+        onValueChange(FIELD_KEYS.protectiveEquity, protEq);
+      }
+    }
+
+    // CLTV = (Existing Liens + Loan Amount) / Purchase Price × 100
+    if (!isNaN(loanAmount) && !isNaN(purchasePrice) && purchasePrice > 0) {
+      const cltv = (((existingLiensTotal + loanAmount) / purchasePrice) * 100).toFixed(2);
+      if (getFieldValue(FIELD_KEYS.cltv) !== cltv) {
+        onValueChange(FIELD_KEYS.cltv, cltv);
+      }
+    }
+  }, [values['loan_terms.loan_amount'], values[FIELD_KEYS.purchasePrice], existingLiensTotal]);
 
   const isCopyBorrower = getFieldValue(FIELD_KEYS.copyBorrowerAddress) === 'true';
   const borrowerStreet = values['borrower.address.street'] || '';
@@ -318,23 +360,42 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             </>
           )}
 
-          {renderCurrencyField(FIELD_KEYS.pledgedEquity, 'Pledged Equity')}
-          {renderCurrencyField(FIELD_KEYS.protectiveEquity, 'Protective Equity')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.pledgedEquity}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Pledged Equity</Label>
+              <div className="relative flex-1">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                <Input value={getFieldValue(FIELD_KEYS.pledgedEquity)} disabled className="h-7 text-xs pl-6 bg-muted" readOnly />
+              </div>
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.protectiveEquity}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Protective Equity</Label>
+              <div className="relative flex-1">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                <Input value={getFieldValue(FIELD_KEYS.protectiveEquity)} disabled className="h-7 text-xs pl-6 bg-muted" readOnly />
+              </div>
+            </div>
+          </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.ltv}>
             <div className="flex items-center gap-2">
               <Label className="w-[110px] shrink-0 text-xs text-foreground">Loan To Value</Label>
               <div className="relative flex-1">
-                <Input
-                  value={getFieldValue(FIELD_KEYS.ltv)}
-                  disabled
-                  className="h-7 text-xs pr-6 bg-muted"
-                  readOnly
-                />
+                <Input value={getFieldValue(FIELD_KEYS.ltv)} disabled className="h-7 text-xs pr-6 bg-muted" readOnly />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
               </div>
             </div>
           </DirtyFieldWrapper>
-          {renderPercentageField(FIELD_KEYS.cltv, 'CLTV (If a Junior Lien)')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.cltv}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">CLTV (If a Junior Lien)</Label>
+              <div className="relative flex-1">
+                <Input value={getFieldValue(FIELD_KEYS.cltv)} disabled className="h-7 text-xs pr-6 bg-muted" readOnly />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
+              </div>
+            </div>
+          </DirtyFieldWrapper>
         </div>
       </div>
     </div>
