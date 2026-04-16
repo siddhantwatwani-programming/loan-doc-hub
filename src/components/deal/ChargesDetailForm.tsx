@@ -24,36 +24,7 @@ import { CHARGES_DETAIL_KEYS } from '@/lib/fieldKeyMap';
 
 const FIELD_KEYS = CHARGES_DETAIL_KEYS;
 
-// Department options (same as modal)
-const DEPARTMENT_OPTIONS = ['Servicing', 'Origination', 'Escrow', 'Collections', 'Other'];
-
-// Category options based on department (same as modal)
-const CATEGORY_OPTIONS: Record<string, string[]> = {
-  Servicing: ['Late Fee', 'NSF Fee', 'Inspection Fee', 'Legal Fee', 'Other'],
-  Origination: ['Processing Fee', 'Underwriting Fee', 'Appraisal Fee', 'Other'],
-  Escrow: ['Property Tax', 'Insurance', 'HOA', 'Other'],
-  Collections: ['Attorney Fee', 'Court Cost', 'Filing Fee', 'Other'],
-  Other: ['Miscellaneous', 'Other'],
-};
-
-// Details options based on category (same as modal)
-const DETAILS_OPTIONS: Record<string, string[]> = {
-  'Late Fee': ['Monthly Late Fee', 'Quarterly Late Fee', 'Annual Late Fee'],
-  'NSF Fee': ['Returned Check', 'Returned ACH'],
-  'Inspection Fee': ['Drive-by Inspection', 'Full Inspection'],
-  'Legal Fee': ['Attorney Fees', 'Court Costs', 'Filing Fees'],
-  'Processing Fee': ['Application Fee', 'Credit Report Fee'],
-  'Underwriting Fee': ['Standard', 'Expedited'],
-  'Appraisal Fee': ['Full Appraisal', 'Desktop Appraisal', 'BPO'],
-  'Property Tax': ['Annual Tax', 'Supplemental Tax'],
-  'Insurance': ['Hazard Insurance', 'Flood Insurance'],
-  'HOA': ['Monthly Dues', 'Special Assessment'],
-  'Attorney Fee': ['Retainer', 'Hourly', 'Flat Fee'],
-  'Court Cost': ['Filing', 'Service'],
-  'Filing Fee': ['County', 'State'],
-  Other: ['Other'],
-  Miscellaneous: ['Miscellaneous'],
-};
+import { DEPARTMENT_OPTIONS, getDepartmentCategories, getCategoryDetails } from '@/lib/chargesCategoryData';
 
 const BILLING_OPTIONS = ['Short Payment', 'Debit All Outgoing', 'Credit Card', 'Invoice / Link'];
 
@@ -76,8 +47,8 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
 
   const departmentVal = values[FIELD_KEYS.department] || '';
   const categoryVal = values[FIELD_KEYS.category] || '';
-  const categoryOptions = departmentVal ? (CATEGORY_OPTIONS[departmentVal] || []) : [];
-  const detailsOptions = categoryVal ? (DETAILS_OPTIONS[categoryVal] || []) : [];
+  const categoryOptions = departmentVal ? getDepartmentCategories(departmentVal) : [];
+  const detailsOptions = (departmentVal && categoryVal) ? getCategoryDetails(departmentVal, categoryVal) : [];
 
   const handleDepartmentChange = (val: string) => {
     onValueChange(FIELD_KEYS.department, val);
@@ -221,7 +192,7 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
               <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Details</Label>
               <Select value={values[FIELD_KEYS.details] || undefined} onValueChange={(val) => onValueChange(FIELD_KEYS.details, val)} disabled={disabled || detailsOptions.length === 0}>
                 <SelectTrigger className="h-7 text-sm flex-1">
-                  <SelectValue placeholder={detailsOptions.length === 0 ? 'Select category first' : 'Select...'} />
+                  <SelectValue placeholder={!categoryVal ? 'Select category first' : detailsOptions.length === 0 ? '--' : 'Select...'} />
                 </SelectTrigger>
                 <SelectContent className="z-[9999]">
                   {detailsOptions.map(opt => (

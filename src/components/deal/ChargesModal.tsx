@@ -40,36 +40,7 @@ const getEmptyCharge = (): ChargeData => ({
   advancedByDeferred: '', advancedByTotal: '', onBehalfOfBilling: '', onBehalfOfTotal: '',
 });
 
-// Department options
-const DEPARTMENT_OPTIONS = ['Servicing', 'Origination', 'Escrow', 'Collections', 'Other'];
-
-// Category options based on department
-const CATEGORY_OPTIONS: Record<string, string[]> = {
-  Servicing: ['Late Fee', 'NSF Fee', 'Inspection Fee', 'Legal Fee', 'Other'],
-  Origination: ['Processing Fee', 'Underwriting Fee', 'Appraisal Fee', 'Other'],
-  Escrow: ['Property Tax', 'Insurance', 'HOA', 'Other'],
-  Collections: ['Attorney Fee', 'Court Cost', 'Filing Fee', 'Other'],
-  Other: ['Miscellaneous', 'Other'],
-};
-
-// Details options based on category
-const DETAILS_OPTIONS: Record<string, string[]> = {
-  'Late Fee': ['Monthly Late Fee', 'Quarterly Late Fee', 'Annual Late Fee'],
-  'NSF Fee': ['Returned Check', 'Returned ACH'],
-  'Inspection Fee': ['Drive-by Inspection', 'Full Inspection'],
-  'Legal Fee': ['Attorney Fees', 'Court Costs', 'Filing Fees'],
-  'Processing Fee': ['Application Fee', 'Credit Report Fee'],
-  'Underwriting Fee': ['Standard', 'Expedited'],
-  'Appraisal Fee': ['Full Appraisal', 'Desktop Appraisal', 'BPO'],
-  'Property Tax': ['Annual Tax', 'Supplemental Tax'],
-  'Insurance': ['Hazard Insurance', 'Flood Insurance'],
-  'HOA': ['Monthly Dues', 'Special Assessment'],
-  'Attorney Fee': ['Retainer', 'Hourly', 'Flat Fee'],
-  'Court Cost': ['Filing', 'Service'],
-  'Filing Fee': ['County', 'State'],
-  Other: ['Other'],
-  Miscellaneous: ['Miscellaneous'],
-};
+import { DEPARTMENT_OPTIONS, getDepartmentCategories, getCategoryDetails } from '@/lib/chargesCategoryData';
 
 const BILLING_OPTIONS = ['Short Payment', 'Debit All Outgoing', 'Credit Card', 'Invoice / Link'];
 
@@ -173,8 +144,8 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
     </div>
   );
 
-  const categoryOptions = formData.department ? (CATEGORY_OPTIONS[formData.department] || []) : [];
-  const detailsOptions = formData.category ? (DETAILS_OPTIONS[formData.category] || []) : [];
+  const categoryOptions = formData.department ? getDepartmentCategories(formData.department) : [];
+  const detailsOptions = (formData.department && formData.category) ? getCategoryDetails(formData.department, formData.category) : [];
 
   // Reset dependent dropdowns when parent changes
   const handleDepartmentChange = (val: string) => {
@@ -254,7 +225,7 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
                   <Label className="w-[110px] shrink-0 text-xs font-semibold text-foreground">Details</Label>
                   <Select value={formData.details || undefined} onValueChange={(val) => handleFieldChange('details', val)} disabled={detailsOptions.length === 0}>
                     <SelectTrigger className="h-7 text-xs flex-1">
-                      <SelectValue placeholder={detailsOptions.length === 0 ? 'Select category first' : 'Select...'} />
+                      <SelectValue placeholder={!formData.category ? 'Select category first' : detailsOptions.length === 0 ? '--' : 'Select...'} />
                     </SelectTrigger>
                     <SelectContent className="!z-[9999]" position="popper" sideOffset={4}>
                       {detailsOptions.map(opt => (
