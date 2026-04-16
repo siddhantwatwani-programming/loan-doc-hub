@@ -423,12 +423,12 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string; d
 
       {/* View Row Detail Dialog */}
       <Dialog open={!!viewingRow} onOpenChange={(open) => { if (!open) setViewingRow(null); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden p-4">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="text-sm">Conversation Log Details</DialogTitle>
           </DialogHeader>
           {viewingRow && (
-            <div className="space-y-3 mt-3">
+            <div className="space-y-3 mt-3 flex-1 overflow-y-auto overflow-x-hidden min-h-0">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-2">
                   <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Date</Label>
@@ -509,7 +509,7 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string; d
               </div>
             </div>
           )}
-          <DialogFooter className="mt-4">
+          <DialogFooter className="mt-4 shrink-0">
             <Button variant="outline" size="sm" onClick={() => setViewingRow(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>
@@ -517,11 +517,11 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string; d
 
       {/* Add Dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4" onInteractOutside={(e) => { if ((e.target as HTMLElement)?.closest('[data-radix-popper-content-wrapper]')) e.preventDefault(); }}>
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden p-4" onInteractOutside={(e) => { if ((e.target as HTMLElement)?.closest('[data-radix-popper-content-wrapper]')) e.preventDefault(); }}>
+          <DialogHeader className="shrink-0">
             <DialogTitle className="text-sm">Add New Conversation Log</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 mt-3">
+          <div className="space-y-3 mt-3 flex-1 overflow-y-auto overflow-x-hidden min-h-0">
             <div className="flex items-center gap-2">
               <Checkbox checked={newLog.highPriority} onCheckedChange={(c) => setNewLog(p => ({ ...p, highPriority: !!c }))} />
               <Label className="text-xs">High Priority</Label>
@@ -619,7 +619,7 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string; d
               )}
             </div>
           </div>
-          <DialogFooter className="mt-4">
+          <DialogFooter className="mt-4 shrink-0">
             <Button variant="outline" size="sm" onClick={() => setAddOpen(false)}>Cancel</Button>
             <Button size="sm" onClick={handleAddLog} disabled={uploading}>{uploading ? 'Uploading...' : 'OK'}</Button>
           </DialogFooter>
