@@ -360,23 +360,42 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             </>
           )}
 
-          {renderCurrencyField(FIELD_KEYS.pledgedEquity, 'Pledged Equity')}
-          {renderCurrencyField(FIELD_KEYS.protectiveEquity, 'Protective Equity')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.pledgedEquity}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Pledged Equity</Label>
+              <div className="relative flex-1">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                <Input value={getFieldValue(FIELD_KEYS.pledgedEquity)} disabled className="h-7 text-xs pl-6 bg-muted" readOnly />
+              </div>
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.protectiveEquity}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Protective Equity</Label>
+              <div className="relative flex-1">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                <Input value={getFieldValue(FIELD_KEYS.protectiveEquity)} disabled className="h-7 text-xs pl-6 bg-muted" readOnly />
+              </div>
+            </div>
+          </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.ltv}>
             <div className="flex items-center gap-2">
               <Label className="w-[110px] shrink-0 text-xs text-foreground">Loan To Value</Label>
               <div className="relative flex-1">
-                <Input
-                  value={getFieldValue(FIELD_KEYS.ltv)}
-                  disabled
-                  className="h-7 text-xs pr-6 bg-muted"
-                  readOnly
-                />
+                <Input value={getFieldValue(FIELD_KEYS.ltv)} disabled className="h-7 text-xs pr-6 bg-muted" readOnly />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
               </div>
             </div>
           </DirtyFieldWrapper>
-          {renderPercentageField(FIELD_KEYS.cltv, 'CLTV (If a Junior Lien)')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.cltv}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">CLTV (If a Junior Lien)</Label>
+              <div className="relative flex-1">
+                <Input value={getFieldValue(FIELD_KEYS.cltv)} disabled className="h-7 text-xs pr-6 bg-muted" readOnly />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
+              </div>
+            </div>
+          </DirtyFieldWrapper>
         </div>
       </div>
     </div>
