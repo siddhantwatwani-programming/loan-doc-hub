@@ -146,12 +146,12 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto z-[9999]">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[85vh] z-[9999] flex flex-col overflow-hidden p-0">
+          <DialogHeader className="shrink-0 px-6 pt-6 pb-2 border-b border-border">
             <DialogTitle>{isEdit ? 'Edit Property Tax' : 'Add Property Tax'}</DialogTitle>
           </DialogHeader>
 
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3 py-4">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 grid grid-cols-2 gap-x-6 gap-y-3 py-4">
             {/* Left column */}
             <div className="space-y-3">
               {propertyOptions.length > 0 && renderDropdownField('property', 'Property', propertyOptions)}
@@ -272,7 +272,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-border flex-shrink-0">
+          <div className="flex justify-end gap-2 px-6 py-3 border-t border-border shrink-0">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled}>
               {isEdit ? 'Update' : 'Save'}
