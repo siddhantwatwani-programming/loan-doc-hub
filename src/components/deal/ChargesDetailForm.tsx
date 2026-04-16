@@ -76,8 +76,8 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
 
   const departmentVal = values[FIELD_KEYS.department] || '';
   const categoryVal = values[FIELD_KEYS.category] || '';
-  const categoryOptions = departmentVal ? (CATEGORY_OPTIONS[departmentVal] || []) : [];
-  const detailsOptions = categoryVal ? (DETAILS_OPTIONS[categoryVal] || []) : [];
+  const categoryOptions = departmentVal ? getDepartmentCategories(departmentVal) : [];
+  const detailsOptions = (departmentVal && categoryVal) ? getCategoryDetails(departmentVal, categoryVal) : [];
 
   const handleDepartmentChange = (val: string) => {
     onValueChange(FIELD_KEYS.department, val);

@@ -173,8 +173,8 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
     </div>
   );
 
-  const categoryOptions = formData.department ? (CATEGORY_OPTIONS[formData.department] || []) : [];
-  const detailsOptions = formData.category ? (DETAILS_OPTIONS[formData.category] || []) : [];
+  const categoryOptions = formData.department ? getDepartmentCategories(formData.department) : [];
+  const detailsOptions = (formData.department && formData.category) ? getCategoryDetails(formData.department, formData.category) : [];
 
   // Reset dependent dropdowns when parent changes
   const handleDepartmentChange = (val: string) => {
