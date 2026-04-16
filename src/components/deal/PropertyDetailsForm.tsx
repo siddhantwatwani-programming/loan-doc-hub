@@ -61,19 +61,61 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   const handleCurrencyChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value));
   const handlePercentageChange = (fieldKey: string, value: string) => onValueChange(fieldKey, sanitizeNumericValue(value).replace(/-/g, ''));
 
-  // Auto-calculate Loan To Value = Loan Amount / Purchase Price
+  // Helper: sum all lien new_remaining_balance values
+  const existingLiensTotal = React.useMemo(() => {
+    let total = 0;
+    const lienPrefixes = new Set<string>();
+    Object.keys(values).forEach(key => {
+      const m = key.match(/^(lien\d+)\./);
+      if (m) lienPrefixes.add(m[1]);
+    });
+    lienPrefixes.forEach(prefix => {
+      const raw = values[`${prefix}.new_remaining_balance`] || '';
+      const num = parseFloat(raw.replace(/[,$]/g, ''));
+      if (!isNaN(num)) total += num;
+    });
+    return total;
+  }, [values]);
+
+  // Auto-calculate LTV, Pledged Equity, Protective Equity, CLTV
   useEffect(() => {
     const loanAmountRaw = values['loan_terms.loan_amount'] || '';
     const purchasePriceRaw = getFieldValue(FIELD_KEYS.purchasePrice);
     const loanAmount = parseFloat(loanAmountRaw.replace(/[,$]/g, ''));
     const purchasePrice = parseFloat(purchasePriceRaw.replace(/[,$]/g, ''));
+
+    // LTV = (Loan Amount / Purchase Price) × 100
     if (!isNaN(loanAmount) && !isNaN(purchasePrice) && purchasePrice > 0) {
       const ltv = ((loanAmount / purchasePrice) * 100).toFixed(2);
       if (getFieldValue(FIELD_KEYS.ltv) !== ltv) {
         onValueChange(FIELD_KEYS.ltv, ltv);
       }
     }
-  }, [values['loan_terms.loan_amount'], values[FIELD_KEYS.purchasePrice]]);
+
+    // Pledged Equity = Purchase Price − Existing Liens (sum of lien new_remaining_balance)
+    if (!isNaN(purchasePrice)) {
+      const pe = (purchasePrice - existingLiensTotal).toFixed(2);
+      if (getFieldValue(FIELD_KEYS.pledgedEquity) !== pe) {
+        onValueChange(FIELD_KEYS.pledgedEquity, pe);
+      }
+    }
+
+    // Protective Equity = Purchase Price − (Existing Liens + Loan Amount)
+    if (!isNaN(purchasePrice) && !isNaN(loanAmount)) {
+      const protEq = (purchasePrice - (existingLiensTotal + loanAmount)).toFixed(2);
+      if (getFieldValue(FIELD_KEYS.protectiveEquity) !== protEq) {
+        onValueChange(FIELD_KEYS.protectiveEquity, protEq);
+      }
+    }
+
+    // CLTV = (Existing Liens + Loan Amount) / Purchase Price × 100
+    if (!isNaN(loanAmount) && !isNaN(purchasePrice) && purchasePrice > 0) {
+      const cltv = (((existingLiensTotal + loanAmount) / purchasePrice) * 100).toFixed(2);
+      if (getFieldValue(FIELD_KEYS.cltv) !== cltv) {
+        onValueChange(FIELD_KEYS.cltv, cltv);
+      }
+    }
+  }, [values['loan_terms.loan_amount'], values[FIELD_KEYS.purchasePrice], existingLiensTotal]);
 
   const isCopyBorrower = getFieldValue(FIELD_KEYS.copyBorrowerAddress) === 'true';
   const borrowerStreet = values['borrower.address.street'] || '';
