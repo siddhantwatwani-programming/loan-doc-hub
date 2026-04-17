@@ -548,40 +548,13 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
         // Snapshot reflects DB + defaults (canonical "saved" state)
         savedValuesSnapshotRef.current = { ...valuesMap };
 
-        // Restore any unsaved values from sessionStorage cache, but only if
-        // they actually differ from the saved snapshot. This prevents stale
-        // or already-saved cache entries from falsely marking the file dirty.
-        const cached = readSessionCache(dealId);
-        if (cached && cached.dirtyKeys.length > 0) {
-          const mergedValues = { ...valuesMap };
-          const trulyDirty = new Set<string>();
-          for (const key of cached.dirtyKeys) {
-            if (key in cached.unsavedValues) {
-              const cachedVal = cached.unsavedValues[key];
-              const savedVal = valuesMap[key] ?? '';
-              if (cachedVal !== savedVal) {
-                mergedValues[key] = cachedVal;
-                trulyDirty.add(key);
-              }
-            }
-          }
-          if (trulyDirty.size > 0) {
-            setValues(mergedValues);
-            valuesRef.current = mergedValues;
-            setDirtyFieldKeys(trulyDirty);
-            setIsDirty(true);
-          } else {
-            // Cache was stale / identical to DB — clear it and load clean
-            clearSessionCache(dealId);
-            setValues(valuesMap);
-            valuesRef.current = valuesMap;
-            setDirtyFieldKeys(new Set());
-            setIsDirty(false);
-          }
-        } else {
-          setValues(valuesMap);
-          valuesRef.current = valuesMap;
-        }
+        // Always load clean: ignore any session cache to prevent phantom
+        // dirty state from key-format mismatches between cache and snapshot.
+        clearSessionCache(dealId);
+        setValues(valuesMap);
+        valuesRef.current = valuesMap;
+        setDirtyFieldKeys(new Set());
+        setIsDirty(false);
       }
     } catch (err: any) {
       console.error('Error fetching deal fields:', err);
