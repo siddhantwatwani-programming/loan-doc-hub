@@ -809,22 +809,35 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
             </div>
             {formData.disbursements.length > 0 && (
               <div className="overflow-x-auto border border-border rounded">
-                <table className="w-full text-[11px]">
+                <table className="w-full text-[11px] table-fixed">
+                  <colgroup>
+                    <col className="w-[50px]" />
+                    <col className="w-[80px]" />
+                    <col className="w-[100px]" />
+                    <col className="w-[90px]" />
+                    <col className="w-[90px]" />
+                    <col className="w-[80px]" />
+                    <col className="w-[90px]" />
+                    <col className="w-[70px]" />
+                    {showPercentageCol && <col className="w-[60px]" />}
+                    <col />
+                    <col className="w-[60px]" />
+                  </colgroup>
                   <thead>
                     <tr className="bg-muted/50 border-b border-border">
-                      <th className="text-center py-1 px-1 font-semibold text-muted-foreground w-[50px]">Active</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Account ID</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[100px]">Name</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[90px]">Start Date</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[90px]">End Date</th>
-                      <th className="text-right py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Amount</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[90px]">Debit Through</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">Type</th>
+                      <th className="text-center py-1 px-1 font-semibold text-muted-foreground">Active</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Account ID</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Name</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Start Date</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground">End Date</th>
+                      <th className="text-right py-1 px-1 font-semibold text-muted-foreground">Amount</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Debit Through</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Type</th>
                       {showPercentageCol && (
-                        <th className="text-right py-1 px-1 font-semibold text-muted-foreground min-w-[60px]">Percentage</th>
+                        <th className="text-right py-1 px-1 font-semibold text-muted-foreground">Percentage</th>
                       )}
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[140px]">Comment</th>
-                      <th className="w-[50px]"></th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Comment</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
