@@ -214,7 +214,35 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   existingRecords = [],
   editingRecordId,
 }) => {
+  // Draft persistence key — survives tab switches and modal close until explicit Save/Cancel
+  const draftKey = React.useMemo(
+    () => `addFundingDraft:${editingRecordId || 'new'}:${loanNumber || 'noloan'}`,
+    [editingRecordId, loanNumber]
+  );
+
+  const readDraft = (): FundingFormData | null => {
+    try {
+      const raw = sessionStorage.getItem(draftKey);
+      return raw ? JSON.parse(raw) as FundingFormData : null;
+    } catch { return null; }
+  };
+
   const getInitialFormData = (): FundingFormData => {
+    // 1. Restore unsaved draft (highest priority — preserves in-progress edits across tab switches)
+    const draft = readDraft();
+    if (draft) {
+      return {
+        ...getDefaultFormData(loanNumber, borrowerName, noteRate, soldRate),
+        ...draft,
+        loan: loanNumber || draft.loan,
+        borrower: borrowerName || draft.borrower,
+        disbursements: draft.disbursements?.length ? draft.disbursements.map(d => ({
+          ...emptyDisbursementRow(),
+          ...d,
+        })) : defaultDisbursements(),
+        payments: draft.payments?.length ? draft.payments : defaultPayments(),
+      };
+    }
     if (editData) {
       return {
         ...getDefaultFormData(loanNumber, borrowerName, noteRate, soldRate),
@@ -251,7 +279,16 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
       const data = getInitialFormData();
       setFormData(data);
     }
-  }, [open, editData]);
+  }, [open, editData, draftKey]);
+
+  // Auto-save in-progress form to sessionStorage on every change (so tab-switch/close keeps the draft).
+  // Cleared explicitly on successful save (handleConfirmSave) — Cancel keeps the draft so user can resume.
+  React.useEffect(() => {
+    if (!open) return;
+    try {
+      sessionStorage.setItem(draftKey, JSON.stringify(formData));
+    } catch { /* ignore quota errors */ }
+  }, [formData, open, draftKey]);
 
   // Compute lenderRate from rate selection
   React.useEffect(() => {
@@ -477,6 +514,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
       brokerMaxFee: formData.vendorMaximum || formData.brokerMaxFee,
     };
     onSubmit(syncedData);
+    // Clear draft on successful save so reopening starts fresh
+    try { sessionStorage.removeItem(draftKey); } catch { /* ignore */ }
     setFormData(getDefaultFormData(loanNumber, borrowerName, noteRate, soldRate));
     onOpenChange(false);
   };
