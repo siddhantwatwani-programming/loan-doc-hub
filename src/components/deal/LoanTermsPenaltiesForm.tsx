@@ -166,6 +166,22 @@ const DistributionFields: React.FC<{
 
   const lendersIs100 = lendersClamped >= 100;
 
+  const handleLendersChange = (val: string) => {
+    onValueChange(`${prefix}.distribution.lenders`, val);
+    const newLenders = parseFloat(val) || 0;
+    if (newLenders + vendorClamped > 100) {
+      const newVendor = Math.max(0, 100 - newLenders);
+      onValueChange(`${prefix}.distribution.origination_vendors`, newVendor.toFixed(2));
+    }
+  };
+
+  const handleVendorChange = (val: string) => {
+    const newVendor = parseFloat(val) || 0;
+    const capped = Math.min(newVendor, Math.max(0, 100 - lendersClamped));
+    const finalVal = capped === newVendor ? val : capped.toFixed(2);
+    onValueChange(`${prefix}.distribution.origination_vendors`, finalVal);
+  };
+
   return (
     <div className="space-y-2 pt-3">
       <div className="flex items-center gap-2 border-b border-border pb-1">
@@ -178,7 +194,7 @@ const DistributionFields: React.FC<{
             <div className="flex-1 min-w-0">
               <PenaltyPercentInput
                 value={lendersRaw}
-                onChange={(val) => onValueChange(`${prefix}.distribution.lenders`, val)}
+                onChange={handleLendersChange}
                 disabled={disabled}
               />
             </div>
@@ -190,7 +206,7 @@ const DistributionFields: React.FC<{
             <div className="flex-1 min-w-0">
               <PenaltyPercentInput
                 value={vendorRaw}
-                onChange={(val) => onValueChange(`${prefix}.distribution.origination_vendors`, val)}
+                onChange={handleVendorChange}
                 disabled={disabled || lendersIs100}
               />
             </div>

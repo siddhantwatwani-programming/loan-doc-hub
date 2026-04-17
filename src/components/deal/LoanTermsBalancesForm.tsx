@@ -344,6 +344,24 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 return normalized;
               };
 
+              const handleLendersChange = (raw: string) => {
+                const sanitized = sanitizePct(raw);
+                const newLenders = parseFloat(sanitized) || 0;
+                setValue(FIELD_KEYS.soldRateCompany, sanitized);
+                if (newLenders + originationClamped > 100) {
+                  const newOrig = Math.max(0, 100 - newLenders);
+                  setValue(FIELD_KEYS.soldRateOtherClient1, newOrig.toFixed(2));
+                }
+              };
+
+              const handleOriginationChange = (raw: string) => {
+                const sanitized = sanitizePct(raw);
+                const newOrig = parseFloat(sanitized) || 0;
+                const capped = Math.min(newOrig, Math.max(0, 100 - lendersClamped));
+                const finalVal = capped === newOrig ? sanitized : capped.toFixed(2);
+                setValue(FIELD_KEYS.soldRateOtherClient1, finalVal);
+              };
+
               return (
                 <div className="space-y-2 pl-5">
                   <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateCompany}>
@@ -354,7 +372,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                       <div className="relative flex-1">
                         <Input
                           value={getValue(FIELD_KEYS.soldRateCompany)}
-                          onChange={(e) => setValue(FIELD_KEYS.soldRateCompany, sanitizePct(e.target.value))}
+                          onChange={(e) => handleLendersChange(e.target.value)}
                           disabled={disabled}
                           className={cn("h-8 text-sm pr-7", showError && "border-destructive")}
                           placeholder="0.00"
@@ -372,7 +390,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                       <div className="relative flex-1">
                         <Input
                           value={getValue(FIELD_KEYS.soldRateOtherClient1)}
-                          onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient1, sanitizePct(e.target.value))}
+                          onChange={(e) => handleOriginationChange(e.target.value)}
                           disabled={disabled || lendersIs100}
                           className={cn("h-8 text-sm pr-7", showError && "border-destructive", lendersIs100 && "bg-muted")}
                           placeholder="0.00"
