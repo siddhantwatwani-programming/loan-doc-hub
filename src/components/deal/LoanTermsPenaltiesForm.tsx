@@ -245,7 +245,7 @@ const DistributionFields: React.FC<{
           </div>
         </DirtyFieldWrapper>
         {showError && (
-          <p className="text-xs text-destructive pl-[172px]">Please allocate remaining percentage in subsequent fields</p>
+          <p className="text-xs text-destructive w-full">Please allocate remaining percentage in subsequent fields</p>
         )}
       </div>
     </div>
