@@ -17,11 +17,14 @@ const AppLayoutInner: React.FC = () => {
   const { isCollapsed } = useSidebar();
   const { role } = useAuth();
   const { openFiles, activeFileId, closeFile, isFileDirty, setFileDirty } = useWorkspace();
+  const contactWs = useContactWorkspace();
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Close confirmation state
+  // Close confirmation state (files)
   const [closingFileId, setClosingFileId] = useState<string | null>(null);
+  // Close confirmation state (contacts)
+  const [closingContactId, setClosingContactId] = useState<string | null>(null);
   // Store save callbacks per file
   const [saveFns, setSaveFns] = useState<Record<string, () => Promise<boolean>>>({});
 
@@ -76,6 +79,47 @@ const AppLayoutInner: React.FC = () => {
     setClosingFileId(null);
   }, []);
 
+  // ---- Contact tab close handlers (mirror file behaviour) ----
+  const handleRequestCloseContact = useCallback((id: string) => {
+    if (contactWs.isContactDirty(id)) {
+      setClosingContactId(id);
+    } else {
+      const closing = contactWs.openContacts.find(c => c.id === id);
+      contactWs.closeContact(id);
+      // If user is currently viewing this contact, navigate back to its list
+      if (closing && location.pathname.startsWith(`/contacts/${closing.kind}s/${id}`)) {
+        navigate(`/contacts/${closing.kind}s`);
+      }
+    }
+  }, [contactWs, location.pathname, navigate]);
+
+  const handleContactSaveAndClose = useCallback(async () => {
+    if (!closingContactId) return;
+    const fn = contactWs.getSaveFn(closingContactId);
+    if (fn) {
+      const ok = await fn();
+      if (ok) contactWs.setContactDirty(closingContactId, false);
+    }
+    const closing = contactWs.openContacts.find(c => c.id === closingContactId);
+    const wasActive = closing && location.pathname.startsWith(`/contacts/${closing.kind}s/${closingContactId}`);
+    contactWs.closeContact(closingContactId);
+    setClosingContactId(null);
+    if (closing && wasActive) navigate(`/contacts/${closing.kind}s`);
+  }, [closingContactId, contactWs, location.pathname, navigate]);
+
+  const handleContactDiscard = useCallback(() => {
+    if (!closingContactId) return;
+    const closing = contactWs.openContacts.find(c => c.id === closingContactId);
+    const wasActive = closing && location.pathname.startsWith(`/contacts/${closing.kind}s/${closingContactId}`);
+    contactWs.closeContact(closingContactId);
+    setClosingContactId(null);
+    if (closing && wasActive) navigate(`/contacts/${closing.kind}s`);
+  }, [closingContactId, contactWs, location.pathname, navigate]);
+
+  const handleContactStay = useCallback(() => {
+    setClosingContactId(null);
+  }, []);
+
   const hasOpenFiles = openFiles.length > 0;
 
   // Check if the current route is a deal edit route and if the deal is open in workspace
@@ -92,7 +136,10 @@ const AppLayoutInner: React.FC = () => {
       <AppSidebar />
       <AppHeader />
       {hasTabBar && (
-        <WorkspaceTabBar onRequestClose={handleRequestClose} />
+        <WorkspaceTabBar
+          onRequestClose={handleRequestClose}
+          onRequestCloseContact={handleRequestCloseContact}
+        />
       )}
         <main className={cn(
           "min-h-screen transition-all duration-300",
@@ -127,6 +174,12 @@ const AppLayoutInner: React.FC = () => {
         onSaveAndClose={handleSaveAndClose}
         onDiscard={handleDiscard}
         onStay={handleStay}
+      />
+      <CloseConfirmationDialog
+        open={!!closingContactId}
+        onSaveAndClose={handleContactSaveAndClose}
+        onDiscard={handleContactDiscard}
+        onStay={handleContactStay}
       />
     </div>
   );
@@ -164,7 +217,9 @@ export const AppLayout: React.FC = () => {
   return (
     <FieldDictionaryCacheProvider>
       <WorkspaceProvider>
-        <AppLayoutInner />
+        <ContactWorkspaceProvider>
+          <AppLayoutInner />
+        </ContactWorkspaceProvider>
       </WorkspaceProvider>
     </FieldDictionaryCacheProvider>
   );
