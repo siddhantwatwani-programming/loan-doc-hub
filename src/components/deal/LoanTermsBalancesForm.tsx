@@ -324,6 +324,13 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               const remainder = Math.max(0, 100 - lendersClamped - originationClamped);
               const vendorCompanyDisplay = (lendersRaw || originationRaw) ? remainder.toFixed(2) : '';
 
+              // Allocation error: Lenders has a value < 100 and Origination Vendor is empty.
+              // Surfaced only after user blurs Lenders, or on tab-switch/save (showValidation).
+              const lendersHasValue = lendersRaw !== '' && !isNaN(parseFloat(lendersRaw));
+              const originationEmpty = originationRaw === '' || isNaN(parseFloat(originationRaw));
+              const allocationIncomplete = lendersHasValue && lendersClamped < 100 && originationEmpty;
+              const showAllocationError = allocationIncomplete && (lendersBlurred || showValidation);
+
               // Keep Vendor Company persisted in sync with computed remainder.
               // Use numeric equality so formatting differences (e.g. "33" vs "33.00")
               // do not trigger a phantom write that would mark the file dirty on load.
