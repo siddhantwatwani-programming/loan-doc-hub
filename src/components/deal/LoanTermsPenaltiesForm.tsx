@@ -62,7 +62,8 @@ const PenaltyPercentInput: React.FC<{
   onChange: (value: string) => void;
   disabled?: boolean;
   className?: string;
-}> = ({ value, onChange, disabled, className }) => {
+  onBlur?: () => void;
+}> = ({ value, onChange, disabled, className, onBlur }) => {
   const [isFocused, setIsFocused] = useState(false);
   const displayValue = isFocused ? (value || '') : formatPercentageDisplay(value || '');
 
@@ -84,6 +85,7 @@ const PenaltyPercentInput: React.FC<{
               onChange(clamped.toFixed(2));
             }
           }
+          onBlur?.();
         }}
         onKeyDown={numericKeyDown}
         onPaste={(e) => numericPaste(e, onChange)}
