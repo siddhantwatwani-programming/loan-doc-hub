@@ -830,6 +830,13 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   <tbody>
                     {formData.disbursements.map((row, idx) => (
                       <tr key={idx} className="border-b border-border last:border-b-0 hover:bg-muted/20">
+                        <td className="py-0.5 px-1 text-center">
+                          <Checkbox
+                            checked={row.active ?? true}
+                            onCheckedChange={(checked) => handleDisbursementChange(idx, 'active', !!checked)}
+                            className="h-3.5 w-3.5"
+                          />
+                        </td>
                         <td className="py-0.5 px-1 text-[10px]">{row.accountId || '-'}</td>
                         <td className="py-0.5 px-1 text-[10px]">{row.name || '-'}</td>
                         <td className="py-0.5 px-1 text-[10px]">{row.startDate ? format(new Date(row.startDate), 'MM/dd/yyyy') : '-'}</td>
