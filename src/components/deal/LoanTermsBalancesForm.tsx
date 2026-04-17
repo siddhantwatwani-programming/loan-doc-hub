@@ -785,7 +785,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.otherScheduledPayments}>
               <div className="flex items-center gap-3">
                 <Label
-                  className=cn(LABEL_CLASS, "text-primary font-medium cursor-pointer hover:underline")
+                  className={cn(LABEL_CLASS, "text-primary font-medium cursor-pointer hover:underline")}
                   onClick={() => setOtherSchedPmtsOpen(true)}
                 >
                   Other Sched. Pmts
@@ -809,7 +809,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.toEscrowImpounds}>
               <div className="flex items-center gap-3">
                 <Label
-                  className=cn(LABEL_CLASS, "text-primary font-medium cursor-pointer hover:underline")
+                  className={cn(LABEL_CLASS, "text-primary font-medium cursor-pointer hover:underline")}
                   onClick={() => navigateToSubSection('escrow_impound')}
                 >
                   To Escrow Impounds
@@ -858,7 +858,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.reserveBalance}>
               <div className="flex items-center gap-3">
                 <Label
-                  className=cn(LABEL_CLASS, "text-primary font-medium cursor-pointer hover:underline")
+                  className={cn(LABEL_CLASS, "text-primary font-medium cursor-pointer hover:underline")}
                   onClick={() => navigateToSubSection('trust_ledger')}
                 >
                   Reserve Balance
@@ -887,7 +887,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.suspenseFunds}>
               <div className="flex items-center gap-3">
                 <Label
-                  className=cn(LABEL_CLASS, "text-primary font-medium cursor-pointer hover:underline")
+                  className={cn(LABEL_CLASS, "text-primary font-medium cursor-pointer hover:underline")}
                   onClick={() => navigateToSubSection('trust_ledger')}
                 >
                   Suspense Funds
