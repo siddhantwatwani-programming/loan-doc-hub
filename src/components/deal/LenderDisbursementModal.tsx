@@ -37,6 +37,7 @@ export interface DisbursementFormData {
 }
 
 const emptyForm = (): DisbursementFormData => ({
+  active: true,
   accountId: '',
   name: '',
   debitPercent: '',
