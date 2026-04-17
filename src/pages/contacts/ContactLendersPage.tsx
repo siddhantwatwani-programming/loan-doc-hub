@@ -38,6 +38,7 @@ import { ContactsListView } from '@/components/contacts/ContactsListView';
 import { CreateContactModal } from '@/components/contacts/CreateContactModal';
 import ContactLenderDetailLayout from '@/components/contacts/lender-detail/ContactLenderDetailLayout';
 import { useFormPermissions } from '@/hooks/useFormPermissions';
+import { useContactWorkspaceOptional } from '@/contexts/ContactWorkspaceContext';
 import type { ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -98,6 +99,7 @@ const ContactLendersPage: React.FC = () => {
   const navigate = useNavigate();
   const crud = useContactsCrud({ contactType: 'lender' });
   const { loading: permissionsLoading, isFormViewOnly } = useFormPermissions();
+  const contactWs = useContactWorkspaceOptional();
   const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const deepLinkLoaded = useRef(false);
@@ -160,9 +162,6 @@ const ContactLendersPage: React.FC = () => {
       return false;
     }
     const result = await crud.updateContact(id, contactData);
-    if (result) {
-      setSelectedContact(null);
-    }
     return result;
   }, [crud, isReadOnly]);
 
@@ -171,12 +170,36 @@ const ContactLendersPage: React.FC = () => {
     await crud.deleteContacts(ids);
   }, [crud, isReadOnly]);
 
+  const handleRowClick = useCallback((c: ContactRecord) => {
+    if (contactWs) {
+      const ok = contactWs.openContact({
+        id: c.id,
+        kind: 'lender',
+        contactId: c.contact_id,
+        fullName: c.full_name || [c.first_name, c.last_name].filter(Boolean).join(' '),
+        openedAt: Date.now(),
+      });
+      if (!ok) return;
+    }
+    setSelectedContact(c);
+    navigate(`/contacts/lenders/${c.id}`);
+  }, [contactWs, navigate]);
+
+  useEffect(() => {
+    if (contactWs && contactId) contactWs.switchToContact(contactId);
+    if (!contactId) setSelectedContact(null);
+  }, [contactId]);
+
   if (selectedContact) {
     return (
       <div className="h-full flex flex-col">
         <ContactLenderDetailLayout
           contact={selectedContact}
-          onBack={() => { setSelectedContact(null); if (contactId) navigate('/contacts/lenders'); }}
+          onBack={() => {
+            if (contactWs) contactWs.closeContact(selectedContact.id);
+            setSelectedContact(null);
+            navigate('/contacts/lenders');
+          }}
           onSave={handleSave}
         />
       </div>
@@ -195,7 +218,7 @@ const ContactLendersPage: React.FC = () => {
         searchQuery={localSearch}
         onSearchChange={setLocalSearch}
         onPageChange={crud.setCurrentPage}
-        onRowClick={setSelectedContact}
+        onRowClick={handleRowClick}
         onCreateNew={() => setModalOpen(true)}
          onDeleteSelected={isReadOnly ? undefined : handleDeleteSelected}
         defaultColumns={DEFAULT_COLUMNS}

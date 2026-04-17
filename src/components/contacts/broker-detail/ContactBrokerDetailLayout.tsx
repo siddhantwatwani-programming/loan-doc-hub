@@ -1,6 +1,7 @@
-import React, { useState, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { SaveConfirmationDialog } from '@/components/workspace/SaveConfirmationDialog';
 import { ArrowLeft, Save } from 'lucide-react';
+import { useContactWorkspaceOptional } from '@/contexts/ContactWorkspaceContext';
 import { Button } from '@/components/ui/button';
 import { logContactEvent, type ContactFieldChange } from '@/hooks/useContactEventJournal';
 import BrokerDetailSidebar, { type BrokerSection } from './BrokerDetailSidebar';
@@ -55,15 +56,13 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
     setValues(prev => ({ ...prev, [fieldKey]: value }));
   }, [isReadOnly]);
 
-  const handleSave = useCallback(async () => {
-    if (isReadOnly) return;
+  const handleSave = useCallback(async (): Promise<boolean> => {
+    if (isReadOnly) return false;
     const contactData: Record<string, string> = {};
     Object.entries(values).forEach(([key, value]) => {
       const stripped = key.replace(/^broker\./, '');
       contactData[stripped] = value;
     });
-
-    // Detect changes for event journal
     const changes: ContactFieldChange[] = [];
     const allKeys = new Set([...Object.keys(values), ...Object.keys(initialValuesRef.current)]);
     allKeys.forEach(key => {
@@ -74,13 +73,21 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
         changes.push({ fieldLabel: label, oldValue: oldVal, newValue: newVal });
       }
     });
-
     const saved = await onSave(contact.id, contactData);
     if (saved && changes.length > 0) {
       await logContactEvent(contact.id, 'Broker Info', changes);
-      initialValuesRef.current = { ...values };
     }
+    if (saved) initialValuesRef.current = { ...values };
+    return !!saved;
   }, [values, contact.id, onSave, isReadOnly]);
+
+  const contactWs = useContactWorkspaceOptional();
+  useEffect(() => { if (contactWs) contactWs.setContactDirty(contact.id, isDirty); }, [isDirty, contact.id, contactWs]);
+  useEffect(() => {
+    if (!contactWs) return;
+    contactWs.registerSaveFn(contact.id, handleSave);
+    return () => contactWs.unregisterSaveFn(contact.id);
+  }, [contactWs, contact.id, handleSave]);
 
   // Build a ContactBroker object from contact_data for components that need it
   const brokerObj: ContactBroker = {
@@ -191,7 +198,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
             <Broker1099
               values={values}
               onValueChange={handleValueChange}
-              onSave={handleSave}
+              onSave={async () => { await handleSave(); }}
               disabled={isReadOnly}
             />
           </div>

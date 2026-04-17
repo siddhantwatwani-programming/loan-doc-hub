@@ -1,18 +1,21 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useContactWorkspace } from '@/contexts/ContactWorkspaceContext';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface WorkspaceTabBarProps {
   onRequestClose: (fileId: string) => void;
+  onRequestCloseContact?: (contactId: string) => void;
 }
 
-export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose }) => {
+export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose, onRequestCloseContact }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { openFiles, activeFileId, switchToFile, isFileDirty } = useWorkspace();
+  const { openContacts, switchToContact, isContactDirty } = useContactWorkspace();
   const { isCollapsed } = useSidebar();
 
   // Determine active state from the current route so top-nav and left-nav are independent.
@@ -22,6 +25,11 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
   const currentFileIdFromRoute = isDealRoute && !isAllDocsActive
     ? openFiles.find(f => location.pathname.startsWith(`/deals/${f.id}`))?.id ?? null
     : null;
+
+  // Active contact = pathname matches /contacts/{kind}s/{id}
+  const currentContactIdFromRoute = openContacts.find(c =>
+    location.pathname.startsWith(`/contacts/${c.kind}s/${c.id}`)
+  )?.id ?? null;
 
   const handleAllDocsClick = () => {
     switchToFile('');
@@ -36,6 +44,13 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
     if (activeFileId === fileId && location.pathname === `/deals/${fileId}/edit`) return;
     switchToFile(fileId);
     navigate(`/deals/${fileId}/edit`);
+  };
+
+  const handleContactClick = (id: string, kind: string) => {
+    const target = `/contacts/${kind}s/${id}`;
+    if (location.pathname.startsWith(target)) return;
+    switchToContact(id);
+    navigate(target);
   };
 
   return (
@@ -95,6 +110,58 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
                       : 'hover:bg-muted-foreground/20 text-muted-foreground opacity-0 group-hover:opacity-100'
                   )}
                   aria-label={`Close ${file.dealNumber}`}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            );
+          })}
+
+          {/* Visual divider between file tabs and contact tabs */}
+          {openContacts.length > 0 && (
+            <div className="flex items-center px-1">
+              <div className="w-px h-5 bg-border" />
+            </div>
+          )}
+
+          {/* Contact tabs */}
+          {openContacts.map(c => {
+            const isActive = currentContactIdFromRoute === c.id;
+            const isDirty = isContactDirty(c.id);
+            const label = c.fullName ? `${c.contactId} · ${c.fullName}` : c.contactId;
+
+            return (
+              <div
+                key={c.id}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 border-r border-border transition-colors group cursor-pointer',
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+                onClick={() => handleContactClick(c.id, c.kind)}
+              >
+                {isDirty && (
+                  <span className={cn(
+                    'text-lg leading-none',
+                    isActive ? 'text-primary-foreground' : 'text-warning'
+                  )}>●</span>
+                )}
+                <span className={cn('text-sm whitespace-nowrap', isActive && 'font-bold')}>
+                  {label}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRequestCloseContact?.(c.id);
+                  }}
+                  className={cn(
+                    'ml-1 p-0.5 rounded-sm transition-colors',
+                    isActive
+                      ? 'hover:bg-primary-foreground/20 text-primary-foreground'
+                      : 'hover:bg-muted-foreground/20 text-muted-foreground opacity-0 group-hover:opacity-100'
+                  )}
+                  aria-label={`Close ${label}`}
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>

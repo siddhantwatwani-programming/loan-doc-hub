@@ -7,6 +7,7 @@ import ContactBorrowerDetailLayout from '@/components/contacts/borrower-detail/C
 import type { ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 import type { FilterOption } from '@/components/deal/GridToolbar';
 import { useFormPermissions } from '@/hooks/useFormPermissions';
+import { useContactWorkspaceOptional } from '@/contexts/ContactWorkspaceContext';
 
 export interface ContactBorrower {
   id: string;
@@ -87,6 +88,7 @@ const ContactBorrowersPage: React.FC = () => {
   const navigate = useNavigate();
   const crud = useContactsCrud({ contactType: 'borrower' });
   const { loading: permissionsLoading, isFormViewOnly } = useFormPermissions();
+  const contactWs = useContactWorkspaceOptional();
   const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState('');
@@ -145,9 +147,6 @@ const ContactBorrowersPage: React.FC = () => {
   const handleSave = useCallback(async (id: string, contactData: Record<string, string>) => {
     if (isReadOnly) return false;
     const result = await crud.updateContact(id, contactData);
-    if (result) {
-      setSelectedContact(null);
-    }
     return result;
   }, [crud, isReadOnly]);
 
@@ -155,6 +154,27 @@ const ContactBorrowersPage: React.FC = () => {
     if (isReadOnly) return;
     await crud.deleteContacts(ids);
   }, [crud, isReadOnly]);
+
+  const handleRowClick = useCallback((c: ContactRecord) => {
+    if (contactWs) {
+      const ok = contactWs.openContact({
+        id: c.id,
+        kind: 'borrower',
+        contactId: c.contact_id,
+        fullName: c.full_name || [c.first_name, c.last_name].filter(Boolean).join(' '),
+        openedAt: Date.now(),
+      });
+      if (!ok) return;
+    }
+    setSelectedContact(c);
+    navigate(`/contacts/borrowers/${c.id}`);
+  }, [contactWs, navigate]);
+
+  // Sync active workspace tab with URL
+  useEffect(() => {
+    if (contactWs && contactId) contactWs.switchToContact(contactId);
+    if (!contactId) setSelectedContact(null);
+  }, [contactId]);
 
   const renderCellValue = useCallback((contact: ContactRecord, columnId: string): React.ReactNode => {
     const cd = (contact.contact_data || {}) as Record<string, string>;
@@ -214,7 +234,11 @@ const ContactBorrowersPage: React.FC = () => {
       <div className="h-full flex flex-col">
         <ContactBorrowerDetailLayout
           contact={selectedContact}
-          onBack={() => { setSelectedContact(null); if (contactId) navigate('/contacts/borrowers'); }}
+          onBack={() => {
+            if (contactWs) contactWs.closeContact(selectedContact.id);
+            setSelectedContact(null);
+            navigate('/contacts/borrowers');
+          }}
           onSave={handleSave}
         />
       </div>
@@ -234,7 +258,7 @@ const ContactBorrowersPage: React.FC = () => {
         onSearchChange={setLocalSearch}
         searchPlaceholder="Search by Borrower ID, Type, or Name..."
         onPageChange={crud.setCurrentPage}
-        onRowClick={setSelectedContact}
+        onRowClick={handleRowClick}
         onCreateNew={() => setModalOpen(true)}
         onDeleteSelected={isReadOnly ? undefined : handleDeleteSelected}
         defaultColumns={DEFAULT_COLUMNS}
