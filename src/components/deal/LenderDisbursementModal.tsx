@@ -53,6 +53,7 @@ const emptyForm = (): DisbursementFormData => ({
   from: '',
   calculatedAmount: '',
   comments: '',
+  isActive: true,
 });
 
 interface LenderDisbursementModalProps {
