@@ -288,7 +288,16 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 <Checkbox
                   id={`${FIELD_KEYS.soldRateEnabled}-cb`}
                   checked={isChecked(FIELD_KEYS.soldRateEnabled)}
-                  onCheckedChange={() => toggleCheck(FIELD_KEYS.soldRateEnabled)}
+                  onCheckedChange={() => {
+                    const wasChecked = isChecked(FIELD_KEYS.soldRateEnabled);
+                    toggleCheck(FIELD_KEYS.soldRateEnabled);
+                    // When unchecking, reset all three percentage values to 0
+                    if (wasChecked) {
+                      setValue(FIELD_KEYS.soldRateCompany, '');
+                      setValue(FIELD_KEYS.soldRateOtherClient1, '');
+                      setValue(FIELD_KEYS.soldRateOtherClient2, '');
+                    }
+                  }}
                   disabled={disabled}
                   className="h-3.5 w-3.5"
                 />
@@ -309,67 +318,101 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
             </div>
 
-            {/* Sold Rate sub-fields - visible only when Sold Rate is checked */}
+            {/* Sold Rate sub-fields - visible only when Sold Rate is checked.
+                Fields: Lenders, Origination, Vendor Company.
+                - Lenders + Origination drive Vendor Company auto-calc (100 - L - O).
+                - Vendor Company is always read-only.
+                - If Lenders === 100, Origination is also disabled.
+                - Validation error only shown via showValidation (tab switch / save). */}
             {isChecked(FIELD_KEYS.soldRateEnabled) && (() => {
-              const companyVal = parseFloat((getValue(FIELD_KEYS.soldRateCompany) || '0').replace(/[^0-9.]/g, '')) || 0;
-              const other1Val = parseFloat((getValue(FIELD_KEYS.soldRateOtherClient1) || '0').replace(/[^0-9.]/g, '')) || 0;
-              const other2Val = parseFloat((getValue(FIELD_KEYS.soldRateOtherClient2) || '0').replace(/[^0-9.]/g, '')) || 0;
-              const splitTotal = companyVal + other1Val + other2Val;
-              const hasAnyValue = !!(getValue(FIELD_KEYS.soldRateCompany) || getValue(FIELD_KEYS.soldRateOtherClient1) || getValue(FIELD_KEYS.soldRateOtherClient2));
-              const showSplitError = hasAnyValue && Math.abs(splitTotal - 100) > 0.001;
+              const lendersRaw = getValue(FIELD_KEYS.soldRateCompany);
+              const originationRaw = getValue(FIELD_KEYS.soldRateOtherClient1);
+              const lendersVal = parseFloat((lendersRaw || '0').replace(/[^0-9.]/g, '')) || 0;
+              const originationVal = parseFloat((originationRaw || '0').replace(/[^0-9.]/g, '')) || 0;
+              const clamp = (n: number) => Math.max(0, Math.min(100, n));
+              const lendersClamped = clamp(lendersVal);
+              const originationClamped = clamp(originationVal);
+              const remainder = Math.max(0, 100 - lendersClamped - originationClamped);
+              const vendorCompanyDisplay = (lendersRaw || originationRaw) ? remainder.toFixed(2) : '';
+
+              // Keep Vendor Company persisted in sync with computed remainder
+              const persistedVendor = getValue(FIELD_KEYS.soldRateOtherClient2);
+              if (vendorCompanyDisplay !== persistedVendor) {
+                // schedule update without triggering during render warnings
+                queueMicrotask(() => setValue(FIELD_KEYS.soldRateOtherClient2, vendorCompanyDisplay));
+              }
+
+              const lendersIs100 = lendersClamped >= 100;
+              const sumIs100 = (lendersClamped + originationClamped) >= 100;
+              const showError = showValidation && lendersClamped < 100 && (lendersClamped + originationClamped) !== 100;
+
+              const sanitizePct = (val: string) => {
+                const cleaned = val.replace(/[^0-9.]/g, '');
+                const parts = cleaned.split('.');
+                const normalized = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : cleaned;
+                const n = parseFloat(normalized);
+                if (!isNaN(n) && n > 100) return '100';
+                return normalized;
+              };
+
               return (
                 <div className="space-y-2 pl-5">
                   <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateCompany}>
                     <div className="flex items-center gap-3">
                       <Label className="text-sm text-muted-foreground min-w-fit text-left shrink-0 whitespace-nowrap">
-                        Company
+                        Lenders
                       </Label>
                       <div className="relative flex-1">
                         <Input
                           value={getValue(FIELD_KEYS.soldRateCompany)}
-                          onChange={(e) => setValue(FIELD_KEYS.soldRateCompany, e.target.value)}
+                          onChange={(e) => setValue(FIELD_KEYS.soldRateCompany, sanitizePct(e.target.value))}
                           disabled={disabled}
-                          className={cn("h-8 text-sm pr-7", showSplitError && "border-destructive")}
-                          placeholder="%"
+                          className={cn("h-8 text-sm pr-7", showError && "border-destructive")}
+                          placeholder="0.00"
+                          inputMode="decimal"
                         />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
                       </div>
                     </div>
                   </DirtyFieldWrapper>
                   <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient1}>
                     <div className="flex items-center gap-3">
                       <Label className="text-sm text-muted-foreground min-w-fit text-left shrink-0 whitespace-nowrap">
-                        Other - Client List
+                        Origination
                       </Label>
                       <div className="relative flex-1">
                         <Input
                           value={getValue(FIELD_KEYS.soldRateOtherClient1)}
-                          onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient1, e.target.value)}
-                          disabled={disabled}
-                          className={cn("h-8 text-sm pr-7", showSplitError && "border-destructive")}
-                          placeholder="%"
+                          onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient1, sanitizePct(e.target.value))}
+                          disabled={disabled || lendersIs100}
+                          className={cn("h-8 text-sm pr-7", showError && "border-destructive", lendersIs100 && "bg-muted")}
+                          placeholder="0.00"
+                          inputMode="decimal"
                         />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
                       </div>
                     </div>
                   </DirtyFieldWrapper>
                   <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient2}>
                     <div className="flex items-center gap-3">
                       <Label className="text-sm text-muted-foreground min-w-fit text-left shrink-0 whitespace-nowrap">
-                        Other - Client List
+                        Vendor Company
                       </Label>
                       <div className="relative flex-1">
                         <Input
-                          value={getValue(FIELD_KEYS.soldRateOtherClient2)}
-                          onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient2, e.target.value)}
-                          disabled={disabled}
-                          className={cn("h-8 text-sm pr-7", showSplitError && "border-destructive")}
-                          placeholder="%"
+                          value={vendorCompanyDisplay}
+                          readOnly
+                          disabled
+                          className="h-8 text-sm pr-7 bg-muted"
+                          placeholder="0.00"
                         />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
                       </div>
                     </div>
                   </DirtyFieldWrapper>
-                  {showSplitError && (
+                  {showError && (
                     <p className="text-xs text-destructive pl-[135px]">
-                      Split must equal 100% (currently {splitTotal.toFixed(2)}%)
+                      Lenders must be 100% or Lenders + Origination must total 100%.
                     </p>
                   )}
                 </div>

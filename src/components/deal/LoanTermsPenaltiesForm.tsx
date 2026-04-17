@@ -130,64 +130,54 @@ const TRIGGERED_BY_OPTIONS = [
   { value: 'maturity_only', label: 'Maturity Only' },
 ];
 
-// Distribution fields component
+// Distribution fields component (always percent-based; Company is auto-calculated)
 const DistributionFields: React.FC<{
   prefix: string;
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
 }> = ({ prefix, values, onValueChange, disabled }) => {
-  const isPercent = values[`${prefix}.distribution.is_percent`] === 'true';
-  const DistInput = isPercent ? PenaltyPercentInput : PenaltyCurrencyInput;
+  const lendersRaw = values[`${prefix}.distribution.lenders`] || '';
+  const vendorRaw = values[`${prefix}.distribution.origination_vendors`] || '';
+  const lendersVal = parseFloat(lendersRaw) || 0;
+  const vendorVal = parseFloat(vendorRaw) || 0;
+  const clamp = (n: number) => Math.max(0, Math.min(100, n));
+  const lendersClamped = clamp(lendersVal);
+  const vendorClamped = clamp(vendorVal);
+  const remainder = Math.max(0, 100 - lendersClamped - vendorClamped);
+  const companyDisplay = (lendersRaw || vendorRaw) ? remainder.toFixed(2) : '';
 
-  const [brokerLenderContacts, setBrokerLenderContacts] = useState<{ id: string; label: string; type: string }[]>([]);
-
+  // Persist computed Company value
+  const persistedCompany = values[`${prefix}.distribution.company`] || '';
   useEffect(() => {
-    const fetchContacts = async () => {
-      const { data } = await supabase
-        .from('contacts')
-        .select('id, full_name, first_name, last_name, company, contact_type')
-        .in('contact_type', ['broker', 'lender'])
-        .order('full_name');
-      if (data) {
-        setBrokerLenderContacts(data.map(c => ({
-          id: c.id,
-          label: `${c.full_name || [c.first_name, c.last_name].filter(Boolean).join(' ')}${c.company ? ` (${c.company})` : ''} — ${c.contact_type === 'broker' ? 'Broker' : 'Lender'}`,
-          type: c.contact_type,
-        })));
-      }
-    };
-    fetchContacts();
+    if (companyDisplay !== persistedCompany) {
+      onValueChange(`${prefix}.distribution.company`, companyDisplay);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyDisplay]);
+
+  // Force is_percent locked to true (always percent-based now)
+  useEffect(() => {
+    if (values[`${prefix}.distribution.is_percent`] !== 'true') {
+      onValueChange(`${prefix}.distribution.is_percent`, 'true');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const lendersVal = parseFloat(values[`${prefix}.distribution.lenders`] || '') || 0;
-  const vendorVal = parseFloat(values[`${prefix}.distribution.origination_vendors`] || '') || 0;
-  const companyVal = parseFloat(values[`${prefix}.distribution.company`] || '') || 0;
-  const percentTotal = lendersVal + vendorVal + companyVal;
-  const hasAnyPercentValue = !!(values[`${prefix}.distribution.lenders`] || values[`${prefix}.distribution.origination_vendors`] || values[`${prefix}.distribution.company`]);
-  const showPercentError = isPercent && hasAnyPercentValue && Math.abs(percentTotal - 100) > 0.001;
+  const lendersIs100 = lendersClamped >= 100;
 
   return (
     <div className="space-y-2 pt-3">
       <div className="flex items-center gap-2 border-b border-border pb-1">
         <h4 className="font-semibold text-sm text-foreground">Distribution</h4>
-        <div className="flex items-center gap-1">
-          <Checkbox
-            checked={isPercent}
-            onCheckedChange={(checked) => onValueChange(`${prefix}.distribution.is_percent`, checked ? 'true' : 'false')}
-            disabled={disabled}
-            className="h-4 w-4"
-          />
-          <Label className="text-xs text-muted-foreground cursor-pointer">%</Label>
-        </div>
       </div>
       <div className="space-y-2">
         <DirtyFieldWrapper fieldKey={`${prefix}.distribution.lenders`}>
           <div className="flex items-center gap-3">
             <Label className="text-sm min-w-[160px] max-w-[160px]">Lenders</Label>
             <div className="flex-1 min-w-0">
-              <DistInput
-                value={values[`${prefix}.distribution.lenders`] || ''}
+              <PenaltyPercentInput
+                value={lendersRaw}
                 onChange={(val) => onValueChange(`${prefix}.distribution.lenders`, val)}
                 disabled={disabled}
               />
@@ -198,10 +188,10 @@ const DistributionFields: React.FC<{
           <div className="flex items-center gap-3">
             <Label className="text-sm min-w-[160px] max-w-[160px]">Origination Vendor</Label>
             <div className="flex-1 min-w-0">
-              <DistInput
-                value={values[`${prefix}.distribution.origination_vendors`] || ''}
+              <PenaltyPercentInput
+                value={vendorRaw}
                 onChange={(val) => onValueChange(`${prefix}.distribution.origination_vendors`, val)}
-                disabled={disabled}
+                disabled={disabled || lendersIs100}
               />
             </div>
           </div>
@@ -210,41 +200,15 @@ const DistributionFields: React.FC<{
           <div className="flex items-center gap-3">
             <Label className="text-sm min-w-[160px] max-w-[160px]">Company</Label>
             <div className="flex-1 min-w-0">
-              <DistInput
-                value={values[`${prefix}.distribution.company`] || ''}
-                onChange={(val) => onValueChange(`${prefix}.distribution.company`, val)}
-                disabled={disabled}
+              <PenaltyPercentInput
+                value={companyDisplay}
+                onChange={() => { /* auto-computed, read-only */ }}
+                disabled
               />
             </div>
           </div>
         </DirtyFieldWrapper>
-        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.other`}>
-          <div className="flex items-center gap-3">
-            <Label className="text-sm min-w-[160px] max-w-[160px]">Other</Label>
-            <div className="flex-1 min-w-0">
-              <Select
-                value={values[`${prefix}.distribution.other`] || ''}
-                onValueChange={(val) => onValueChange(`${prefix}.distribution.other`, val)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-7 text-sm">
-                  <SelectValue placeholder="Select Broker or Lender..." />
-                </SelectTrigger>
-                <SelectContent className="bg-background border border-border z-50 max-h-60">
-                  {brokerLenderContacts.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </DirtyFieldWrapper>
       </div>
-      {showPercentError && (
-        <p className="text-[11px] text-destructive flex items-center gap-1 pt-1">
-          Total distribution percentage must equal 100% (current: {percentTotal.toFixed(2)}%)
-        </p>
-      )}
     </div>
   );
 };
