@@ -333,7 +333,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
               const lendersIs100 = lendersClamped >= 100;
               const sumIs100 = (lendersClamped + originationClamped) >= 100;
-              const showError = showValidation && lendersClamped < 100;
+              const showError = false;
 
               const sanitizePct = (val: string) => {
                 const cleaned = val.replace(/[^0-9.]/g, '');
