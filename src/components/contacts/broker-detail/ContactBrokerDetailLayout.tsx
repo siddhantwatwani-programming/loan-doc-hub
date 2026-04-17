@@ -1,6 +1,7 @@
-import React, { useState, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { SaveConfirmationDialog } from '@/components/workspace/SaveConfirmationDialog';
 import { ArrowLeft, Save } from 'lucide-react';
+import { useContactWorkspaceOptional } from '@/contexts/ContactWorkspaceContext';
 import { Button } from '@/components/ui/button';
 import { logContactEvent, type ContactFieldChange } from '@/hooks/useContactEventJournal';
 import BrokerDetailSidebar, { type BrokerSection } from './BrokerDetailSidebar';
