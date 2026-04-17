@@ -1,45 +1,67 @@
 
 
-## Root cause (remaining)
+## Root cause (confirmed)
 
-The previous fix (value-comparison restore) helps with stale identical caches, but the dot still appears on opening DL-2026-0191 because of **key-format mismatches** between what the session cache stores and what the snapshot rebuilds.
+`src/components/deal/LoanTermsBalancesForm.tsx` lines 327-332 perform a **render-time auto-write** of the read-only "Vendor Company" field (`soldRateOtherClient2`):
 
-In `src/hooks/useDealFields.ts` (lines 548–584):
+```ts
+const persistedVendor = getValue(FIELD_KEYS.soldRateOtherClient2);
+if (vendorCompanyDisplay !== persistedVendor) {
+  queueMicrotask(() => setValue(FIELD_KEYS.soldRateOtherClient2, vendorCompanyDisplay));
+}
+```
 
-- The "saved snapshot" (`valuesMap`) keys come from DB rows translated through `resolveDbKeyToLegacy(...)` plus prefix-reconstruction logic for multi-entity records (lines 487–535) and field defaults (line 542).
-- The session cache's `dirtyKeys` are written by `updateValue` using **whatever key the UI component happened to pass in** — this can be a legacy dot key, a DB key, a prefixed multi-entity key, or a charge/insurance/notes pseudo-key (e.g. `charge.<id>.amount`).
-- When those forms don't line up exactly (different prefix scheme, different canonical form, charge id rebuild, etc.), `valuesMap[cachedKey] ?? ''` returns `''` while `cached.unsavedValues[cachedKey]` is a real string → falsely "different" → file marked dirty on open with no user input.
+`vendorCompanyDisplay` is built with `remainder.toFixed(2)` (e.g. `"33.00"`). The DB persists whatever string was saved (e.g. `"33"`). On opening DL-2026-0191:
 
-The user's acceptance criterion is unambiguous: **"When a loan file is opened, it should always load in a clean state."** Trying to perfectly reconcile every key-format variant is fragile and risks regressions across 60+ updateValue call sites.
+1. Form mounts with persisted Lenders=`"34"`, Origination=`"33"`, Vendor=`"33"`.
+2. Recomputed `vendorCompanyDisplay` = `"33.00"`.
+3. String compare `"33.00" !== "33"` → microtask fires `setValue('...sold_rate_other_client_2', '33.00')`.
+4. `updateValue` (useDealFields.ts:573) compares against `savedValuesSnapshotRef` (`"33"`) → marks key dirty → `setIsDirty(true)`.
+5. `DealDataEntryPage` effect (line 296-300) propagates to `setFileDirty(id, true)` → tab dot lights up.
+
+This matches the screenshot exactly: only the "Vendor Company" row shows the orange `DirtyFieldWrapper` highlight, and the tab dot appears with no user input.
+
+The previously-shipped clean-load fix in `useDealFields.ts` is correct and stays. The remaining bug is form-side: a render-time write that re-dirties the file the moment the Loan tab renders.
 
 ## Fix (single, surgical change)
 
-In `src/hooks/useDealFields.ts`, replace the cache-restore block (lines 548–584) with a clean-load-only behavior:
+In `src/components/deal/LoanTermsBalancesForm.tsx`, lines 327-332: change the resync guard from string-equality to **numeric equality** so that formatting differences (`"33"` vs `"33.00"`, `""` vs `"0.00"`) do not trigger a write.
 
-- Always set `values` and `valuesRef.current` to the freshly rebuilt `valuesMap` (DB + defaults).
-- Always set `savedValuesSnapshotRef.current` to the same `valuesMap`.
-- Always set `dirtyFieldKeys = new Set()` and `setIsDirty(false)`.
-- Always call `clearSessionCache(dealId)` on load so no stale entry can ever resurrect a phantom dirty state on subsequent opens.
+Replacement logic:
 
-This guarantees:
-- Opening any loan file (including DL-2026-0191) loads clean — no dot.
-- The dot only appears after a real `updateValue(...)` call from a user edit (existing logic at lines 600–636 unchanged).
-- Save still clears dirty + cache (lines 1083–1087 unchanged).
-- Tab switching never triggers dirty (no other code path sets dirty on mount).
+```ts
+const persistedVendor = getValue(FIELD_KEYS.soldRateOtherClient2);
+const persistedNum = parseFloat((persistedVendor || '').replace(/[^0-9.]/g, ''));
+const displayNum = parseFloat(vendorCompanyDisplay);
+const numericallyEqual =
+  (isNaN(persistedNum) && isNaN(displayNum)) ||
+  (!isNaN(persistedNum) && !isNaN(displayNum) && persistedNum === displayNum);
 
-### Trade-off acknowledged
+// Only write back when the underlying number actually changed (e.g. user edited
+// Lenders/Origination), not when it's just a formatting difference on load.
+if (!numericallyEqual && vendorCompanyDisplay !== '') {
+  queueMicrotask(() => setValue(FIELD_KEYS.soldRateOtherClient2, vendorCompanyDisplay));
+}
+```
 
-The mid-edit hard-refresh "restore unsaved values" recovery path is removed. This is intentional and aligns with the user's explicit acceptance criteria. Save/discard workflow, tab logic, routing, schema, APIs, and UI components are untouched.
+This preserves the live-recalc behavior when the user edits Lenders or Origination (numeric value changes → write happens → field saves correctly), and stops the phantom write on initial render when the persisted value already represents the same number.
+
+## Why this is the minimal change
+
+- No schema, API, save workflow, calculation engine, dirty-tracking, tab logic, or other forms touched.
+- No change to DirtyFieldWrapper, useDealFields, DealDataEntryPage, or WorkspaceContext.
+- Vendor Company stays read-only and continues to display `remainder.toFixed(2)` exactly as before.
+- Save still persists the formatted value correctly when a user actually changes inputs.
 
 ## Files touched
 
-- `src/hooks/useDealFields.ts` — replace the cache-restore branch (current lines 548–584) with the clean-load behavior above. No other files modified.
+- `src/components/deal/LoanTermsBalancesForm.tsx` — replace lines 327-332 with the numeric-equality guard above. No other files modified.
 
-## Acceptance check (manual)
+## Acceptance check
 
-1. Open DL-2026-0191 (and any other file) → no dot.
-2. Edit a field → dot appears.
-3. Save → dot disappears.
-4. Switch between open file tabs → no random dots.
-5. Reopen any previously-edited-and-discarded file → no dot.
+1. Open DL-2026-0191 → no tab dot, Vendor Company row not highlighted.
+2. Open any other previously-saved file with Sold Rate set → no dot.
+3. Edit Lenders or Origination → Vendor Company recomputes live, dot appears (real edit).
+4. Save → dot disappears.
+5. Switch tabs → no random dots.
 
