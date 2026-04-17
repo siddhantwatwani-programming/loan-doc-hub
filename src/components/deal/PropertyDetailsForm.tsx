@@ -92,13 +92,6 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
       }
     }
 
-    // Pledged Equity = Purchase Price − Existing Liens (sum of lien new_remaining_balance)
-    if (!isNaN(purchasePrice)) {
-      const pe = (purchasePrice - existingLiensTotal).toFixed(2);
-      if (getFieldValue(FIELD_KEYS.pledgedEquity) !== pe) {
-        onValueChange(FIELD_KEYS.pledgedEquity, pe);
-      }
-    }
 
     // Protective Equity = Purchase Price − (Existing Liens + Loan Amount)
     if (!isNaN(purchasePrice) && !isNaN(loanAmount)) {
