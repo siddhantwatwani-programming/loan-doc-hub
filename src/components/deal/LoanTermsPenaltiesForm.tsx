@@ -136,7 +136,8 @@ const DistributionFields: React.FC<{
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
-}> = ({ prefix, values, onValueChange, disabled }) => {
+  showValidation?: boolean;
+}> = ({ prefix, values, onValueChange, disabled, showValidation }) => {
   const lendersRaw = values[`${prefix}.distribution.lenders`] || '';
   const vendorRaw = values[`${prefix}.distribution.origination_vendors`] || '';
   const lendersVal = parseFloat(lendersRaw) || 0;
@@ -165,6 +166,7 @@ const DistributionFields: React.FC<{
   }, []);
 
   const lendersIs100 = lendersClamped >= 100;
+  const showError = !!showValidation && lendersClamped < 100;
 
   const handleLendersChange = (val: string) => {
     onValueChange(`${prefix}.distribution.lenders`, val);
@@ -190,8 +192,8 @@ const DistributionFields: React.FC<{
       <div className="space-y-2">
         <DirtyFieldWrapper fieldKey={`${prefix}.distribution.lenders`}>
           <div className="flex items-center gap-3">
-            <Label className="text-sm min-w-[160px] max-w-[160px]">Lenders</Label>
-            <div className="flex-1 min-w-0">
+            <Label className={cn("text-sm min-w-[160px] max-w-[160px]", showError && "text-destructive")}>Lenders</Label>
+            <div className={cn("flex-1 min-w-0", showError && "[&_input]:border-destructive")}>
               <PenaltyPercentInput
                 value={lendersRaw}
                 onChange={handleLendersChange}
@@ -224,6 +226,9 @@ const DistributionFields: React.FC<{
             </div>
           </div>
         </DirtyFieldWrapper>
+        {showError && (
+          <p className="text-xs text-destructive pl-[172px]">Lenders must equal 100%</p>
+        )}
       </div>
     </div>
   );
@@ -266,7 +271,8 @@ const LateFeeColumn: React.FC<{
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
   percentageLabel?: string;
-}> = ({ title, prefix, values, onValueChange, disabled, percentageLabel = 'Percentage of Payment' }) => {
+  showValidation?: boolean;
+}> = ({ title, prefix, values, onValueChange, disabled, percentageLabel = 'Percentage of Payment', showValidation }) => {
   const isEnabled = values[`${prefix}.enabled`] === 'true';
 
   return (
@@ -333,6 +339,7 @@ const LateFeeColumn: React.FC<{
         values={values}
         onValueChange={onValueChange}
         disabled={disabled || !isEnabled}
+        showValidation={showValidation && isEnabled}
       />
     </div>
   );
@@ -391,7 +398,8 @@ const DefaultInterestColumn: React.FC<{
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
-}> = ({ values, onValueChange, disabled }) => {
+  showValidation?: boolean;
+}> = ({ values, onValueChange, disabled, showValidation }) => {
   const prefix = 'loan_terms.penalties.default_interest';
   const isEnabled = values[`${prefix}.enabled`] === 'true';
 
@@ -488,6 +496,7 @@ const DefaultInterestColumn: React.FC<{
         values={values}
         onValueChange={onValueChange}
         disabled={disabled || !isEnabled}
+        showValidation={showValidation && isEnabled}
       />
     </div>
   );
@@ -498,7 +507,8 @@ const InterestGuaranteeSection: React.FC<{
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
-}> = ({ values, onValueChange, disabled }) => {
+  showValidation?: boolean;
+}> = ({ values, onValueChange, disabled, showValidation }) => {
   const prefix = 'loan_terms.penalties.interest_guarantee';
   const isEnabled = values[`${prefix}.enabled`] === 'true';
 
@@ -559,6 +569,7 @@ const InterestGuaranteeSection: React.FC<{
         values={values}
         onValueChange={onValueChange}
         disabled={disabled || !isEnabled}
+        showValidation={showValidation && isEnabled}
       />
     </div>
   );
@@ -569,7 +580,8 @@ const PrepaymentPenaltySection: React.FC<{
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
-}> = ({ values, onValueChange, disabled }) => {
+  showValidation?: boolean;
+}> = ({ values, onValueChange, disabled, showValidation }) => {
   const prefix = 'loan_terms.penalties.prepayment';
   const isEnabled = values[`${prefix}.enabled`] === 'true';
 
@@ -646,6 +658,7 @@ const PrepaymentPenaltySection: React.FC<{
         values={values}
         onValueChange={onValueChange}
         disabled={disabled || !isEnabled}
+        showValidation={showValidation && isEnabled}
       />
     </div>
   );
@@ -656,7 +669,8 @@ const MaturitySection: React.FC<{
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
-}> = ({ values, onValueChange, disabled }) => {
+  showValidation?: boolean;
+}> = ({ values, onValueChange, disabled, showValidation }) => {
   const prefix = 'loan_terms.penalties.maturity';
   const isEnabled = values[`${prefix}.enabled`] === 'true';
 
@@ -711,6 +725,7 @@ const MaturitySection: React.FC<{
         values={values}
         onValueChange={onValueChange}
         disabled={disabled || !isEnabled}
+        showValidation={showValidation && isEnabled}
       />
     </div>
   );
@@ -735,6 +750,7 @@ export const LoanTermsPenaltiesForm: React.FC<LoanTermsPenaltiesFormProps> = ({
           onValueChange={onValueChange}
           disabled={disabled}
           percentageLabel="Percentage of Payment"
+          showValidation={showValidation}
         />
         <LateFeeColumn
           title="Late Fee II"
@@ -743,11 +759,13 @@ export const LoanTermsPenaltiesForm: React.FC<LoanTermsPenaltiesFormProps> = ({
           onValueChange={onValueChange}
           disabled={disabled}
           percentageLabel="Percentage of"
+          showValidation={showValidation}
         />
         <DefaultInterestColumn
           values={values}
           onValueChange={onValueChange}
           disabled={disabled}
+          showValidation={showValidation}
         />
       </div>
 
@@ -757,16 +775,19 @@ export const LoanTermsPenaltiesForm: React.FC<LoanTermsPenaltiesFormProps> = ({
           values={values}
           onValueChange={onValueChange}
           disabled={disabled}
+          showValidation={showValidation}
         />
         <PrepaymentPenaltySection
           values={values}
           onValueChange={onValueChange}
           disabled={disabled}
+          showValidation={showValidation}
         />
         <MaturitySection
           values={values}
           onValueChange={onValueChange}
           disabled={disabled}
+          showValidation={showValidation}
         />
       </div>
     </div>
