@@ -7,6 +7,7 @@ import ContactBorrowerDetailLayout from '@/components/contacts/borrower-detail/C
 import type { ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 import type { FilterOption } from '@/components/deal/GridToolbar';
 import { useFormPermissions } from '@/hooks/useFormPermissions';
+import { useContactWorkspaceOptional } from '@/contexts/ContactWorkspaceContext';
 
 export interface ContactBorrower {
   id: string;
@@ -87,6 +88,7 @@ const ContactBorrowersPage: React.FC = () => {
   const navigate = useNavigate();
   const crud = useContactsCrud({ contactType: 'borrower' });
   const { loading: permissionsLoading, isFormViewOnly } = useFormPermissions();
+  const contactWs = useContactWorkspaceOptional();
   const [selectedContact, setSelectedContact] = useState<ContactRecord | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState('');
