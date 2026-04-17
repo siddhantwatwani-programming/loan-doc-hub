@@ -81,10 +81,15 @@ export const LenderDisbursementModal: React.FC<LenderDisbursementModalProps> = (
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [debitDateOpen, setDebitDateOpen] = useState(false);
 
+  // Only re-initialize the form when the modal transitions from closed -> open.
+  // Using `open` alone (not editData) prevents the parent's inline-recreated editData object
+  // from wiping user input on every parent re-render while editing.
+  const wasOpenRef = React.useRef(false);
   useEffect(() => {
-    if (open) {
+    if (open && !wasOpenRef.current) {
       setFormData(editData ? { ...emptyForm(), ...editData } : emptyForm());
     }
+    wasOpenRef.current = open;
   }, [open, editData]);
 
   const handleChange = (field: keyof DisbursementFormData, value: string) => {
