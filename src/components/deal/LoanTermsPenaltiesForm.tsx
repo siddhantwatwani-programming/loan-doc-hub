@@ -136,7 +136,8 @@ const DistributionFields: React.FC<{
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
-}> = ({ prefix, values, onValueChange, disabled }) => {
+  showValidation?: boolean;
+}> = ({ prefix, values, onValueChange, disabled, showValidation }) => {
   const lendersRaw = values[`${prefix}.distribution.lenders`] || '';
   const vendorRaw = values[`${prefix}.distribution.origination_vendors`] || '';
   const lendersVal = parseFloat(lendersRaw) || 0;
@@ -165,6 +166,7 @@ const DistributionFields: React.FC<{
   }, []);
 
   const lendersIs100 = lendersClamped >= 100;
+  const showError = !!showValidation && lendersClamped < 100;
 
   const handleLendersChange = (val: string) => {
     onValueChange(`${prefix}.distribution.lenders`, val);
@@ -190,8 +192,8 @@ const DistributionFields: React.FC<{
       <div className="space-y-2">
         <DirtyFieldWrapper fieldKey={`${prefix}.distribution.lenders`}>
           <div className="flex items-center gap-3">
-            <Label className="text-sm min-w-[160px] max-w-[160px]">Lenders</Label>
-            <div className="flex-1 min-w-0">
+            <Label className={cn("text-sm min-w-[160px] max-w-[160px]", showError && "text-destructive")}>Lenders</Label>
+            <div className={cn("flex-1 min-w-0", showError && "[&_input]:border-destructive")}>
               <PenaltyPercentInput
                 value={lendersRaw}
                 onChange={handleLendersChange}
@@ -224,6 +226,9 @@ const DistributionFields: React.FC<{
             </div>
           </div>
         </DirtyFieldWrapper>
+        {showError && (
+          <p className="text-xs text-destructive pl-[172px]">Lenders must equal 100%</p>
+        )}
       </div>
     </div>
   );
