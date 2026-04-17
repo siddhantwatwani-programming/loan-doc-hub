@@ -162,7 +162,7 @@ export const PropertyInsuranceForm: React.FC<PropertyInsuranceFormProps> = ({
               <Popover open={expirationOpen} onOpenChange={setExpirationOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn('h-8 text-sm mt-1 w-full justify-start text-left font-normal', !getFieldValue(FIELD_KEYS.expiration) && 'text-muted-foreground')} disabled={disabled}>
-                    {getFieldValue(FIELD_KEYS.expiration) && safeParseDateStr(getFieldValue(FIELD_KEYS.expiration)) ? format(safeParseDateStr(getFieldValue(FIELD_KEYS.expiration))!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
+                    {getFieldValue(FIELD_KEYS.expiration) && safeParseDateStr(getFieldValue(FIELD_KEYS.expiration)) ? format(safeParseDateStr(getFieldValue(FIELD_KEYS.expiration))!, 'MM/dd/yyyy') : 'MM/DD/YYYY'}
                     <CalendarIcon className="ml-auto h-3.5 w-3.5" />
                   </Button>
                 </PopoverTrigger>

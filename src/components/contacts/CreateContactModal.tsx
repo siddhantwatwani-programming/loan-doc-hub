@@ -469,7 +469,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn("h-7 text-xs flex-1 justify-start font-normal", !form['dob'] && "text-muted-foreground", lenderErrors['dob'] && "border-destructive")}>
                       <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                      {form['dob'] || 'mm/dd/yyyy'}
+                      {form['dob'] || 'MM/DD/YYYY'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 z-[200]" align="start">
@@ -837,7 +837,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn("h-7 text-xs flex-1 justify-start font-normal", !form['dob'] && "text-muted-foreground", borrowerErrors['dob'] && "border-destructive")}>
                       <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                      {form['dob'] || 'mm/dd/yyyy'}
+                      {form['dob'] || 'MM/DD/YYYY'}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 z-[200]" align="start">
