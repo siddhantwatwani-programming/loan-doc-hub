@@ -1,43 +1,93 @@
 
 
 ## Goal
-Align all input fields uniformly across the three columns (Terms / Payments / Balances) in **Loan → Terms & Balances** so inputs start and end at the same horizontal position. Long labels should wrap to two lines instead of pushing inputs out of alignment.
+Enhance the **Lender Disbursement** modal (Add Funding → Add Disbursement) and the disbursement table inside Add Funding with: smart Payee search, calculated Amount with caps, new Maximum field, new Start Date, Debit Through dropdown w/ dynamic UI, restructured table columns, Type filter and hidden Percentage column, plus inline editable Comment with auto-save in state.
 
-## Root cause
-- `LABEL_CLASS` is fixed at `w-[140px]` (correct), but many label cells override it with `min-w-fit ... whitespace-nowrap`, causing inputs to shift left/right based on label text length.
-- Checkbox+label combo rows (Prepaid Payments, Impounded Payments, Funding Holdback, Accept Short Payments, Override Funds Held) also use `min-w-fit shrink-0 whitespace-nowrap`, breaking alignment.
-- Result: inputs in column 1 (Terms) don't line up with columns 2 and 3, and long labels like "Estimated Balloon Payment" expand the label cell instead of wrapping.
+## Files to modify
+1. `src/components/deal/LenderDisbursementModal.tsx`
+2. `src/components/deal/AddFundingModal.tsx` (DisbursementRow type, table headers/cells, modal submit mapping, payment row handlers stay same)
+3. `src/components/deal/LoanFundingGrid.tsx` (only the row mapping in `handleRowClick` to include `startDate`, `maximumAmount`, `comments`, `debitThrough` dropdown selection — payee/comments persist via the existing `disbursements` JSONB save path; no schema change)
 
-## Changes (single file: `src/components/deal/LoanTermsBalancesForm.tsx`)
+No new tables, no schema changes. Persistence reuses the existing `disbursements` array on the funding record (already JSONB).
 
-1. **Standardize all label cells to `LABEL_CLASS` (140px fixed, wrap-enabled)** — replace `min-w-fit ... whitespace-nowrap` with `LABEL_CLASS` while preserving the primary-color/cursor-pointer/underline styling for the clickable labels:
-   - Other Sched. Pmts
-   - To Escrow Impounds
-   - Amount to Reinstate
-   - Reserve Balance
-   - Escrow Balance
-   - Suspense Funds
-   - Total Balance Due
-   - Estimated Balloon Payment
-   
-   Build the className as `cn(LABEL_CLASS, "text-primary font-medium cursor-pointer hover:underline")` for clickable ones, and `cn(LABEL_CLASS, "text-primary font-medium")` for read-only highlighted ones.
+## 1. LenderDisbursementModal.tsx changes
 
-2. **Fix checkbox+label combo rows** (Prepaid Payments, Impounded Payments, Funding Holdback, Override Funds Held, Accept Short Payments) — change wrapper div from `min-w-fit shrink-0 whitespace-nowrap` to fixed width `w-[140px] min-w-[140px] max-w-[140px] shrink-0` and remove `whitespace-nowrap` so labels wrap naturally to two lines (e.g., "Impounded Payments / Months" already stacks correctly; this just enforces fixed width).
+**Form data additions:**
+- `maximumAmount: string` (after Minimum, currency, optional)
+- `startDate: string` (date, accepts past/future)
+- `comments: string` (carried for table inline edit, but modal does not need to show it; keep field on form for round-trip)
+- `calculatedAmount: string` (computed read-only, stored final capped value)
 
-3. **Fix Sold Rate header row** — same treatment for the inline checkbox label cell so its width matches the rest.
+**Smart Payee search:**
+- Replace current `AccountIdSearch` with same component but increase debounce to 500ms — update `AccountIdSearch.tsx` debounce from 300 → 500 (only one numeric change).
+- On selection, autofill `accountId` and `name` (already wired).
 
-4. **Sold Rate sub-fields (Lenders / Origination / Vendor Company)** — these are nested under `pl-5` indentation. Reduce their label width so input right-edge still aligns with siblings: keep current `w-[120px]` (correct, since `pl-5` adds 20px → 120 + 20 = 140px total). No change needed here.
+**Calculation block (live):**
+- Need `lenderShare` values for Payment / Interest / Principal — pass three numbers as new props from `AddFundingModal`:
+  - `paymentShare` = `formData.regularPayment` (lender share of monthly payment)
+  - `interestShare` = principalBalance × lenderRate / 12 / 100
+  - `principalShare` = paymentShare − interestShare
+- Formula: `base = shareForType(debitOf); calc = base * (debitPercent/100) + plus; if(min) calc = max(calc, min); if(max) calc = min(calc, max);`
+- Show a small read-only "Calculated Amount" line under Minimum/Maximum.
+- Store `calculatedAmount` in form data on every change → flows to row.
 
-5. **Standalone "Accept Post-maturity" and "Auto-post Enabled" rows** — these are checkbox-only with no input; leave as-is (they don't affect input alignment).
+**New Maximum field:** placed right after Minimum (same currency input pattern, `formatCurrencyDisplay` on blur).
 
-6. **Helper for "Percent of Servicing Fees" caption** — its `paddingLeft` already aligns under the input; leave as-is.
+**Debit Through section:**
+- Add **Start Date** field (Popover + EnhancedCalendar, MM/DD/YYYY display, accepts past/future).
+- Convert Debit Through from radio group → Select dropdown with options: Date, Amount, Number of Payments, Payoff.
+- Below the dropdown, render only the field matching the selection:
+  - Date → date picker
+  - Amount → currency input
+  - Number of Payments → numeric input
+  - Payoff → no extra field
+- Keep storing the existing `debitThrough` / `debitThroughDate` / `debitThroughAmount` / `debitThroughPayments` keys (no schema change).
+
+**Validation (block Save when invalid):**
+- Payee required, debitOf (Type) required, debitPercent ≥ 0, startDate required & valid, debitThrough selection required.
+- If both Minimum and Maximum present → Min ≤ Max (inline error).
+
+## 2. AddFundingModal.tsx changes
+
+**`DisbursementRow` interface:** add `maximumAmount: string` and rename intent for `startDate` (already exists, now used). `comments` already exists.
+
+**Pass new props to `LenderDisbursementModal`:**
+- `paymentShare`, `interestShare`, `principalShare` — derived inside AddFundingModal from `regularPayment`, `principalBalance`, `lenderRate`.
+
+**`handleDisbursementModalSubmit`:** map all new fields including `startDate`, `maximumAmount`, `calculatedAmount` → row.amount.
+
+**Table (inside Add Funding):** restructure columns per spec:
+| Column | Source |
+|---|---|
+| Account ID | `row.accountId` |
+| Name | `row.name` |
+| Amount | `row.amount` (final calculated) |
+| Debit Through | dynamic display: date / `$amount` / `N Payments` / `Payoff` |
+| Type | `row.debitOf` (renamed from "From") |
+| Comment | inline `<Input>` editable, `onChange` updates row in state (auto-save in modal form, persisted on Save Funding) |
+
+- Remove "Debit %", "Debit Of", "Plus", "Minimum", "From" columns from default table.
+- Add "Percentage" column hidden by default, shown via existing `ColumnConfigPopover` pattern… but this table is a simple inline `<table>`, not `useTableColumnConfig`. **Simpler approach:** add a small toggle button "Show %" beside the "Add Disbursement" button that flips a local `showPercentage` boolean; when true, render an extra `Percentage` column showing `row.debitPercent + '%'`. Matches "Hidden by default, available in column filter, show when enabled" intent without restructuring the inline table.
+
+## 3. LoanFundingGrid.tsx — `handleRowClick` mapping
+Add the new fields when rebuilding `disbursements` for editing:
+- `startDate`, `maximumAmount`, `comments` (already there), and pass through.
+No other changes here.
+
+## 4. AccountIdSearch.tsx
+- Change debounce from `300` → `500` ms (one literal). Component already returns `(accountId, name)`, used everywhere.
+
+## Persistence
+- All new fields ride inside the existing `disbursements: JSONB[]` column on the funding record.
+- Save uses the existing `onSubmit → onAddFunding / onUpdateRecord` flow — no API/schema change.
+- Inline Comment changes update local row state; persisted when user clicks Save Funding (auto-save within the modal session — no separate save button per spec).
 
 ## Out of scope
-- No data/persistence changes
-- No schema/API changes
-- No behavior changes to validation, calculation, or Sold Rate logic
-- Sub-navigation, modals, and click handlers remain identical
+- No history/random-payment recalcs.
+- No changes to lender funding calculations, rate selection, broker/company fee blocks.
+- No DB migration.
 
-## Result
-All inputs in the three columns will start at the same `x` position (label cell = exactly 140px wide) and inputs flex to fill remaining width uniformly. Long labels like "Estimated Balloon Payment" wrap to two lines within the 140px label cell instead of stretching the row.
+## Visual reference match
+- Modal layout stays close to current (image-349) with: Payee, Name, Debit __% of [Type], Plus, Minimum, **Maximum (NEW)**, **Start Date (NEW)**, Debit Through [Dropdown] + dynamic field, plus a small read-only "Calculated Amount" footer line.
+- Table matches image-348 column order: Account ID · Name · Start Date · Amount · Debit Through · Type · Comment · (Percentage hidden) · edit/delete.
 
