@@ -300,7 +300,22 @@ const LateFeeColumn: React.FC<{
           <h3 className="font-semibold text-sm text-foreground">{title}</h3>
           <Checkbox
             checked={isEnabled}
-            onCheckedChange={(checked) => onValueChange(`${prefix}.enabled`, checked ? 'true' : 'false')}
+            onCheckedChange={(checked) => {
+              const next = !!checked;
+              onValueChange(`${prefix}.enabled`, next ? 'true' : 'false');
+              if (!next) {
+                // Reset all fields in this Late Fee column to 0 / empty when unchecked
+                onValueChange(`${prefix}.type`, '0.00');
+                onValueChange(`${prefix}.grace_period`, '0');
+                onValueChange(`${prefix}.calendar_actual`, '0');
+                onValueChange(`${prefix}.minimum_late_fee`, '0.00');
+                onValueChange(`${prefix}.percentage_of_payment`, '0.00');
+                onValueChange(`${prefix}.additional_daily_charge`, '0.00');
+                onValueChange(`${prefix}.distribution.lenders`, '0.00');
+                onValueChange(`${prefix}.distribution.origination_vendors`, '0.00');
+                onValueChange(`${prefix}.distribution.company`, '0.00');
+              }
+            }}
             disabled={disabled}
             className="h-4 w-4"
           />
