@@ -62,7 +62,8 @@ const PenaltyPercentInput: React.FC<{
   onChange: (value: string) => void;
   disabled?: boolean;
   className?: string;
-}> = ({ value, onChange, disabled, className }) => {
+  onBlur?: () => void;
+}> = ({ value, onChange, disabled, className, onBlur }) => {
   const [isFocused, setIsFocused] = useState(false);
   const displayValue = isFocused ? (value || '') : formatPercentageDisplay(value || '');
 
@@ -84,6 +85,7 @@ const PenaltyPercentInput: React.FC<{
               onChange(clamped.toFixed(2));
             }
           }
+          onBlur?.();
         }}
         onKeyDown={numericKeyDown}
         onPaste={(e) => numericPaste(e, onChange)}
@@ -166,7 +168,22 @@ const DistributionFields: React.FC<{
   }, []);
 
   const lendersIs100 = lendersClamped >= 100;
-  const showError = false;
+
+  // Allocation error: Lenders < 100 and Origination Vendor empty.
+  // Shown after user blurs Lenders, or on tab-switch / save (showValidation).
+  const [lendersBlurred, setLendersBlurred] = useState(false);
+  const lendersHasValue = lendersRaw !== '' && !isNaN(parseFloat(lendersRaw));
+  const vendorEmpty = vendorRaw === '' || isNaN(parseFloat(vendorRaw));
+  const allocationIncomplete = lendersHasValue && lendersClamped < 100 && vendorEmpty;
+  const showError = allocationIncomplete && (lendersBlurred || !!showValidation);
+
+  // If Lenders hits 100, force Origination Vendor to 0 (Company auto = 0).
+  useEffect(() => {
+    if (lendersIs100 && vendorRaw !== '' && vendorClamped !== 0) {
+      onValueChange(`${prefix}.distribution.origination_vendors`, '0.00');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lendersIs100]);
 
   const handleLendersChange = (val: string) => {
     onValueChange(`${prefix}.distribution.lenders`, val);
@@ -197,6 +214,7 @@ const DistributionFields: React.FC<{
               <PenaltyPercentInput
                 value={lendersRaw}
                 onChange={handleLendersChange}
+                onBlur={() => setLendersBlurred(true)}
                 disabled={disabled}
               />
             </div>
@@ -227,7 +245,7 @@ const DistributionFields: React.FC<{
           </div>
         </DirtyFieldWrapper>
         {showError && (
-          <p className="text-xs text-destructive pl-[172px]">Lenders must equal 100%</p>
+          <p className="text-xs text-destructive pl-[172px]">Please allocate remaining percentage in subsequent fields</p>
         )}
       </div>
     </div>
