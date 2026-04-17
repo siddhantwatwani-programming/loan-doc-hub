@@ -3,6 +3,7 @@ import { Outlet, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { WorkspaceProvider, useWorkspace } from '@/contexts/WorkspaceContext';
+import { ContactWorkspaceProvider, useContactWorkspace } from '@/contexts/ContactWorkspaceContext';
 import { FieldDictionaryCacheProvider } from '@/hooks/useFieldDictionaryCache';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
