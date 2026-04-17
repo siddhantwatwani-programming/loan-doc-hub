@@ -58,6 +58,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 }) => {
   const nav = useDealNavigationOptional();
   const [otherSchedPmtsOpen, setOtherSchedPmtsOpen] = useState(false);
+  const [lendersBlurred, setLendersBlurred] = useState(false);
 
   const navigateToSubSection = (sub: LoanTermsSubSection) => {
     nav?.setSubSection('loan_terms', sub);
@@ -291,11 +292,12 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   onCheckedChange={() => {
                     const wasChecked = isChecked(FIELD_KEYS.soldRateEnabled);
                     toggleCheck(FIELD_KEYS.soldRateEnabled);
-                    // When unchecking, reset all three percentage values to 0
+                    // When unchecking, reset all three percentage values and clear validation state.
                     if (wasChecked) {
                       setValue(FIELD_KEYS.soldRateCompany, '');
                       setValue(FIELD_KEYS.soldRateOtherClient1, '');
                       setValue(FIELD_KEYS.soldRateOtherClient2, '');
+                      setLendersBlurred(false);
                     }
                   }}
                   disabled={disabled}
