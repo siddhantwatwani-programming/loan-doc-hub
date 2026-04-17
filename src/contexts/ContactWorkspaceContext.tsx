@@ -19,6 +19,9 @@ interface ContactWorkspaceState {
   setContactDirty: (id: string, dirty: boolean) => void;
   isContactDirty: (id: string) => boolean;
   isAtLimit: () => boolean;
+  registerSaveFn: (id: string, fn: () => Promise<boolean>) => void;
+  unregisterSaveFn: (id: string) => void;
+  getSaveFn: (id: string) => (() => Promise<boolean>) | undefined;
 }
 
 const MAX_CONTACTS = 10;
