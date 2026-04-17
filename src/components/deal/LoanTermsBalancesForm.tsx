@@ -48,7 +48,7 @@ const ACCRUAL_METHOD_OPTIONS = [
   { value: "actual_actual", label: "Actual/Actual" },
 ];
 
-const LABEL_CLASS = "text-sm text-muted-foreground min-w-fit text-left shrink-0 whitespace-nowrap";
+const LABEL_CLASS = "text-sm text-muted-foreground w-[140px] min-w-[140px] max-w-[140px] text-left shrink-0 leading-tight break-words";
 
 export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
   values,
@@ -366,7 +366,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 <div className="space-y-2 pl-5">
                   <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateCompany}>
                     <div className="flex items-center gap-3">
-                      <Label className="text-sm text-muted-foreground min-w-fit text-left shrink-0 whitespace-nowrap">
+                      <Label className="text-sm text-muted-foreground w-[120px] min-w-[120px] max-w-[120px] text-left shrink-0 leading-tight break-words">
                         Lenders
                       </Label>
                       <div className="relative flex-1">
@@ -384,7 +384,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   </DirtyFieldWrapper>
                   <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient1}>
                     <div className="flex items-center gap-3">
-                      <Label className="text-sm text-muted-foreground min-w-fit text-left shrink-0 whitespace-nowrap">
+                      <Label className="text-sm text-muted-foreground w-[120px] min-w-[120px] max-w-[120px] text-left shrink-0 leading-tight break-words">
                         Origination
                       </Label>
                       <div className="relative flex-1">
@@ -402,7 +402,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   </DirtyFieldWrapper>
                   <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient2}>
                     <div className="flex items-center gap-3">
-                      <Label className="text-sm text-muted-foreground min-w-fit text-left shrink-0 whitespace-nowrap">
+                      <Label className="text-sm text-muted-foreground w-[120px] min-w-[120px] max-w-[120px] text-left shrink-0 leading-tight break-words">
                         Vendor Company
                       </Label>
                       <div className="relative flex-1">
