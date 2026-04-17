@@ -18,6 +18,7 @@ import { ModalSaveConfirmation } from './ModalSaveConfirmation';
 import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 
 export interface DisbursementFormData {
+  active?: boolean;
   accountId: string;
   name: string;
   debitPercent: string;
