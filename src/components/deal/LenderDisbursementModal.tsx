@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { CalendarIcon } from 'lucide-react';
@@ -18,6 +19,7 @@ import { ModalSaveConfirmation } from './ModalSaveConfirmation';
 import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 
 export interface DisbursementFormData {
+  active?: boolean;
   accountId: string;
   name: string;
   debitPercent: string;
@@ -36,6 +38,7 @@ export interface DisbursementFormData {
 }
 
 const emptyForm = (): DisbursementFormData => ({
+  active: true,
   accountId: '',
   name: '',
   debitPercent: '',
@@ -154,6 +157,16 @@ export const LenderDisbursementModal: React.FC<LenderDisbursementModalProps> = (
           </div>
 
           <div className="px-3 py-3 space-y-2">
+            {/* Active */}
+            <div className="flex items-center gap-1">
+              <Label className="text-[11px] font-bold min-w-[80px] shrink-0">Active</Label>
+              <Checkbox
+                checked={formData.active !== false}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: !!checked }))}
+                className="h-3.5 w-3.5"
+              />
+            </div>
+
             {/* Payee */}
             <div className="flex items-center gap-1">
               <Label className="text-[11px] font-bold min-w-[80px] shrink-0">Payee</Label>
