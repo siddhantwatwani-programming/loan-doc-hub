@@ -324,9 +324,17 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               const remainder = Math.max(0, 100 - lendersClamped - originationClamped);
               const vendorCompanyDisplay = (lendersRaw || originationRaw) ? remainder.toFixed(2) : '';
 
-              // Keep Vendor Company persisted in sync with computed remainder
+              // Keep Vendor Company persisted in sync with computed remainder.
+              // Use numeric equality so formatting differences (e.g. "33" vs "33.00")
+              // do not trigger a phantom write that would mark the file dirty on load.
               const persistedVendor = getValue(FIELD_KEYS.soldRateOtherClient2);
-              if (vendorCompanyDisplay !== persistedVendor) {
+              const persistedNum = parseFloat((persistedVendor || '').replace(/[^0-9.]/g, ''));
+              const displayNum = parseFloat(vendorCompanyDisplay);
+              const numericallyEqual =
+                (isNaN(persistedNum) && isNaN(displayNum)) ||
+                (!isNaN(persistedNum) && !isNaN(displayNum) && persistedNum === displayNum);
+
+              if (!numericallyEqual && vendorCompanyDisplay !== '') {
                 // schedule update without triggering during render warnings
                 queueMicrotask(() => setValue(FIELD_KEYS.soldRateOtherClient2, vendorCompanyDisplay));
               }
