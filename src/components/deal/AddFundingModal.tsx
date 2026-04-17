@@ -913,7 +913,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
         from: formData.disbursements[editingDisbursementIdx].from as any,
         calculatedAmount: '',
         comments: formData.disbursements[editingDisbursementIdx].comments || '',
-        isActive: (formData.disbursements[editingDisbursementIdx] as any).isActive ?? true,
       } : null}
       isEditing={editingDisbursementIdx !== null}
     />
