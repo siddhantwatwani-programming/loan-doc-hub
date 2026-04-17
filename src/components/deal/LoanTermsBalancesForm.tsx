@@ -350,7 +350,12 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
               const lendersIs100 = lendersClamped >= 100;
               const sumIs100 = (lendersClamped + originationClamped) >= 100;
-              const showError = false;
+              const showError = showAllocationError;
+
+              // If Lenders hits 100, Origination Vendor must be 0 (and Company auto = 0).
+              if (lendersIs100 && originationRaw !== '' && originationClamped !== 0) {
+                queueMicrotask(() => setValue(FIELD_KEYS.soldRateOtherClient1, '0.00'));
+              }
 
               const sanitizePct = (val: string) => {
                 const cleaned = val.replace(/[^0-9.]/g, '');
@@ -390,6 +395,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                         <Input
                           value={getValue(FIELD_KEYS.soldRateCompany)}
                           onChange={(e) => handleLendersChange(e.target.value)}
+                          onBlur={() => setLendersBlurred(true)}
                           disabled={disabled}
                           className={cn("h-8 text-sm pr-7", showError && "border-destructive")}
                           placeholder="0.00"
@@ -402,7 +408,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient1}>
                     <div className="flex items-center gap-3">
                       <Label className="text-sm text-muted-foreground w-[120px] min-w-[120px] max-w-[120px] text-left shrink-0 leading-tight break-words">
-                        Origination
+                        Origination Vendor
                       </Label>
                       <div className="relative flex-1">
                         <Input
@@ -420,7 +426,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient2}>
                     <div className="flex items-center gap-3">
                       <Label className="text-sm text-muted-foreground w-[120px] min-w-[120px] max-w-[120px] text-left shrink-0 leading-tight break-words">
-                        Vendor Company
+                        Company
                       </Label>
                       <div className="relative flex-1">
                         <Input
@@ -436,7 +442,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   </DirtyFieldWrapper>
                   {showError && (
                     <p className="text-xs text-destructive pl-[135px]">
-                      Lenders must be 100% or Lenders + Origination must total 100%.
+                      Please allocate remaining percentage in subsequent fields
                     </p>
                   )}
                 </div>
