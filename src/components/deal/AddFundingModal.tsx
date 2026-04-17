@@ -73,6 +73,7 @@ export interface PaymentRow {
 }
 
 const emptyDisbursementRow = (): DisbursementRow => ({
+  active: true,
   accountId: '', name: '', startDate: '', endDate: '', amount: '', percentage: '', from: '', comments: '',
   debitPercent: '', debitOf: '', plusAmount: '', minimumAmount: '', maximumAmount: '',
   debitThrough: '', debitThroughDate: '', debitThroughAmount: '', debitThroughPayments: '',
