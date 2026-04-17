@@ -34,6 +34,7 @@ export interface DisbursementFormData {
   from: 'Payment' | 'Interest' | 'Principal' | '';
   calculatedAmount: string;
   comments: string;
+  isActive: boolean;
 }
 
 const emptyForm = (): DisbursementFormData => ({
