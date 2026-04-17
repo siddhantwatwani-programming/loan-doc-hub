@@ -31,7 +31,7 @@ export interface PropertyData {
   apn: string;
   loanPriority: string;
   floodZone?: string;
-  pledgedEquity?: string;
+  
   zoning?: string;
   performedBy?: string;
   copyBorrowerAddress?: boolean;
@@ -120,7 +120,6 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'thirdPartyFullName', label: 'Appraiser Name', visible: false },
   { id: 'appraiserPhone', label: 'Appraiser Phone', visible: false },
   { id: 'appraiserEmail', label: 'Appraiser Email', visible: false },
-  { id: 'pledgedEquity', label: 'Pledged Equity', visible: false },
   { id: 'protectiveEquity', label: 'Protective Equity', visible: false },
   { id: 'ltv', label: 'Loan To Value', visible: true },
   { id: 'cltv', label: 'CLTV', visible: false },
@@ -236,7 +235,6 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
       case 'appraisedValue':
       case 'purchasePrice':
       case 'downPayment':
-      case 'pledgedEquity':
       case 'protectiveEquity':
         return formatCurrency(String(property[columnId as keyof PropertyData] || ''));
       case 'ltv':

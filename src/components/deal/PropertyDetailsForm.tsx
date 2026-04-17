@@ -77,7 +77,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
     return total;
   }, [values]);
 
-  // Auto-calculate LTV, Pledged Equity, Protective Equity, CLTV
+  // Auto-calculate LTV, Protective Equity, CLTV
   useEffect(() => {
     const loanAmountRaw = values['loan_terms.loan_amount'] || '';
     const purchasePriceRaw = getFieldValue(FIELD_KEYS.purchasePrice);
@@ -92,13 +92,6 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
       }
     }
 
-    // Pledged Equity = Purchase Price − Existing Liens (sum of lien new_remaining_balance)
-    if (!isNaN(purchasePrice)) {
-      const pe = (purchasePrice - existingLiensTotal).toFixed(2);
-      if (getFieldValue(FIELD_KEYS.pledgedEquity) !== pe) {
-        onValueChange(FIELD_KEYS.pledgedEquity, pe);
-      }
-    }
 
     // Protective Equity = Purchase Price − (Existing Liens + Loan Amount)
     if (!isNaN(purchasePrice) && !isNaN(loanAmount)) {
@@ -360,15 +353,6 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             </>
           )}
 
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.pledgedEquity}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[110px] shrink-0 text-xs text-foreground">Pledged Equity</Label>
-              <div className="relative flex-1">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-                <Input value={getFieldValue(FIELD_KEYS.pledgedEquity)} disabled className="h-7 text-xs pl-6 bg-muted" readOnly />
-              </div>
-            </div>
-          </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.protectiveEquity}>
             <div className="flex items-center gap-2">
               <Label className="w-[110px] shrink-0 text-xs text-foreground">Protective Equity</Label>

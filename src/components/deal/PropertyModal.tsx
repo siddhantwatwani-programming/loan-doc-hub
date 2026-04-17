@@ -47,7 +47,7 @@ const generatePropertyId = () => `property_${Date.now()}_${Math.random().toStrin
 const getEmptyProperty = (): PropertyData => ({
   id: generatePropertyId(), isPrimary: false, description: '', street: '', city: '', state: '', zipCode: '', county: '',
   propertyType: '', occupancy: '', appraisedValue: '', appraisedDate: '', ltv: '', apn: '',
-  loanPriority: '', floodZone: '', pledgedEquity: '', zoning: '', performedBy: '', copyBorrowerAddress: false,
+  loanPriority: '', floodZone: '', zoning: '', performedBy: '', copyBorrowerAddress: false,
   purchasePrice: '', downPayment: '', delinquentTaxes: '',
   appraiserStreet: '', appraiserCity: '', appraiserState: '', appraiserZip: '', appraiserPhone: '', appraiserEmail: '',
   yearBuilt: '', squareFeet: '', constructionType: '', monthlyIncome: '', lienProtectiveEquity: '', sourceLienInfo: '',
@@ -64,7 +64,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   const [formData, setFormData] = useState<PropertyData>(getEmptyProperty());
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const CURRENCY_MODAL_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'pledgedEquity', 'monthlyIncome', 'lienProtectiveEquity', 'netMonthlyIncome', 'fromRent', 'fromOtherDescribe', 'protectiveEquity'];
+  const CURRENCY_MODAL_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'monthlyIncome', 'lienProtectiveEquity', 'netMonthlyIncome', 'fromRent', 'fromOtherDescribe', 'protectiveEquity'];
   useEffect(() => {
     if (open) {
       const base = property ? { ...getEmptyProperty(), ...property } : getEmptyProperty();
@@ -101,7 +101,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   const emailsValid = hasValidEmails(formData as any, ['appraiserEmail']);
 
   const handleSaveClick = () => setShowConfirm(true);
-  const CURRENCY_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'pledgedEquity', 'monthlyIncome', 'lienProtectiveEquity', 'netMonthlyIncome', 'fromRent', 'fromOtherDescribe', 'protectiveEquity'];
+  const CURRENCY_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'monthlyIncome', 'lienProtectiveEquity', 'netMonthlyIncome', 'fromRent', 'fromOtherDescribe', 'protectiveEquity'];
   const handleConfirmSave = () => {
     setShowConfirm(false);
     const cleaned = { ...formData };
@@ -307,7 +307,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                   </>
                 )}
 
-                {renderCurrencyField('pledgedEquity', 'Pledged Equity')}
+                
                 {renderCurrencyField('protectiveEquity', 'Protective Equity')}
                 {renderPercentageField('ltv', 'Loan To Value')}
                 {renderPercentageField('cltv', 'CLTV (If a Junior Lien)')}
