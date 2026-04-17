@@ -303,6 +303,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         amount: d.amount || '', percentage: d.percentage || '', from: (d as any).from || '' as const, comments: d.comments || '',
         debitPercent: (d as any).debitPercent || '', debitOf: (d as any).debitOf || '' as const,
         plusAmount: (d as any).plusAmount || '', minimumAmount: (d as any).minimumAmount || '',
+        maximumAmount: (d as any).maximumAmount || '',
         debitThrough: (d as any).debitThrough || '' as const, debitThroughDate: (d as any).debitThroughDate || '',
         debitThroughAmount: (d as any).debitThroughAmount || '', debitThroughPayments: (d as any).debitThroughPayments || '',
       })) : [],
