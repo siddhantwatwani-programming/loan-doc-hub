@@ -235,7 +235,6 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
       case 'appraisedValue':
       case 'purchasePrice':
       case 'downPayment':
-      case 'pledgedEquity':
       case 'protectiveEquity':
         return formatCurrency(String(property[columnId as keyof PropertyData] || ''));
       case 'ltv':
