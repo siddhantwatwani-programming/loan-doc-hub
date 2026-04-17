@@ -268,7 +268,7 @@ export const LenderDisbursementModal: React.FC<LenderDisbursementModalProps> = (
 
             {/* Calculated Amount (read-only) */}
             <div className="flex items-center gap-1">
-              <Label className="text-[11px] font-bold min-w-[80px] shrink-0">Calculated</Label>
+              <Label className="text-[11px] font-bold min-w-[80px] shrink-0">Amount</Label>
               <div className="relative flex-1">
                 <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
                 <Input
