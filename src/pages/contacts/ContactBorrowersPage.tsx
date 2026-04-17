@@ -108,7 +108,7 @@ const ContactBorrowersPage: React.FC = () => {
         .eq('id', contactId)
         .maybeSingle();
       if (data) {
-        setSelectedContact({
+        const rec = {
           id: data.id,
           contact_id: data.contact_id,
           contact_type: data.contact_type,
@@ -123,10 +123,20 @@ const ContactBorrowersPage: React.FC = () => {
           contact_data: (data.contact_data || {}) as Record<string, string>,
           created_at: data.created_at || '',
           updated_at: data.updated_at || '',
-        });
+        };
+        setSelectedContact(rec);
+        if (contactWs) {
+          contactWs.openContact({
+            id: rec.id,
+            kind: 'borrower',
+            contactId: rec.contact_id,
+            fullName: rec.full_name || [rec.first_name, rec.last_name].filter(Boolean).join(' '),
+            openedAt: Date.now(),
+          });
+        }
       }
     })();
-  }, [contactId]);
+  }, [contactId, contactWs]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
