@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AccountIdSearch } from './AccountIdSearch';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
+import { Checkbox } from '@/components/ui/checkbox';
 import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 
 export interface DisbursementFormData {
