@@ -372,16 +372,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                       <div className="relative flex-1">
                         <Input
                           value={getValue(FIELD_KEYS.soldRateOtherClient1)}
-                          onChange={(e) => {
-                            const sanitized = sanitizePct(e.target.value);
-                            const n = parseFloat(sanitized);
-                            const maxAllowed = Math.max(0, 100 - lendersClamped);
-                            if (!isNaN(n) && n > maxAllowed) {
-                              setValue(FIELD_KEYS.soldRateOtherClient1, maxAllowed.toString());
-                            } else {
-                              setValue(FIELD_KEYS.soldRateOtherClient1, sanitized);
-                            }
-                          }}
+                          onChange={(e) => setValue(FIELD_KEYS.soldRateOtherClient1, sanitizePct(e.target.value))}
                           disabled={disabled || lendersIs100}
                           className={cn("h-8 text-sm pr-7", showError && "border-destructive", lendersIs100 && "bg-muted")}
                           placeholder="0.00"
