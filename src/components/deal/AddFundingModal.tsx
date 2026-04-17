@@ -42,6 +42,7 @@ interface AddFundingModalProps {
 }
 
 export interface DisbursementRow {
+  active: boolean;
   accountId: string;
   name: string;
   startDate: string;
