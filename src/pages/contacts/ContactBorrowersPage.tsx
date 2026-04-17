@@ -236,7 +236,7 @@ const ContactBorrowersPage: React.FC = () => {
         onSearchChange={setLocalSearch}
         searchPlaceholder="Search by Borrower ID, Type, or Name..."
         onPageChange={crud.setCurrentPage}
-        onRowClick={setSelectedContact}
+        onRowClick={handleRowClick}
         onCreateNew={() => setModalOpen(true)}
         onDeleteSelected={isReadOnly ? undefined : handleDeleteSelected}
         defaultColumns={DEFAULT_COLUMNS}
