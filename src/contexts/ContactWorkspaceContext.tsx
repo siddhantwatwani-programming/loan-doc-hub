@@ -101,11 +101,21 @@ export const ContactWorkspaceProvider: React.FC<{ children: ReactNode }> = ({ ch
   const isContactDirty = useCallback((id: string) => dirtyRef.current.has(id), []);
   const isAtLimit = useCallback(() => openContacts.length >= MAX_CONTACTS, [openContacts]);
 
+  const saveFnsRef = useRef<Record<string, () => Promise<boolean>>>({});
+  const registerSaveFn = useCallback((id: string, fn: () => Promise<boolean>) => {
+    saveFnsRef.current[id] = fn;
+  }, []);
+  const unregisterSaveFn = useCallback((id: string) => {
+    delete saveFnsRef.current[id];
+  }, []);
+  const getSaveFn = useCallback((id: string) => saveFnsRef.current[id], []);
+
   return (
     <ContactWorkspaceContext.Provider value={{
       openContacts, activeContactId,
       openContact, closeContact, switchToContact,
       setContactDirty, isContactDirty, isAtLimit,
+      registerSaveFn, unregisterSaveFn, getSaveFn,
     }}>
       {children}
     </ContactWorkspaceContext.Provider>
