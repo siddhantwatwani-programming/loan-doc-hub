@@ -163,7 +163,7 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             <Lender1099
               values={values}
               onValueChange={handleValueChange}
-              onSave={handleSave}
+              onSave={async () => { await handleSave(); }}
               disabled={isReadOnly}
             />
           </div>

@@ -198,7 +198,7 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
             <Broker1099
               values={values}
               onValueChange={handleValueChange}
-              onSave={handleSave}
+              onSave={async () => { await handleSave(); }}
               disabled={isReadOnly}
             />
           </div>
