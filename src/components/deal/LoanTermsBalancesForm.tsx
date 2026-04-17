@@ -58,6 +58,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 }) => {
   const nav = useDealNavigationOptional();
   const [otherSchedPmtsOpen, setOtherSchedPmtsOpen] = useState(false);
+  const [lendersBlurred, setLendersBlurred] = useState(false);
 
   const navigateToSubSection = (sub: LoanTermsSubSection) => {
     nav?.setSubSection('loan_terms', sub);
@@ -291,11 +292,12 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   onCheckedChange={() => {
                     const wasChecked = isChecked(FIELD_KEYS.soldRateEnabled);
                     toggleCheck(FIELD_KEYS.soldRateEnabled);
-                    // When unchecking, reset all three percentage values to 0
+                    // When unchecking, reset all three percentage values and clear validation state.
                     if (wasChecked) {
                       setValue(FIELD_KEYS.soldRateCompany, '');
                       setValue(FIELD_KEYS.soldRateOtherClient1, '');
                       setValue(FIELD_KEYS.soldRateOtherClient2, '');
+                      setLendersBlurred(false);
                     }
                   }}
                   disabled={disabled}
@@ -324,6 +326,13 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               const remainder = Math.max(0, 100 - lendersClamped - originationClamped);
               const vendorCompanyDisplay = (lendersRaw || originationRaw) ? remainder.toFixed(2) : '';
 
+              // Allocation error: Lenders has a value < 100 and Origination Vendor is empty.
+              // Surfaced only after user blurs Lenders, or on tab-switch/save (showValidation).
+              const lendersHasValue = lendersRaw !== '' && !isNaN(parseFloat(lendersRaw));
+              const originationEmpty = originationRaw === '' || isNaN(parseFloat(originationRaw));
+              const allocationIncomplete = lendersHasValue && lendersClamped < 100 && originationEmpty;
+              const showAllocationError = allocationIncomplete && (lendersBlurred || showValidation);
+
               // Keep Vendor Company persisted in sync with computed remainder.
               // Use numeric equality so formatting differences (e.g. "33" vs "33.00")
               // do not trigger a phantom write that would mark the file dirty on load.
@@ -341,7 +350,12 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
 
               const lendersIs100 = lendersClamped >= 100;
               const sumIs100 = (lendersClamped + originationClamped) >= 100;
-              const showError = false;
+              const showError = showAllocationError;
+
+              // If Lenders hits 100, Origination Vendor must be 0 (and Company auto = 0).
+              if (lendersIs100 && originationRaw !== '' && originationClamped !== 0) {
+                queueMicrotask(() => setValue(FIELD_KEYS.soldRateOtherClient1, '0.00'));
+              }
 
               const sanitizePct = (val: string) => {
                 const cleaned = val.replace(/[^0-9.]/g, '');
@@ -381,6 +395,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                         <Input
                           value={getValue(FIELD_KEYS.soldRateCompany)}
                           onChange={(e) => handleLendersChange(e.target.value)}
+                          onBlur={() => setLendersBlurred(true)}
                           disabled={disabled}
                           className={cn("h-8 text-sm pr-7", showError && "border-destructive")}
                           placeholder="0.00"
@@ -393,7 +408,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient1}>
                     <div className="flex items-center gap-3">
                       <Label className="text-sm text-muted-foreground w-[120px] min-w-[120px] max-w-[120px] text-left shrink-0 leading-tight break-words">
-                        Origination
+                        Origination Vendor
                       </Label>
                       <div className="relative flex-1">
                         <Input
@@ -411,7 +426,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   <DirtyFieldWrapper fieldKey={FIELD_KEYS.soldRateOtherClient2}>
                     <div className="flex items-center gap-3">
                       <Label className="text-sm text-muted-foreground w-[120px] min-w-[120px] max-w-[120px] text-left shrink-0 leading-tight break-words">
-                        Vendor Company
+                        Company
                       </Label>
                       <div className="relative flex-1">
                         <Input
@@ -427,7 +442,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   </DirtyFieldWrapper>
                   {showError && (
                     <p className="text-xs text-destructive pl-[135px]">
-                      Lenders must be 100% or Lenders + Origination must total 100%.
+                      Please allocate remaining percentage in subsequent fields
                     </p>
                   )}
                 </div>
