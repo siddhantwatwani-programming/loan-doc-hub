@@ -271,7 +271,8 @@ const LateFeeColumn: React.FC<{
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
   percentageLabel?: string;
-}> = ({ title, prefix, values, onValueChange, disabled, percentageLabel = 'Percentage of Payment' }) => {
+  showValidation?: boolean;
+}> = ({ title, prefix, values, onValueChange, disabled, percentageLabel = 'Percentage of Payment', showValidation }) => {
   const isEnabled = values[`${prefix}.enabled`] === 'true';
 
   return (
@@ -338,6 +339,7 @@ const LateFeeColumn: React.FC<{
         values={values}
         onValueChange={onValueChange}
         disabled={disabled || !isEnabled}
+        showValidation={showValidation && isEnabled}
       />
     </div>
   );
@@ -396,7 +398,8 @@ const DefaultInterestColumn: React.FC<{
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
-}> = ({ values, onValueChange, disabled }) => {
+  showValidation?: boolean;
+}> = ({ values, onValueChange, disabled, showValidation }) => {
   const prefix = 'loan_terms.penalties.default_interest';
   const isEnabled = values[`${prefix}.enabled`] === 'true';
 
@@ -493,6 +496,7 @@ const DefaultInterestColumn: React.FC<{
         values={values}
         onValueChange={onValueChange}
         disabled={disabled || !isEnabled}
+        showValidation={showValidation && isEnabled}
       />
     </div>
   );
@@ -503,7 +507,8 @@ const InterestGuaranteeSection: React.FC<{
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
-}> = ({ values, onValueChange, disabled }) => {
+  showValidation?: boolean;
+}> = ({ values, onValueChange, disabled, showValidation }) => {
   const prefix = 'loan_terms.penalties.interest_guarantee';
   const isEnabled = values[`${prefix}.enabled`] === 'true';
 
@@ -564,6 +569,7 @@ const InterestGuaranteeSection: React.FC<{
         values={values}
         onValueChange={onValueChange}
         disabled={disabled || !isEnabled}
+        showValidation={showValidation && isEnabled}
       />
     </div>
   );
@@ -574,7 +580,8 @@ const PrepaymentPenaltySection: React.FC<{
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
-}> = ({ values, onValueChange, disabled }) => {
+  showValidation?: boolean;
+}> = ({ values, onValueChange, disabled, showValidation }) => {
   const prefix = 'loan_terms.penalties.prepayment';
   const isEnabled = values[`${prefix}.enabled`] === 'true';
 
@@ -651,6 +658,7 @@ const PrepaymentPenaltySection: React.FC<{
         values={values}
         onValueChange={onValueChange}
         disabled={disabled || !isEnabled}
+        showValidation={showValidation && isEnabled}
       />
     </div>
   );
@@ -661,7 +669,8 @@ const MaturitySection: React.FC<{
   values: Record<string, string>;
   onValueChange: (fieldKey: string, value: string) => void;
   disabled?: boolean;
-}> = ({ values, onValueChange, disabled }) => {
+  showValidation?: boolean;
+}> = ({ values, onValueChange, disabled, showValidation }) => {
   const prefix = 'loan_terms.penalties.maturity';
   const isEnabled = values[`${prefix}.enabled`] === 'true';
 
@@ -716,6 +725,7 @@ const MaturitySection: React.FC<{
         values={values}
         onValueChange={onValueChange}
         disabled={disabled || !isEnabled}
+        showValidation={showValidation && isEnabled}
       />
     </div>
   );
@@ -740,6 +750,7 @@ export const LoanTermsPenaltiesForm: React.FC<LoanTermsPenaltiesFormProps> = ({
           onValueChange={onValueChange}
           disabled={disabled}
           percentageLabel="Percentage of Payment"
+          showValidation={showValidation}
         />
         <LateFeeColumn
           title="Late Fee II"
@@ -748,11 +759,13 @@ export const LoanTermsPenaltiesForm: React.FC<LoanTermsPenaltiesFormProps> = ({
           onValueChange={onValueChange}
           disabled={disabled}
           percentageLabel="Percentage of"
+          showValidation={showValidation}
         />
         <DefaultInterestColumn
           values={values}
           onValueChange={onValueChange}
           disabled={disabled}
+          showValidation={showValidation}
         />
       </div>
 
@@ -762,16 +775,19 @@ export const LoanTermsPenaltiesForm: React.FC<LoanTermsPenaltiesFormProps> = ({
           values={values}
           onValueChange={onValueChange}
           disabled={disabled}
+          showValidation={showValidation}
         />
         <PrepaymentPenaltySection
           values={values}
           onValueChange={onValueChange}
           disabled={disabled}
+          showValidation={showValidation}
         />
         <MaturitySection
           values={values}
           onValueChange={onValueChange}
           disabled={disabled}
+          showValidation={showValidation}
         />
       </div>
     </div>
