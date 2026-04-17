@@ -54,6 +54,7 @@ export interface DisbursementRow {
   debitOf: 'Payment' | 'Interest' | 'Principal' | '';
   plusAmount: string;
   minimumAmount: string;
+  maximumAmount: string;
   debitThrough: 'date' | 'amount' | 'payments' | 'payoff' | '';
   debitThroughDate: string;
   debitThroughAmount: string;
@@ -72,7 +73,7 @@ export interface PaymentRow {
 
 const emptyDisbursementRow = (): DisbursementRow => ({
   accountId: '', name: '', startDate: '', endDate: '', amount: '', percentage: '', from: '', comments: '',
-  debitPercent: '', debitOf: '', plusAmount: '', minimumAmount: '',
+  debitPercent: '', debitOf: '', plusAmount: '', minimumAmount: '', maximumAmount: '',
   debitThrough: '', debitThroughDate: '', debitThroughAmount: '', debitThroughPayments: '',
 });
 const defaultDisbursements = (): DisbursementRow[] => [];
@@ -372,19 +373,23 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const handleDisbursementModalSubmit = (data: DisbursementFormData) => {
     setFormData(prev => {
       const updated = [...prev.disbursements];
+      const finalAmount = data.calculatedAmount
+        ? formatCurrencyDisplay(data.calculatedAmount)
+        : (data.plusAmount || data.debitThroughAmount || '');
       const row: DisbursementRow = {
         accountId: data.accountId,
         name: data.name,
-        startDate: data.debitThroughDate || '',
+        startDate: data.startDate || '',
         endDate: '',
-        amount: data.plusAmount || data.debitThroughAmount || '',
+        amount: finalAmount,
         percentage: data.debitPercent || '',
-        from: data.from || '',
-        comments: '',
+        from: data.debitOf || '',
+        comments: data.comments || '',
         debitPercent: data.debitPercent,
         debitOf: data.debitOf,
         plusAmount: data.plusAmount,
         minimumAmount: data.minimumAmount,
+        maximumAmount: data.maximumAmount || '',
         debitThrough: data.debitThrough,
         debitThroughDate: data.debitThroughDate,
         debitThroughAmount: data.debitThroughAmount,
@@ -399,6 +404,25 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     });
     setEditingDisbursementIdx(null);
   };
+
+  // Inline comment auto-save handler
+  const handleDisbursementCommentChange = (index: number, comment: string) => {
+    setFormData(prev => {
+      const updated = [...prev.disbursements];
+      updated[index] = { ...updated[index], comments: comment };
+      return { ...prev, disbursements: updated };
+    });
+  };
+
+  // Toggle for Percentage column visibility
+  const [showPercentageCol, setShowPercentageCol] = useState(false);
+
+  // Lender share values for disbursement calculation
+  const paymentShareNum = parseFloat((formData.regularPayment || '').replace(/[$,]/g, '')) || 0;
+  const principalBalNum = parseFloat((formData.principalBalance || '').replace(/[$,]/g, '')) || 0;
+  const lenderRateNum = parseFloat(formData.lenderRate || '0') || 0;
+  const interestShareNum = principalBalNum > 0 && lenderRateNum > 0 ? (principalBalNum * lenderRateNum) / 12 / 100 : 0;
+  const principalShareNum = Math.max(paymentShareNum - interestShareNum, 0);
 
   const handleDeleteDisbursement = (index: number) => {
     setFormData(prev => {
@@ -724,24 +748,35 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
           <div className="space-y-1 border-t border-border pt-2">
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-bold underline text-foreground">Disbursements from Lender Proceeds</p>
-              <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" onClick={handleAddDisbursement}>
-                <Plus className="h-3 w-3" />
-                Add Disbursement
-              </Button>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-1 text-[10px] cursor-pointer">
+                  <Checkbox
+                    checked={showPercentageCol}
+                    onCheckedChange={(checked) => setShowPercentageCol(!!checked)}
+                    className="h-3.5 w-3.5"
+                  />
+                  Show %
+                </label>
+                <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" onClick={handleAddDisbursement}>
+                  <Plus className="h-3 w-3" />
+                  Add Disbursement
+                </Button>
+              </div>
             </div>
             {formData.disbursements.length > 0 && (
               <div className="overflow-x-auto border border-border rounded">
                 <table className="w-full text-[11px]">
                   <thead>
                     <tr className="bg-muted/50 border-b border-border">
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Payee</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Name</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[55px]">Debit %</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[60px]">Debit Of</th>
-                      <th className="text-right py-1 px-1 font-semibold text-muted-foreground min-w-[60px]">Plus</th>
-                      <th className="text-right py-1 px-1 font-semibold text-muted-foreground min-w-[60px]">Minimum</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">Debit Through</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[60px]">From</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Account ID</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[100px]">Name</th>
+                      <th className="text-right py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Amount</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[90px]">Debit Through</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">Type</th>
+                      {showPercentageCol && (
+                        <th className="text-right py-1 px-1 font-semibold text-muted-foreground min-w-[60px]">Percentage</th>
+                      )}
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[140px]">Comment</th>
                       <th className="w-[50px]"></th>
                     </tr>
                   </thead>
@@ -750,17 +785,25 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                       <tr key={idx} className="border-b border-border last:border-b-0 hover:bg-muted/20">
                         <td className="py-0.5 px-1 text-[10px]">{row.accountId || '-'}</td>
                         <td className="py-0.5 px-1 text-[10px]">{row.name || '-'}</td>
-                        <td className="py-0.5 px-1 text-[10px]">{row.debitPercent ? `${row.debitPercent}%` : '-'}</td>
-                        <td className="py-0.5 px-1 text-[10px]">{row.debitOf || '-'}</td>
-                        <td className="py-0.5 px-1 text-[10px] text-right">{row.plusAmount ? `$${row.plusAmount}` : '-'}</td>
-                        <td className="py-0.5 px-1 text-[10px] text-right">{row.minimumAmount ? `$${row.minimumAmount}` : '-'}</td>
+                        <td className="py-0.5 px-1 text-[10px] text-right">{row.amount ? `$${row.amount}` : '-'}</td>
                         <td className="py-0.5 px-1 text-[10px]">
-                          {row.debitThrough === 'date' ? row.debitThroughDate || 'Date' :
+                          {row.debitThrough === 'date' ? (row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-') :
                            row.debitThrough === 'amount' ? `$${row.debitThroughAmount}` :
                            row.debitThrough === 'payments' ? `${row.debitThroughPayments} Payments` :
                            row.debitThrough === 'payoff' ? 'Payoff' : '-'}
                         </td>
-                        <td className="py-0.5 px-1 text-[10px]">{row.from || '-'}</td>
+                        <td className="py-0.5 px-1 text-[10px]">{row.debitOf || row.from || '-'}</td>
+                        {showPercentageCol && (
+                          <td className="py-0.5 px-1 text-[10px] text-right">{row.debitPercent ? `${row.debitPercent}%` : '-'}</td>
+                        )}
+                        <td className="py-0.5 px-1">
+                          <Input
+                            value={row.comments || ''}
+                            onChange={(e) => handleDisbursementCommentChange(idx, e.target.value)}
+                            className="h-5 text-[10px]"
+                            placeholder="Add comment..."
+                          />
+                        </td>
                         <td className="py-0.5 px-1 text-center">
                           <div className="flex items-center gap-0.5 justify-center">
                             <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleEditDisbursement(idx)} title="Edit">
@@ -807,6 +850,9 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
       open={disbursementModalOpen}
       onOpenChange={handleDisbursementModalClose}
       onSubmit={handleDisbursementModalSubmit}
+      paymentShare={paymentShareNum}
+      interestShare={interestShareNum}
+      principalShare={principalShareNum}
       editData={editingDisbursementIdx !== null && formData.disbursements[editingDisbursementIdx] ? {
         accountId: formData.disbursements[editingDisbursementIdx].accountId,
         name: formData.disbursements[editingDisbursementIdx].name,
@@ -814,11 +860,15 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
         debitOf: formData.disbursements[editingDisbursementIdx].debitOf,
         plusAmount: formData.disbursements[editingDisbursementIdx].plusAmount,
         minimumAmount: formData.disbursements[editingDisbursementIdx].minimumAmount,
+        maximumAmount: formData.disbursements[editingDisbursementIdx].maximumAmount || '',
+        startDate: formData.disbursements[editingDisbursementIdx].startDate || '',
         debitThrough: formData.disbursements[editingDisbursementIdx].debitThrough,
         debitThroughDate: formData.disbursements[editingDisbursementIdx].debitThroughDate,
         debitThroughAmount: formData.disbursements[editingDisbursementIdx].debitThroughAmount,
         debitThroughPayments: formData.disbursements[editingDisbursementIdx].debitThroughPayments,
         from: formData.disbursements[editingDisbursementIdx].from as any,
+        calculatedAmount: '',
+        comments: formData.disbursements[editingDisbursementIdx].comments || '',
       } : null}
       isEditing={editingDisbursementIdx !== null}
     />
