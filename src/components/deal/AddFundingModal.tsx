@@ -416,6 +416,9 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
         ? formatCurrencyDisplay(data.calculatedAmount)
         : (data.plusAmount || data.debitThroughAmount || '');
       const row: DisbursementRow = {
+        active: editingDisbursementIdx !== null && editingDisbursementIdx < updated.length
+          ? updated[editingDisbursementIdx].active
+          : true,
         accountId: data.accountId,
         name: data.name,
         startDate: data.startDate || '',
