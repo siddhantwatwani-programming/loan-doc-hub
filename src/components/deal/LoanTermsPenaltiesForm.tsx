@@ -209,7 +209,7 @@ const DistributionFields: React.FC<{
       <div className="space-y-2">
         <DirtyFieldWrapper fieldKey={`${prefix}.distribution.lenders`}>
           <div className="flex items-center gap-3">
-            <Label className={cn("text-sm min-w-[160px] max-w-[160px]", showError && "text-destructive")}>Lenders</Label>
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Lenders</Label>
             <div className={cn("flex-1 min-w-0", showError && "[&_input]:border-destructive")}>
               <PenaltyPercentInput
                 value={lendersRaw}
