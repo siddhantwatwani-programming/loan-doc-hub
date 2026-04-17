@@ -441,7 +441,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     </div>
                   </DirtyFieldWrapper>
                   {showError && (
-                    <p className="text-xs text-destructive pl-[135px]">
+                    <p className="text-xs text-destructive w-full">
                       Please allocate remaining percentage in subsequent fields
                     </p>
                   )}
