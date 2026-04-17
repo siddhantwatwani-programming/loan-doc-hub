@@ -166,7 +166,7 @@ const DistributionFields: React.FC<{
   }, []);
 
   const lendersIs100 = lendersClamped >= 100;
-  const showError = !!showValidation && lendersClamped < 100;
+  const showError = false;
 
   const handleLendersChange = (val: string) => {
     onValueChange(`${prefix}.distribution.lenders`, val);
