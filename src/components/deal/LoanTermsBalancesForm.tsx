@@ -48,7 +48,7 @@ const ACCRUAL_METHOD_OPTIONS = [
   { value: "actual_actual", label: "Actual/Actual" },
 ];
 
-const LABEL_CLASS = "text-sm text-muted-foreground min-w-fit text-left shrink-0 whitespace-nowrap";
+const LABEL_CLASS = "text-sm text-muted-foreground w-[140px] min-w-[140px] max-w-[140px] text-left shrink-0 leading-tight break-words";
 
 export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
   values,
