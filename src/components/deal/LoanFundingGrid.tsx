@@ -299,6 +299,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       rateLenderValue: record.rateLenderValue || '',
       roundingAdjustment: record.roundingAdjustment || false,
       disbursements: record.disbursements?.length ? record.disbursements.map(d => ({
+        active: (d as any).active ?? true,
         accountId: d.accountId || '', name: d.name || '', startDate: (d as any).startDate || '', endDate: (d as any).endDate || '',
         amount: d.amount || '', percentage: d.percentage || '', from: (d as any).from || '' as const, comments: d.comments || '',
         debitPercent: (d as any).debitPercent || '', debitOf: (d as any).debitOf || '' as const,
