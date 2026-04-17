@@ -71,7 +71,7 @@ export interface FundingRecord {
   brokerParticipates?: boolean;
   interestFrom?: string;
   roundingAdjustment?: boolean;
-  disbursements?: Array<{accountId: string; name: string; amount: string; percentage: string; comments: string}>;
+  disbursements?: Array<{accountId: string; name: string; amount: string; percentage: string; comments: string; startDate?: string; endDate?: string; debitPercent?: string; debitOf?: string; plusAmount?: string; minimumAmount?: string; maximumAmount?: string; debitThrough?: string; debitThroughDate?: string; debitThroughAmount?: string; debitThroughPayments?: string; from?: string}>;
   payments?: Array<{active: boolean; accountId: string; name: string; amount: string; percentage: string; comment: string; from: string}>;
   // Fees to Company
   overrideServicing?: boolean;

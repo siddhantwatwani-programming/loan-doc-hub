@@ -770,6 +770,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                     <tr className="bg-muted/50 border-b border-border">
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Account ID</th>
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[100px]">Name</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[90px]">Start Date</th>
+                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[90px]">End Date</th>
                       <th className="text-right py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Amount</th>
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[90px]">Debit Through</th>
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[70px]">Type</th>
@@ -785,6 +787,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                       <tr key={idx} className="border-b border-border last:border-b-0 hover:bg-muted/20">
                         <td className="py-0.5 px-1 text-[10px]">{row.accountId || '-'}</td>
                         <td className="py-0.5 px-1 text-[10px]">{row.name || '-'}</td>
+                        <td className="py-0.5 px-1 text-[10px]">{row.startDate ? format(new Date(row.startDate), 'MM/dd/yyyy') : '-'}</td>
+                        <td className="py-0.5 px-1 text-[10px]">{row.endDate ? format(new Date(row.endDate), 'MM/dd/yyyy') : (row.debitThrough === 'date' && row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-')}</td>
                         <td className="py-0.5 px-1 text-[10px] text-right">{row.amount ? `$${row.amount}` : '-'}</td>
                         <td className="py-0.5 px-1 text-[10px]">
                           {row.debitThrough === 'date' ? (row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-') :
@@ -800,6 +804,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                           <Input
                             value={row.comments || ''}
                             onChange={(e) => handleDisbursementCommentChange(idx, e.target.value)}
+                            onBlur={(e) => handleDisbursementCommentChange(idx, e.target.value)}
                             className="h-5 text-[10px]"
                             placeholder="Add comment..."
                           />
