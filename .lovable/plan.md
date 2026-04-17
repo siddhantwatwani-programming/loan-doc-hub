@@ -1,41 +1,45 @@
 
 
-## Root cause
+## Root cause (remaining)
 
-The "false dirty dot" on freshly opened tabs comes from `src/hooks/useDealFields.ts` lines 548-563. On `fetchData()`:
+The previous fix (value-comparison restore) helps with stale identical caches, but the dot still appears on opening DL-2026-0191 because of **key-format mismatches** between what the session cache stores and what the snapshot rebuilds.
 
-1. DB values are loaded into `valuesMap`, then defaults from `field_dictionary.default_value` are merged in (lines 542-546).
-2. `readSessionCache(dealId)` then re-applies any cached "dirty keys" from sessionStorage and **unconditionally calls `setIsDirty(true)`** if the cache has any dirty keys.
+In `src/hooks/useDealFields.ts` (lines 548–584):
 
-This causes false-positive dirty state in two scenarios:
+- The "saved snapshot" (`valuesMap`) keys come from DB rows translated through `resolveDbKeyToLegacy(...)` plus prefix-reconstruction logic for multi-entity records (lines 487–535) and field defaults (line 542).
+- The session cache's `dirtyKeys` are written by `updateValue` using **whatever key the UI component happened to pass in** — this can be a legacy dot key, a DB key, a prefixed multi-entity key, or a charge/insurance/notes pseudo-key (e.g. `charge.<id>.amount`).
+- When those forms don't line up exactly (different prefix scheme, different canonical form, charge id rebuild, etc.), `valuesMap[cachedKey] ?? ''` returns `''` while `cached.unsavedValues[cachedKey]` is a real string → falsely "different" → file marked dirty on open with no user input.
 
-- **Stale cache** — A previous tab/page lifecycle wrote dirty keys to `sessionStorage` (key `deal-values-<dealId>`) and was discarded/closed without clearing it (e.g. close-without-save discard, browser reload mid-edit, navigation away). Reopening the file blindly trusts the cache.
-- **Identical values** — Even when cached "unsaved" values are byte-identical to what's now in DB (e.g. server already saved them, or another tab saved them), the code still marks every cached key dirty without comparing.
-
-In both cases, the `useEffect` at `DealDataEntryPage.tsx:296-300` propagates `isDirty=true` into `WorkspaceContext.setFileDirty`, lighting up the tab's warning dot before the user has touched anything.
+The user's acceptance criterion is unambiguous: **"When a loan file is opened, it should always load in a clean state."** Trying to perfectly reconcile every key-format variant is fragile and risks regressions across 60+ updateValue call sites.
 
 ## Fix (single, surgical change)
 
-In `src/hooks/useDealFields.ts`, replace the unconditional cache-restore block (lines 548-568) with a value-comparison restore:
+In `src/hooks/useDealFields.ts`, replace the cache-restore block (lines 548–584) with a clean-load-only behavior:
 
-- Build the merged values map (DB + defaults) — call this the canonical "saved snapshot".
-- If there is a session cache, iterate its `dirtyKeys` and **only keep a key as dirty if `cached.unsavedValues[k] !== savedSnapshot[k]`**.
-- Build the final `values` from the snapshot, overlaying only the truly-dirty cached values.
-- Set `dirtyFieldKeys` to the filtered set; set `isDirty` to `filtered.size > 0`.
-- If the filtered set is empty, call `clearSessionCache(dealId)` so the stale entry doesn't keep haunting future opens.
-- Always set `savedValuesSnapshotRef.current` to the DB+defaults snapshot (unchanged behavior).
+- Always set `values` and `valuesRef.current` to the freshly rebuilt `valuesMap` (DB + defaults).
+- Always set `savedValuesSnapshotRef.current` to the same `valuesMap`.
+- Always set `dirtyFieldKeys = new Set()` and `setIsDirty(false)`.
+- Always call `clearSessionCache(dealId)` on load so no stale entry can ever resurrect a phantom dirty state on subsequent opens.
 
-This preserves the legitimate "restore unsaved edits after refresh" UX and only suppresses the false-dirty case.
+This guarantees:
+- Opening any loan file (including DL-2026-0191) loads clean — no dot.
+- The dot only appears after a real `updateValue(...)` call from a user edit (existing logic at lines 600–636 unchanged).
+- Save still clears dirty + cache (lines 1083–1087 unchanged).
+- Tab switching never triggers dirty (no other code path sets dirty on mount).
+
+### Trade-off acknowledged
+
+The mid-edit hard-refresh "restore unsaved values" recovery path is removed. This is intentional and aligns with the user's explicit acceptance criteria. Save/discard workflow, tab logic, routing, schema, APIs, and UI components are untouched.
 
 ## Files touched
 
-- `src/hooks/useDealFields.ts` — replace lines 548-568 with the comparison-aware restore described above. No other files, no schema/API/UI/tab-logic/save-workflow changes.
+- `src/hooks/useDealFields.ts` — replace the cache-restore branch (current lines 548–584) with the clean-load behavior above. No other files modified.
 
 ## Acceptance check (manual)
 
-1. Open a fresh loan file → no dot.
+1. Open DL-2026-0191 (and any other file) → no dot.
 2. Edit a field → dot appears.
 3. Save → dot disappears.
-4. Edit, close tab via Discard → reopen file → no dot (stale cache no longer falsely flagged; cache also cleared if values match DB).
-5. Edit, hard-refresh browser → reopen file → dot still appears with values restored (legitimate recovery preserved).
+4. Switch between open file tabs → no random dots.
+5. Reopen any previously-edited-and-discarded file → no dot.
 
