@@ -56,16 +56,13 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
     setValues(prev => ({ ...prev, [fieldKey]: value }));
   }, [isReadOnly]);
 
-  const handleSave = useCallback(async () => {
-    if (isReadOnly) return;
-
+  const handleSave = useCallback(async (): Promise<boolean> => {
+    if (isReadOnly) return false;
     const contactData: Record<string, string> = {};
     Object.entries(values).forEach(([key, value]) => {
       const stripped = key.replace(/^lender\./, '');
       contactData[stripped] = value;
     });
-
-    // Detect changes for event journal
     const changes: ContactFieldChange[] = [];
     const allKeys = new Set([...Object.keys(values), ...Object.keys(initialValuesRef.current)]);
     allKeys.forEach(key => {
@@ -76,13 +73,21 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
         changes.push({ fieldLabel: label, oldValue: oldVal, newValue: newVal });
       }
     });
-
     const saved = await onSave(contact.id, contactData);
     if (saved && changes.length > 0) {
       await logContactEvent(contact.id, 'Lender Info', changes);
-      initialValuesRef.current = { ...values };
     }
+    if (saved) initialValuesRef.current = { ...values };
+    return !!saved;
   }, [isReadOnly, values, contact.id, onSave]);
+
+  const contactWs = useContactWorkspaceOptional();
+  useEffect(() => { if (contactWs) contactWs.setContactDirty(contact.id, isDirty); }, [isDirty, contact.id, contactWs]);
+  useEffect(() => {
+    if (!contactWs) return;
+    contactWs.registerSaveFn(contact.id, handleSave);
+    return () => contactWs.unregisterSaveFn(contact.id);
+  }, [contactWs, contact.id, handleSave]);
 
   const emptyFields: any[] = [];
   const emptyDirty = new Set<string>();

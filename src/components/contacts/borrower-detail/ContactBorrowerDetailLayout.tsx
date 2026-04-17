@@ -60,49 +60,43 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
     setValues(prev => ({ ...prev, [fieldKey]: value }));
   }, [isReadOnly]);
 
-  const handleSave = useCallback(async () => {
-    if (isReadOnly) return;
+  const handleSave = useCallback(async (): Promise<boolean> => {
+    if (isReadOnly) return false;
     const contactData: Record<string, string> = {};
     Object.entries(values).forEach(([key, value]) => {
       const stripped = NON_BORROWER_PREFIXES.some(p => key.startsWith(p)) ? key : key.replace(/^borrower\./, '');
       contactData[stripped] = value;
     });
-
-    // Detect changes for event journal logging
     const oldData = (contact.contact_data || {}) as Record<string, string>;
     const changes: ContactFieldChange[] = [];
     const allKeys = new Set([...Object.keys(oldData), ...Object.keys(contactData)]);
     allKeys.forEach(key => {
-      if (key.startsWith('_')) return; // skip internal keys
+      if (key.startsWith('_')) return;
       const oldVal = oldData[key] || '';
       const newVal = contactData[key] || '';
-      if (oldVal !== newVal) {
-        changes.push({ fieldLabel: key, oldValue: oldVal, newValue: newVal });
-      }
+      if (oldVal !== newVal) changes.push({ fieldLabel: key, oldValue: oldVal, newValue: newVal });
     });
-
     const saved = await onSave(contact.id, contactData);
-
-    // Log borrower profile event if changes were detected and save succeeded
     if (saved && changes.length > 0) {
-      // Determine section based on changed fields
       let section = 'borrower_profile';
-      const changedKeys = changes.map(c => c.fieldLabel);
-      if (changedKeys.some(k => k.startsWith('ach.') || k.includes('bank') || k.includes('routing'))) {
-        section = 'banking';
-      } else if (changedKeys.some(k => k.includes('tax') || k.includes('tin') || k.startsWith('borrower.1098'))) {
-        section = 'tax_info';
-      } else if (changedKeys.some(k => k.includes('authorized'))) {
-        section = 'authorized_party';
-      } else if (changedKeys.some(k => k.includes('email') || k.includes('phone') || k.includes('address') || k.includes('mailing'))) {
-        section = 'contact_info';
-      }
-
-      logContactEvent(contact.id, section, changes).catch(err =>
-        console.error('Failed to log borrower event:', err)
-      );
+      const ck = changes.map(c => c.fieldLabel);
+      if (ck.some(k => k.startsWith('ach.') || k.includes('bank') || k.includes('routing'))) section = 'banking';
+      else if (ck.some(k => k.includes('tax') || k.includes('tin') || k.startsWith('borrower.1098'))) section = 'tax_info';
+      else if (ck.some(k => k.includes('authorized'))) section = 'authorized_party';
+      else if (ck.some(k => k.includes('email') || k.includes('phone') || k.includes('address') || k.includes('mailing'))) section = 'contact_info';
+      logContactEvent(contact.id, section, changes).catch(err => console.error('Failed to log borrower event:', err));
     }
+    if (saved) initialValuesRef.current = { ...values };
+    return !!saved;
   }, [values, contact.id, contact.contact_data, onSave, isReadOnly]);
+
+  const contactWs = useContactWorkspaceOptional();
+  useEffect(() => { if (contactWs) contactWs.setContactDirty(contact.id, isDirty); }, [isDirty, contact.id, contactWs]);
+  useEffect(() => {
+    if (!contactWs) return;
+    contactWs.registerSaveFn(contact.id, handleSave);
+    return () => contactWs.unregisterSaveFn(contact.id);
+  }, [contactWs, contact.id, handleSave]);
 
   const emptyFields: any[] = [];
   const emptyDirty = new Set<string>();
