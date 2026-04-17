@@ -812,6 +812,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 <table className="w-full text-[11px]">
                   <thead>
                     <tr className="bg-muted/50 border-b border-border">
+                      <th className="text-center py-1 px-1 font-semibold text-muted-foreground w-[50px]">Active</th>
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[80px]">Account ID</th>
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[100px]">Name</th>
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground min-w-[90px]">Start Date</th>
