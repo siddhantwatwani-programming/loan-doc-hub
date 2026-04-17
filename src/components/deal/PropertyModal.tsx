@@ -124,7 +124,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
           <Popover open={datePickerStates[field] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [field]: open }))}>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn('h-7 text-xs flex-1 justify-start text-left font-normal', !val && 'text-muted-foreground')}>
-                {val && parseDate(val) ? format(parseDate(val)!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
+                {val && parseDate(val) ? format(parseDate(val)!, 'MM/dd/yyyy') : 'MM/DD/YYYY'}
                 <CalendarIcon className="ml-auto h-3.5 w-3.5" />
               </Button>
             </PopoverTrigger>

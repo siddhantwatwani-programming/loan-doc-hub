@@ -326,7 +326,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                   >
                     {getValue('nextDebitDate')
                       ? format(parseDate(getValue('nextDebitDate'))!, 'MM/dd/yyyy')
-                      : 'mm/dd/yyyy'}
+                      : 'MM/DD/YYYY'}
                     <CalendarIcon className="ml-auto h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
@@ -360,7 +360,7 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
                   >
                     {getValue('stopDate')
                       ? format(parseDate(getValue('stopDate'))!, 'MM/dd/yyyy')
-                      : 'mm/dd/yyyy'}
+                      : 'MM/DD/YYYY'}
                     <CalendarIcon className="ml-auto h-4 w-4" />
                   </Button>
                 </PopoverTrigger>

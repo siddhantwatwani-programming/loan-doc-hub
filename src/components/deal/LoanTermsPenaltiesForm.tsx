@@ -363,7 +363,7 @@ const ActiveUntilDatePicker: React.FC<{
             readOnly
             disabled={disabled}
             value={isValidDate ? format(selectedDate, 'MM/dd/yyyy') : ''}
-            placeholder="mm/dd/yyyy"
+            placeholder="MM/DD/YYYY"
             className={cn(
               'h-7 text-sm pr-8 cursor-pointer',
               disabled && 'bg-muted cursor-not-allowed'

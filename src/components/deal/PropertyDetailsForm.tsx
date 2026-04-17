@@ -226,7 +226,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           <Popover open={datePickerStates[fieldKey] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [fieldKey]: open }))}>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn('h-7 w-full justify-start text-left font-normal text-xs', !val && 'text-muted-foreground')} disabled={disabled}>
-                {val && parseDate(val) ? format(parseDate(val)!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
+                {val && parseDate(val) ? format(parseDate(val)!, 'MM/dd/yyyy') : 'MM/DD/YYYY'}
                 <CalendarIcon className="ml-auto h-3.5 w-3.5" />
               </Button>
             </PopoverTrigger>

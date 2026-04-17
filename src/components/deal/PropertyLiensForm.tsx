@@ -60,7 +60,7 @@ export const PropertyLiensForm: React.FC<PropertyLiensFormProps> = ({
       <Popover open={datePickerStates[fieldKey] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [fieldKey]: open }))}>
         <PopoverTrigger asChild>
           <Button variant="outline" className={cn('h-8 text-sm mt-1 w-full justify-start text-left font-normal', !getFieldValue(fieldKey) && 'text-muted-foreground')} disabled={disabled}>
-            {getFieldValue(fieldKey) && safeParseDateStr(getFieldValue(fieldKey)) ? format(safeParseDateStr(getFieldValue(fieldKey))!, 'MM/dd/yyyy') : 'mm/dd/yyyy'}
+            {getFieldValue(fieldKey) && safeParseDateStr(getFieldValue(fieldKey)) ? format(safeParseDateStr(getFieldValue(fieldKey))!, 'MM/dd/yyyy') : 'MM/DD/YYYY'}
             <CalendarIcon className="ml-auto h-3.5 w-3.5" />
           </Button>
         </PopoverTrigger>
