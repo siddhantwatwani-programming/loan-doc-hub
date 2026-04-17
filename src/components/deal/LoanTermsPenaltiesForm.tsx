@@ -166,7 +166,22 @@ const DistributionFields: React.FC<{
   }, []);
 
   const lendersIs100 = lendersClamped >= 100;
-  const showError = false;
+
+  // Allocation error: Lenders < 100 and Origination Vendor empty.
+  // Shown after user blurs Lenders, or on tab-switch / save (showValidation).
+  const [lendersBlurred, setLendersBlurred] = useState(false);
+  const lendersHasValue = lendersRaw !== '' && !isNaN(parseFloat(lendersRaw));
+  const vendorEmpty = vendorRaw === '' || isNaN(parseFloat(vendorRaw));
+  const allocationIncomplete = lendersHasValue && lendersClamped < 100 && vendorEmpty;
+  const showError = allocationIncomplete && (lendersBlurred || !!showValidation);
+
+  // If Lenders hits 100, force Origination Vendor to 0 (Company auto = 0).
+  useEffect(() => {
+    if (lendersIs100 && vendorRaw !== '' && vendorClamped !== 0) {
+      onValueChange(`${prefix}.distribution.origination_vendors`, '0.00');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lendersIs100]);
 
   const handleLendersChange = (val: string) => {
     onValueChange(`${prefix}.distribution.lenders`, val);
