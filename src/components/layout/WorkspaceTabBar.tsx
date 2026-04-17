@@ -56,10 +56,10 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
   return (
     <div
       className={cn(
-        'fixed top-12 right-0 left-64 z-30 h-10 border-b border-border bg-background overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent'
+        'fixed top-12 right-0 left-64 z-30 h-10 border-b border-border bg-background overflow-x-auto overflow-y-hidden sleek-scrollbar'
       )}
     >
-      <div className="flex items-stretch h-10 w-max min-w-full">
+      <div className="flex items-stretch h-[34px] w-max min-w-full">
           {/* All Loan Documents tab - always first, not closable */}
           <button
             onClick={handleAllDocsClick}
