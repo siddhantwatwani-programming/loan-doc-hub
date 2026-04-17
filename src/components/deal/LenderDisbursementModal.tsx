@@ -154,6 +154,13 @@ export const LenderDisbursementModal: React.FC<LenderDisbursementModalProps> = (
           {/* Header */}
           <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30 pr-10">
             <span className="text-xs font-bold">Lender Disbursements</span>
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <Checkbox
+                checked={formData.isActive}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked === true }))}
+              />
+              <span className="text-[11px] font-bold">Active</span>
+            </label>
           </div>
 
           <div className="px-3 py-3 space-y-2">
