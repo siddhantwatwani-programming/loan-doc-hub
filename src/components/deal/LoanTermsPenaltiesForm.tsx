@@ -214,6 +214,7 @@ const DistributionFields: React.FC<{
               <PenaltyPercentInput
                 value={lendersRaw}
                 onChange={handleLendersChange}
+                onBlur={() => setLendersBlurred(true)}
                 disabled={disabled}
               />
             </div>
@@ -244,7 +245,7 @@ const DistributionFields: React.FC<{
           </div>
         </DirtyFieldWrapper>
         {showError && (
-          <p className="text-xs text-destructive pl-[172px]">Lenders must equal 100%</p>
+          <p className="text-xs text-destructive pl-[172px]">Please allocate remaining percentage in subsequent fields</p>
         )}
       </div>
     </div>
