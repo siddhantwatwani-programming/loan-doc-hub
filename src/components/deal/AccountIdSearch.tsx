@@ -72,7 +72,7 @@ export const AccountIdSearch: React.FC<AccountIdSearchProps> = ({
     setQuery(val);
     onChange(val, '');
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => searchAccounts(val), 300);
+    debounceRef.current = setTimeout(() => searchAccounts(val), 500);
   };
 
   const handleSelect = (account: AccountResult) => {
