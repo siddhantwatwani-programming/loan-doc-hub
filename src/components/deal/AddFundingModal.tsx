@@ -514,6 +514,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
       brokerMaxFee: formData.vendorMaximum || formData.brokerMaxFee,
     };
     onSubmit(syncedData);
+    // Clear draft on successful save so reopening starts fresh
+    try { sessionStorage.removeItem(draftKey); } catch { /* ignore */ }
     setFormData(getDefaultFormData(loanNumber, borrowerName, noteRate, soldRate));
     onOpenChange(false);
   };
