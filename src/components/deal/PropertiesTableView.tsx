@@ -120,7 +120,6 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'thirdPartyFullName', label: 'Appraiser Name', visible: false },
   { id: 'appraiserPhone', label: 'Appraiser Phone', visible: false },
   { id: 'appraiserEmail', label: 'Appraiser Email', visible: false },
-  { id: 'pledgedEquity', label: 'Pledged Equity', visible: false },
   { id: 'protectiveEquity', label: 'Protective Equity', visible: false },
   { id: 'ltv', label: 'Loan To Value', visible: true },
   { id: 'cltv', label: 'CLTV', visible: false },
