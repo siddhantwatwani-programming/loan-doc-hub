@@ -31,7 +31,7 @@ export interface PropertyData {
   apn: string;
   loanPriority: string;
   floodZone?: string;
-  pledgedEquity?: string;
+  
   zoning?: string;
   performedBy?: string;
   copyBorrowerAddress?: boolean;
