@@ -157,6 +157,16 @@ export const LenderDisbursementModal: React.FC<LenderDisbursementModalProps> = (
           </div>
 
           <div className="px-3 py-3 space-y-2">
+            {/* Active */}
+            <div className="flex items-center gap-1">
+              <Label className="text-[11px] font-bold min-w-[80px] shrink-0">Active</Label>
+              <Checkbox
+                checked={formData.active !== false}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: !!checked }))}
+                className="h-3.5 w-3.5"
+              />
+            </div>
+
             {/* Payee */}
             <div className="flex items-center gap-1">
               <Label className="text-[11px] font-bold min-w-[80px] shrink-0">Payee</Label>
