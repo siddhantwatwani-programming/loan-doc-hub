@@ -148,7 +148,9 @@ const DistributionFields: React.FC<{
   const lendersClamped = clamp(lendersVal);
   const vendorClamped = clamp(vendorVal);
   const remainder = Math.max(0, 100 - lendersClamped - vendorClamped);
-  const companyDisplay = (lendersRaw || vendorRaw) ? remainder.toFixed(2) : '';
+  const companyDisplay = disabled
+    ? '0.00'
+    : ((lendersRaw || vendorRaw) ? remainder.toFixed(2) : '');
 
   // Persist computed Company value
   const persistedCompany = values[`${prefix}.distribution.company`] || '';
