@@ -225,7 +225,7 @@ const DistributionFields: React.FC<{
         <DirtyFieldWrapper fieldKey={`${prefix}.distribution.origination_vendors`}>
           <div className="flex items-center gap-3">
             <Label className="text-sm min-w-[160px] max-w-[160px]">Origination Vendor</Label>
-            <div className="flex-1 min-w-0">
+            <div className={cn("flex-1 min-w-0", showError && "[&_input]:border-destructive")}>
               <PenaltyPercentInput
                 value={vendorRaw}
                 onChange={handleVendorChange}
