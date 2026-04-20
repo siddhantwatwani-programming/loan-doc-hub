@@ -25,6 +25,8 @@ interface DealSectionTabProps {
   hasCompleted?: boolean;
   /** Hide the validation status banner (for sections that don't need it) */
   hideValidationStatus?: boolean;
+  /** Hide placeholders for input fields */
+  hidePlaceholders?: boolean;
 }
 
 export const DealSectionTab: React.FC<DealSectionTabProps> = ({
@@ -39,6 +41,7 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
   blockingRole = null,
   hasCompleted = false,
   hideValidationStatus = false,
+  hidePlaceholders = false,
 }) => {
   const { checkCanView, checkCanEdit } = useFieldPermissions();
   const { isExternalUser } = useAuth();
@@ -172,6 +175,7 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
               showValidation={showValidation}
               calculationResult={calculationResults[field.field_key]}
               disabled={readOnlyFields.has(field.field_key)}
+              hidePlaceholder={hidePlaceholders}
             />
           );
         })}
