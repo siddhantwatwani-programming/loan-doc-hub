@@ -41,6 +41,7 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
   blockingRole = null,
   hasCompleted = false,
   hideValidationStatus = false,
+  hidePlaceholders = false,
 }) => {
   const { checkCanView, checkCanEdit } = useFieldPermissions();
   const { isExternalUser } = useAuth();

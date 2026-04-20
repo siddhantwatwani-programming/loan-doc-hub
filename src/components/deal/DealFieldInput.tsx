@@ -23,6 +23,7 @@ interface DealFieldInputProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResult?: CalculationResult;
+  hidePlaceholder?: boolean;
 }
 
 export const DealFieldInput: React.FC<DealFieldInputProps> = ({
@@ -33,6 +34,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
   showValidation = false,
   disabled = false,
   calculationResult,
+  hidePlaceholder = false,
 }) => {
   const isDisabled = disabled || field.is_calculated;
   const showError = error && showValidation;
