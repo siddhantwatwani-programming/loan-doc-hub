@@ -480,28 +480,35 @@ export function useDealFields(dealId: string, packetId: string | null, active: b
         // Fallback: some persisted values (like Loan > Trust Ledger dynamic rows) may exist in
         // deal_section_values even when their field definitions were not part of the packet-resolved
         // field set. Load those field_dictionary rows on demand so saved values hydrate correctly.
+        const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         const missingFieldDictIds = Array.from(new Set(
           ((sectionValues || []) as any[]).flatMap((sv: any) =>
             Object.keys(sv.field_values || {}).map((storageKey) => parseStorageKey(storageKey).fieldDictId)
           )
-        )).filter((fieldDictId) => !fieldDictIdToMeta.has(fieldDictId));
+        )).filter((fieldDictId) => fieldDictId && UUID_REGEX.test(fieldDictId) && !fieldDictIdToMeta.has(fieldDictId));
 
         if (missingFieldDictIds.length > 0) {
-          const { data: fallbackFieldRows, error: fallbackFieldError } = await supabase
-            .from('field_dictionary')
-            .select('id, field_key, data_type')
-            .in('id', missingFieldDictIds as any);
+          try {
+            const { data: fallbackFieldRows, error: fallbackFieldError } = await supabase
+              .from('field_dictionary')
+              .select('id, field_key, data_type')
+              .in('id', missingFieldDictIds as any);
 
-          if (fallbackFieldError) throw fallbackFieldError;
-
-          (fallbackFieldRows || []).forEach((row: any) => {
-            if (row?.id && row?.field_key && row?.data_type) {
-              fieldDictIdToMeta.set(row.id, {
-                field_key: row.field_key,
-                data_type: row.data_type,
+            if (fallbackFieldError) {
+              console.warn('[useDealFields] Fallback field_dictionary lookup failed:', fallbackFieldError);
+            } else {
+              (fallbackFieldRows || []).forEach((row: any) => {
+                if (row?.id && row?.field_key && row?.data_type) {
+                  fieldDictIdToMeta.set(row.id, {
+                    field_key: row.field_key,
+                    data_type: row.data_type,
+                  });
+                }
               });
             }
-          });
+          } catch (e) {
+            console.warn('[useDealFields] Fallback field_dictionary lookup threw:', e);
+          }
         }
 
         // Build values map - parse JSONB field_values with composite key support
