@@ -61,7 +61,7 @@ const getEmptyProperty = (): PropertyData => ({
   informationProvidedBy: '',
 });
 
-export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange, property, onSave, isEdit = false }) => {
+export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange, property, onSave, isEdit = false, borrowerAddress }) => {
   const [formData, setFormData] = useState<PropertyData>(getEmptyProperty());
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -79,7 +79,16 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
 
   const handleFieldChange = (field: keyof PropertyData, value: string | boolean) => {
     const resolved = value === '__none__' ? '' : value;
-    setFormData(prev => ({ ...prev, [field]: resolved }));
+    setFormData(prev => {
+      const next = { ...prev, [field]: resolved } as PropertyData;
+      if (field === 'copyBorrowerAddress' && value === true && borrowerAddress) {
+        next.street = borrowerAddress.street || '';
+        next.city = borrowerAddress.city || '';
+        next.state = borrowerAddress.state || '';
+        next.zipCode = borrowerAddress.zipCode || '';
+      }
+      return next;
+    });
   };
   const sanitizeNumericValue = (value: string): string => value.replace(/[^0-9.]/g, '');
   const handleCurrencyChange = (field: keyof PropertyData, value: string) => setFormData(prev => ({ ...prev, [field]: sanitizeNumericValue(value) }));
