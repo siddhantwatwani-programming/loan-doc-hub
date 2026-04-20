@@ -394,13 +394,24 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
         {/* Column 4 - Preferred (narrow) */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Preferred</h4>
-          {phoneRows.map(({ prefKey, prefId }) => (
-            <DirtyFieldWrapper key={prefId} fieldKey={FIELD_KEYS[prefKey]}>
-              <div className="flex items-center justify-center h-7">
-                <Checkbox id={`borrower-${prefId}`} checked={getBoolValue(prefKey)} onCheckedChange={(checked) => handleChange(prefKey, !!checked)} disabled={disabled} />
-              </div>
-            </DirtyFieldWrapper>
-          ))}
+          <RadioGroup
+            value={(phoneRows.find(({ prefKey }) => getBoolValue(prefKey))?.prefKey as string) || ''}
+            onValueChange={(val) => {
+              phoneRows.forEach(({ prefKey }) => {
+                handleChange(prefKey, prefKey === val);
+              });
+            }}
+            className="space-y-0"
+            disabled={disabled}
+          >
+            {phoneRows.map(({ prefKey, prefId }) => (
+              <DirtyFieldWrapper key={prefId} fieldKey={FIELD_KEYS[prefKey]}>
+                <div className="flex items-center justify-center h-7">
+                  <RadioGroupItem id={`borrower-${prefId}`} value={prefKey} disabled={disabled} />
+                </div>
+              </DirtyFieldWrapper>
+            ))}
+          </RadioGroup>
         </div>
       </div>
     </div>
