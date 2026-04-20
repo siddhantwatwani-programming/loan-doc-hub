@@ -111,27 +111,10 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   }, [values['loan_terms.loan_amount'], values[FIELD_KEYS.purchasePrice], existingLiensTotal]);
 
   const isCopyBorrower = getFieldValue(FIELD_KEYS.copyBorrowerAddress) === 'true';
-
-  // Resolve the primary borrower's address from multi-entity keys (borrower1.*, borrower2.*, ...).
-  // Falls back to legacy 'borrower.*' keys when present.
-  const { borrowerStreet, borrowerCity, borrowerState, borrowerZip } = React.useMemo(() => {
-    const prefixes = new Set<string>();
-    Object.keys(values).forEach((k) => {
-      const m = k.match(/^(borrower\d+)\./);
-      if (m) prefixes.add(m[1]);
-    });
-    const list = Array.from(prefixes).sort();
-    // Prefer the borrower flagged as primary; otherwise fall back to the first entry.
-    const primary = list.find((p) => values[`${p}.is_primary`] === 'true') || list[0];
-    const pick = (suffix: string, legacy: string) =>
-      (primary && values[`${primary}.${suffix}`]) || values[legacy] || '';
-    return {
-      borrowerStreet: pick('address.street', 'borrower.address.street'),
-      borrowerCity: pick('address.city', 'borrower.address.city'),
-      borrowerState: pick('state', 'borrower.state'),
-      borrowerZip: pick('address.zip', 'borrower.address.zip'),
-    };
-  }, [values]);
+  const borrowerStreet = values['borrower.address.street'] || '';
+  const borrowerCity = values['borrower.address.city'] || '';
+  const borrowerState = values['borrower.state'] || '';
+  const borrowerZip = values['borrower.address.zip'] || '';
 
   useEffect(() => {
     if (isCopyBorrower) {
