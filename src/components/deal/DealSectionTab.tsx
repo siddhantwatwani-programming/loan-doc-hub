@@ -27,6 +27,8 @@ interface DealSectionTabProps {
   hideValidationStatus?: boolean;
   /** Hide placeholders for input fields */
   hidePlaceholders?: boolean;
+  /** Custom grid columns class (e.g., 'grid-cols-2' for 2 columns) */
+  gridColumnsClass?: string;
 }
 
 export const DealSectionTab: React.FC<DealSectionTabProps> = ({
@@ -42,6 +44,7 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
   hasCompleted = false,
   hideValidationStatus = false,
   hidePlaceholders = false,
+  gridColumnsClass,
 }) => {
   const { checkCanView, checkCanEdit } = useFieldPermissions();
   const { isExternalUser } = useAuth();
@@ -137,7 +140,10 @@ export const DealSectionTab: React.FC<DealSectionTabProps> = ({
       )}
 
       {/* Fields grid - responsive from 1 to 4 columns */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-6 gap-y-1.5">
+      <div className={cn(
+        "grid gap-x-6 gap-y-1.5",
+        gridColumnsClass || "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+      )}>
         {visibleFields.map(field => {
           // Non-input types (section, label, template, action) render differently
           const isNonInputType = ['section', 'label', 'template', 'action'].includes(field.data_type);
