@@ -12,6 +12,7 @@ import { EmailInput } from '@/components/ui/email-input';
 import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -593,25 +594,28 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 <h3 className="font-semibold text-xs text-foreground">Phone</h3>
                 <span className="font-semibold text-xs text-foreground">Pref</span>
               </div>
-              {[
-                { label: 'Home', phoneKey: 'phone.home', prefKey: 'preferred.home' },
-                { label: 'Work', phoneKey: 'phone.work', prefKey: 'preferred.work' },
-                { label: 'Cell', phoneKey: 'phone.cell', prefKey: 'preferred.cell' },
-                { label: 'Fax', phoneKey: 'phone.fax', prefKey: 'preferred.fax' },
-              ].map((p) => (
-                <div key={p.label} className="flex items-center gap-2">
-                  <Label className="w-[40px] shrink-0 text-xs">{p.label}</Label>
-                  <PhoneInput
-                    value={form[p.phoneKey] || ''}
-                    onValueChange={(v) => set(p.phoneKey, v)}
-                    className="h-7 text-xs flex-1"
-                  />
-                  <Checkbox
-                    checked={form[p.prefKey] === 'true'}
-                    onCheckedChange={(checked) => handleLenderPref(p.prefKey, !!checked)}
-                  />
-                </div>
-              ))}
+              <RadioGroup
+                value={['preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax'].find((key) => form[key] === 'true') || ''}
+                onValueChange={(value) => handleLenderPref(value, true)}
+                className="space-y-1.5"
+              >
+                {[
+                  { label: 'Home', phoneKey: 'phone.home', prefKey: 'preferred.home' },
+                  { label: 'Work', phoneKey: 'phone.work', prefKey: 'preferred.work' },
+                  { label: 'Cell', phoneKey: 'phone.cell', prefKey: 'preferred.cell' },
+                  { label: 'Fax', phoneKey: 'phone.fax', prefKey: 'preferred.fax' },
+                ].map((p) => (
+                  <div key={p.label} className="flex items-center gap-2">
+                    <Label className="w-[40px] shrink-0 text-xs">{p.label}</Label>
+                    <PhoneInput
+                      value={form[p.phoneKey] || ''}
+                      onValueChange={(v) => set(p.phoneKey, v)}
+                      className="h-7 text-xs flex-1"
+                    />
+                    <RadioGroupItem value={p.prefKey} id={`lender-${p.prefKey}`} />
+                  </div>
+                ))}
+              </RadioGroup>
               <div className="pt-2 space-y-1">
                 <h3 className={cn("font-semibold text-xs border-b pb-1 mb-1", lenderErrors['delivery'] ? "text-destructive border-destructive" : "text-foreground border-border")}>Delivery Options</h3>
                 <div className="flex items-center gap-3">
@@ -932,25 +936,28 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 <h3 className="font-semibold text-xs text-foreground">Phone</h3>
                 <span className="font-semibold text-xs text-foreground">Pref</span>
               </div>
-              {[
-                { label: 'Home', phoneKey: 'phone.home', prefKey: 'preferred.home' },
-                { label: 'Work', phoneKey: 'phone.work', prefKey: 'preferred.work' },
-                { label: 'Cell', phoneKey: 'phone.cell', prefKey: 'preferred.cell' },
-                { label: 'Fax', phoneKey: 'phone.fax', prefKey: 'preferred.fax' },
-              ].map((p) => (
-                <div key={p.label} className="flex items-center gap-2">
-                  <Label className="w-[40px] shrink-0 text-xs">{p.label}</Label>
-                  <PhoneInput
-                    value={form[p.phoneKey] || ''}
-                    onValueChange={(v) => set(p.phoneKey, v)}
-                    className="h-7 text-xs flex-1"
-                  />
-                  <Checkbox
-                    checked={form[p.prefKey] === 'true'}
-                    onCheckedChange={(checked) => handleBorrowerPref(p.prefKey, !!checked)}
-                  />
-                </div>
-              ))}
+              <RadioGroup
+                value={['preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax'].find((key) => form[key] === 'true') || ''}
+                onValueChange={(value) => handleBorrowerPref(value, true)}
+                className="space-y-1.5"
+              >
+                {[
+                  { label: 'Home', phoneKey: 'phone.home', prefKey: 'preferred.home' },
+                  { label: 'Work', phoneKey: 'phone.work', prefKey: 'preferred.work' },
+                  { label: 'Cell', phoneKey: 'phone.cell', prefKey: 'preferred.cell' },
+                  { label: 'Fax', phoneKey: 'phone.fax', prefKey: 'preferred.fax' },
+                ].map((p) => (
+                  <div key={p.label} className="flex items-center gap-2">
+                    <Label className="w-[40px] shrink-0 text-xs">{p.label}</Label>
+                    <PhoneInput
+                      value={form[p.phoneKey] || ''}
+                      onValueChange={(v) => set(p.phoneKey, v)}
+                      className="h-7 text-xs flex-1"
+                    />
+                    <RadioGroupItem value={p.prefKey} id={`borrower-${p.prefKey}`} />
+                  </div>
+                ))}
+              </RadioGroup>
               <div className="pt-2 space-y-1">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Tax Info</h3>
                 <div className="flex items-center gap-2">
