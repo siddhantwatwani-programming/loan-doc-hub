@@ -126,6 +126,7 @@ export const LoanTermsSectionContent: React.FC<LoanTermsSectionContentProps> = (
               showValidation={showValidation}
               calculationResults={calculationResults}
               hideValidationStatus
+              hidePlaceholders
             />
           </div>
         );
