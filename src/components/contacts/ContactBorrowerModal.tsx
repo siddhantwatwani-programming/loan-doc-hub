@@ -15,6 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { hasAtLeastOneFieldFilled, validatePhoneFields, hasValidContactEmails } from '@/lib/contactFormValidation';
 import { toast } from 'sonner';
 import type { ContactBorrower } from '@/pages/contacts/ContactBorrowersPage';
@@ -92,9 +93,32 @@ export const ContactBorrowerModal: React.FC<ContactBorrowerModalProps> = ({ open
               </Select>
             </div>
             <div><Label>Email</Label><EmailInput value={form.email} onValueChange={(v) => set('email', v)} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Home Phone</Label>
+                <PhoneInput value={form.homePhone} onValueChange={(v) => set('homePhone', v)} />
+              </div>
+              <div>
+                <Label>Work Phone</Label>
+                <PhoneInput value={form.workPhone} onValueChange={(v) => set('workPhone', v)} />
+              </div>
+              <div>
+                <Label>Cell Phone</Label>
+                <PhoneInput value={form.cellPhone} onValueChange={(v) => set('cellPhone', v)} />
+              </div>
+              <div>
+                <Label>Fax</Label>
+                <PhoneInput value={form.fax} onValueChange={(v) => set('fax', v)} />
+              </div>
+            </div>
             <div>
-              <Label>Cell Phone</Label>
-              <PhoneInput value={form.cellPhone} onValueChange={(v) => set('cellPhone', v)} />
+              <Label className="mb-2 block">Preferred Phone</Label>
+              <RadioGroup value={form.preferredPhone} onValueChange={(v) => set('preferredPhone', v)} className="flex gap-4">
+                <div className="flex items-center gap-1.5"><RadioGroupItem value="home" id="bm-pref-home" /><Label htmlFor="bm-pref-home" className="font-normal">Home</Label></div>
+                <div className="flex items-center gap-1.5"><RadioGroupItem value="work" id="bm-pref-work" /><Label htmlFor="bm-pref-work" className="font-normal">Work</Label></div>
+                <div className="flex items-center gap-1.5"><RadioGroupItem value="cell" id="bm-pref-cell" /><Label htmlFor="bm-pref-cell" className="font-normal">Cell</Label></div>
+                <div className="flex items-center gap-1.5"><RadioGroupItem value="fax" id="bm-pref-fax" /><Label htmlFor="bm-pref-fax" className="font-normal">Fax</Label></div>
+              </RadioGroup>
             </div>
             <div><Label>City</Label><Input value={form.city} onChange={(e) => set('city', e.target.value)} /></div>
             <div><Label>State</Label><Input value={form.state} onChange={(e) => set('state', e.target.value)} /></div>
