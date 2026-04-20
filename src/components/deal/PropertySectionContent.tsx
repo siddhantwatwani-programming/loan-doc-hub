@@ -764,6 +764,12 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         property={editingProperty}
         onSave={handleSaveProperty}
         isEdit={!!editingProperty}
+        borrowerAddress={{
+          street: values['borrower.address.street'] || '',
+          city: values['borrower.address.city'] || '',
+          state: values['borrower.state'] || '',
+          zipCode: values['borrower.address.zip'] || '',
+        }}
       />
 
       {/* Add/Edit Property Tax Modal */}
