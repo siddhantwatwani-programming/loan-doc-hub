@@ -23,6 +23,7 @@ import { ZipInput } from '@/components/ui/zip-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
@@ -499,7 +500,16 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
             <h3 className="text-sm font-semibold text-foreground">Phone</h3>
             <span className="text-sm font-semibold text-foreground">Preferred</span>
           </div>
-          <div className="space-y-3">
+          <RadioGroup
+            value={(PHONE_FIELDS.find((p) => getBoolValue(p.prefKey))?.prefKey as string) || ''}
+            onValueChange={(val) => {
+              PHONE_FIELDS.forEach((p) => {
+                handleChange(p.prefKey, p.prefKey === val);
+              });
+            }}
+            className="space-y-3"
+            disabled={disabled}
+          >
             {PHONE_FIELDS.map((phone) => (
               <DirtyFieldWrapper key={phone.label} fieldKey={FIELD_KEYS[phone.fieldKey]}>
                 <div className="flex items-center gap-3">
@@ -510,15 +520,15 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                     disabled={disabled}
                     className="h-8"
                   />
-                  <Checkbox
-                    checked={getBoolValue(phone.prefKey)}
-                    onCheckedChange={(checked) => handleChange(phone.prefKey, !!checked)}
+                  <RadioGroupItem
+                    value={phone.prefKey}
+                    id={`lender-pref-${phone.prefKey}`}
                     disabled={disabled}
                   />
                 </div>
               </DirtyFieldWrapper>
             ))}
-          </div>
+          </RadioGroup>
 
           {/* Delivery Options */}
           <div className="mt-4">
