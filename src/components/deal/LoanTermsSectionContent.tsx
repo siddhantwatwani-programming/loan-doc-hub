@@ -127,6 +127,7 @@ export const LoanTermsSectionContent: React.FC<LoanTermsSectionContentProps> = (
               calculationResults={calculationResults}
               hideValidationStatus
               hidePlaceholders
+              gridColumnsClass="grid-cols-2"
             />
           </div>
         );
