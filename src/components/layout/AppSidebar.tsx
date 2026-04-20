@@ -170,7 +170,7 @@ export const AppSidebar: React.FC = () => {
       'Knowledge Center','Legal','Documents Vault','Event Journal','Contacts',
       'Statements & Reports','System Administration','C Level Module',
       'Management Dashboard','Department Alerts','Department Dashboard',
-      'All Loan Document Files','Custom Views','Activity Journal',
+      'All Loan Files','Custom Views','Activity Journal',
       'Mod & Forbearance Wizard','Foreclosure Processing','Bankruptcy Monitoring',
       'Senior Lien Tracking','Insurance Tracking','Tax Tracking','Account Maintenance',
       'Outstanding / Missing Items','Fee Sheet','Policies & Processes','Industry News','Smart AI',
@@ -346,7 +346,7 @@ export const AppSidebar: React.FC = () => {
                   { label: 'Management Dashboard', path: '/broker-services/servicing/management' },
                   { label: 'Department Alerts', path: '/broker-services/servicing/alerts' },
                   { label: 'Department Dashboard', path: '/broker-services/servicing/dashboard' },
-                  { label: 'All Loan Document Files', path: '/deals' },
+                  { label: 'All Loan Files', path: '/deals' },
                   { label: 'Custom Views', path: '/broker-services/servicing/custom-views' },
                   { label: 'Activity Journal', path: '/broker-services/servicing/activity' },
                 ]}

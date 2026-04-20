@@ -70,7 +70,7 @@ export const WorkspaceTabBar: React.FC<WorkspaceTabBarProps> = ({ onRequestClose
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
           >
-            All Loan Documents
+            All Loan Files
           </button>
 
           {/* File tabs */}
