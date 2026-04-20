@@ -28,6 +28,7 @@ interface PropertyModalProps {
   property?: PropertyData | null;
   onSave: (property: PropertyData) => void;
   isEdit?: boolean;
+  borrowerAddress?: { street: string; city: string; state: string; zipCode: string };
 }
 
 const PROPERTY_TYPE_OPTIONS = [
