@@ -162,8 +162,29 @@ export const ContactLenderModal: React.FC<ContactLenderModalProps> = ({
                 <EmailInput value={form.email} onValueChange={(v) => set('email', v)} />
               </div>
               <div>
+                <Label>Home Phone</Label>
+                <PhoneInput value={form.homePhone} onValueChange={(v) => set('homePhone', v)} />
+              </div>
+              <div>
+                <Label>Work Phone</Label>
+                <PhoneInput value={form.workPhone} onValueChange={(v) => set('workPhone', v)} />
+              </div>
+              <div>
                 <Label>Cell Phone</Label>
                 <PhoneInput value={form.cellPhone} onValueChange={(v) => set('cellPhone', v)} />
+              </div>
+              <div>
+                <Label>Fax</Label>
+                <PhoneInput value={form.fax} onValueChange={(v) => set('fax', v)} />
+              </div>
+              <div className="col-span-2">
+                <Label className="mb-2 block">Preferred Phone</Label>
+                <RadioGroup value={form.preferredPhone} onValueChange={(v) => set('preferredPhone', v)} className="flex gap-6">
+                  <div className="flex items-center gap-1.5"><RadioGroupItem value="Home" id="lm-pref-home" /><Label htmlFor="lm-pref-home" className="font-normal">Home</Label></div>
+                  <div className="flex items-center gap-1.5"><RadioGroupItem value="Work" id="lm-pref-work" /><Label htmlFor="lm-pref-work" className="font-normal">Work</Label></div>
+                  <div className="flex items-center gap-1.5"><RadioGroupItem value="Cell" id="lm-pref-cell" /><Label htmlFor="lm-pref-cell" className="font-normal">Cell</Label></div>
+                  <div className="flex items-center gap-1.5"><RadioGroupItem value="Fax" id="lm-pref-fax" /><Label htmlFor="lm-pref-fax" className="font-normal">Fax</Label></div>
+                </RadioGroup>
               </div>
             </div>
 
