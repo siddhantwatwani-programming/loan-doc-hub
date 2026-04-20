@@ -211,7 +211,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
         isDisabled && 'bg-muted cursor-not-allowed'
       )}
       rows={2}
-      placeholder={field.description || undefined}
+      placeholder={hidePlaceholder ? undefined : (field.description || undefined)}
     />
   );
 
@@ -243,7 +243,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
             (showError || negativeValueError) && 'border-destructive focus:ring-destructive bg-destructive/5',
             isDisabled && 'bg-muted cursor-not-allowed'
           )}
-          placeholder={field.description || undefined}
+          placeholder={hidePlaceholder ? undefined : (field.description || undefined)}
         />
         {suffix && (
           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs pointer-events-none">
@@ -270,7 +270,7 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
         showError && 'border-destructive focus:ring-destructive bg-destructive/5',
         isDisabled && 'bg-muted cursor-not-allowed'
       )}
-      placeholder={field.description || 'Phone number'}
+      placeholder={hidePlaceholder ? undefined : (field.description || 'Phone number')}
     />
   );
 
