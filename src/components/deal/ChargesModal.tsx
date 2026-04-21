@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DollarSign, CalendarIcon, Search } from 'lucide-react';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
+import { toast } from 'sonner';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
@@ -58,7 +59,21 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
 
   const isFormFilled = hasModalFormData(formData, ['id']);
 
-  const handleSaveClick = () => setShowConfirm(true);
+  /** Validate account number - must not be negative */
+  const validateAccountNumber = (account: string): boolean => {
+    if (!account) return true; // Empty is allowed
+    const num = parseFloat(account);
+    return !isNaN(num) && num >= 0;
+  };
+
+  const handleSaveClick = () => {
+    // Validate Account Number before showing confirmation
+    if (!validateAccountNumber(formData.account || '')) {
+      toast.error('Account Number cannot be negative. Please enter a positive value.');
+      return;
+    }
+    setShowConfirm(true);
+  };
   const handleConfirmSave = () => { setShowConfirm(false); onSave(formData); onOpenChange(false); };
 
   const safeParse = (v: string): Date | undefined => {
@@ -94,7 +109,18 @@ export const ChargesModal: React.FC<ChargesModalProps> = ({ open, onOpenChange, 
   const renderTextField = (field: keyof ChargeData, label: string, labelWidth = 'w-[110px]') => (
     <div className="flex items-center gap-2">
       <Label className={cn(labelWidth, 'shrink-0 text-xs font-semibold text-foreground')}>{label}</Label>
-      <Input value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value)} className="h-7 text-xs flex-1" />
+      <Input 
+        value={formData[field]} 
+        onChange={(e) => {
+          // Block negative sign for account field
+          if (field === 'account' && e.target.value.includes('-')) {
+            toast.error('Account Number cannot be negative');
+            return;
+          }
+          handleFieldChange(field, e.target.value);
+        }} 
+        className="h-7 text-xs flex-1" 
+      />
     </div>
   );
 
