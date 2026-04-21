@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from 'sonner';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
@@ -83,14 +84,30 @@ export const ChargesDetailForm: React.FC<ChargesDetailFormProps> = ({
     );
   };
 
-  const renderTextField = (key: string, label: string, placeholder = '') => (
-    <DirtyFieldWrapper fieldKey={key}>
-      <div className="flex items-center gap-3">
-        <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
-        <Input value={values[key] || ''} onChange={(e) => onValueChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" placeholder={placeholder} />
-      </div>
-    </DirtyFieldWrapper>
-  );
+  const renderTextField = (key: string, label: string, placeholder = '') => {
+    const isAccountField = key === FIELD_KEYS.account;
+    return (
+      <DirtyFieldWrapper fieldKey={key}>
+        <div className="flex items-center gap-3">
+          <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">{label}</Label>
+          <Input 
+            value={values[key] || ''} 
+            onChange={(e) => {
+              // Block negative sign for account number field
+              if (isAccountField && e.target.value.includes('-')) {
+                toast.error('Account Number cannot be negative');
+                return;
+              }
+              onValueChange(key, e.target.value);
+            }} 
+            disabled={disabled} 
+            className="h-7 text-sm flex-1" 
+            placeholder={placeholder} 
+          />
+        </div>
+      </DirtyFieldWrapper>
+    );
+  };
 
   const renderCurrencyField = (key: string, label: string) => (
     <DirtyFieldWrapper fieldKey={key}>
