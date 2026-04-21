@@ -130,16 +130,6 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
     }
   }, [isCopyBorrower, borrowerStreet, borrowerCity, borrowerState, borrowerZip]);
 
-  // Auto-fill Description (Nickname) when Information Provided By is Broker or Borrower
-  const infoProvidedBy = getFieldValue(FIELD_KEYS.informationProvidedBy);
-  useEffect(() => {
-    if (infoProvidedBy === 'Broker' || infoProvidedBy === 'Borrower') {
-      if (getFieldValue(FIELD_KEYS.description) !== infoProvidedBy) {
-        onValueChange(FIELD_KEYS.description, infoProvidedBy);
-      }
-    }
-  }, [infoProvidedBy]);
-
   const parseDate = (val: string): Date | undefined => {
     if (!val) return undefined;
     try { return parse(val, 'yyyy-MM-dd', new Date()); } catch { return undefined; }

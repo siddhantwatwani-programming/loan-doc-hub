@@ -87,9 +87,6 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
         next.state = borrowerAddress.state || '';
         next.zipCode = borrowerAddress.zipCode || '';
       }
-      if (field === 'informationProvidedBy' && (resolved === 'Broker' || resolved === 'Borrower')) {
-        next.description = resolved as string;
-      }
       return next;
     });
   };
