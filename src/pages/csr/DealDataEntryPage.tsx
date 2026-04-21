@@ -119,11 +119,17 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
   const { activeTab, setActiveTab, setSubSection } = useDealNavigation();
   const workspace = useWorkspaceOptional();
 
-  // Always reset Loan sub-section to "Terms & Balances" when entering data entry
+  // Always reset to Loan -> Terms & Balances on every entry to /edit (including
+  // when the file is kept-alive in the workspace). location.key changes on every
+  // navigation, so this re-fires when user clicks "Enter Data" again.
   useEffect(() => {
+    setActiveTab('loan_terms');
     setSubSection('loan_terms', 'balances_loan_details');
+    if ((location.state as { resetToLoanTerms?: boolean } | null)?.resetToLoanTerms) {
+      window.history.replaceState({ ...window.history.state, usr: null }, '');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [location.key]);
 
   const isDirectDealRoute = !!id && (
     location.pathname === `/deals/${id}/data` ||

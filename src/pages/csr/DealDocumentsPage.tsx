@@ -730,7 +730,7 @@ export const DealDocumentsPage: React.FC = () => {
             variant="outline" 
             size="sm" 
             className="ml-auto"
-            onClick={() => navigate(`/deals/${id}/edit`)}
+            onClick={() => navigate(`/deals/${id}/edit`, { state: { resetToLoanTerms: true } })}
           >
             Enter Data
           </Button>
@@ -1191,7 +1191,7 @@ export const DealDocumentsPage: React.FC = () => {
               <Button 
                 variant="outline" 
                 className="w-full justify-start gap-2"
-                onClick={() => navigate(`/deals/${id}/edit`)}
+                onClick={() => navigate(`/deals/${id}/edit`, { state: { resetToLoanTerms: true } })}
               >
                 <File className="h-4 w-4" />
                 Edit Deal Data
