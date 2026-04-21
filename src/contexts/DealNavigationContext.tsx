@@ -52,7 +52,8 @@ const loadState = (dealId?: string, initialTab = ''): StoredState => {
       if (stored) {
         const parsed = JSON.parse(stored) as StoredState;
         return {
-          activeTab: parsed.activeTab || initialTab,
+          // Always reset activeTab on load — never restore from storage
+          activeTab: initialTab,
           subSections: parsed.subSections || {},
           selectedPrefixes: parsed.selectedPrefixes || {},
         };
