@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
 import { formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ChargesSubNavigation, ChargesSubSection } from './ChargesSubNavigation';
 import { ChargesDetailForm } from './ChargesDetailForm';
@@ -180,6 +181,12 @@ export const ChargesSectionContent: React.FC<ChargesSectionContentProps> = ({
   }, []);
 
   const handleSaveCharge = useCallback((chargeData: ChargeData) => {
+    // Validate Account Number - must not be negative
+    if (chargeData.account && parseFloat(chargeData.account) < 0) {
+      toast.error('Account Number cannot be negative. Please enter a positive value.');
+      return;
+    }
+    
     const prefix = editingCharge ? editingCharge.id : getNextChargePrefix(values);
     const isEdit = !!editingCharge;
     
