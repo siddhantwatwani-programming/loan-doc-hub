@@ -1,50 +1,79 @@
 
 
-## Bug: "Enter Data" reopens to the last visited tab when the file is already in the workspace
+## Block save when Sold Rate / Distribution allocation is invalid
 
-### Root cause
-The workspace keeps each open file's `DealNavigationProvider` mounted (kept-alive), so when the user clicks **Enter Data** on a file that's already open, `activeTab` retains whatever the user last selected (e.g. Property, Charges). The existing reset logic only runs on first mount of the provider — not on re-entry from the Files list.
+### Scope (exactly the two cases requested)
 
-### Fix (minimal, scoped)
-Force a reset of both `activeTab` and the Loan sub-section every time the user clicks an **Enter Data** entry point, by passing a navigation flag and reacting to it inside `DealDataEntryInner`.
+**A. Loan → Terms & Balances → Sold Rate**
+- Error: Sold Rate is checked, **Lenders < 100** and **Origination Vendor is empty**.
+- This is already detected in `LoanTermsBalancesForm.tsx` (`allocationIncomplete`) but only displayed visually — `performSave` proceeds.
+
+**B. Loan → Penalties → Late Fee 1 → Distribution** (and other penalties using the same `DistributionFields`)
+- Error: **Lenders < 100** and **Origination Vendor is empty** under any penalty's `distribution.*` fields.
+- Already detected in `LoanTermsPenaltiesForm.tsx` (`allocationIncomplete`) but not save-blocking.
+
+### Fix (minimal)
+
+Add a tiny shared validator and call it inside `performSave` in `DealDataEntryPage.tsx` before `saveDraft()`. If validation fails, abort save, show a toast, switch the user to the offending tab/sub-section, and set `showValidation(true)` so the inline red error already coded in those forms is revealed.
 
 ### Changes
 
-1. **`src/pages/csr/DealsPage.tsx`**  
-   In `handleEnterData`, change both `navigate('/deals/{id}/edit')` calls to include a state flag:
+1. **New file: `src/lib/loanAllocationValidation.ts`**
+   Two pure helpers reading from `values: Record<string,string>`:
+   - `validateBalancesSoldRate(values)` → returns `{ ok: boolean }`. Fails when:
+     - `loan_terms.balances.sold_rate_enabled === 'true'`
+     - `sold_rate.lenders` parses to a number > 0 and < 100
+     - `sold_rate.origination_vendor` is empty/NaN
+     (Use the same `FIELD_KEYS` from `LOAN_TERMS_BALANCES_KEYS`.)
+   - `validatePenaltyDistributions(values)` → returns `{ ok: boolean, firstPrefix?: string }`. Iterates over the known penalty prefixes already used in `LoanTermsPenaltiesForm.tsx` (late_fee_1, late_fee_2, default_interest, interest_guarantee, prepayment_penalty, maturity). For each prefix, fails when:
+     - `${prefix}.distribution.lenders` is non-empty and parses < 100
+     - `${prefix}.distribution.origination_vendors` is empty/NaN
+
+2. **`src/pages/csr/DealDataEntryPage.tsx`** — modify `performSave` only:
    ```ts
-   navigate(`/deals/${deal.id}/edit`, { state: { resetToLoanTerms: true } });
-   ```
+   const performSave = async () => {
+     setShowValidation(true);
 
-2. **`src/pages/csr/DealOverviewPage.tsx`**  
-   Apply the same `state: { resetToLoanTerms: true }` to the two "Enter Data" button `navigate(...)` calls (lines ~464, ~479, and the documents-page entry at ~729 if it also routes to `/edit`).
-
-3. **`src/pages/csr/DealDocumentsPage.tsx`**  
-   The "Enter Data" button (line 733) `navigate('/deals/${id}/edit')` — add `{ state: { resetToLoanTerms: true } }`.
-
-4. **`src/pages/csr/DealDataEntryPage.tsx`** (`DealDataEntryInner`)  
-   Replace the existing one-time mount effect (lines 122-126) with a `useEffect` that listens to `location.key` + the `resetToLoanTerms` state flag. When the flag is present (or on initial mount):
-   ```ts
-   useEffect(() => {
-     setActiveTab('loan_terms');
-     setSubSection('loan_terms', 'balances_loan_details');
-     // clear the flag from history state to avoid re-firing on internal nav
-     if (location.state?.resetToLoanTerms) {
-       window.history.replaceState({ ...window.history.state, usr: null }, '');
+     const balancesCheck = validateBalancesSoldRate(values);
+     if (!balancesCheck.ok) {
+       setActiveTab('loan_terms');
+       nav?.setSubSection('loan_terms', 'balances_loan_details');
+       toast({
+         title: 'Cannot save',
+         description: 'Please complete the Sold Rate allocation in Terms & Balances before saving.',
+         variant: 'destructive',
+       });
+       return;
      }
-   }, [location.key]);
-   ```
-   Using `location.key` ensures the reset re-runs every time the user navigates back to `/deals/:id/edit` via an "Enter Data" click, even when the component is kept alive in the workspace.
 
-### Why this is safe
-- No change to UI, components, APIs, schema, routing structure, or permissions.
-- No change to the `DealNavigationProvider` storage/persistence behavior (sub-sections and selected prefixes still persist as designed).
-- Only adds a navigation state flag and one effect — does not affect other navigation flows (sub-tab clicks within the page still work normally because they don't change `location.key`).
-- Manually switching tabs after entering still works — the reset only fires on re-entry from an "Enter Data" click.
+     const penaltyCheck = validatePenaltyDistributions(values);
+     if (!penaltyCheck.ok) {
+       setActiveTab('loan_terms');
+       nav?.setSubSection('loan_terms', 'penalties');
+       toast({
+         title: 'Cannot save',
+         description: 'Please complete the Distribution allocation under Loan → Penalties before saving.',
+         variant: 'destructive',
+       });
+       return;
+     }
+
+     computeCalculatedFields();
+     const success = await saveDraft();
+     // ...rest unchanged
+   };
+   ```
+   Also gate `handleMarkReady` the same way (it currently calls `saveDraft` directly) by reusing the same two checks before `saveDraft`.
+
+### What is NOT changed
+
+- No DB schema changes. No new tables. Existing `saveDraft` API is reused unchanged.
+- No UI/layout changes — the inline red borders + helper text already exist; we only ensure they appear (via `setShowValidation(true)` already called) and we navigate to the offending sub-section.
+- No change to other tabs, other validations, dirty-tracking, autosave, or grid behavior.
+- The visual error already in both forms remains the user-facing prompt to "fix the validation error first".
 
 ### Files touched
-- `src/pages/csr/DealsPage.tsx`
-- `src/pages/csr/DealOverviewPage.tsx`
-- `src/pages/csr/DealDocumentsPage.tsx`
-- `src/pages/csr/DealDataEntryPage.tsx`
+
+- `src/lib/loanAllocationValidation.ts` (new, ~40 lines)
+- `src/pages/csr/DealDataEntryPage.tsx` (add 2 imports, ~20 lines inside `performSave` and `handleMarkReady`)
 
