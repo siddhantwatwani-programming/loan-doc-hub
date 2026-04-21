@@ -1165,7 +1165,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
 export const DealDataEntryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   return (
-    <DealNavigationProvider dealId={id}>
+    <DealNavigationProvider dealId={id} initialTab="loan_terms">
       <DealDataEntryInner />
     </DealNavigationProvider>
   );
