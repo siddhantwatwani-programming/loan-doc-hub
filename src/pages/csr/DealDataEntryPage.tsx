@@ -448,7 +448,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
       setSubSection('loan_terms', 'balances_loan_details');
       toast({
         title: 'Cannot save',
-        description: 'Please complete the Sold Rate allocation in Terms & Balances before saving.',
+        description: 'Please complete the allocate remaining percentage in subsequent fields before saving',
         variant: 'destructive',
       });
       return;
@@ -459,7 +459,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
       setSubSection('loan_terms', 'penalties');
       toast({
         title: 'Cannot save',
-        description: 'Please complete the Distribution allocation under Loan → Penalties before saving.',
+        description: 'Please complete the allocate remaining percentage in subsequent fields before saving',
         variant: 'destructive',
       });
       return;
@@ -556,7 +556,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
       setSubSection('loan_terms', 'balances_loan_details');
       toast({
         title: 'Cannot mark ready',
-        description: 'Please complete the Sold Rate allocation in Terms & Balances before saving.',
+        description: 'Please complete the allocate remaining percentage in subsequent fields before saving',
         variant: 'destructive',
       });
       return;
@@ -568,7 +568,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
       setSubSection('loan_terms', 'penalties');
       toast({
         title: 'Cannot mark ready',
-        description: 'Please complete the Distribution allocation under Loan → Penalties before saving.',
+        description: 'Please complete the allocate remaining percentage in subsequent fields before saving',
         variant: 'destructive',
       });
       return;
