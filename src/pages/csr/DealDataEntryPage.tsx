@@ -116,8 +116,14 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
   const location = useLocation();
   const { toast } = useToast();
   const { user, isExternalUser, isInternalUser, loading: authLoading } = useAuth();
-  const { activeTab, setActiveTab } = useDealNavigation();
+  const { activeTab, setActiveTab, setSubSection } = useDealNavigation();
   const workspace = useWorkspaceOptional();
+
+  // Always reset Loan sub-section to "Terms & Balances" when entering data entry
+  useEffect(() => {
+    setSubSection('loan_terms', 'balances_loan_details');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const isDirectDealRoute = !!id && (
     location.pathname === `/deals/${id}/data` ||
@@ -1165,7 +1171,7 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
 export const DealDataEntryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   return (
-    <DealNavigationProvider dealId={id}>
+    <DealNavigationProvider dealId={id} initialTab="loan_terms">
       <DealDataEntryInner />
     </DealNavigationProvider>
   );
