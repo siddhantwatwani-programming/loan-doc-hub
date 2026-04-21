@@ -52,7 +52,8 @@ const loadState = (dealId?: string, initialTab = ''): StoredState => {
       if (stored) {
         const parsed = JSON.parse(stored) as StoredState;
         return {
-          activeTab: parsed.activeTab || initialTab,
+          // Always reset activeTab on load — never restore from storage
+          activeTab: initialTab,
           subSections: parsed.subSections || {},
           selectedPrefixes: parsed.selectedPrefixes || {},
         };
@@ -76,13 +77,13 @@ export const DealNavigationProvider: React.FC<DealNavigationProviderProps> = ({ 
   const [subSections, setSubSections] = useState<Record<string, string>>(state.subSections);
   const [selectedPrefixes, setSelectedPrefixes] = useState<Record<string, string>>(state.selectedPrefixes);
 
-  // Persist to sessionStorage on changes
+  // Persist to sessionStorage on changes (excluding activeTab — always resets to default on reopen)
   useEffect(() => {
     const key = getStorageKey(dealId);
     if (key) {
-      sessionStorage.setItem(key, JSON.stringify({ activeTab, subSections, selectedPrefixes }));
+      sessionStorage.setItem(key, JSON.stringify({ subSections, selectedPrefixes }));
     }
-  }, [dealId, activeTab, subSections, selectedPrefixes]);
+  }, [dealId, subSections, selectedPrefixes]);
 
   const setActiveTab = useCallback((tab: string) => {
     setActiveTabState(tab);
