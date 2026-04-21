@@ -187,9 +187,20 @@ const DistributionFields: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lendersIs100]);
 
+  // Match Sold Rate sanitization: digits + single decimal point, hard cap at 100.
+  const sanitizePct = (val: string) => {
+    const cleaned = val.replace(/[^0-9.]/g, '');
+    const parts = cleaned.split('.');
+    const normalized = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : cleaned;
+    const n = parseFloat(normalized);
+    if (!isNaN(n) && n > 100) return '100';
+    return normalized;
+  };
+
   const handleLendersChange = (val: string) => {
-    onValueChange(`${prefix}.distribution.lenders`, val);
-    const newLenders = parseFloat(val) || 0;
+    const sanitized = sanitizePct(val);
+    const newLenders = parseFloat(sanitized) || 0;
+    onValueChange(`${prefix}.distribution.lenders`, sanitized);
     if (newLenders + vendorClamped > 100) {
       const newVendor = Math.max(0, 100 - newLenders);
       onValueChange(`${prefix}.distribution.origination_vendors`, newVendor.toFixed(2));
@@ -197,9 +208,10 @@ const DistributionFields: React.FC<{
   };
 
   const handleVendorChange = (val: string) => {
-    const newVendor = parseFloat(val) || 0;
+    const sanitized = sanitizePct(val);
+    const newVendor = parseFloat(sanitized) || 0;
     const capped = Math.min(newVendor, Math.max(0, 100 - lendersClamped));
-    const finalVal = capped === newVendor ? val : capped.toFixed(2);
+    const finalVal = capped === newVendor ? sanitized : capped.toFixed(2);
     onValueChange(`${prefix}.distribution.origination_vendors`, finalVal);
   };
 
