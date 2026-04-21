@@ -199,7 +199,7 @@ export const DealsPage: React.FC = () => {
       const alreadyOpen = workspace.openFiles.find(f => f.id === deal.id);
       if (alreadyOpen) {
         workspace.switchToFile(deal.id);
-        navigate(`/deals/${deal.id}/edit`);
+        navigate(`/deals/${deal.id}/edit`, { state: { resetToLoanTerms: true } });
         return;
       }
       
