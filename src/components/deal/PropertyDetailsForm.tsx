@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { toast } from 'sonner';
 
 interface PropertyDetailsFormProps {
   fields: FieldDefinition[];
@@ -111,24 +112,59 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   }, [values['loan_terms.loan_amount'], values[FIELD_KEYS.purchasePrice], existingLiensTotal]);
 
   const isCopyBorrower = getFieldValue(FIELD_KEYS.copyBorrowerAddress) === 'true';
-  const borrowerStreet = values['borrower.address.street'] || '';
-  const borrowerCity = values['borrower.address.city'] || '';
-  const borrowerState = values['borrower.state'] || '';
-  const borrowerZip = values['borrower.address.zip'] || '';
+  const informationProvidedBy = getFieldValue(FIELD_KEYS.informationProvidedBy);
 
-  useEffect(() => {
-    if (isCopyBorrower) {
-      const mappings: [string, string][] = [
-        [FIELD_KEYS.street, borrowerStreet],
-        [FIELD_KEYS.city, borrowerCity],
-        [FIELD_KEYS.state, borrowerState],
-        [FIELD_KEYS.zip, borrowerZip],
-      ];
-      mappings.forEach(([dst, srcVal]) => {
-        if (getFieldValue(dst) !== srcVal) onValueChange(dst, srcVal);
-      });
+  // Resolve the Primary Borrower's prefix from multi-borrower storage.
+  // Borrowers are stored under borrower1, borrower2, ... each with `${prefix}.is_primary`.
+  // Falls back to a base 'borrower' record if no numbered borrowers exist.
+  const primaryBorrowerPrefix = React.useMemo(() => {
+    const prefixes = new Set<string>();
+    Object.keys(values).forEach(key => {
+      const m = key.match(/^(borrower\d+)\./);
+      if (m) prefixes.add(m[1]);
+    });
+    if (prefixes.size === 0) {
+      const hasBase = Object.keys(values).some(k => k.startsWith('borrower.') && !k.match(/^borrower\d+\./));
+      if (hasBase) return 'borrower';
+      return null;
     }
-  }, [isCopyBorrower, borrowerStreet, borrowerCity, borrowerState, borrowerZip]);
+    // Find the one explicitly marked primary
+    for (const p of prefixes) {
+      if (values[`${p}.is_primary`] === 'true') return p;
+    }
+    return null;
+  }, [values]);
+
+  const borrowerStreet = primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.address.street`] || '') : '';
+  const borrowerCity = primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.address.city`] || '') : '';
+  const borrowerState = primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.state`] || '') : '';
+  const borrowerZip = primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.address.zip`] || '') : '';
+
+  // Track previous checkbox state so we only warn on a fresh check (not on every render).
+  const prevCopyRef = React.useRef<boolean>(isCopyBorrower);
+  useEffect(() => {
+    const justChecked = isCopyBorrower && !prevCopyRef.current;
+    prevCopyRef.current = isCopyBorrower;
+
+    if (!isCopyBorrower) return;
+
+    if (informationProvidedBy === 'Borrower' && !primaryBorrowerPrefix) {
+      if (justChecked) {
+        toast.error('Primary Borrower not found in Participants');
+      }
+      return;
+    }
+
+    const mappings: [string, string][] = [
+      [FIELD_KEYS.street, borrowerStreet],
+      [FIELD_KEYS.city, borrowerCity],
+      [FIELD_KEYS.state, borrowerState],
+      [FIELD_KEYS.zip, borrowerZip],
+    ];
+    mappings.forEach(([dst, srcVal]) => {
+      if (getFieldValue(dst) !== srcVal) onValueChange(dst, srcVal);
+    });
+  }, [isCopyBorrower, informationProvidedBy, primaryBorrowerPrefix, borrowerStreet, borrowerCity, borrowerState, borrowerZip]);
 
   const parseDate = (val: string): Date | undefined => {
     if (!val) return undefined;
