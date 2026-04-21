@@ -25,7 +25,7 @@ export const WorkspaceFileRenderer: React.FC<WorkspaceFileRendererProps> = ({ re
               isActive ? 'block' : 'hidden'
             )}
           >
-            <DealNavigationProvider dealId={file.id}>
+            <DealNavigationProvider dealId={file.id} initialTab="loan_terms">
               {renderFile(file.id, isActive)}
             </DealNavigationProvider>
           </div>
