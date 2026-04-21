@@ -461,7 +461,7 @@ export const DealOverviewPage: React.FC = () => {
                 const alreadyOpen = workspace.openFiles.find(f => f.id === deal.id);
                 if (alreadyOpen) {
                   workspace.switchToFile(deal.id);
-                  navigate(`/deals/${deal.id}/edit`);
+                  navigate(`/deals/${deal.id}/edit`, { state: { resetToLoanTerms: true } });
                   return;
                 }
                 if (workspace.isAtLimit()) {
@@ -476,7 +476,7 @@ export const DealOverviewPage: React.FC = () => {
                   openedAt: Date.now(),
                 });
               }
-              navigate(`/deals/${deal.id}/edit`);
+              navigate(`/deals/${deal.id}/edit`, { state: { resetToLoanTerms: true } });
             }} className="gap-2">
               <Edit className="h-4 w-4" />
               Enter Data
@@ -726,7 +726,7 @@ export const DealOverviewPage: React.FC = () => {
                         workspace.switchToFile(deal.id);
                       }
                     }
-                    navigate(`/deals/${deal.id}/edit`);
+                    navigate(`/deals/${deal.id}/edit`, { state: { resetToLoanTerms: true } });
                   }}
                 >
                   <Edit className="h-3 w-3" />

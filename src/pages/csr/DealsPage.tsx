@@ -217,7 +217,7 @@ export const DealsPage: React.FC = () => {
       });
     }
     
-    navigate(`/deals/${deal.id}/edit`);
+    navigate(`/deals/${deal.id}/edit`, { state: { resetToLoanTerms: true } });
   };
 
   const handleDelete = async (deal: Deal) => {
