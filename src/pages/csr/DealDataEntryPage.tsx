@@ -32,6 +32,7 @@ import { EventJournalViewer } from "@/components/deal/EventJournalViewer";
 
 import { ParticipantsSectionContent } from "@/components/deal/ParticipantsSectionContent";
 import { logDealUpdated, logDealMarkedReady, logDealRevertedToDraft } from "@/hooks/useActivityLog";
+import { validateBalancesSoldRate, validatePenaltyDistributions } from "@/lib/loanAllocationValidation";
 import {
   ArrowLeft,
   Loader2,
@@ -439,6 +440,31 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
 
   const performSave = async () => {
     setShowValidation(true);
+
+    // Block save when Sold Rate / Penalty Distribution allocations are invalid.
+    const balancesCheck = validateBalancesSoldRate(values);
+    if (!balancesCheck.ok) {
+      setActiveTab('loan_terms');
+      setSubSection('loan_terms', 'balances_loan_details');
+      toast({
+        title: 'Cannot save',
+        description: 'Please complete the Sold Rate allocation in Terms & Balances before saving.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const penaltyCheck = validatePenaltyDistributions(values);
+    if (!penaltyCheck.ok) {
+      setActiveTab('loan_terms');
+      setSubSection('loan_terms', 'penalties');
+      toast({
+        title: 'Cannot save',
+        description: 'Please complete the Distribution allocation under Loan → Penalties before saving.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     // Run calculations before saving
     computeCalculatedFields();
     const success = await saveDraft();
@@ -518,6 +544,32 @@ export const DealDataEntryInner: React.FC<DealDataEntryInnerProps> = ({
         title: "Cannot mark ready",
         description: "Please complete all required fields first",
         variant: "destructive",
+      });
+      return;
+    }
+
+    // Block mark-ready when Sold Rate / Penalty Distribution allocations are invalid.
+    const balancesCheck = validateBalancesSoldRate(values);
+    if (!balancesCheck.ok) {
+      setShowValidation(true);
+      setActiveTab('loan_terms');
+      setSubSection('loan_terms', 'balances_loan_details');
+      toast({
+        title: 'Cannot mark ready',
+        description: 'Please complete the Sold Rate allocation in Terms & Balances before saving.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const penaltyCheck = validatePenaltyDistributions(values);
+    if (!penaltyCheck.ok) {
+      setShowValidation(true);
+      setActiveTab('loan_terms');
+      setSubSection('loan_terms', 'penalties');
+      toast({
+        title: 'Cannot mark ready',
+        description: 'Please complete the Distribution allocation under Loan → Penalties before saving.',
+        variant: 'destructive',
       });
       return;
     }
