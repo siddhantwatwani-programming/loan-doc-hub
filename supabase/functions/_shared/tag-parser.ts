@@ -919,18 +919,21 @@ export function replaceLabelBasedFields(
         formattedValue = formattedValue.substring(1);
       }
 
-      // XML-escape and convert newlines to DOCX line breaks for label-based values
-      formattedValue = formattedValue
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
+      // XML-escape resolved value for safe injection. Newlines are preserved
+      // as literal "\n" here and converted to Word XML in-run breaks ONLY at
+      // insertion sites that are inside an open <w:t> element (see
+      // formatValueForInsertion). This prevents orphan </w:t> tags that
+      // otherwise corrupt the generated .docx.
+      formattedValue = escapeXmlValue(formattedValue);
+
+      const insertAt = (src: string, offset: number) =>
+        formatValueForInsertion(formattedValue, src, offset).replace(/\$/g, '$$$$');
 
       if (label === "as of _") {
         const asOfPattern = /as of\s*_+/gi;
         if (asOfPattern.test(result)) {
-          result = result.replace(asOfPattern, `as of ${formattedValue}`);
+          result = result.replace(asOfPattern, (match, offset: number) =>
+            `as of ${insertAt(result, offset + match.length)}`);
           resultLower = result.toLowerCase();
           replacementCount++;
           labelResolvedKeys.add(resolvedKey.toLowerCase());
@@ -957,7 +960,7 @@ export function replaceLabelBasedFields(
               colonDetected = true;
               return match;
             }
-            return formattedValue;
+            return formatValueForInsertion(formattedValue, result, offset);
           });
 
           if (colonDetected) {
@@ -965,7 +968,8 @@ export function replaceLabelBasedFields(
               `(\\b${escapedText}\\b(?:\\s|<[^>]*>)*:\\s*)(_+|\\s*)`,
               'gi'
             );
-            result = result.replace(fullPattern, `$1${formattedValue} `);
+            result = result.replace(fullPattern, (match, prefix: string, _filler: string, offset: number) =>
+              `${prefix}${insertAt(result, offset + prefix.length)} `);
           }
 
           resultLower = result.toLowerCase();
@@ -980,7 +984,8 @@ export function replaceLabelBasedFields(
       const labelPattern = new RegExp(`(${labelEscaped})(\\s*)`, 'gi');
 
       if (labelPattern.test(result)) {
-        result = result.replace(labelPattern, `$1$2${formattedValue} `);
+        result = result.replace(labelPattern, (match, g1: string, g2: string, offset: number) =>
+          `${g1}${g2}${insertAt(result, offset + match.length)} `);
         resultLower = result.toLowerCase();
         replacementCount++;
         labelResolvedKeys.add(resolvedKey.toLowerCase());
@@ -991,7 +996,8 @@ export function replaceLabelBasedFields(
         const colonTolerantPattern = new RegExp(`(${labelNoColonEscaped})(?:\\s|<[^>]+>)*:`, 'gi');
 
         if (colonTolerantPattern.test(result)) {
-          result = result.replace(colonTolerantPattern, `$&${formattedValue} `);
+          result = result.replace(colonTolerantPattern, (match, _g1: string, offset: number) =>
+            `${match}${insertAt(result, offset + match.length)} `);
           resultLower = result.toLowerCase();
           replacementCount++;
           labelResolvedKeys.add(resolvedKey.toLowerCase());
