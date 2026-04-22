@@ -273,6 +273,14 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
     if (record.regularPayment > 0) return record.regularPayment;
     return (record.payments || []).reduce((sum, payment) => sum + parsePaymentAmount(payment.amount), 0);
   };
+  const getDisbursementsTotal = (record: FundingRecord) => {
+    return (record.disbursements || []).reduce(
+      (sum, d) => sum + parsePaymentAmount(d.amount), 0
+    );
+  };
+  const getNetPayment = (record: FundingRecord) => {
+    return Math.max(0, getDisplayedPayment(record) - getDisbursementsTotal(record));
+  };
 
   const computeCurrentBalance = (record: FundingRecord): number => {
     if (record.currentBalance !== undefined && record.currentBalance !== null && !isNaN(record.currentBalance)) {
