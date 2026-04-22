@@ -1,106 +1,63 @@
 
 
-## Fix RE851A + Investor Questionnaire DOCX corruption (Google Docs / Word can't open)
+## Fix: "Principal Balance" must show loan-level value, not lender-aggregated value
 
 ### Root cause
 
-The integrity guard now passes (files are marked `success`, no error), but Google Docs and Word still refuse to open the output. The remaining bug is a **namespace problem**, not a tag-balance problem — which is exactly why the current `<w:p>/<w:r>/<w:t>` balance check doesn't catch it.
+"Principal Balance" appears in two places near the Funding section, and both currently derive from lender funding rows instead of the loan's principal balance:
 
-The post-processing pass `convertGlyphsToSdtCheckboxes` (in `supabase/functions/_shared/tag-parser.ts`, lines 593–648) injects this XML wherever it finds a `<w:r>` containing only `☐ / ☑ / ☒`:
+1. **Funding Grid header** (`src/components/deal/LoanFundingGrid.tsx`, lines 540–548) — the field labeled **Balance** at the top binds to `totalPrincipalBalance`, which is `Σ fundingRecords[i].principalBalance` (lender-level). When two lenders fund $50k each on a $80k-current loan, this shows $100k instead of $80k.
 
-```xml
-<w:sdt>
-  <w:sdtPr>
-    <w:rPr>…</w:rPr>
-    <w14:checkbox>
-      <w14:checked w14:val="0"/>
-      <w14:checkedState w14:val="2612" w14:font="MS Gothic"/>
-      <w14:uncheckedState w14:val="2610" w14:font="MS Gothic"/>
-    </w14:checkbox>
-  </w:sdtPr>
-  <w:sdtContent>…</w:sdtContent>
-</w:sdt>
-```
+2. **Add Funding modal header** (`src/components/deal/AddFundingModal.tsx`, lines 695–704) — the **Principal Balance** field at the top binds to `formData.principalBalance`, which is hydrated from the per-lender record (`record.principalBalance`, set in LoanFundingGrid line 328). It also reflects only the row being edited, not the loan.
 
-This uses the `w14` namespace prefix. For `w14` to be valid, the part's root element (`<w:document>`, `<w:hdr>`, `<w:ftr>`, `<w:footnotes>`, `<w:endnotes>`) must declare:
+The correct, loan-level value already exists in the deal data:
 
-```
-xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"
-```
+- `values['loan_terms.principal']` — the current loan principal balance (already shown as **Principal** in the Loan Terms → Balances form).
+- `values['loan_terms.loan_amount']` / `values['loan_terms.original_loan_amount']` — the original loan amount (already exposed by `LoanTermsFundingForm` as `loanAmount` and passed to the grid).
 
-The RE851A template (and Investor Questionnaire) is an older RE form whose body uses plain `[ ]` / `☐` glyphs, not native SDT checkboxes. Its root part(s) very likely **do not declare the `w14` prefix**. The moment the post-pass injects `<w14:checkbox>` into such a part, the file becomes XML-namespace-invalid. Word's tolerant parser sometimes still opens it; Google Docs (stricter) does not — exactly matching the user's report ("File could not open. Try refreshing the page."). Tag-balance counts (`<w:p>` / `<w:r>` / `<w:t>`) stay equal, so the current integrity check cannot catch it.
+### Fix (surgical, no layout / schema / API changes)
 
-This explains:
-- Why DB rows show `success` while the file won't open.
-- Why earlier "fixes" tightened balance checks but the corruption persisted.
-- Why this specifically hits RE851A and Investor Questionnaire (old templates without `w14`) but not templates that already use SDT checkboxes (which already declare `w14`).
+#### 1. Pass loan-level principal through to the Funding Grid and modal
 
-### Fix (minimum, surgical, no template/UI/format changes)
+In `src/components/deal/LoanTermsFundingForm.tsx`:
 
-#### 1. Ensure `w14` (and adjacent w14-required) namespaces are declared on every processed XML part — only when missing
+- Read the loan-level principal balance the same way `LoanTermsBalancesForm` does:
+  - `loanPrincipalBalance = values['loan_terms.principal'] || ''`
+- Pass it as a new prop to `<LoanFundingGrid …>` (e.g. `loanPrincipalBalance={loanPrincipalBalance}`). Keep existing `loanAmount` prop untouched as a fallback.
 
-In `supabase/functions/_shared/docx-processor.ts`, after `replaceMergeTags(...)` returns `processedXml` for each content-bearing part (`word/document.xml`, `word/header*.xml`, `word/footer*.xml`, `word/footnotes.xml`, `word/endnotes.xml`):
+In `src/components/deal/LoanFundingGrid.tsx`:
 
-- Detect whether the produced XML contains any `w14:` element/attribute (`<w14:` or ` w14:`).
-- If yes, locate the root element of that part:
-  - `<w:document …>` for `word/document.xml`
-  - `<w:hdr …>` for `word/header*.xml`
-  - `<w:ftr …>` for `word/footer*.xml`
-  - `<w:footnotes …>` for `word/footnotes.xml`
-  - `<w:endnotes …>` for `word/endnotes.xml`
-- If the root tag does **not** already contain `xmlns:w14="…wordml"`, inject the `xmlns:w14` declaration into the root tag attributes. Do the same defensive injection for `mc:Ignorable` so older readers ignore the new prefix when present.
+- Accept new optional prop `loanPrincipalBalance?: string` on `LoanFundingGridProps`.
+- Compute a single `loanLevelPrincipalBalance` number = parse of `loanPrincipalBalance` (preferred). If empty/0, fall back to parsed `loanAmount` (original loan amount). Never use any lender aggregation.
+- **Replace** the value bound to the header **Balance** input (lines 540–548): use `loanLevelPrincipalBalance` (formatted with the existing `Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })`, or `'-'` when 0/empty). Field stays `readOnly`, same width, same `$` prefix, same classes — no UI/layout change.
+- Pass the same `loanLevelPrincipalBalance` (formatted) into `<AddFundingModal …>` via a new optional prop `loanPrincipalBalance` so the modal header can show the loan-level value when the user opens Add/Edit.
+- Do **not** touch any column logic, totals row math, or the per-lender `principalBalance` field on `FundingRecord` — those stay exactly as they are (they drive the "Principal Balance" column in the grid and existing per-lender behavior, which is out of scope).
 
-This is a localized string edit on the root opening tag of each processed part. It changes **no** content, formatting, layout, fonts, table widths, page breaks, headers/footers, or template structure. It only adds an XML namespace declaration that the part now needs because we injected `w14:` content into it.
+#### 2. Make the Add Funding modal header show loan-level principal
 
-#### 2. Guarantee no orphan `\uFFFD_SDT_PLACEHOLDER_n_END` markers survive
+In `src/components/deal/AddFundingModal.tsx`:
 
-Same file, same function (`convertGlyphsToSdtCheckboxes`, lines 593–648). After the placeholder restore loop:
+- Add optional prop `loanPrincipalBalance?: string` to `AddFundingModalProps`.
+- In the header block (lines 695–704), bind the read-only `Principal Balance` Input's `value` to `loanPrincipalBalance ?? ''` instead of `formData.principalBalance`. Keep the field `readOnly`, currency `$` prefix, same width / styling — no layout change.
+- **Do not change** the existing `formData.principalBalance` field, the per-lender hydration that sets it (`LoanFundingGrid` line 328), the interest-share math at line 560–562, or the persistence at line 692. Those remain per-lender and behave exactly as today (so the Funding grid's per-lender **Principal Balance** column, edit/save flow, totals row, and disbursement math are untouched). This satisfies the request: only the **top-of-section "Principal Balance"** display is corrected.
 
-- Assert that the resulting XML contains no remaining `\uFFFD_SDT_PLACEHOLDER_` substring. If any survive (depth-extraction edge case), fall back by replacing each remaining marker with the original SDT block stored at that index (or, if missing, an empty string) before the function returns. This prevents `\uFFFD` and the literal placeholder text from ever leaking into `word/*.xml`. Google Docs treats `\uFFFD` (U+FFFD) inside element/attribute names as an invalid name char, which is a second class of "won't open" corruption.
+#### 3. Read-only, currency-formatted, reactive
 
-#### 3. Strengthen the integrity check so this class of corruption is caught — without parsing the whole document with a heavyweight XML parser
-
-In `processDocx`, in addition to the existing `<?xml` prolog, root close, and `<w:p>/<w:r>/<w:t>` balance checks, add three cheap but high-value assertions per processed content part:
-
-1. The XML contains no `\uFFFD` and no `_SDT_PLACEHOLDER_` text.
-2. If the part contains any `w14:` token, its root element (`<w:document …>`, `<w:hdr …>`, `<w:ftr …>`, `<w:footnotes …>`, `<w:endnotes …>`) declares `xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"`.
-3. There are no orphan/unclosed text-run sequences from a botched substitution: simple regex check that every `</w:t>` is preceded (looking back through the immediately surrounding XML window) by a matching `<w:t…>` open. (Already partially covered by tag-balance, kept for safety.)
-
-If any of these fail, throw `DOCX_INTEGRITY: <part> <reason>` exactly as today, so:
-
-- The job is recorded as failed (not falsely `success`).
-- The error message names the offending part and the reason — actionable for ops.
-
-#### 4. No template, mapping, layout, or pipeline changes
-
-Explicitly out of scope: the templates themselves, placeholder names (`{{ln_p_loanAmount}}`, etc., including the malformed `${…}}` and `{{ln_p_estimateBall 00Paymen}}` already in the source template), field maps, document generation flow, file-naming, permissions, and storage paths. The fix is entirely inside `_shared/docx-processor.ts` (and a tiny helper consumed by it from `_shared/tag-parser.ts`'s post-pass).
+Already satisfied by the existing `Input readOnly` with the `$` prefix and `Intl.NumberFormat`. Because the value comes from `values['loan_terms.principal']`, it automatically reflects updates made anywhere that writes to that loan-level field (Loan Terms → Balances → "Principal"), with no extra wiring.
 
 ### Files touched
 
-- `supabase/functions/_shared/docx-processor.ts`
-  - Add `ensureW14Namespace(xml, partName)` and call it after each successful `replaceMergeTags(...)`.
-  - Extend the integrity assertions to detect missing `w14` declarations and `\uFFFD` / placeholder leakage.
-- `supabase/functions/_shared/tag-parser.ts`
-  - In `convertGlyphsToSdtCheckboxes`, after the placeholder restore loop, run a final defensive sweep that replaces any leftover `\uFFFD_SDT_PLACEHOLDER_<n>_END` with the stored block (or empty) so the marker can never reach the output XML.
+- `src/components/deal/LoanTermsFundingForm.tsx` — read `loan_terms.principal`, pass as new prop to grid.
+- `src/components/deal/LoanFundingGrid.tsx` — accept `loanPrincipalBalance`, bind it to the header **Balance** input, forward to modal.
+- `src/components/deal/AddFundingModal.tsx` — accept `loanPrincipalBalance`, bind it to the header **Principal Balance** input.
 
-No other files change. The edge function is auto-deployed.
+No schema, API, RLS, document-generation, export, permissions, or other UI changes. The lender-level **Principal Balance** column inside the funding grid, totals row, and per-lender record persistence remain exactly as they are.
 
-### Validation
+### Acceptance verification
 
-For DL-20260-0212:
-
-1. Regenerate `re851a` and `Investor Questionnaire`.
-2. Confirm new rows in `generated_documents` are `success` AND the `.docx` opens cleanly in:
-   - Microsoft Word
-   - Google Docs
-3. Visually compare against a pre-fix-good rendering of the same template: layout, page breaks, tables, header/footer, fonts, spacing must be unchanged.
-4. Repeat for at least 5 other deal files using the same templates to confirm no regression.
-5. Spot-check a template that already uses native SDT checkboxes (e.g. RE885 / one of the loan-doc-packet templates) to confirm the `w14` injection is a no-op when the namespace is already declared.
-
-### Acceptance criteria
-
-- RE851A and Investor Questionnaire generated for DL-20260-0212 open cleanly in both Word and Google Docs.
-- The fix is template-agnostic — works for every loan file and every template that uses checkbox glyphs.
-- No template, layout, font, table width, page break, or placeholder change.
-- Any future corruption of the same class is reported as `DOCX_INTEGRITY: <part> <reason>` instead of being stored as `success`.
+- Funding screen top: **Balance** field shows the loan-level principal (matches Loan Terms → Balances → "Principal" / falls back to Original Loan Amount when Principal is blank).
+- Example: Loan = $100,000, Principal Paid such that `loan_terms.principal` = $80,000, Lender A funded $50,000, Lender B $50,000 → top **Balance** shows **$80,000.00** (not $100,000).
+- Add/Edit Lender Funding modal: top **Principal Balance** shows the same loan-level value, regardless of which lender row is being edited.
+- Per-lender **Principal Balance** column in the grid, totals row, and lender disbursement/interest math are unchanged.
+- No layout, font, spacing, color, or column changes anywhere.
 
