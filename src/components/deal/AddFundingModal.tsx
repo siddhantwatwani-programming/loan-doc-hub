@@ -957,7 +957,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                       Columns
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent align="end" className="w-48 p-2 z-[9999]">
+                  <PopoverContent align="end" className="w-56 p-2 z-[9999]">
                     <p className="text-[11px] font-semibold mb-2 text-foreground">Show / Hide Columns</p>
                     <div className="space-y-1.5">
                       {([
@@ -988,6 +988,41 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                           />
                           Percentage
                         </label>
+                      </div>
+                      {customDisbCols.length > 0 && (
+                        <div className="border-t border-border pt-1.5 mt-1.5 space-y-1">
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase">Custom</p>
+                          {customDisbCols.map((c) => (
+                            <div key={c.id} className="flex items-center justify-between gap-2 text-[11px] text-foreground">
+                              <span className="truncate">{c.label}</span>
+                              <Button variant="ghost" size="icon" className="h-4 w-4 shrink-0" onClick={() => handleRemoveCustomCol(c.id)} title="Remove column">
+                                <X className="h-2.5 w-2.5 text-destructive" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="border-t border-border pt-1.5 mt-1.5 space-y-1">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase">Add Column</p>
+                        <div className="flex items-center gap-1">
+                          <Input
+                            value={newColLabel}
+                            onChange={(e) => setNewColLabel(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomCol(); } }}
+                            placeholder="Column name"
+                            className="h-6 text-[10px] flex-1"
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-6 w-6 shrink-0"
+                            onClick={handleAddCustomCol}
+                            disabled={!newColLabel.trim()}
+                            title="Add column"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </PopoverContent>
