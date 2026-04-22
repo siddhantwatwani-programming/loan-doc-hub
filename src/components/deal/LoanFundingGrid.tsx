@@ -50,6 +50,8 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'noteRate', label: 'Note Rate', visible: true },
   { id: 'lenderRate', label: 'Lender Rate', visible: true },
   { id: 'regularPayment', label: 'Payment', visible: true },
+  { id: 'disbursements', label: 'Disbursements', visible: true },
+  { id: 'netPayment', label: 'Net Payment', visible: true },
   { id: 'roundingError', label: 'Rounding', visible: true },
 ];
 
