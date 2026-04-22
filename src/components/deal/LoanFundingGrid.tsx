@@ -673,6 +673,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               rateNoteValue: data.rateNoteValue,
               rateSoldValue: data.rateSoldValue,
               rateLenderValue: data.rateLenderValue,
+              lenderRateOverride: data.lenderRateOverride,
+              lenderRateOverrideValue: data.lenderRateOverrideValue,
               brokerParticipates: data.brokerParticipates,
               interestFrom: data.interestFrom,
               roundingAdjustment: data.roundingAdjustment,
