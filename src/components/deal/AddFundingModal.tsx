@@ -502,8 +502,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     });
   };
 
-  // Toggle for Percentage column visibility
-  const [showPercentageCol, setShowPercentageCol] = useState(false);
+  // Percentage column is always visible
+  const showPercentageCol = true;
 
   // Per-column visibility toggles for Disbursements grid
   const [disbColVisibility, setDisbColVisibility] = useState({
@@ -954,14 +954,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-bold underline text-foreground">Disbursements from Lender Proceeds</p>
               <div className="flex items-center gap-2">
-                <label className="flex items-center gap-1 text-[10px] cursor-pointer">
-                  <Checkbox
-                    checked={showPercentageCol}
-                    onCheckedChange={(checked) => setShowPercentageCol(!!checked)}
-                    className="h-3.5 w-3.5"
-                  />
-                  Show %
-                </label>
+
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1">
@@ -991,16 +984,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                           {label}
                         </label>
                       ))}
-                      <div className="border-t border-border pt-1.5 mt-1.5">
-                        <label className="flex items-center gap-2 text-[11px] cursor-pointer hover:text-foreground text-muted-foreground">
-                          <Checkbox
-                            checked={showPercentageCol}
-                            onCheckedChange={(checked) => setShowPercentageCol(!!checked)}
-                            className="h-3.5 w-3.5"
-                          />
-                          Percentage
-                        </label>
-                      </div>
                     </div>
                   </PopoverContent>
                 </Popover>
