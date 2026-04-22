@@ -1443,9 +1443,21 @@ export function processEachBlocks(
           }
 
           // XML-escape resolved value before injecting into document XML.
-          // Without this, values containing &, <, > break word/document.xml
-          // and Word reports "file could not open".
-          blockContent = blockContent.split(tag[0]).join(escapeXmlValue(resolvedValue));
+          // Without this, values containing &, <, > break word/document.xml.
+          // Use context-aware newline handling so we never emit an orphan
+          // </w:t> outside an open text run (Word rejects such files).
+          {
+            const tagText = tag[0];
+            const parts = blockContent.split(tagText);
+            if (parts.length > 1) {
+              let rebuilt = parts[0];
+              for (let pi = 1; pi < parts.length; pi++) {
+                rebuilt += formatValueForInsertion(resolvedValue, rebuilt, rebuilt.length);
+                rebuilt += parts[pi];
+              }
+              blockContent = rebuilt;
+            }
+          }
         }
 
         for (const tag of innerChevronTags) {
