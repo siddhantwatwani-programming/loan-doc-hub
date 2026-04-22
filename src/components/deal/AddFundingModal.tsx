@@ -37,6 +37,7 @@ interface AddFundingModalProps {
   soldRate?: string;
   totalPayment?: string;
   loanAmount?: string;
+  loanPrincipalBalance?: string;
   existingRecords?: Array<{ id: string; roundingError: boolean; pctOwned: number }>;
   editingRecordId?: string;
 }
@@ -220,6 +221,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   soldRate = '',
   totalPayment = '',
   loanAmount = '',
+  loanPrincipalBalance,
   existingRecords = [],
   editingRecordId,
 }) => {
@@ -696,7 +698,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
             <div className="relative w-24">
               <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
               <Input
-                value={(formData.principalBalance as string) || ''}
+                value={loanPrincipalBalance ?? ''}
                 readOnly
                 className="h-6 text-[11px] pl-4 bg-muted/50"
                 placeholder="-"
