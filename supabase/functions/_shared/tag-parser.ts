@@ -1141,6 +1141,17 @@ export function processConditionalBlocks(
     console.warn("[tag-parser] Hit max iterations for conditional processing — possible malformed tags");
   }
 
+  // Safety net: strip any unmatched conditional markers that survived
+  // (e.g. an {{#if x}} with no {{/if}}). Leaving them in place would either
+  // render as literal text or, worse, leave broken paragraph fragments that
+  // can corrupt word/document.xml. We only remove the markers themselves
+  // and keep the surrounding content unchanged.
+  result = result.replace(/\{\{#if\s+[A-Za-z0-9_.]+\}\}/g, "");
+  result = result.replace(/\{\{#unless\s+[A-Za-z0-9_.]+\}\}/g, "");
+  result = result.replace(/\{\{\/if\}\}/g, "");
+  result = result.replace(/\{\{\/unless\}\}/g, "");
+  result = result.replace(/\{\{else\}\}/g, "");
+
   return result;
 }
 
