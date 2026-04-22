@@ -1387,7 +1387,10 @@ export function processEachBlocks(
             }
           }
 
-          blockContent = blockContent.split(tag[0]).join(resolvedValue);
+          // XML-escape resolved value before injecting into document XML.
+          // Without this, values containing &, <, > break word/document.xml
+          // and Word reports "file could not open".
+          blockContent = blockContent.split(tag[0]).join(escapeXmlValue(resolvedValue));
         }
 
         for (const tag of innerChevronTags) {
@@ -1401,7 +1404,7 @@ export function processEachBlocks(
             resolvedValue = formatByDataType(resolved.data.rawValue, resolved.data.dataType);
           }
 
-          blockContent = blockContent.split(tag[0]).join(resolvedValue);
+          blockContent = blockContent.split(tag[0]).join(escapeXmlValue(resolvedValue));
         }
 
         expandedBlocks.push(blockContent);
