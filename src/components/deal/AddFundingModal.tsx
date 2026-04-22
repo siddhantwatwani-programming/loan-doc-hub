@@ -239,9 +239,14 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     // 1. Restore unsaved draft (highest priority — preserves in-progress edits across tab switches)
     const draft = readDraft();
     if (draft) {
+      const mergedDraft = {
+        ...draft,
+        rateSoldValue: soldRate || draft.rateSoldValue || '',
+        lenderRate: soldRate || draft.lenderRate || '',
+      };
       return {
         ...getDefaultFormData(loanNumber, borrowerName, noteRate, soldRate),
-        ...draft,
+        ...mergedDraft,
         loan: loanNumber || draft.loan,
         borrower: borrowerName || draft.borrower,
         disbursements: draft.disbursements?.length ? draft.disbursements.map(d => ({

@@ -68,6 +68,8 @@ export interface FundingRecord {
   rateNoteValue?: string;
   rateSoldValue?: string;
   rateLenderValue?: string;
+  lenderRateOverride?: boolean;
+  lenderRateOverrideValue?: string;
   brokerParticipates?: boolean;
   interestFrom?: string;
   roundingAdjustment?: boolean;
