@@ -103,6 +103,8 @@ export interface FundingFormData {
   rateLenderValue: string;
   /** When true, user has opted to override the auto-prefilled Lender Rate (from Sold Rate). */
   lenderRateOverride?: boolean;
+  /** Editable override value entered by user when Override checkbox is on. */
+  lenderRateOverrideValue?: string;
   roundingAdjustment: boolean;
   disbursements: DisbursementRow[];
   principalBalance?: string;
