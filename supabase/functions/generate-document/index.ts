@@ -1363,28 +1363,11 @@ async function generateSingleDocument(
     // entries that the Investor Questionnaire template references.
     // Populate them from the primary lender name fields if not already set.
     {
-      const aliasSetIfEmpty = (targetKey: string, sourceKey: string, dt?: string) => {
-        if (!fieldValues.has(targetKey) || !fieldValues.get(targetKey)?.rawValue) {
-          const src = fieldValues.get(sourceKey);
-          if (src?.rawValue) {
-            fieldValues.set(targetKey, { rawValue: src.rawValue, dataType: dt || src.dataType });
-          }
-        }
-      };
-      aliasSetIfEmpty('ld_p_firstIfEntityUse', 'ld_p_firstName', 'text');
-      aliasSetIfEmpty('ld_p_middle', 'ld_p_middleName', 'text');
-      aliasSetIfEmpty('ld_p_last', 'ld_p_lastName', 'text');
-
-      // ── Hazardous Materials / Investor Questionnaire vesting rule ──
-      // If Lender Type === "Individual": clear vesting and force the three name
-      // tags to the Individual's first / middle / last name (no vesting prefix).
-      // Otherwise: keep vesting, and append a single trailing space so the
-      // template tag {{ld_p_vesting}}{{ld_p_firstIfEntityUse}}... renders cleanly
-      // without requiring a literal space between the two tags.
       const lenderTypeRaw = (fieldValues.get('ld_p_lenderType')?.rawValue ?? '').toString().trim();
       const isIndividual = lenderTypeRaw.toLowerCase() === 'individual';
 
       if (isIndividual) {
+        // Vesting must NOT appear; name comes from Individual first/middle/last
         fieldValues.set('ld_p_vesting', { rawValue: '', dataType: 'text' });
 
         const first = fieldValues.get('ld_p_firstName')?.rawValue ?? '';
@@ -1394,11 +1377,23 @@ async function generateSingleDocument(
         fieldValues.set('ld_p_middle', { rawValue: String(middle), dataType: 'text' });
         fieldValues.set('ld_p_last', { rawValue: String(last), dataType: 'text' });
       } else {
+        // Entity / Trust / LLC / etc.
+        // Vesting prints the entity legal block; do NOT also alias firstName→firstIfEntityUse
+        // (that caused the entity name to render twice in the body sentence).
         const vestingRaw = (fieldValues.get('ld_p_vesting')?.rawValue ?? '').toString().trim();
         fieldValues.set('ld_p_vesting', {
           rawValue: vestingRaw ? `${vestingRaw} ` : '',
           dataType: 'text',
         });
+
+        // Leave ld_p_firstIfEntityUse / ld_p_middle / ld_p_last as whatever the user
+        // explicitly entered (signer override). If they have no value, they stay empty,
+        // so the template will only print the vesting block.
+        for (const k of ['ld_p_firstIfEntityUse', 'ld_p_middle', 'ld_p_last']) {
+          if (!fieldValues.has(k)) {
+            fieldValues.set(k, { rawValue: '', dataType: 'text' });
+          }
+        }
       }
     }
 
