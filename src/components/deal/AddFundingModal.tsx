@@ -778,12 +778,12 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 })()}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Override</Label>
-                {(() => {
-                  const soldRateVal = (formData.rateSoldValue || '').trim();
-                  const isOn = !!formData.lenderRateOverride;
-                  return (
-                    <div className="flex items-center gap-1 flex-1">
+                <Label className="text-[11px] font-bold min-w-[75px] shrink-0 flex items-center gap-1">
+                  <span>Override</span>
+                  {(() => {
+                    const isOn = !!formData.lenderRateOverride;
+                    const soldRateVal = (formData.rateSoldValue || '').trim();
+                    return (
                       <Checkbox
                         checked={isOn}
                         onCheckedChange={(checked) => {
@@ -798,34 +798,39 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                         }}
                         className="h-3.5 w-3.5"
                       />
-                      <div className="relative flex-1">
-                        <Input
-                          value={formData.lenderRateOverrideValue || ''}
-                          onChange={(e) => {
-                            let v = e.target.value.replace(/[^0-9.]/g, '');
-                            const parts = v.split('.');
-                            if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
-                            const [intPart, decPart] = v.split('.');
-                            if (decPart && decPart.length > 2) v = `${intPart}.${decPart.slice(0, 2)}`;
-                            setFormData(prev => ({ ...prev, lenderRateOverrideValue: v, rateLenderValue: v }));
-                          }}
-                          onBlur={(e) => {
-                            const raw = (e.target.value || '').replace(/[^0-9.]/g, '');
-                            if (!raw) return;
-                            const [intPart, decPart = ''] = raw.split('.');
-                            const truncated = `${intPart || '0'}.${(decPart + '00').slice(0, 2)}`;
-                            if (truncated !== formData.lenderRateOverrideValue) {
-                              setFormData(prev => ({ ...prev, lenderRateOverrideValue: truncated, rateLenderValue: truncated }));
-                            }
-                          }}
-                          onKeyDown={numericKeyDown}
-                          className="h-6 text-[11px] pr-4"
-                          inputMode="decimal"
-                          placeholder="%"
-                          disabled={!isOn}
-                        />
-                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
-                      </div>
+                    );
+                  })()}
+                </Label>
+                {(() => {
+                  const isOn = !!formData.lenderRateOverride;
+                  return (
+                    <div className="relative flex-1">
+                      <Input
+                        value={formData.lenderRateOverrideValue || ''}
+                        onChange={(e) => {
+                          let v = e.target.value.replace(/[^0-9.]/g, '');
+                          const parts = v.split('.');
+                          if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+                          const [intPart, decPart] = v.split('.');
+                          if (decPart && decPart.length > 2) v = `${intPart}.${decPart.slice(0, 2)}`;
+                          setFormData(prev => ({ ...prev, lenderRateOverrideValue: v, rateLenderValue: v }));
+                        }}
+                        onBlur={(e) => {
+                          const raw = (e.target.value || '').replace(/[^0-9.]/g, '');
+                          if (!raw) return;
+                          const [intPart, decPart = ''] = raw.split('.');
+                          const truncated = `${intPart || '0'}.${(decPart + '00').slice(0, 2)}`;
+                          if (truncated !== formData.lenderRateOverrideValue) {
+                            setFormData(prev => ({ ...prev, lenderRateOverrideValue: truncated, rateLenderValue: truncated }));
+                          }
+                        }}
+                        onKeyDown={numericKeyDown}
+                        className="h-6 text-[11px] pr-4"
+                        inputMode="decimal"
+                        placeholder="%"
+                        disabled={!isOn}
+                      />
+                      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
                     </div>
                   );
                 })()}
@@ -835,11 +840,11 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 {renderDateField(fundingDate, (d) => handleChange('fundingDate', d ? format(d, 'yyyy-MM-dd') : ''), fundingDateOpen, setFundingDateOpen)}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] font-bold min-w-[110px] shrink-0">Original Funding</Label>
+                <Label className="text-[11px] font-bold min-w-[75px] max-w-[75px] shrink-0 whitespace-normal leading-tight">Original Funding</Label>
                 {renderCurrencyInput('fundingAmount', '0.00')}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] font-bold min-w-[110px] shrink-0">Current Balance</Label>
+                <Label className="text-[11px] font-bold min-w-[75px] max-w-[75px] shrink-0 whitespace-normal leading-tight">Current Balance</Label>
                 {renderCurrencyInput('currentBalance', '0.00')}
               </div>
               <div className="flex items-center gap-1">
