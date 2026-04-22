@@ -1610,6 +1610,26 @@ export function replaceMergeTags(
   // First normalize the XML to handle fragmented merge fields
   let result = normalizeWordXml(content);
 
+  // Unconditional safety net: strip BARE Handlebars-style control directives
+  // that template authors sometimes leave in DOCX paragraphs as plain text
+  // (i.e. NOT wrapped in {{ }}), e.g. a paragraph whose run text reads:
+  //     #if (eq ld_p_lenderType "Individual")
+  // The engine cannot evaluate such directives and they would otherwise print
+  // verbatim. We only clear matching <w:t> run text; the surrounding run and
+  // paragraph wrappers are kept so the template's layout/spacing is preserved.
+  result = result.replace(
+    /<w:t(\s[^>]*)?>\s*(?:#if|#unless|#each)\s*\([^<]*?\)\s*<\/w:t>/g,
+    (m) => m.replace(/>\s*(?:#if|#unless|#each)\s*\([^<]*?\)\s*</, "><"),
+  );
+  result = result.replace(
+    /<w:t(\s[^>]*)?>\s*(?:#if|#unless|#each)\s+[A-Za-z0-9_.]+\s*<\/w:t>/g,
+    (m) => m.replace(/>\s*(?:#if|#unless|#each)\s+[A-Za-z0-9_.]+\s*</, "><"),
+  );
+  result = result.replace(
+    /<w:t(\s[^>]*)?>\s*(?:\/if|\/unless|\/each|else)\s*<\/w:t>/g,
+    (m) => m.replace(/>\s*(?:\/if|\/unless|\/each|else)\s*</, "><"),
+  );
+
   if (result.includes('{{#each')) {
     result = processEachBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
   }
