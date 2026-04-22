@@ -262,6 +262,14 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
         const lenderBalance = pctOwned > 0
           ? principalBalanceFull * (pctOwned / 100)
           : (fundingRec ? Number(fundingRec.principalBalance || 0) : 0);
+        const disbSumLender = fundingRec && Array.isArray(fundingRec.disbursements)
+          ? fundingRec.disbursements.reduce(
+              (s: number, d: any) => s + (parseFloat(String(d?.amount || '').replace(/[$,]/g, '')) || 0), 0
+            )
+          : 0;
+        const lenderCurrentBalance = fundingRec && fundingRec.currentBalance !== undefined && fundingRec.currentBalance !== null && !isNaN(Number(fundingRec.currentBalance))
+          ? Number(fundingRec.currentBalance)
+          : Math.max(0, fundingAmount - disbSumLender);
 
         const rawCapacity = capacityMap.get(dealId) || '';
         const CAPACITY_MAP: Record<string, string> = {
