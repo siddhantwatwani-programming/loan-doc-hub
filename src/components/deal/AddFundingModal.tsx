@@ -101,6 +101,8 @@ export interface FundingFormData {
   rateNoteValue: string;
   rateSoldValue: string;
   rateLenderValue: string;
+  /** When true, user has opted to override the auto-prefilled Lender Rate (from Sold Rate). */
+  lenderRateOverride?: boolean;
   roundingAdjustment: boolean;
   disbursements: DisbursementRow[];
   principalBalance?: string;
@@ -178,6 +180,7 @@ const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: 
   lenderRate: '', fundingAmount: '', fundingDate: '', interestFrom: '', notes: '', brokerParticipates: false,
   percentOwned: '', regularPayment: '', lenderShare: '',
   rateSelection: 'note_rate', rateNoteValue: noteRate, rateSoldValue: soldRate, rateLenderValue: '',
+  lenderRateOverride: false,
   roundingAdjustment: false,
   disbursements: defaultDisbursements(),
   principalBalance: '', noteRateDisplay: noteRate,
@@ -292,16 +295,26 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     } catch { /* ignore quota errors */ }
   }, [formData, open, draftKey]);
 
-  // Compute lenderRate from rate selection
+  // Compute lenderRate.
+  // Priority: if a Sold Rate exists on the loan AND override is OFF, lenderRate is forced
+  // to the Sold Rate (and the field is disabled in the UI). When override is ON, we keep
+  // whatever the user types (rateLenderValue) — but the prefilled value remains visible
+  // until they change it.
   React.useEffect(() => {
+    const soldRateVal = (formData.rateSoldValue || '').trim();
+    const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
+
     let rate = '';
-    if (formData.rateSelection === 'note_rate') rate = formData.rateNoteValue;
+    if (hasSoldRate && !formData.lenderRateOverride) {
+      rate = soldRateVal;
+    } else if (formData.rateSelection === 'note_rate') rate = formData.rateNoteValue;
     else if (formData.rateSelection === 'sold_rate') rate = formData.rateSoldValue;
     else if (formData.rateSelection === 'lender_rate') rate = formData.rateLenderValue;
+
     if (rate !== formData.lenderRate) {
       setFormData(prev => ({ ...prev, lenderRate: rate }));
     }
-  }, [formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
+  }, [formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue, formData.lenderRateOverride]);
 
   // Auto-compute Percent Owned
   React.useEffect(() => {
@@ -629,8 +642,56 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               </div>
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Lender Rate</Label>
-                {renderPercentInput('lenderRate', '%')}
+                {(() => {
+                  const soldRateVal = (formData.rateSoldValue || '').trim();
+                  const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
+                  const lenderRateDisabled = hasSoldRate && !formData.lenderRateOverride;
+                  return (
+                    <div className="relative flex-1">
+                      <Input
+                        value={formData.lenderRate || ''}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/[^0-9.]/g, '');
+                          // Mirror writes into rateLenderValue so the override value persists
+                          // through the rate-compute effect and gets saved with the row.
+                          setFormData(prev => ({ ...prev, lenderRate: v, rateLenderValue: v }));
+                        }}
+                        onKeyDown={numericKeyDown}
+                        className="h-6 text-[11px] pr-4"
+                        inputMode="decimal"
+                        placeholder="%"
+                        disabled={lenderRateDisabled}
+                      />
+                      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+                    </div>
+                  );
+                })()}
               </div>
+              {(() => {
+                const soldRateVal = (formData.rateSoldValue || '').trim();
+                const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
+                if (!hasSoldRate) return null;
+                return (
+                  <div className="flex items-center gap-1">
+                    <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Override</Label>
+                    <Checkbox
+                      checked={formData.lenderRateOverride ?? false}
+                      onCheckedChange={(checked) => {
+                        const isOn = !!checked;
+                        setFormData(prev => ({
+                          ...prev,
+                          lenderRateOverride: isOn,
+                          // When turning override ON for the first time, seed rateLenderValue
+                          // with the currently displayed (sold-rate) value so the field stays
+                          // populated and editable instead of clearing.
+                          rateLenderValue: isOn && !prev.rateLenderValue ? (prev.lenderRate || soldRateVal) : prev.rateLenderValue,
+                        }));
+                      }}
+                      className="h-3.5 w-3.5"
+                    />
+                  </div>
+                );
+              })()}
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Funding Date</Label>
                 {renderDateField(fundingDate, (d) => handleChange('fundingDate', d ? format(d, 'yyyy-MM-dd') : ''), fundingDateOpen, setFundingDateOpen)}
