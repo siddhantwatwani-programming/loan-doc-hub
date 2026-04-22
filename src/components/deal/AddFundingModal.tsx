@@ -656,7 +656,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
         <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30 pr-10">
           <span className="text-xs font-bold">Add / Edit Lender Funding</span>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold">Principal Balance</span>
+            <span className="text-xs font-bold">Current Balance</span>
             <div className="relative w-24">
               <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
               <Input
@@ -799,6 +799,18 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[110px] shrink-0">Original Funding</Label>
                 {renderCurrencyInput('fundingAmount', '0.00')}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] font-bold min-w-[110px] shrink-0">Current Balance</Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
+                  <Input
+                    value={(formData.principalBalance as string) || ''}
+                    readOnly
+                    className="h-6 text-[11px] pl-4 bg-muted/30"
+                    placeholder="-"
+                  />
+                </div>
               </div>
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Interest From</Label>
