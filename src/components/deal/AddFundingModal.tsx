@@ -476,6 +476,20 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   // Toggle for Percentage column visibility
   const [showPercentageCol, setShowPercentageCol] = useState(false);
 
+  // Per-column visibility toggles for Disbursements grid
+  const [disbColVisibility, setDisbColVisibility] = useState({
+    active: true,
+    accountId: true,
+    name: true,
+    startDate: true,
+    amount: true,
+    debitThrough: true,
+    type: true,
+    comment: true,
+  });
+  const toggleDisbCol = (key: keyof typeof disbColVisibility) =>
+    setDisbColVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
+
   // Lender share values for disbursement calculation
   const paymentShareNum = parseFloat((formData.regularPayment || '').replace(/[$,]/g, '')) || 0;
   const principalBalNum = parseFloat((formData.principalBalance || '').replace(/[$,]/g, '')) || 0;
