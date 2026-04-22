@@ -231,6 +231,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   const soldRate = values['loan_terms.sold_rate_enabled'] ? (values['loan_terms.sold_rate_company'] || values['loan_terms.sold_rate'] || '') : '';
   const totalPayment = values['loan_terms.total_payment'] || values['loan_terms.regular_payment'] || '';
   const loanAmount = values['loan_terms.loan_amount'] || values['loan_terms.original_loan_amount'] || '';
+  const loanPrincipalBalance = values['loan_terms.principal'] || '';
 
   // Parse funding records from stored JSON value
   const fundingRecords: FundingRecord[] = useMemo(() => {
@@ -602,6 +603,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       soldRate={soldRate}
       totalPayment={totalPayment}
       loanAmount={loanAmount}
+      loanPrincipalBalance={loanPrincipalBalance}
       onLoanNumberChange={handleLoanNumberChange}
       onBorrowerNameChange={handleBorrowerNameChange}
       onHeaderFieldBlur={handleHeaderFieldBlur}
