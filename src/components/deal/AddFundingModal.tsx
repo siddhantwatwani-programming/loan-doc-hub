@@ -913,8 +913,18 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                         </td>
                         <td className="py-0.5 px-1 text-[10px]">{row.accountId || '-'}</td>
                         <td className="py-0.5 px-1 text-[10px]">{row.name || '-'}</td>
-                        <td className="py-0.5 px-1 text-[10px]">{row.startDate ? format(new Date(row.startDate), 'MM/dd/yyyy') : '-'}</td>
-                        <td className="py-0.5 px-1 text-[10px]">{row.endDate ? format(new Date(row.endDate), 'MM/dd/yyyy') : (row.debitThrough === 'date' && row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-')}</td>
+                        <td className="py-0.5 px-1 text-[10px]">{(() => { if (!row.startDate) return '-'; const d = new Date(row.startDate); return isNaN(d.getTime()) ? '-' : format(d, 'MM/dd/yyyy'); })()}</td>
+                        <td className="py-0.5 px-1 text-[10px]">{(() => {
+                          if (row.endDate) {
+                            const d = new Date(row.endDate);
+                            if (!isNaN(d.getTime())) return format(d, 'MM/dd/yyyy');
+                          }
+                          if (row.debitThrough === 'date' && row.debitThroughDate) {
+                            const d = new Date(row.debitThroughDate);
+                            if (!isNaN(d.getTime())) return format(d, 'MM/dd/yyyy');
+                          }
+                          return '-';
+                        })()}</td>
                         <td className="py-0.5 px-1 text-[10px] text-right">{row.amount ? `$${row.amount}` : '-'}</td>
                         <td className="py-0.5 px-1 text-[10px]">
                           {row.debitThrough === 'date' ? (row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-') :
