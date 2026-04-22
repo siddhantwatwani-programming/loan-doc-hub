@@ -108,6 +108,7 @@ export interface FundingFormData {
   roundingAdjustment: boolean;
   disbursements: DisbursementRow[];
   principalBalance?: string;
+  currentBalance?: string;
   noteRateDisplay?: string;
   overrideServicing?: boolean;
   companyBaseFee?: string;
@@ -186,7 +187,7 @@ const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: 
   lenderRateOverrideValue: '',
   roundingAdjustment: false,
   disbursements: defaultDisbursements(),
-  principalBalance: '', noteRateDisplay: noteRate,
+  principalBalance: '', currentBalance: '', noteRateDisplay: noteRate,
   overrideServicing: false,
   companyBaseFee: '', companyBaseFeePct: '', companyAdditionalServices: '', companyMinimum: '', companyMaximum: '',
   companyNrSitSplitPct: '', companyNrSitSplit: '', companyTotal: '',
@@ -358,6 +359,41 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
       setFormData(prev => ({ ...prev, percentOwned: '' }));
     }
   }, [formData.fundingAmount, loanAmount]);
+
+  // Auto-default Current Balance from Original Funding minus disbursements (only when not manually edited)
+  const currentBalanceTouchedRef = React.useRef<boolean>(!!editData?.currentBalance);
+  React.useEffect(() => {
+    if (currentBalanceTouchedRef.current) return;
+    const fa = parseFloat((formData.fundingAmount || '').replace(/[$,]/g, '')) || 0;
+    const disbSum = (formData.disbursements || []).reduce((s, d) => {
+      return s + (parseFloat((d.amount || '').replace(/[$,]/g, '')) || 0);
+    }, 0);
+    if (fa <= 0) {
+      if (formData.currentBalance && formData.currentBalance !== '') {
+        setFormData(prev => ({ ...prev, currentBalance: '' }));
+      }
+      return;
+    }
+    const remaining = Math.max(0, fa - disbSum);
+    const formatted = formatCurrencyDisplay(String(remaining.toFixed(2)));
+    if (formatted !== formData.currentBalance) {
+      setFormData(prev => ({ ...prev, currentBalance: formatted }));
+    }
+  }, [formData.fundingAmount, formData.disbursements]);
+
+  // Mark Current Balance as manually touched when user edits it
+  const prevCurrentBalanceRef = React.useRef<string | undefined>(formData.currentBalance);
+  React.useEffect(() => {
+    // detect change that didn't come from our auto-default by comparing against last known auto value
+    if (formData.currentBalance !== prevCurrentBalanceRef.current && formData.currentBalance) {
+      // heuristic: if user edits to a value different from auto-calc, flag as touched
+      const fa = parseFloat((formData.fundingAmount || '').replace(/[$,]/g, '')) || 0;
+      const disbSum = (formData.disbursements || []).reduce((s, d) => s + (parseFloat((d.amount || '').replace(/[$,]/g, '')) || 0), 0);
+      const auto = formatCurrencyDisplay(String(Math.max(0, fa - disbSum).toFixed(2)));
+      if (formData.currentBalance !== auto) currentBalanceTouchedRef.current = true;
+    }
+    prevCurrentBalanceRef.current = formData.currentBalance;
+  }, [formData.currentBalance, formData.fundingAmount, formData.disbursements]);
 
   // Regular Payment calculation
   React.useEffect(() => {
@@ -799,6 +835,10 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[110px] shrink-0">Original Funding</Label>
                 {renderCurrencyInput('fundingAmount', '0.00')}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] font-bold min-w-[110px] shrink-0">Current Balance</Label>
+                {renderCurrencyInput('currentBalance', '0.00')}
               </div>
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Interest From</Label>

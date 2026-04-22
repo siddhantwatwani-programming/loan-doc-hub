@@ -40,6 +40,7 @@ interface PortfolioRow {
   lenderRate: number;
   maturityDate: string;
   outstandingBalance: number;
+  currentBalance: number;
   accruedInterest: number;
   paymentReceived: number;
   roiYield: number;
@@ -58,6 +59,7 @@ const ALL_COLUMNS = [
   { id: 'ownershipPct', label: '% Owned (Pro-rata)' },
   { id: 'fundingAmount', label: 'Investment Amount' },
   { id: 'outstandingBalance', label: 'Current Balance (UPB)' },
+  { id: 'currentBalance', label: 'Current Balance' },
   { id: 'noteRate', label: 'Interest Rate' },
   { id: 'lenderRate', label: 'Lender Rate' },
   { id: 'paymentReceived', label: 'Payment Received' },
@@ -260,6 +262,14 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
         const lenderBalance = pctOwned > 0
           ? principalBalanceFull * (pctOwned / 100)
           : (fundingRec ? Number(fundingRec.principalBalance || 0) : 0);
+        const disbSumLender = fundingRec && Array.isArray(fundingRec.disbursements)
+          ? fundingRec.disbursements.reduce(
+              (s: number, d: any) => s + (parseFloat(String(d?.amount || '').replace(/[$,]/g, '')) || 0), 0
+            )
+          : 0;
+        const lenderCurrentBalance = fundingRec && fundingRec.currentBalance !== undefined && fundingRec.currentBalance !== null && !isNaN(Number(fundingRec.currentBalance))
+          ? Number(fundingRec.currentBalance)
+          : Math.max(0, fundingAmount - disbSumLender);
 
         const rawCapacity = capacityMap.get(dealId) || '';
         const CAPACITY_MAP: Record<string, string> = {
@@ -331,6 +341,7 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
           lenderRate,
           maturityDate: maturityDateVal,
           outstandingBalance: lenderBalance,
+          currentBalance: lenderCurrentBalance,
           accruedInterest,
           paymentReceived,
           roiYield,
@@ -449,6 +460,7 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
       case 'lenderRate': return fmtPct(row.lenderRate);
       case 'regularPayment': return fmtCurrency(row.regularPayment);
       case 'outstandingBalance': return fmtCurrency(row.outstandingBalance);
+      case 'currentBalance': return fmtCurrency(row.currentBalance);
       case 'paymentReceived': return fmtCurrency(row.paymentReceived);
       case 'accruedInterest': return fmtCurrency(row.accruedInterest);
       case 'roiYield': return fmtPct(row.roiYield);

@@ -42,7 +42,8 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'lenderAccount', label: 'Lender ID', visible: true },
   { id: 'lenderName', label: 'Name', visible: true },
   { id: 'originalAmount', label: 'Funding Amount', visible: true },
-  { id: 'principalBalance', label: 'Current Balance', visible: true },
+  { id: 'currentBalance', label: 'Current Balance', visible: true },
+  { id: 'principalBalance', label: 'Principal Balance', visible: true },
   { id: 'pctOwned', label: 'Pro Rata', visible: true },
   { id: 'fundingDate', label: 'Funding Date', visible: true },
   { id: 'interestFrom', label: 'Interest From', visible: true },
@@ -61,6 +62,7 @@ export interface FundingRecord {
   lenderRate: number;
   principalBalance: number;
   originalAmount: number;
+  currentBalance?: number;
   regularPayment: number;
   lenderShare: number;
   roundingError: boolean;
@@ -268,8 +270,19 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
     return (record.payments || []).reduce((sum, payment) => sum + parsePaymentAmount(payment.amount), 0);
   };
 
+  const computeCurrentBalance = (record: FundingRecord): number => {
+    if (record.currentBalance !== undefined && record.currentBalance !== null && !isNaN(record.currentBalance)) {
+      return record.currentBalance;
+    }
+    const disbSum = (record.disbursements || []).reduce(
+      (s, d) => s + (parseFloat(String(d.amount || '').replace(/[$,]/g, '')) || 0), 0
+    );
+    return Math.max(0, (record.originalAmount || 0) - disbSum);
+  };
+
   const totalOwnership = fundingRecords.reduce((sum, r) => sum + r.pctOwned, 0);
   const totalPrincipalBalance = fundingRecords.reduce((sum, r) => sum + r.principalBalance, 0);
+  const totalCurrentBalance = fundingRecords.reduce((sum, r) => sum + computeCurrentBalance(r), 0);
   const totalPaymentSum = fundingRecords.reduce((sum, r) => sum + getDisplayedPayment(r), 0);
   const totalFundingAmount = fundingRecords.reduce((sum, r) => sum + r.originalAmount, 0);
 
@@ -313,6 +326,9 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         debitThroughAmount: (d as any).debitThroughAmount || '', debitThroughPayments: (d as any).debitThroughPayments || '',
       })) : [],
       principalBalance: formatCurrencyDisplay(String(record.principalBalance)),
+      currentBalance: record.currentBalance !== undefined && record.currentBalance !== null
+        ? formatCurrencyDisplay(String(record.currentBalance))
+        : '',
       noteRateDisplay: record.noteRateDisplay || noteRate,
       overrideServicing: record.overrideServicing ?? record.overrideServicingFees ?? false,
       companyBaseFee: record.companyBaseFee || record.companyServicingFee || '',
@@ -386,6 +402,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         return <span>{formatCurrency(record.originalAmount)}</span>;
       case 'principalBalance':
         return <span>{formatCurrency(record.principalBalance)}</span>;
+      case 'currentBalance':
+        return <span>{formatCurrency(computeCurrentBalance(record))}</span>;
       case 'pctOwned':
         return <span>{formatPercentage(record.pctOwned)}</span>;
       case 'fundingDate':
@@ -436,6 +454,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         return <span className="font-semibold">{formatCurrency(totalFundingAmount)}</span>;
       case 'principalBalance':
         return <span className="font-semibold">{formatCurrency(totalPrincipalBalance)}</span>;
+      case 'currentBalance':
+        return <span className="font-semibold">{formatCurrency(totalCurrentBalance)}</span>;
       case 'pctOwned':
         return '';
       case 'regularPayment':
@@ -670,6 +690,9 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               lenderRate,
               originalAmount: safeParse(data.fundingAmount),
               principalBalance: safeParse(data.principalBalance || data.fundingAmount),
+              currentBalance: data.currentBalance !== undefined && data.currentBalance !== ''
+                ? safeParse(data.currentBalance)
+                : safeParse(data.fundingAmount),
               pctOwned: safeParse(data.percentOwned),
               regularPayment: safeParse(data.regularPayment),
               lenderShare: safeParse(data.lenderShare),
