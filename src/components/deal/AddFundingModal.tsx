@@ -108,6 +108,7 @@ export interface FundingFormData {
   roundingAdjustment: boolean;
   disbursements: DisbursementRow[];
   principalBalance?: string;
+  currentBalance?: string;
   noteRateDisplay?: string;
   overrideServicing?: boolean;
   companyBaseFee?: string;
@@ -186,7 +187,7 @@ const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: 
   lenderRateOverrideValue: '',
   roundingAdjustment: false,
   disbursements: defaultDisbursements(),
-  principalBalance: '', noteRateDisplay: noteRate,
+  principalBalance: '', currentBalance: '', noteRateDisplay: noteRate,
   overrideServicing: false,
   companyBaseFee: '', companyBaseFeePct: '', companyAdditionalServices: '', companyMinimum: '', companyMaximum: '',
   companyNrSitSplitPct: '', companyNrSitSplit: '', companyTotal: '',
@@ -799,6 +800,10 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[110px] shrink-0">Original Funding</Label>
                 {renderCurrencyInput('fundingAmount', '0.00')}
+              </div>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] font-bold min-w-[110px] shrink-0">Current Balance</Label>
+                {renderCurrencyInput('currentBalance', '0.00')}
               </div>
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Interest From</Label>
