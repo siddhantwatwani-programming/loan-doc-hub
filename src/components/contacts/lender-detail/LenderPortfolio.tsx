@@ -341,6 +341,7 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
           lenderRate,
           maturityDate: maturityDateVal,
           outstandingBalance: lenderBalance,
+          currentBalance: lenderCurrentBalance,
           accruedInterest,
           paymentReceived,
           roiYield,
