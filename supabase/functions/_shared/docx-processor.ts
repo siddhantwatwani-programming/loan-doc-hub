@@ -180,12 +180,30 @@ export async function processDocx(
       // produce the "file could not be opened" error in Word. Orphaned
       // text-run tags from malformed merge-tag substitutions are the
       // historical root cause of corrupted .docx files.
-      for (const tag of ['w:p', 'w:r', 'w:t']) {
+      for (const tag of ['w:p', 'w:r', 'w:t', 'w:sdt']) {
         const opens = countOpens(xml, tag);
         const closes = countCloses(xml, tag);
         if (opens !== closes) {
           throw new Error(
             `DOCX_INTEGRITY: ${partName} has unbalanced <${tag}> tags (open=${opens}, close=${closes})`
+          );
+        }
+      }
+
+      // Namespace-usage check: any prefixed element (w14:/w15:/mc:) is only
+      // valid when the root element of the part declares the matching
+      // xmlns:* attribute. Word rejects the entire package as malformed
+      // otherwise — even when every tag is well-formed and balanced.
+      const head = xml.length > 4096 ? xml.substring(0, 4096) : xml;
+      const nsChecks: Array<[string, RegExp, RegExp]> = [
+        ['w14', /<w14:[A-Za-z]/, /xmlns:w14\s*=\s*"http:\/\/schemas\.microsoft\.com\/office\/word\/2010\/wordml"/i],
+        ['w15', /<w15:[A-Za-z]/, /xmlns:w15\s*=\s*"/i],
+        ['mc', /<mc:[A-Za-z]/, /xmlns:mc\s*=\s*"/i],
+      ];
+      for (const [prefix, usageRe, declRe] of nsChecks) {
+        if (usageRe.test(xml) && !declRe.test(head)) {
+          throw new Error(
+            `DOCX_INTEGRITY: ${partName} uses ${prefix}: but does not declare xmlns:${prefix}`
           );
         }
       }
