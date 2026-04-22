@@ -21,7 +21,7 @@ export interface DisbursementFormData {
   accountId: string;
   name: string;
   debitPercent: string;
-  debitOf: 'Payment' | 'Interest' | 'Principal' | '';
+  debitOf: 'Payment' | 'Interest' | 'Principal' | 'NA' | '';
   plusAmount: string;
   minimumAmount: string;
   maximumAmount: string;
@@ -30,7 +30,7 @@ export interface DisbursementFormData {
   debitThroughDate: string;
   debitThroughAmount: string;
   debitThroughPayments: string;
-  from: 'Payment' | 'Interest' | 'Principal' | '';
+  from: 'Payment' | 'Interest' | 'Principal' | 'NA' | '';
   calculatedAmount: string;
   comments: string;
 }
