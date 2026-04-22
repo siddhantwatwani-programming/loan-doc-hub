@@ -1426,7 +1426,20 @@ async function generateSingleDocument(
       fetchFieldKeyMappings(supabase),
     ]);
     const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
-    const processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+    let processedDocx: Uint8Array;
+    try {
+      processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      // Surface DOCX integrity failures as a real generation failure rather
+      // than uploading a corrupted file that Word will refuse to open.
+      if (message.startsWith("DOCX_INTEGRITY")) {
+        console.error(`[generate-document] DOCX integrity check failed for template ${templateId}: ${message}`);
+        result.error = `Generated document failed integrity check (${message.replace(/^DOCX_INTEGRITY:\s*/, "")}). Please review the template for unbalanced tags or invalid placeholders.`;
+        return result;
+      }
+      throw err;
+    }
 
     debugLog(`[generate-document] Processed DOCX: ${processedDocx.length} bytes`);
 

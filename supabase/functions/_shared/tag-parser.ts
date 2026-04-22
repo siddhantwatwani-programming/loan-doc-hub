@@ -651,6 +651,22 @@ function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/**
+ * Escape characters that have special meaning in XML so resolved field
+ * values cannot break the well-formedness of word/document.xml.
+ * Newlines are converted into a Word in-run line break and a fresh
+ * preserve-space text segment so multi-line values still render correctly.
+ */
+export function escapeXmlValue(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+    .replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
+}
+
 function buildXmlFlexibleLabelPattern(label: string): string {
   const parts = label.split(/\s+/).filter(Boolean).map(escapeRegex);
   if (parts.length === 0) return '';
@@ -1125,6 +1141,17 @@ export function processConditionalBlocks(
     console.warn("[tag-parser] Hit max iterations for conditional processing — possible malformed tags");
   }
 
+  // Safety net: strip any unmatched conditional markers that survived
+  // (e.g. an {{#if x}} with no {{/if}}). Leaving them in place would either
+  // render as literal text or, worse, leave broken paragraph fragments that
+  // can corrupt word/document.xml. We only remove the markers themselves
+  // and keep the surrounding content unchanged.
+  result = result.replace(/\{\{#if\s+[A-Za-z0-9_.]+\}\}/g, "");
+  result = result.replace(/\{\{#unless\s+[A-Za-z0-9_.]+\}\}/g, "");
+  result = result.replace(/\{\{\/if\}\}/g, "");
+  result = result.replace(/\{\{\/unless\}\}/g, "");
+  result = result.replace(/\{\{else\}\}/g, "");
+
   return result;
 }
 
@@ -1371,7 +1398,10 @@ export function processEachBlocks(
             }
           }
 
-          blockContent = blockContent.split(tag[0]).join(resolvedValue);
+          // XML-escape resolved value before injecting into document XML.
+          // Without this, values containing &, <, > break word/document.xml
+          // and Word reports "file could not open".
+          blockContent = blockContent.split(tag[0]).join(escapeXmlValue(resolvedValue));
         }
 
         for (const tag of innerChevronTags) {
@@ -1385,7 +1415,7 @@ export function processEachBlocks(
             resolvedValue = formatByDataType(resolved.data.rawValue, resolved.data.dataType);
           }
 
-          blockContent = blockContent.split(tag[0]).join(resolvedValue);
+          blockContent = blockContent.split(tag[0]).join(escapeXmlValue(resolvedValue));
         }
 
         expandedBlocks.push(blockContent);
@@ -1417,8 +1447,15 @@ export function processEachBlocks(
   }
 
   if (iterations >= MAX_ITERATIONS) {
-    console.warn("[tag-parser] Hit max iterations for {{#each}} processing");
+    console.warn("[tag-parser] Hit max iterations for {{#each}} processing — stripping any remaining unmatched block markers to keep XML valid");
   }
+
+  // Safety net: if any unmatched {{#each ...}} / {{/each}} markers survived
+  // (malformed template, MAX_ITERATIONS hit, etc.), strip the literal markers
+  // so they cannot end up rendered as text or mistaken for XML by Word.
+  // Removing only the markers (not the content between them) preserves layout.
+  result = result.replace(/\{\{#each\s+[A-Za-z0-9_.]+\}\}/g, "");
+  result = result.replace(/\{\{\/each\}\}/g, "");
 
   return result;
 }

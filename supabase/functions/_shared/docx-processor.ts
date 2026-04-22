@@ -122,6 +122,41 @@ export async function processDocx(
   }
 
   const compressed = fflate.zipSync(processedFiles);
+
+  // Defensive integrity check: re-open the produced ZIP and assert that
+  // word/document.xml is well-formed enough to open in Word. If it isn't,
+  // throw a tagged error so the caller can mark the job as failed instead
+  // of uploading a corrupted file that Word will refuse to open.
+  try {
+    const verify = fflate.unzipSync(compressed);
+    const docXmlBytes = verify["word/document.xml"];
+    if (!docXmlBytes) {
+      throw new Error("DOCX_INTEGRITY: word/document.xml missing from generated package");
+    }
+    const docXml = new TextDecoder("utf-8").decode(docXmlBytes);
+    const trimmed = docXml.trim();
+    if (!trimmed.startsWith("<?xml")) {
+      throw new Error("DOCX_INTEGRITY: word/document.xml does not start with <?xml prolog");
+    }
+    if (!trimmed.endsWith("</w:document>")) {
+      throw new Error("DOCX_INTEGRITY: word/document.xml is truncated (missing </w:document>)");
+    }
+    // Cheap well-formedness signal: tag count balance for the most common
+    // structural elements that, when unbalanced, are what causes Word's
+    // "file could not be opened" error.
+    const openP = (docXml.match(/<w:p[\s>]/g) || []).length;
+    const closeP = (docXml.match(/<\/w:p>/g) || []).length;
+    if (openP !== closeP) {
+      throw new Error(`DOCX_INTEGRITY: <w:p> tags unbalanced (open=${openP}, close=${closeP})`);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (!message.startsWith("DOCX_INTEGRITY")) {
+      throw new Error(`DOCX_INTEGRITY: ${message}`);
+    }
+    throw err;
+  }
+
   return compressed;
 }
 
