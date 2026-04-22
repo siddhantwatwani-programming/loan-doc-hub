@@ -215,26 +215,46 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
     );
   };
 
-  const renderPercentField = (key: string, label: string) => (
-    <DirtyFieldWrapper fieldKey={key}>
-      <div className="flex items-center gap-3">
-        <Label className={LABEL_CLASS}>{label}</Label>
-        <div className="relative flex-1">
-          <Input
-            id={key}
-            value={getValue(key)}
-            onChange={(e) => setValue(key, sanitizeInterestInput(e.target.value))}
-            onBlur={() => { const v = normalizeInterestOnBlur(getValue(key), 2); if (v !== getValue(key)) setValue(key, v); }}
-            disabled={disabled}
-            className="h-8 text-sm pr-7"
-            placeholder="0.00"
-            inputMode="decimal"
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+  const [focusedPercentField, setFocusedPercentField] = useState<string | null>(null);
+
+  const formatPercentDisplay = useCallback((val: string) => {
+    if (!val) return "";
+    const stripped = val.replace(/,/g, '');
+    const num = parseFloat(stripped);
+    if (isNaN(num)) return val;
+    return num.toFixed(2);
+  }, []);
+
+  const renderPercentField = (key: string, label: string) => {
+    const isFocused = focusedPercentField === key;
+    const rawValue = getValue(key);
+    const displayValue = isFocused ? rawValue : formatPercentDisplay(rawValue);
+    return (
+      <DirtyFieldWrapper fieldKey={key}>
+        <div className="flex items-center gap-3">
+          <Label className={LABEL_CLASS}>{label}</Label>
+          <div className="relative flex-1">
+            <Input
+              id={key}
+              value={displayValue}
+              onChange={(e) => setValue(key, sanitizeInterestInput(e.target.value))}
+              onFocus={() => setFocusedPercentField(key)}
+              onBlur={() => {
+                setFocusedPercentField(null);
+                const v = normalizeInterestOnBlur(getValue(key), 2);
+                if (v !== getValue(key)) setValue(key, v);
+              }}
+              disabled={disabled}
+              className="h-8 text-sm pr-7"
+              placeholder="0.00"
+              inputMode="decimal"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+          </div>
         </div>
-      </div>
-    </DirtyFieldWrapper>
-  );
+      </DirtyFieldWrapper>
+    );
+  };
 
   const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
 
