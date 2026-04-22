@@ -222,7 +222,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
     const stripped = val.replace(/,/g, '');
     const num = parseFloat(stripped);
     if (isNaN(num)) return val;
-    return num.toFixed(2);
+    return num.toFixed(3);
   }, []);
 
   const renderPercentField = (key: string, label: string) => {
@@ -231,17 +231,13 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
     const displayValue = isFocused ? rawValue : formatPercentDisplay(rawValue);
     return (
       <DirtyFieldWrapper fieldKey={key}>
-        <div className="flex items-center gap-3">
-          <Label className={LABEL_CLASS}>{label}</Label>
-          <div className="relative flex-1">
-            <Input
-              id={key}
+...
               value={displayValue}
               onChange={(e) => setValue(key, sanitizeInterestInput(e.target.value))}
               onFocus={() => setFocusedPercentField(key)}
               onBlur={() => {
                 setFocusedPercentField(null);
-                const v = normalizeInterestOnBlur(getValue(key), 2);
+                const v = normalizeInterestOnBlur(getValue(key), 3);
                 if (v !== getValue(key)) setValue(key, v);
               }}
               disabled={disabled}
