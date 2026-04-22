@@ -49,10 +49,10 @@ export interface DisbursementRow {
   endDate: string;
   amount: string;
   percentage: string;
-  from: 'Interest' | 'Principal' | 'Payment' | '';
+  from: 'Interest' | 'Principal' | 'Payment' | 'NA' | '';
   comments: string;
   debitPercent: string;
-  debitOf: 'Payment' | 'Interest' | 'Principal' | '';
+  debitOf: 'Payment' | 'Interest' | 'Principal' | 'NA' | '';
   plusAmount: string;
   minimumAmount: string;
   maximumAmount: string;
