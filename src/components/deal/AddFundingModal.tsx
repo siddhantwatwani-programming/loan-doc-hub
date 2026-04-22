@@ -1071,6 +1071,11 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                         <th className="text-right py-1 px-1 font-semibold text-muted-foreground">Percentage</th>
                       )}
                       {disbColVisibility.comment && <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Comment</th>}
+                      {customDisbCols.map((c) => (
+                        <th key={c.id} className="text-left py-1 px-1 font-semibold text-muted-foreground">
+                          <span className="truncate inline-block max-w-full" title={c.label}>{c.label}</span>
+                        </th>
+                      ))}
                       <th></th>
                     </tr>
                   </thead>
