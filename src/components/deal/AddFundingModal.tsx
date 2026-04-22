@@ -927,7 +927,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1">
-                      <Columns3 className="h-3 w-3" />
+                      <SlidersHorizontal className="h-3 w-3" />
                       Columns
                     </Button>
                   </PopoverTrigger>
