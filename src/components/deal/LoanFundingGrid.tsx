@@ -279,7 +279,13 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
     );
   };
   const getNetPayment = (record: FundingRecord) => {
-    return Math.max(0, getDisplayedPayment(record) - getDisbursementsTotal(record));
+    // Disbursement amounts are entered against the full loan payment;
+    // each lender's share is reduced by their pro-rata portion (pctOwned).
+    const payment = getDisplayedPayment(record);
+    const disbursementsTotal = getDisbursementsTotal(record);
+    const proRata = (record.pctOwned || 0) / 100;
+    const lenderDisbursementShare = disbursementsTotal * proRata;
+    return Math.max(0, payment - lenderDisbursementShare);
   };
 
   const computeCurrentBalance = (record: FundingRecord): number => {
