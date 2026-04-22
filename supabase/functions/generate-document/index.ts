@@ -1374,6 +1374,32 @@ async function generateSingleDocument(
       aliasSetIfEmpty('ld_p_firstIfEntityUse', 'ld_p_firstName', 'text');
       aliasSetIfEmpty('ld_p_middle', 'ld_p_middleName', 'text');
       aliasSetIfEmpty('ld_p_last', 'ld_p_lastName', 'text');
+
+      // ── Hazardous Materials / Investor Questionnaire vesting rule ──
+      // If Lender Type === "Individual": clear vesting and force the three name
+      // tags to the Individual's first / middle / last name (no vesting prefix).
+      // Otherwise: keep vesting, and append a single trailing space so the
+      // template tag {{ld_p_vesting}}{{ld_p_firstIfEntityUse}}... renders cleanly
+      // without requiring a literal space between the two tags.
+      const lenderTypeRaw = (fieldValues.get('ld_p_lenderType')?.rawValue ?? '').toString().trim();
+      const isIndividual = lenderTypeRaw.toLowerCase() === 'individual';
+
+      if (isIndividual) {
+        fieldValues.set('ld_p_vesting', { rawValue: '', dataType: 'text' });
+
+        const first = fieldValues.get('ld_p_firstName')?.rawValue ?? '';
+        const middle = fieldValues.get('ld_p_middleName')?.rawValue ?? '';
+        const last = fieldValues.get('ld_p_lastName')?.rawValue ?? '';
+        fieldValues.set('ld_p_firstIfEntityUse', { rawValue: String(first), dataType: 'text' });
+        fieldValues.set('ld_p_middle', { rawValue: String(middle), dataType: 'text' });
+        fieldValues.set('ld_p_last', { rawValue: String(last), dataType: 'text' });
+      } else {
+        const vestingRaw = (fieldValues.get('ld_p_vesting')?.rawValue ?? '').toString().trim();
+        fieldValues.set('ld_p_vesting', {
+          rawValue: vestingRaw ? `${vestingRaw} ` : '',
+          dataType: 'text',
+        });
+      }
     }
 
     // Build set of all valid field keys once and reuse it across invocations.
