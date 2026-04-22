@@ -1052,6 +1052,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                     {disbColVisibility.type && <col className="w-[70px]" />}
                     {showPercentageCol && <col className="w-[60px]" />}
                     {disbColVisibility.comment && <col />}
+                    {customDisbCols.map((c) => <col key={c.id} className="w-[100px]" />)}
                     <col className="w-[60px]" />
                   </colgroup>
                   <thead>
