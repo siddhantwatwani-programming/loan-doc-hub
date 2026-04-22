@@ -348,14 +348,15 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   React.useEffect(() => {
     const la = parseFloat(loanAmount) || 0;
     let rate = 0;
-    if (formData.rateSelection === 'note_rate') rate = parseFloat(formData.rateNoteValue) || 0;
+    if (formData.lenderRateOverride) rate = parseFloat(formData.lenderRateOverrideValue || '') || 0;
+    else if (formData.rateSelection === 'note_rate') rate = parseFloat(formData.rateNoteValue) || 0;
     else if (formData.rateSelection === 'sold_rate') rate = parseFloat(formData.rateSoldValue) || 0;
     else if (formData.rateSelection === 'lender_rate') rate = parseFloat(formData.rateLenderValue) || 0;
     const payment = la > 0 && rate > 0 ? (la * (rate / 100) / 12).toFixed(2) : '';
     if (payment !== formData.regularPayment) {
       setFormData(prev => ({ ...prev, regularPayment: payment }));
     }
-  }, [loanAmount, formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
+  }, [loanAmount, formData.lenderRateOverride, formData.lenderRateOverrideValue, formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
 
   // Auto-compute total columns for default fees
   const computeTotal = (lender: string, company: string, broker: string): string => {
@@ -545,10 +546,15 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const handleConfirmSave = () => {
     setShowConfirm(false);
     // Sync new fee fields back to legacy fields for persistence
+    const effectiveRateLenderValue = formData.lenderRateOverride
+      ? (formData.lenderRateOverrideValue || '')
+      : (formData.rateLenderValue || formData.lenderRate || '');
+
     const syncedData: FundingFormData = {
       ...formData,
       loan: loanNumber || formData.loan,
       borrower: borrowerName || formData.borrower,
+      rateLenderValue: effectiveRateLenderValue,
       overrideServicingFees: formData.overrideServicing || formData.overrideServicingFees,
       companyServicingFee: formData.companyBaseFee || formData.companyServicingFee,
       companyServicingFeePct: formData.companyBaseFeePct || formData.companyServicingFeePct,
