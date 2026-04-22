@@ -1436,8 +1436,15 @@ export function processEachBlocks(
   }
 
   if (iterations >= MAX_ITERATIONS) {
-    console.warn("[tag-parser] Hit max iterations for {{#each}} processing");
+    console.warn("[tag-parser] Hit max iterations for {{#each}} processing — stripping any remaining unmatched block markers to keep XML valid");
   }
+
+  // Safety net: if any unmatched {{#each ...}} / {{/each}} markers survived
+  // (malformed template, MAX_ITERATIONS hit, etc.), strip the literal markers
+  // so they cannot end up rendered as text or mistaken for XML by Word.
+  // Removing only the markers (not the content between them) preserves layout.
+  result = result.replace(/\{\{#each\s+[A-Za-z0-9_.]+\}\}/g, "");
+  result = result.replace(/\{\{\/each\}\}/g, "");
 
   return result;
 }
