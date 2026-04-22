@@ -331,8 +331,11 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
 
   const handleAddFunding = useCallback(async (data: FundingFormData) => {
     // Effective saved lender rate uses override value when override is checked.
+    const soldRateVal = (data.rateSoldValue || '').trim();
+    const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
     let lenderRate = 0;
     if (data.lenderRateOverride) lenderRate = parseFloat(data.lenderRateOverrideValue || '') || 0;
+    else if (hasSoldRate) lenderRate = parseFloat(soldRateVal) || 0;
     else if (data.rateSelection === 'note_rate') lenderRate = parseFloat(data.rateNoteValue) || 0;
     else if (data.rateSelection === 'sold_rate') lenderRate = parseFloat(data.rateSoldValue) || 0;
     else if (data.rateSelection === 'lender_rate') lenderRate = parseFloat(data.rateLenderValue) || 0;

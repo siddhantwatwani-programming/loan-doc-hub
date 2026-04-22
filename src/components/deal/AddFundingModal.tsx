@@ -299,6 +299,21 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     }
   }, [open, editData, draftKey]);
 
+  React.useEffect(() => {
+    if (!open) return;
+
+    setFormData((prev) => {
+      const nextSoldRate = (soldRate || '').trim();
+      if (prev.rateSoldValue === nextSoldRate) return prev;
+
+      return {
+        ...prev,
+        rateSoldValue: nextSoldRate,
+        lenderRate: nextSoldRate || prev.lenderRate,
+      };
+    });
+  }, [open, soldRate]);
+
   // Auto-save in-progress form to sessionStorage on every change (so tab-switch/close keeps the draft).
   // Cleared explicitly on successful save (handleConfirmSave) — Cancel keeps the draft so user can resume.
   React.useEffect(() => {
@@ -347,8 +362,11 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   // Regular Payment calculation
   React.useEffect(() => {
     const la = parseFloat(loanAmount) || 0;
+    const soldRateVal = (formData.rateSoldValue || '').trim();
+    const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
     let rate = 0;
     if (formData.lenderRateOverride) rate = parseFloat(formData.lenderRateOverrideValue || '') || 0;
+    else if (hasSoldRate) rate = parseFloat(soldRateVal) || 0;
     else if (formData.rateSelection === 'note_rate') rate = parseFloat(formData.rateNoteValue) || 0;
     else if (formData.rateSelection === 'sold_rate') rate = parseFloat(formData.rateSoldValue) || 0;
     else if (formData.rateSelection === 'lender_rate') rate = parseFloat(formData.rateLenderValue) || 0;
@@ -546,8 +564,12 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const handleConfirmSave = () => {
     setShowConfirm(false);
     // Sync new fee fields back to legacy fields for persistence
+    const soldRateVal = (formData.rateSoldValue || '').trim();
+    const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
     const effectiveRateLenderValue = formData.lenderRateOverride
       ? (formData.lenderRateOverrideValue || '')
+      : hasSoldRate
+        ? soldRateVal
       : (formData.rateLenderValue || formData.lenderRate || '');
 
     const syncedData: FundingFormData = {
