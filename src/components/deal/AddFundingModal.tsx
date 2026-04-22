@@ -879,7 +879,12 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 </Button>
               </div>
             </div>
-            {formData.disbursements.length > 0 && (
+            {formData.disbursements.length > 0 && (() => {
+              const showEndDateCol = formData.disbursements.some(
+                (r) => (r.endDate && r.endDate.trim() !== '') ||
+                       (r.debitThrough === 'date' && r.debitThroughDate && r.debitThroughDate.trim() !== '')
+              );
+              return (
               <div className="overflow-x-auto border border-border rounded">
                 <table className="w-full text-[11px] table-fixed">
                   <colgroup>
@@ -887,7 +892,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                     <col className="w-[80px]" />
                     <col className="w-[100px]" />
                     <col className="w-[90px]" />
-                    <col className="w-[90px]" />
+                    {showEndDateCol && <col className="w-[90px]" />}
                     <col className="w-[80px]" />
                     <col className="w-[90px]" />
                     <col className="w-[70px]" />
@@ -901,7 +906,9 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Account ID</th>
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Name</th>
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Start Date</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground">End Date</th>
+                      {showEndDateCol && (
+                        <th className="text-left py-1 px-1 font-semibold text-muted-foreground">End Date</th>
+                      )}
                       <th className="text-right py-1 px-1 font-semibold text-muted-foreground">Amount</th>
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Debit Through</th>
                       <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Type</th>
@@ -925,7 +932,9 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                         <td className="py-0.5 px-1 text-[10px]">{row.accountId || '-'}</td>
                         <td className="py-0.5 px-1 text-[10px]">{row.name || '-'}</td>
                         <td className="py-0.5 px-1 text-[10px]">{row.startDate ? format(new Date(row.startDate), 'MM/dd/yyyy') : '-'}</td>
-                        <td className="py-0.5 px-1 text-[10px]">{row.endDate ? format(new Date(row.endDate), 'MM/dd/yyyy') : (row.debitThrough === 'date' && row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-')}</td>
+                        {showEndDateCol && (
+                          <td className="py-0.5 px-1 text-[10px]">{row.endDate ? format(new Date(row.endDate), 'MM/dd/yyyy') : (row.debitThrough === 'date' && row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-')}</td>
+                        )}
                         <td className="py-0.5 px-1 text-[10px] text-right">{row.amount ? `$${row.amount}` : '-'}</td>
                         <td className="py-0.5 px-1 text-[10px]">
                           {row.debitThrough === 'date' ? (row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-') :
@@ -961,7 +970,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   </tbody>
                 </table>
               </div>
-            )}
+              );
+            })()}
             {formData.disbursements.length === 0 && (
               <p className="text-[10px] text-muted-foreground italic py-1">No disbursements added.</p>
             )}
