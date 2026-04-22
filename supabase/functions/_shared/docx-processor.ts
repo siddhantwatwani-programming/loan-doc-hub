@@ -54,6 +54,59 @@ function hasLikelyMergeWork(xml: string, labelMap: Record<string, LabelMapping>)
   });
 }
 
+const W14_NS = 'http://schemas.microsoft.com/office/word/2010/wordml';
+
+/**
+ * If the processed XML contains any w14:* token (typically introduced by
+ * convertGlyphsToSdtCheckboxes injecting <w14:checkbox> blocks) but the
+ * part's root element does not declare the w14 namespace, inject the
+ * declaration into the root opening tag. Without this, Google Docs and
+ * strict XML parsers reject the file as namespace-invalid even though
+ * Word's tolerant parser may still open it.
+ *
+ * This is a localized string edit on the root opening tag only — it does
+ * NOT change content, formatting, layout, or template structure.
+ */
+function ensureW14Namespace(xml: string, partName: string): string {
+  // Quick exit: no w14: usage means no injection needed.
+  if (!/(<|\s)w14:/.test(xml)) return xml;
+
+  // Determine root element name for this part.
+  let rootName: string | null = null;
+  if (partName === 'word/document.xml') rootName = 'w:document';
+  else if (partName.startsWith('word/header')) rootName = 'w:hdr';
+  else if (partName.startsWith('word/footer')) rootName = 'w:ftr';
+  else if (partName.startsWith('word/footnotes')) rootName = 'w:footnotes';
+  else if (partName.startsWith('word/endnotes')) rootName = 'w:endnotes';
+  if (!rootName) return xml;
+
+  // Match the root opening tag (first occurrence).
+  const rootOpenRegex = new RegExp(`<${rootName.replace(':', '\\:')}\\b([^>]*)>`);
+  const match = xml.match(rootOpenRegex);
+  if (!match) return xml;
+
+  const attrs = match[1] || '';
+  // If w14 already declared, no-op.
+  if (/\bxmlns:w14\s*=/.test(attrs)) return xml;
+
+  // Inject xmlns:w14 (and add w14 to mc:Ignorable if present so older
+  // readers ignore the new prefix gracefully).
+  let newAttrs = attrs + ` xmlns:w14="${W14_NS}"`;
+  const ignorableMatch = newAttrs.match(/\bmc:Ignorable\s*=\s*"([^"]*)"/);
+  if (ignorableMatch) {
+    const tokens = ignorableMatch[1].split(/\s+/).filter(Boolean);
+    if (!tokens.includes('w14')) {
+      tokens.push('w14');
+      newAttrs = newAttrs.replace(
+        /\bmc:Ignorable\s*=\s*"[^"]*"/,
+        `mc:Ignorable="${tokens.join(' ')}"`
+      );
+    }
+  }
+
+  return xml.replace(rootOpenRegex, `<${rootName}${newAttrs}>`);
+}
+
 export async function processDocx(
   docxBuffer: Uint8Array,
   fieldValues: Map<string, FieldValueData>,
@@ -88,6 +141,11 @@ export async function processDocx(
         }
 
         let processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+
+        // If the post-pass injected w14:* (e.g. <w14:checkbox>) into a part
+        // whose root does not declare the w14 namespace, inject the
+        // declaration. Required for Google Docs / strict parsers to open.
+        processedXml = ensureW14Namespace(processedXml, filename);
 
         // Post-process: ensure Signature paragraph has a page break before it,
         // but ONLY if the original template already contains page breaks or section
@@ -187,6 +245,37 @@ export async function processDocx(
           throw new Error(
             `DOCX_INTEGRITY: ${partName} has unbalanced <${tag}> tags (open=${opens}, close=${closes})`
           );
+        }
+      }
+
+      // Reject any leftover \uFFFD or SDT placeholder markers — internal
+      // artifacts of convertGlyphsToSdtCheckboxes that must never reach the
+      // output. Google Docs rejects \uFFFD inside element / attribute names.
+      if (xml.includes('\uFFFD')) {
+        throw new Error(`DOCX_INTEGRITY: ${partName} contains stray U+FFFD replacement char`);
+      }
+      if (xml.includes('_SDT_PLACEHOLDER_')) {
+        throw new Error(`DOCX_INTEGRITY: ${partName} contains unrestored SDT placeholder marker`);
+      }
+
+      // If this part uses the w14 prefix anywhere, its root element MUST
+      // declare xmlns:w14. Without it, the file is namespace-invalid and
+      // Google Docs / strict parsers will refuse to open it.
+      if (/(<|\s)w14:/.test(xml)) {
+        let rootOpenRegex: RegExp | null = null;
+        if (partName === "word/document.xml") rootOpenRegex = /<w:document\b([^>]*)>/;
+        else if (partName.startsWith("word/header")) rootOpenRegex = /<w:hdr\b([^>]*)>/;
+        else if (partName.startsWith("word/footer")) rootOpenRegex = /<w:ftr\b([^>]*)>/;
+        else if (partName.startsWith("word/footnotes")) rootOpenRegex = /<w:footnotes\b([^>]*)>/;
+        else if (partName.startsWith("word/endnotes")) rootOpenRegex = /<w:endnotes\b([^>]*)>/;
+
+        if (rootOpenRegex) {
+          const m = xml.match(rootOpenRegex);
+          if (!m || !/\bxmlns:w14\s*=/.test(m[1] || '')) {
+            throw new Error(
+              `DOCX_INTEGRITY: ${partName} uses w14:* but root element is missing xmlns:w14 declaration`
+            );
+          }
         }
       }
     }
