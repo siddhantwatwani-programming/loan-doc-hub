@@ -985,8 +985,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                         </label>
                       ))}
                     </div>
-
-                    </div>
                   </PopoverContent>
                 </Popover>
                 <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" onClick={handleAddDisbursement}>
