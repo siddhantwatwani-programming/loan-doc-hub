@@ -585,12 +585,35 @@ function buildSdtCheckboxXml(isChecked: boolean, rPr?: string): string {
 }
 
 /**
+ * Returns true only when the root element of this XML part declares the
+ * w14 namespace. Headers/footers/footnotes/endnotes frequently omit it, in
+ * which case any injected <w14:checkbox> markup would make Word reject the
+ * entire .docx with a generic "File could not open" error.
+ */
+export function xmlPartDeclaresW14(xml: string): boolean {
+  // Only inspect the first ~4KB — the root element's attribute list is
+  // always near the top of the part. Avoids scanning massive bodies.
+  const head = xml.length > 4096 ? xml.substring(0, 4096) : xml;
+  return /xmlns:w14\s*=\s*"http:\/\/schemas\.microsoft\.com\/office\/word\/2010\/wordml"/i.test(head);
+}
+
+/**
  * Post-processing pass: convert any <w:r> whose <w:t> contains ONLY a
  * checkbox glyph (☐, ☑, or ☒) into a native Word SDT checkbox.
  * This runs after all merge-tag and label-based replacements are complete,
  * so every checkbox glyph — regardless of origin — becomes interactive.
+ *
+ * IMPORTANT: SDT checkboxes use the w14: namespace, which is only valid in
+ * XML parts that declare xmlns:w14 on the root element. When `declaresW14`
+ * is false (typical for headers/footers/footnotes/endnotes), this function
+ * leaves the original glyph runs untouched so the resulting document
+ * remains a valid Open XML package. The visual checkbox character is
+ * preserved exactly as it appeared in the template.
  */
-function convertGlyphsToSdtCheckboxes(xml: string): string {
+function convertGlyphsToSdtCheckboxes(xml: string, declaresW14: boolean = true): string {
+  if (!declaresW14) {
+    return xml;
+  }
   let count = 0;
   // Match a <w:r> that contains an optional <w:rPr> and a <w:t> with only a checkbox glyph
   const runWithGlyphOnly = /<w:r\b[^>]*>((?:\s*<w:rPr>([\s\S]*?)<\/w:rPr>)?)\s*<w:t[^>]*>([☐☑☒])<\/w:t>\s*<\/w:r>/g;
