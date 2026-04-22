@@ -690,6 +690,9 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
               lenderRate,
               originalAmount: safeParse(data.fundingAmount),
               principalBalance: safeParse(data.principalBalance || data.fundingAmount),
+              currentBalance: data.currentBalance !== undefined && data.currentBalance !== ''
+                ? safeParse(data.currentBalance)
+                : safeParse(data.fundingAmount),
               pctOwned: safeParse(data.percentOwned),
               regularPayment: safeParse(data.regularPayment),
               lenderShare: safeParse(data.lenderShare),
