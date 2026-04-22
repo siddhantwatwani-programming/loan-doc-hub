@@ -502,8 +502,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     });
   };
 
-  // Toggle for Percentage column visibility
-  const [showPercentageCol, setShowPercentageCol] = useState(false);
+  // Percentage column is always visible
+  const showPercentageCol = true;
 
   // Per-column visibility toggles for Disbursements grid
   const [disbColVisibility, setDisbColVisibility] = useState({
