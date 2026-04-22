@@ -1,59 +1,75 @@
 
 
-## Fix: Investor Questionnaire (DL‑20260‑0212 / RE 870) generates a corrupted DOCX
+## Fix: RE851A (DL‑20260‑0212) generates a corrupted .docx
 
-### Root‑cause direction
+### Root cause
 
-The generation pipeline reports `success` and uploads bytes, but Word reports the file is unreadable. That always means the produced `word/document.xml` is no longer well‑formed XML, or the ZIP package is missing a part. For the Investor Questionnaire specifically, three recently‑touched areas are the realistic causes:
+Looking at `supabase/functions/_shared/tag-parser.ts`, the previous round of changes added `escapeXmlValue()` which converts `\n` into a literal Word fragment:
 
-1. **Replacement values containing unescaped XML characters** (`&`, `<`, `>`, `"`) — investor names, company names, addresses, descriptions can contain `&` (e.g. "Smith & Jones"), which silently breaks `word/document.xml`.
-2. **Unbalanced / leftover Handlebars blocks** in the RE 870 template (`{{#if …}}` without a matching `{{/if}}`, or stray `{{else}}`) — the conditional processor in `tag-parser.ts` can over‑consume runs and leave malformed XML.
-3. **Merge‑tag aliases added in `20260415170501_…sql`** (`ld_p_investorQuestiDueDate`, `ld_p_lenderType`, `lender.investor_questionnaire_due_date`, etc.) resolving to unexpected values that break a structured Word table cell.
+```
+</w:t><w:br/><w:t xml:space="preserve">
+```
 
-### What I will do (read → diagnose → fix → verify)
+This fragment is then injected at every value-substitution site, including:
 
-1. **Reproduce & capture the bad bytes** — pull the latest generated artifact (`generated-docs/<dealId>/d25cc037…_v8_*.docx`) using the service‑role client inside a small one‑shot edge function call, unzip it, and run `xmllint --noout` on `word/document.xml`. Identify the exact line/column the parser rejects. Also unzip the source template (`templates/1776276673127_re870_…docx`) and confirm it opens cleanly and that all `{{ … }}` and `«…»` tags are well‑formed and balanced.
+1. `processEachBlocks` (split/join replacement of resolved values)
+2. The main `replaceMergeTags` loop for `{{tag}}` / `«tag»`
+3. Label-based `replaceNext` substitutions
+4. Resolved values inside `{{#if}}` / `{{#unless}}` blocks
 
-2. **Patch the replacement pipeline so values are XML‑safe** in `supabase/functions/_shared/tag-parser.ts` (and `formatting.ts` if needed):
-   - Centralize a single `escapeXml(value)` helper (`& → &amp;`, `< → &lt;`, `> → &gt;`, `" → &quot;`, `' → &apos;`).
-   - Apply it inside `replaceMergeTags` for **every** value path: curly `{{tag}}`, chevron `«tag»`, label‑based mapping, conditional resolved string, and any `replaceNext` substitution for merge_tag_aliases. This is the minimum change required and does not alter formatting or layout.
-   - Verify checkboxes / SDT replacement (`formatCheckbox`) still emit valid XML — they already use literal characters, so they remain unchanged.
+The fragment is **only valid if the substitution site is already inside a `<w:t>` element**. For RE851A, several merge tags in the template sit inside table cells, header/footer parts, and inside SDT (structured document tag) wrappers where the surrounding XML is `<w:r><w:rPr>…</w:rPr><w:t>{{tag}}</w:t></w:r>` for some, but for others the tag was split across runs and the cleanup pipeline leaves the substitution **outside** an open `<w:t>`. When that happens, the engine emits an orphan `</w:t>` and an opening `<w:t xml:space="preserve">` with no matching close, which:
 
-3. **Harden conditional / each block parsing for the RE 870 template**:
-   - In `tag-parser.ts`, when an `{{#if x}}` / `{{#unless x}}` / `{{#each x}}` opener has no matching closer in the same paragraph or section, fall back to **leaving the original text unchanged** instead of consuming runs across the rest of the document. This prevents one malformed tag from destroying the document body.
-   - Log the offending tag name to `console.warn` so the next regeneration surfaces the bad placeholder by name (no behavior change for valid templates).
+- silently passes the existing integrity check (it only counts `<w:p>` open vs close), and
+- causes Word to reject the file with "File could not open. Try refreshing the page."
 
-4. **Fix the RE 870 template tags themselves** (only if step 1 proves they are malformed):
-   - Re‑open `1776276673127_re870_-_Investor_Questionnaire_-_Field_Key_mapping.docx`, normalize fragmented tags, ensure every `{{`/`}}` is balanced, replace unsupported placeholder names with their canonical `field_dictionary` keys (e.g. `{{ld_p_investorQuestiDueDate}}`), and re‑upload via `upload-template` (which already validates structure).
-   - Do not change visible text, formatting, or layout.
+The two known-broken generations for deal `b097983c-…` (`d25cc037…_v1` and `_v2`) are both persisted as `generation_status='success'` with no `error_message`, confirming the integrity check is too permissive.
 
-5. **Add a defensive ZIP‑integrity check** at the end of `processDocx` in `supabase/functions/_shared/docx-processor.ts`:
-   - After `fflate.zipSync`, re‑parse the produced bytes with `fflate.unzipSync` and assert that `word/document.xml` parses as XML (lightweight check: must start with `<?xml` and end with `</w:document>`).
-   - If the check fails, mark the `generated_documents` row as `failed` with a clear `error_message` instead of uploading a corrupt file. Existing successful generations are unaffected.
+### Fix (minimal, surgical)
 
-6. **Verify**:
-   - Regenerate the Investor Questionnaire for the deal in the screenshots (`b097983c-…`), download the `.docx`, open it with `unzip -p output.docx word/document.xml | xmllint --noout -`, then convert to PDF via LibreOffice and inspect the first three pages as images.
-   - Confirm: file opens in Word, all mapped fields populate, layout unchanged, empty fields render blank (not `{{tag}}`), and special characters like `&` in lender names appear correctly.
+1. **`supabase/functions/_shared/tag-parser.ts`** — make newline handling context-safe:
+   - Remove the unconditional `\n → </w:t><w:br/><w:t xml:space="preserve">` replacement from the central `escapeXmlValue()` helper. `escapeXmlValue()` will only escape `&`, `<`, `>`, `"`, `'` (the part that fixed the Investor Questionnaire `&` bug — kept).
+   - At each substitution site (`processEachBlocks` lines ~1404 & ~1418, main loop lines ~1571–1577, label/`replaceNext` site), detect whether the replacement is inside an open `<w:t>` run by inspecting the surrounding XML window. Only when it is, emit the `</w:t><w:br/><w:t xml:space="preserve">` form for newlines; otherwise replace `\n` with a single space.
+   - This preserves multi-line rendering for values that legitimately appear inside text runs (Lender name with embedded newline, etc.) and removes the only known way our pipeline produces orphan `</w:t>`/missing `<w:t>` tags.
+
+2. **`supabase/functions/_shared/docx-processor.ts`** — strengthen the post-zip integrity check so a future regression cannot ship a broken .docx as `success`:
+   - Keep existing prolog/epilog/`<w:p>` balance guards.
+   - Add `<w:r>` and `<w:t>` open/close balance checks (handle `<w:r/>` and `<w:t/>` self-closing forms).
+   - On failure, throw `DOCX_INTEGRITY: <reason>` (existing handler in `generate-document/index.ts` already maps this to `generation_status='failed'` + `error_message`, instead of uploading a corrupt file).
+
+3. **One-shot data cleanup** — mark the two known-broken `generated_documents` rows for deal `b097983c-…` as `failed` so the UI stops serving them as openable downloads:
+   ```sql
+   UPDATE generated_documents
+      SET generation_status = 'failed',
+          error_message = 'Regenerate — file failed XML integrity (Word reported "could not open").'
+    WHERE deal_id = 'b097983c-b183-49b7-b7b8-83570972bfdb'
+      AND template_id = (SELECT id FROM document_templates WHERE name ILIKE '%RE851A%' OR name ILIKE '%re_851a%' LIMIT 1)
+      AND generation_status = 'success'
+      AND created_at > now() - interval '7 days';
+   ```
+   No schema change.
+
+4. **Verify**:
+   - Regenerate RE851A for `DL-20260-0212`. Download the .docx, run `unzip -p file.docx word/document.xml | xmllint --noout -` (must exit 0). Open in LibreOffice and confirm the file opens with no error and layout is byte-identical to before.
+   - Spot-check Investor Questionnaire (RE 870), RE 885, Addendum to LPDS, and Allonge — confirm they continue to generate and open identically.
+   - Confirm a value containing both `&` and `\n` (e.g. a multi-line lender name "Smith & Jones\nTrust") still renders correctly inside a body paragraph and does not corrupt the file when present in a header cell.
 
 ### Files that will be edited
 
-- `supabase/functions/_shared/tag-parser.ts` — add `escapeXml` to all value substitution sites; safer fallback for unbalanced conditional blocks.
-- `supabase/functions/_shared/docx-processor.ts` — post‑zip integrity check; on failure return an error instead of corrupted bytes.
-- `supabase/functions/generate-document/index.ts` — when `processDocx` throws the new integrity error, persist `generation_status = 'failed'` with `error_message` so the UI shows a real error rather than serving a broken file.
-- (Conditional) Re‑upload `templates/1776276673127_re870_-_Investor_Questionnaire_-_Field_Key_mapping.docx` if step 1 finds malformed tags inside the template itself.
+- `supabase/functions/_shared/tag-parser.ts` — context-aware newline handling at 4 substitution sites; `escapeXmlValue` no longer emits XML for `\n`.
+- `supabase/functions/_shared/docx-processor.ts` — extend integrity check with `<w:r>` and `<w:t>` balance.
+- One-shot SQL update on the two known-broken `generated_documents` rows.
 
-### What will NOT change
+### Why the template formatting remains unchanged
 
-- No database schema changes.
-- No changes to existing field_dictionary entries, merge_tag_aliases rows, RLS, permissions, packet logic, PDF conversion, signature page‑break injection, or any other template's behavior.
-- No UI, layout, route, or component changes.
-- All other templates continue to generate exactly as today.
+- No edits to the `.docx` template stored in the `templates` bucket.
+- No edits to `field_dictionary`, `merge_tag_aliases`, packet logic, signature page-break injection, checkbox SDT logic, formatting helpers, PDF conversion, or any field mapping.
+- Substitutions still produce identical output for every value that does not contain a `\n`. For values that do contain `\n` and sit inside a `<w:t>` run, output is byte-identical to today. The only behavioral change is for values containing `\n` that are substituted outside a text run — those previously corrupted the file; they now render as a space.
 
 ### Acceptance verification
 
-- ✅ `unzip -p generated.docx word/document.xml | xmllint --noout -` exits 0.
-- ✅ Word and LibreOffice open the file with no "could not open / refresh the page" error.
-- ✅ Mapped Investor Questionnaire fields render correctly; unmapped fields render empty.
-- ✅ Lender/investor names containing `&`, `<`, `>` no longer corrupt the file.
-- ✅ Existing templates (RE 851A, RE 885, Addendum to LPDS, etc.) still generate and open identically.
+- ✅ RE851A for `DL-20260-0212` opens in Microsoft Word and LibreOffice with no error.
+- ✅ Layout, styling, spacing, and mapping are unchanged from the current template.
+- ✅ `xmllint --noout word/document.xml` exits 0 on the regenerated file.
+- ✅ All other templates (RE 870 Investor Questionnaire, RE 885, Addendum to LPDS, Allonge, etc.) still generate and open identically.
+- ✅ Any future regression that produces malformed XML is persisted as `failed` with a descriptive `error_message`, not served as a downloadable broken file.
 
