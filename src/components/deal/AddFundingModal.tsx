@@ -797,7 +797,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 {renderDateField(fundingDate, (d) => handleChange('fundingDate', d ? format(d, 'yyyy-MM-dd') : ''), fundingDateOpen, setFundingDateOpen)}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Amount</Label>
+                <Label className="text-[11px] font-bold min-w-[110px] shrink-0">Original Funding</Label>
                 {renderCurrencyInput('fundingAmount', '0.00')}
               </div>
               <div className="flex items-center gap-1">
