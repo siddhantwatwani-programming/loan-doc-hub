@@ -592,8 +592,11 @@ function buildSdtCheckboxXml(isChecked: boolean, rPr?: string): string {
  */
 function convertGlyphsToSdtCheckboxes(xml: string): string {
   let count = 0;
-  // Match a <w:r> that contains an optional <w:rPr> and a <w:t> with only a checkbox glyph
-  const runWithGlyphOnly = /<w:r\b[^>]*>((?:\s*<w:rPr>([\s\S]*?)<\/w:rPr>)?)\s*<w:t[^>]*>([☐☑☒])<\/w:t>\s*<\/w:r>/g;
+  // Match ONLY a single run whose content is exactly: optional <w:rPr>, one
+  // checkbox glyph text node, then closing </w:r>. The prior pattern could
+  // overrun across many paragraphs until the first glyph in the document,
+  // corrupting existing <w:sdt> blocks in RE851A.
+  const runWithGlyphOnly = /<w:r\b[^>]*>\s*(?:<w:rPr>((?:(?!<\/w:rPr>|<w:r\b|<w:p\b|<w:tbl\b)[\s\S])*?)<\/w:rPr>)?\s*<w:t[^>]*>([☐☑☒])<\/w:t>\s*<\/w:r>/g;
 
   // To avoid nesting <w:sdt> inside existing <w:sdt> (which corrupts the document),
   // extract existing SDT blocks using depth-aware matching, process the remaining
