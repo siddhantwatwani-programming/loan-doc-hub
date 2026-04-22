@@ -954,14 +954,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-bold underline text-foreground">Disbursements from Lender Proceeds</p>
               <div className="flex items-center gap-2">
-                <label className="flex items-center gap-1 text-[10px] cursor-pointer">
-                  <Checkbox
-                    checked={showPercentageCol}
-                    onCheckedChange={(checked) => setShowPercentageCol(!!checked)}
-                    className="h-3.5 w-3.5"
-                  />
-                  Show %
-                </label>
+
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1">
