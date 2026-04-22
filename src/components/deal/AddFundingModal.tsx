@@ -676,10 +676,11 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                           }
                         }}
                         onKeyDown={numericKeyDown}
-                        className="h-6 text-[11px] pr-4"
+                        className={cn("h-6 text-[11px] pr-4", lenderRateDisabled && "opacity-60 bg-muted cursor-not-allowed")}
                         inputMode="decimal"
                         placeholder="%"
                         disabled={lenderRateDisabled}
+                        readOnly={lenderRateDisabled}
                       />
                       <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
                     </div>
