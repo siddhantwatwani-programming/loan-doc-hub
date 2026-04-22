@@ -924,6 +924,48 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   />
                   Show %
                 </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1">
+                      <Columns3 className="h-3 w-3" />
+                      Columns
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-48 p-2 z-[9999]">
+                    <p className="text-[11px] font-semibold mb-2 text-foreground">Show / Hide Columns</p>
+                    <div className="space-y-1.5">
+                      {([
+                        ['active', 'Active'],
+                        ['accountId', 'Account ID'],
+                        ['name', 'Name'],
+                        ['startDate', 'Start Date'],
+                        ['amount', 'Amount'],
+                        ['debitThrough', 'Debit Through'],
+                        ['type', 'Type'],
+                        ['comment', 'Comment'],
+                      ] as const).map(([key, label]) => (
+                        <label key={key} className="flex items-center gap-2 text-[11px] cursor-pointer hover:text-foreground text-muted-foreground">
+                          <Checkbox
+                            checked={disbColVisibility[key]}
+                            onCheckedChange={() => toggleDisbCol(key)}
+                            className="h-3.5 w-3.5"
+                          />
+                          {label}
+                        </label>
+                      ))}
+                      <div className="border-t border-border pt-1.5 mt-1.5">
+                        <label className="flex items-center gap-2 text-[11px] cursor-pointer hover:text-foreground text-muted-foreground">
+                          <Checkbox
+                            checked={showPercentageCol}
+                            onCheckedChange={(checked) => setShowPercentageCol(!!checked)}
+                            className="h-3.5 w-3.5"
+                          />
+                          Percentage
+                        </label>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" onClick={handleAddDisbursement}>
                   <Plus className="h-3 w-3" />
                   Add Disbursement
