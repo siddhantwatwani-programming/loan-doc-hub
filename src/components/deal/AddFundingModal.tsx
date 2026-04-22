@@ -295,16 +295,26 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     } catch { /* ignore quota errors */ }
   }, [formData, open, draftKey]);
 
-  // Compute lenderRate from rate selection
+  // Compute lenderRate.
+  // Priority: if a Sold Rate exists on the loan AND override is OFF, lenderRate is forced
+  // to the Sold Rate (and the field is disabled in the UI). When override is ON, we keep
+  // whatever the user types (rateLenderValue) — but the prefilled value remains visible
+  // until they change it.
   React.useEffect(() => {
+    const soldRateVal = (formData.rateSoldValue || '').trim();
+    const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
+
     let rate = '';
-    if (formData.rateSelection === 'note_rate') rate = formData.rateNoteValue;
+    if (hasSoldRate && !formData.lenderRateOverride) {
+      rate = soldRateVal;
+    } else if (formData.rateSelection === 'note_rate') rate = formData.rateNoteValue;
     else if (formData.rateSelection === 'sold_rate') rate = formData.rateSoldValue;
     else if (formData.rateSelection === 'lender_rate') rate = formData.rateLenderValue;
+
     if (rate !== formData.lenderRate) {
       setFormData(prev => ({ ...prev, lenderRate: rate }));
     }
-  }, [formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
+  }, [formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue, formData.lenderRateOverride]);
 
   // Auto-compute Percent Owned
   React.useEffect(() => {
