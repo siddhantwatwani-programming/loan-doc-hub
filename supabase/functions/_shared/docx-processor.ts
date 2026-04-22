@@ -124,40 +124,70 @@ export async function processDocx(
   const compressed = fflate.zipSync(processedFiles);
 
   // Defensive integrity check: re-open the produced ZIP and assert that
-  // word/document.xml is well-formed enough to open in Word. If it isn't,
-  // throw a tagged error so the caller can mark the job as failed instead
-  // of uploading a corrupted file that Word will refuse to open.
+  // EVERY processed content-bearing XML part is well-formed enough for
+  // Word to open. The previous version only checked word/document.xml,
+  // which let malformed headers/footers/footnotes/endnotes through and
+  // caused Word's "file could not be opened" error on download.
   try {
     const verify = fflate.unzipSync(compressed);
+    const verifyDecoder = new TextDecoder("utf-8");
+
     const docXmlBytes = verify["word/document.xml"];
     if (!docXmlBytes) {
       throw new Error("DOCX_INTEGRITY: word/document.xml missing from generated package");
     }
-    const docXml = new TextDecoder("utf-8").decode(docXmlBytes);
-    const trimmed = docXml.trim();
-    if (!trimmed.startsWith("<?xml")) {
-      throw new Error("DOCX_INTEGRITY: word/document.xml does not start with <?xml prolog");
-    }
-    if (!trimmed.endsWith("</w:document>")) {
-      throw new Error("DOCX_INTEGRITY: word/document.xml is truncated (missing </w:document>)");
-    }
-    // Cheap well-formedness signal: tag count balance for the most common
-    // structural elements that, when unbalanced, are what causes Word's
-    // "file could not be opened" error. We check <w:p>, <w:r>, and <w:t>
-    // because orphaned text-run tags (introduced by malformed merge-tag
-    // substitutions) are the historical root cause of corrupted .docx files.
-    const countOpens = (tag: string) => {
-      // Match `<tag>` or `<tag ...>` but NOT `<tag/>` self-closing.
-      const re = new RegExp(`<${tag}(\\s[^>]*[^/])?>`, 'g');
-      return (docXml.match(re) || []).length;
-    };
-    const countCloses = (tag: string) => (docXml.match(new RegExp(`</${tag}>`, 'g')) || []).length;
 
-    for (const tag of ['w:p', 'w:r', 'w:t']) {
-      const opens = countOpens(tag);
-      const closes = countCloses(tag);
-      if (opens !== closes) {
-        throw new Error(`DOCX_INTEGRITY: <${tag}> tags unbalanced (open=${opens}, close=${closes})`);
+    // Identify every content-bearing XML part we may have edited. This
+    // mirrors the isContentPart filter above.
+    const contentPartNames = Object.keys(verify).filter((filename) =>
+      filename === "word/document.xml" ||
+      filename.startsWith("word/header") ||
+      filename.startsWith("word/footer") ||
+      filename.startsWith("word/footnotes") ||
+      filename.startsWith("word/endnotes")
+    ).filter((filename) => filename.endsWith(".xml"));
+
+    const countOpens = (xml: string, tag: string) => {
+      const re = new RegExp(`<${tag}(\\s[^>]*[^/])?>`, 'g');
+      return (xml.match(re) || []).length;
+    };
+    const countCloses = (xml: string, tag: string) =>
+      (xml.match(new RegExp(`</${tag}>`, 'g')) || []).length;
+
+    for (const partName of contentPartNames) {
+      const bytes = verify[partName];
+      if (!bytes) continue;
+      const xml = verifyDecoder.decode(bytes);
+      const trimmed = xml.trim();
+
+      if (!trimmed.startsWith("<?xml")) {
+        throw new Error(`DOCX_INTEGRITY: ${partName} does not start with <?xml prolog`);
+      }
+
+      // Determine the expected closing root element for this part.
+      let rootClose: string | null = null;
+      if (partName === "word/document.xml") rootClose = "</w:document>";
+      else if (partName.startsWith("word/header")) rootClose = "</w:hdr>";
+      else if (partName.startsWith("word/footer")) rootClose = "</w:ftr>";
+      else if (partName.startsWith("word/footnotes")) rootClose = "</w:footnotes>";
+      else if (partName.startsWith("word/endnotes")) rootClose = "</w:endnotes>";
+
+      if (rootClose && !trimmed.endsWith(rootClose)) {
+        throw new Error(`DOCX_INTEGRITY: ${partName} is truncated (missing ${rootClose})`);
+      }
+
+      // Tag-balance check on the structural elements that, when unbalanced,
+      // produce the "file could not be opened" error in Word. Orphaned
+      // text-run tags from malformed merge-tag substitutions are the
+      // historical root cause of corrupted .docx files.
+      for (const tag of ['w:p', 'w:r', 'w:t']) {
+        const opens = countOpens(xml, tag);
+        const closes = countCloses(xml, tag);
+        if (opens !== closes) {
+          throw new Error(
+            `DOCX_INTEGRITY: ${partName} has unbalanced <${tag}> tags (open=${opens}, close=${closes})`
+          );
+        }
       }
     }
   } catch (err) {
