@@ -651,6 +651,22 @@ function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/**
+ * Escape characters that have special meaning in XML so resolved field
+ * values cannot break the well-formedness of word/document.xml.
+ * Newlines are converted into a Word in-run line break and a fresh
+ * preserve-space text segment so multi-line values still render correctly.
+ */
+export function escapeXmlValue(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+    .replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
+}
+
 function buildXmlFlexibleLabelPattern(label: string): string {
   const parts = label.split(/\s+/).filter(Boolean).map(escapeRegex);
   if (parts.length === 0) return '';
