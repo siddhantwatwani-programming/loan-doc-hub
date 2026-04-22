@@ -257,9 +257,14 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
       };
     }
     if (editData) {
+      const mergedEditData = {
+        ...editData,
+        rateSoldValue: soldRate || editData.rateSoldValue || '',
+        lenderRate: soldRate || editData.lenderRate || '',
+      };
       return {
         ...getDefaultFormData(loanNumber, borrowerName, noteRate, soldRate),
-        ...editData,
+        ...mergedEditData,
         loan: loanNumber || editData.loan,
         borrower: borrowerName || editData.borrower,
         roundingAdjustment: editData.roundingAdjustment ?? false,

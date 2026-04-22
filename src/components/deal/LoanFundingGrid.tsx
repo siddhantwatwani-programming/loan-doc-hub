@@ -297,8 +297,10 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       lenderShare: String(record.lenderShare || ''),
       rateSelection: record.rateSelection || 'note_rate',
       rateNoteValue: record.rateNoteValue || noteRate,
-      rateSoldValue: record.rateSoldValue || soldRate,
+      rateSoldValue: soldRate || record.rateSoldValue || '',
       rateLenderValue: record.rateLenderValue || '',
+      lenderRateOverride: record.lenderRateOverride || false,
+      lenderRateOverrideValue: record.lenderRateOverrideValue || '',
       roundingAdjustment: record.roundingAdjustment || false,
       disbursements: record.disbursements?.length ? record.disbursements.map(d => ({
         active: (d as any).active ?? true,
