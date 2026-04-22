@@ -1009,8 +1009,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                     {showEndDateCol && <col className="w-[90px]" />}
                     {disbColVisibility.amount && <col className="w-[80px]" />}
                     {disbColVisibility.debitThrough && <col className="w-[90px]" />}
-                    {disbColVisibility.type && <col className="w-[70px]" />}
                     {showPercentageCol && <col className="w-[60px]" />}
+                    {disbColVisibility.type && <col className="w-[70px]" />}
                     {disbColVisibility.comment && <col />}
                     <col className="w-[60px]" />
                   </colgroup>
@@ -1025,10 +1025,10 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                       )}
                       {disbColVisibility.amount && <th className="text-right py-1 px-1 font-semibold text-muted-foreground">Amount</th>}
                       {disbColVisibility.debitThrough && <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Debit Through</th>}
-                      {disbColVisibility.type && <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Type</th>}
                       {showPercentageCol && (
                         <th className="text-right py-1 px-1 font-semibold text-muted-foreground">Percentage</th>
                       )}
+                      {disbColVisibility.type && <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Type</th>}
                       {disbColVisibility.comment && <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Comment</th>}
                       <th></th>
                     </tr>
@@ -1060,10 +1060,10 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                              row.debitThrough === 'payoff' ? 'Payoff' : '-'}
                           </td>
                         )}
-                        {disbColVisibility.type && <td className="py-0.5 px-1 text-[10px]">{row.debitOf || row.from || '-'}</td>}
                         {showPercentageCol && (
                           <td className="py-0.5 px-1 text-[10px] text-right">{row.debitPercent ? `${row.debitPercent}%` : '-'}</td>
                         )}
+                        {disbColVisibility.type && <td className="py-0.5 px-1 text-[10px]">{row.debitOf || row.from || '-'}</td>}
                         {disbColVisibility.comment && (
                           <td className="py-0.5 px-1">
                             <Input
