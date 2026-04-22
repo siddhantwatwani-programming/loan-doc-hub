@@ -490,6 +490,32 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const toggleDisbCol = (key: keyof typeof disbColVisibility) =>
     setDisbColVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
 
+  // User-defined custom columns (session-scoped, label only, text values)
+  const [customDisbCols, setCustomDisbCols] = useState<Array<{ id: string; label: string }>>([]);
+  const [customDisbValues, setCustomDisbValues] = useState<Record<string, Record<number, string>>>({});
+  const [newColLabel, setNewColLabel] = useState('');
+  const handleAddCustomCol = () => {
+    const label = newColLabel.trim();
+    if (!label) return;
+    const id = `custom_${Date.now()}`;
+    setCustomDisbCols((prev) => [...prev, { id, label }]);
+    setNewColLabel('');
+  };
+  const handleRemoveCustomCol = (id: string) => {
+    setCustomDisbCols((prev) => prev.filter((c) => c.id !== id));
+    setCustomDisbValues((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+  const handleCustomCellChange = (colId: string, rowIdx: number, val: string) => {
+    setCustomDisbValues((prev) => ({
+      ...prev,
+      [colId]: { ...(prev[colId] || {}), [rowIdx]: val },
+    }));
+  };
+
   // Lender share values for disbursement calculation
   const paymentShareNum = parseFloat((formData.regularPayment || '').replace(/[$,]/g, '')) || 0;
   const principalBalNum = parseFloat((formData.principalBalance || '').replace(/[$,]/g, '')) || 0;
