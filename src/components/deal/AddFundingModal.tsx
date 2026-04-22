@@ -651,10 +651,25 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                       <Input
                         value={formData.lenderRate || ''}
                         onChange={(e) => {
-                          const v = e.target.value.replace(/[^0-9.]/g, '');
-                          // Mirror writes into rateLenderValue so the override value persists
-                          // through the rate-compute effect and gets saved with the row.
+                          // Allow only digits and a single decimal. Truncate (do NOT round) to 2 decimals.
+                          let v = e.target.value.replace(/[^0-9.]/g, '');
+                          const parts = v.split('.');
+                          if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+                          const [intPart, decPart] = v.split('.');
+                          if (decPart && decPart.length > 2) {
+                            v = `${intPart}.${decPart.slice(0, 2)}`;
+                          }
                           setFormData(prev => ({ ...prev, lenderRate: v, rateLenderValue: v }));
+                        }}
+                        onBlur={(e) => {
+                          // Pad to exactly 2 decimal places without rounding.
+                          const raw = (e.target.value || '').replace(/[^0-9.]/g, '');
+                          if (!raw) return;
+                          const [intPart, decPart = ''] = raw.split('.');
+                          const truncated = `${intPart || '0'}.${(decPart + '00').slice(0, 2)}`;
+                          if (truncated !== formData.lenderRate) {
+                            setFormData(prev => ({ ...prev, lenderRate: truncated, rateLenderValue: truncated }));
+                          }
                         }}
                         onKeyDown={numericKeyDown}
                         className="h-6 text-[11px] pr-4"
@@ -667,13 +682,11 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   );
                 })()}
               </div>
-              {(() => {
-                const soldRateVal = (formData.rateSoldValue || '').trim();
-                const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
-                if (!hasSoldRate) return null;
-                return (
-                  <div className="flex items-center gap-1">
-                    <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Override</Label>
+              <div className="flex items-center gap-1">
+                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Override</Label>
+                {(() => {
+                  const soldRateVal = (formData.rateSoldValue || '').trim();
+                  return (
                     <Checkbox
                       checked={formData.lenderRateOverride ?? false}
                       onCheckedChange={(checked) => {
@@ -681,17 +694,15 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                         setFormData(prev => ({
                           ...prev,
                           lenderRateOverride: isOn,
-                          // When turning override ON for the first time, seed rateLenderValue
-                          // with the currently displayed (sold-rate) value so the field stays
-                          // populated and editable instead of clearing.
+                          // Seed editable value with currently displayed rate when first enabled.
                           rateLenderValue: isOn && !prev.rateLenderValue ? (prev.lenderRate || soldRateVal) : prev.rateLenderValue,
                         }));
                       }}
                       className="h-3.5 w-3.5"
                     />
-                  </div>
-                );
-              })()}
+                  );
+                })()}
+              </div>
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Funding Date</Label>
                 {renderDateField(fundingDate, (d) => handleChange('fundingDate', d ? format(d, 'yyyy-MM-dd') : ''), fundingDateOpen, setFundingDateOpen)}
