@@ -141,6 +141,11 @@ export async function processDocx(
 
         let processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
 
+        // If the post-pass injected w14:* (e.g. <w14:checkbox>) into a part
+        // whose root does not declare the w14 namespace, inject the
+        // declaration. Required for Google Docs / strict parsers to open.
+        processedXml = ensureW14Namespace(processedXml, filename);
+
         // Post-process: ensure Signature paragraph has a page break before it,
         // but ONLY if the original template already contains page breaks or section
         // breaks. Single-page templates (like Addendum to LPDS) must not have
