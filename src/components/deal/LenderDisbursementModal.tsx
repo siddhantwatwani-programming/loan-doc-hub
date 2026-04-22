@@ -96,6 +96,19 @@ export const LenderDisbursementModal: React.FC<LenderDisbursementModalProps> = (
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Auto-default Type to "NA" when % <= 0; clear "NA" when % becomes > 0
+  const debitPercentNum = parseNum(formData.debitPercent);
+  const isPercentZeroOrLess = debitPercentNum <= 0;
+  useEffect(() => {
+    if (isPercentZeroOrLess) {
+      if (formData.debitOf !== 'NA') {
+        setFormData(prev => ({ ...prev, debitOf: 'NA' }));
+      }
+    } else if (formData.debitOf === 'NA') {
+      setFormData(prev => ({ ...prev, debitOf: '' }));
+    }
+  }, [isPercentZeroOrLess, formData.debitOf]);
+
   // Live calculation
   const calculatedAmount = useMemo(() => {
     let base = 0;
@@ -193,7 +206,11 @@ export const LenderDisbursementModal: React.FC<LenderDisbursementModalProps> = (
                 <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
               </div>
               <span className="text-[11px] text-muted-foreground">of</span>
-              <Select value={formData.debitOf || undefined} onValueChange={(val) => handleChange('debitOf', val)}>
+              <Select
+                value={formData.debitOf || undefined}
+                onValueChange={(val) => handleChange('debitOf', val)}
+                disabled={isPercentZeroOrLess}
+              >
                 <SelectTrigger className="h-6 text-[11px] w-[110px]">
                   <SelectValue placeholder="Select Type" />
                 </SelectTrigger>
@@ -201,6 +218,7 @@ export const LenderDisbursementModal: React.FC<LenderDisbursementModalProps> = (
                   <SelectItem value="Payment">Payment</SelectItem>
                   <SelectItem value="Interest">Interest</SelectItem>
                   <SelectItem value="Principal">Principal</SelectItem>
+                  <SelectItem value="NA">NA</SelectItem>
                 </SelectContent>
               </Select>
             </div>
