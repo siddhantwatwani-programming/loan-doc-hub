@@ -31,16 +31,10 @@ export interface AllocationValidationResult {
 export function validateBalancesSoldRate(
   values: Record<string, string>
 ): AllocationValidationResult {
-  const enabled = values[LOAN_TERMS_BALANCES_KEYS.soldRateEnabled] === 'true';
-  if (!enabled) return { ok: true };
-
-  const lenders = parsePct(values[LOAN_TERMS_BALANCES_KEYS.soldRateCompany]);
-  const origination = parsePct(values[LOAN_TERMS_BALANCES_KEYS.soldRateOtherClient1]);
-
-  // Replicates LoanTermsBalancesForm: lendersHasValue && lendersClamped < 100 && originationEmpty
-  if (lenders !== null && lenders < 100 && origination === null) {
-    return { ok: false };
-  }
+  // Sold Rate UI was simplified to a single editable percentage field.
+  // The legacy Lenders / Origination Vendor allocation no longer applies,
+  // so this check is intentionally a no-op and always passes.
+  void values;
   return { ok: true };
 }
 
