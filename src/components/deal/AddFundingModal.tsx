@@ -1015,39 +1015,45 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                   <tbody>
                     {formData.disbursements.map((row, idx) => (
                       <tr key={idx} className="border-b border-border last:border-b-0 hover:bg-muted/20">
-                        <td className="py-0.5 px-1 text-center">
-                          <Checkbox
-                            checked={row.active ?? true}
-                            onCheckedChange={(checked) => handleDisbursementChange(idx, 'active', !!checked)}
-                            className="h-3.5 w-3.5"
-                          />
-                        </td>
-                        <td className="py-0.5 px-1 text-[10px]">{row.accountId || '-'}</td>
-                        <td className="py-0.5 px-1 text-[10px]">{row.name || '-'}</td>
-                        <td className="py-0.5 px-1 text-[10px]">{row.startDate ? format(new Date(row.startDate), 'MM/dd/yyyy') : '-'}</td>
+                        {disbColVisibility.active && (
+                          <td className="py-0.5 px-1 text-center">
+                            <Checkbox
+                              checked={row.active ?? true}
+                              onCheckedChange={(checked) => handleDisbursementChange(idx, 'active', !!checked)}
+                              className="h-3.5 w-3.5"
+                            />
+                          </td>
+                        )}
+                        {disbColVisibility.accountId && <td className="py-0.5 px-1 text-[10px]">{row.accountId || '-'}</td>}
+                        {disbColVisibility.name && <td className="py-0.5 px-1 text-[10px]">{row.name || '-'}</td>}
+                        {disbColVisibility.startDate && <td className="py-0.5 px-1 text-[10px]">{row.startDate ? format(new Date(row.startDate), 'MM/dd/yyyy') : '-'}</td>}
                         {showEndDateCol && (
                           <td className="py-0.5 px-1 text-[10px]">{row.endDate ? format(new Date(row.endDate), 'MM/dd/yyyy') : (row.debitThrough === 'date' && row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-')}</td>
                         )}
-                        <td className="py-0.5 px-1 text-[10px] text-right">{row.amount ? `$${row.amount}` : '-'}</td>
-                        <td className="py-0.5 px-1 text-[10px]">
-                          {row.debitThrough === 'date' ? (row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-') :
-                           row.debitThrough === 'amount' ? `$${row.debitThroughAmount}` :
-                           row.debitThrough === 'payments' ? `${row.debitThroughPayments} Payments` :
-                           row.debitThrough === 'payoff' ? 'Payoff' : '-'}
-                        </td>
-                        <td className="py-0.5 px-1 text-[10px]">{row.debitOf || row.from || '-'}</td>
+                        {disbColVisibility.amount && <td className="py-0.5 px-1 text-[10px] text-right">{row.amount ? `$${row.amount}` : '-'}</td>}
+                        {disbColVisibility.debitThrough && (
+                          <td className="py-0.5 px-1 text-[10px]">
+                            {row.debitThrough === 'date' ? (row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-') :
+                             row.debitThrough === 'amount' ? `$${row.debitThroughAmount}` :
+                             row.debitThrough === 'payments' ? `${row.debitThroughPayments} Payments` :
+                             row.debitThrough === 'payoff' ? 'Payoff' : '-'}
+                          </td>
+                        )}
+                        {disbColVisibility.type && <td className="py-0.5 px-1 text-[10px]">{row.debitOf || row.from || '-'}</td>}
                         {showPercentageCol && (
                           <td className="py-0.5 px-1 text-[10px] text-right">{row.debitPercent ? `${row.debitPercent}%` : '-'}</td>
                         )}
-                        <td className="py-0.5 px-1">
-                          <Input
-                            value={row.comments || ''}
-                            onChange={(e) => handleDisbursementCommentChange(idx, e.target.value)}
-                            onBlur={(e) => handleDisbursementCommentChange(idx, e.target.value)}
-                            className="h-5 text-[10px]"
-                            placeholder="Add comment..."
-                          />
-                        </td>
+                        {disbColVisibility.comment && (
+                          <td className="py-0.5 px-1">
+                            <Input
+                              value={row.comments || ''}
+                              onChange={(e) => handleDisbursementCommentChange(idx, e.target.value)}
+                              onBlur={(e) => handleDisbursementCommentChange(idx, e.target.value)}
+                              className="h-5 text-[10px]"
+                              placeholder="Add comment..."
+                            />
+                          </td>
+                        )}
                         <td className="py-0.5 px-1 text-center">
                           <div className="flex items-center gap-0.5 justify-center">
                             <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleEditDisbursement(idx)} title="Edit">
