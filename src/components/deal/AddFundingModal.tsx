@@ -180,6 +180,7 @@ const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: 
   lenderRate: '', fundingAmount: '', fundingDate: '', interestFrom: '', notes: '', brokerParticipates: false,
   percentOwned: '', regularPayment: '', lenderShare: '',
   rateSelection: 'note_rate', rateNoteValue: noteRate, rateSoldValue: soldRate, rateLenderValue: '',
+  lenderRateOverride: false,
   roundingAdjustment: false,
   disbursements: defaultDisbursements(),
   principalBalance: '', noteRateDisplay: noteRate,
