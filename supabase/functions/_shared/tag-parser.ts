@@ -641,6 +641,25 @@ function convertGlyphsToSdtCheckboxes(xml: string): string {
     );
   }
 
+  // DEFENSIVE FINAL SWEEP: under no circumstances may the placeholder marker
+  // (which contains \uFFFD) reach the output XML. \uFFFD inside element /
+  // attribute names is rejected by strict XML parsers (Google Docs) and
+  // produces "File could not open" errors. If any survived (e.g. extraction
+  // depth exceeded MAX_EXTRACTION_PASSES), restore from the stored block or
+  // strip to empty as a last resort.
+  if (safeguardedXml.includes(sdtMarkerPrefix)) {
+    safeguardedXml = safeguardedXml.replace(
+      new RegExp(escapeRegex(sdtMarkerPrefix) + '(\\d+)' + escapeRegex(sdtMarkerSuffix), 'g'),
+      (_m, idx) => sdtPlaceholders[parseInt(idx, 10)] || ''
+    );
+  }
+  // Belt-and-suspenders: nuke any stray \uFFFD that may have leaked in from
+  // any other source. \uFFFD is the Unicode replacement char and is not
+  // valid inside XML names.
+  if (safeguardedXml.includes('\uFFFD')) {
+    safeguardedXml = safeguardedXml.replace(/\uFFFD/g, '');
+  }
+
   if (count > 0) {
     debugLog(`[tag-parser] Converted ${count} checkbox glyphs to SDT checkboxes`);
   }
