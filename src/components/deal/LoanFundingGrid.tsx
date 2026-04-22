@@ -50,6 +50,8 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'noteRate', label: 'Note Rate', visible: true },
   { id: 'lenderRate', label: 'Lender Rate', visible: true },
   { id: 'regularPayment', label: 'Payment', visible: true },
+  { id: 'disbursements', label: 'Disbursements', visible: true },
+  { id: 'netPayment', label: 'Net Payment', visible: true },
   { id: 'roundingError', label: 'Rounding', visible: true },
 ];
 
@@ -271,6 +273,14 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
     if (record.regularPayment > 0) return record.regularPayment;
     return (record.payments || []).reduce((sum, payment) => sum + parsePaymentAmount(payment.amount), 0);
   };
+  const getDisbursementsTotal = (record: FundingRecord) => {
+    return (record.disbursements || []).reduce(
+      (sum, d) => sum + parsePaymentAmount(d.amount), 0
+    );
+  };
+  const getNetPayment = (record: FundingRecord) => {
+    return Math.max(0, getDisplayedPayment(record) - getDisbursementsTotal(record));
+  };
 
   const computeCurrentBalance = (record: FundingRecord): number => {
     if (record.currentBalance !== undefined && record.currentBalance !== null && !isNaN(record.currentBalance)) {
@@ -286,6 +296,8 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const totalPrincipalBalance = fundingRecords.reduce((sum, r) => sum + r.principalBalance, 0);
   const totalCurrentBalance = fundingRecords.reduce((sum, r) => sum + computeCurrentBalance(r), 0);
   const totalPaymentSum = fundingRecords.reduce((sum, r) => sum + getDisplayedPayment(r), 0);
+  const totalDisbursementsSum = fundingRecords.reduce((sum, r) => sum + getDisbursementsTotal(r), 0);
+  const totalNetPaymentSum = fundingRecords.reduce((sum, r) => sum + getNetPayment(r), 0);
   const totalFundingAmount = fundingRecords.reduce((sum, r) => sum + r.originalAmount, 0);
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
@@ -417,7 +429,11 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       case 'lenderRate':
         return <span>{formatPercentage(record.lenderRate)}</span>;
       case 'regularPayment':
-        return <span>{formatCurrency(record.regularPayment)}</span>;
+        return <span>{formatCurrency(getDisplayedPayment(record))}</span>;
+      case 'disbursements':
+        return <span>{formatCurrency(getDisbursementsTotal(record))}</span>;
+      case 'netPayment':
+        return <span>{formatCurrency(getNetPayment(record))}</span>;
       case 'roundingError':
         return (
           <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
@@ -462,6 +478,10 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         return '';
       case 'regularPayment':
         return <span className="font-semibold">{formatCurrency(totalPaymentSum)}</span>;
+      case 'disbursements':
+        return <span className="font-semibold">{formatCurrency(totalDisbursementsSum)}</span>;
+      case 'netPayment':
+        return <span className="font-semibold">{formatCurrency(totalNetPaymentSum)}</span>;
       default:
         return '';
     }
