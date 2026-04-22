@@ -1224,6 +1224,34 @@ export function processConditionalBlocks(
   result = result.replace(/\{\{\/unless\}\}/g, "");
   result = result.replace(/\{\{else\}\}/g, "");
 
+  // Extended safety net: also strip Handlebars-style sub-expression openers
+  // such as {{#if (eq ld_p_lenderType "Individual")}} or {{#unless (ne ...)}}.
+  // The engine does not evaluate sub-expressions, so leaving these in would
+  // print as literal text in the generated document.
+  result = result.replace(/\{\{#if\s*\([^}]*?\)\s*\}\}/g, "");
+  result = result.replace(/\{\{#unless\s*\([^}]*?\)\s*\}\}/g, "");
+  result = result.replace(/\{\{#each\s*\([^}]*?\)\s*\}\}/g, "");
+
+  // Extended safety net: strip BARE (unwrapped) conditional directives that
+  // template authors sometimes leave inside DOCX paragraphs as plain text,
+  // e.g. a paragraph whose run text is exactly:
+  //   #if (eq ld_p_lenderType "Individual")
+  // Without this, the literal control text appears in the generated document.
+  // We only remove text inside <w:t>…</w:t> runs whose entire content matches
+  // a conditional directive; surrounding prose is never touched.
+  result = result.replace(
+    /<w:t(\s[^>]*)?>\s*(?:#if|#unless|#each)\s*\([^<]*?\)\s*<\/w:t>/g,
+    (m) => m.replace(/>\s*(?:#if|#unless|#each)\s*\([^<]*?\)\s*</, "><"),
+  );
+  result = result.replace(
+    /<w:t(\s[^>]*)?>\s*(?:#if|#unless|#each)\s+[A-Za-z0-9_.]+\s*<\/w:t>/g,
+    (m) => m.replace(/>\s*(?:#if|#unless|#each)\s+[A-Za-z0-9_.]+\s*</, "><"),
+  );
+  result = result.replace(
+    /<w:t(\s[^>]*)?>\s*(?:\/if|\/unless|\/each|else)\s*<\/w:t>/g,
+    (m) => m.replace(/>\s*(?:\/if|\/unless|\/each|else)\s*</, "><"),
+  );
+
   return result;
 }
 
