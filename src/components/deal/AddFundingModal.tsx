@@ -981,34 +981,34 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               <div className="overflow-x-auto border border-border rounded">
                 <table className="w-full text-[11px] table-fixed">
                   <colgroup>
-                    <col className="w-[50px]" />
-                    <col className="w-[80px]" />
-                    <col className="w-[100px]" />
-                    <col className="w-[90px]" />
+                    {disbColVisibility.active && <col className="w-[50px]" />}
+                    {disbColVisibility.accountId && <col className="w-[80px]" />}
+                    {disbColVisibility.name && <col className="w-[100px]" />}
+                    {disbColVisibility.startDate && <col className="w-[90px]" />}
                     {showEndDateCol && <col className="w-[90px]" />}
-                    <col className="w-[80px]" />
-                    <col className="w-[90px]" />
-                    <col className="w-[70px]" />
+                    {disbColVisibility.amount && <col className="w-[80px]" />}
+                    {disbColVisibility.debitThrough && <col className="w-[90px]" />}
+                    {disbColVisibility.type && <col className="w-[70px]" />}
                     {showPercentageCol && <col className="w-[60px]" />}
-                    <col />
+                    {disbColVisibility.comment && <col />}
                     <col className="w-[60px]" />
                   </colgroup>
                   <thead>
                     <tr className="bg-muted/50 border-b border-border">
-                      <th className="text-center py-1 px-1 font-semibold text-muted-foreground">Active</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Account ID</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Name</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Start Date</th>
+                      {disbColVisibility.active && <th className="text-center py-1 px-1 font-semibold text-muted-foreground">Active</th>}
+                      {disbColVisibility.accountId && <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Account ID</th>}
+                      {disbColVisibility.name && <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Name</th>}
+                      {disbColVisibility.startDate && <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Start Date</th>}
                       {showEndDateCol && (
                         <th className="text-left py-1 px-1 font-semibold text-muted-foreground">End Date</th>
                       )}
-                      <th className="text-right py-1 px-1 font-semibold text-muted-foreground">Amount</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Debit Through</th>
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Type</th>
+                      {disbColVisibility.amount && <th className="text-right py-1 px-1 font-semibold text-muted-foreground">Amount</th>}
+                      {disbColVisibility.debitThrough && <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Debit Through</th>}
+                      {disbColVisibility.type && <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Type</th>}
                       {showPercentageCol && (
                         <th className="text-right py-1 px-1 font-semibold text-muted-foreground">Percentage</th>
                       )}
-                      <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Comment</th>
+                      {disbColVisibility.comment && <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Comment</th>}
                       <th></th>
                     </tr>
                   </thead>
