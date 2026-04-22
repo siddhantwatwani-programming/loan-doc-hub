@@ -143,11 +143,22 @@ export async function processDocx(
     }
     // Cheap well-formedness signal: tag count balance for the most common
     // structural elements that, when unbalanced, are what causes Word's
-    // "file could not be opened" error.
-    const openP = (docXml.match(/<w:p[\s>]/g) || []).length;
-    const closeP = (docXml.match(/<\/w:p>/g) || []).length;
-    if (openP !== closeP) {
-      throw new Error(`DOCX_INTEGRITY: <w:p> tags unbalanced (open=${openP}, close=${closeP})`);
+    // "file could not be opened" error. We check <w:p>, <w:r>, and <w:t>
+    // because orphaned text-run tags (introduced by malformed merge-tag
+    // substitutions) are the historical root cause of corrupted .docx files.
+    const countOpens = (tag: string) => {
+      // Match `<tag>` or `<tag ...>` but NOT `<tag/>` self-closing.
+      const re = new RegExp(`<${tag}(\\s[^>]*[^/])?>`, 'g');
+      return (docXml.match(re) || []).length;
+    };
+    const countCloses = (tag: string) => (docXml.match(new RegExp(`</${tag}>`, 'g')) || []).length;
+
+    for (const tag of ['w:p', 'w:r', 'w:t']) {
+      const opens = countOpens(tag);
+      const closes = countCloses(tag);
+      if (opens !== closes) {
+        throw new Error(`DOCX_INTEGRITY: <${tag}> tags unbalanced (open=${opens}, close=${closes})`);
+      }
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
