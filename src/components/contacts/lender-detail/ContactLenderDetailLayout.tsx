@@ -47,8 +47,8 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
     return result;
   });
 
-  const initialValuesRef = useRef<Record<string, string>>({ ...values });
-  const isDirty = useMemo(() => JSON.stringify(values) !== JSON.stringify(initialValuesRef.current), [values]);
+  const [initialValues, setInitialValues] = useState<Record<string, string>>(() => ({ ...values }));
+  const isDirty = useMemo(() => JSON.stringify(values) !== JSON.stringify(initialValues), [values, initialValues]);
   const isReadOnly = permissionsLoading || isFormViewOnly('lender');
 
   const handleValueChange = useCallback((fieldKey: string, value: string) => {
@@ -64,9 +64,9 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
       contactData[stripped] = value;
     });
     const changes: ContactFieldChange[] = [];
-    const allKeys = new Set([...Object.keys(values), ...Object.keys(initialValuesRef.current)]);
+    const allKeys = new Set([...Object.keys(values), ...Object.keys(initialValues)]);
     allKeys.forEach(key => {
-      const oldVal = initialValuesRef.current[key] || '';
+      const oldVal = initialValues[key] || '';
       const newVal = values[key] || '';
       if (oldVal !== newVal) {
         const label = key.replace(/^lender\./, '').replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -77,9 +77,9 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
     if (saved && changes.length > 0) {
       await logContactEvent(contact.id, 'Lender Info', changes);
     }
-    if (saved) initialValuesRef.current = { ...values };
+    if (saved) setInitialValues({ ...values });
     return !!saved;
-  }, [isReadOnly, values, contact.id, onSave]);
+  }, [isReadOnly, values, initialValues, contact.id, onSave]);
 
   const contactWs = useContactWorkspaceOptional();
   useEffect(() => { if (contactWs) contactWs.setContactDirty(contact.id, isDirty); }, [isDirty, contact.id, contactWs]);
