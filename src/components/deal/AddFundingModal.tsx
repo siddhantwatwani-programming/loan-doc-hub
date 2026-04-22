@@ -925,7 +925,15 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                         <td className="py-0.5 px-1 text-[10px]">{row.accountId || '-'}</td>
                         <td className="py-0.5 px-1 text-[10px]">{row.name || '-'}</td>
                         <td className="py-0.5 px-1 text-[10px]">{row.startDate ? format(new Date(row.startDate), 'MM/dd/yyyy') : '-'}</td>
-                        <td className="py-0.5 px-1 text-[10px]">{row.endDate ? format(new Date(row.endDate), 'MM/dd/yyyy') : (row.debitThrough === 'date' && row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-')}</td>
+                        <td className="py-0.5 px-1 text-[10px]">{(() => {
+                          // Show End Date only when a valid value exists; otherwise leave the
+                          // cell visually blank (non-breaking space preserves row height/alignment).
+                          const raw = row.endDate || (row.debitThrough === 'date' ? row.debitThroughDate : '') || '';
+                          if (!raw) return '\u00A0';
+                          const d = new Date(raw);
+                          if (isNaN(d.getTime())) return '\u00A0';
+                          return format(d, 'MM/dd/yyyy');
+                        })()}</td>
                         <td className="py-0.5 px-1 text-[10px] text-right">{row.amount ? `$${row.amount}` : '-'}</td>
                         <td className="py-0.5 px-1 text-[10px]">
                           {row.debitThrough === 'date' ? (row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-') :
