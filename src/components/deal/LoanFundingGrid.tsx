@@ -478,6 +478,10 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         return '';
       case 'regularPayment':
         return <span className="font-semibold">{formatCurrency(totalPaymentSum)}</span>;
+      case 'disbursements':
+        return <span className="font-semibold">{formatCurrency(totalDisbursementsSum)}</span>;
+      case 'netPayment':
+        return <span className="font-semibold">{formatCurrency(totalNetPaymentSum)}</span>;
       default:
         return '';
     }
