@@ -123,7 +123,6 @@ export const LenderDisbursementModal: React.FC<LenderDisbursementModalProps> = (
     parseNum(formData.minimumAmount) > parseNum(formData.maximumAmount);
   const isValid =
     !!formData.accountId &&
-    !!formData.debitOf &&
     parseNum(formData.debitPercent) >= 0 &&
     !!formData.startDate &&
     !!formData.debitThrough &&
