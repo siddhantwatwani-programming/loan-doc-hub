@@ -642,8 +642,56 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               </div>
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Lender Rate</Label>
-                {renderPercentInput('lenderRate', '%')}
+                {(() => {
+                  const soldRateVal = (formData.rateSoldValue || '').trim();
+                  const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
+                  const lenderRateDisabled = hasSoldRate && !formData.lenderRateOverride;
+                  return (
+                    <div className="relative flex-1">
+                      <Input
+                        value={formData.lenderRate || ''}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/[^0-9.]/g, '');
+                          // Mirror writes into rateLenderValue so the override value persists
+                          // through the rate-compute effect and gets saved with the row.
+                          setFormData(prev => ({ ...prev, lenderRate: v, rateLenderValue: v }));
+                        }}
+                        onKeyDown={numericKeyDown}
+                        className="h-6 text-[11px] pr-4"
+                        inputMode="decimal"
+                        placeholder="%"
+                        disabled={lenderRateDisabled}
+                      />
+                      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+                    </div>
+                  );
+                })()}
               </div>
+              {(() => {
+                const soldRateVal = (formData.rateSoldValue || '').trim();
+                const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
+                if (!hasSoldRate) return null;
+                return (
+                  <div className="flex items-center gap-1">
+                    <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Override</Label>
+                    <Checkbox
+                      checked={formData.lenderRateOverride ?? false}
+                      onCheckedChange={(checked) => {
+                        const isOn = !!checked;
+                        setFormData(prev => ({
+                          ...prev,
+                          lenderRateOverride: isOn,
+                          // When turning override ON for the first time, seed rateLenderValue
+                          // with the currently displayed (sold-rate) value so the field stays
+                          // populated and editable instead of clearing.
+                          rateLenderValue: isOn && !prev.rateLenderValue ? (prev.lenderRate || soldRateVal) : prev.rateLenderValue,
+                        }));
+                      }}
+                      className="h-3.5 w-3.5"
+                    />
+                  </div>
+                );
+              })()}
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Funding Date</Label>
                 {renderDateField(fundingDate, (d) => handleChange('fundingDate', d ? format(d, 'yyyy-MM-dd') : ''), fundingDateOpen, setFundingDateOpen)}
