@@ -231,7 +231,11 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
     const displayValue = isFocused ? rawValue : formatPercentDisplay(rawValue);
     return (
       <DirtyFieldWrapper fieldKey={key}>
-...
+        <div className="flex items-center gap-2">
+          <Label className={LABEL_CLASS}>{label}</Label>
+          <div className="relative flex-1">
+            <Input
+              type="text"
               value={displayValue}
               onChange={(e) => setValue(key, sanitizeInterestInput(e.target.value))}
               onFocus={() => setFocusedPercentField(key)}
