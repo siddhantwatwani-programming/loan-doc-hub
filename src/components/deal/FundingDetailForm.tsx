@@ -198,6 +198,68 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
         </div>
       </div>
 
+      {/* Lender Rate (auto-prefilled from Sold Rate; disabled unless Override is on) */}
+      {(() => {
+        const soldRateVal = (data.rateSoldValue || '').trim();
+        const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
+        const lenderRateDisabled = hasSoldRate && !data.lenderRateOverride;
+        const displayRate = hasSoldRate && !data.lenderRateOverride
+          ? soldRateVal
+          : (data.lenderRate || '');
+        return (
+          <div className="flex items-center gap-6 flex-wrap mt-1">
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground shrink-0 min-w-[110px]">Lender Rate</Label>
+              <div className="relative w-28">
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={displayRate}
+                  onChange={(e) => {
+                    let v = e.target.value.replace(/[^0-9.]/g, '');
+                    const parts = v.split('.');
+                    if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+                    const [intPart, decPart] = v.split('.');
+                    if (decPart && decPart.length > 2) v = `${intPart}.${decPart.slice(0, 2)}`;
+                    onChange({ ...data, lenderRate: v, rateLenderValue: v });
+                  }}
+                  onBlur={(e) => {
+                    const raw = (e.target.value || '').replace(/[^0-9.]/g, '');
+                    if (!raw) return;
+                    const [intPart, decPart = ''] = raw.split('.');
+                    const truncated = `${intPart || '0'}.${(decPart + '00').slice(0, 2)}`;
+                    if (truncated !== data.lenderRate) {
+                      onChange({ ...data, lenderRate: truncated, rateLenderValue: truncated });
+                    }
+                  }}
+                  disabled={lenderRateDisabled}
+                  className={cn('h-7 text-sm pr-6', lenderRateDisabled && 'opacity-50 bg-muted')}
+                  placeholder="%"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground shrink-0">Override</Label>
+              <Checkbox
+                checked={data.lenderRateOverride ?? false}
+                onCheckedChange={(checked) => {
+                  const isOn = !!checked;
+                  onChange({
+                    ...data,
+                    lenderRateOverride: isOn,
+                    rateLenderValue: isOn && !data.rateLenderValue
+                      ? (data.lenderRate || soldRateVal)
+                      : data.rateLenderValue,
+                  });
+                }}
+                className="h-3.5 w-3.5"
+              />
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="flex items-center gap-2">
         <Checkbox id="detail-brokerParticipates" checked={data.brokerParticipates} onCheckedChange={(checked) => handleChange('brokerParticipates', !!checked)} />
         <Label htmlFor="detail-brokerParticipates" className="text-sm font-medium leading-tight cursor-pointer">Lender is: The Broker, Employee or Family of Broker</Label>

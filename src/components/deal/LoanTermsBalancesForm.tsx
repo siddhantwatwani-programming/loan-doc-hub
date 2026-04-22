@@ -305,9 +305,20 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   disabled={disabled}
                   className="h-3.5 w-3.5"
                 />
-                <Label htmlFor={`${FIELD_KEYS.soldRateEnabled}-cb`} className="text-sm text-primary font-medium">
-                  Sold Rate
-                </Label>
+                {isChecked(FIELD_KEYS.soldRateEnabled) ? (
+                  <button
+                    type="button"
+                    onClick={() => nav?.setActiveTab('funding')}
+                    className="text-sm text-primary font-medium underline-offset-2 hover:underline cursor-pointer bg-transparent p-0 border-0"
+                    title="Open Funding grid"
+                  >
+                    Sold Rate
+                  </button>
+                ) : (
+                  <Label htmlFor={`${FIELD_KEYS.soldRateEnabled}-cb`} className="text-sm text-primary font-medium">
+                    Sold Rate
+                  </Label>
+                )}
               </div>
               <div className="relative flex-1">
                 <Input
