@@ -654,8 +654,17 @@ function escapeRegex(value: string): string {
 /**
  * Escape characters that have special meaning in XML so resolved field
  * values cannot break the well-formedness of word/document.xml.
- * Newlines are converted into a Word in-run line break and a fresh
- * preserve-space text segment so multi-line values still render correctly.
+ *
+ * NOTE: Newlines are intentionally NOT converted here. Emitting
+ * `</w:t><w:br/><w:t xml:space="preserve">` is only valid when the value
+ * is being injected inside an open <w:t> element. When the substitution
+ * site is outside a text run (e.g. between runs, inside table-cell
+ * markup, or inside an SDT wrapper), that fragment produces an orphan
+ * </w:t> and an unclosed <w:t>, which Word rejects with
+ * "File could not open. Try refreshing the page."
+ *
+ * Callers should use `formatValueForInsertion(value, surroundingXml, index)`
+ * (below) so newline handling is decided based on the actual call site.
  */
 export function escapeXmlValue(value: string): string {
   return value
@@ -663,8 +672,43 @@ export function escapeXmlValue(value: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
-    .replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
+    .replace(/'/g, '&apos;');
+}
+
+/**
+ * Determine whether a position in the XML lies inside an open <w:t> element.
+ * Returns true when the most recent <w:t ...> open tag before `index` has no
+ * matching </w:t> close tag between it and `index`.
+ */
+export function isInsideTextRun(xml: string, index: number): boolean {
+  const lastOpen = xml.lastIndexOf('<w:t', index);
+  if (lastOpen === -1) return false;
+  const tagEnd = xml.indexOf('>', lastOpen);
+  if (tagEnd === -1 || tagEnd >= index) return false;
+  const tagHead = xml.substring(lastOpen, tagEnd + 1);
+  // Must be <w:t> or <w:t ...> — not <w:tbl>, <w:tr>, <w:tc>, <w:tab/>, etc.
+  if (!/^<w:t(\s[^>]*)?>$/.test(tagHead)) return false;
+  const lastClose = xml.lastIndexOf('</w:t>', index);
+  return lastClose < lastOpen;
+}
+
+/**
+ * Format a resolved field value for safe insertion into Word XML at the given
+ * position. Escapes XML-special characters; converts newlines into a Word
+ * in-run line break ONLY when the insertion point is inside an open <w:t>.
+ * Otherwise newlines collapse to a single space so the package stays valid.
+ */
+export function formatValueForInsertion(
+  value: string,
+  surroundingXml: string,
+  index: number,
+): string {
+  const escaped = escapeXmlValue(value);
+  if (!escaped.includes('\n')) return escaped;
+  if (isInsideTextRun(surroundingXml, index)) {
+    return escaped.replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
+  }
+  return escaped.replace(/\n/g, ' ');
 }
 
 function buildXmlFlexibleLabelPattern(label: string): string {
