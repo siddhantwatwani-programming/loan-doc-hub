@@ -105,6 +105,7 @@ function ensureW14Namespace(xml: string, partName: string): string {
   }
 
   return xml.replace(rootOpenRegex, `<${rootName}${newAttrs}>`);
+}
 
 export async function processDocx(
   docxBuffer: Uint8Array,
