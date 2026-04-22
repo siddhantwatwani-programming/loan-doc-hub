@@ -326,6 +326,9 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         debitThroughAmount: (d as any).debitThroughAmount || '', debitThroughPayments: (d as any).debitThroughPayments || '',
       })) : [],
       principalBalance: formatCurrencyDisplay(String(record.principalBalance)),
+      currentBalance: record.currentBalance !== undefined && record.currentBalance !== null
+        ? formatCurrencyDisplay(String(record.currentBalance))
+        : '',
       noteRateDisplay: record.noteRateDisplay || noteRate,
       overrideServicing: record.overrideServicing ?? record.overrideServicingFees ?? false,
       companyBaseFee: record.companyBaseFee || record.companyServicingFee || '',
