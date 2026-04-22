@@ -490,32 +490,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const toggleDisbCol = (key: keyof typeof disbColVisibility) =>
     setDisbColVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  // User-defined custom columns (session-scoped, label only, text values)
-  const [customDisbCols, setCustomDisbCols] = useState<Array<{ id: string; label: string }>>([]);
-  const [customDisbValues, setCustomDisbValues] = useState<Record<string, Record<number, string>>>({});
-  const [newColLabel, setNewColLabel] = useState('');
-  const handleAddCustomCol = () => {
-    const label = newColLabel.trim();
-    if (!label) return;
-    const id = `custom_${Date.now()}`;
-    setCustomDisbCols((prev) => [...prev, { id, label }]);
-    setNewColLabel('');
-  };
-  const handleRemoveCustomCol = (id: string) => {
-    setCustomDisbCols((prev) => prev.filter((c) => c.id !== id));
-    setCustomDisbValues((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-  };
-  const handleCustomCellChange = (colId: string, rowIdx: number, val: string) => {
-    setCustomDisbValues((prev) => ({
-      ...prev,
-      [colId]: { ...(prev[colId] || {}), [rowIdx]: val },
-    }));
-  };
-
   // Lender share values for disbursement calculation
   const paymentShareNum = parseFloat((formData.regularPayment || '').replace(/[$,]/g, '')) || 0;
   const principalBalNum = parseFloat((formData.principalBalance || '').replace(/[$,]/g, '')) || 0;
@@ -957,7 +931,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                       Columns
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent align="end" className="w-56 p-2 z-[9999]">
+                  <PopoverContent align="end" className="w-48 p-2 z-[9999]">
                     <p className="text-[11px] font-semibold mb-2 text-foreground">Show / Hide Columns</p>
                     <div className="space-y-1.5">
                       {([
@@ -989,41 +963,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                           Percentage
                         </label>
                       </div>
-                      {customDisbCols.length > 0 && (
-                        <div className="border-t border-border pt-1.5 mt-1.5 space-y-1">
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase">Custom</p>
-                          {customDisbCols.map((c) => (
-                            <div key={c.id} className="flex items-center justify-between gap-2 text-[11px] text-foreground">
-                              <span className="truncate">{c.label}</span>
-                              <Button variant="ghost" size="icon" className="h-4 w-4 shrink-0" onClick={() => handleRemoveCustomCol(c.id)} title="Remove column">
-                                <X className="h-2.5 w-2.5 text-destructive" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <div className="border-t border-border pt-1.5 mt-1.5 space-y-1">
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase">Add Column</p>
-                        <div className="flex items-center gap-1">
-                          <Input
-                            value={newColLabel}
-                            onChange={(e) => setNewColLabel(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomCol(); } }}
-                            placeholder="Column name"
-                            className="h-6 text-[10px] flex-1"
-                          />
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-6 w-6 shrink-0"
-                            onClick={handleAddCustomCol}
-                            disabled={!newColLabel.trim()}
-                            title="Add column"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
                     </div>
                   </PopoverContent>
                 </Popover>
@@ -1052,7 +991,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                     {disbColVisibility.type && <col className="w-[70px]" />}
                     {showPercentageCol && <col className="w-[60px]" />}
                     {disbColVisibility.comment && <col />}
-                    {customDisbCols.map((c) => <col key={c.id} className="w-[100px]" />)}
                     <col className="w-[60px]" />
                   </colgroup>
                   <thead>
@@ -1071,11 +1009,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                         <th className="text-right py-1 px-1 font-semibold text-muted-foreground">Percentage</th>
                       )}
                       {disbColVisibility.comment && <th className="text-left py-1 px-1 font-semibold text-muted-foreground">Comment</th>}
-                      {customDisbCols.map((c) => (
-                        <th key={c.id} className="text-left py-1 px-1 font-semibold text-muted-foreground">
-                          <span className="truncate inline-block max-w-full" title={c.label}>{c.label}</span>
-                        </th>
-                      ))}
                       <th></th>
                     </tr>
                   </thead>
@@ -1121,16 +1054,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                             />
                           </td>
                         )}
-                        {customDisbCols.map((c) => (
-                          <td key={c.id} className="py-0.5 px-1">
-                            <Input
-                              value={(customDisbValues[c.id]?.[idx]) ?? ''}
-                              onChange={(e) => handleCustomCellChange(c.id, idx, e.target.value)}
-                              className="h-5 text-[10px]"
-                              placeholder={c.label}
-                            />
-                          </td>
-                        ))}
                         <td className="py-0.5 px-1 text-center">
                           <div className="flex items-center gap-0.5 justify-center">
                             <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleEditDisbursement(idx)} title="Edit">
