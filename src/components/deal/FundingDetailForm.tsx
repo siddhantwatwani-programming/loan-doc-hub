@@ -198,14 +198,14 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
         </div>
       </div>
 
-      {/* Lender Rate (auto-prefilled from Sold Rate; disabled unless Override is on) */}
+      {/* Lender Rate (auto-prefilled from Sold Rate; disabled when Sold Rate exists). Override has its own editable input. */}
       {(() => {
         const soldRateVal = (data.rateSoldValue || '').trim();
         const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
-        const lenderRateDisabled = hasSoldRate && !data.lenderRateOverride;
-        const displayRate = hasSoldRate && !data.lenderRateOverride
-          ? soldRateVal
-          : (data.lenderRate || '');
+        const lenderRateDisabled = hasSoldRate;
+        const displayRate = hasSoldRate ? soldRateVal : (data.lenderRate || '');
+        const isOn = !!data.lenderRateOverride;
+        const overrideVal = data.lenderRateOverrideValue || '';
         return (
           <div className="flex items-center gap-6 flex-wrap mt-1">
             <div className="flex items-center gap-2">
@@ -240,21 +240,49 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground shrink-0">Override</Label>
+              <Label className="text-sm text-muted-foreground shrink-0 min-w-[110px]">Override</Label>
               <Checkbox
-                checked={data.lenderRateOverride ?? false}
+                checked={isOn}
                 onCheckedChange={(checked) => {
-                  const isOn = !!checked;
+                  const on = !!checked;
                   onChange({
                     ...data,
-                    lenderRateOverride: isOn,
-                    rateLenderValue: isOn && !data.rateLenderValue
-                      ? (data.lenderRate || soldRateVal)
-                      : data.rateLenderValue,
+                    lenderRateOverride: on,
+                    lenderRateOverrideValue: on
+                      ? (data.lenderRateOverrideValue || data.lenderRate || soldRateVal)
+                      : data.lenderRateOverrideValue,
                   });
                 }}
                 className="h-3.5 w-3.5"
               />
+              <div className="relative w-28">
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={overrideVal}
+                  onChange={(e) => {
+                    let v = e.target.value.replace(/[^0-9.]/g, '');
+                    const parts = v.split('.');
+                    if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+                    const [intPart, decPart] = v.split('.');
+                    if (decPart && decPart.length > 2) v = `${intPart}.${decPart.slice(0, 2)}`;
+                    onChange({ ...data, lenderRateOverrideValue: v, rateLenderValue: v });
+                  }}
+                  onBlur={(e) => {
+                    const raw = (e.target.value || '').replace(/[^0-9.]/g, '');
+                    if (!raw) return;
+                    const [intPart, decPart = ''] = raw.split('.');
+                    const truncated = `${intPart || '0'}.${(decPart + '00').slice(0, 2)}`;
+                    if (truncated !== overrideVal) {
+                      onChange({ ...data, lenderRateOverrideValue: truncated, rateLenderValue: truncated });
+                    }
+                  }}
+                  disabled={!isOn}
+                  className={cn('h-7 text-sm pr-6', !isOn && 'opacity-50 bg-muted')}
+                  placeholder="%"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
+              </div>
             </div>
           </div>
         );

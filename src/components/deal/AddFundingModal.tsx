@@ -103,6 +103,8 @@ export interface FundingFormData {
   rateLenderValue: string;
   /** When true, user has opted to override the auto-prefilled Lender Rate (from Sold Rate). */
   lenderRateOverride?: boolean;
+  /** Editable override value entered by user when Override checkbox is on. */
+  lenderRateOverrideValue?: string;
   roundingAdjustment: boolean;
   disbursements: DisbursementRow[];
   principalBalance?: string;
@@ -181,6 +183,7 @@ const getDefaultFormData = (loanNumber: string, borrowerName: string, noteRate: 
   percentOwned: '', regularPayment: '', lenderShare: '',
   rateSelection: 'note_rate', rateNoteValue: noteRate, rateSoldValue: soldRate, rateLenderValue: '',
   lenderRateOverride: false,
+  lenderRateOverrideValue: '',
   roundingAdjustment: false,
   disbursements: defaultDisbursements(),
   principalBalance: '', noteRateDisplay: noteRate,
@@ -305,7 +308,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
 
     let rate = '';
-    if (hasSoldRate && !formData.lenderRateOverride) {
+    if (hasSoldRate) {
+      // Lender Rate display always mirrors Sold Rate (per spec) regardless of override.
       rate = soldRateVal;
     } else if (formData.rateSelection === 'note_rate') rate = formData.rateNoteValue;
     else if (formData.rateSelection === 'sold_rate') rate = formData.rateSoldValue;
@@ -645,7 +649,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 {(() => {
                   const soldRateVal = (formData.rateSoldValue || '').trim();
                   const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
-                  const lenderRateDisabled = hasSoldRate && !formData.lenderRateOverride;
+                  const lenderRateDisabled = hasSoldRate;
                   return (
                     <div className="relative flex-1">
                       <Input
@@ -686,20 +690,52 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Override</Label>
                 {(() => {
                   const soldRateVal = (formData.rateSoldValue || '').trim();
+                  const isOn = !!formData.lenderRateOverride;
                   return (
-                    <Checkbox
-                      checked={formData.lenderRateOverride ?? false}
-                      onCheckedChange={(checked) => {
-                        const isOn = !!checked;
-                        setFormData(prev => ({
-                          ...prev,
-                          lenderRateOverride: isOn,
-                          // Seed editable value with currently displayed rate when first enabled.
-                          rateLenderValue: isOn && !prev.rateLenderValue ? (prev.lenderRate || soldRateVal) : prev.rateLenderValue,
-                        }));
-                      }}
-                      className="h-3.5 w-3.5"
-                    />
+                    <div className="flex items-center gap-1 flex-1">
+                      <Checkbox
+                        checked={isOn}
+                        onCheckedChange={(checked) => {
+                          const on = !!checked;
+                          setFormData(prev => ({
+                            ...prev,
+                            lenderRateOverride: on,
+                            lenderRateOverrideValue: on
+                              ? (prev.lenderRateOverrideValue || prev.lenderRate || soldRateVal)
+                              : prev.lenderRateOverrideValue,
+                          }));
+                        }}
+                        className="h-3.5 w-3.5"
+                      />
+                      <div className="relative flex-1">
+                        <Input
+                          value={formData.lenderRateOverrideValue || ''}
+                          onChange={(e) => {
+                            let v = e.target.value.replace(/[^0-9.]/g, '');
+                            const parts = v.split('.');
+                            if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+                            const [intPart, decPart] = v.split('.');
+                            if (decPart && decPart.length > 2) v = `${intPart}.${decPart.slice(0, 2)}`;
+                            setFormData(prev => ({ ...prev, lenderRateOverrideValue: v, rateLenderValue: v }));
+                          }}
+                          onBlur={(e) => {
+                            const raw = (e.target.value || '').replace(/[^0-9.]/g, '');
+                            if (!raw) return;
+                            const [intPart, decPart = ''] = raw.split('.');
+                            const truncated = `${intPart || '0'}.${(decPart + '00').slice(0, 2)}`;
+                            if (truncated !== formData.lenderRateOverrideValue) {
+                              setFormData(prev => ({ ...prev, lenderRateOverrideValue: truncated, rateLenderValue: truncated }));
+                            }
+                          }}
+                          onKeyDown={numericKeyDown}
+                          className="h-6 text-[11px] pr-4"
+                          inputMode="decimal"
+                          placeholder="%"
+                          disabled={!isOn}
+                        />
+                        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+                      </div>
+                    </div>
                   );
                 })()}
               </div>
