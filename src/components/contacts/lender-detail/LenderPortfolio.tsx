@@ -40,6 +40,7 @@ interface PortfolioRow {
   lenderRate: number;
   maturityDate: string;
   outstandingBalance: number;
+  currentBalance: number;
   accruedInterest: number;
   paymentReceived: number;
   roiYield: number;
@@ -58,6 +59,7 @@ const ALL_COLUMNS = [
   { id: 'ownershipPct', label: '% Owned (Pro-rata)' },
   { id: 'fundingAmount', label: 'Investment Amount' },
   { id: 'outstandingBalance', label: 'Current Balance (UPB)' },
+  { id: 'currentBalance', label: 'Current Balance' },
   { id: 'noteRate', label: 'Interest Rate' },
   { id: 'lenderRate', label: 'Lender Rate' },
   { id: 'paymentReceived', label: 'Payment Received' },
