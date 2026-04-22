@@ -649,7 +649,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 {(() => {
                   const soldRateVal = (formData.rateSoldValue || '').trim();
                   const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
-                  const lenderRateDisabled = hasSoldRate && !formData.lenderRateOverride;
+                  const lenderRateDisabled = hasSoldRate;
                   return (
                     <div className="relative flex-1">
                       <Input
