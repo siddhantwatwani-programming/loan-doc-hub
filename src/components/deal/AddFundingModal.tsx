@@ -1121,6 +1121,16 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                             />
                           </td>
                         )}
+                        {customDisbCols.map((c) => (
+                          <td key={c.id} className="py-0.5 px-1">
+                            <Input
+                              value={(customDisbValues[c.id]?.[idx]) ?? ''}
+                              onChange={(e) => handleCustomCellChange(c.id, idx, e.target.value)}
+                              className="h-5 text-[10px]"
+                              placeholder={c.label}
+                            />
+                          </td>
+                        ))}
                         <td className="py-0.5 px-1 text-center">
                           <div className="flex items-center gap-0.5 justify-center">
                             <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleEditDisbursement(idx)} title="Edit">
