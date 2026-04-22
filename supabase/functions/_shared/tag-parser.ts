@@ -1799,7 +1799,12 @@ export function replaceMergeTags(
 
   // Final pass: convert any remaining checkbox glyphs (☐/☑/☒) in <w:r>
   // elements into native Word SDT checkboxes so they are editable/clickable.
-  result = convertGlyphsToSdtCheckboxes(result);
+  // Final pass: convert any remaining checkbox glyphs (☐/☑/☒) in <w:r>
+  // elements into native Word SDT checkboxes so they are editable/clickable.
+  // Only promote glyphs to SDTs in parts that declare xmlns:w14 — otherwise
+  // the injected <w14:checkbox> markup would make Word refuse the file.
+  const declaresW14 = xmlPartDeclaresW14(content);
+  result = convertGlyphsToSdtCheckboxes(result, declaresW14);
 
   return result;
 }
