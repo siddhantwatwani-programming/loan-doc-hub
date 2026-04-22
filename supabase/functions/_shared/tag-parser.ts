@@ -1648,7 +1648,19 @@ export function replaceMergeTags(
       k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     );
     const combinedRegex = new RegExp(escapedPatterns.join('|'), 'g');
-    result = result.replace(combinedRegex, (match) => tagReplacementMap.get(match) ?? match);
+    result = result.replace(combinedRegex, (match, offset: number) => {
+      const replacement = tagReplacementMap.get(match);
+      if (replacement === undefined) return match;
+      if (!replacement.includes('\n')) return replacement;
+      // Context-aware newline handling: only emit Word's in-run break form
+      // when we're substituting inside an open <w:t> element. Otherwise the
+      // </w:t><w:br/><w:t> fragment would create orphan tags and corrupt
+      // the file.
+      if (isInsideTextRun(result, offset)) {
+        return replacement.replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
+      }
+      return replacement.replace(/\n/g, ' ');
+    });
 
     // Dedup: after merge tag replacement, collapse adjacent duplicate checkbox
     // glyphs that arise when a merge tag resolves to ☑/☐ next to a static ☐
