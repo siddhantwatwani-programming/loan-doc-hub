@@ -1471,7 +1471,18 @@ export function processEachBlocks(
             resolvedValue = formatByDataType(resolved.data.rawValue, resolved.data.dataType);
           }
 
-          blockContent = blockContent.split(tag[0]).join(escapeXmlValue(resolvedValue));
+          {
+            const tagText = tag[0];
+            const parts = blockContent.split(tagText);
+            if (parts.length > 1) {
+              let rebuilt = parts[0];
+              for (let pi = 1; pi < parts.length; pi++) {
+                rebuilt += formatValueForInsertion(resolvedValue, rebuilt, rebuilt.length);
+                rebuilt += parts[pi];
+              }
+              blockContent = rebuilt;
+            }
+          }
         }
 
         expandedBlocks.push(blockContent);
