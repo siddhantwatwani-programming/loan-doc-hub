@@ -460,6 +460,7 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
       case 'lenderRate': return fmtPct(row.lenderRate);
       case 'regularPayment': return fmtCurrency(row.regularPayment);
       case 'outstandingBalance': return fmtCurrency(row.outstandingBalance);
+      case 'currentBalance': return fmtCurrency(row.currentBalance);
       case 'paymentReceived': return fmtCurrency(row.paymentReceived);
       case 'accruedInterest': return fmtCurrency(row.accruedInterest);
       case 'roiYield': return fmtPct(row.roiYield);
