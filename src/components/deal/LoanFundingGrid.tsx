@@ -42,7 +42,8 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'lenderAccount', label: 'Lender ID', visible: true },
   { id: 'lenderName', label: 'Name', visible: true },
   { id: 'originalAmount', label: 'Funding Amount', visible: true },
-  { id: 'principalBalance', label: 'Current Balance', visible: true },
+  { id: 'currentBalance', label: 'Current Balance', visible: true },
+  { id: 'principalBalance', label: 'Principal Balance', visible: true },
   { id: 'pctOwned', label: 'Pro Rata', visible: true },
   { id: 'fundingDate', label: 'Funding Date', visible: true },
   { id: 'interestFrom', label: 'Interest From', visible: true },
@@ -61,6 +62,7 @@ export interface FundingRecord {
   lenderRate: number;
   principalBalance: number;
   originalAmount: number;
+  currentBalance?: number;
   regularPayment: number;
   lenderShare: number;
   roundingError: boolean;
