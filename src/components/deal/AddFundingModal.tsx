@@ -52,7 +52,7 @@ export interface DisbursementRow {
   from: 'Interest' | 'Principal' | 'Payment' | '';
   comments: string;
   debitPercent: string;
-  debitOf: 'Payment' | 'Interest' | 'Principal' | '';
+  debitOf: 'Payment' | 'Interest' | 'Principal' | 'NA' | '';
   plusAmount: string;
   minimumAmount: string;
   maximumAmount: string;
