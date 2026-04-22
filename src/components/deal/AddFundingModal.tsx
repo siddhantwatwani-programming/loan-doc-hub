@@ -308,7 +308,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
 
     let rate = '';
-    if (hasSoldRate && !formData.lenderRateOverride) {
+    if (hasSoldRate) {
+      // Lender Rate display always mirrors Sold Rate (per spec) regardless of override.
       rate = soldRateVal;
     } else if (formData.rateSelection === 'note_rate') rate = formData.rateNoteValue;
     else if (formData.rateSelection === 'sold_rate') rate = formData.rateSoldValue;
