@@ -1634,13 +1634,11 @@ export function replaceMergeTags(
       console.log(`[tag-parser] No data for ${tag.tagName} (canonical: ${canonicalKey}, ultimate: ${ultimateKey})`);
     }
     
-    // XML-escape the value to prevent corruption from &, <, >, " characters
-    const xmlSafeValue = resolvedValue
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
+    // XML-escape the value to prevent corruption from &, <, >, ", ' characters.
+    // Newline handling is deferred until insertion (see combinedRegex below) so
+    // we never emit </w:t><w:br/><w:t> outside an open text run, which would
+    // produce orphan tags and cause Word to refuse to open the file.
+    const xmlSafeValue = escapeXmlValue(resolvedValue);
     tagReplacementMap.set(tag.fullMatch, xmlSafeValue);
   }
 
