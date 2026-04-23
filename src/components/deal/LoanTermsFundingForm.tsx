@@ -506,9 +506,44 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     const updatedRecordsJson = JSON.stringify(updatedRecords);
     onValueChange(FIELD_KEYS.fundingRecords, updatedRecordsJson);
 
+    // Mirror edits into Funding History so the history grid auto-updates
+    const updatedRecord = updatedRecords.find((r) => r.id === id);
+    const historyValue = values[FIELD_KEYS.fundingHistory];
+    let history: any[] = [];
+    try {
+      history = historyValue ? JSON.parse(historyValue) : [];
+    } catch {
+      history = [];
+    }
+    let updatedHistoryJson: string | null = null;
+    if (Array.isArray(history) && updatedRecord) {
+      const historyId = `history-${id}`;
+      const idx = history.findIndex((h: any) => h?.id === historyId);
+      const patch = {
+        fundingDate: updatedRecord.fundingDate || '',
+        lenderAccount: updatedRecord.lenderAccount || '',
+        lenderName: updatedRecord.lenderName || '',
+        amountFunded: typeof updatedRecord.originalAmount === 'number'
+          ? updatedRecord.originalAmount
+          : parseFloat(String(updatedRecord.originalAmount || '').replace(/[$,]/g, '')) || 0,
+      };
+      if (idx >= 0) {
+        history[idx] = { ...history[idx], ...patch };
+      } else {
+        history.push({ id: historyId, reference: `REF-${id}`, ...patch });
+      }
+      updatedHistoryJson = JSON.stringify(history);
+      onValueChange(FIELD_KEYS.fundingHistory, updatedHistoryJson);
+    }
+
     // Direct-persist to DB
-    await directPersistFundingField(dealId, FIELD_KEYS.fundingRecords, updatedRecordsJson, dictCacheRef.current);
-  }, [fundingRecords, onValueChange, dealId]);
+    await Promise.all([
+      directPersistFundingField(dealId, FIELD_KEYS.fundingRecords, updatedRecordsJson, dictCacheRef.current),
+      updatedHistoryJson
+        ? directPersistFundingField(dealId, FIELD_KEYS.fundingHistory, updatedHistoryJson, dictCacheRef.current)
+        : Promise.resolve(),
+    ]);
+  }, [fundingRecords, values, onValueChange, dealId]);
 
   const handleDeleteHistoryRecord = useCallback(async (record: { id: string }) => {
     const current = historyRecords.filter((r: any) => r.id !== record.id);
