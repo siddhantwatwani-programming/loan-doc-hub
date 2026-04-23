@@ -347,7 +347,7 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
           open={exportOpen}
           onOpenChange={setExportOpen}
           columns={HISTORY_EXPORT_COLUMNS}
-          data={historyRecords}
+          data={filteredRecords}
           fileName="funding_history"
         />
 
