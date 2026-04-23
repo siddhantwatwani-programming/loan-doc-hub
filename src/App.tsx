@@ -34,6 +34,7 @@ import GlobalEventJournalPage from "./pages/csr/GlobalEventJournalPage";
 import ContactLendersPage from "./pages/contacts/ContactLendersPage";
 import ContactBorrowersPage from "./pages/contacts/ContactBorrowersPage";
 import ContactBrokersPage from "./pages/contacts/ContactBrokersPage";
+import ContactOthersPage from "./pages/contacts/ContactOthersPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -83,8 +84,85 @@ const App = () => (
                   <Route path="/contacts/others/insurance-company" element={<ComingSoonPage />} />
                   <Route path="/contacts/others/title-company" element={<ComingSoonPage />} />
                   <Route path="/contacts/others/notary" element={<ComingSoonPage />} />
+                  <Route
+                    path="/contacts/others/additional-guarantor"
+                    element={
+                      <ContactOthersPage
+                        contactType="additional_guarantor"
+                        kindLabel="Additional Guarantor"
+                        pluralLabel="Additional Guarantors"
+                        routeBase="/contacts/others/additional-guarantor"
+                        workspaceKind="additional_guarantor"
+                        tableConfigKey="contact_additional_guarantors_v1"
+                      />
+                    }
+                  />
+                  <Route
+                    path="/contacts/others/additional-guarantor/:contactId"
+                    element={
+                      <ContactOthersPage
+                        contactType="additional_guarantor"
+                        kindLabel="Additional Guarantor"
+                        pluralLabel="Additional Guarantors"
+                        routeBase="/contacts/others/additional-guarantor"
+                        workspaceKind="additional_guarantor"
+                        tableConfigKey="contact_additional_guarantors_v1"
+                      />
+                    }
+                  />
+                  <Route
+                    path="/contacts/others/authorized-party"
+                    element={
+                      <ContactOthersPage
+                        contactType="authorized_party"
+                        kindLabel="Authorized Party"
+                        pluralLabel="Authorized Parties"
+                        routeBase="/contacts/others/authorized-party"
+                        workspaceKind="authorized_party"
+                        tableConfigKey="contact_authorized_parties_v1"
+                      />
+                    }
+                  />
+                  <Route
+                    path="/contacts/others/authorized-party/:contactId"
+                    element={
+                      <ContactOthersPage
+                        contactType="authorized_party"
+                        kindLabel="Authorized Party"
+                        pluralLabel="Authorized Parties"
+                        routeBase="/contacts/others/authorized-party"
+                        workspaceKind="authorized_party"
+                        tableConfigKey="contact_authorized_parties_v1"
+                      />
+                    }
+                  />
+                  <Route
+                    path="/contacts/others/attorney"
+                    element={
+                      <ContactOthersPage
+                        contactType="attorney"
+                        kindLabel="Attorney"
+                        pluralLabel="Attorneys"
+                        routeBase="/contacts/others/attorney"
+                        workspaceKind="attorney"
+                        tableConfigKey="contact_attorneys_v1"
+                      />
+                    }
+                  />
+                  <Route
+                    path="/contacts/others/attorney/:contactId"
+                    element={
+                      <ContactOthersPage
+                        contactType="attorney"
+                        kindLabel="Attorney"
+                        pluralLabel="Attorneys"
+                        routeBase="/contacts/others/attorney"
+                        workspaceKind="attorney"
+                        tableConfigKey="contact_attorneys_v1"
+                      />
+                    }
+                  />
                   <Route path="/contacts/others/guarantor" element={<ComingSoonPage />} />
-                  <Route path="/contacts/others/authorized-party" element={<ComingSoonPage />} />
                   <Route path="/contacts/others/attorneys" element={<ComingSoonPage />} />
 
                   {/* Broker Services */}

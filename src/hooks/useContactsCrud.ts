@@ -20,8 +20,16 @@ export interface ContactRecord {
   updated_at: string;
 }
 
+export type ContactType =
+  | 'lender'
+  | 'broker'
+  | 'borrower'
+  | 'additional_guarantor'
+  | 'authorized_party'
+  | 'attorney';
+
 interface UseContactsCrudOptions {
-  contactType: 'lender' | 'broker' | 'borrower';
+  contactType: ContactType;
   pageSize?: number;
 }
 
