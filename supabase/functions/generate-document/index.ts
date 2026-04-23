@@ -514,6 +514,16 @@ async function generateSingleDocument(
             setIfEmpty("lender1.investor_questionnaire_due_date", lcd.investor_questionnaire_due_date);
           }
 
+          // Bridge investor questionnaire due (boolean checkbox) from contact_data
+          const iqDueRaw = lcd.investor_questionnaire_due;
+          const iqDueChecked =
+            iqDueRaw === true || iqDueRaw === 'true' || iqDueRaw === 1 || iqDueRaw === '1' || iqDueRaw === 'yes';
+          setIfEmpty("ld_p_investorQuestiDue", iqDueChecked ? "true" : "false");
+          setIfEmpty("lender1.investor_questionnaire_due", iqDueChecked ? "true" : "false");
+          setIfEmpty("lender.investor_questionnaire_due", iqDueChecked ? "true" : "false");
+          // Pre-rendered checkbox glyph for templates that prefer a single placeholder
+          setIfEmpty("ld_p_investorQuestiDueCheckbox", iqDueChecked ? "☒" : "☐");
+
           debugLog(`[generate-document] Injected lender contact fields from participant (contact ${lc.contact_id}), lenderName="${lFullName}"`);
         }
       }
