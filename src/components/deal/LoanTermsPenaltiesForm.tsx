@@ -205,8 +205,8 @@ const DistributionFields: React.FC<{
     const sanitized = sanitizePct(val);
     const newLenders = parseFloat(sanitized) || 0;
     onValueChange(`${prefix}.distribution.lenders`, sanitized);
-    if (newLenders + vendorClamped > 100) {
-      const newVendor = Math.max(0, 100 - newLenders);
+    if (newLenders + vendorClamped + otherClamped > 100) {
+      const newVendor = Math.max(0, 100 - newLenders - otherClamped);
       onValueChange(`${prefix}.distribution.origination_vendors`, newVendor.toFixed(2));
     }
   };
@@ -214,9 +214,17 @@ const DistributionFields: React.FC<{
   const handleVendorChange = (val: string) => {
     const sanitized = sanitizePct(val);
     const newVendor = parseFloat(sanitized) || 0;
-    const capped = Math.min(newVendor, Math.max(0, 100 - lendersClamped));
+    const capped = Math.min(newVendor, Math.max(0, 100 - lendersClamped - otherClamped));
     const finalVal = capped === newVendor ? sanitized : capped.toFixed(2);
     onValueChange(`${prefix}.distribution.origination_vendors`, finalVal);
+  };
+
+  const handleOtherChange = (val: string) => {
+    const sanitized = sanitizePct(val);
+    const newOther = parseFloat(sanitized) || 0;
+    const capped = Math.min(newOther, Math.max(0, 100 - lendersClamped - vendorClamped));
+    const finalVal = capped === newOther ? sanitized : capped.toFixed(2);
+    onValueChange(`${prefix}.distribution.other`, finalVal);
   };
 
   return (
