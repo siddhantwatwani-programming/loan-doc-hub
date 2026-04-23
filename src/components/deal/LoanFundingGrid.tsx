@@ -245,6 +245,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   onHeaderFieldBlur,
   fundingAdjustments = [],
   onSaveAdjustment,
+  onDeleteHistoryRecord,
 }) => {
   const { user } = useAuth();
   const [createLenderModalOpen, setCreateLenderModalOpen] = useState(false);
@@ -796,7 +797,14 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         editingRecordId={selectedRecord?.id}
       />
 
-      <FundingHistoryDialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen} dealId={dealId} historyRecords={historyRecords} />
+      <FundingHistoryDialog
+        open={isHistoryOpen}
+        onOpenChange={setIsHistoryOpen}
+        dealId={dealId}
+        historyRecords={historyRecords}
+        loanReleased={true}
+        onDeleteRecord={onDeleteHistoryRecord}
+      />
 
       <DeleteConfirmationDialog
         open={!!deleteRowRecord}
