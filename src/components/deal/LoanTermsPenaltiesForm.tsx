@@ -270,6 +270,28 @@ const DistributionFields: React.FC<{
             </div>
           </div>
         </DirtyFieldWrapper>
+        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.other`}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Other</Label>
+            <div className="flex-1 min-w-0">
+              <PenaltyPercentInput
+                value={otherRaw}
+                onChange={handleOtherChange}
+                disabled={disabled}
+              />
+            </div>
+          </div>
+        </DirtyFieldWrapper>
+        <div className="flex items-center gap-3">
+          <Label className="text-sm min-w-[160px] max-w-[160px] font-semibold">Total</Label>
+          <div className="flex-1 min-w-0">
+            <PenaltyPercentInput
+              value={totalDisplay}
+              onChange={() => { /* auto-computed, read-only */ }}
+              disabled
+            />
+          </div>
+        </div>
         {showError && (
           <p className="text-xs text-destructive w-full">Please allocate remaining percentage in subsequent fields</p>
         )}
