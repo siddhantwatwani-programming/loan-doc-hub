@@ -90,9 +90,19 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'email', label: 'Email', visible: true },
   { id: 'phone', label: 'Phone', visible: true },
   { id: 'participant_type_capacity', label: 'Participant Type - Capacity', visible: true },
+  { id: 'originating_vendor', label: 'Originating Vendor', visible: true },
   { id: 'status', label: 'Status', visible: true },
   { id: 'created_at', label: 'Added Date', visible: true },
 ];
+
+const formatPhoneDisplay = (value: string | null | undefined): string => {
+  if (!value) return '';
+  const digits = String(value).replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return String(value);
+};
 
 const SEARCHABLE_FIELDS = ['name', 'email', 'phone', 'role', 'contact_id_display', 'capacity', 'participant_type_capacity'];
 
