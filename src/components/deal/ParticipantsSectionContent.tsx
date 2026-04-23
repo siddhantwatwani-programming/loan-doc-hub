@@ -478,7 +478,65 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
     return statuses.map((s) => ({ value: s, label: STATUS_LABELS[s] || 'Active' }));
   }, [participants]);
 
+  const brokerParticipants = useMemo(
+    () => participants.filter((p) => p.role === 'broker'),
+    [participants]
+  );
+
+  const resolvedOriginatingVendor = useMemo(() => {
+    if (brokerParticipants.length === 0) return null;
+    if (brokerParticipants.length === 1) return brokerParticipants[0];
+    return (
+      brokerParticipants.find((b) => b.contact_id === originatingVendorId) || null
+    );
+  }, [brokerParticipants, originatingVendorId]);
+
+  const handleOriginatingVendorChange = useCallback(
+    async (contactId: string) => {
+      setOriginatingVendorId(contactId);
+      try {
+        const { data: existing } = await supabase
+          .from('deal_section_values')
+          .select('id, field_values')
+          .eq('deal_id', dealId)
+          .eq('section', 'participants')
+          .maybeSingle();
+
+        const currentValues = (existing?.field_values as Record<string, any>) || {};
+        const newValues = { ...currentValues, originating_vendor_contact_id: contactId };
+
+        if (existing?.id) {
+          await supabase
+            .from('deal_section_values')
+            .update({ field_values: newValues })
+            .eq('id', existing.id);
+        } else {
+          await supabase
+            .from('deal_section_values')
+            .insert({ deal_id: dealId, section: 'participants', field_values: newValues });
+        }
+      } catch (err) {
+        console.error('Error saving originating vendor:', err);
+        toast.error('Failed to save originating vendor');
+      }
+    },
+    [dealId]
+  );
+
   const exportColumns: ExportColumn[] = columns.map((c) => ({ id: c.id, label: c.label }));
+
+  const exportData = useMemo(
+    () =>
+      filteredData.map((p) => ({
+        ...p,
+        phone: formatPhoneDisplay(p.phone),
+        originating_vendor:
+          brokerParticipants.length === 1
+            ? brokerParticipants[0].name
+            : brokerParticipants.find((b) => b.contact_id === originatingVendorId)?.name || '',
+      })),
+    [filteredData, brokerParticipants, originatingVendorId]
+  );
 
   const renderCellValue = (participant: Participant, columnId: string) => {
     switch (columnId) {
@@ -489,7 +547,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
       case 'email':
         return <span className="text-muted-foreground">{participant.email || '—'}</span>;
       case 'phone':
-        return <span className="text-muted-foreground">{participant.phone || '—'}</span>;
+        return <span className="text-muted-foreground">{formatPhoneDisplay(participant.phone) || '—'}</span>;
       case 'participant_type_capacity':
         return (
           <Badge variant="secondary" className={cn('text-xs', ROLE_COLORS[participant.role] || '')}>
