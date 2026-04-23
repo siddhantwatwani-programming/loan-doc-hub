@@ -436,9 +436,9 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       history = [];
     }
     history.push({
-      id: `history-${Date.now()}`,
+      id: `history-${newRecord.id}`,
       fundingDate: data.fundingDate,
-      reference: `REF-${Date.now()}`,
+      reference: `REF-${newRecord.id}`,
       lenderAccount: data.lenderId,
       lenderName: data.lenderFullName,
       amountFunded: safeParseFloat(data.fundingAmount),
