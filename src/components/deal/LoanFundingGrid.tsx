@@ -179,6 +179,7 @@ interface LoanFundingGridProps {
   // Funding Adjustment
   fundingAdjustments?: FundingAdjustmentData[];
   onSaveAdjustment?: (adjustment: FundingAdjustmentData) => void;
+  onDeleteHistoryRecord?: (record: { id: string }) => void;
 }
 
 const SEARCH_FIELDS = ['lenderAccount', 'lenderName'];
