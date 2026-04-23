@@ -245,7 +245,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
       const mergedDraft = {
         ...draft,
         rateSoldValue: soldRate || draft.rateSoldValue || '',
-        lenderRate: soldRate || draft.lenderRate || '',
+        lenderRate: draft.lenderRate || soldRate || draft.rateLenderValue || '',
       };
       return {
         ...getDefaultFormData(loanNumber, borrowerName, noteRate, soldRate),
@@ -263,7 +263,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
       const mergedEditData = {
         ...editData,
         rateSoldValue: soldRate || editData.rateSoldValue || '',
-        lenderRate: soldRate || editData.lenderRate || '',
+        lenderRate: editData.lenderRate || soldRate || editData.rateLenderValue || '',
       };
       return {
         ...getDefaultFormData(loanNumber, borrowerName, noteRate, soldRate),
@@ -312,7 +312,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
       return {
         ...prev,
         rateSoldValue: nextSoldRate,
-        lenderRate: nextSoldRate || prev.lenderRate,
       };
     });
   }, [open, soldRate]);
@@ -326,27 +325,12 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     } catch { /* ignore quota errors */ }
   }, [formData, open, draftKey]);
 
-  // Compute lenderRate.
-  // Priority: if a Sold Rate exists on the loan AND override is OFF, lenderRate is forced
-  // to the Sold Rate (and the field is disabled in the UI). When override is ON, we keep
-  // whatever the user types (rateLenderValue) — but the prefilled value remains visible
-  // until they change it.
+  // Keep the legacy rateLenderValue in sync with the editable Lender Rate field without overwriting user input.
   React.useEffect(() => {
-    const soldRateVal = (formData.rateSoldValue || '').trim();
-    const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
-
-    let rate = '';
-    if (hasSoldRate) {
-      // Lender Rate display always mirrors Sold Rate (per spec) regardless of override.
-      rate = soldRateVal;
-    } else if (formData.rateSelection === 'note_rate') rate = formData.rateNoteValue;
-    else if (formData.rateSelection === 'sold_rate') rate = formData.rateSoldValue;
-    else if (formData.rateSelection === 'lender_rate') rate = formData.rateLenderValue;
-
-    if (rate !== formData.lenderRate) {
-      setFormData(prev => ({ ...prev, lenderRate: rate }));
+    if ((formData.rateLenderValue || '') !== (formData.lenderRate || '')) {
+      setFormData(prev => ({ ...prev, rateLenderValue: prev.lenderRate || '' }));
     }
-  }, [formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue, formData.lenderRateOverride]);
+  }, [formData.lenderRate, formData.rateLenderValue]);
 
   // Auto-compute Percent Owned
   React.useEffect(() => {
@@ -400,19 +384,14 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   // Regular Payment calculation
   React.useEffect(() => {
     const la = parseFloat(loanAmount) || 0;
-    const soldRateVal = (formData.rateSoldValue || '').trim();
-    const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
-    let rate = 0;
-    if (formData.lenderRateOverride) rate = parseFloat(formData.lenderRateOverrideValue || '') || 0;
-    else if (hasSoldRate) rate = parseFloat(soldRateVal) || 0;
-    else if (formData.rateSelection === 'note_rate') rate = parseFloat(formData.rateNoteValue) || 0;
-    else if (formData.rateSelection === 'sold_rate') rate = parseFloat(formData.rateSoldValue) || 0;
-    else if (formData.rateSelection === 'lender_rate') rate = parseFloat(formData.rateLenderValue) || 0;
+    const rate = formData.lenderRateOverride
+      ? (parseFloat(formData.lenderRateOverrideValue || '') || 0)
+      : (parseFloat(formData.lenderRate || '') || 0);
     const payment = la > 0 && rate > 0 ? (la * (rate / 100) / 12).toFixed(2) : '';
     if (payment !== formData.regularPayment) {
       setFormData(prev => ({ ...prev, regularPayment: payment }));
     }
-  }, [loanAmount, formData.lenderRateOverride, formData.lenderRateOverrideValue, formData.rateSelection, formData.rateNoteValue, formData.rateSoldValue, formData.rateLenderValue]);
+  }, [loanAmount, formData.lenderRateOverride, formData.lenderRateOverrideValue, formData.lenderRate]);
 
   // Auto-compute total columns for default fees
   const computeTotal = (lender: string, company: string, broker: string): string => {
@@ -602,13 +581,9 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const handleConfirmSave = () => {
     setShowConfirm(false);
     // Sync new fee fields back to legacy fields for persistence
-    const soldRateVal = (formData.rateSoldValue || '').trim();
-    const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
     const effectiveRateLenderValue = formData.lenderRateOverride
       ? (formData.lenderRateOverrideValue || '')
-      : hasSoldRate
-        ? soldRateVal
-      : (formData.rateLenderValue || formData.lenderRate || '');
+      : (formData.lenderRate || formData.rateLenderValue || '');
 
     const syncedData: FundingFormData = {
       ...formData,
