@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 
-export type ContactKind = 'borrower' | 'broker' | 'lender';
+export type ContactKind =
+  | 'borrower'
+  | 'broker'
+  | 'lender'
+  | 'additional_guarantor'
+  | 'authorized_party'
+  | 'attorney';
 
 export interface OpenContact {
   id: string;            // contacts.id (uuid)
