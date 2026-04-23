@@ -142,15 +142,19 @@ const DistributionFields: React.FC<{
 }> = ({ prefix, values, onValueChange, disabled, showValidation }) => {
   const lendersRaw = values[`${prefix}.distribution.lenders`] || '';
   const vendorRaw = values[`${prefix}.distribution.origination_vendors`] || '';
+  const otherRaw = values[`${prefix}.distribution.other`] || '';
   const lendersVal = parseFloat(lendersRaw) || 0;
   const vendorVal = parseFloat(vendorRaw) || 0;
+  const otherVal = parseFloat(otherRaw) || 0;
   const clamp = (n: number) => Math.max(0, Math.min(100, n));
   const lendersClamped = clamp(lendersVal);
   const vendorClamped = clamp(vendorVal);
-  const remainder = Math.max(0, 100 - lendersClamped - vendorClamped);
+  const otherClamped = clamp(otherVal);
+  const remainder = Math.max(0, 100 - lendersClamped - vendorClamped - otherClamped);
   const companyDisplay = disabled
     ? '0.00'
-    : ((lendersRaw || vendorRaw) ? remainder.toFixed(2) : '');
+    : ((lendersRaw || vendorRaw || otherRaw) ? remainder.toFixed(2) : '');
+  const totalDisplay = (lendersClamped + vendorClamped + otherClamped + (parseFloat(companyDisplay) || 0)).toFixed(2);
 
   // Persist computed Company value
   const persistedCompany = values[`${prefix}.distribution.company`] || '';
@@ -201,8 +205,8 @@ const DistributionFields: React.FC<{
     const sanitized = sanitizePct(val);
     const newLenders = parseFloat(sanitized) || 0;
     onValueChange(`${prefix}.distribution.lenders`, sanitized);
-    if (newLenders + vendorClamped > 100) {
-      const newVendor = Math.max(0, 100 - newLenders);
+    if (newLenders + vendorClamped + otherClamped > 100) {
+      const newVendor = Math.max(0, 100 - newLenders - otherClamped);
       onValueChange(`${prefix}.distribution.origination_vendors`, newVendor.toFixed(2));
     }
   };
@@ -210,9 +214,17 @@ const DistributionFields: React.FC<{
   const handleVendorChange = (val: string) => {
     const sanitized = sanitizePct(val);
     const newVendor = parseFloat(sanitized) || 0;
-    const capped = Math.min(newVendor, Math.max(0, 100 - lendersClamped));
+    const capped = Math.min(newVendor, Math.max(0, 100 - lendersClamped - otherClamped));
     const finalVal = capped === newVendor ? sanitized : capped.toFixed(2);
     onValueChange(`${prefix}.distribution.origination_vendors`, finalVal);
+  };
+
+  const handleOtherChange = (val: string) => {
+    const sanitized = sanitizePct(val);
+    const newOther = parseFloat(sanitized) || 0;
+    const capped = Math.min(newOther, Math.max(0, 100 - lendersClamped - vendorClamped));
+    const finalVal = capped === newOther ? sanitized : capped.toFixed(2);
+    onValueChange(`${prefix}.distribution.other`, finalVal);
   };
 
   return (
@@ -258,6 +270,28 @@ const DistributionFields: React.FC<{
             </div>
           </div>
         </DirtyFieldWrapper>
+        <DirtyFieldWrapper fieldKey={`${prefix}.distribution.other`}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm min-w-[160px] max-w-[160px]">Other</Label>
+            <div className="flex-1 min-w-0">
+              <PenaltyPercentInput
+                value={otherRaw}
+                onChange={handleOtherChange}
+                disabled={disabled}
+              />
+            </div>
+          </div>
+        </DirtyFieldWrapper>
+        <div className="flex items-center gap-3">
+          <Label className="text-sm min-w-[160px] max-w-[160px] font-semibold">Total</Label>
+          <div className="flex-1 min-w-0">
+            <PenaltyPercentInput
+              value={totalDisplay}
+              onChange={() => { /* auto-computed, read-only */ }}
+              disabled
+            />
+          </div>
+        </div>
         {showError && (
           <p className="text-xs text-destructive w-full">Please allocate remaining percentage in subsequent fields</p>
         )}
