@@ -570,6 +570,40 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         );
       case 'created_at':
         return <span className="text-muted-foreground">{formatDate(participant.created_at)}</span>;
+      case 'originating_vendor': {
+        if (brokerParticipants.length === 0) {
+          return (
+            <span className="text-xs text-muted-foreground italic">
+              Add a Broker participant
+            </span>
+          );
+        }
+        if (brokerParticipants.length === 1) {
+          return (
+            <span className="text-foreground">{brokerParticipants[0].name || '—'}</span>
+          );
+        }
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Select
+              value={originatingVendorId || undefined}
+              onValueChange={handleOriginatingVendorChange}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-8 text-xs w-[180px]">
+                <SelectValue placeholder="Select broker" />
+              </SelectTrigger>
+              <SelectContent>
+                {brokerParticipants.map((b) => (
+                  <SelectItem key={b.id} value={b.contact_id || b.id}>
+                    {b.name || '—'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        );
+      }
       default:
         return '—';
     }
