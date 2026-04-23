@@ -206,6 +206,19 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Search */}
+          <div className="relative max-w-sm">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              type="text"
+              placeholder="Search history..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-9"
+              aria-label="Search funding history"
+            />
+          </div>
+
           {/* Grid */}
           <div className="border rounded-lg overflow-auto">
             <Table>
@@ -281,7 +294,7 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
                 <SelectTrigger className="w-[70px] h-8">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[100]" position="popper" sideOffset={4}>
                   <SelectItem value="10">10</SelectItem>
                   <SelectItem value="25">25</SelectItem>
                   <SelectItem value="50">50</SelectItem>
