@@ -510,6 +510,19 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     await directPersistFundingField(dealId, FIELD_KEYS.fundingRecords, updatedRecordsJson, dictCacheRef.current);
   }, [fundingRecords, onValueChange, dealId]);
 
+  const handleDeleteHistoryRecord = useCallback(async (record: { id: string }) => {
+    const current = historyRecords.filter((r: any) => r.id !== record.id);
+    const json = JSON.stringify(current);
+    onValueChange(FIELD_KEYS.fundingHistory, json);
+    try {
+      await directPersistFundingField(dealId, FIELD_KEYS.fundingHistory, json, dictCacheRef.current);
+      toast.success('Funding history record deleted');
+    } catch (err) {
+      console.error('[LoanTermsFundingForm] Delete history record failed:', err);
+      toast.error('Failed to delete funding history record');
+    }
+  }, [historyRecords, onValueChange, dealId]);
+
   const handleDeleteRecord = async (record: FundingRecord) => {
     const updatedRecords = fundingRecords.filter((r) => r.id !== record.id);
     onValueChange(FIELD_KEYS.fundingRecords, JSON.stringify(updatedRecords));
@@ -633,6 +646,7 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       onHeaderFieldBlur={handleHeaderFieldBlur}
       fundingAdjustments={fundingAdjustments}
       onSaveAdjustment={handleSaveAdjustment}
+      onDeleteHistoryRecord={handleDeleteHistoryRecord}
     />
   );
 };
