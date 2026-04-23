@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Plus, Trash2, Pencil, Loader2, Download, Search, X, Filter, SlidersHorizontal } from 'lucide-react';
+import { Plus, Trash2, Pencil, Loader2, Download, Search, X, Filter, SlidersHorizontal, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import { FundingAdjustmentModal, FundingAdjustmentData } from './FundingAdjustmentModal';
@@ -514,6 +514,16 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                 <SlidersHorizontal className="h-3.5 w-3.5" /> Funding Adjustment
               </Button>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 h-7 text-xs"
+              onClick={() => setIsHistoryOpen(true)}
+              disabled={disabled}
+              title="Funding History"
+            >
+              <History className="h-3.5 w-3.5" /> Funding History
+            </Button>
           </div>
         </div>
 
