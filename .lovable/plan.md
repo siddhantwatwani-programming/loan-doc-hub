@@ -1,57 +1,48 @@
 
 
-## Fix: Investor Questionnaire Due checkbox not rendering in generated DOCX
+## Plan: Participants — Originating Vendor field + Phone formatting
 
-### Root Cause
-The Lender's "Investor Questionnaire Due" checkbox is stored on the Contact record at `contacts.contact_data.investor_questionnaire_due` (as `'true'`/`'false'`).
+### Scope
+Two minimal additions to the **Enter File Data → Participants** module. No schema changes, no API changes, no other modules touched.
 
-The document generation engine (`generate-document` edge function) **does** support `{{#if x}}☒{{else}}☐{{/if}}` syntax — that part of the engine works correctly.
+### 1. Phone formatting in Participants grid `(XXX) XXX-XXXX`
 
-The bug is in the lender-bridging block inside `supabase/functions/generate-document/index.ts` (around lines 504–515): it bridges `lcd.type` and `lcd.investor_questionnaire_due_date` from contact_data into the deal's field-value map, but it **does NOT bridge** `lcd.investor_questionnaire_due`. So the merge-field `ld_p_investorQuestiDue` is always empty → conditional always evaluates falsy → output is always `☐`.
+**File:** `src/components/deal/ParticipantsSectionContent.tsx`
 
-The unchecked-glyph artifact in the existing template proves the conditional engine itself executes correctly — only the data is missing.
+- Add a small `formatPhoneDisplay(value)` helper that strips non-digits and formats 10-digit numbers as `(XXX) XXX-XXXX`. Numbers shorter/longer than 10 digits fall back to the raw value (so existing data isn't hidden).
+- Update the `'phone'` case inside `renderCellValue()` to render `formatPhoneDisplay(participant.phone)` instead of the raw string.
+- Also apply the same formatter inside the `GridExportDialog` data path so exports stay consistent (passed via `filteredData` mapping or by formatting before export — minimal change preferred: just format in the cell renderer; export already uses raw `phone` field, we'll map it through the formatter in the data passed to the dialog).
 
-### Fix (Minimal Change)
-Add a single bridging block in `supabase/functions/generate-document/index.ts` directly after the existing `investor_questionnaire_due_date` bridge. This:
+Storage stays unchanged — raw digits remain in `deal_participants.phone` and `contacts.phone`. This is **display-only formatting**, matching the standard already used by `PhoneInput` (`src/components/ui/phone-input.tsx`).
 
-1. Bridges the boolean to the merge keys consumers already expect:
-   - `ld_p_investorQuestiDue`
-   - `lender1.investor_questionnaire_due`
-   - `lender.investor_questionnaire_due`
-2. Also seeds a pre-rendered glyph alias `ld_p_investorQuestiDueCheckbox` set to `☒` or `☐`, so templates can use the simpler single-placeholder form `{{ld_p_investorQuestiDueCheckbox}}` per the user's fallback requirement.
+### 2. "Originating Vendor" auto-populated field
 
-This keeps **both** template patterns working:
-- Existing template using `{{#if ld_p_investorQuestiDue}}☒{{else}}☐{{/if}}` → now evaluates correctly.
-- Any future template using `{{ld_p_investorQuestiDueCheckbox}}` → renders the right glyph directly.
+**Where it appears:** In the Participants grid as a **new column** (label: `Originating Vendor`), so it follows the existing column-config pattern users already understand (visible by default, toggleable via `ColumnConfigPopover`).
 
-### Technical Details
-File touched: `supabase/functions/generate-document/index.ts` (one location, ~6 lines added)
+**Logic** (computed client-side, no new persisted field):
+- Scan the loaded `participants` array for entries with `role === 'broker'`.
+- If **exactly 1 broker** exists → cell shows that broker's `name` (read-only auto-fill).
+- If **multiple brokers** exist → cell shows the broker that was selected for the deal. Selection is persisted in the existing `deal_section_values` row (`section='participants'`) under a single key `originating_vendor_contact_id`, using the same JSONB pattern already used for `participant_<contactId>_capacity`. The cell renders a small inline `<Select>` of broker names so the user can pick; on change we update that one key via the existing `deal_section_values` upsert path used in `AddParticipantModal.handleSave` (lines ~293-313).
+- If **0 brokers** → cell shows an empty placeholder `—` with muted "Add a Broker participant" hint text (no hard validation popup, since the grid itself has no save action; this matches existing empty-state behavior in the file).
 
-Logic added immediately after the existing `lcd.investor_questionnaire_due_date` block:
-
-```ts
-// Bridge investor questionnaire due (boolean checkbox) from contact_data
-const iqDueRaw = lcd.investor_questionnaire_due;
-const iqDueChecked =
-  iqDueRaw === true || iqDueRaw === 'true' || iqDueRaw === 1 || iqDueRaw === '1' || iqDueRaw === 'yes';
-setIfEmpty("ld_p_investorQuestiDue", iqDueChecked ? "true" : "false");
-setIfEmpty("lender1.investor_questionnaire_due", iqDueChecked ? "true" : "false");
-setIfEmpty("lender.investor_questionnaire_due", iqDueChecked ? "true" : "false");
-// Pre-rendered checkbox glyph for templates that prefer a single placeholder
-setIfEmpty("ld_p_investorQuestiDueCheckbox", iqDueChecked ? "☒" : "☐");
-```
+**Files touched:**
+- `src/components/deal/ParticipantsSectionContent.tsx`
+  - Add `originating_vendor_contact_id` to the existing `deal_section_values` fetch (already fetched on lines 222-239 — just read one extra key from the same row).
+  - Add `'originating_vendor'` to `DEFAULT_COLUMNS` (visible by default, after `participant_type_capacity`).
+  - Add a small handler `handleOriginatingVendorChange(contactId)` that upserts the key into `deal_section_values` (mirrors lines 293-313 of `AddParticipantModal`).
+  - Add a `case 'originating_vendor':` branch in `renderCellValue()` implementing the 1-broker / multi-broker / no-broker UI above.
 
 ### What is NOT changed
-- No DB schema changes
-- No template files touched
-- No changes to UI / Lender form / contact storage
-- No changes to the conditional-block engine, field-resolver, or any other edge function
-- No change to formatting, layout, or other lender mappings
-- Other contact fields (date, type) remain bridged exactly as they are today
+- No DB schema changes, no new tables, no new columns.
+- No changes to `AddParticipantModal`, contact pages, document generation, permissions, or any other grid.
+- No change to how phone numbers are stored — raw digits remain canonical; formatting is display-only.
+- Existing columns, sorting, filtering, search, export, pagination, selection, and bulk-delete behavior remain untouched.
+- The `originating_vendor_contact_id` key is auto-skipped by the existing capacity regex (`/^participant_(.+)_capacity$/`), so no other code paths are affected.
 
 ### Validation
-After deployment:
-- Check the box in Contacts → Lender → save → regenerate Investor Questionnaire doc → renders `☒`
-- Uncheck the box → regenerate → renders `☐`
-- All other lender merge fields and templates remain unaffected
+- Grid `Phone` column displays `(415) 555-1234` for stored `4155551234`; partial/invalid numbers display unchanged.
+- With 1 broker participant → Originating Vendor cell auto-shows that broker's name.
+- Adding a 2nd broker → cell becomes a dropdown; selection persists across reloads.
+- Removing all brokers → cell shows `—`.
+- Export reflects the formatted phone and the resolved Originating Vendor name.
 
