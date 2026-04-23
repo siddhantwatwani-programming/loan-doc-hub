@@ -113,6 +113,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
 }) => {
   const navigate = useNavigate();
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [originatingVendorId, setOriginatingVendorId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
