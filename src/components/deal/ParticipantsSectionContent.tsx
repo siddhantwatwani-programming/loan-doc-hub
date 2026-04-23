@@ -769,7 +769,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         open={exportOpen}
         onOpenChange={setExportOpen}
         columns={exportColumns}
-        data={filteredData}
+        data={exportData}
         fileName="participants"
       />
 
