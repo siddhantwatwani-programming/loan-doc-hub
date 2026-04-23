@@ -157,7 +157,7 @@ export const CreateOtherContactModal: React.FC<CreateOtherContactModalProps> = (
                   <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
                     {US_STATES.map((s) => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                      <SelectItem key={s.code} value={s.code}>{s.code} - {s.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

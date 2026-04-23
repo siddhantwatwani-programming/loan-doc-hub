@@ -182,8 +182,8 @@ export const OtherProfileForm: React.FC<OtherProfileFormProps> = ({
               </SelectTrigger>
               <SelectContent>
                 {US_STATES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
+                  <SelectItem key={s.code} value={s.code}>
+                    {s.code} - {s.name}
                   </SelectItem>
                 ))}
               </SelectContent>
