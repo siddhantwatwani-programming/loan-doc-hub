@@ -23,7 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Download, Trash2, Lock } from 'lucide-react';
+import { Download, Trash2, Lock, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
@@ -84,6 +85,7 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
   const [selectedRecord, setSelectedRecord] = useState<FundingHistoryRecord | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<FundingHistoryRecord | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Persisted column configuration (Customize Grid)
   const [columns, setColumns, resetColumns] = useTableColumnConfig(
@@ -98,12 +100,34 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
   const visibleColumns = useMemo(() => columns.filter((c) => c.visible), [columns]);
   const isVisible = (id: string) => visibleColumns.some((c) => c.id === id);
 
-  const totalPages = Math.max(1, Math.ceil(historyRecords.length / pageSize));
+  // Real-time, case-insensitive, partial-match search across visible-relevant fields
+  const filteredRecords = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return historyRecords;
+    return historyRecords.filter((r) => {
+      const amount = typeof r.amountFunded === 'number' ? r.amountFunded.toString() : '';
+      return (
+        (r.fundingDate || '').toLowerCase().includes(q) ||
+        (r.reference || '').toLowerCase().includes(q) ||
+        (r.lenderAccount || '').toLowerCase().includes(q) ||
+        (r.lenderName || '').toLowerCase().includes(q) ||
+        amount.includes(q) ||
+        (r.notes || '').toLowerCase().includes(q)
+      );
+    });
+  }, [historyRecords, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
 
   const paginatedRecords = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
-    return historyRecords.slice(start, start + pageSize);
-  }, [historyRecords, currentPage, pageSize]);
+    return filteredRecords.slice(start, start + pageSize);
+  }, [filteredRecords, currentPage, pageSize]);
+
+  // Reset to page 1 whenever filters/page size change so results stay visible
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, pageSize]);
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
@@ -182,6 +206,19 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Search */}
+          <div className="relative max-w-sm">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              type="text"
+              placeholder="Search history..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-9"
+              aria-label="Search funding history"
+            />
+          </div>
+
           {/* Grid */}
           <div className="border rounded-lg overflow-auto">
             <Table>
@@ -257,7 +294,7 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
                 <SelectTrigger className="w-[70px] h-8">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[100]" position="popper" sideOffset={4}>
                   <SelectItem value="10">10</SelectItem>
                   <SelectItem value="25">25</SelectItem>
                   <SelectItem value="50">50</SelectItem>
@@ -310,7 +347,7 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
           open={exportOpen}
           onOpenChange={setExportOpen}
           columns={HISTORY_EXPORT_COLUMNS}
-          data={historyRecords}
+          data={filteredRecords}
           fileName="funding_history"
         />
 
