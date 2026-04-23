@@ -23,7 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Download, Trash2, Lock } from 'lucide-react';
+import { Download, Trash2, Lock, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
 import { ColumnConfigPopover, ColumnConfig } from './ColumnConfigPopover';
@@ -84,6 +85,7 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
   const [selectedRecord, setSelectedRecord] = useState<FundingHistoryRecord | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<FundingHistoryRecord | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Persisted column configuration (Customize Grid)
   const [columns, setColumns, resetColumns] = useTableColumnConfig(
@@ -98,12 +100,34 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
   const visibleColumns = useMemo(() => columns.filter((c) => c.visible), [columns]);
   const isVisible = (id: string) => visibleColumns.some((c) => c.id === id);
 
-  const totalPages = Math.max(1, Math.ceil(historyRecords.length / pageSize));
+  // Real-time, case-insensitive, partial-match search across visible-relevant fields
+  const filteredRecords = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return historyRecords;
+    return historyRecords.filter((r) => {
+      const amount = typeof r.amountFunded === 'number' ? r.amountFunded.toString() : '';
+      return (
+        (r.fundingDate || '').toLowerCase().includes(q) ||
+        (r.reference || '').toLowerCase().includes(q) ||
+        (r.lenderAccount || '').toLowerCase().includes(q) ||
+        (r.lenderName || '').toLowerCase().includes(q) ||
+        amount.includes(q) ||
+        (r.notes || '').toLowerCase().includes(q)
+      );
+    });
+  }, [historyRecords, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRecords.length / pageSize));
 
   const paginatedRecords = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
-    return historyRecords.slice(start, start + pageSize);
-  }, [historyRecords, currentPage, pageSize]);
+    return filteredRecords.slice(start, start + pageSize);
+  }, [filteredRecords, currentPage, pageSize]);
+
+  // Reset to page 1 whenever filters/page size change so results stay visible
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, pageSize]);
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
