@@ -47,7 +47,6 @@ const PARTICIPANT_TYPES = [
   { value: 'borrower', label: 'Borrower', disabled: false },
   { value: 'lender', label: 'Lender', disabled: false },
   { value: 'broker', label: 'Broker', disabled: false },
-  { value: 'other', label: 'Other', disabled: true },
 ];
 
 const CAPACITY_OPTIONS: Record<string, string[]> = {
