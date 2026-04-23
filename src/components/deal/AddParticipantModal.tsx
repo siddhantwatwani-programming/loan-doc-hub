@@ -149,9 +149,12 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           .from('contacts')
           .select('id, contact_id, full_name, email, phone, contact_type');
         
-        // For 'other' type, search all contacts; otherwise filter by matching type
-        if (participantType !== 'other') {
+        // For 'other' subtypes, search across the matching contact_type; for primary types, filter by role
+        const dbRole = TYPE_TO_ROLE[participantType];
+        if (dbRole !== 'other') {
           query = query.eq('contact_type', participantType);
+        } else {
+          query = query.eq('contact_type', TYPE_TO_CONTACT_TYPE[participantType]);
         }
         
         const { data, error } = await query
