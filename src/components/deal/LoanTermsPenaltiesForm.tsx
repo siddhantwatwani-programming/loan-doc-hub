@@ -142,15 +142,19 @@ const DistributionFields: React.FC<{
 }> = ({ prefix, values, onValueChange, disabled, showValidation }) => {
   const lendersRaw = values[`${prefix}.distribution.lenders`] || '';
   const vendorRaw = values[`${prefix}.distribution.origination_vendors`] || '';
+  const otherRaw = values[`${prefix}.distribution.other`] || '';
   const lendersVal = parseFloat(lendersRaw) || 0;
   const vendorVal = parseFloat(vendorRaw) || 0;
+  const otherVal = parseFloat(otherRaw) || 0;
   const clamp = (n: number) => Math.max(0, Math.min(100, n));
   const lendersClamped = clamp(lendersVal);
   const vendorClamped = clamp(vendorVal);
-  const remainder = Math.max(0, 100 - lendersClamped - vendorClamped);
+  const otherClamped = clamp(otherVal);
+  const remainder = Math.max(0, 100 - lendersClamped - vendorClamped - otherClamped);
   const companyDisplay = disabled
     ? '0.00'
-    : ((lendersRaw || vendorRaw) ? remainder.toFixed(2) : '');
+    : ((lendersRaw || vendorRaw || otherRaw) ? remainder.toFixed(2) : '');
+  const totalDisplay = (lendersClamped + vendorClamped + otherClamped + (parseFloat(companyDisplay) || 0)).toFixed(2);
 
   // Persist computed Company value
   const persistedCompany = values[`${prefix}.distribution.company`] || '';
