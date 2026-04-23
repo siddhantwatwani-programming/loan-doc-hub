@@ -1366,34 +1366,34 @@ async function generateSingleDocument(
       const lenderTypeRaw = (fieldValues.get('ld_p_lenderType')?.rawValue ?? '').toString().trim();
       const isIndividual = lenderTypeRaw.toLowerCase() === 'individual';
 
-      if (isIndividual) {
-        // Vesting must NOT appear; name comes from Individual first/middle/last
-        fieldValues.set('ld_p_vesting', { rawValue: '', dataType: 'text' });
+      // Always alias the lender's name parts to first/middle/last so the name
+      // prints exactly once. Add a trailing space after each non-empty part so
+      // the template tags `{{first}}{{middle}}{{last}}` render as "F M L".
+      const firstRaw = (fieldValues.get('ld_p_firstName')?.rawValue ?? '').toString();
+      const middleRaw = (fieldValues.get('ld_p_middleName')?.rawValue ?? '').toString();
+      const lastRaw = (fieldValues.get('ld_p_lastName')?.rawValue ?? '').toString();
+      const withTrailingSpace = (v: string) => {
+        const t = v.trim();
+        return t ? `${t} ` : '';
+      };
+      fieldValues.set('ld_p_firstIfEntityUse', { rawValue: withTrailingSpace(firstRaw), dataType: 'text' });
+      fieldValues.set('ld_p_middle', { rawValue: withTrailingSpace(middleRaw), dataType: 'text' });
+      // Last name has no trailing space (end of name block).
+      fieldValues.set('ld_p_last', { rawValue: lastRaw.trim(), dataType: 'text' });
 
-        const first = fieldValues.get('ld_p_firstName')?.rawValue ?? '';
-        const middle = fieldValues.get('ld_p_middleName')?.rawValue ?? '';
-        const last = fieldValues.get('ld_p_lastName')?.rawValue ?? '';
-        fieldValues.set('ld_p_firstIfEntityUse', { rawValue: String(first), dataType: 'text' });
-        fieldValues.set('ld_p_middle', { rawValue: String(middle), dataType: 'text' });
-        fieldValues.set('ld_p_last', { rawValue: String(last), dataType: 'text' });
+      if (isIndividual) {
+        // Individual → vesting must NOT appear in the document.
+        fieldValues.set('ld_p_vesting', { rawValue: '', dataType: 'text' });
       } else {
-        // Entity / Trust / LLC / etc.
-        // Vesting prints the entity legal block; do NOT also alias firstName→firstIfEntityUse
-        // (that caused the entity name to render twice in the body sentence).
+        // Joint / Family Trust / LLC / Corp / IRA / ERISA / Investment Fund /
+        // 401k / Foreign Holder W-8 / Non-profit → vesting prints first,
+        // followed by the name parts. Append a trailing space when present so
+        // it visually separates from the following first name.
         const vestingRaw = (fieldValues.get('ld_p_vesting')?.rawValue ?? '').toString().trim();
         fieldValues.set('ld_p_vesting', {
           rawValue: vestingRaw ? `${vestingRaw} ` : '',
           dataType: 'text',
         });
-
-        // Leave ld_p_firstIfEntityUse / ld_p_middle / ld_p_last as whatever the user
-        // explicitly entered (signer override). If they have no value, they stay empty,
-        // so the template will only print the vesting block.
-        for (const k of ['ld_p_firstIfEntityUse', 'ld_p_middle', 'ld_p_last']) {
-          if (!fieldValues.has(k)) {
-            fieldValues.set(k, { rawValue: '', dataType: 'text' });
-          }
-        }
       }
     }
 
