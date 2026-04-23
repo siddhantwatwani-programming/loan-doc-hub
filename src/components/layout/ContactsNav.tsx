@@ -21,9 +21,9 @@ interface ContactsNavProps {
 }
 
 const directItems = [
-  { label: 'Lenders', path: '/contacts/lenders' },
-  { label: 'Borrowers', path: '/contacts/borrowers' },
-  { label: 'Brokers', path: '/contacts/brokers' },
+  { label: 'Borrower', path: '/contacts/borrowers' },
+  { label: 'Lender', path: '/contacts/lenders' },
+  { label: 'Broker', path: '/contacts/brokers' },
 ];
 
 const othersItems = [
