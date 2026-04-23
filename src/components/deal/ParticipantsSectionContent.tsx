@@ -7,6 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -83,9 +90,19 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'email', label: 'Email', visible: true },
   { id: 'phone', label: 'Phone', visible: true },
   { id: 'participant_type_capacity', label: 'Participant Type - Capacity', visible: true },
+  { id: 'originating_vendor', label: 'Originating Vendor', visible: true },
   { id: 'status', label: 'Status', visible: true },
   { id: 'created_at', label: 'Added Date', visible: true },
 ];
+
+const formatPhoneDisplay = (value: string | null | undefined): string => {
+  if (!value) return '';
+  const digits = String(value).replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return String(value);
+};
 
 const SEARCHABLE_FIELDS = ['name', 'email', 'phone', 'role', 'contact_id_display', 'capacity', 'participant_type_capacity'];
 
@@ -96,6 +113,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
 }) => {
   const navigate = useNavigate();
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [originatingVendorId, setOriginatingVendorId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -236,6 +254,13 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             dealCapacityMap[match[1]] = String(val);
           }
         });
+        setOriginatingVendorId(
+          pValues['originating_vendor_contact_id']
+            ? String(pValues['originating_vendor_contact_id'])
+            : ''
+        );
+      } else {
+        setOriginatingVendorId('');
       }
 
       setParticipants(
@@ -453,7 +478,65 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
     return statuses.map((s) => ({ value: s, label: STATUS_LABELS[s] || 'Active' }));
   }, [participants]);
 
+  const brokerParticipants = useMemo(
+    () => participants.filter((p) => p.role === 'broker'),
+    [participants]
+  );
+
+  const resolvedOriginatingVendor = useMemo(() => {
+    if (brokerParticipants.length === 0) return null;
+    if (brokerParticipants.length === 1) return brokerParticipants[0];
+    return (
+      brokerParticipants.find((b) => b.contact_id === originatingVendorId) || null
+    );
+  }, [brokerParticipants, originatingVendorId]);
+
+  const handleOriginatingVendorChange = useCallback(
+    async (contactId: string) => {
+      setOriginatingVendorId(contactId);
+      try {
+        const { data: existing } = await supabase
+          .from('deal_section_values')
+          .select('id, field_values')
+          .eq('deal_id', dealId)
+          .eq('section', 'participants')
+          .maybeSingle();
+
+        const currentValues = (existing?.field_values as Record<string, any>) || {};
+        const newValues = { ...currentValues, originating_vendor_contact_id: contactId };
+
+        if (existing?.id) {
+          await supabase
+            .from('deal_section_values')
+            .update({ field_values: newValues })
+            .eq('id', existing.id);
+        } else {
+          await supabase
+            .from('deal_section_values')
+            .insert({ deal_id: dealId, section: 'participants', field_values: newValues });
+        }
+      } catch (err) {
+        console.error('Error saving originating vendor:', err);
+        toast.error('Failed to save originating vendor');
+      }
+    },
+    [dealId]
+  );
+
   const exportColumns: ExportColumn[] = columns.map((c) => ({ id: c.id, label: c.label }));
+
+  const exportData = useMemo(
+    () =>
+      filteredData.map((p) => ({
+        ...p,
+        phone: formatPhoneDisplay(p.phone),
+        originating_vendor:
+          brokerParticipants.length === 1
+            ? brokerParticipants[0].name
+            : brokerParticipants.find((b) => b.contact_id === originatingVendorId)?.name || '',
+      })),
+    [filteredData, brokerParticipants, originatingVendorId]
+  );
 
   const renderCellValue = (participant: Participant, columnId: string) => {
     switch (columnId) {
@@ -464,7 +547,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
       case 'email':
         return <span className="text-muted-foreground">{participant.email || '—'}</span>;
       case 'phone':
-        return <span className="text-muted-foreground">{participant.phone || '—'}</span>;
+        return <span className="text-muted-foreground">{formatPhoneDisplay(participant.phone) || '—'}</span>;
       case 'participant_type_capacity':
         return (
           <Badge variant="secondary" className={cn('text-xs', ROLE_COLORS[participant.role] || '')}>
@@ -487,6 +570,40 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         );
       case 'created_at':
         return <span className="text-muted-foreground">{formatDate(participant.created_at)}</span>;
+      case 'originating_vendor': {
+        if (brokerParticipants.length === 0) {
+          return (
+            <span className="text-xs text-muted-foreground italic">
+              Add a Broker participant
+            </span>
+          );
+        }
+        if (brokerParticipants.length === 1) {
+          return (
+            <span className="text-foreground">{brokerParticipants[0].name || '—'}</span>
+          );
+        }
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Select
+              value={originatingVendorId || undefined}
+              onValueChange={handleOriginatingVendorChange}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-8 text-xs w-[180px]">
+                <SelectValue placeholder="Select broker" />
+              </SelectTrigger>
+              <SelectContent>
+                {brokerParticipants.map((b) => (
+                  <SelectItem key={b.id} value={b.contact_id || b.id}>
+                    {b.name || '—'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        );
+      }
       default:
         return '—';
     }
@@ -652,7 +769,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         open={exportOpen}
         onOpenChange={setExportOpen}
         columns={exportColumns}
-        data={filteredData}
+        data={exportData}
         fileName="participants"
       />
 
