@@ -254,6 +254,13 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             dealCapacityMap[match[1]] = String(val);
           }
         });
+        setOriginatingVendorId(
+          pValues['originating_vendor_contact_id']
+            ? String(pValues['originating_vendor_contact_id'])
+            : ''
+        );
+      } else {
+        setOriginatingVendorId('');
       }
 
       setParticipants(
