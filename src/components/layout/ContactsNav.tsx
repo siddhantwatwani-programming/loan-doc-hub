@@ -27,14 +27,9 @@ const directItems = [
 ];
 
 const othersItems = [
-  { label: 'Vendors', path: '/contacts/others/vendors' },
-  { label: 'Tax Authority', path: '/contacts/others/tax-authority' },
-  { label: 'Insurance Company', path: '/contacts/others/insurance-company' },
-  { label: 'Title Company', path: '/contacts/others/title-company' },
-  { label: 'Notary', path: '/contacts/others/notary' },
-  { label: 'Guarantor', path: '/contacts/others/guarantor' },
+  { label: 'Additional Guarantor', path: '/contacts/others/additional-guarantor' },
   { label: 'Authorized Party', path: '/contacts/others/authorized-party' },
-  { label: 'Attorneys', path: '/contacts/others/attorneys' },
+  { label: 'Attorney', path: '/contacts/others/attorney' },
 ];
 
 export const ContactsNav: React.FC<ContactsNavProps> = ({
