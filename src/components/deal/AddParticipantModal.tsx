@@ -280,14 +280,17 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
         contactId = newContact.id;
       }
 
-      // Check if participant already exists for this deal (by contact_id + type, or email + type)
+      // Map UI subtype to actual DB role for deal_participants
+      const dbRole = TYPE_TO_ROLE[participantType];
+
+      // Check if participant already exists for this deal (by contact_id + role, or email + role)
       if (contactId) {
         const { data: existing } = await supabase
           .from('deal_participants')
           .select('id')
           .eq('deal_id', dealId)
           .eq('contact_id', contactId)
-          .eq('role', participantType)
+          .eq('role', dbRole)
           .maybeSingle();
 
         if (existing) {
@@ -301,7 +304,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           .select('id')
           .eq('deal_id', dealId)
           .eq('email', email)
-          .eq('role', participantType)
+          .eq('role', dbRole)
           .maybeSingle();
 
         if (existing) {
@@ -316,7 +319,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
         .from('deal_participants')
         .insert({
           deal_id: dealId,
-          role: participantType as any,
+          role: dbRole as any,
           name,
           email: email || null,
           phone: phone || null,
