@@ -43,7 +43,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'lenderName', label: 'Name', visible: true },
   { id: 'originalAmount', label: 'Funding Amount', visible: true },
   { id: 'currentBalance', label: 'Current Balance', visible: true },
-  { id: 'principalBalance', label: 'Principal Balance', visible: true },
+  
   { id: 'pctOwned', label: 'Pro Rata', visible: true },
   { id: 'fundingDate', label: 'Funding Date', visible: true },
   { id: 'interestFrom', label: 'Interest From', visible: true },
