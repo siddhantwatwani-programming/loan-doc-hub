@@ -562,6 +562,26 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     const updatedRecords = fundingRecords.filter((r) => r.id !== record.id);
     onValueChange(FIELD_KEYS.fundingRecords, JSON.stringify(updatedRecords));
 
+    // Mirror deletion into Funding History so the history grid auto-updates
+    const historyValue = values[FIELD_KEYS.fundingHistory];
+    let history: any[] = [];
+    try {
+      history = historyValue ? JSON.parse(historyValue) : [];
+    } catch {
+      history = [];
+    }
+    if (Array.isArray(history) && history.length > 0) {
+      const historyId = `history-${record.id}`;
+      const updatedHistory = history.filter((h: any) => h?.id !== historyId);
+      const updatedHistoryJson = JSON.stringify(updatedHistory);
+      onValueChange(FIELD_KEYS.fundingHistory, updatedHistoryJson);
+      try {
+        await directPersistFundingField(dealId, FIELD_KEYS.fundingHistory, updatedHistoryJson, dictCacheRef.current);
+      } catch (err) {
+        console.error('[LoanTermsFundingForm] Mirror history delete failed:', err);
+      }
+    }
+
     try {
       const fieldDictId = await resolveFieldDictId(FIELD_KEYS.fundingRecords, dictCacheRef.current);
       if (!fieldDictId) throw new Error('Field dictionary entry not found for funding_records');
