@@ -619,7 +619,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
                 {filteredData.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={visibleColumns.length + 2} className="text-center text-muted-foreground py-8">
-                      {fundingRecords.length === 0 ? 'No funding records found. Click "+" to add a new funding record.' : 'No funding records match your search.'}
+                      {fundingRecords.length === 0 ? 'No funding records found. Click "Add Funding" to add a new funding record.' : 'No funding records match your search.'}
                     </TableCell>
                   </TableRow>
                 ) : (
