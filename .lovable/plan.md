@@ -1,97 +1,52 @@
 
 
-## Fix duplicate Lender output in Hazardous Materials Certificate
+## Fix Hazardous Materials Certificate – Lender Block Duplicated
 
-### Root cause
+### Problem
 
-The duplication you see in the body sentence — `Del Toro Loan Servicing Inc / a California Corporation  ddddads ("Lender")` — is **not** caused by the template having two placeholders or by the engine looping. It's caused by the field‑alias block in `supabase/functions/generate-document/index.ts` (lines 1361–1403) populating **both** sides of the same name simultaneously when the lender is an entity:
+The generated DOCX shows the Lender details in two places:
 
-1. `ld_p_vesting` already contains the full entity legal block (e.g. `"Del Toro Loan Servicing Inc\na California Corporation"`) — confirmed in edge logs.
-2. The alias step then unconditionally does:
-   ```
-   ld_p_firstIfEntityUse ← ld_p_firstName   ("ddd" / entity name copy)
-   ld_p_middle           ← ld_p_middleName
-   ld_p_last             ← ld_p_lastName    ("dads")
-   ```
-3. The template line `{{ld_p_vesting}} {{ld_p_firstIfEntityUse}}{{ld_p_middle}}{{ld_p_last}}` therefore prints the entity block (from vesting) **and then** the entity name again (concatenated from first/middle/last) → looks like the lender is rendered twice.
+1. Inline sentence: *"…in favor of Del Toro Loan Servicing Inc a California Corporation ddd dads ('Lender')."*
+2. A second standalone block lower in the document: *"ddd dads / Del Toro Loan Servicing Inc / a California Corporation"*
 
-The field‑dictionary label confirms this: `ld_p_firstIfEntityUse` = **"First (If Entity, Use Signer)"** — for an Entity it should hold the *signer's* first name, **not** be auto‑aliased from `ld_p_firstName`. The signature block at the bottom of the document (`ddd dads / Del Toro Loan Servicing Inc / a California Corporation`) is a separate, intentional placeholder and is **not** the duplicate.
+The mapping logic in `supabase/functions/generate-document/index.ts` (lines 1365–1398) is correct — it resolves each lender tag once. The duplication is caused by the template file itself (`1775837145212_Hazardous_Materials_Certificate-Key_Mapping.docx`) containing the same lender merge tags in **two physical locations**: the inline paragraph and a second signature/identification block below.
 
-### Fix (single, surgical change)
+### Root Cause
 
-Edit only the alias block at **`supabase/functions/generate-document/index.ts` lines 1365–1403**. No template, schema, UI, or other code changes.
+Template `Test Version-1 (v1)` for "Hazardous Materials Certificate and Indemnity Agreement" contains a duplicated lender placement block (the second occurrence appears to be a signature-style block showing name + vesting on separate lines). Both locations resolve the same `{{ld_p_firstIfEntityUse}}{{ld_p_middle}}{{ld_p_last}}` and `{{ld_p_vesting}}` tags, producing the visible duplicate.
 
-Replace the current "always alias firstName/middleName/lastName" logic with a type‑driven rule that matches the previously approved Hazardous Materials spec:
+### Fix Approach
 
-- **Individual** (`ld_p_lenderType === "Individual"`):
-  - `ld_p_vesting` → `""`
-  - `ld_p_firstIfEntityUse` ← `ld_p_firstName`
-  - `ld_p_middle` ← `ld_p_middleName`
-  - `ld_p_last` ← `ld_p_lastName`
-  
-  Result in body: `{{ld_p_vesting}}{{ld_p_firstIfEntityUse}}{{ld_p_middle}}{{ld_p_last}}` → `First Middle Last` (no vesting, printed once).
+Modify the **template DOCX** (the only source of the duplication) to remove the second lender block while preserving:
+- All other content, layout, fonts, spacing, headings
+- The first inline lender reference ("…in favor of … ('Lender').")
+- The Borrower block, Account Number, body text, and signature lines unrelated to the lender identification block
 
-- **Entity / Trust / LLC / anything else**:
-  - `ld_p_vesting` ← existing vesting value, with a single trailing space when non‑empty (current behavior, preserved).
-  - `ld_p_firstIfEntityUse`, `ld_p_middle`, `ld_p_last` → **only set if the user has explicitly entered signer overrides** for those keys. If they're empty, they stay empty (do **not** auto‑copy from `ld_p_firstName/middleName/lastName`, which for an entity contain the entity name and would duplicate vesting).
-  
-  Result in body: `{{ld_p_vesting}}{{ld_p_firstIfEntityUse}}…` → `Del Toro Loan Servicing Inc / a California Corporation` (printed once, no trailing duplicate).
+Steps:
 
-### Code change (lines 1365–1403)
+1. Download the current template (`1775837145212_Hazardous_Materials_Certificate-Key_Mapping.docx`) from the `templates` storage bucket.
+2. Unpack the DOCX, locate the second `{{ld_p_*}}` paragraph cluster in `word/document.xml` (the standalone block matching the screenshot's bottom three lines).
+3. Remove only the paragraphs that comprise the duplicate lender block. Leave all surrounding paragraphs, page breaks, and signature scaffolding intact.
+4. Repack and validate the DOCX (no schema/structure changes elsewhere).
+5. Re-upload the corrected file as a **new version** of the same template record (`id = ff06e3a1-3804-480f-94b5-0c255b5e96ad`) so that file naming logic and template metadata remain unchanged. Use the existing template upload/replace flow — no new APIs.
 
-```ts
-{
-  const lenderTypeRaw = (fieldValues.get('ld_p_lenderType')?.rawValue ?? '').toString().trim();
-  const isIndividual = lenderTypeRaw.toLowerCase() === 'individual';
+### What Will NOT Change
 
-  if (isIndividual) {
-    // Vesting must NOT appear; name comes from Individual first/middle/last
-    fieldValues.set('ld_p_vesting', { rawValue: '', dataType: 'text' });
-
-    const first  = fieldValues.get('ld_p_firstName')?.rawValue   ?? '';
-    const middle = fieldValues.get('ld_p_middleName')?.rawValue  ?? '';
-    const last   = fieldValues.get('ld_p_lastName')?.rawValue    ?? '';
-    fieldValues.set('ld_p_firstIfEntityUse', { rawValue: String(first),  dataType: 'text' });
-    fieldValues.set('ld_p_middle',           { rawValue: String(middle), dataType: 'text' });
-    fieldValues.set('ld_p_last',             { rawValue: String(last),   dataType: 'text' });
-  } else {
-    // Entity / Trust / LLC / etc.
-    // Vesting prints the entity legal block; do NOT also alias firstName→firstIfEntityUse
-    // (that caused the entity name to render twice in the body sentence).
-    const vestingRaw = (fieldValues.get('ld_p_vesting')?.rawValue ?? '').toString().trim();
-    fieldValues.set('ld_p_vesting', {
-      rawValue: vestingRaw ? `${vestingRaw} ` : '',
-      dataType: 'text',
-    });
-
-    // Leave ld_p_firstIfEntityUse / ld_p_middle / ld_p_last as whatever the user
-    // explicitly entered (signer override). If they have no value, they stay empty,
-    // so the template will only print the vesting block.
-    for (const k of ['ld_p_firstIfEntityUse', 'ld_p_middle', 'ld_p_last']) {
-      if (!fieldValues.has(k)) {
-        fieldValues.set(k, { rawValue: '', dataType: 'text' });
-      }
-    }
-  }
-}
-```
-
-### Why this is minimal & safe
-
-- Touches one block in one file.
-- No template change, no schema change, no UI change, no permission change.
-- Investor Questionnaire (the other consumer of `ld_p_firstIfEntityUse/middle/last`): for Individual lenders it now receives the individual's name (same as today). For Entity lenders it receives the explicit signer fields if entered, or empty — which matches the dictionary semantics ("First (If Entity, Use Signer)") and removes the accidental entity‑name duplication. If existing data relied on the silent auto‑alias for entities, the user can populate the signer fields explicitly.
-- Signature block at the bottom of the Hazardous Materials Certificate is a separate template placeholder and is unaffected.
+- `generate-document/index.ts` mapping logic — already correct, leave untouched.
+- Field dictionary, merge tag aliases, RLS, schema.
+- Any other template, packet assignment, or file naming convention.
+- The first (inline) lender reference and its conditional individual/entity behavior.
 
 ### Validation
 
-1. **Entity lender** (current test data: vesting = "Del Toro Loan Servicing Inc / a California Corporation"): body sentence renders `... in favor of Del Toro Loan Servicing Inc / a California Corporation ("Lender").` — no trailing `ddddads` duplicate.
-2. **Individual lender**: body sentence renders `... in favor of First Middle Last ("Lender").` — no vesting, no leading blank.
-3. Signature block at bottom renders once, exactly as today.
-4. Investor Questionnaire still resolves first/middle/last for Individual lenders.
-5. No other templates reference these aliases, so no collateral impact.
+After re-upload, regenerate Hazardous Materials Certificate for deal `DL-2026-0212`:
 
-### File touched
+- **Lender Type = IRA / ERISA (Entity)** → lender appears once inline as: `Del Toro Loan Servicing Inc a California Corporation ddd dads ("Lender")`. No standalone block below.
+- **Lender Type = Individual** → lender appears once inline with name only (no vesting), no standalone block.
+- Document opens cleanly in MS Word with unchanged formatting, fonts, and pagination.
 
-- `supabase/functions/generate-document/index.ts` (lines 1365–1403 only)
+### Files Touched
+
+- Template binary (re-uploaded via existing template management flow): `Hazardous_Materials_Certificate-Key_Mapping.docx`
+- No code or schema changes.
 
