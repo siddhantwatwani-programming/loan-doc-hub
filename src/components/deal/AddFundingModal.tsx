@@ -737,9 +737,6 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Lender Rate</Label>
                 {(() => {
-                  const soldRateVal = (formData.rateSoldValue || '').trim();
-                  const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
-                  const lenderRateDisabled = hasSoldRate;
                   return (
                     <div className="relative flex-1">
                       <Input
@@ -766,11 +763,9 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                           }
                         }}
                         onKeyDown={numericKeyDown}
-                        className={cn("h-6 text-[11px] pr-4", lenderRateDisabled && "opacity-60 bg-muted cursor-not-allowed")}
+                        className="h-6 text-[11px] pr-4"
                         inputMode="decimal"
                         placeholder="%"
-                        disabled={lenderRateDisabled}
-                        readOnly={lenderRateDisabled}
                       />
                       <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
                     </div>
