@@ -246,17 +246,41 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
     return [];
   }, [values]);
 
-  // Parse funding history from stored JSON value
+  // Parse funding history from stored JSON value.
+  // Fallback: if no stored history exists yet (e.g. legacy/in-progress deals where the
+  // history field failed to persist), derive a read-only history view from the current
+  // funding records so the Funding History grid is never empty when records exist.
   const historyRecords = useMemo(() => {
     const storedValue = values[FIELD_KEYS.fundingHistory];
+    let parsed: any[] = [];
     if (storedValue) {
       try {
-        return JSON.parse(storedValue);
+        parsed = JSON.parse(storedValue);
       } catch {
-        return [];
+        parsed = [];
       }
     }
-    return [];
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+
+    // Derive from funding records as a fallback (no DB writes here)
+    const recordsValue = values[FIELD_KEYS.fundingRecords];
+    if (!recordsValue) return [];
+    try {
+      const recs: any[] = JSON.parse(recordsValue);
+      if (!Array.isArray(recs)) return [];
+      return recs.map((r) => ({
+        id: `history-${r.id || r.lenderAccount || Math.random()}`,
+        fundingDate: r.fundingDate || '',
+        reference: `REF-${r.id || ''}`,
+        lenderAccount: r.lenderAccount || '',
+        lenderName: r.lenderName || '',
+        amountFunded: typeof r.originalAmount === 'number'
+          ? r.originalAmount
+          : parseFloat(String(r.originalAmount || '').replace(/[$,]/g, '')) || 0,
+      }));
+    } catch {
+      return [];
+    }
   }, [values]);
 
   // Parse funding adjustments from stored JSON value
