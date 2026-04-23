@@ -583,7 +583,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     // Sync new fee fields back to legacy fields for persistence
     const effectiveRateLenderValue = formData.lenderRateOverride
       ? (formData.lenderRateOverrideValue || '')
-      : (formData.lenderRate || formData.rateLenderValue || soldRateVal || '');
+      : (formData.lenderRate || formData.rateLenderValue || '');
 
     const syncedData: FundingFormData = {
       ...formData,
