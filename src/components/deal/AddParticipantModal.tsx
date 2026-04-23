@@ -41,13 +41,49 @@ interface ContactResult {
   contact_type: string;
 }
 
-type ParticipantType = 'borrower' | 'lender' | 'broker' | 'other';
+type ParticipantType =
+  | 'borrower'
+  | 'lender'
+  | 'broker'
+  | 'other_additional_guarantor'
+  | 'other_authorized_party'
+  | 'other_attorney';
 
 const PARTICIPANT_TYPES = [
   { value: 'borrower', label: 'Borrower', disabled: false },
   { value: 'lender', label: 'Lender', disabled: false },
   { value: 'broker', label: 'Broker', disabled: false },
+  { value: 'other_additional_guarantor', label: 'Other: Additional Guarantor', disabled: false },
+  { value: 'other_authorized_party', label: 'Other: Authorized Party', disabled: false },
+  { value: 'other_attorney', label: 'Other: Attorney', disabled: false },
 ];
+
+// Map UI participant type -> stored DB role (constrained by app_role enum)
+const TYPE_TO_ROLE: Record<ParticipantType, 'borrower' | 'lender' | 'broker' | 'other'> = {
+  borrower: 'borrower',
+  lender: 'lender',
+  broker: 'broker',
+  other_additional_guarantor: 'other',
+  other_authorized_party: 'other',
+  other_attorney: 'other',
+};
+
+// Map UI participant type -> contact_type stored in contacts table (for new contacts)
+const TYPE_TO_CONTACT_TYPE: Record<ParticipantType, string> = {
+  borrower: 'borrower',
+  lender: 'lender',
+  broker: 'broker',
+  other_additional_guarantor: 'additional_guarantor',
+  other_authorized_party: 'authorized_party',
+  other_attorney: 'attorney',
+};
+
+// Default capacity label persisted for "Other" subtypes (used as the subtype marker)
+const TYPE_DEFAULT_CAPACITY: Partial<Record<ParticipantType, string>> = {
+  other_additional_guarantor: 'Additional Guarantor',
+  other_authorized_party: 'Authorized Party',
+  other_attorney: 'Attorney',
+};
 
 const CAPACITY_OPTIONS: Record<string, string[]> = {
   borrower: [
