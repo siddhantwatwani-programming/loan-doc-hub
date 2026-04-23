@@ -41,13 +41,49 @@ interface ContactResult {
   contact_type: string;
 }
 
-type ParticipantType = 'borrower' | 'lender' | 'broker' | 'other';
+type ParticipantType =
+  | 'borrower'
+  | 'lender'
+  | 'broker'
+  | 'other_additional_guarantor'
+  | 'other_authorized_party'
+  | 'other_attorney';
 
 const PARTICIPANT_TYPES = [
   { value: 'borrower', label: 'Borrower', disabled: false },
   { value: 'lender', label: 'Lender', disabled: false },
   { value: 'broker', label: 'Broker', disabled: false },
+  { value: 'other_additional_guarantor', label: 'Other: Additional Guarantor', disabled: false },
+  { value: 'other_authorized_party', label: 'Other: Authorized Party', disabled: false },
+  { value: 'other_attorney', label: 'Other: Attorney', disabled: false },
 ];
+
+// Map UI participant type -> stored DB role (constrained by app_role enum)
+const TYPE_TO_ROLE: Record<ParticipantType, 'borrower' | 'lender' | 'broker' | 'other'> = {
+  borrower: 'borrower',
+  lender: 'lender',
+  broker: 'broker',
+  other_additional_guarantor: 'other',
+  other_authorized_party: 'other',
+  other_attorney: 'other',
+};
+
+// Map UI participant type -> contact_type stored in contacts table (for new contacts)
+const TYPE_TO_CONTACT_TYPE: Record<ParticipantType, string> = {
+  borrower: 'borrower',
+  lender: 'lender',
+  broker: 'broker',
+  other_additional_guarantor: 'additional_guarantor',
+  other_authorized_party: 'authorized_party',
+  other_attorney: 'attorney',
+};
+
+// Default capacity label persisted for "Other" subtypes (used as the subtype marker)
+const TYPE_DEFAULT_CAPACITY: Partial<Record<ParticipantType, string>> = {
+  other_additional_guarantor: 'Additional Guarantor',
+  other_authorized_party: 'Authorized Party',
+  other_attorney: 'Attorney',
+};
 
 const CAPACITY_OPTIONS: Record<string, string[]> = {
   borrower: [
@@ -113,9 +149,12 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           .from('contacts')
           .select('id, contact_id, full_name, email, phone, contact_type');
         
-        // For 'other' type, search all contacts; otherwise filter by matching type
-        if (participantType !== 'other') {
+        // For 'other' subtypes, search across the matching contact_type; for primary types, filter by role
+        const dbRole = TYPE_TO_ROLE[participantType];
+        if (dbRole !== 'other') {
           query = query.eq('contact_type', participantType);
+        } else {
+          query = query.eq('contact_type', TYPE_TO_CONTACT_TYPE[participantType]);
         }
         
         const { data, error } = await query
@@ -201,8 +240,8 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           return;
         }
 
-        // Create new contact - use 'borrower' as default contact_type for 'other'
-        const contactType = participantType === 'other' ? 'borrower' : participantType;
+        // Determine contact_type for new contact based on the selected participant subtype
+        const contactType = TYPE_TO_CONTACT_TYPE[participantType];
         const { data: genId } = await supabase.rpc('generate_contact_id', {
           p_type: contactType,
         });
@@ -241,14 +280,17 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
         contactId = newContact.id;
       }
 
-      // Check if participant already exists for this deal (by contact_id + type, or email + type)
+      // Map UI subtype to actual DB role for deal_participants
+      const dbRole = TYPE_TO_ROLE[participantType];
+
+      // Check if participant already exists for this deal (by contact_id + role, or email + role)
       if (contactId) {
         const { data: existing } = await supabase
           .from('deal_participants')
           .select('id')
           .eq('deal_id', dealId)
           .eq('contact_id', contactId)
-          .eq('role', participantType)
+          .eq('role', dbRole)
           .maybeSingle();
 
         if (existing) {
@@ -262,7 +304,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           .select('id')
           .eq('deal_id', dealId)
           .eq('email', email)
-          .eq('role', participantType)
+          .eq('role', dbRole)
           .maybeSingle();
 
         if (existing) {
@@ -277,7 +319,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
         .from('deal_participants')
         .insert({
           deal_id: dealId,
-          role: participantType as any,
+          role: dbRole as any,
           name,
           email: email || null,
           phone: phone || null,
@@ -288,8 +330,11 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
 
       if (insertError) throw insertError;
 
-      // Persist capacity per-deal in deal_section_values (section='participants')
-      if (contactId && capacity) {
+      // Persist capacity per-deal in deal_section_values (section='participants').
+      // For "Other" subtypes (Additional Guarantor, Authorized Party, Attorney) we
+      // auto-persist the subtype label as capacity so the grid can show the subtype.
+      const capacityToPersist = capacity || TYPE_DEFAULT_CAPACITY[participantType] || '';
+      if (contactId && capacityToPersist) {
         const capacityKey = `participant_${contactId}_capacity`;
         const { data: existingSection } = await supabase
           .from('deal_section_values')
@@ -299,7 +344,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           .maybeSingle();
 
         const existingValues = (existingSection?.field_values as Record<string, any>) || {};
-        const updatedValues = { ...existingValues, [capacityKey]: capacity };
+        const updatedValues = { ...existingValues, [capacityKey]: capacityToPersist };
 
         if (existingSection) {
           await supabase.from('deal_section_values')
@@ -317,7 +362,15 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
 
       // Only navigate to contact detail page for NEW contacts
       if (mode === 'new' && contactId) {
-        const route = participantType === 'lender' ? 'lenders' : participantType === 'broker' ? 'brokers' : 'borrowers';
+        const otherRouteMap: Record<string, string> = {
+          additional_guarantor: 'others/additional-guarantor',
+          authorized_party: 'others/authorized-party',
+          attorney: 'others/attorney',
+        };
+        const contactType = TYPE_TO_CONTACT_TYPE[participantType];
+        const route =
+          otherRouteMap[contactType] ||
+          (participantType === 'lender' ? 'lenders' : participantType === 'broker' ? 'brokers' : 'borrowers');
         setTimeout(() => {
           navigate(`/contacts/${route}/${contactId}`);
         }, 300);
