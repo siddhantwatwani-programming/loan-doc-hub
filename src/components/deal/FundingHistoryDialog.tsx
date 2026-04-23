@@ -309,6 +309,7 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
                 size="sm"
                 onClick={() => handlePageChange(1)}
                 disabled={currentPage === 1}
+                className="disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 First
               </Button>
@@ -317,17 +318,20 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
                 size="sm"
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
+                className="disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </Button>
               <span className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm">
                 {currentPage}
               </span>
+              <span className="text-sm text-muted-foreground px-1">of {totalPages}</span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage >= totalPages}
+                className="disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
               </Button>
@@ -336,6 +340,7 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
                 size="sm"
                 onClick={() => handlePageChange(totalPages)}
                 disabled={currentPage >= totalPages}
+                className="disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Last
               </Button>
