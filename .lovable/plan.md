@@ -1,52 +1,57 @@
 
 
-## Fix Hazardous Materials Certificate – Lender Block Duplicated
-
-### Problem
-
-The generated DOCX shows the Lender details in two places:
-
-1. Inline sentence: *"…in favor of Del Toro Loan Servicing Inc a California Corporation ddd dads ('Lender')."*
-2. A second standalone block lower in the document: *"ddd dads / Del Toro Loan Servicing Inc / a California Corporation"*
-
-The mapping logic in `supabase/functions/generate-document/index.ts` (lines 1365–1398) is correct — it resolves each lender tag once. The duplication is caused by the template file itself (`1775837145212_Hazardous_Materials_Certificate-Key_Mapping.docx`) containing the same lender merge tags in **two physical locations**: the inline paragraph and a second signature/identification block below.
+## Fix: Investor Questionnaire Due checkbox not rendering in generated DOCX
 
 ### Root Cause
+The Lender's "Investor Questionnaire Due" checkbox is stored on the Contact record at `contacts.contact_data.investor_questionnaire_due` (as `'true'`/`'false'`).
 
-Template `Test Version-1 (v1)` for "Hazardous Materials Certificate and Indemnity Agreement" contains a duplicated lender placement block (the second occurrence appears to be a signature-style block showing name + vesting on separate lines). Both locations resolve the same `{{ld_p_firstIfEntityUse}}{{ld_p_middle}}{{ld_p_last}}` and `{{ld_p_vesting}}` tags, producing the visible duplicate.
+The document generation engine (`generate-document` edge function) **does** support `{{#if x}}☒{{else}}☐{{/if}}` syntax — that part of the engine works correctly.
 
-### Fix Approach
+The bug is in the lender-bridging block inside `supabase/functions/generate-document/index.ts` (around lines 504–515): it bridges `lcd.type` and `lcd.investor_questionnaire_due_date` from contact_data into the deal's field-value map, but it **does NOT bridge** `lcd.investor_questionnaire_due`. So the merge-field `ld_p_investorQuestiDue` is always empty → conditional always evaluates falsy → output is always `☐`.
 
-Modify the **template DOCX** (the only source of the duplication) to remove the second lender block while preserving:
-- All other content, layout, fonts, spacing, headings
-- The first inline lender reference ("…in favor of … ('Lender').")
-- The Borrower block, Account Number, body text, and signature lines unrelated to the lender identification block
+The unchecked-glyph artifact in the existing template proves the conditional engine itself executes correctly — only the data is missing.
 
-Steps:
+### Fix (Minimal Change)
+Add a single bridging block in `supabase/functions/generate-document/index.ts` directly after the existing `investor_questionnaire_due_date` bridge. This:
 
-1. Download the current template (`1775837145212_Hazardous_Materials_Certificate-Key_Mapping.docx`) from the `templates` storage bucket.
-2. Unpack the DOCX, locate the second `{{ld_p_*}}` paragraph cluster in `word/document.xml` (the standalone block matching the screenshot's bottom three lines).
-3. Remove only the paragraphs that comprise the duplicate lender block. Leave all surrounding paragraphs, page breaks, and signature scaffolding intact.
-4. Repack and validate the DOCX (no schema/structure changes elsewhere).
-5. Re-upload the corrected file as a **new version** of the same template record (`id = ff06e3a1-3804-480f-94b5-0c255b5e96ad`) so that file naming logic and template metadata remain unchanged. Use the existing template upload/replace flow — no new APIs.
+1. Bridges the boolean to the merge keys consumers already expect:
+   - `ld_p_investorQuestiDue`
+   - `lender1.investor_questionnaire_due`
+   - `lender.investor_questionnaire_due`
+2. Also seeds a pre-rendered glyph alias `ld_p_investorQuestiDueCheckbox` set to `☒` or `☐`, so templates can use the simpler single-placeholder form `{{ld_p_investorQuestiDueCheckbox}}` per the user's fallback requirement.
 
-### What Will NOT Change
+This keeps **both** template patterns working:
+- Existing template using `{{#if ld_p_investorQuestiDue}}☒{{else}}☐{{/if}}` → now evaluates correctly.
+- Any future template using `{{ld_p_investorQuestiDueCheckbox}}` → renders the right glyph directly.
 
-- `generate-document/index.ts` mapping logic — already correct, leave untouched.
-- Field dictionary, merge tag aliases, RLS, schema.
-- Any other template, packet assignment, or file naming convention.
-- The first (inline) lender reference and its conditional individual/entity behavior.
+### Technical Details
+File touched: `supabase/functions/generate-document/index.ts` (one location, ~6 lines added)
+
+Logic added immediately after the existing `lcd.investor_questionnaire_due_date` block:
+
+```ts
+// Bridge investor questionnaire due (boolean checkbox) from contact_data
+const iqDueRaw = lcd.investor_questionnaire_due;
+const iqDueChecked =
+  iqDueRaw === true || iqDueRaw === 'true' || iqDueRaw === 1 || iqDueRaw === '1' || iqDueRaw === 'yes';
+setIfEmpty("ld_p_investorQuestiDue", iqDueChecked ? "true" : "false");
+setIfEmpty("lender1.investor_questionnaire_due", iqDueChecked ? "true" : "false");
+setIfEmpty("lender.investor_questionnaire_due", iqDueChecked ? "true" : "false");
+// Pre-rendered checkbox glyph for templates that prefer a single placeholder
+setIfEmpty("ld_p_investorQuestiDueCheckbox", iqDueChecked ? "☒" : "☐");
+```
+
+### What is NOT changed
+- No DB schema changes
+- No template files touched
+- No changes to UI / Lender form / contact storage
+- No changes to the conditional-block engine, field-resolver, or any other edge function
+- No change to formatting, layout, or other lender mappings
+- Other contact fields (date, type) remain bridged exactly as they are today
 
 ### Validation
-
-After re-upload, regenerate Hazardous Materials Certificate for deal `DL-2026-0212`:
-
-- **Lender Type = IRA / ERISA (Entity)** → lender appears once inline as: `Del Toro Loan Servicing Inc a California Corporation ddd dads ("Lender")`. No standalone block below.
-- **Lender Type = Individual** → lender appears once inline with name only (no vesting), no standalone block.
-- Document opens cleanly in MS Word with unchanged formatting, fonts, and pagination.
-
-### Files Touched
-
-- Template binary (re-uploaded via existing template management flow): `Hazardous_Materials_Certificate-Key_Mapping.docx`
-- No code or schema changes.
+After deployment:
+- Check the box in Contacts → Lender → save → regenerate Investor Questionnaire doc → renders `☒`
+- Uncheck the box → regenerate → renders `☐`
+- All other lender merge fields and templates remain unaffected
 
