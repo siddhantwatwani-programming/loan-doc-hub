@@ -330,8 +330,11 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
 
       if (insertError) throw insertError;
 
-      // Persist capacity per-deal in deal_section_values (section='participants')
-      if (contactId && capacity) {
+      // Persist capacity per-deal in deal_section_values (section='participants').
+      // For "Other" subtypes (Additional Guarantor, Authorized Party, Attorney) we
+      // auto-persist the subtype label as capacity so the grid can show the subtype.
+      const capacityToPersist = capacity || TYPE_DEFAULT_CAPACITY[participantType] || '';
+      if (contactId && capacityToPersist) {
         const capacityKey = `participant_${contactId}_capacity`;
         const { data: existingSection } = await supabase
           .from('deal_section_values')
@@ -341,7 +344,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           .maybeSingle();
 
         const existingValues = (existingSection?.field_values as Record<string, any>) || {};
-        const updatedValues = { ...existingValues, [capacityKey]: capacity };
+        const updatedValues = { ...existingValues, [capacityKey]: capacityToPersist };
 
         if (existingSection) {
           await supabase.from('deal_section_values')
@@ -359,7 +362,15 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
 
       // Only navigate to contact detail page for NEW contacts
       if (mode === 'new' && contactId) {
-        const route = participantType === 'lender' ? 'lenders' : participantType === 'broker' ? 'brokers' : 'borrowers';
+        const otherRouteMap: Record<string, string> = {
+          additional_guarantor: 'others/additional-guarantor',
+          authorized_party: 'others/authorized-party',
+          attorney: 'others/attorney',
+        };
+        const contactType = TYPE_TO_CONTACT_TYPE[participantType];
+        const route =
+          otherRouteMap[contactType] ||
+          (participantType === 'lender' ? 'lenders' : participantType === 'broker' ? 'brokers' : 'borrowers');
         setTimeout(() => {
           navigate(`/contacts/${route}/${contactId}`);
         }, 300);
