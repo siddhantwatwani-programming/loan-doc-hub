@@ -4,6 +4,8 @@ import { EmailInput } from '@/components/ui/email-input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
@@ -65,7 +67,24 @@ const FIELD_KEYS = {
   is_broker_borrower_yes: 'origination_app.doc.is_broker_also_borrower_yes',
   is_broker_borrower_no: 'origination_app.doc.is_broker_also_borrower_no',
   doc_additional_info: 'origination_app.doc.additional_info_attached',
+
+  // Financials (additive — extends existing Application area)
+  fin_bank_statements_yn: 'origination_app.financials.bank_statements_yn',
+  fin_bank_statements_status: 'origination_app.financials.bank_statements_status',
+  fin_balance_sheet_pl_yn: 'origination_app.financials.balance_sheet_pl_yn',
+  fin_balance_sheet_pl_assurance: 'origination_app.financials.balance_sheet_pl_assurance',
+  fin_balance_sheet_pl_status: 'origination_app.financials.balance_sheet_pl_status',
+  fin_balance_sheet_as_of_date: 'origination_app.financials.balance_sheet_as_of_date',
+  fin_pl_period_begin: 'origination_app.financials.pl_period_begin',
+  fin_pl_period_end: 'origination_app.financials.pl_period_end',
+  fin_performed_by: 'origination_app.financials.performed_by',
+  fin_rent_rolls_leases_yn: 'origination_app.financials.rent_rolls_leases_yn',
+  fin_rent_rolls_leases_status: 'origination_app.financials.rent_rolls_leases_status',
 };
+
+const STATUS_OPTIONS = ['Requested', 'Partially Received', 'Received'];
+const ASSURANCE_OPTIONS = ['Unaudited', 'Audited'];
+const PERFORMED_BY_OPTIONS = ['Borrower', 'CPA', 'Other'];
 
 // Additional rows: 8 rows with text + 2 checkboxes each
 const ADDITIONAL_ROWS = Array.from({ length: 8 }, (_, i) => ({
@@ -230,6 +249,71 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
     </DirtyFieldWrapper>
   );
 
+  const renderYNToggle = (label: string, key: string) => (
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[180px] text-sm shrink-0">{label}</Label>
+        <Switch
+          checked={getBoolValue(key)}
+          onCheckedChange={(checked) => setBoolValue(key, !!checked)}
+          disabled={disabled}
+        />
+      </div>
+    </DirtyFieldWrapper>
+  );
+
+  const renderDropdownField = (label: string, key: string, options: string[]) => (
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[180px] text-sm shrink-0">{label}</Label>
+        <Select
+          value={getValue(key) || undefined}
+          onValueChange={(val) => setValue(key, val)}
+          disabled={disabled}
+        >
+          <SelectTrigger className="h-7 text-sm flex-1">
+            <SelectValue placeholder="Select..." />
+          </SelectTrigger>
+          <SelectContent className="z-[9999]">
+            {options.map((opt) => (
+              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </DirtyFieldWrapper>
+  );
+
+  const renderFinancialsDatePicker = (label: string, key: string) => (
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[180px] text-sm shrink-0">{label}</Label>
+        <Popover open={datePickerStates[key] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [key]: open }))}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn('h-7 flex-1 justify-start text-left font-normal text-sm', !getValue(key) && 'text-muted-foreground')}
+              disabled={disabled}
+            >
+              {getValue(key) ? format(parseDate(getValue(key))!, 'MM/dd/yyyy') : 'MM/DD/YYYY'}
+              <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+            <EnhancedCalendar
+              mode="single"
+              selected={parseDate(getValue(key))}
+              onSelect={(date) => { if (date) setValue(key, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
+              onClear={() => { setValue(key, ''); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
+              onToday={() => { setValue(key, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </DirtyFieldWrapper>
+  );
+
   return (
     <div className="p-4 space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-6">
@@ -326,6 +410,28 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
             </div>
           </DirtyFieldWrapper>
           {ADDITIONAL_ROWS.map(renderAdditionalDocRow)}
+        </div>
+      </div>
+
+      {/* Financials (additive — extends existing Application area) */}
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Financials</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-3">
+          <div className="space-y-3">
+            {renderYNToggle('Bank Statements', FIELD_KEYS.fin_bank_statements_yn)}
+            {renderDropdownField('Status', FIELD_KEYS.fin_bank_statements_status, STATUS_OPTIONS)}
+            {renderYNToggle('Balance Sheet / P&L', FIELD_KEYS.fin_balance_sheet_pl_yn)}
+            {renderDropdownField('Assurance Level', FIELD_KEYS.fin_balance_sheet_pl_assurance, ASSURANCE_OPTIONS)}
+            {renderDropdownField('Status', FIELD_KEYS.fin_balance_sheet_pl_status, STATUS_OPTIONS)}
+            {renderFinancialsDatePicker('Balance Sheet as of Date', FIELD_KEYS.fin_balance_sheet_as_of_date)}
+          </div>
+          <div className="space-y-3">
+            {renderFinancialsDatePicker('P&L Period Begin', FIELD_KEYS.fin_pl_period_begin)}
+            {renderFinancialsDatePicker('P&L Period End', FIELD_KEYS.fin_pl_period_end)}
+            {renderDropdownField('Performed By', FIELD_KEYS.fin_performed_by, PERFORMED_BY_OPTIONS)}
+            {renderYNToggle('Rent Rolls / Leases', FIELD_KEYS.fin_rent_rolls_leases_yn)}
+            {renderDropdownField('Status', FIELD_KEYS.fin_rent_rolls_leases_status, STATUS_OPTIONS)}
+          </div>
         </div>
       </div>
     </div>
