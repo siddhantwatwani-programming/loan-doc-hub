@@ -440,12 +440,22 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       case 'roundingError':
         return (
           <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
-            <Checkbox
-              checked={record.roundingError}
-              onCheckedChange={(checked) => handleRoundingChange(record.id, checked === true)}
-              disabled={disabled}
-              className="h-3.5 w-3.5"
-            />
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center justify-center h-5 w-5">
+                    {record.roundingAdjustment ? (
+                      <Check className="h-4 w-4 text-primary" aria-label="Receives rounding adjustment" />
+                    ) : (
+                      <span className="text-muted-foreground/40">—</span>
+                    )}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  This lender will receive any rounding difference (e.g., $0.01)
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         );
       default:
