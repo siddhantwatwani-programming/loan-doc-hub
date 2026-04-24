@@ -3,7 +3,6 @@ import { cn } from '@/lib/utils';
 
 export type OriginationFeesSubSection =
   | 'application'
-  | 'financials'
   | 'escrow_title'
   | 'document_provisions'
   | 'insurance_conditions'
@@ -12,7 +11,6 @@ export type OriginationFeesSubSection =
 
 const SECTIONS: { key: OriginationFeesSubSection; label: string }[] = [
   { key: 'application', label: 'Application' },
-  { key: 'financials', label: 'Financials' },
   { key: 'escrow_title', label: 'Escrow & Title' },
   { key: 'document_provisions', label: 'Document Provisions' },
   { key: 'insurance_conditions', label: 'Insurance Conditions' },
