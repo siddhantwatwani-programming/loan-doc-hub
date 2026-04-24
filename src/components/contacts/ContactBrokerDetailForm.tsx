@@ -170,7 +170,7 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
                 <Label className="text-sm">{row.label}</Label>
                 <PhoneInput
                   value={(form as any)[row.key] || ''}
-                  onValueChange={(v) => set(row.key, v)}
+                  onValueChange={(v) => set(row.key as any, v)}
                 />
                 <div className="flex justify-center">
                   <RadioGroupItem value={row.value} id={`pref-${row.value}`} />
