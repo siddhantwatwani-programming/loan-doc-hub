@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { LenderIdSearch } from './LenderIdSearch';
 import { AccountIdSearch } from './AccountIdSearch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
@@ -954,7 +955,17 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 onCheckedChange={(checked) => handleChange('roundingAdjustment', !!checked)}
                 className="h-3.5 w-3.5"
               />
-              <Label className="text-[11px] font-medium cursor-pointer">Rounding Adjustment</Label>
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Label className="text-[11px] font-medium cursor-pointer">Rounding Adjustment</Label>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="text-xs">
+                    This lender will receive any rounding difference (e.g., $0.01).
+                    Only one lender can be selected at a time — enabling here will disable it on all other lenders.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <div className="flex items-center gap-2">
               <Checkbox
