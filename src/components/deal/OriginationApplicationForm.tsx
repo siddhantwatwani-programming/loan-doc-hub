@@ -249,7 +249,70 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
     </DirtyFieldWrapper>
   );
 
-  return (
+  const renderYNToggle = (label: string, key: string) => (
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[180px] text-sm shrink-0">{label}</Label>
+        <Switch
+          checked={getBoolValue(key)}
+          onCheckedChange={(checked) => setBoolValue(key, !!checked)}
+          disabled={disabled}
+        />
+      </div>
+    </DirtyFieldWrapper>
+  );
+
+  const renderDropdownField = (label: string, key: string, options: string[]) => (
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[180px] text-sm shrink-0">{label}</Label>
+        <Select
+          value={getValue(key) || undefined}
+          onValueChange={(val) => setValue(key, val)}
+          disabled={disabled}
+        >
+          <SelectTrigger className="h-7 text-sm flex-1">
+            <SelectValue placeholder="Select..." />
+          </SelectTrigger>
+          <SelectContent className="z-[9999]">
+            {options.map((opt) => (
+              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </DirtyFieldWrapper>
+  );
+
+  const renderFinancialsDatePicker = (label: string, key: string) => (
+    <DirtyFieldWrapper fieldKey={key}>
+      <div className="flex items-center gap-2">
+        <Label className="w-[180px] text-sm shrink-0">{label}</Label>
+        <Popover open={datePickerStates[key] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, [key]: open }))}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn('h-7 flex-1 justify-start text-left font-normal text-sm', !getValue(key) && 'text-muted-foreground')}
+              disabled={disabled}
+            >
+              {getValue(key) ? format(parseDate(getValue(key))!, 'MM/dd/yyyy') : 'MM/DD/YYYY'}
+              <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+            <EnhancedCalendar
+              mode="single"
+              selected={parseDate(getValue(key))}
+              onSelect={(date) => { if (date) setValue(key, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
+              onClear={() => { setValue(key, ''); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
+              onToday={() => { setValue(key, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, [key]: false })); }}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </DirtyFieldWrapper>
+  );
     <div className="p-4 space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-6">
         {/* Column 1: Borrower */}
