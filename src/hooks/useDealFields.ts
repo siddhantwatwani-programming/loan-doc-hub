@@ -225,8 +225,13 @@ function extractTypedValueFromJsonb(fieldData: JsonbFieldValue, dataType: FieldD
       return num.toFixed(2);
     }
     case 'number':
-    case 'percentage':
       return fieldData.value_number?.toString() || fieldData.value_text || '';
+    case 'percentage': {
+      const raw = fieldData.value_number?.toString() || fieldData.value_text || '';
+      if (!raw) return '';
+      const num = parseFloat(raw.replace(/,/g, ''));
+      return isNaN(num) ? raw : num.toFixed(2);
+    }
     case 'date':
       return fieldData.value_date || fieldData.value_text || '';
     case 'boolean':
