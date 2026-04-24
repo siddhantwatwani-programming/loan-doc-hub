@@ -41,13 +41,32 @@ interface ContactResult {
   contact_type: string;
 }
 
-type ParticipantType = 'borrower' | 'lender' | 'broker' | 'other';
+type ParticipantType =
+  | 'borrower'
+  | 'lender'
+  | 'broker'
+  | 'vendor'
+  | 'additional_guarantor'
+  | 'authorized_party'
+  | 'other';
 
 const PARTICIPANT_TYPES = [
   { value: 'borrower', label: 'Borrower', disabled: false },
   { value: 'lender', label: 'Lender', disabled: false },
   { value: 'broker', label: 'Broker', disabled: false },
+  { value: 'vendor', label: 'Vendor', disabled: false },
+  { value: 'additional_guarantor', label: 'Additional Guarantor', disabled: false },
+  { value: 'authorized_party', label: 'Authorized Party', disabled: false },
 ];
+
+// Types that don't map to a native app_role enum value — persisted as 'other' role
+// with the original selection retained as the participant's capacity label.
+const EXTENDED_TYPE_LABELS: Record<string, string> = {
+  vendor: 'Vendor',
+  additional_guarantor: 'Additional Guarantor',
+  authorized_party: 'Authorized Party',
+};
+const NATIVE_ROLES = new Set(['borrower', 'lender', 'broker', 'other']);
 
 const CAPACITY_OPTIONS: Record<string, string[]> = {
   borrower: [
@@ -113,8 +132,9 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           .from('contacts')
           .select('id, contact_id, full_name, email, phone, contact_type');
         
-        // For 'other' type, search all contacts; otherwise filter by matching type
-        if (participantType !== 'other') {
+        // For 'other' or extended types (vendor / additional_guarantor / authorized_party),
+        // search across all contacts; otherwise filter by matching contact_type.
+        if (NATIVE_ROLES.has(participantType) && participantType !== 'other') {
           query = query.eq('contact_type', participantType);
         }
         
@@ -152,6 +172,14 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
   const handleSave = async () => {
     if (!participantType || !dealId) return;
 
+    // Map extended types (no native enum value) to 'other' for the role column.
+    const persistedRole: 'borrower' | 'lender' | 'broker' | 'other' = NATIVE_ROLES.has(participantType)
+      ? (participantType as 'borrower' | 'lender' | 'broker' | 'other')
+      : 'other';
+    // Resolve the capacity label: explicit selection > extended type label > participant type.
+    const resolvedCapacity =
+      capacity || EXTENDED_TYPE_LABELS[participantType] || participantType;
+
     setSaving(true);
     try {
       let contactId: string | null = null;
@@ -173,12 +201,11 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           .maybeSingle();
 
         const existingData = (existingContact?.contact_data || {}) as Record<string, string>;
-        const capacityLabel = capacity || participantType;
         const mergedData: Record<string, string> = {
           ...existingData,
           'full_name': name,
           'email': email,
-          'capacity': capacityLabel,
+          'capacity': resolvedCapacity,
         };
         if (phone) mergedData['phone.home'] = phone;
         if (name) {
@@ -201,8 +228,10 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           return;
         }
 
-        // Create new contact - use 'borrower' as default contact_type for 'other'
-        const contactType = participantType === 'other' ? 'borrower' : participantType;
+        // Create new contact - use 'borrower' as default contact_type for non-native types
+        const contactType = NATIVE_ROLES.has(participantType) && participantType !== 'other'
+          ? participantType
+          : 'borrower';
         const { data: genId } = await supabase.rpc('generate_contact_id', {
           p_type: contactType,
         });
@@ -218,8 +247,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
         };
         if (email) contactDataPayload['email'] = email;
         if (phone) contactDataPayload['phone.home'] = phone;
-        // Use selected capacity
-        contactDataPayload['capacity'] = capacity || participantType;
+        contactDataPayload['capacity'] = resolvedCapacity;
 
         const { data: newContact, error: contactError } = await supabase
           .from('contacts')
@@ -248,7 +276,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           .select('id')
           .eq('deal_id', dealId)
           .eq('contact_id', contactId)
-          .eq('role', participantType)
+          .eq('role', persistedRole)
           .maybeSingle();
 
         if (existing) {
@@ -262,7 +290,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           .select('id')
           .eq('deal_id', dealId)
           .eq('email', email)
-          .eq('role', participantType)
+          .eq('role', persistedRole)
           .maybeSingle();
 
         if (existing) {
@@ -277,7 +305,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
         .from('deal_participants')
         .insert({
           deal_id: dealId,
-          role: participantType as any,
+          role: persistedRole,
           name,
           email: email || null,
           phone: phone || null,
@@ -289,7 +317,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
       if (insertError) throw insertError;
 
       // Persist capacity per-deal in deal_section_values (section='participants')
-      if (contactId && capacity) {
+      if (contactId && resolvedCapacity) {
         const capacityKey = `participant_${contactId}_capacity`;
         const { data: existingSection } = await supabase
           .from('deal_section_values')
@@ -299,7 +327,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           .maybeSingle();
 
         const existingValues = (existingSection?.field_values as Record<string, any>) || {};
-        const updatedValues = { ...existingValues, [capacityKey]: capacity };
+        const updatedValues = { ...existingValues, [capacityKey]: resolvedCapacity };
 
         if (existingSection) {
           await supabase.from('deal_section_values')
@@ -310,6 +338,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
             .insert({ deal_id: dealId, section: 'participants' as any, field_values: updatedValues });
         }
       }
+
 
       toast.success('Participant added successfully');
       onParticipantAdded();
