@@ -6,7 +6,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Plus, Trash2, Pencil, Loader2, Download, Search, X, Filter, SlidersHorizontal, History } from 'lucide-react';
+import { Plus, Trash2, Pencil, Loader2, Download, Search, X, Filter, SlidersHorizontal, History, Check } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { AddFundingModal, FundingFormData } from './AddFundingModal';
 import { FundingAdjustmentModal, FundingAdjustmentData } from './FundingAdjustmentModal';
@@ -439,12 +440,22 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       case 'roundingError':
         return (
           <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
-            <Checkbox
-              checked={record.roundingError}
-              onCheckedChange={(checked) => handleRoundingChange(record.id, checked === true)}
-              disabled={disabled}
-              className="h-3.5 w-3.5"
-            />
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center justify-center h-5 w-5">
+                    {record.roundingAdjustment ? (
+                      <Check className="h-4 w-4 text-primary" aria-label="Receives rounding adjustment" />
+                    ) : (
+                      <span className="text-muted-foreground/40">—</span>
+                    )}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  This lender will receive any rounding difference (e.g., $0.01)
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         );
       default:
@@ -711,6 +722,16 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         loanNumber={loanNumber}
         borrowerName={borrowerName}
         onSubmit={(data) => {
+          // Mutual exclusivity: only ONE lender may have rounding adjustment enabled.
+          // When the user enables it on the current record, atomically clear it on every other record.
+          if (data.roundingAdjustment) {
+            const currentId = selectedRecord?.id;
+            fundingRecords.forEach((r) => {
+              if (r.id !== currentId && r.roundingAdjustment) {
+                onUpdateRecord(r.id, { roundingAdjustment: false });
+              }
+            });
+          }
           if (selectedRecord) {
             const soldRateVal = (data.rateSoldValue || '').trim();
             const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
