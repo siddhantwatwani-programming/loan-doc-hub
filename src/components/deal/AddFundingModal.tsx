@@ -303,26 +303,39 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     }
   }, [open, editData, draftKey]);
 
+  // Note Rate, Sold Rate, and Lender Rate are dynamically linked.
+  // Source of truth: Sold Rate (falls back to Note Rate when Sold is empty).
+  // Lender Rate continuously mirrors the source unless the user has enabled Override.
   React.useEffect(() => {
     if (!open) return;
 
     setFormData((prev) => {
       const nextSoldRate = (soldRate || '').trim();
-      const soldChanged = prev.rateSoldValue !== nextSoldRate;
-      // Auto-populate Lender Rate from Loan > Terms & Balance Sold Rate
-      const shouldSyncLenderRate = nextSoldRate !== '' && prev.lenderRate !== nextSoldRate;
+      const nextNoteRate = (noteRate || '').trim();
+      const linkedRate = nextSoldRate !== '' ? nextSoldRate : nextNoteRate;
 
-      if (!soldChanged && !shouldSyncLenderRate) return prev;
+      const overrideOn = !!prev.lenderRateOverride;
+      const shouldSyncLenderRate =
+        !overrideOn && linkedRate !== '' && prev.lenderRate !== linkedRate;
+      const soldChanged = prev.rateSoldValue !== nextSoldRate;
+      const noteChanged = (prev.rateNoteValue || '') !== nextNoteRate;
+      const noteDisplayChanged = (prev.noteRateDisplay || '') !== nextNoteRate;
+
+      if (!soldChanged && !noteChanged && !noteDisplayChanged && !shouldSyncLenderRate) {
+        return prev;
+      }
 
       return {
         ...prev,
         rateSoldValue: nextSoldRate,
+        rateNoteValue: nextNoteRate || prev.rateNoteValue,
+        noteRateDisplay: nextNoteRate || prev.noteRateDisplay,
         ...(shouldSyncLenderRate
-          ? { lenderRate: nextSoldRate, rateLenderValue: nextSoldRate }
+          ? { lenderRate: linkedRate, rateLenderValue: linkedRate }
           : {}),
       };
     });
-  }, [open, soldRate]);
+  }, [open, soldRate, noteRate]);
 
   // Auto-save in-progress form to sessionStorage on every change (so tab-switch/close keeps the draft).
   // Cleared explicitly on successful save (handleConfirmSave) — Cancel keeps the draft so user can resume.

@@ -201,10 +201,13 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
       {/* Lender Rate (auto-prefilled from Sold Rate; disabled when Sold Rate exists). Override has its own editable input. */}
       {(() => {
         const soldRateVal = (data.rateSoldValue || '').trim();
-        const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
-        // Lender Rate becomes non-editable once it has been populated (from Sold Rate or any prior value)
-        const lenderRateDisabled = hasSoldRate || !!(data.lenderRate && data.lenderRate.trim() !== '');
-        const displayRate = hasSoldRate ? soldRateVal : (data.lenderRate || '');
+        const noteRateVal = (data.rateNoteValue || '').trim();
+        const linkedRate = soldRateVal !== '' ? soldRateVal : noteRateVal;
+        const hasLinkedRate = linkedRate !== '' && !isNaN(parseFloat(linkedRate));
+        // Note, Sold, and Lender Rate are dynamically linked. Lender Rate mirrors the
+        // linked source (Sold → Note fallback) and is non-editable unless Override is on.
+        const lenderRateDisabled = hasLinkedRate;
+        const displayRate = hasLinkedRate ? linkedRate : (data.lenderRate || '');
         const isOn = !!data.lenderRateOverride;
         const overrideVal = data.lenderRateOverrideValue || '';
         return (
