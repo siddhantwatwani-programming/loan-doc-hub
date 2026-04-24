@@ -202,7 +202,8 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
       {(() => {
         const soldRateVal = (data.rateSoldValue || '').trim();
         const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
-        const lenderRateDisabled = hasSoldRate;
+        // Lender Rate becomes non-editable once it has been populated (from Sold Rate or any prior value)
+        const lenderRateDisabled = hasSoldRate || !!(data.lenderRate && data.lenderRate.trim() !== '');
         const displayRate = hasSoldRate ? soldRateVal : (data.lenderRate || '');
         const isOn = !!data.lenderRateOverride;
         const overrideVal = data.lenderRateOverrideValue || '';
