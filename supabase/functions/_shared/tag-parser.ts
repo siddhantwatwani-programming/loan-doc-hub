@@ -1652,34 +1652,24 @@ export function replaceMergeTags(
   const stripXmlBetween = (raw: string): string =>
     raw.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 
-  const controlPatterns: Array<{ re: RegExp; build: (m: RegExpExecArray) => string | null }> = [
-    {
-      re: /\{\{([\s\S]{0,400}?)\}\}/g,
-      build: (m) => {
-        const inner = stripXmlBetween(m[1]);
-        if (/^#if\s+[A-Za-z0-9_.]+$/.test(inner)) return `{{${inner}}}`;
-        if (/^#unless\s+[A-Za-z0-9_.]+$/.test(inner)) return `{{${inner}}}`;
-        if (inner === "else" || inner === "/if" || inner === "/unless") return `{{${inner}}}`;
-        return null;
-      },
-    },
-  ];
-
-  for (const { re, build } of controlPatterns) {
-    result = result.replace(re, (full, _g1) => {
-      const exec = re.exec(full);
-      if (!exec) {
-        // Re-run on the matched text to extract groups for build()
-        const localRe = new RegExp(re.source, re.flags.replace("g", ""));
-        const local = localRe.exec(full);
-        if (!local) return full;
-        const built = build(local as RegExpExecArray);
-        return built ?? full;
-      }
-      const built = build(exec);
-      return built ?? full;
-    });
-  }
+  result = result.replace(/\{\{([\s\S]{0,400}?)\}\}/g, (full, inner: string) => {
+    // Only act if the inner span actually contains XML markup (i.e. fragmented).
+    if (!inner.includes("<")) return full;
+    const cleaned = stripXmlBetween(inner);
+    if (/^#if\s+[A-Za-z0-9_.]+$/.test(cleaned)) {
+      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+      return `{{${cleaned}}}`;
+    }
+    if (/^#unless\s+[A-Za-z0-9_.]+$/.test(cleaned)) {
+      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+      return `{{${cleaned}}}`;
+    }
+    if (cleaned === "else" || cleaned === "/if" || cleaned === "/unless") {
+      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+      return `{{${cleaned}}}`;
+    }
+    return full;
+  });
 
   // Unconditional safety net: strip BARE Handlebars-style control directives
   // that template authors sometimes leave in DOCX paragraphs as plain text
