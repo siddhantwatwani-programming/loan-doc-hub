@@ -1,46 +1,49 @@
-## Recommended fix
-No field mapping, UI, API, or database change is needed.
+# Plan: Fix RE851A Balloon Payment checkbox logic
 
-The existing source path is already wired correctly:
-- UI checkbox saves to `loan_terms.balloon_payment`
-- legacy alias exists as `ln_p_balloonPaymen`
-- document generation already derives `ln_p_balloonPayment` and treats missing values as false
+## What will be changed
+1. Keep the existing data mapping exactly as-is.
+   - Continue using the Loan UI checkbox source.
+   - Continue using `ln_p_balloonPayment` in the RE851A logic.
+   - Do not change UI, database, API, or unrelated field mappings.
 
-The failure is most likely in the RE851A template/rendering layer, not the data mapping. The screenshot shows the conditional tags printing literally, which means the checkbox block is not being resolved during document generation.
-
-## Plan
-1. Keep the current field mapping exactly as-is.
-   - Do not change `loan_terms.balloon_payment`
-   - Do not change `{{ln_p_balloonPayment}}`
-   - Do not touch UI, backend data model, or other RE851A fields
-
-2. Fix only the Balloon Payment checkbox block in the RE851A template.
-   - Update the two Part 3 checkbox lines so they use the existing supported conditional syntax cleanly:
+2. Correct the RE851A Part 3 checkbox rendering at the template/parser layer only.
+   - The uploaded RE851A reference shows the Balloon Payment row currently authored as a single conditional block that only outputs one side of the choice.
+   - Replace that logic with a true two-option render so both choices are always present:
      - `{{#if ln_p_balloonPayment}}☑{{else}}☐{{/if}} YES`
      - `{{#if ln_p_balloonPayment}}☐{{else}}☑{{/if}} NO`
-   - Preserve the exact layout, spacing, label text, and document formatting
-   - Change only the checkbox symbols and malformed control-tag wrapping in that section if needed
+   - Preserve the exact cell, spacing, labels, and document structure.
 
-3. If the template is already authored that way but Word has fragmented the tags, harden the parser only for this existing syntax.
-   - Support fragmented `{{#if ln_p_balloonPayment}}`, `{{else}}`, and `{{/if}}` runs in the Balloon Payment paragraph
-   - Do not introduce new helpers or new business mappings
-   - Do not affect other sections unless they already rely on the same supported syntax
+3. Keep null and missing values treated as false.
+   - `true` => YES checked, NO unchecked
+   - `false` / `null` / `undefined` => YES unchecked, NO checked
 
-4. Validate both document outcomes.
-   - `true`/checked -> YES checked, NO unchecked
-   - `false`/null/undefined -> YES unchecked, NO checked
-   - Confirm no raw Handlebars tags appear in the output
-   - Confirm no layout shift or formatting regression in RE851A
+4. Verify parser compatibility for fragmented Word tags.
+   - If the live template already contains the correct Handlebars syntax but still fails, harden the existing conditional-tag consolidation in `tag-parser.ts` only for this rendering path.
+   - Do not introduce new helpers unless the current parser already supports them.
+
+5. Validate no regression in RE851A.
+   - Confirm the Balloon Payment row renders correctly with no raw tags, no misalignment, and no impact on other sections.
+
+## What this means for your question
+You should not change the field mapping.
+
+The mapping/derivation path is already in place in the document generator:
+- UI value is stored under `loan_terms.balloon_payment`
+- Legacy alias exists as `ln_p_balloonPaymen`
+- The generator already derives `ln_p_balloonPayment` as a boolean for template conditionals
+
+So the likely fix is:
+- template logic correction if the live RE851A matches the uploaded reference, or
+- parser hardening if Word is fragmenting otherwise-correct tags
 
 ## Technical details
-Relevant files already confirm the mapping is present:
-- `src/lib/fieldKeyMap.ts` -> `balloonPayment: 'loan_terms.balloon_payment'`
-- `src/lib/legacyKeyMap.ts` -> `'loan_terms.balloon_payment': 'ln_p_balloonPaymen'`
-- `supabase/functions/generate-document/index.ts` -> derives both `ln_p_balloonPayment` and `ln_p_balloonPaymen`
-- `supabase/functions/_shared/tag-parser.ts` -> supports basic `#if / else / /if` blocks, so literal output indicates malformed or insufficiently consolidated template tags
+- Keep `generate-document/index.ts` balloon boolean derivation intact unless a very small normalization adjustment is needed.
+- Apply the fix only in the RE851A Balloon Payment rendering path.
+- Do not touch other checkbox logic, document sections, field keys, schema, or UI components.
+- If needed, extend the existing tag-parser control-tag consolidation rather than adding a new helper or new mapping.
 
-## Expected outcome
-- No mapping change required
-- No database/UI/API change required
-- Only the RE851A Balloon Payment checkbox rendering is corrected
-- The generated document shows the correct YES/NO selection without exposing template tags
+## Expected result
+- Checked in Loan UI -> `☑ YES` and `☐ NO`
+- Unchecked or empty -> `☐ YES` and `☑ NO`
+- No layout or formatting changes
+- No regression in other RE851A fields
