@@ -823,6 +823,20 @@ async function generateSingleDocument(
     fieldValues.set("ln_p_paymentWeekly", { rawValue: payFreqVal === "weekly" ? "true" : "false", dataType: "boolean" });
     debugLog(`[generate-document] Derived payment frequency checkboxes from "${payFreqVal}": monthly=${payFreqVal === "monthly"}, weekly=${payFreqVal === "weekly"}`);
 
+    // Balloon Payment (RE851A Part 3) → boolean checkbox key
+    // UI persists under loan_terms.balloon_payment (legacy alias ln_p_balloonPaymen, note truncated key).
+    // Template uses {{ln_p_balloonPayment}} (full spelling) for YES/NO conditional checkboxes.
+    const balloonRaw = (
+      fieldValues.get("loan_terms.balloon_payment")?.rawValue ??
+      fieldValues.get("ln_p_balloonPaymen")?.rawValue ??
+      fieldValues.get("ln_p_balloonPayment")?.rawValue ?? ""
+    ).toString().trim().toLowerCase();
+    const balloonTrue = ["true", "1", "yes", "on", "checked"].includes(balloonRaw);
+    fieldValues.set("ln_p_balloonPayment", { rawValue: balloonTrue ? "true" : "false", dataType: "boolean" });
+    fieldValues.set("ln_p_balloonPaymen", { rawValue: balloonTrue ? "true" : "false", dataType: "boolean" });
+    fieldValues.set("loan_terms.balloon_payment", { rawValue: balloonTrue ? "true" : "false", dataType: "boolean" });
+    debugLog(`[generate-document] Derived ln_p_balloonPayment from "${balloonRaw}": ${balloonTrue}`);
+
     // Broker Capacity in Transaction (RE851A Part 2) → boolean checkbox keys
     // Derived from "Is Broker Also a Borrower?" UI checkbox. The UI persists this
     // under origination_app.doc.is_broker_also_borrower_yes (legacy alias
