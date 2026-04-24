@@ -713,11 +713,13 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               <div className="flex items-center gap-1">
                 <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Lender Rate</Label>
                 {(() => {
+                  const hasLenderRate = !!(formData.lenderRate && String(formData.lenderRate).trim() !== '');
                   return (
                     <div className="relative flex-1">
                       <Input
                         value={formData.lenderRate || ''}
                         onChange={(e) => {
+                          if (hasLenderRate) return;
                           // Allow only digits and a single decimal. Truncate (do NOT round) to 2 decimals.
                           let v = e.target.value.replace(/[^0-9.]/g, '');
                           const parts = v.split('.');
@@ -729,6 +731,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                           setFormData(prev => ({ ...prev, lenderRate: v, rateLenderValue: v }));
                         }}
                         onBlur={(e) => {
+                          if (hasLenderRate) return;
                           // Pad to exactly 2 decimal places without rounding.
                           const raw = (e.target.value || '').replace(/[^0-9.]/g, '');
                           if (!raw) return;
@@ -739,7 +742,8 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                           }
                         }}
                         onKeyDown={numericKeyDown}
-                        className="h-6 text-[11px] pr-4"
+                        disabled={hasLenderRate}
+                        className={cn("h-6 text-[11px] pr-4", hasLenderRate && "opacity-60 bg-muted cursor-not-allowed")}
                         inputMode="decimal"
                         placeholder="%"
                       />
