@@ -339,6 +339,8 @@ export function normalizeWordXml(xmlContent: string): string {
     });
 
     // Handle fragmented conditional block tags
+    // Also tolerate control tags that Word has split into separate <w:t> runs,
+    // e.g. "{{#if" + " ln_p_balloonPayment" + "}}".
     const ifFragmented = /\{\{((?:<[^>]*>|\s)*?)#if\s*((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
     p = p.replace(ifFragmented, (_match, pre, mid, fieldName, post) => {
       if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
@@ -347,10 +349,26 @@ export function normalizeWordXml(xmlContent: string): string {
       return `{{#if ${fieldName}}}`;
     });
 
+    const ifOpenFragmented = /\{\{#if((?:<[^>]*>|\s)+)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*)\}\}/g;
+    p = p.replace(ifOpenFragmented, (_match, mid, fieldName, post) => {
+      if (mid.includes("<") || post.includes("<")) {
+        debugLog(`[tag-parser] Consolidated split-open {{#if ${fieldName}}}`);
+      }
+      return `{{#if ${fieldName}}}`;
+    });
+
     const unlessFragmented = /\{\{((?:<[^>]*>|\s)*?)#unless\s*((?:<[^>]*>|\s)*?)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*?)\}\}/g;
     p = p.replace(unlessFragmented, (_match, pre, mid, fieldName, post) => {
       if (pre.includes("<") || mid.includes("<") || post.includes("<")) {
         debugLog(`[tag-parser] Consolidated fragmented {{#unless ${fieldName}}}`);
+      }
+      return `{{#unless ${fieldName}}}`;
+    });
+
+    const unlessOpenFragmented = /\{\{#unless((?:<[^>]*>|\s)+)([A-Za-z0-9_.]+)((?:<[^>]*>|\s)*)\}\}/g;
+    p = p.replace(unlessOpenFragmented, (_match, mid, fieldName, post) => {
+      if (mid.includes("<") || post.includes("<")) {
+        debugLog(`[tag-parser] Consolidated split-open {{#unless ${fieldName}}}`);
       }
       return `{{#unless ${fieldName}}}`;
     });
@@ -376,6 +394,14 @@ export function normalizeWordXml(xmlContent: string): string {
     p = p.replace(elseFragmented, (_match, pre, post) => {
       if (pre.includes("<") || post.includes("<")) {
         debugLog(`[tag-parser] Consolidated fragmented {{else}}`);
+      }
+      return `{{else}}`;
+    });
+
+    const elseOpenFragmented = /\{\{((?:<[^>]*>|\s)+)else((?:<[^>]*>|\s)*)\}\}/g;
+    p = p.replace(elseOpenFragmented, (_match, pre, post) => {
+      if (pre.includes("<") || post.includes("<")) {
+        debugLog(`[tag-parser] Consolidated split-open {{else}}`);
       }
       return `{{else}}`;
     });
