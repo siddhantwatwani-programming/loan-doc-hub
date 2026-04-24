@@ -1468,10 +1468,26 @@ async function generateSingleDocument(
       fetchMergeTagMappings(supabase),
       fetchFieldKeyMappings(supabase),
     ]);
+
+    // RE851A Part 2 broker-capacity checkboxes are often authored as native Word
+    // checkboxes or static glyphs beside the literal A./B. labels rather than as
+    // explicit merge tags. Inject these label bindings at generation time so the
+    // existing layout remains untouched while the checkbox state still resolves
+    // from the already-derived boolean keys.
+    const effectiveLabelMap = {
+      ...labelMap,
+      "A. Agent in arranging a loan on behalf of another": {
+        fieldKey: "or_p_brkCapacityAgent",
+      },
+      "B. Principal as a borrower on funds from which broker will directly or indirectly benefit": {
+        fieldKey: "or_p_brkCapacityPrincipal",
+      },
+    };
+
     const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
     let processedDocx: Uint8Array;
     try {
-      processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+      processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, effectiveLabelMap, validFieldKeys);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       // Surface DOCX integrity failures as a real generation failure rather
