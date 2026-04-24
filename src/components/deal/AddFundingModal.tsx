@@ -308,11 +308,18 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
     setFormData((prev) => {
       const nextSoldRate = (soldRate || '').trim();
-      if (prev.rateSoldValue === nextSoldRate) return prev;
+      const soldChanged = prev.rateSoldValue !== nextSoldRate;
+      // Auto-populate Lender Rate from Loan > Terms & Balance Sold Rate
+      const shouldSyncLenderRate = nextSoldRate !== '' && prev.lenderRate !== nextSoldRate;
+
+      if (!soldChanged && !shouldSyncLenderRate) return prev;
 
       return {
         ...prev,
         rateSoldValue: nextSoldRate,
+        ...(shouldSyncLenderRate
+          ? { lenderRate: nextSoldRate, rateLenderValue: nextSoldRate }
+          : {}),
       };
     });
   }, [open, soldRate]);
