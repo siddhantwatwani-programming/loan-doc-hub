@@ -313,6 +313,8 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
       </div>
     </DirtyFieldWrapper>
   );
+
+  return (
     <div className="p-4 space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-6">
         {/* Column 1: Borrower */}
