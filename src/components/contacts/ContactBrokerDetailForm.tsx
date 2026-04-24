@@ -149,31 +149,38 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
           <Label>Email</Label>
           <EmailInput value={form.email} onValueChange={(v) => set('email', v)} />
         </div>
-        <div>
-          <Label>Home Phone</Label>
-          <PhoneInput value={form.homePhone} onValueChange={(v) => set('homePhone', v)} />
-        </div>
-        <div>
-          <Label>Work Phone</Label>
-          <PhoneInput value={form.workPhone} onValueChange={(v) => set('workPhone', v)} />
-        </div>
-        <div>
-          <Label>Cell Phone</Label>
-          <PhoneInput value={form.cellPhone} onValueChange={(v) => set('cellPhone', v)} />
-        </div>
-        <div>
-          <Label>Fax</Label>
-          <PhoneInput value={form.fax} onValueChange={(v) => set('fax', v)} />
-        </div>
         <div className="col-span-2">
-          <Label>Preferred Phone</Label>
-          <RadioGroup value={form.preferredPhone} onValueChange={(v) => set('preferredPhone', v)} className="flex gap-4 mt-1">
-            <label className="flex items-center gap-1.5 text-sm"><RadioGroupItem value="Home" /> Home</label>
-            <label className="flex items-center gap-1.5 text-sm"><RadioGroupItem value="Work" /> Work</label>
-            <label className="flex items-center gap-1.5 text-sm"><RadioGroupItem value="Cell" /> Cell</label>
+          <div className="grid grid-cols-[60px_1fr_90px] items-center gap-3 mb-1">
+            <span />
+            <Label className="text-xs font-semibold">Phone</Label>
+            <Label className="text-xs font-semibold text-center">Preferred</Label>
+          </div>
+          <RadioGroup
+            value={form.preferredPhone}
+            onValueChange={(v) => set('preferredPhone', v)}
+            className="space-y-2"
+          >
+            {[
+              { key: 'homePhone', label: 'Home', value: 'Home' },
+              { key: 'workPhone', label: 'Work', value: 'Work' },
+              { key: 'cellPhone', label: 'Cell', value: 'Cell' },
+              { key: 'fax', label: 'Fax', value: 'Fax' },
+            ].map((row) => (
+              <div key={row.key} className="grid grid-cols-[60px_1fr_90px] items-center gap-3">
+                <Label className="text-sm">{row.label}</Label>
+                <PhoneInput
+                  value={(form as any)[row.key] || ''}
+                  onValueChange={(v) => set(row.key, v)}
+                />
+                <div className="flex justify-center">
+                  <RadioGroupItem value={row.value} id={`pref-${row.value}`} />
+                </div>
+              </div>
+            ))}
           </RadioGroup>
         </div>
       </div>
+
 
       {/* Address */}
       <SectionTitle>Address</SectionTitle>
