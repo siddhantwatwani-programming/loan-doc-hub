@@ -1703,6 +1703,53 @@ export function replaceMergeTags(
     result = processSdtCheckboxes(result, fieldValues, mergeTagMap, validFieldKeys, labelMap);
   }
 
+  // RE851A Part 2 fallback: some authored templates use literal bracket
+  // markers ("[ ]", "[x]", "[X]") instead of checkbox glyphs (☐/☑) next to
+  // the A. / B. broker-capacity labels. The downstream label-based replacer
+  // only knows how to swap glyph characters, so we normalize bracket markers
+  // immediately preceding any boolean label in labelMap into the equivalent
+  // glyph here. The replacement is strictly bounded to the marker region —
+  // surrounding text, spacing, and XML structure are preserved unchanged.
+  if (result.includes('[') && result.includes(']')) {
+    const booleanLabels = Object.entries(labelMap)
+      .filter(([, mapping]) => {
+        const fd = fieldValues.get(mapping.fieldKey);
+        return fd?.dataType === 'boolean';
+      })
+      .map(([label]) => label)
+      .sort((a, b) => b.length - a.length);
+
+    for (const label of booleanLabels) {
+      const labelPattern = buildXmlFlexibleLabelPattern(label);
+      if (!labelPattern) continue;
+      // [ ] or [x]/[X] possibly wrapped in XML, then optional whitespace/XML,
+      // then the label text. Only the bracket marker is rewritten.
+      const bracketBeforeLabel = new RegExp(
+        `(<w:t[^>]*>)([^<]*?)\\[\\s*([xX]?)\\s*\\]([^<]*?</w:t>)((?:\\s|<[^>]+>)*?${labelPattern})(?![A-Za-z])`,
+        'g'
+      );
+      result = result.replace(
+        bracketBeforeLabel,
+        (_m, wtOpen, pre, mark, wtTail, labelPart) => {
+          const glyph = mark ? '☑' : '☐';
+          return `${wtOpen}${pre}${glyph}${wtTail}${labelPart}`;
+        }
+      );
+      // Plain-text fallback (no <w:t> wrapper) — same scoping, marker only.
+      const plainBracketBeforeLabel = new RegExp(
+        `\\[\\s*([xX]?)\\s*\\]((?:\\s|<[^>]+>)*?)(${labelPattern})(?![A-Za-z])`,
+        'g'
+      );
+      result = result.replace(
+        plainBracketBeforeLabel,
+        (_m, mark, spacing, labelText) => {
+          const glyph = mark ? '☑' : '☐';
+          return `${glyph}${spacing}${labelText}`;
+        }
+      );
+    }
+  }
+
   if (result.includes('{{') || result.includes('}}')) {
     const openBraceCount = (result.match(/\{\{/g) || []).length;
     const closeBraceCount = (result.match(/\}\}/g) || []).length;
