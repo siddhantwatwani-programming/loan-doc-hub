@@ -62,7 +62,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
     const fa = safeParseFloat(data.fundingAmount);
     const la = safeParseFloat(loanAmount);
     if (la > 0 && fa > 0) {
-      const computed = (fa / la * 100).toFixed(3);
+      const computed = (fa / la * 100).toFixed(2);
       if (computed !== data.percentOwned) {
         onChange({ ...data, percentOwned: computed });
       }
@@ -182,7 +182,7 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
         <div className="flex items-center gap-2">
           <Label className={cn("text-sm shrink-0", percentOwnedError ? "text-destructive font-medium" : "text-muted-foreground")}>Percent Owned</Label>
           <div className="relative w-28">
-            <Input type="text" inputMode="decimal" value={data.percentOwned || ''} disabled className={cn("h-7 text-sm pr-6 opacity-50 bg-muted", percentOwnedError && "border-destructive")} placeholder="0.000" />
+            <Input type="text" inputMode="decimal" value={data.percentOwned || ''} disabled className={cn("h-7 text-sm pr-6 opacity-50 bg-muted", percentOwnedError && "border-destructive")} placeholder="0.00" />
             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">%</span>
           </div>
         </div>
