@@ -222,7 +222,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
     const stripped = val.replace(/,/g, '');
     const num = parseFloat(stripped);
     if (isNaN(num)) return val;
-    return num.toFixed(3);
+    return num.toFixed(2);
   }, []);
 
   const renderPercentField = (key: string, label: string) => {
@@ -241,7 +241,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               onFocus={() => setFocusedPercentField(key)}
               onBlur={() => {
                 setFocusedPercentField(null);
-                const v = normalizeInterestOnBlur(getValue(key), 3);
+                const v = normalizeInterestOnBlur(getValue(key), 2);
                 if (v !== getValue(key)) setValue(key, v);
               }}
               disabled={disabled}
