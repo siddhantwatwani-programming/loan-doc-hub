@@ -785,8 +785,12 @@ async function generateSingleDocument(
     debugLog(`[generate-document] Derived payment frequency checkboxes from "${payFreqVal}": monthly=${payFreqVal === "monthly"}, weekly=${payFreqVal === "weekly"}`);
 
     // Broker Capacity in Transaction (RE851A Part 2) → boolean checkbox keys
-    // Derived from "Is Broker Also a Borrower?" (or_p_isBrkBorrower)
+    // Derived from "Is Broker Also a Borrower?" UI checkbox. The UI persists this
+    // under origination_app.doc.is_broker_also_borrower_yes (legacy alias
+    // or_p_isBrokerAlsoBorrower_yes); also accept legacy variants.
     const brkBorrowerRaw = (
+      fieldValues.get("or_p_isBrokerAlsoBorrower_yes")?.rawValue ??
+      fieldValues.get("origination_app.doc.is_broker_also_borrower_yes")?.rawValue ??
       fieldValues.get("or_p_isBrkBorrower")?.rawValue ??
       fieldValues.get("origination.is_broker_also_a_borrower")?.rawValue ??
       ""
@@ -794,6 +798,9 @@ async function generateSingleDocument(
     const brkBorrowerTrue = ["true", "yes", "1", "checked", "on"].includes(brkBorrowerRaw);
     fieldValues.set("or_p_brkCapacityPrincipal", { rawValue: brkBorrowerTrue ? "true" : "false", dataType: "boolean" });
     fieldValues.set("or_p_brkCapacityAgent", { rawValue: brkBorrowerTrue ? "false" : "true", dataType: "boolean" });
+    // Also publish under or_p_isBrkBorrower so any {{#if or_p_isBrkBorrower}} blocks
+    // in the RE851A template evaluate against the same source of truth.
+    fieldValues.set("or_p_isBrkBorrower", { rawValue: brkBorrowerTrue ? "true" : "false", dataType: "boolean" });
     debugLog(`[generate-document] Derived broker capacity checkboxes from "${brkBorrowerRaw}": agent=${!brkBorrowerTrue}, principal=${brkBorrowerTrue}`);
 
     // Build all_properties_list and multi-property pr_p_address
