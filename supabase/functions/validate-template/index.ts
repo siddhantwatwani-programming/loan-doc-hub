@@ -184,6 +184,25 @@ function findMergeTags(content: string): { tag: string; tagName: string; tagType
   return tags;
 }
 
+function normalizeControlTagName(tagName: string): string | null {
+  const normalized = tagName.replace(/\s+/g, ' ').trim();
+
+  if (normalized === 'else' || normalized === '/if' || normalized === '/unless' || normalized === '/each') {
+    return null;
+  }
+
+  const ifMatch = normalized.match(/^#if\s+([A-Za-z0-9_.]+)$/);
+  if (ifMatch) return ifMatch[1];
+
+  const unlessMatch = normalized.match(/^#unless\s+([A-Za-z0-9_.]+)$/);
+  if (unlessMatch) return unlessMatch[1];
+
+  const eachMatch = normalized.match(/^#each\s+([A-Za-z0-9_.]+)$/);
+  if (eachMatch) return eachMatch[1];
+
+  return normalized;
+}
+
 function findLabels(content: string, labelMap: Map<string, { fieldKey: string; replaceNext?: string }>): { tag: string; tagName: string; fieldKey: string }[] {
   const labels: { tag: string; tagName: string; fieldKey: string }[] = [];
   
@@ -435,20 +454,25 @@ serve(async (req) => {
 
     // Process merge tags
     for (const tag of foundMergeTags) {
+      const normalizedTagName = normalizeControlTagName(tag.tagName);
+      if (!normalizedTagName) {
+        continue;
+      }
+
       // Priority 1: Check explicit alias mapping
-      let fieldKey = mergeTagMap.get(tag.tagName) || mergeTagMap.get(tag.tagName.toLowerCase());
+      let fieldKey = mergeTagMap.get(normalizedTagName) || mergeTagMap.get(normalizedTagName.toLowerCase());
       let resolvedVia = "alias";
       
       // Priority 2: Check direct field_key match (new behavior)
       if (!fieldKey) {
         // Exact match
-        if (validFieldKeys.has(tag.tagName)) {
-          fieldKey = tag.tagName;
+        if (validFieldKeys.has(normalizedTagName)) {
+          fieldKey = normalizedTagName;
           resolvedVia = "direct";
         }
         // Case-insensitive match
         else {
-          const lowerTag = tag.tagName.toLowerCase();
+          const lowerTag = normalizedTagName.toLowerCase();
           for (const key of validFieldKeys) {
             if (key.toLowerCase() === lowerTag) {
               fieldKey = key;
@@ -459,7 +483,7 @@ serve(async (req) => {
         }
         // Try underscore-to-dot conversion
         if (!fieldKey) {
-          const dotVersion = tag.tagName.replace(/_/g, ".");
+          const dotVersion = normalizedTagName.replace(/_/g, ".");
           if (validFieldKeys.has(dotVersion)) {
             fieldKey = dotVersion;
             resolvedVia = "direct_underscore_converted";
@@ -479,7 +503,7 @@ serve(async (req) => {
         const dictInfo = includeFieldDictionary ? (fieldDictMap.get(fieldKey) || fieldDictMap.get(fieldKey.toLowerCase()) || null) : undefined;
         mappedTags.push({
           tag: tag.tag,
-          tagName: tag.tagName,
+          tagName: normalizedTagName,
           tagType: tag.tagType,
           fieldKey,
           mapped: true,
@@ -489,13 +513,13 @@ serve(async (req) => {
         // Direct field_key resolution is now the primary method - no warning needed
         // Only log for debugging purposes
         if (resolvedVia !== "alias") {
-          console.log(`[validate-template] Tag "${tag.tagName}" resolved directly to "${fieldKey}" via ${resolvedVia}`);
+          console.log(`[validate-template] Tag "${normalizedTagName}" resolved directly to "${fieldKey}" via ${resolvedVia}`);
         }
       } else {
-        const suggestions = findSuggestions(tag.tagName, allFieldKeys);
+        const suggestions = findSuggestions(normalizedTagName, allFieldKeys);
         unmappedTags.push({
           tag: tag.tag,
-          tagName: tag.tagName,
+          tagName: normalizedTagName,
           tagType: tag.tagType,
           fieldKey: null,
           mapped: false,
