@@ -1,49 +1,65 @@
-# Plan: Fix RE851A Balloon Payment checkbox logic
+## RE851A Part 2 checkbox assessment
 
-## What will be changed
-1. Keep the existing data mapping exactly as-is.
-   - Continue using the Loan UI checkbox source.
-   - Continue using `ln_p_balloonPayment` in the RE851A logic.
-   - Do not change UI, database, API, or unrelated field mappings.
+You do **not** need to change the field mapping.
 
-2. Correct the RE851A Part 3 checkbox rendering at the template/parser layer only.
-   - The uploaded RE851A reference shows the Balloon Payment row currently authored as a single conditional block that only outputs one side of the choice.
-   - Replace that logic with a true two-option render so both choices are always present:
-     - `{{#if ln_p_balloonPayment}}☑{{else}}☐{{/if}} YES`
-     - `{{#if ln_p_balloonPayment}}☐{{else}}☑{{/if}} NO`
-   - Preserve the exact cell, spacing, labels, and document structure.
+### What is already correct
+- The generator already derives the broker-capacity booleans from the existing UI field/key path.
+- `or_p_isBrkBorrower` is already published for template conditionals.
+- Derived aliases already exist:
+  - `or_p_brkCapacityAgent`
+  - `or_p_brkCapacityPrincipal`
 
-3. Keep null and missing values treated as false.
-   - `true` => YES checked, NO unchecked
-   - `false` / `null` / `undefined` => YES unchecked, NO checked
+### Root cause in the uploaded RE851A
+In the uploaded template, Part 2 is authored as literal text:
+- `[ ] A. Agent in arranging a loan on behalf of another`
+- `[x] B. Principal as a borrower ...`
 
-4. Verify parser compatibility for fragmented Word tags.
-   - If the live template already contains the correct Handlebars syntax but still fails, harden the existing conditional-tag consolidation in `tag-parser.ts` only for this rendering path.
-   - Do not introduce new helpers unless the current parser already supports them.
+That means the current document engine cannot reliably toggle those markers because it is built to handle:
+- Handlebars tags like `{{#if or_p_isBrkBorrower}}...{{/if}}`
+- checkbox glyphs like `☑ / ☐`
+- native Word checkbox controls
 
-5. Validate no regression in RE851A.
-   - Confirm the Balloon Payment row renders correctly with no raw tags, no misalignment, and no impact on other sections.
+It does **not** currently treat literal bracket markers `[ ] / [x]` as dynamic checkbox targets.
 
-## What this means for your question
-You should not change the field mapping.
+### Secondary issue
+The uploaded Part 2 “B” label text is longer than some of the existing fallback label variants, so label-based matching is not guaranteed on this exact template version.
 
-The mapping/derivation path is already in place in the document generator:
-- UI value is stored under `loan_terms.balloon_payment`
-- Legacy alias exists as `ln_p_balloonPaymen`
-- The generator already derives `ln_p_balloonPayment` as a boolean for template conditionals
+## Recommended fix
+Keep the existing mapping exactly as-is and fix the rendering layer only.
 
-So the likely fix is:
-- template logic correction if the live RE851A matches the uploaded reference, or
-- parser hardening if Word is fragmenting otherwise-correct tags
+### Preferred option
+Update only the two checkbox symbols in the RE851A template to use the existing boolean key:
+- `{{#if or_p_isBrkBorrower}}☐{{else}}☑{{/if}} A.`
+- `{{#if or_p_isBrkBorrower}}☑{{else}}☐{{/if}} B.`
+
+This preserves:
+- labels
+- spacing
+- alignment
+- layout
+- all other sections
+
+### Code-only fallback if template text must stay `[ ] / [x]`
+Implement a narrow parser enhancement that only swaps the bracket marker immediately before the exact Part 2 A/B labels, without touching any other section.
+
+## Implementation plan
+1. Keep the current field mapping and boolean derivation unchanged.
+2. Support the uploaded Part 2 authoring pattern by one of these minimal paths:
+   - preferred: use Handlebars glyph toggles in the two RE851A Part 2 lines only
+   - fallback: extend the parser to recognize `[ ]` / `[x]` markers for those exact A/B labels
+3. Expand the exact label matching for the uploaded B sentence so the full RE851A wording is covered.
+4. Verify the final output behavior:
+   - `or_p_isBrkBorrower = true` → A unchecked, B checked
+   - `false/null` → A checked, B unchecked
+   - no layout movement
+   - no effect on Balloon Payment or other checkbox logic
 
 ## Technical details
-- Keep `generate-document/index.ts` balloon boolean derivation intact unless a very small normalization adjustment is needed.
-- Apply the fix only in the RE851A Balloon Payment rendering path.
-- Do not touch other checkbox logic, document sections, field keys, schema, or UI components.
-- If needed, extend the existing tag-parser control-tag consolidation rather than adding a new helper or new mapping.
+- No UI change
+- No API/backend contract change
+- No database change
+- No field mapping change
+- No document section restructuring
+- Only checkbox symbol resolution in RE851A Part 2 should be adjusted
 
-## Expected result
-- Checked in Loan UI -> `☑ YES` and `☐ NO`
-- Unchecked or empty -> `☐ YES` and `☑ NO`
-- No layout or formatting changes
-- No regression in other RE851A fields
+If you approve, the safest implementation is to support this exact RE851A Part 2 template pattern without touching any other mappings or sections.
