@@ -1643,6 +1643,34 @@ export function replaceMergeTags(
   // First normalize the XML to handle fragmented merge fields
   let result = normalizeWordXml(content);
 
+  // Document-wide consolidation for control tags whose {{ ... }} brackets get
+  // split by Word across multiple <w:r> or <w:p> boundaries. The paragraph-
+  // scoped pass in normalizeWordXml() does not catch tags whose opening "{{"
+  // and closing "}}" land in different paragraphs (common in table cells like
+  // RE851A's Balloon Payment YES/NO checkboxes). We only collapse XML markup
+  // between recognized control tokens — surrounding prose is never touched.
+  const stripXmlBetween = (raw: string): string =>
+    raw.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+
+  result = result.replace(/\{\{([\s\S]{0,400}?)\}\}/g, (full, inner: string) => {
+    // Only act if the inner span actually contains XML markup (i.e. fragmented).
+    if (!inner.includes("<")) return full;
+    const cleaned = stripXmlBetween(inner);
+    if (/^#if\s+[A-Za-z0-9_.]+$/.test(cleaned)) {
+      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+      return `{{${cleaned}}}`;
+    }
+    if (/^#unless\s+[A-Za-z0-9_.]+$/.test(cleaned)) {
+      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+      return `{{${cleaned}}}`;
+    }
+    if (cleaned === "else" || cleaned === "/if" || cleaned === "/unless") {
+      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+      return `{{${cleaned}}}`;
+    }
+    return full;
+  });
+
   // Unconditional safety net: strip BARE Handlebars-style control directives
   // that template authors sometimes leave in DOCX paragraphs as plain text
   // (i.e. NOT wrapped in {{ }}), e.g. a paragraph whose run text reads:
