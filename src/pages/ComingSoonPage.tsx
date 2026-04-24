@@ -22,9 +22,9 @@ const sectionMap: Record<string, string> = {
   '/contacts/others/insurance-company': 'Contacts → Insurance Company',
   '/contacts/others/title-company': 'Contacts → Title Company',
   '/contacts/others/notary': 'Contacts → Notary',
-  '/contacts/others/guarantor': 'Contacts → Guarantor',
+  '/contacts/others/additional-guarantor': 'Contacts → Additional Guarantor',
   '/contacts/others/authorized-party': 'Contacts → Authorized Party',
-  '/contacts/others/attorneys': 'Contacts → Attorneys',
+  '/contacts/others/attorney': 'Contacts → Attorney',
 };
 
 function getSectionTitle(pathname: string): string | null {
