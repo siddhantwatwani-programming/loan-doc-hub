@@ -771,6 +771,45 @@ async function generateSingleDocument(
       }
     }
 
+    // Auto-compute ln_p_estimateBallooPaymen (Estimated Balloon Payment) if not already set.
+    // Mirrors the read-only UI calculation in LoanTermsBalancesForm:
+    //   estimatedBalloon = totalBalanceDue + (loanAmount * noteRate / 100) / 12
+    // where totalBalanceDue = principal + unpaidInterest + accruedInterest
+    //                       + chargesOwed + chargesInterest + unpaidOther
+    const existingEstBalloon = fieldValues.get("ln_p_estimateBallooPaymen");
+    if (!existingEstBalloon || !existingEstBalloon.rawValue) {
+      const numFromKeys = (...keys: string[]): number => {
+        for (const k of keys) {
+          const raw = fieldValues.get(k)?.rawValue;
+          if (raw === undefined || raw === null || raw === "") continue;
+          const n = parseFloat(String(raw).replace(/[^0-9.-]/g, ""));
+          if (!isNaN(n)) return n;
+        }
+        return 0;
+      };
+      const principal = numFromKeys("ln_p_principa", "loan_terms.principal");
+      const unpaidInterest = numFromKeys("ln_bl_unpaidIntere", "loan_terms.unpaid_interest");
+      const accruedInterest = numFromKeys("ln_p_accruedIntere", "loan_terms.accrued_interest");
+      const chargesOwed = numFromKeys("ln_p_chargesOwed", "loan_terms.charges_owed");
+      const chargesInterest = numFromKeys("ln_p_chargesIntere", "loan_terms.charges_interest");
+      const unpaidOther = numFromKeys("ln_p_unpaidOther", "loan_terms.unpaid_other");
+      const loanAmt = numFromKeys("ln_p_loanAmount", "loan_terms.loan_amount");
+      const noteRate = numFromKeys("ln_p_noteRate", "loan_terms.note_rate");
+
+      const totalBalanceDue =
+        principal + unpaidInterest + accruedInterest +
+        chargesOwed + chargesInterest + unpaidOther;
+      const oneMonthInterest = (loanAmt * (noteRate / 100)) / 12;
+      const estimatedBalloon = totalBalanceDue + oneMonthInterest;
+
+      if (estimatedBalloon > 0 || loanAmt > 0 || principal > 0) {
+        const estStr = estimatedBalloon.toFixed(2);
+        fieldValues.set("ln_p_estimateBallooPaymen", { rawValue: estStr, dataType: "currency" });
+        fieldValues.set("loan_terms.estimated_balloon_payment", { rawValue: estStr, dataType: "currency" });
+        debugLog(`[generate-document] Auto-computed ln_p_estimateBallooPaymen = ${estStr} (totalBalanceDue=${totalBalanceDue}, oneMonthInterest=${oneMonthInterest})`);
+      }
+    }
+
     // ── Dropdown-to-Checkbox derivation for Re851a ──
     // Amortization dropdown → boolean checkbox keys
     const amortVal = (fieldValues.get("ln_p_amortiza")?.rawValue || fieldValues.get("loan_terms.amortization")?.rawValue || "").toString().trim().toLowerCase();
