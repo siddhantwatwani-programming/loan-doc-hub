@@ -1389,7 +1389,7 @@ export function processSdtCheckboxes(
     }
 
     const checkedVal = isChecked ? "1" : "0";
-    const displayChar = isChecked ? "\u2612" : "\u2610"; // ☒ or ☐
+    const displayChar = isChecked ? "\u2611" : "\u2610"; // ☑ or ☐
 
     debugLog(`[tag-parser] SDT checkbox "${tagMatch?.[1] || '(tagless)'}" -> ${canonicalKey} = ${isChecked} (${displayChar})`);
 
@@ -1397,6 +1397,16 @@ export function processSdtCheckboxes(
     let result = sdtBlock.replace(
       /(<w14:checked\s+w14:val=")([^"]*)("\s*\/>)/,
       `$1${checkedVal}$3`
+    );
+
+    result = result.replace(
+      /(<w14:checkedState\s+w14:val=")([^"]*)("\s+w14:font="MS Gothic"\s*\/>)/,
+      '$12611$3'
+    );
+
+    result = result.replace(
+      /(<w14:uncheckedState\s+w14:val=")([^"]*)("\s+w14:font="MS Gothic"\s*\/>)/,
+      '$12610$3'
     );
 
     // 2. Replace the display character inside <w:sdtContent>
