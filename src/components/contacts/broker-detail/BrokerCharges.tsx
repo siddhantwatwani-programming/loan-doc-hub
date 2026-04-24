@@ -427,8 +427,8 @@ const BrokerCharges: React.FC<BrokerChargesProps> = ({ contactDbId, disabled }) 
                         className="h-8 text-xs"
                         value={(newCharge as any)[col.id] || ''}
                         onChange={e => setNewCharge(prev => ({ ...prev, [col.id]: sanitizeInterestInput(e.target.value) }))}
-                        onBlur={() => { const v = normalizeInterestOnBlur((newCharge as any)[col.id] || '', 3); if (v !== ((newCharge as any)[col.id] || '')) setNewCharge(prev => ({ ...prev, [col.id]: v })); }}
-                        placeholder="0.000"
+                        onBlur={() => { const v = normalizeInterestOnBlur((newCharge as any)[col.id] || '', 2); if (v !== ((newCharge as any)[col.id] || '')) setNewCharge(prev => ({ ...prev, [col.id]: v })); }}
+                        placeholder="0.00"
                         inputMode="decimal"
                       />
                       <span className="text-muted-foreground text-xs">%</span>

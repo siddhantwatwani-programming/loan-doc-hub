@@ -204,7 +204,7 @@ const buildFundingFilterOptions = (records: FundingRecord[]): FilterOption[] => 
     {
       id: 'lenderRate',
       label: 'Lender Rate',
-      options: uniqueRates.map(r => ({ value: String(r), label: `${r.toFixed(3)}%` })),
+      options: uniqueRates.map(r => ({ value: String(r), label: `${r.toFixed(2)}%` })),
     },
   ];
 };
