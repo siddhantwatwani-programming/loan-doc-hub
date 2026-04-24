@@ -67,7 +67,24 @@ const FIELD_KEYS = {
   is_broker_borrower_yes: 'origination_app.doc.is_broker_also_borrower_yes',
   is_broker_borrower_no: 'origination_app.doc.is_broker_also_borrower_no',
   doc_additional_info: 'origination_app.doc.additional_info_attached',
+
+  // Financials (additive — extends existing Application area)
+  fin_bank_statements_yn: 'origination_app.financials.bank_statements_yn',
+  fin_bank_statements_status: 'origination_app.financials.bank_statements_status',
+  fin_balance_sheet_pl_yn: 'origination_app.financials.balance_sheet_pl_yn',
+  fin_balance_sheet_pl_assurance: 'origination_app.financials.balance_sheet_pl_assurance',
+  fin_balance_sheet_pl_status: 'origination_app.financials.balance_sheet_pl_status',
+  fin_balance_sheet_as_of_date: 'origination_app.financials.balance_sheet_as_of_date',
+  fin_pl_period_begin: 'origination_app.financials.pl_period_begin',
+  fin_pl_period_end: 'origination_app.financials.pl_period_end',
+  fin_performed_by: 'origination_app.financials.performed_by',
+  fin_rent_rolls_leases_yn: 'origination_app.financials.rent_rolls_leases_yn',
+  fin_rent_rolls_leases_status: 'origination_app.financials.rent_rolls_leases_status',
 };
+
+const STATUS_OPTIONS = ['Requested', 'Partially Received', 'Received'];
+const ASSURANCE_OPTIONS = ['Unaudited', 'Audited'];
+const PERFORMED_BY_OPTIONS = ['Borrower', 'CPA', 'Other'];
 
 // Additional rows: 8 rows with text + 2 checkboxes each
 const ADDITIONAL_ROWS = Array.from({ length: 8 }, (_, i) => ({
