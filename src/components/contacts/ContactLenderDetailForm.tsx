@@ -174,6 +174,8 @@ export const ContactLenderDetailForm: React.FC<Props> = ({ lender, onSave, onCan
               ))}
             </RadioGroup>
           </div>
+        </div>
+      </div>
 
       {/* Financial / Compliance */}
       <div>
