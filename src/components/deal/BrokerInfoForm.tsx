@@ -78,15 +78,6 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
     });
   };
 
-  const renderPhoneField = (key: keyof typeof FIELD_KEYS, label: string) => (
-    <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
-      <div className="flex items-center gap-2">
-        <Label className="w-14 shrink-0 text-xs">{label}</Label>
-        <PhoneInput value={getValue(key)} onValueChange={(val) => handleChange(key, val)} disabled={disabled} className="h-7 text-xs flex-1" />
-      </div>
-    </DirtyFieldWrapper>
-  );
-
   return (
     <div className="space-y-4">
       {requiredFieldsStatus.missingCount > 0 && (
@@ -191,12 +182,20 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
               { phoneKey: 'phoneCell', prefKey: 'preferredCell', label: 'Cell' },
               { phoneKey: 'phoneFax', prefKey: 'preferredFax', label: 'Fax' },
             ].map(({ phoneKey, prefKey, label }) => (
-              <div key={phoneKey} className="grid grid-cols-[56px_1fr_72px] items-center gap-2">
-                {renderPhoneField(phoneKey as keyof typeof FIELD_KEYS, label)}
+              <DirtyFieldWrapper key={phoneKey} fieldKey={FIELD_KEYS[phoneKey as keyof typeof FIELD_KEYS]}>
+                <div className="grid grid-cols-[56px_1fr_72px] items-center gap-2">
+                  <Label className="w-14 shrink-0 text-xs">{label}</Label>
+                  <PhoneInput
+                    value={getValue(phoneKey as keyof typeof FIELD_KEYS)}
+                    onValueChange={(val) => handleChange(phoneKey as keyof typeof FIELD_KEYS, val)}
+                    disabled={disabled}
+                    className="h-7 text-xs flex-1"
+                  />
                 <div className="flex justify-center">
                   <RadioGroupItem value={prefKey} disabled={disabled} aria-label={`Preferred ${label} phone`} />
                 </div>
-              </div>
+                </div>
+              </DirtyFieldWrapper>
             ))}
           </RadioGroup>
 
