@@ -403,8 +403,6 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
               />
             </div>
           </DirtyFieldWrapper>
-          {renderLabelInputPair(FIELD_KEYS.extra_label_1, FIELD_KEYS.extra_value_1)}
-          {renderLabelInputPair(FIELD_KEYS.extra_label_2, FIELD_KEYS.extra_value_2)}
         </div>
 
         {/* Column 2: Income & Expenses */}
