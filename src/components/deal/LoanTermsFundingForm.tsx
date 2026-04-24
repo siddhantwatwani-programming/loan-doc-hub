@@ -423,7 +423,12 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
       maturityLender: data.maturityLender, maturityCompany: data.maturityCompany, maturityBroker: data.maturityBroker, maturityTotal: data.maturityTotal, maturityMaximum: data.maturityMaximum,
     };
 
-    const updatedRecords = [...fundingRecords, newRecord];
+    // Mutual exclusivity for Rounding Adjustment: only ONE lender can hold it.
+    // If the new record enables it, atomically clear it on every existing record in the same write.
+    const baseRecords = newRecord.roundingAdjustment
+      ? fundingRecords.map((r) => (r.roundingAdjustment ? { ...r, roundingAdjustment: false } : r))
+      : fundingRecords;
+    const updatedRecords = [...baseRecords, newRecord];
     const updatedRecordsJson = JSON.stringify(updatedRecords);
     onValueChange(FIELD_KEYS.fundingRecords, updatedRecordsJson);
 
@@ -500,9 +505,14 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
   }, [fundingRecords, values, onValueChange, dealId]);
 
   const handleUpdateRecord = useCallback(async (id: string, updates: Partial<FundingRecord>) => {
-    const updatedRecords = fundingRecords.map((record) =>
-      record.id === id ? { ...record, ...updates } : record
-    );
+    // Mutual exclusivity for Rounding Adjustment: only ONE lender can hold it.
+    // When this update sets roundingAdjustment=true, atomically clear it on every other record in the same write.
+    const enablingRounding = updates.roundingAdjustment === true;
+    const updatedRecords = fundingRecords.map((record) => {
+      if (record.id === id) return { ...record, ...updates };
+      if (enablingRounding && record.roundingAdjustment) return { ...record, roundingAdjustment: false };
+      return record;
+    });
     const updatedRecordsJson = JSON.stringify(updatedRecords);
     onValueChange(FIELD_KEYS.fundingRecords, updatedRecordsJson);
 
