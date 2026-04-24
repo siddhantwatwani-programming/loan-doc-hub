@@ -1,90 +1,71 @@
 ## Diagnosis
-No field mapping change is needed. The failure is in the RE851A template authoring for Part 3, not in the UI mapping or database-backed value resolution.
 
-## What is already correct
-- UI source field is already the correct one: `loan_terms.balloon_payment`
-- The document engine already derives and publishes:
-  - `loan_terms.balloon_payment`
-  - `ln_p_balloonPaymen` (legacy truncated alias)
-  - `ln_p_balloonPayment` (full tag used by the template)
-- The Loan UI checkbox is already bound to the same source field
+For deal `DL-2026-0189`, the Balloon Payment value is already saved correctly in the backend.
 
-So the mapping chain is already in place. Changing field mapping would not fix this issue.
+Confirmed facts:
+- The deal has a `loan_terms` row in `deal_section_values`
+- The saved balloon field exists under the actual backend key `ln_p_balloonPaymen`
+- Its saved value is `true`
+- RE851A generation completed successfully after that save
 
-## Root cause
-The uploaded RE851A template is authored with the wrong conditional pattern in the Balloon Payment cell.
+So this is **not** a missing save issue and **not** a UI field-mapping issue.
 
-Current template pattern found in the uploaded file:
-```handlebars
-{{#if ln_p_balloonPayment}} [x] YES {{else}} [ ] NO {{/if}}
-```
+## What is still wrong
 
-That pattern has two problems:
+The active RE851A template/control-tag path is the problem.
 
-1. It renders only one branch
-- When true, it outputs only the YES branch
-- When false, it outputs only the NO branch
-- Your requirement needs both labels to remain visible at all times, with only the symbols changing
+I checked the active RE851A template validation output and it still contains control tags for both:
+- `{{#if ln_p_balloonPayment}}`
+- `{{#if ln_p_balloonPaymen}}`
 
-2. It uses literal bracket markers (`[x]` / `[ ]`)
-- The document engine is most reliable when checkboxes are authored as direct glyph toggles (`☑` / `☐`) or native Word checkbox controls
-- A special bracket-normalization fallback was added for Part 2 Broker Capacity labels, but Balloon Payment YES/NO does not currently have that same scoped fallback path
+That means at least one of these is true:
+1. the active template still contains mixed old/new balloon conditions
+2. the Balloon Payment cell has duplicate logic left behind
+3. Word has fragmented the inline `#if / else / /if` control tags in a way the generator is not resolving reliably in that cell
 
-## Why it still fails even if the boolean value is present
-Even if `ln_p_balloonPayment` resolves correctly, the current template logic cannot meet the expected output because it is structurally wrong for a two-option checkbox row.
+## Important conclusion
 
-Expected requirement:
-```text
-true  -> ☑ YES   ☐ NO
-false -> ☐ YES   ☑ NO
-```
+Changing the field mapping again will not fix this.
 
-Current authoring can only produce one of these at a time:
-```text
-true  -> [x] YES
-false -> [ ] NO
-```
+Your saved source of truth is already correct:
+- persisted key: `ln_p_balloonPaymen`
+- persisted value for this deal: `true`
 
-So this is primarily a template logic issue, not a data issue.
+If the document still does not populate, the remaining failure is in the **template authoring / document parser handling of inline conditionals**, not in the saved data.
 
-## Recommended fix
-Update only the Balloon Payment line in the RE851A template to two independent Handlebars expressions:
+## Most likely root cause now
 
-```handlebars
-{{#if ln_p_balloonPayment}}☑{{else}}☐{{/if}} YES
-{{#if ln_p_balloonPayment}}☐{{else}}☑{{/if}} NO
-```
+The RE851A Balloon Payment row uses inline Handlebars control blocks inside a Word table cell. That is more fragile than normal merge tags because Word often splits these tags across XML runs.
 
-## Template authoring guidance
-- Retype the Balloon Payment content fresh in Word instead of editing character-by-character
-- Use literal Unicode glyphs: `☑` and `☐`
-- Do not use `[x]` / `[ ]` for this section
-- Keep the same cell, font, spacing, and label text
-- Ensure each Handlebars tag is typed as continuous text so Word does not fragment the control tags awkwardly
+The validator can see the control tags, but the generator may still fail to evaluate the full block reliably if the cell contains mixed or fragmented versions. In that case the symbols do not toggle correctly even though the boolean data exists.
 
-## Minimal implementation plan
-1. Update only the RE851A Part 3 Balloon Payment cell in the `.docx` template
-2. Replace the single conditional with the two-line YES/NO toggle logic above
-3. Generate the document twice for validation:
-   - Balloon Payment checked
-   - Balloon Payment unchecked/null
-4. Confirm:
-   - both YES and NO remain visible
-   - only the checkbox symbols switch
-   - no formatting/layout regression in Part 3
+## Minimal fix plan
 
-## Fallback only if template cannot be edited
-If you must keep the existing malformed template unchanged, the only code-based rescue would be a very narrow parser fallback in `tag-parser.ts` for the Balloon Payment YES/NO labels, similar to the Part 2 Broker Capacity workaround.
+1. Clean the Balloon Payment cell so it contains only one key version
+   - use only `ln_p_balloonPaymen` in that row if you want to match the persisted backend key directly
+   - remove any remaining `ln_p_balloonPayment` occurrence from the same row/cell
 
-That is not the preferred path because:
-- it touches document-generation logic
-- your instruction said not to impact backend logic
-- the template itself is currently authored incorrectly for the required output
+2. Re-author the cell fresh in Word
+   - delete the entire Balloon Payment YES/NO content in that cell
+   - retype it as fresh plain text so no hidden fragmented runs remain
+   - keep only the checkbox logic, no layout changes
+
+3. If it still fails after the cell is clean
+   - add a very narrow document-engine fix in `supabase/functions/_shared/tag-parser.ts`
+   - make conditional evaluation for RE851A Balloon Payment tolerate both aliases and fragmented inline `#if/else` blocks
+   - keep the change scoped only to this checkbox logic to avoid regressions
 
 ## Technical details
-Relevant existing code already confirms the mapping is present:
-- `src/lib/fieldKeyMap.ts` maps Balloon Payment to `loan_terms.balloon_payment`
-- `src/lib/legacyKeyMap.ts` maps it to legacy alias `ln_p_balloonPaymen`
-- `supabase/functions/generate-document/index.ts` derives `ln_p_balloonPayment` from the stored value and treats null/empty as false
 
-Conclusion: do not change field mapping. Fix the RE851A template authoring for Balloon Payment.
+Evidence gathered:
+- Saved backend field present: `ln_p_balloonPaymen = true`
+- Field dictionary contains the backend boolean key `ln_p_balloonPaymen`
+- Active RE851A template validation still reports balloon control tags, including both spelling variants
+- Therefore the generator is reaching the template, but the conditional rendering path is still the weak point
+
+## Expected outcome after implementation
+
+- No changes to UI, APIs, database schema, or unrelated mappings
+- Balloon Payment checked -> `YES` checked, `NO` unchecked
+- Balloon Payment unchecked -> `NO` checked, `YES` unchecked
+- No RE851A layout changes
