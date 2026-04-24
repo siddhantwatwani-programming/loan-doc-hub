@@ -6,6 +6,7 @@ import { ZipInput } from '@/components/ui/zip-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { AlertCircle } from 'lucide-react';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
@@ -70,30 +71,12 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
     </DirtyFieldWrapper>
   );
 
-  const handlePhonePref = (prefKey: keyof typeof FIELD_KEYS, checked: boolean) => {
+  const handlePhonePref = (prefKey: keyof typeof FIELD_KEYS) => {
     const allPrefKeys: (keyof typeof FIELD_KEYS)[] = ['preferredHome', 'preferredWork', 'preferredCell', 'preferredFax'];
     allPrefKeys.forEach(k => {
-      handleChange(k, k === prefKey && checked);
+      handleChange(k, k === prefKey);
     });
   };
-
-  const renderPhoneField = (key: keyof typeof FIELD_KEYS, prefKey: keyof typeof FIELD_KEYS, label: string) => (
-    <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>
-      <div className="flex items-center gap-2">
-        <div className="w-14 shrink-0 flex flex-col">
-          <Label className="text-xs">{label}</Label>
-          {getBoolValue(prefKey) && <span className="text-[10px] text-primary font-medium">Primary</span>}
-        </div>
-        <PhoneInput value={getValue(key)} onValueChange={(val) => handleChange(key, val)} disabled={disabled} className="h-7 text-xs flex-1" />
-        <Checkbox
-          checked={getBoolValue(prefKey)}
-          onCheckedChange={(checked) => handlePhonePref(prefKey, !!checked)}
-          disabled={disabled}
-          className="h-3.5 w-3.5 shrink-0"
-        />
-      </div>
-    </DirtyFieldWrapper>
-  );
 
   return (
     <div className="space-y-4">
@@ -183,11 +166,38 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
 
         {/* Column 3 - Phone */}
         <div className="space-y-1.5">
-          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Phone</h3>
-          {renderPhoneField('phoneHome', 'preferredHome', 'Home')}
-          {renderPhoneField('phoneWork', 'preferredWork', 'Work')}
-          {renderPhoneField('phoneCell', 'preferredCell', 'Cell')}
-          {renderPhoneField('phoneFax', 'preferredFax', 'Fax')}
+          <div className="grid grid-cols-[56px_1fr_72px] items-center gap-2 border-b border-border pb-1 mb-2">
+            <span />
+            <h3 className="font-semibold text-xs text-foreground">Phone</h3>
+            <span className="font-semibold text-xs text-foreground text-center">Preferred</span>
+          </div>
+          <RadioGroup
+            value={(['preferredHome', 'preferredWork', 'preferredCell', 'preferredFax'].find((key) => getBoolValue(key as keyof typeof FIELD_KEYS)) || '') as string}
+            onValueChange={(value) => handlePhonePref(value as keyof typeof FIELD_KEYS)}
+            className="space-y-1.5"
+          >
+            {[
+              { phoneKey: 'phoneHome', prefKey: 'preferredHome', label: 'Home' },
+              { phoneKey: 'phoneWork', prefKey: 'preferredWork', label: 'Work' },
+              { phoneKey: 'phoneCell', prefKey: 'preferredCell', label: 'Cell' },
+              { phoneKey: 'phoneFax', prefKey: 'preferredFax', label: 'Fax' },
+            ].map(({ phoneKey, prefKey, label }) => (
+              <DirtyFieldWrapper key={phoneKey} fieldKey={FIELD_KEYS[phoneKey as keyof typeof FIELD_KEYS]}>
+                <div className="grid grid-cols-[56px_1fr_72px] items-center gap-2">
+                  <Label className="w-14 shrink-0 text-xs">{label}</Label>
+                  <PhoneInput
+                    value={getValue(phoneKey as keyof typeof FIELD_KEYS)}
+                    onValueChange={(val) => handleChange(phoneKey as keyof typeof FIELD_KEYS, val)}
+                    disabled={disabled}
+                    className="h-7 text-xs flex-1"
+                  />
+                <div className="flex justify-center">
+                  <RadioGroupItem value={prefKey} disabled={disabled} aria-label={`Preferred ${label} phone`} />
+                </div>
+                </div>
+              </DirtyFieldWrapper>
+            ))}
+          </RadioGroup>
 
           <div className="space-y-1.5 pt-3">
             <Label className="text-xs font-medium">Send:</Label>

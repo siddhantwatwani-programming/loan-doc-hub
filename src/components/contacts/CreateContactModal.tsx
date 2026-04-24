@@ -388,11 +388,11 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
     });
   };
 
-  const handleBrokerPref = (prefKey: string, checked: boolean) => {
+  const handleBrokerPref = (prefKey: string) => {
     const allPrefs = ['preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax'];
     setForm(prev => {
       const u = { ...prev };
-      allPrefs.forEach(k => { u[k] = (k === prefKey && checked) ? 'true' : 'false'; });
+      allPrefs.forEach(k => { u[k] = k === prefKey ? 'true' : 'false'; });
       return u;
     });
   };
@@ -758,29 +758,35 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
             {/* Column 3: Phone */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between border-b border-border pb-1 mb-2">
+              <div className="grid grid-cols-[40px_1fr_72px] items-center gap-2 border-b border-border pb-1 mb-2">
+                <span />
                 <h3 className="font-semibold text-xs text-foreground">Phone</h3>
-                <span className="font-semibold text-xs text-foreground">Pref</span>
+                <span className="font-semibold text-xs text-foreground text-center">Preferred</span>
               </div>
-              {[
-                { label: 'Home', phoneKey: 'phone.home', prefKey: 'preferred.home' },
-                { label: 'Work', phoneKey: 'phone.work', prefKey: 'preferred.work' },
-                { label: 'Cell', phoneKey: 'phone.cell', prefKey: 'preferred.cell' },
-                { label: 'Fax', phoneKey: 'phone.fax', prefKey: 'preferred.fax' },
-              ].map((p) => (
-                <div key={p.label} className="flex items-center gap-2">
-                  <Label className="w-[40px] shrink-0 text-xs">{p.label}</Label>
-                  <PhoneInput
-                    value={form[p.phoneKey] || ''}
-                    onValueChange={(v) => set(p.phoneKey, v)}
-                    className="h-7 text-xs flex-1"
-                  />
-                  <Checkbox
-                    checked={form[p.prefKey] === 'true'}
-                    onCheckedChange={(checked) => handleBrokerPref(p.prefKey, !!checked)}
-                  />
-                </div>
-              ))}
+              <RadioGroup
+                value={['preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax'].find((key) => form[key] === 'true') || ''}
+                onValueChange={handleBrokerPref}
+                className="space-y-1.5"
+              >
+                {[
+                  { label: 'Home', phoneKey: 'phone.home', prefKey: 'preferred.home' },
+                  { label: 'Work', phoneKey: 'phone.work', prefKey: 'preferred.work' },
+                  { label: 'Cell', phoneKey: 'phone.cell', prefKey: 'preferred.cell' },
+                  { label: 'Fax', phoneKey: 'phone.fax', prefKey: 'preferred.fax' },
+                ].map((p) => (
+                  <div key={p.label} className="grid grid-cols-[40px_1fr_72px] items-center gap-2">
+                    <Label className="w-[40px] shrink-0 text-xs">{p.label}</Label>
+                    <PhoneInput
+                      value={form[p.phoneKey] || ''}
+                      onValueChange={(v) => set(p.phoneKey, v)}
+                      className="h-7 text-xs flex-1"
+                    />
+                    <div className="flex justify-center">
+                      <RadioGroupItem value={p.prefKey} aria-label={`Preferred ${p.label} phone`} />
+                    </div>
+                  </div>
+                ))}
+              </RadioGroup>
             </div>
           </div>
         )}
