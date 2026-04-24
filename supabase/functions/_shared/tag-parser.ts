@@ -1091,14 +1091,47 @@ function buildEntityPrefixCache(fieldValues: Map<string, FieldValueData>): Map<s
   return prefixes;
 }
 
+function getConditionalAliasCandidates(fieldKey: string): string[] {
+  const normalized = fieldKey.trim();
+  const lower = normalized.toLowerCase();
+
+  if (lower === "ln_p_balloonpayment") {
+    return [normalized, "ln_p_balloonPaymen", "loan_terms.balloon_payment"];
+  }
+
+  if (lower === "ln_p_balloonpaymen") {
+    return [normalized, "ln_p_balloonPayment", "loan_terms.balloon_payment"];
+  }
+
+  if (lower === "loan_terms.balloon_payment") {
+    return [normalized, "ln_p_balloonPaymen", "ln_p_balloonPayment"];
+  }
+
+  return [normalized];
+}
+
 function isConditionTruthy(
   fieldKey: string,
   fieldValues: Map<string, FieldValueData>,
   mergeTagMap: Record<string, string>,
   validFieldKeys?: Set<string>
 ): boolean {
-  const canonicalKey = resolveFieldKeyWithMap(fieldKey, mergeTagMap, validFieldKeys);
-  const resolved = getFieldData(canonicalKey, fieldValues);
+  const aliasCandidates = getConditionalAliasCandidates(fieldKey);
+  let canonicalKey = resolveFieldKeyWithMap(fieldKey, mergeTagMap, validFieldKeys);
+  let resolved = getFieldData(canonicalKey, fieldValues);
+
+  if (!resolved?.data) {
+    for (const aliasKey of aliasCandidates) {
+      const aliasCanonicalKey = resolveFieldKeyWithMap(aliasKey, mergeTagMap, validFieldKeys);
+      const aliasResolved = getFieldData(aliasCanonicalKey, fieldValues);
+      if (aliasResolved?.data) {
+        canonicalKey = aliasCanonicalKey;
+        resolved = aliasResolved;
+        debugLog(`[tag-parser] Conditional alias fallback: ${fieldKey} -> ${aliasCanonicalKey}`);
+        break;
+      }
+    }
+  }
 
   if (resolved?.data) {
     const raw = resolved.data.rawValue;
