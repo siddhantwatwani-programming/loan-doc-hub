@@ -784,6 +784,18 @@ async function generateSingleDocument(
     fieldValues.set("ln_p_paymentWeekly", { rawValue: payFreqVal === "weekly" ? "true" : "false", dataType: "boolean" });
     debugLog(`[generate-document] Derived payment frequency checkboxes from "${payFreqVal}": monthly=${payFreqVal === "monthly"}, weekly=${payFreqVal === "weekly"}`);
 
+    // Broker Capacity in Transaction (RE851A Part 2) → boolean checkbox keys
+    // Derived from "Is Broker Also a Borrower?" (or_p_isBrkBorrower)
+    const brkBorrowerRaw = (
+      fieldValues.get("or_p_isBrkBorrower")?.rawValue ??
+      fieldValues.get("origination.is_broker_also_a_borrower")?.rawValue ??
+      ""
+    ).toString().trim().toLowerCase();
+    const brkBorrowerTrue = ["true", "yes", "1", "checked", "on"].includes(brkBorrowerRaw);
+    fieldValues.set("or_p_brkCapacityPrincipal", { rawValue: brkBorrowerTrue ? "true" : "false", dataType: "boolean" });
+    fieldValues.set("or_p_brkCapacityAgent", { rawValue: brkBorrowerTrue ? "false" : "true", dataType: "boolean" });
+    debugLog(`[generate-document] Derived broker capacity checkboxes from "${brkBorrowerRaw}": agent=${!brkBorrowerTrue}, principal=${brkBorrowerTrue}`);
+
     // Build all_properties_list and multi-property pr_p_address
     if (propertyIndices.size > 0) {
       const sortedIndices = [...propertyIndices].sort((a, b) => a - b);
