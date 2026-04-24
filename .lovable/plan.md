@@ -1,24 +1,48 @@
-1. Update the RE851A broker-capacity derivation in `supabase/functions/generate-document/index.ts` to read the same persisted field the UI actually saves: `origination_app.doc.is_broker_also_borrower_yes` / `or_p_isBrokerAlsoBorrower_yes`, while preserving the existing fallback keys already in place.
+## Plan
 
-2. Keep the current minimal boolean derivation pattern already used elsewhere in RE851A:
-   - `or_p_brkCapacityAgent = true` when broker-borrower is false/null
-   - `or_p_brkCapacityPrincipal = true` when broker-borrower is true
-   This preserves layout because only checkbox state changes.
+1. Keep the existing field mapping unchanged.
+   - The UI already persists `IS BROKER ALSO A BORROWER?` under `origination_app.doc.is_broker_also_borrower_yes`.
+   - The legacy alias already exists as `or_p_isBrokerAlsoBorrower_yes`.
+   - The RE851A conditional tag should continue to evaluate `or_p_isBrkBorrower`.
 
-3. Harden the label-based fallback for Part 2 native/static checkboxes so it matches the live RE851A wording shown in the screenshots, including the shorter live label text for B (`B. Principal as a borrower`) in addition to the longer existing variant.
+2. Apply a minimal fix only in the document generator for RE851A Part 2.
+   - Ensure the broker-capacity derivation always normalizes the persisted UI value from:
+     - `origination_app.doc.is_broker_also_borrower_yes`
+     - `or_p_isBrokerAlsoBorrower_yes`
+     - existing fallback keys already in place
+   - Publish the normalized result back to:
+     - `or_p_isBrkBorrower`
+     - `or_p_brkCapacityAgent`
+     - `or_p_brkCapacityPrincipal`
+   - Treat `null`, `undefined`, empty string, and false-like values as false.
 
-4. Leave everything else untouched:
-   - no schema changes
-   - no UI changes
-   - no template layout changes
-   - no pipeline refactor
-   - no unrelated field mapping changes
+3. Preserve both template patterns without changing layout.
+   - Support `{{#if or_p_isBrkBorrower}}...{{else}}...{{/if}}` if the template uses explicit conditional tags.
+   - Preserve the existing label-based fallback for native/tagless Word checkboxes if the live RE851A file is using static checkbox content beside text labels instead of merge tags.
+   - Keep label text, spacing, and formatting untouched.
 
-5. Verify the fix by checking generation logs for the derived broker-capacity keys and confirming the output behavior:
-   - checked UI field -> B checked, A unchecked
-   - unchecked/null UI field -> A checked, B unchecked
+4. Verify only the affected Part 2 behavior.
+   - Confirm checked UI value produces:
+     - `A = ☐`
+     - `B = ☑`
+   - Confirm unchecked or missing UI value produces:
+     - `A = ☑`
+     - `B = ☐`
+   - Confirm no other RE851A checkbox logic is altered.
 
-Technical details
-- Likely root cause 1: current derivation is reading `or_p_isBrkBorrower` / `origination.is_broker_also_a_borrower`, but the UI persists `origination_app.doc.is_broker_also_borrower_yes` (legacy alias `or_p_isBrokerAlsoBorrower_yes`).
-- Likely root cause 2: the injected label fallback currently targets only the long B label, while the live template appears to contain the shorter wording, so tagless/native checkbox matching can miss that checkbox.
-- Files to update: `supabase/functions/generate-document/index.ts` only, unless a tiny follow-up adjustment is needed after verification.
+## Recommendation
+
+No database change is needed.
+No UI change is needed.
+No field-dictionary remap is likely needed.
+
+The most likely fix is in the RE851A document-generation derivation layer, not in the saved field mapping itself.
+
+## Technical details
+
+Observed code paths already indicate the intended source is the UI key:
+- UI field: `origination_app.doc.is_broker_also_borrower_yes`
+- Legacy alias: `or_p_isBrokerAlsoBorrower_yes`
+- Template boolean target: `or_p_isBrkBorrower`
+
+So the minimal implementation should focus on making the generator use that persisted value as the single source of truth and ensuring the live Part 2 checkbox replacement path matches the actual RE851A template wording.
