@@ -144,45 +144,36 @@ export const ContactLenderDetailForm: React.FC<Props> = ({ lender, onSave, onCan
             <Label>Email</Label>
             <EmailInput value={form.email} onValueChange={(v) => set('email', v)} />
           </div>
-          <div>
-            <Label>Home Phone</Label>
-            <PhoneInput value={form.homePhone} onValueChange={(v) => set('homePhone', v)} />
-          </div>
-          <div>
-            <Label>Work Phone</Label>
-            <PhoneInput value={form.workPhone} onValueChange={(v) => set('workPhone', v)} />
-          </div>
-          <div>
-            <Label>Cell Phone</Label>
-            <PhoneInput value={form.cellPhone} onValueChange={(v) => set('cellPhone', v)} />
-          </div>
-          <div>
-            <Label>Fax</Label>
-            <PhoneInput value={form.fax} onValueChange={(v) => set('fax', v)} />
-          </div>
           <div className="col-span-2">
-            <Label className="mb-2 block">Preferred Phone</Label>
+            <div className="grid grid-cols-[80px_1fr_90px] items-center gap-3 mb-2">
+              <div />
+              <Label className="text-muted-foreground">Phone</Label>
+              <Label className="text-muted-foreground text-center">Preferred</Label>
+            </div>
             <RadioGroup
               value={form.preferredPhone}
               onValueChange={(v) => set('preferredPhone', v)}
-              className="flex items-center gap-6"
+              className="space-y-2"
             >
-              <div className="flex items-center gap-1.5">
-                <RadioGroupItem value="Home" id="pref-home" />
-                <Label htmlFor="pref-home" className="font-normal">Home</Label>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <RadioGroupItem value="Work" id="pref-work" />
-                <Label htmlFor="pref-work" className="font-normal">Work</Label>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <RadioGroupItem value="Cell" id="pref-cell" />
-                <Label htmlFor="pref-cell" className="font-normal">Cell</Label>
-              </div>
+              {[
+                { key: 'homePhone', label: 'Home', value: 'Home' },
+                { key: 'workPhone', label: 'Work', value: 'Work' },
+                { key: 'cellPhone', label: 'Cell', value: 'Cell' },
+                { key: 'fax', label: 'Fax', value: 'Fax' },
+              ].map((row) => (
+                <div key={row.key} className="grid grid-cols-[80px_1fr_90px] items-center gap-3">
+                  <Label className="font-normal">{row.label}</Label>
+                  <PhoneInput
+                    value={(form as any)[row.key]}
+                    onValueChange={(v) => set(row.key as any, v)}
+                  />
+                  <div className="flex justify-center">
+                    <RadioGroupItem value={row.value} id={`pref-lender-${row.key}`} />
+                  </div>
+                </div>
+              ))}
             </RadioGroup>
           </div>
-        </div>
-      </div>
 
       {/* Financial / Compliance */}
       <div>
