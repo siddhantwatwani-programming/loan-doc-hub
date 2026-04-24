@@ -722,6 +722,16 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
         loanNumber={loanNumber}
         borrowerName={borrowerName}
         onSubmit={(data) => {
+          // Mutual exclusivity: only ONE lender may have rounding adjustment enabled.
+          // When the user enables it on the current record, atomically clear it on every other record.
+          if (data.roundingAdjustment) {
+            const currentId = selectedRecord?.id;
+            fundingRecords.forEach((r) => {
+              if (r.id !== currentId && r.roundingAdjustment) {
+                onUpdateRecord(r.id, { roundingAdjustment: false });
+              }
+            });
+          }
           if (selectedRecord) {
             const soldRateVal = (data.rateSoldValue || '').trim();
             const hasSoldRate = soldRateVal !== '' && !isNaN(parseFloat(soldRateVal));
