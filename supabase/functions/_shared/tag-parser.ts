@@ -573,15 +573,12 @@ function getLabelQuickNeedle(label: string, mapping: LabelMapping): string {
  */
 function buildSdtCheckboxXml(isChecked: boolean, rPr?: string): string {
   const checkedVal = isChecked ? '1' : '0';
-  const displayChar = isChecked ? '\u2612' : '\u2610'; // ☒ or ☐
-  const displayHex = isChecked ? '2612' : '2610';
-  const rPrBlock = rPr || '<w:rFonts w:ascii="MS Gothic" w:hAnsi="MS Gothic" w:eastAsia="MS Gothic" w:hint="eastAsia"/>';
-  const rPrXml = rPr ? rPr : `<w:rPr>${rPrBlock}</w:rPr>`;
+  const displayChar = isChecked ? '\u2611' : '\u2610'; // ☑ or ☐
   const wrappedRPr = rPr
     ? (rPr.startsWith('<w:rPr>') ? rPr : `<w:rPr>${rPr}</w:rPr>`)
     : `<w:rPr><w:rFonts w:ascii="MS Gothic" w:hAnsi="MS Gothic" w:eastAsia="MS Gothic" w:hint="eastAsia"/></w:rPr>`;
 
-  return `<w:sdt><w:sdtPr>${wrappedRPr}<w14:checkbox><w14:checked w14:val="${checkedVal}"/><w14:checkedState w14:val="2612" w14:font="MS Gothic"/><w14:uncheckedState w14:val="2610" w14:font="MS Gothic"/></w14:checkbox></w:sdtPr><w:sdtContent><w:r>${wrappedRPr}<w:t>${displayChar}</w:t></w:r></w:sdtContent></w:sdt>`;
+  return `<w:sdt><w:sdtPr>${wrappedRPr}<w14:checkbox><w14:checked w14:val="${checkedVal}"/><w14:checkedState w14:val="2611" w14:font="MS Gothic"/><w14:uncheckedState w14:val="2610" w14:font="MS Gothic"/></w14:checkbox></w:sdtPr><w:sdtContent><w:r>${wrappedRPr}<w:t>${displayChar}</w:t></w:r></w:sdtContent></w:sdt>`;
 }
 
 /**
@@ -1392,7 +1389,7 @@ export function processSdtCheckboxes(
     }
 
     const checkedVal = isChecked ? "1" : "0";
-    const displayChar = isChecked ? "\u2612" : "\u2610"; // ☒ or ☐
+    const displayChar = isChecked ? "\u2611" : "\u2610"; // ☑ or ☐
 
     debugLog(`[tag-parser] SDT checkbox "${tagMatch?.[1] || '(tagless)'}" -> ${canonicalKey} = ${isChecked} (${displayChar})`);
 
@@ -1400,6 +1397,16 @@ export function processSdtCheckboxes(
     let result = sdtBlock.replace(
       /(<w14:checked\s+w14:val=")([^"]*)("\s*\/>)/,
       `$1${checkedVal}$3`
+    );
+
+    result = result.replace(
+      /(<w14:checkedState\s+w14:val=")([^"]*)("\s+w14:font="MS Gothic"\s*\/>)/,
+      '$12611$3'
+    );
+
+    result = result.replace(
+      /(<w14:uncheckedState\s+w14:val=")([^"]*)("\s+w14:font="MS Gothic"\s*\/>)/,
+      '$12610$3'
     );
 
     // 2. Replace the display character inside <w:sdtContent>
