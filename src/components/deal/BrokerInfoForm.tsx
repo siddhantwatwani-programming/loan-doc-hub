@@ -167,8 +167,8 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
         {/* Column 3 - Phone */}
         <div className="space-y-1.5">
           <div className="grid grid-cols-[56px_1fr_72px] items-center gap-2 border-b border-border pb-1 mb-2">
-            <span />
             <h3 className="font-semibold text-xs text-foreground">Phone</h3>
+            <span />
             <span className="font-semibold text-xs text-foreground text-center">Preferred</span>
           </div>
           <RadioGroup
