@@ -40,6 +40,9 @@ const FIELD_KEYS = {
   extra_value_1: 'origination_app.borrower.extra_value_1',
   extra_label_2: 'origination_app.borrower.extra_label_2',
   extra_value_2: 'origination_app.borrower.extra_value_2',
+  info_provided_by: 'origination_app.borrower.info_provided_by',
+  is_borrower_also_broker: 'origination_app.borrower.is_borrower_also_broker',
+  employer_contact_name: 'origination_app.borrower.employer_contact_name',
 
   // Gross Monthly Income
   income_salary: 'origination_app.income.salary',
