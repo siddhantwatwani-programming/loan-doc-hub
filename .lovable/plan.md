@@ -1,48 +1,46 @@
+## Recommended fix
+No field mapping, UI, API, or database change is needed.
+
+The existing source path is already wired correctly:
+- UI checkbox saves to `loan_terms.balloon_payment`
+- legacy alias exists as `ln_p_balloonPaymen`
+- document generation already derives `ln_p_balloonPayment` and treats missing values as false
+
+The failure is most likely in the RE851A template/rendering layer, not the data mapping. The screenshot shows the conditional tags printing literally, which means the checkbox block is not being resolved during document generation.
+
 ## Plan
+1. Keep the current field mapping exactly as-is.
+   - Do not change `loan_terms.balloon_payment`
+   - Do not change `{{ln_p_balloonPayment}}`
+   - Do not touch UI, backend data model, or other RE851A fields
 
-1. Keep the existing field mapping unchanged.
-   - The UI already persists `IS BROKER ALSO A BORROWER?` under `origination_app.doc.is_broker_also_borrower_yes`.
-   - The legacy alias already exists as `or_p_isBrokerAlsoBorrower_yes`.
-   - The RE851A conditional tag should continue to evaluate `or_p_isBrkBorrower`.
+2. Fix only the Balloon Payment checkbox block in the RE851A template.
+   - Update the two Part 3 checkbox lines so they use the existing supported conditional syntax cleanly:
+     - `{{#if ln_p_balloonPayment}}☑{{else}}☐{{/if}} YES`
+     - `{{#if ln_p_balloonPayment}}☐{{else}}☑{{/if}} NO`
+   - Preserve the exact layout, spacing, label text, and document formatting
+   - Change only the checkbox symbols and malformed control-tag wrapping in that section if needed
 
-2. Apply a minimal fix only in the document generator for RE851A Part 2.
-   - Ensure the broker-capacity derivation always normalizes the persisted UI value from:
-     - `origination_app.doc.is_broker_also_borrower_yes`
-     - `or_p_isBrokerAlsoBorrower_yes`
-     - existing fallback keys already in place
-   - Publish the normalized result back to:
-     - `or_p_isBrkBorrower`
-     - `or_p_brkCapacityAgent`
-     - `or_p_brkCapacityPrincipal`
-   - Treat `null`, `undefined`, empty string, and false-like values as false.
+3. If the template is already authored that way but Word has fragmented the tags, harden the parser only for this existing syntax.
+   - Support fragmented `{{#if ln_p_balloonPayment}}`, `{{else}}`, and `{{/if}}` runs in the Balloon Payment paragraph
+   - Do not introduce new helpers or new business mappings
+   - Do not affect other sections unless they already rely on the same supported syntax
 
-3. Preserve both template patterns without changing layout.
-   - Support `{{#if or_p_isBrkBorrower}}...{{else}}...{{/if}}` if the template uses explicit conditional tags.
-   - Preserve the existing label-based fallback for native/tagless Word checkboxes if the live RE851A file is using static checkbox content beside text labels instead of merge tags.
-   - Keep label text, spacing, and formatting untouched.
-
-4. Verify only the affected Part 2 behavior.
-   - Confirm checked UI value produces:
-     - `A = ☐`
-     - `B = ☑`
-   - Confirm unchecked or missing UI value produces:
-     - `A = ☑`
-     - `B = ☐`
-   - Confirm no other RE851A checkbox logic is altered.
-
-## Recommendation
-
-No database change is needed.
-No UI change is needed.
-No field-dictionary remap is likely needed.
-
-The most likely fix is in the RE851A document-generation derivation layer, not in the saved field mapping itself.
+4. Validate both document outcomes.
+   - `true`/checked -> YES checked, NO unchecked
+   - `false`/null/undefined -> YES unchecked, NO checked
+   - Confirm no raw Handlebars tags appear in the output
+   - Confirm no layout shift or formatting regression in RE851A
 
 ## Technical details
+Relevant files already confirm the mapping is present:
+- `src/lib/fieldKeyMap.ts` -> `balloonPayment: 'loan_terms.balloon_payment'`
+- `src/lib/legacyKeyMap.ts` -> `'loan_terms.balloon_payment': 'ln_p_balloonPaymen'`
+- `supabase/functions/generate-document/index.ts` -> derives both `ln_p_balloonPayment` and `ln_p_balloonPaymen`
+- `supabase/functions/_shared/tag-parser.ts` -> supports basic `#if / else / /if` blocks, so literal output indicates malformed or insufficiently consolidated template tags
 
-Observed code paths already indicate the intended source is the UI key:
-- UI field: `origination_app.doc.is_broker_also_borrower_yes`
-- Legacy alias: `or_p_isBrokerAlsoBorrower_yes`
-- Template boolean target: `or_p_isBrkBorrower`
-
-So the minimal implementation should focus on making the generator use that persisted value as the single source of truth and ensuring the live Part 2 checkbox replacement path matches the actual RE851A template wording.
+## Expected outcome
+- No mapping change required
+- No database/UI/API change required
+- Only the RE851A Balloon Payment checkbox rendering is corrected
+- The generated document shows the correct YES/NO selection without exposing template tags
