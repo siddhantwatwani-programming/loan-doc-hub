@@ -132,8 +132,9 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           .from('contacts')
           .select('id, contact_id, full_name, email, phone, contact_type');
         
-        // For 'other' type, search all contacts; otherwise filter by matching type
-        if (participantType !== 'other') {
+        // For 'other' or extended types (vendor / additional_guarantor / authorized_party),
+        // search across all contacts; otherwise filter by matching contact_type.
+        if (NATIVE_ROLES.has(participantType) && participantType !== 'other') {
           query = query.eq('contact_type', participantType);
         }
         
