@@ -2,6 +2,7 @@ import React from 'react';
 import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { OriginationFeesForm } from './OriginationFeesForm';
 import { OriginationApplicationForm } from './OriginationApplicationForm';
+import { OriginationFinancialsForm } from './OriginationFinancialsForm';
 import { OriginationInsuranceConditionsForm } from './OriginationInsuranceConditionsForm';
 import { OriginationServicingForm } from './OriginationServicingForm';
 import { OriginationEscrowTitleForm } from './OriginationEscrowTitleForm';
