@@ -854,7 +854,11 @@ async function generateSingleDocument(
     // Also publish under or_p_isBrkBorrower so any {{#if or_p_isBrkBorrower}} blocks
     // in the RE851A template evaluate against the same source of truth.
     fieldValues.set("or_p_isBrkBorrower", { rawValue: brkBorrowerTrue ? "true" : "false", dataType: "boolean" });
-    debugLog(`[generate-document] Derived broker capacity checkboxes from "${brkBorrowerRaw}": agent=${!brkBorrowerTrue}, principal=${brkBorrowerTrue}`);
+    // Also publish glyph-form aliases so simple {{or_p_isBrkBorrower_glyph}} or
+    // direct A/B glyph merge tags resolve correctly without altering layout.
+    fieldValues.set("or_p_brkCapacityAgentGlyph", { rawValue: brkBorrowerTrue ? "☐" : "☑", dataType: "text" });
+    fieldValues.set("or_p_brkCapacityPrincipalGlyph", { rawValue: brkBorrowerTrue ? "☑" : "☐", dataType: "text" });
+    console.log(`[generate-document] Derived broker capacity checkboxes from "${brkBorrowerRaw}": agent=${!brkBorrowerTrue}, principal=${brkBorrowerTrue}, isBrkBorrower=${brkBorrowerTrue}`);
 
     // Build all_properties_list and multi-property pr_p_address
     if (propertyIndices.size > 0) {
