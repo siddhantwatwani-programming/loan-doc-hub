@@ -222,7 +222,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
     const stripped = val.replace(/,/g, '');
     const num = parseFloat(stripped);
     if (isNaN(num)) return val;
-    return num.toFixed(3);
+    return num.toFixed(2);
   }, []);
 
   const renderPercentField = (key: string, label: string) => {
@@ -241,7 +241,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               onFocus={() => setFocusedPercentField(key)}
               onBlur={() => {
                 setFocusedPercentField(null);
-                const v = normalizeInterestOnBlur(getValue(key), 3);
+                const v = normalizeInterestOnBlur(getValue(key), 2);
                 if (v !== getValue(key)) setValue(key, v);
               }}
               disabled={disabled}
@@ -345,12 +345,12 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   value={getValue(FIELD_KEYS.soldRateCompany)}
                   onChange={(e) => setValue(FIELD_KEYS.soldRateCompany, sanitizeInterestInput(e.target.value))}
                   onBlur={() => {
-                    const v = normalizeInterestOnBlur(getValue(FIELD_KEYS.soldRateCompany), 3);
+                    const v = normalizeInterestOnBlur(getValue(FIELD_KEYS.soldRateCompany), 2);
                     if (v !== getValue(FIELD_KEYS.soldRateCompany)) setValue(FIELD_KEYS.soldRateCompany, v);
                   }}
                   disabled={disabled || !isChecked(FIELD_KEYS.soldRateEnabled)}
                   className={cn("h-8 text-sm pr-7", !isChecked(FIELD_KEYS.soldRateEnabled) && "bg-muted")}
-                  placeholder="0.000"
+                  placeholder="0.00"
                   inputMode="decimal"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>

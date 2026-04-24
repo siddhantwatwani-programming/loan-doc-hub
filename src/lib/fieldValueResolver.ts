@@ -110,7 +110,7 @@ function formatByDataType(
       return formatCurrency(value);
     
     case 'percentage':
-      return formatPercentage(value, 3);
+      return formatPercentage(value, 2);
     
     case 'date':
       return formatDateMMDDYYYY(String(value));

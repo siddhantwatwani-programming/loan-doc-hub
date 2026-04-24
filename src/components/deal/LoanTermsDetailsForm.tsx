@@ -314,12 +314,12 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
             }}
             onBlur={() => {
               const val = getValue(fieldKey);
-              if (val) { const num = parseFloat(val); if (!isNaN(num)) setValue(fieldKey, num.toFixed(3)); }
+              if (val) { const num = parseFloat(val); if (!isNaN(num)) setValue(fieldKey, num.toFixed(2)); }
             }}
             disabled={disabled}
             className="h-8 text-xs pr-5"
             inputMode="decimal"
-            placeholder="0.000"
+              placeholder="0.00"
           />
           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
         </div>
@@ -497,12 +497,12 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
                     }}
                     onBlur={() => {
                       const val = getValue(FIELD_KEYS.adjRateIncreasePercent);
-                      if (val) { const num = parseFloat(val); if (!isNaN(num)) setValue(FIELD_KEYS.adjRateIncreasePercent, num.toFixed(3)); }
+                      if (val) { const num = parseFloat(val); if (!isNaN(num)) setValue(FIELD_KEYS.adjRateIncreasePercent, num.toFixed(2)); }
                     }}
                     disabled={disabled}
                     className="h-8 text-xs pr-5"
                     inputMode="decimal"
-                    placeholder="0.000"
+                    placeholder="0.00"
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
                 </div>
@@ -540,12 +540,12 @@ export const LoanTermsDetailsForm: React.FC<LoanTermsDetailsFormProps> = ({
                     }}
                     onBlur={() => {
                       const val = getValue(FIELD_KEYS.adjPaymentOptionsEndPercent);
-                      if (val) { const num = parseFloat(val); if (!isNaN(num)) setValue(FIELD_KEYS.adjPaymentOptionsEndPercent, num.toFixed(3)); }
+                      if (val) { const num = parseFloat(val); if (!isNaN(num)) setValue(FIELD_KEYS.adjPaymentOptionsEndPercent, num.toFixed(2)); }
                     }}
                     disabled={disabled}
                     className="h-8 text-xs pr-5"
                     inputMode="decimal"
-                    placeholder="0.000"
+                    placeholder="0.00"
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
                 </div>

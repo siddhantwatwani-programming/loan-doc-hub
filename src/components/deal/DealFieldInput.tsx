@@ -103,12 +103,13 @@ export const DealFieldInput: React.FC<DealFieldInputProps> = ({
           formattedValue = currencyNum.toFixed(2);
         }
         break;
-      case 'percentage':
+      case 'percentage': {
         const pctNum = parseFloat(value);
         if (!isNaN(pctNum)) {
-          formattedValue = pctNum.toFixed(3);
+          formattedValue = pctNum.toFixed(2);
         }
         break;
+      }
       case 'number':
         const num = parseFloat(value);
         if (!isNaN(num)) {

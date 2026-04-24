@@ -152,7 +152,7 @@ export function formatLowercase(value: string | null): string {
 // Number/Percentage Formatters
 // ============================================
 
-export function formatPercentage(value: string | number | null, decimals = 3): string {
+export function formatPercentage(value: string | number | null, decimals = 2): string {
   if (value === null || value === undefined || value === "") return "";
   const num = typeof value === "string" ? parseFloat(value) : value;
   if (isNaN(num)) return "";
@@ -281,7 +281,7 @@ export function formatByDataType(value: string | number | null, dataType: string
     case "currency":
       return formatCurrency(value);
     case "percentage":
-      return formatPercentage(value, 3);
+      return formatPercentage(value, 2);
     case "date":
       return formatDateMMDDYYYY(String(value));
     case "number": {

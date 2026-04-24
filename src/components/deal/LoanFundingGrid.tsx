@@ -204,7 +204,7 @@ const buildFundingFilterOptions = (records: FundingRecord[]): FilterOption[] => 
     {
       id: 'lenderRate',
       label: 'Lender Rate',
-      options: uniqueRates.map(r => ({ value: String(r), label: `${r.toFixed(3)}%` })),
+      options: uniqueRates.map(r => ({ value: String(r), label: `${r.toFixed(2)}%` })),
     },
   ];
 };
@@ -304,7 +304,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
   const totalFundingAmount = fundingRecords.reduce((sum, r) => sum + r.originalAmount, 0);
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
-  const formatPercentage = (value: number) => `${value.toFixed(3)}%`;
+  const formatPercentage = (value: number) => `${value.toFixed(2)}%`;
 
   const handleRoundingChange = (recordId: string, checked: boolean) => {
     onUpdateRecord(recordId, { roundingError: checked });
@@ -428,7 +428,7 @@ export const LoanFundingGrid: React.FC<LoanFundingGridProps> = ({
       case 'interestFrom':
         return formatDate(record.interestFrom) || '-';
       case 'noteRate':
-        return <span>{record.rateNoteValue ? `${parseFloat(record.rateNoteValue).toFixed(3)}%` : (noteRate ? `${parseFloat(noteRate).toFixed(3)}%` : '-')}</span>;
+        return <span>{record.rateNoteValue ? `${parseFloat(record.rateNoteValue).toFixed(2)}%` : (noteRate ? `${parseFloat(noteRate).toFixed(2)}%` : '-')}</span>;
       case 'lenderRate':
         return <span>{formatPercentage(record.lenderRate)}</span>;
       case 'regularPayment':

@@ -206,10 +206,10 @@ export const PropertiesTableView: React.FC<PropertiesTableViewProps> = ({
   };
 
   const formatPercentage = (value: string) => {
-    if (!value) return '0.000%';
+    if (!value) return '0.00%';
     const num = parseFloat(value);
-    if (isNaN(num)) return '0.000%';
-    return `${num.toFixed(3)}%`;
+    if (isNaN(num)) return '0.00%';
+    return `${num.toFixed(2)}%`;
   };
 
   const formatDate = (val: string) => {
