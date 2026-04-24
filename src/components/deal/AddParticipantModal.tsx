@@ -41,13 +41,32 @@ interface ContactResult {
   contact_type: string;
 }
 
-type ParticipantType = 'borrower' | 'lender' | 'broker' | 'other';
+type ParticipantType =
+  | 'borrower'
+  | 'lender'
+  | 'broker'
+  | 'vendor'
+  | 'additional_guarantor'
+  | 'authorized_party'
+  | 'other';
 
 const PARTICIPANT_TYPES = [
   { value: 'borrower', label: 'Borrower', disabled: false },
   { value: 'lender', label: 'Lender', disabled: false },
   { value: 'broker', label: 'Broker', disabled: false },
+  { value: 'vendor', label: 'Vendor', disabled: false },
+  { value: 'additional_guarantor', label: 'Additional Guarantor', disabled: false },
+  { value: 'authorized_party', label: 'Authorized Party', disabled: false },
 ];
+
+// Types that don't map to a native app_role enum value — persisted as 'other' role
+// with the original selection retained as the participant's capacity label.
+const EXTENDED_TYPE_LABELS: Record<string, string> = {
+  vendor: 'Vendor',
+  additional_guarantor: 'Additional Guarantor',
+  authorized_party: 'Authorized Party',
+};
+const NATIVE_ROLES = new Set(['borrower', 'lender', 'broker', 'other']);
 
 const CAPACITY_OPTIONS: Record<string, string[]> = {
   borrower: [
