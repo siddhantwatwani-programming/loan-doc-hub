@@ -1286,7 +1286,12 @@ async function generateSingleDocument(
     {
       const yesVal = fieldValues.get("or_p_isBrokerAlsoBorrower_yes")
         || fieldValues.get("origination_app.doc.is_broker_also_borrower_yes");
-      const isYes = yesVal && (yesVal.rawValue === "true" || yesVal.rawValue === true);
+      const rawYes = yesVal?.rawValue;
+      const isYes = typeof rawYes === "string"
+        ? ["true", "yes", "1", "checked", "on"].includes(rawYes.trim().toLowerCase())
+        : typeof rawYes === "number"
+          ? rawYes !== 0
+          : false;
       fieldValues.set("or_p_isBrokerAlsoBorrower_yes", { rawValue: isYes ? "true" : "false", dataType: "boolean" });
       fieldValues.set("or_p_isBrokerAlsoBorrower_no", { rawValue: isYes ? "false" : "true", dataType: "boolean" });
       debugLog(`[generate-document] or_p_isBrokerAlsoBorrower: YES=${isYes}`);
