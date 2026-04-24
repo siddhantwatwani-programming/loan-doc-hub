@@ -1494,6 +1494,17 @@ async function generateSingleDocument(
       "B. Principal as a borrower on funds from which broker will directly or indirectly benefit": {
         fieldKey: "or_p_brkCapacityPrincipal",
       },
+      // Shorter variant used in the live RE851A wording — matches both static
+      // glyph templates and tagless SDT checkboxes during label fallback.
+      "B. Principal as a borrower on funds from which broker will benefit": {
+        fieldKey: "or_p_brkCapacityPrincipal",
+      },
+      "B. Principal as a borrower on funds": {
+        fieldKey: "or_p_brkCapacityPrincipal",
+      },
+      "B. Principal as a borrower": {
+        fieldKey: "or_p_brkCapacityPrincipal",
+      },
     };
 
     const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
