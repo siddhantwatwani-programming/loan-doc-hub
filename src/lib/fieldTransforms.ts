@@ -178,7 +178,7 @@ export function formatLowercase(value: string | null): string {
  * @param value - Raw numeric value (e.g., 8.25)
  * @returns Formatted string (e.g., "8.250%")
  */
-export function formatPercentage(value: string | number | null, decimals = 3): string {
+export function formatPercentage(value: string | number | null, decimals = 2): string {
   if (value === null || value === undefined || value === '') return '';
   const num = typeof value === 'string' ? parseFloat(value) : value;
   if (isNaN(num)) return '';
@@ -306,7 +306,7 @@ export function formatForDisplay(value: string, dataType: string): string {
     case 'percentage':
       const pct = parseFloat(value);
       if (isNaN(pct)) return value;
-      return pct.toFixed(3);
+      return pct.toFixed(2);
     default:
       return value;
   }
