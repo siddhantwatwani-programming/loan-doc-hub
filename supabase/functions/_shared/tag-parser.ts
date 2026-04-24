@@ -1643,6 +1643,44 @@ export function replaceMergeTags(
   // First normalize the XML to handle fragmented merge fields
   let result = normalizeWordXml(content);
 
+  // Document-wide consolidation for control tags whose {{ ... }} brackets get
+  // split by Word across multiple <w:r> or <w:p> boundaries. The paragraph-
+  // scoped pass in normalizeWordXml() does not catch tags whose opening "{{"
+  // and closing "}}" land in different paragraphs (common in table cells like
+  // RE851A's Balloon Payment YES/NO checkboxes). We only collapse XML markup
+  // between recognized control tokens — surrounding prose is never touched.
+  const stripXmlBetween = (raw: string): string =>
+    raw.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+
+  const controlPatterns: Array<{ re: RegExp; build: (m: RegExpExecArray) => string | null }> = [
+    {
+      re: /\{\{([\s\S]{0,400}?)\}\}/g,
+      build: (m) => {
+        const inner = stripXmlBetween(m[1]);
+        if (/^#if\s+[A-Za-z0-9_.]+$/.test(inner)) return `{{${inner}}}`;
+        if (/^#unless\s+[A-Za-z0-9_.]+$/.test(inner)) return `{{${inner}}}`;
+        if (inner === "else" || inner === "/if" || inner === "/unless") return `{{${inner}}}`;
+        return null;
+      },
+    },
+  ];
+
+  for (const { re, build } of controlPatterns) {
+    result = result.replace(re, (full, _g1) => {
+      const exec = re.exec(full);
+      if (!exec) {
+        // Re-run on the matched text to extract groups for build()
+        const localRe = new RegExp(re.source, re.flags.replace("g", ""));
+        const local = localRe.exec(full);
+        if (!local) return full;
+        const built = build(local as RegExpExecArray);
+        return built ?? full;
+      }
+      const built = build(exec);
+      return built ?? full;
+    });
+  }
+
   // Unconditional safety net: strip BARE Handlebars-style control directives
   // that template authors sometimes leave in DOCX paragraphs as plain text
   // (i.e. NOT wrapped in {{ }}), e.g. a paragraph whose run text reads:
