@@ -338,7 +338,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     const fa = parseFloat((formData.fundingAmount || '').replace(/[$,]/g, '')) || 0;
     const la = parseFloat((loanAmount || '').replace(/[$,]/g, '')) || 0;
     if (la > 0 && fa > 0) {
-      const computed = (fa / la * 100).toFixed(3);
+      const computed = (fa / la * 100).toFixed(2);
       if (computed !== formData.percentOwned) {
         setFormData(prev => ({ ...prev, percentOwned: computed }));
       }
@@ -400,7 +400,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     const c = parseFloat(company) || 0;
     const b = parseFloat(broker) || 0;
     const total = l + c + b;
-    return total > 0 ? total.toFixed(3) : '';
+    return total > 0 ? total.toFixed(2) : '';
   };
 
   React.useEffect(() => {
