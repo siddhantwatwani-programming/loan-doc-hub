@@ -53,6 +53,16 @@ export const OriginationFeesSectionContent: React.FC<OriginationFeesSectionConte
             calculationResults={calculationResults}
           />
         );
+      case 'financials':
+        return (
+          <OriginationFinancialsForm
+            values={values}
+            onValueChange={onValueChange}
+            showValidation={showValidation}
+            disabled={disabled}
+            calculationResults={calculationResults}
+          />
+        );
       case 'insurance_conditions':
         return (
           <OriginationInsuranceConditionsForm
