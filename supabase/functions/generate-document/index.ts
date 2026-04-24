@@ -1286,7 +1286,12 @@ async function generateSingleDocument(
     {
       const yesVal = fieldValues.get("or_p_isBrokerAlsoBorrower_yes")
         || fieldValues.get("origination_app.doc.is_broker_also_borrower_yes");
-      const isYes = yesVal && (yesVal.rawValue === "true" || yesVal.rawValue === true);
+      const rawYes = yesVal?.rawValue;
+      const isYes = typeof rawYes === "string"
+        ? ["true", "yes", "1", "checked", "on"].includes(rawYes.trim().toLowerCase())
+        : typeof rawYes === "number"
+          ? rawYes !== 0
+          : false;
       fieldValues.set("or_p_isBrokerAlsoBorrower_yes", { rawValue: isYes ? "true" : "false", dataType: "boolean" });
       fieldValues.set("or_p_isBrokerAlsoBorrower_no", { rawValue: isYes ? "false" : "true", dataType: "boolean" });
       debugLog(`[generate-document] or_p_isBrokerAlsoBorrower: YES=${isYes}`);
@@ -1468,10 +1473,26 @@ async function generateSingleDocument(
       fetchMergeTagMappings(supabase),
       fetchFieldKeyMappings(supabase),
     ]);
+
+    // RE851A Part 2 broker-capacity checkboxes are often authored as native Word
+    // checkboxes or static glyphs beside the literal A./B. labels rather than as
+    // explicit merge tags. Inject these label bindings at generation time so the
+    // existing layout remains untouched while the checkbox state still resolves
+    // from the already-derived boolean keys.
+    const effectiveLabelMap = {
+      ...labelMap,
+      "A. Agent in arranging a loan on behalf of another": {
+        fieldKey: "or_p_brkCapacityAgent",
+      },
+      "B. Principal as a borrower on funds from which broker will directly or indirectly benefit": {
+        fieldKey: "or_p_brkCapacityPrincipal",
+      },
+    };
+
     const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
     let processedDocx: Uint8Array;
     try {
-      processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+      processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, effectiveLabelMap, validFieldKeys);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       // Surface DOCX integrity failures as a real generation failure rather
