@@ -1548,6 +1548,12 @@ async function generateSingleDocument(
       "A. Agent in arranging a loan on behalf of another": {
         fieldKey: "or_p_brkCapacityAgent",
       },
+      "A. Agent in arranging a loan": {
+        fieldKey: "or_p_brkCapacityAgent",
+      },
+      "A. Agent": {
+        fieldKey: "or_p_brkCapacityAgent",
+      },
       "B. Principal as a borrower on funds from which broker will directly or indirectly benefit": {
         fieldKey: "or_p_brkCapacityPrincipal",
       },
