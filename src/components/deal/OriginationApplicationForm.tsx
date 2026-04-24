@@ -323,10 +323,49 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
         {/* Column 1: Borrower */}
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Borrower</h3>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.info_provided_by}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[140px] text-sm shrink-0">Information Provided By</Label>
+              <Select
+                value={getValue(FIELD_KEYS.info_provided_by) || undefined}
+                onValueChange={(val) => setValue(FIELD_KEYS.info_provided_by, val)}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-7 text-sm flex-1">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent className="z-[9999]">
+                  <SelectItem value="Broker">Broker</SelectItem>
+                  <SelectItem value="Borrower">Borrower</SelectItem>
+                  <SelectItem value="Public Record">Public Record</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.is_borrower_also_broker}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[140px] text-sm shrink-0">Is Borrower also the Broker</Label>
+              <Select
+                value={getValue(FIELD_KEYS.is_borrower_also_broker) || undefined}
+                onValueChange={(val) => setValue(FIELD_KEYS.is_borrower_also_broker, val)}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-7 text-sm flex-1">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent className="z-[9999]">
+                  <SelectItem value="Yes">Yes</SelectItem>
+                  <SelectItem value="No">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
           {renderDatePicker('DOB', FIELD_KEYS.dob)}
           {renderTextField('Occupation', FIELD_KEYS.occupation)}
           {renderTextField('Employer', FIELD_KEYS.employer)}
           {renderDatePicker('Employed Since', FIELD_KEYS.employed_since)}
+          {renderTextField('Employer Contact Name', FIELD_KEYS.employer_contact_name)}
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.contact}>
             <div className="flex items-center gap-2">
               <Label className="w-[140px] text-sm shrink-0">Contact</Label>
@@ -366,45 +405,6 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
           </DirtyFieldWrapper>
           {renderLabelInputPair(FIELD_KEYS.extra_label_1, FIELD_KEYS.extra_value_1)}
           {renderLabelInputPair(FIELD_KEYS.extra_label_2, FIELD_KEYS.extra_value_2)}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.info_provided_by}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[140px] text-sm shrink-0">Information Provided By</Label>
-              <Select
-                value={getValue(FIELD_KEYS.info_provided_by) || undefined}
-                onValueChange={(val) => setValue(FIELD_KEYS.info_provided_by, val)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-7 text-sm flex-1">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent className="z-[9999]">
-                  <SelectItem value="Broker">Broker</SelectItem>
-                  <SelectItem value="Borrower">Borrower</SelectItem>
-                  <SelectItem value="Public Record">Public Record</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.is_borrower_also_broker}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[140px] text-sm shrink-0">Is Borrower also the Broker</Label>
-              <Select
-                value={getValue(FIELD_KEYS.is_borrower_also_broker) || undefined}
-                onValueChange={(val) => setValue(FIELD_KEYS.is_borrower_also_broker, val)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-7 text-sm flex-1">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent className="z-[9999]">
-                  <SelectItem value="Yes">Yes</SelectItem>
-                  <SelectItem value="No">No</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </DirtyFieldWrapper>
-          {renderTextField('Employer Contact Name', FIELD_KEYS.employer_contact_name)}
         </div>
 
         {/* Column 2: Income & Expenses */}
