@@ -864,9 +864,12 @@ function replaceStaticCheckboxLabel(
     });
     // Remove duplicate adjacent checkbox glyphs that arise when a merge tag
     // already resolved to ☑/☐ AND the template had a static glyph.
-    // Pattern: two checkbox glyphs separated only by XML tags / whitespace.
+    // Pattern: two checkbox glyphs separated only by XML tags / whitespace,
+    // SCOPED to the same paragraph (`</w:p>` and `<w:p>` are excluded from
+    // the gap) so we never collapse two legitimately distinct paragraph-level
+    // glyphs into one (e.g., the RE851A A./B. broker-capacity rows).
     result = result.replace(
-      /([☐☑☒])((?:\s|<[^>]*>)*?)([☐☑☒])((?:\s|<[^>]*>)*?)/g,
+      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)/g,
       (_m, g1, mid, _g2, trail) => `${g1}${mid}${trail}`
     );
     return { content: result, replaced: true };
@@ -885,7 +888,7 @@ function replaceStaticCheckboxLabel(
       return `${labelText}${spacing}${checkboxValue}`;
     });
     result = result.replace(
-      /([☐☑☒])((?:\s|<[^>]*>)*?)([☐☑☒])((?:\s|<[^>]*>)*?)/g,
+      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)/g,
       (_m, g1, mid, _g2, trail) => `${g1}${mid}${trail}`
     );
     return { content: result, replaced: true };
@@ -900,9 +903,10 @@ function replaceStaticCheckboxLabel(
   let result = content.replace(plainPattern, (_match, _glyph, spacing, labelText) => {
     return `${checkboxValue}${spacing}${labelText}`;
   });
-  // Same dedup for plain-text path
+  // Same dedup for plain-text path — paragraph-scoped to avoid collapsing
+  // glyphs that legitimately belong to different paragraphs.
   result = result.replace(
-    /([☐☑☒])((?:\s|<[^>]*>)*?)([☐☑☒])((?:\s|<[^>]*>)*?)/g,
+    /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)/g,
     (_m, g1, mid, _g2, trail) => `${g1}${mid}${trail}`
   );
   return { content: result, replaced: true };
@@ -1527,7 +1531,7 @@ export function processSdtCheckboxes(
     if (resolved?.data) {
       const raw = resolved.data.rawValue;
       if (typeof raw === "string") {
-        isChecked = ["true", "1", "yes"].includes(raw.toLowerCase());
+        isChecked = ["true", "1", "yes", "y", "checked", "on"].includes(raw.toLowerCase().trim());
       } else if (typeof raw === "number") {
         isChecked = raw !== 0;
       } else {
@@ -1970,8 +1974,17 @@ export function replaceMergeTags(
     // Dedup: after merge tag replacement, collapse adjacent duplicate checkbox
     // glyphs that arise when a merge tag resolves to ☑/☐ next to a static ☐
     // already present in the template (e.g., "☑☐ Label" → "☑ Label").
+    //
+    // SCOPING: Restrict the dedup so the gap between the two glyphs may NOT
+    // cross a paragraph boundary (`</w:p>` or a new `<w:p>` start). Without
+    // this guard, two glyphs that legitimately belong to *different*
+    // paragraphs but are separated only by XML markup (which is common —
+    // e.g., the RE851A Part 2 A./B. broker-capacity rows where each glyph
+    // is its own conditional in its own paragraph) would be collapsed,
+    // silently dropping the second glyph and leaving Option B unchecked
+    // even when "IS BROKER ALSO A BORROWER?" is selected.
     result = result.replace(
-      /([☐☑☒])((?:\s|<[^>]*>)*?)([☐☑☒])/g,
+      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)([☐☑☒])/g,
       (_m, g1, mid, _g2) => `${g1}${mid}`
     );
   }
