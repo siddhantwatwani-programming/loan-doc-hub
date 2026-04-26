@@ -1188,14 +1188,27 @@ function getConditionalAliasCandidates(fieldKey: string): string[] {
   }
 
   // "Is Broker Also a Borrower?" — RE851A Part 2 A/B capacity checkboxes.
-  // Falls back to the engine-published sibling boolean and the UI persistence key
-  // so the conditional resolves correctly even if the primary key is missing.
+  // Prefer the actual CSR persistence key first so the conditional always sees
+  // the user's selection, then fall back to engine-derived siblings and legacy
+  // aliases. Order matters — the first key that has saved deal data wins.
   if (lower === "or_p_isbrkborrower") {
     return [
-      normalized,
-      "or_p_brkCapacityPrincipal",
-      "or_p_isBrokerAlsoBorrower_yes",
       "origination_app.doc.is_broker_also_borrower_yes",
+      "or_p_isBrokerAlsoBorrower_yes",
+      "or_p_brkCapacityPrincipal",
+      normalized,
+    ];
+  }
+  if (
+    lower === "origination_app.doc.is_broker_also_borrower_yes" ||
+    lower === "or_p_isbrokeralsoborrower_yes"
+  ) {
+    return [
+      "origination_app.doc.is_broker_also_borrower_yes",
+      "or_p_isBrokerAlsoBorrower_yes",
+      "or_p_brkCapacityPrincipal",
+      "or_p_isBrkBorrower",
+      normalized,
     ];
   }
 
