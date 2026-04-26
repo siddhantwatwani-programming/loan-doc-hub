@@ -848,7 +848,7 @@ async function generateSingleDocument(
       fieldValues.get("origination.is_broker_also_a_borrower")?.rawValue ??
       ""
     ).toString().trim().toLowerCase();
-    const brkBorrowerTrue = ["true", "yes", "1", "checked", "on"].includes(brkBorrowerRaw);
+    const brkBorrowerTrue = ["true", "yes", "y", "1", "checked", "on"].includes(brkBorrowerRaw);
     fieldValues.set("or_p_brkCapacityPrincipal", { rawValue: brkBorrowerTrue ? "true" : "false", dataType: "boolean" });
     fieldValues.set("or_p_brkCapacityAgent", { rawValue: brkBorrowerTrue ? "false" : "true", dataType: "boolean" });
     // Also publish under or_p_isBrkBorrower so any {{#if or_p_isBrkBorrower}} blocks
