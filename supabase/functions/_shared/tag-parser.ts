@@ -1187,6 +1187,16 @@ function getConditionalAliasCandidates(fieldKey: string): string[] {
     return [normalized, "ln_p_balloonPaymen", "ln_p_balloonPayment"];
   }
 
+  // Subordination Provision — RE851A Yes/No checkbox.
+  // CSR persists this under `loan_terms.subordination_provision` while the
+  // template references `ln_p_subordinationProvision`. Bridge both directions.
+  if (lower === "ln_p_subordinationprovision") {
+    return [normalized, "loan_terms.subordination_provision"];
+  }
+  if (lower === "loan_terms.subordination_provision") {
+    return [normalized, "ln_p_subordinationProvision"];
+  }
+
   // "Is Broker Also a Borrower?" — RE851A Part 2 A/B capacity checkboxes.
   // Prefer the actual CSR persistence key first so the conditional always sees
   // the user's selection, then fall back to engine-derived siblings and legacy
