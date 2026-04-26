@@ -362,23 +362,53 @@ export function normalizeWordXml(xmlContent: string): string {
     );
     p = p.replace(
       checkboxIfElsePattern,
-      (match, fieldName, _midA, glyphTrue, _midB, _midC, glyphFalse, _midD) => {
+      (match, fieldName, midA, glyphTrue, midB, midC, glyphFalse, midD) => {
         // Safety guards: never cross paragraph boundaries.
         if (/<\/w:p>|<w:p[\s>\/]/.test(match)) return match;
-        // Bail out only if an EXTRA control tag (#if/#unless/#each/else/closing)
-        // appears inside the captured region besides our own #if / else / /if.
-        // Plain value merge tags like {{br_p_fullName}} are fine — they live
-        // outside the captured glyph branches and are preserved verbatim.
-        const innerNoTags = match.replace(/<[^>]*>/g, "");
-        const allTags = innerNoTags.match(/\{\{[^}]*\}\}/g) || [];
-        const controlTags = allTags.filter((t) =>
-          /\{\{\s*(?:#if\b|#unless\b|#each\b|else\b|\/if\b|\/unless\b|\/each\b)/.test(t)
-        );
-        // We expect exactly 3 control tags: our own #if, else, /if. Anything
-        // more means a nested or sibling conditional — too risky to rewrite.
-        if (controlTags.length !== 3) return match;
+        // Validate per-branch: each of the 4 inter-marker segments
+        // (midA: #if→glyphTrue, midB: glyphTrue→else, midC: else→glyphFalse,
+        // midD: glyphFalse→/if) must contain NO Handlebars control tags
+        // and NO additional checkbox glyphs. Plain value merge tags like
+        // {{br_p_fullName}} appearing outside the branches are fine and a
+        // sibling row's control tag captured by greedy regex no longer
+        // forces a bail-out, so the RE851A B-line rewrite succeeds.
+        const controlTagRe = /\{\{\s*(?:#if\b|#unless\b|#each\b|else\b|\/if\b|\/unless\b|\/each\b)/;
+        const extraGlyphRe = new RegExp(`[${CHECKBOX_GLYPHS}]`);
+        for (const seg of [midA, midB, midC, midD]) {
+          const segNoXml = String(seg ?? "").replace(/<[^>]*>/g, "");
+          if (controlTagRe.test(segNoXml)) return match;
+          if (extraGlyphRe.test(segNoXml)) return match;
+        }
         debugLog(
-          `[tag-parser] Consolidated fragmented checkbox conditional for ${fieldName}`
+          `[tag-parser] Consolidated fragmented checkbox conditional for ${fieldName} (true=${glyphTrue}, false=${glyphFalse})`
+        );
+        return `{{#if ${fieldName}}}${glyphTrue}{{else}}${glyphFalse}{{/if}}`;
+      }
+    );
+
+    // Defensive fallback: after the strict consolidator, if a paragraph still
+    // contains a checkbox-glyph #if/else/#if triplet for the SAME field that
+    // is interleaved with arbitrary inline XML (Word run wrappers), rewrite
+    // it into the canonical clean form. Scoped to the exact shape:
+    //   {{#if KEY}} ...xml... GLYPH ...xml... {{else}} ...xml... GLYPH ...xml... {{/if}}
+    // where each branch contains exactly one checkbox glyph and no nested
+    // control tags. This catches the RE851A B-line shape when the strict
+    // pattern's per-branch greedy capture would otherwise leave the block
+    // un-consolidated and the orphan-strip would drop the #if branch glyph.
+    const checkboxFallbackPattern = new RegExp(
+      "\\{\\{\\s*#if\\s+([A-Za-z0-9_.]+)\\s*\\}\\}" +
+      "((?:(?!\\{\\{)[\\s\\S])*?)([" + CHECKBOX_GLYPHS + "])((?:(?!\\{\\{)[\\s\\S])*?)" +
+      "\\{\\{\\s*else\\s*\\}\\}" +
+      "((?:(?!\\{\\{)[\\s\\S])*?)([" + CHECKBOX_GLYPHS + "])((?:(?!\\{\\{)[\\s\\S])*?)" +
+      "\\{\\{\\s*\\/if\\s*\\}\\}",
+      "g"
+    );
+    p = p.replace(
+      checkboxFallbackPattern,
+      (match, fieldName, _a, glyphTrue, _b, _c, glyphFalse, _d) => {
+        if (/<\/w:p>|<w:p[\s>\/]/.test(match)) return match;
+        debugLog(
+          `[tag-parser] Fallback-consolidated checkbox conditional for ${fieldName} (true=${glyphTrue}, false=${glyphFalse})`
         );
         return `{{#if ${fieldName}}}${glyphTrue}{{else}}${glyphFalse}{{/if}}`;
       }
