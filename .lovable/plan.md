@@ -1,55 +1,62 @@
-I found an important clue in the current generated output screenshot and backend logs:
+## Root cause
 
-- The backend is receiving the CSR checkbox as checked and deriving `isBrkBorrower=true` correctly.
-- The current latest generation log says: `Derived broker capacity checkboxes from "true": agent=false, principal=true, isBrkBorrower=true`.
-- The remaining failure is therefore in the RE851A DOCX rendering/label matching layer, not in the CSR save value.
-- The screenshot shows the B label as `B. *Principal...` with an asterisk before `Principal`. The current fallback label bindings only cover `B. Principal...` without the asterisk, so the B checkbox can remain as its static unchecked glyph even though the data is true.
+The RE851A template uses `{{#if ln_p_subordinationProvision}}`, but the CSR UI persists this checkbox under a different key:
 
-Plan to fix, with minimal scope only for this issue:
+- **UI write key (from `src/lib/fieldKeyMap.ts`):** `loan_terms.subordination_provision`
+- **Field dictionary entry:** `field_key = ln_p_subordinationProvision`, `data_type = boolean`, no `canonical_key`, no `merge_tag_aliases` row.
+- **Server-side handling in `generate-document` / `tag-parser.ts`:** none. There is no alias mapping that bridges `ln_p_subordinationProvision` to `loan_terms.subordination_provision`.
 
-1. Add exact RE851A B-label variants that include the asterisk
-   - Extend only the runtime RE851A Part 2 label map in `generate-document`.
-   - Add variants such as:
-     - `B. *Principal as a borrower on funds from which broker will directly or indirectly benefit`
-     - `B. *Principal as a borrower on funds from which broker will benefit`
-     - `B. *Principal as a borrower on funds`
-     - `B. *Principal as a borrower`
-   - Map those variants only to `or_p_brkCapacityPrincipal`.
-   - Do not change any UI, database schema, permissions, or unrelated template mappings.
+Because the dictionary key (`ln_p_subordinationProvision`) and the persisted key (`loan_terms.subordination_provision`) are not linked, `isConditionTruthy()` resolves the conditional to `false` regardless of the CSR selection. The template logic itself is correct — Yes/No always inverts together — so when the lookup is empty, **No** ends up checked even when CSR shows Yes.
 
-2. Add a final RE851A-only safety pass for the two broker-capacity lines
-   - After conditionals and label replacements, before checkbox glyph conversion, force only these two label-adjacent glyphs to the derived state:
-     - A line: checked when broker is not also borrower.
-     - B line: checked when broker is also borrower.
-   - Scope this by literal A/B label text, including optional `*` before `Principal`, so no other RE851A checkbox logic is affected.
-   - If the template contains both a static unchecked glyph and a generated conditional glyph, collapse that local pair to one correct glyph instead of letting the static glyph win.
+This is the same class of issue that was already fixed for `ln_p_balloonPayment` and `or_p_isBrkBorrower` in `getConditionalAliasCandidates()` inside `supabase/functions/_shared/tag-parser.ts`.
 
-3. Keep the condition truthy logic intact and confirm it supports all required checked values
-   - Preserve the existing accepted true values:
-     - `true`, `"true"`, `"Yes"`, `"Y"`, `1`, plus `checked` and `on`.
-   - Confirm the field aliases still resolve from:
-     - `origination_app.doc.is_broker_also_borrower_yes`
-     - `or_p_isBrokerAlsoBorrower_yes`
-     - `or_p_isBrkBorrower`
-     - `or_p_brkCapacityPrincipal`
+## Fix (minimal, scoped)
 
-4. Provide the corrected Handlebars template condition
-   - The safe template condition is:
+Add `ln_p_subordinationProvision` to the existing `getConditionalAliasCandidates()` switch in `supabase/functions/_shared/tag-parser.ts` so the conditional probes the actual UI persistence key. No template, schema, mapping table, UI, or pipeline changes are required.
 
-```handlebars
-{{#if or_p_isBrkBorrower}}☐{{else}}☑{{/if}} A. Agent in arranging a loan on behalf of another
-{{#if or_p_isBrkBorrower}}☑{{else}}☐{{/if}} B. *Principal as a borrower on funds from which broker will directly or indirectly benefit...
+### Code change (single function, two small additions)
+
+In `supabase/functions/_shared/tag-parser.ts`, inside `getConditionalAliasCandidates()` (around line 1188, alongside the balloon block):
+
+```ts
+if (lower === "ln_p_subordinationprovision") {
+  return [normalized, "loan_terms.subordination_provision"];
+}
+
+if (lower === "loan_terms.subordination_provision") {
+  return [normalized, "ln_p_subordinationProvision"];
+}
 ```
 
-   - If we want it to bind directly to the CSR persistence key, the equivalent is:
+The existing `isConditionTruthy()` already:
+
+- Probes alias candidates when the canonical key has no data.
+- Treats `true`, `"true"`, `"yes"`, `"y"`, `"1"`, `"checked"`, `"on"` as truthy.
+- Treats `false`, `"false"`, `"no"`, `"n"`, `"0"`, `"unchecked"`, `"off"`, `""`, `null` as falsy.
+- Handles native booleans and numbers.
+
+So no other logic needs to change.
+
+## Confirmed corrected Handlebars (no template edit needed)
+
+The current template is already correct and will work once the alias is in place:
 
 ```handlebars
-{{#if origination_app.doc.is_broker_also_borrower_yes}}☐{{else}}☑{{/if}} A. Agent in arranging a loan on behalf of another
-{{#if origination_app.doc.is_broker_also_borrower_yes}}☑{{else}}☐{{/if}} B. *Principal as a borrower on funds from which broker will directly or indirectly benefit...
+{{#if ln_p_subordinationProvision}}☑{{else}}☐{{/if}} Yes
+{{#if ln_p_subordinationProvision}}☐{{else}}☑{{/if}} No
 ```
 
-5. Validate both states
-   - Test with the CSR checkbox checked: A = `☐`, B = `☑`.
-   - Test with the CSR checkbox unchecked: A = `☑`, B = `☐`.
-   - Add targeted regression coverage for the exact `B. *Principal...` label so this does not regress.
-   - Deploy the updated `generate-document` backend function after the fix.
+## Verification
+
+1. Deploy the updated `generate-document` edge function (automatic on save).
+2. In CSR → Loan → Detail, **check** Subordination Provision → save → regenerate RE851A → expect `☑ Yes`, `☐ No`.
+3. **Uncheck** Subordination Provision → save → regenerate → expect `☐ Yes`, `☑ No`.
+4. Confirm no regression on other RE851A checkboxes (Balloon Payment, Broker Capacity A/B, payment frequency, amortization).
+
+## Out of scope (explicitly not touched)
+
+- UI components, `fieldKeyMap.ts`, `legacyKeyMap.ts`
+- `field_dictionary`, `merge_tag_aliases`, any DB schema or rows
+- RE851A DOCX template or any other template
+- Document generation pipeline stages, label-safety passes, or unrelated checkbox logic
+- Permissions / RLS
