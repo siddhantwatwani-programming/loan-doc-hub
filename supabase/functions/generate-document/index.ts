@@ -1568,6 +1568,22 @@ async function generateSingleDocument(
       "B. Principal as a borrower": {
         fieldKey: "or_p_brkCapacityPrincipal",
       },
+      // RE851A live wording prefixes "Principal" with a literal asterisk
+      // ("B. *Principal as a borrower..."). Without these label variants
+      // the broker-capacity B checkbox falls back to its static unchecked
+      // glyph even when the CSR "IS BROKER ALSO A BORROWER?" box is true.
+      "B. *Principal as a borrower on funds from which broker will directly or indirectly benefit": {
+        fieldKey: "or_p_brkCapacityPrincipal",
+      },
+      "B. *Principal as a borrower on funds from which broker will benefit": {
+        fieldKey: "or_p_brkCapacityPrincipal",
+      },
+      "B. *Principal as a borrower on funds": {
+        fieldKey: "or_p_brkCapacityPrincipal",
+      },
+      "B. *Principal as a borrower": {
+        fieldKey: "or_p_brkCapacityPrincipal",
+      },
     };
 
     const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
