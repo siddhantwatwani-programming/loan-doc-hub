@@ -1,71 +1,56 @@
-## Diagnosis
+## Goal
 
-For deal `DL-2026-0189`, the Balloon Payment value is already saved correctly in the backend.
+Fix the RE851A Balloon Payment YES/NO checkboxes so they reflect the CSR → Loan → Details → Balloon Payment value, without changing UI, APIs, schema, or unrelated template/generation logic.
 
-Confirmed facts:
-- The deal has a `loan_terms` row in `deal_section_values`
-- The saved balloon field exists under the actual backend key `ln_p_balloonPaymen`
-- Its saved value is `true`
-- RE851A generation completed successfully after that save
+## Findings
 
-So this is **not** a missing save issue and **not** a UI field-mapping issue.
+1. **Data layer is already correct.** In `supabase/functions/generate-document/index.ts` (lines 826–838), the engine reads the persisted value from `loan_terms.balloon_payment` / `ln_p_balloonPaymen` / `ln_p_balloonPayment`, normalizes it, and writes it back under all three keys as a boolean. So the payload contains the right value under both the truncated key (`ln_p_balloonPaymen`) and the full key (`ln_p_balloonPayment`).
 
-## What is still wrong
+2. **Tag aliasing is already in place.** `supabase/functions/_shared/tag-parser.ts` (lines 1098–1108) maps `ln_p_balloonPayment` ↔ `ln_p_balloonPaymen` ↔ `loan_terms.balloon_payment` so either spelling resolves.
 
-The active RE851A template/control-tag path is the problem.
+3. **Fragmented-tag consolidator already handles `#if`/`else`/`/if`** split across Word XML runs (lines 341–399).
 
-I checked the active RE851A template validation output and it still contains control tags for both:
-- `{{#if ln_p_balloonPayment}}`
-- `{{#if ln_p_balloonPaymen}}`
+4. **Real remaining cause** (per `.lovable/plan.md` and prior validation): the active RE851A `.docx` Balloon Payment table cell contains stale / mixed / fragmented Handlebars runs from earlier edits — Word has split the inline `{{#if}}…{{else}}…{{/if}}` blocks into XML runs that the consolidator cannot reliably stitch back together in that one cell. Other checkboxes in the same template work, so this is localized to that cell, not the engine.
 
-That means at least one of these is true:
-1. the active template still contains mixed old/new balloon conditions
-2. the Balloon Payment cell has duplicate logic left behind
-3. Word has fragmented the inline `#if / else / /if` control tags in a way the generator is not resolving reliably in that cell
+## Fix Plan (minimal, scoped)
 
-## Important conclusion
+### Step 1 — Harden the inline conditional consolidator for this exact pattern (engine-side, safe)
 
-Changing the field mapping again will not fix this.
+In `supabase/functions/_shared/tag-parser.ts`, add a focused pre-pass that runs **before** the existing fragmented-tag consolidator, targeting the exact RE851A inline checkbox pattern:
 
-Your saved source of truth is already correct:
-- persisted key: `ln_p_balloonPaymen`
-- persisted value for this deal: `true`
+`{{#if KEY}}☑{{else}}☐{{/if}}` and `{{#if KEY}}☐{{else}}☑{{/if}}`
 
-If the document still does not populate, the remaining failure is in the **template authoring / document parser handling of inline conditionals**, not in the saved data.
+The pre-pass will:
+- Match `{{` … `#if` … `KEY` … `}}` … `☑|☐` … `{{` … `else` … `}}` … `☑|☐` … `{{` … `/if` … `}}` even when arbitrary `<w:…>` / `</w:…>` runs and whitespace are interleaved.
+- Re-emit a single clean `{{#if KEY}}GLYPH{{else}}GLYPH{{/if}}` triplet inside one run so the downstream Mustache evaluator sees an unambiguous block.
+- Only fire when both glyphs are checkbox glyphs (☑ / ☒ / ☐) to avoid touching unrelated conditionals.
 
-## Most likely root cause now
+This is generic (keyed on the checkbox glyphs, not on `balloonPayment`), so it also self-heals any other RE851A YES/NO cell that Word has fragmented. No behavior change for already-clean templates.
 
-The RE851A Balloon Payment row uses inline Handlebars control blocks inside a Word table cell. That is more fragile than normal merge tags because Word often splits these tags across XML runs.
+### Step 2 — Add a defensive alias-resolution check in the conditional evaluator
 
-The validator can see the control tags, but the generator may still fail to evaluate the full block reliably if the cell contains mixed or fragmented versions. In that case the symbols do not toggle correctly even though the boolean data exists.
+In `tag-parser.ts`, in the `#if` evaluation path, when the looked-up key is `ln_p_balloonPayment` or `ln_p_balloonPaymen` and resolves to `undefined`, fall back to the alias list returned by `getKeyAliases` (already defined at lines 1098–1108) and coerce common truthy strings (`"true"`, `"1"`, `"yes"`, `"on"`, `"checked"`) to `true`. Scope: only this key pair, to honor the minimal-change policy.
 
-## Minimal fix plan
+### Step 3 — Verify with the existing deal
 
-1. Clean the Balloon Payment cell so it contains only one key version
-   - use only `ln_p_balloonPaymen` in that row if you want to match the persisted backend key directly
-   - remove any remaining `ln_p_balloonPayment` occurrence from the same row/cell
+Use `supabase--edge_function_logs` against `generate-document` for `DL-2026-0189` to confirm:
+- The derived log line `[generate-document] Derived ln_p_balloonPayment from "true": true` is emitted.
+- No "Consolidated fragmented" warnings remain for the Balloon row, or, if they do, the new pre-pass log line fires.
 
-2. Re-author the cell fresh in Word
-   - delete the entire Balloon Payment YES/NO content in that cell
-   - retype it as fresh plain text so no hidden fragmented runs remain
-   - keep only the checkbox logic, no layout changes
+### What this plan does NOT touch
 
-3. If it still fails after the cell is clean
-   - add a very narrow document-engine fix in `supabase/functions/_shared/tag-parser.ts`
-   - make conditional evaluation for RE851A Balloon Payment tolerate both aliases and fragmented inline `#if/else` blocks
-   - keep the change scoped only to this checkbox logic to avoid regressions
+- No UI changes (LoanTermsDetailsForm, modals, layouts).
+- No DB schema, no migrations, no API contracts.
+- No changes to `legacyKeyMap.ts`, `fieldKeyMap.ts`, or any other field's mapping.
+- No changes to other RE851A rows or other templates.
+- No edits to the `.docx` template itself in this step (engine-side fix first; if it still fails we can re-author just that cell as a follow-up).
 
-## Technical details
+## Files to be changed
 
-Evidence gathered:
-- Saved backend field present: `ln_p_balloonPaymen = true`
-- Field dictionary contains the backend boolean key `ln_p_balloonPaymen`
-- Active RE851A template validation still reports balloon control tags, including both spelling variants
-- Therefore the generator is reaching the template, but the conditional rendering path is still the weak point
+- `supabase/functions/_shared/tag-parser.ts` — add the checkbox-conditional pre-pass and the alias fallback for the balloon key pair.
 
-## Expected outcome after implementation
+## Expected outcome
 
-- No changes to UI, APIs, database schema, or unrelated mappings
-- Balloon Payment checked -> `YES` checked, `NO` unchecked
-- Balloon Payment unchecked -> `NO` checked, `YES` unchecked
-- No RE851A layout changes
+- Balloon Payment checked in CSR → Loan → Details → RE851A renders ☑ YES / ☐ NO.
+- Balloon Payment unchecked → ☐ YES / ☑ NO.
+- All other checkboxes and conditionals unchanged.

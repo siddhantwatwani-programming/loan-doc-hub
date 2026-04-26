@@ -338,6 +338,47 @@ export function normalizeWordXml(xmlContent: string): string {
       return match;
     });
 
+    // Pre-pass: consolidate fragmented inline checkbox conditionals of the form
+    //   {{#if KEY}}☑{{else}}☐{{/if}}  (or any combination of ☑ / ☒ / ☐)
+    // Word frequently splits the inline #if/else//if blocks across multiple
+    // <w:r>/<w:t> runs in a single table cell (notably the RE851A YES/NO rows
+    // such as Balloon Payment), which can prevent the downstream Mustache
+    // evaluator from seeing a clean block. We rewrite the entire triplet into
+    // a single clean expression. Scoped strictly to checkbox-glyph payloads so
+    // it never touches unrelated conditionals.
+    const CHECKBOX_GLYPHS = "\u2610\u2611\u2612"; // ☐ ☑ ☒
+    const checkboxIfElsePattern = new RegExp(
+      // {{ ... #if ... KEY ... }}
+      "\\{\\{(?:<[^>]*>|\\s)*?#if(?:<[^>]*>|\\s)+([A-Za-z0-9_.]+)(?:<[^>]*>|\\s)*?\\}\\}" +
+      // arbitrary XML runs, then a single checkbox glyph (possibly wrapped)
+      "([\\s\\S]*?)([" + CHECKBOX_GLYPHS + "])([\\s\\S]*?)" +
+      // {{ ... else ... }}
+      "\\{\\{(?:<[^>]*>|\\s)*?else(?:<[^>]*>|\\s)*?\\}\\}" +
+      // arbitrary XML runs, then second checkbox glyph
+      "([\\s\\S]*?)([" + CHECKBOX_GLYPHS + "])([\\s\\S]*?)" +
+      // {{ ... /if ... }}
+      "\\{\\{(?:<[^>]*>|\\s)*?\\/(?:<[^>]*>|\\s)*?if(?:<[^>]*>|\\s)*?\\}\\}",
+      "g"
+    );
+    p = p.replace(
+      checkboxIfElsePattern,
+      (match, fieldName, _midA, glyphTrue, _midB, _midC, glyphFalse, _midD) => {
+        // Safety guards: never cross paragraph boundaries, and never swallow
+        // another merge tag or control tag that lives between the glyphs.
+        if (/<\/w:p>|<w:p[\s>\/]/.test(match)) return match;
+        const inner = match;
+        // If there is any other {{...}} between #if and /if besides our own
+        // {{else}} marker, bail out — we cannot safely rewrite it.
+        const innerNoTags = inner.replace(/<[^>]*>/g, "");
+        const tagCount = (innerNoTags.match(/\{\{[^}]*\}\}/g) || []).length;
+        if (tagCount !== 3) return match;
+        debugLog(
+          `[tag-parser] Consolidated fragmented checkbox conditional for ${fieldName}`
+        );
+        return `{{#if ${fieldName}}}${glyphTrue}{{else}}${glyphFalse}{{/if}}`;
+      }
+    );
+
     // Handle fragmented conditional block tags
     // Also tolerate control tags that Word has split into separate <w:t> runs,
     // e.g. "{{#if" + " ln_p_balloonPayment" + "}}".
