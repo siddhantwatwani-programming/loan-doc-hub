@@ -1225,11 +1225,15 @@ function isConditionTruthy(
   let canonicalKey = resolveFieldKeyWithMap(fieldKey, mergeTagMap, validFieldKeys);
   let resolved = getFieldData(canonicalKey, fieldValues);
 
-  if (!resolved?.data) {
+  // Always probe aliases — if any alias key actually has saved deal data,
+  // prefer it over a canonical key whose data slot is empty/missing.
+  // This fixes RE851A "IS BROKER ALSO A BORROWER?" where the canonical
+  // dictionary key exists but only the UI persistence key has the saved value.
+  if (!resolved?.data || resolved.data.rawValue === null || resolved.data.rawValue === "") {
     for (const aliasKey of aliasCandidates) {
       const aliasCanonicalKey = resolveFieldKeyWithMap(aliasKey, mergeTagMap, validFieldKeys);
       const aliasResolved = getFieldData(aliasCanonicalKey, fieldValues);
-      if (aliasResolved?.data) {
+      if (aliasResolved?.data && aliasResolved.data.rawValue !== null && aliasResolved.data.rawValue !== "") {
         canonicalKey = aliasCanonicalKey;
         resolved = aliasResolved;
         debugLog(`[tag-parser] Conditional alias fallback: ${fieldKey} -> ${aliasCanonicalKey}`);
@@ -1242,7 +1246,11 @@ function isConditionTruthy(
     const raw = resolved.data.rawValue;
     if (raw === null || raw === "") return false;
     if (typeof raw === "string") {
-      return !["false", "0", "no", "n"].includes(raw.toLowerCase());
+      const v = raw.trim().toLowerCase();
+      if (["true", "yes", "y", "1", "checked", "on"].includes(v)) return true;
+      if (["false", "no", "n", "0", "unchecked", "off", ""].includes(v)) return false;
+      // Unknown non-empty string — treat as truthy (legacy behavior).
+      return true;
     }
     if (typeof raw === "number") return raw !== 0;
     return Boolean(raw);
