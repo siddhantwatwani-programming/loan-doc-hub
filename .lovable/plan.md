@@ -1,56 +1,69 @@
 ## Goal
 
-Fix the RE851A Balloon Payment YES/NO checkboxes so they reflect the CSR → Loan → Details → Balloon Payment value, without changing UI, APIs, schema, or unrelated template/generation logic.
+Fix the RE851A "IS BROKER ALSO A BORROWER?" A/B checkboxes so they render correctly based on the CSR → Other Origination → Application checkbox, without changing UI, APIs, schema, document templates, or unrelated generation logic.
 
 ## Findings
 
-1. **Data layer is already correct.** In `supabase/functions/generate-document/index.ts` (lines 826–838), the engine reads the persisted value from `loan_terms.balloon_payment` / `ln_p_balloonPaymen` / `ln_p_balloonPayment`, normalizes it, and writes it back under all three keys as a boolean. So the payload contains the right value under both the truncated key (`ln_p_balloonPaymen`) and the full key (`ln_p_balloonPayment`).
+1. **UI persistence is correct.** `OriginationApplicationForm.tsx` writes the "IS BROKER ALSO A BORROWER?" checkbox to `origination_app.doc.is_broker_also_borrower_yes` as a boolean.
 
-2. **Tag aliasing is already in place.** `supabase/functions/_shared/tag-parser.ts` (lines 1098–1108) maps `ln_p_balloonPayment` ↔ `ln_p_balloonPaymen` ↔ `loan_terms.balloon_payment` so either spelling resolves.
+2. **Data-layer derivation is correct.** `supabase/functions/generate-document/index.ts` (lines 840–861) reads that key (plus legacy aliases `or_p_isBrokerAlsoBorrower_yes`, `or_p_isBrkBorrower`, `origination.is_broker_also_a_borrower`), normalizes to boolean, and republishes:
+   - `or_p_isBrkBorrower` = `"true"` / `"false"` (string-boolean)
+   - `or_p_brkCapacityAgent`, `or_p_brkCapacityPrincipal` (string-boolean)
+   - `or_p_brkCapacityAgentGlyph`, `or_p_brkCapacityPrincipalGlyph` (☐/☑)
+   
+   Confirmed in edge logs: `Derived broker capacity checkboxes from "true": agent=false, principal=true, isBrkBorrower=true`.
 
-3. **Fragmented-tag consolidator already handles `#if`/`else`/`/if`** split across Word XML runs (lines 341–399).
+3. **`#if` evaluator handles string-booleans correctly.** `isConditionTruthy` in `tag-parser.ts` (line 1181) treats `"false"`, `"0"`, `"no"`, `"n"` as falsy — so the string `"false"` will NOT trigger the truthy branch. The current template logic is logically right:
+   ```
+   {{#if or_p_isBrkBorrower}}☐{{else}}☑{{/if}} A. Agent ...
+   {{#if or_p_isBrkBorrower}}☑{{else}}☐{{/if}} B. Principal ...
+   ```
 
-4. **Real remaining cause** (per `.lovable/plan.md` and prior validation): the active RE851A `.docx` Balloon Payment table cell contains stale / mixed / fragmented Handlebars runs from earlier edits — Word has split the inline `{{#if}}…{{else}}…{{/if}}` blocks into XML runs that the consolidator cannot reliably stitch back together in that one cell. Other checkboxes in the same template work, so this is localized to that cell, not the engine.
+4. **Real cause: same XML-fragmentation issue as Balloon Payment.** Word has split the inline `{{#if}}…{{else}}…{{/if}}` runs in the A and B cells across multiple `<w:r>`/`<w:t>` elements, so the downstream Mustache evaluator sees broken blocks.
 
-## Fix Plan (minimal, scoped)
+5. **The existing checkbox-glyph-aware consolidator (lines 341–380, added for the Balloon fix) is generic** — it keys on `☐/☑/☒` glyphs, not on a specific field name, so it should already heal these A/B rows. But it has two guards that may bail out on this specific RE851A cell:
+   - **Guard 1 (line 374): `tagCount !== 3` bail-out.** Each A/B row contains *additional* merge tags inline (e.g., `{{br_p_fullName}}` next to the glyph in the same paragraph) — this can push the tag count above 3 and cause the consolidator to bail out, leaving the fragmentation unresolved.
+   - **Guard 2 (line 368): paragraph-boundary bail-out.** Holds; A/B fit inside a single cell paragraph.
 
-### Step 1 — Harden the inline conditional consolidator for this exact pattern (engine-side, safe)
+## Fix Plan (engine-side, scoped, minimal)
 
-In `supabase/functions/_shared/tag-parser.ts`, add a focused pre-pass that runs **before** the existing fragmented-tag consolidator, targeting the exact RE851A inline checkbox pattern:
+### Step 1 — Tighten the consolidator's "extra tags" guard so unrelated merge tags inside the same cell don't disable consolidation
 
-`{{#if KEY}}☑{{else}}☐{{/if}}` and `{{#if KEY}}☐{{else}}☑{{/if}}`
+In `supabase/functions/_shared/tag-parser.ts`, in the checkbox-glyph pre-pass (around lines 363–380), replace the strict `tagCount !== 3` bail-out with a more precise check:
 
-The pre-pass will:
-- Match `{{` … `#if` … `KEY` … `}}` … `☑|☐` … `{{` … `else` … `}}` … `☑|☐` … `{{` … `/if` … `}}` even when arbitrary `<w:…>` / `</w:…>` runs and whitespace are interleaved.
-- Re-emit a single clean `{{#if KEY}}GLYPH{{else}}GLYPH{{/if}}` triplet inside one run so the downstream Mustache evaluator sees an unambiguous block.
-- Only fire when both glyphs are checkbox glyphs (☑ / ☒ / ☐) to avoid touching unrelated conditionals.
+- Bail out **only** when an extra `{{#if … }}`, `{{#unless … }}`, `{{else}}`, `{{/if}}`, `{{/unless}}`, `{{#each … }}`, or `{{/each}}` **control tag** appears between the matched `#if` and `/if`.
+- Plain value merge tags like `{{br_p_fullName}}`, `{{or_p_brkCapacityAgentGlyph}}`, etc., must NOT cause a bail-out — they live outside the captured glyph branches and are preserved verbatim by the regex's backreferences.
 
-This is generic (keyed on the checkbox glyphs, not on `balloonPayment`), so it also self-heals any other RE851A YES/NO cell that Word has fragmented. No behavior change for already-clean templates.
+This keeps the fix engine-generic (no broker-specific code) and lets the consolidator heal both the Balloon Payment row AND the broker capacity A/B rows, plus any future RE851A YES/NO rows that share the same pattern.
 
-### Step 2 — Add a defensive alias-resolution check in the conditional evaluator
+### Step 2 — Add `or_p_isBrkBorrower` to the conditional-alias fallback list
 
-In `tag-parser.ts`, in the `#if` evaluation path, when the looked-up key is `ln_p_balloonPayment` or `ln_p_balloonPaymen` and resolves to `undefined`, fall back to the alias list returned by `getKeyAliases` (already defined at lines 1098–1108) and coerce common truthy strings (`"true"`, `"1"`, `"yes"`, `"on"`, `"checked"`) to `true`. Scope: only this key pair, to honor the minimal-change policy.
+In `tag-parser.ts`, in `getConditionalAliasCandidates` (lines 1135–1152), add a defensive entry so `{{#if or_p_isBrkBorrower}}` falls back to:
+- `or_p_brkCapacityPrincipal` (already published as boolean by the engine), and
+- `origination_app.doc.is_broker_also_borrower_yes` (the UI persistence key).
 
-### Step 3 — Verify with the existing deal
+Same shape as the existing balloon entries. This is belt-and-suspenders: if the consolidator ever fails for any reason, the conditional still resolves to the right value via the published siblings.
 
-Use `supabase--edge_function_logs` against `generate-document` for `DL-2026-0189` to confirm:
-- The derived log line `[generate-document] Derived ln_p_balloonPayment from "true": true` is emitted.
-- No "Consolidated fragmented" warnings remain for the Balloon row, or, if they do, the new pre-pass log line fires.
+### Step 3 — Verify with edge function logs
 
-### What this plan does NOT touch
+After deploy, regenerate RE851A on the current deal and confirm in `generate-document` logs:
+- `[generate-document] Derived broker capacity checkboxes from "..."`: principal=true/false matches the UI checkbox.
+- `[tag-parser] Consolidated fragmented checkbox conditional for or_p_isBrkBorrower` fires for both the A and B cells (or no fragmentation warning remains).
 
-- No UI changes (LoanTermsDetailsForm, modals, layouts).
+## What this plan does NOT touch
+
+- No UI changes (`OriginationApplicationForm.tsx`, modals, layouts).
 - No DB schema, no migrations, no API contracts.
-- No changes to `legacyKeyMap.ts`, `fieldKeyMap.ts`, or any other field's mapping.
-- No changes to other RE851A rows or other templates.
-- No edits to the `.docx` template itself in this step (engine-side fix first; if it still fails we can re-author just that cell as a follow-up).
+- No edits to the RE851A `.docx` template (engine-side fix only).
+- No changes to other RE851A rows, other templates, or other field mappings.
+- The Balloon Payment fix from the previous task remains intact and benefits from the same tightened guard.
 
 ## Files to be changed
 
-- `supabase/functions/_shared/tag-parser.ts` — add the checkbox-conditional pre-pass and the alias fallback for the balloon key pair.
+- `supabase/functions/_shared/tag-parser.ts` — tighten the checkbox-glyph consolidator guard (Step 1) and add the `or_p_isBrkBorrower` alias entry (Step 2).
 
 ## Expected outcome
 
-- Balloon Payment checked in CSR → Loan → Details → RE851A renders ☑ YES / ☐ NO.
-- Balloon Payment unchecked → ☐ YES / ☑ NO.
-- All other checkboxes and conditionals unchanged.
+- "IS BROKER ALSO A BORROWER?" checked in CSR → Other Origination → Application → RE851A renders **☐ A. Agent** and **☑ B. Principal**.
+- Unchecked → **☑ A. Agent** and **☐ B. Principal**.
+- All other checkboxes, conditionals, and merge tags in RE851A and every other template remain unchanged.
