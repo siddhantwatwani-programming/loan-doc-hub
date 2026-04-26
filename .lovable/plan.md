@@ -1,60 +1,58 @@
-## Goal
+Plan to fix the RE851A “IS BROKER ALSO A BORROWER?” checkbox issue with minimal scope only.
 
-Fix the RE851A "IS BROKER ALSO A BORROWER?" Option B checkbox so it renders ☑ when the CSR checkbox is checked. Option A already renders correctly in both states; only the **checked → B** path fails.
+Findings so far:
+- The current deal shown in the URL stores the checked CSR value under:
+  - `origination_app.doc.is_broker_also_borrower_yes`
+  - stored value: `value_text: "true"`
+- The related “No” field is also present and stored as `value_text: "false"`.
+- The document generator already derives:
+  - `or_p_isBrkBorrower = "true"` when the CSR checkbox is checked
+  - `or_p_brkCapacityPrincipal = "true"`
+  - `or_p_brkCapacityAgent = "false"`
+- Recent generation logs confirm the payload currently reaches the backend as checked:
+  - `Derived broker capacity checkboxes from "true": agent=false, principal=true, isBrkBorrower=true`
+- Therefore the remaining failure is most likely in the RE851A DOCX rendering path for the checked branch, not in CSR storage.
 
-## Root cause analysis
+Implementation scope:
+1. Add a very narrow truthy-value helper for this broker-borrower condition path only.
+   - Treat these checked values as true: `true`, `"true"`, `"Yes"`, `"Y"`, `1`, plus existing accepted values such as `"checked"` and `"on"`.
+   - Treat unchecked/empty values as false.
 
-Verified in the engine logs and source:
+2. Apply the helper only where RE851A broker-capacity booleans are derived in `generate-document`.
+   - Keep existing field names and aliases intact.
+   - Add `"y"` support to the checked value detection.
+   - Continue publishing the same derived keys:
+     - `or_p_isBrkBorrower`
+     - `or_p_brkCapacityPrincipal`
+     - `or_p_brkCapacityAgent`
+     - glyph aliases for A/B fallback.
 
-- The CSR field is correctly persisted at `origination_app.doc.is_broker_also_borrower_yes`.
-- The generate-document Edge Function correctly derives:
-  - `or_p_isBrkBorrower = "true"` (string, treated as truthy)
-  - `or_p_brkCapacityPrincipal = "true"`, `or_p_brkCapacityAgent = "false"`
-  - Glyph aliases `or_p_brkCapacityAgentGlyph = "☐"`, `or_p_brkCapacityPrincipalGlyph = "☑"`
-- `isConditionTruthy` in `tag-parser.ts` correctly evaluates `"true"`, `"yes"`, `"y"`, `"1"` as truthy.
+3. Apply the same `"y"` handling to the conditional evaluator fallback for `or_p_isBrkBorrower` only if needed.
+   - This ensures the Handlebars condition remains correct even if a future template reads the raw field directly instead of the derived normalized boolean.
+   - No broad checkbox behavior changes unless strictly necessary.
 
-So the **data side is fine**. The asymmetry (A always works, B fails when checked) points to a **template XML fragmentation** issue scoped to the B line:
+4. Verify the template condition remains the expected simple Handlebars condition:
+   ```handlebars
+   {{#if or_p_isBrkBorrower}}☐{{else}}☑{{/if}} A. Agent in arranging a loan on behalf of another
 
-- Option A condition: `{{#if or_p_isBrkBorrower}}☐{{else}}☑{{/if}}`
-- Option B condition: `{{#if or_p_isBrkBorrower}}☑{{else}}☐{{/if}}`
+   {{#if or_p_isBrkBorrower}}☑{{else}}☐{{/if}} B. Principal as a borrower on funds from which broker will directly or indirectly benefit...
+   ```
 
-When the field is **checked (true)**, the engine must emit the **`#if` branch** (☑) for B. If the B-line `#if`/`else`/`/if` triplet is split across `<w:r>` runs and the inline checkbox-conditional consolidator (`tag-parser.ts` line 341–385) bails out — for example because the B paragraph captures a 4th control tag from a sibling row, or because the `#if`/`/if` braces are split mid-token in a way the existing fragment regex doesn't catch — the downstream Mustache evaluator never sees a valid block. The orphan-strip at line 1335 then removes the leftover `{{#if ...}}`, and the `☑` glyph that lived inside the `#if` branch gets dropped along with the surrounding broken markup, leaving B unchecked.
+5. Test both cases without touching UI, schema, permissions, or the template file unless required:
+   - Checked value examples: `true`, `"true"`, `"Yes"`, `"Y"`, `1` → A unchecked, B checked.
+   - Unchecked values: `false`, `"false"`, `"No"`, `"N"`, `0`, empty → A checked, B unchecked.
 
-When the field is **unchecked (false)**, B's correct output is `☐`, which happens to also be present as the static fallback / `else` glyph in the rendered fragments, so the failure is invisible for the unchecked case.
+Technical details:
+- No database schema changes.
+- No UI/layout/component changes.
+- No document template replacement unless the code-level fix proves insufficient.
+- Target files, if implementation is approved:
+  - `supabase/functions/generate-document/index.ts`
+  - possibly `supabase/functions/_shared/tag-parser.ts` for the narrow conditional truthiness fallback.
 
-## Fix scope
-
-Engine-side only, in `supabase/functions/_shared/tag-parser.ts`. Strictly scoped to the inline checkbox-glyph conditional consolidator so no other template logic is affected.
-
-### Targeted adjustments
-
-1. **Glyph-only branch enforcement, not control-tag count.** Replace the current "exactly 3 control tags" guard with a stricter check that the captured `#if` and `else` branches each contain **exactly one checkbox glyph and no other Handlebars control tags**, ignoring plain merge tags. This lets the consolidator succeed on the B line even when an adjacent paragraph fragment leaks a 4th control tag into the regex's greedy capture.
-
-2. **Pre-normalize split braces around `#if` / `else` / `/if` for the B-line shape.** Add a small pre-pass that joins `{{` + `#if` + ` KEY` + `}}` (and the matching `{{else}}` / `{{/if}}`) when they are separated only by `<w:r><w:t>...</w:t></w:r>` wrappers, before the inline checkbox consolidator runs. The existing `ifFragmented` regex (line 390) handles some shapes; we extend it to cover the specific RE851A B-line fragmentation.
-
-3. **Defensive fallback rewrite.** If after consolidation the B-line still contains a `{{#if or_p_isBrkBorrower}}` followed by a checkbox glyph followed by `{{else}}` followed by a checkbox glyph followed by `{{/if}}` anywhere in the same paragraph (with arbitrary inline XML), rewrite it into the canonical clean form `{{#if or_p_isBrkBorrower}}☑{{else}}☐{{/if}}` so the Mustache evaluator can resolve it.
-
-4. **Diagnostic log.** Add a one-line debug log when the B-line consolidation fires, so future regressions are visible in `generate-document` logs.
-
-### What is NOT changed
-
-- No edits to the `.docx` RE851A template file.
-- No edits to the database schema, field dictionary, UI components, or APIs.
-- No changes to `isConditionTruthy` (already handles all required truthy variants).
-- No changes to the engine's broker-capacity derivation in `generate-document/index.ts` (already correct).
-- No changes to Option A logic, other checkbox conditionals, or unrelated `#if` blocks.
-
-## Verification
-
-After the change, regenerate RE851A for the current deal and confirm:
-
-- CSR "IS BROKER ALSO A BORROWER?" **checked** → A = ☐, B = ☑
-- CSR "IS BROKER ALSO A BORROWER?" **unchecked** → A = ☑, B = ☐
-- Edge logs show: `Consolidated fragmented checkbox conditional for or_p_isBrkBorrower` for both A and B lines.
-- Other RE851A checkbox rows (Balloon Payment, Amortization, Payment Frequency, etc.) remain unchanged.
-
-## Files touched
-
-- `supabase/functions/_shared/tag-parser.ts` (inline checkbox-conditional consolidator only)
-
-No migrations, no template edits, no UI changes.
+Deliverable after implementation:
+- Confirm the actual payload includes `origination_app.doc.is_broker_also_borrower_yes = "true"` for the checked CSR field.
+- Provide the corrected Handlebars condition above.
+- Confirm generated RE851A output resolves:
+  - checked CSR checkbox → Option A `☐`, Option B `☑`
+  - unchecked CSR checkbox → Option A `☑`, Option B `☐`
