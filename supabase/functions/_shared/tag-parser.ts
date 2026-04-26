@@ -2214,6 +2214,7 @@ export function replaceMergeTags(
   }
 
 
+  // RE851A Part 2 — broker-capacity A/B safety pass.
   // Strictly scoped to the literal "A. Agent in arranging..." and
   // "B. [optional *]Principal as a borrower..." labels. After all merge-tag,
   // conditional, label, and bracket replacements have run, force the glyph
