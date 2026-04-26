@@ -363,15 +363,20 @@ export function normalizeWordXml(xmlContent: string): string {
     p = p.replace(
       checkboxIfElsePattern,
       (match, fieldName, _midA, glyphTrue, _midB, _midC, glyphFalse, _midD) => {
-        // Safety guards: never cross paragraph boundaries, and never swallow
-        // another merge tag or control tag that lives between the glyphs.
+        // Safety guards: never cross paragraph boundaries.
         if (/<\/w:p>|<w:p[\s>\/]/.test(match)) return match;
-        const inner = match;
-        // If there is any other {{...}} between #if and /if besides our own
-        // {{else}} marker, bail out — we cannot safely rewrite it.
-        const innerNoTags = inner.replace(/<[^>]*>/g, "");
-        const tagCount = (innerNoTags.match(/\{\{[^}]*\}\}/g) || []).length;
-        if (tagCount !== 3) return match;
+        // Bail out only if an EXTRA control tag (#if/#unless/#each/else/closing)
+        // appears inside the captured region besides our own #if / else / /if.
+        // Plain value merge tags like {{br_p_fullName}} are fine — they live
+        // outside the captured glyph branches and are preserved verbatim.
+        const innerNoTags = match.replace(/<[^>]*>/g, "");
+        const allTags = innerNoTags.match(/\{\{[^}]*\}\}/g) || [];
+        const controlTags = allTags.filter((t) =>
+          /\{\{\s*(?:#if\b|#unless\b|#each\b|else\b|\/if\b|\/unless\b|\/each\b)/.test(t)
+        );
+        // We expect exactly 3 control tags: our own #if, else, /if. Anything
+        // more means a nested or sibling conditional — too risky to rewrite.
+        if (controlTags.length !== 3) return match;
         debugLog(
           `[tag-parser] Consolidated fragmented checkbox conditional for ${fieldName}`
         );
