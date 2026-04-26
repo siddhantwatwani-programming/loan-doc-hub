@@ -1531,7 +1531,7 @@ export function processSdtCheckboxes(
     if (resolved?.data) {
       const raw = resolved.data.rawValue;
       if (typeof raw === "string") {
-        isChecked = ["true", "1", "yes"].includes(raw.toLowerCase());
+        isChecked = ["true", "1", "yes", "y", "checked", "on"].includes(raw.toLowerCase().trim());
       } else if (typeof raw === "number") {
         isChecked = raw !== 0;
       } else {
