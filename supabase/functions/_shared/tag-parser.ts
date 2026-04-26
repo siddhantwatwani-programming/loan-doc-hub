@@ -2107,6 +2107,88 @@ export function replaceMergeTags(
     }
   }
 
+  // RE851A Part 2 — broker-capacity A/B safety pass.
+  // Strictly scoped to the literal "A. Agent in arranging..." and
+  // "B. [optional *]Principal as a borrower..." labels. After all merge-tag,
+  // conditional, label, and bracket replacements have run, force the glyph
+  // immediately preceding each label to the correct state derived from
+  // or_p_isBrkBorrower. This prevents a leftover static unchecked glyph
+  // (or a stale conditional remnant) from masking the user's CSR selection.
+  // Surrounding text, formatting, and XML structure are preserved unchanged.
+  {
+    const brkData =
+      getFieldData("or_p_isBrkBorrower", fieldValues)?.data
+      || getFieldData("or_p_brkCapacityPrincipal", fieldValues)?.data
+      || getFieldData("origination_app.doc.is_broker_also_borrower_yes", fieldValues)?.data
+      || getFieldData("or_p_isBrokerAlsoBorrower_yes", fieldValues)?.data;
+    let isBrkBorrower: boolean | null = null;
+    if (brkData) {
+      const raw = brkData.rawValue;
+      if (raw === null || raw === "") {
+        isBrkBorrower = null;
+      } else if (typeof raw === "string") {
+        const v = raw.trim().toLowerCase();
+        if (["true", "yes", "y", "1", "checked", "on"].includes(v)) isBrkBorrower = true;
+        else if (["false", "no", "n", "0", "unchecked", "off"].includes(v)) isBrkBorrower = false;
+      } else if (typeof raw === "number") {
+        isBrkBorrower = raw !== 0;
+      } else {
+        isBrkBorrower = Boolean(raw);
+      }
+    }
+
+    if (isBrkBorrower !== null) {
+      const aGlyph = isBrkBorrower ? "☐" : "☑"; // A. Agent
+      const bGlyph = isBrkBorrower ? "☑" : "☐"; // B. Principal
+      const labelA = "A. Agent in arranging a loan";
+      // Allow optional "*" before "Principal" to match the live RE851A wording.
+      const labelBCore = "Principal as a borrower";
+
+      const buildXmlFlex = (label: string) =>
+        label.split(/\s+/).filter(Boolean)
+          .map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+          .join("(?:\\s|<[^>]+>)*");
+
+      const aPattern = buildXmlFlex(labelA);
+      const bPattern = `B\\.(?:\\s|<[^>]+>)*\\*?(?:\\s|<[^>]+>)*${buildXmlFlex(labelBCore)}`;
+
+      const forceGlyphBeforeLabel = (xml: string, labelPattern: string, glyph: string): string => {
+        // 1) Glyph inside a <w:t> immediately followed (across XML/whitespace)
+        //    by the literal label. Replace ONLY the glyph character.
+        const glyphInWt = new RegExp(
+          `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)((?:\\s|<[^>]+>)*?${labelPattern})(?![A-Za-z])`,
+          "gi",
+        );
+        let next = xml.replace(glyphInWt, (_m, wtOpen, pre, _g, wtTail, labelPart) =>
+          `${wtOpen}${pre}${glyph}${wtTail}${labelPart}`,
+        );
+
+        // 2) Plain-text glyph (no <w:t> wrapper) directly before the label.
+        const glyphPlain = new RegExp(
+          `([☐☑☒])((?:\\s|<[^>]+>)*?)(${labelPattern})(?![A-Za-z])`,
+          "gi",
+        );
+        next = next.replace(glyphPlain, (_m, _g, mid, labelText) =>
+          `${glyph}${mid}${labelText}`,
+        );
+        return next;
+      };
+
+      result = forceGlyphBeforeLabel(result, aPattern, aGlyph);
+      result = forceGlyphBeforeLabel(result, bPattern, bGlyph);
+
+      // Local paragraph-scoped dedup: collapse two adjacent glyphs separated
+      // only by intra-paragraph XML/whitespace into the FIRST one (which we
+      // just forced to the correct state). This handles templates that have
+      // both a static glyph AND a conditionally-rendered glyph on the same
+      // A/B line.
+      result = result.replace(
+        /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)(A\.(?:\s|<[^>]+>)*Agent|B\.(?:\s|<[^>]+>)*\*?(?:\s|<[^>]+>)*Principal)/g,
+        (_m, g1, mid1, _g2, mid2, labelHead) => `${g1}${mid1}${mid2}${labelHead}`,
+      );
+    }
+  }
+
   // Final pass: convert any remaining checkbox glyphs (☐/☑/☒) in <w:r>
   // elements into native Word SDT checkboxes so they are editable/clickable.
   result = convertGlyphsToSdtCheckboxes(result);
