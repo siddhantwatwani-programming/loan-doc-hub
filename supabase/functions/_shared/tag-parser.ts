@@ -864,9 +864,12 @@ function replaceStaticCheckboxLabel(
     });
     // Remove duplicate adjacent checkbox glyphs that arise when a merge tag
     // already resolved to ☑/☐ AND the template had a static glyph.
-    // Pattern: two checkbox glyphs separated only by XML tags / whitespace.
+    // Pattern: two checkbox glyphs separated only by XML tags / whitespace,
+    // SCOPED to the same paragraph (`</w:p>` and `<w:p>` are excluded from
+    // the gap) so we never collapse two legitimately distinct paragraph-level
+    // glyphs into one (e.g., the RE851A A./B. broker-capacity rows).
     result = result.replace(
-      /([☐☑☒])((?:\s|<[^>]*>)*?)([☐☑☒])((?:\s|<[^>]*>)*?)/g,
+      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)/g,
       (_m, g1, mid, _g2, trail) => `${g1}${mid}${trail}`
     );
     return { content: result, replaced: true };
