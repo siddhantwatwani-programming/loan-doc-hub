@@ -903,9 +903,10 @@ function replaceStaticCheckboxLabel(
   let result = content.replace(plainPattern, (_match, _glyph, spacing, labelText) => {
     return `${checkboxValue}${spacing}${labelText}`;
   });
-  // Same dedup for plain-text path
+  // Same dedup for plain-text path — paragraph-scoped to avoid collapsing
+  // glyphs that legitimately belong to different paragraphs.
   result = result.replace(
-    /([☐☑☒])((?:\s|<[^>]*>)*?)([☐☑☒])((?:\s|<[^>]*>)*?)/g,
+    /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)/g,
     (_m, g1, mid, _g2, trail) => `${g1}${mid}${trail}`
   );
   return { content: result, replaced: true };
