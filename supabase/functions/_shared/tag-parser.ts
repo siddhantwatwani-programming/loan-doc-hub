@@ -2117,6 +2117,103 @@ export function replaceMergeTags(
     }
   }
 
+  // RE851A — Subordination Provision Yes/No safety pass.
+  // Strictly scoped to the literal row beginning with
+  // "There are subordination provisions". Within that local XML window only,
+  // force the glyph immediately preceding "Yes" and "No" to the correct state
+  // derived from ln_p_subordinationProvision (CSR persists this under
+  // loan_terms.subordination_provision; both keys are normalized upstream).
+  // No other Yes/No checkbox pairs in RE851A are touched.
+  {
+    const subData =
+      getFieldData("ln_p_subordinationProvision", fieldValues)?.data
+      || getFieldData("loan_terms.subordination_provision", fieldValues)?.data;
+    let isSubordination: boolean | null = null;
+    if (subData) {
+      const raw = subData.rawValue;
+      if (raw === null || raw === "") {
+        isSubordination = null;
+      } else if (typeof raw === "string") {
+        const v = raw.trim().toLowerCase();
+        if (["true", "yes", "y", "1", "checked", "on"].includes(v)) isSubordination = true;
+        else if (["false", "no", "n", "0", "unchecked", "off"].includes(v)) isSubordination = false;
+      } else if (typeof raw === "number") {
+        isSubordination = raw !== 0;
+      } else {
+        isSubordination = Boolean(raw);
+      }
+    }
+
+    if (isSubordination !== null) {
+      const yesGlyph = isSubordination ? "☑" : "☐";
+      const noGlyph = isSubordination ? "☐" : "☑";
+
+      // Locate the row anchor "There are subordination provisions" — tolerate
+      // intervening XML/whitespace between words. Operate only on a local
+      // window starting at the anchor and extending up to ~3000 chars (enough
+      // to cover the Yes / No labels in the same row, far less than a page).
+      const anchorParts = ["There", "are", "subordination", "provisions"];
+      const anchorPattern = anchorParts
+        .map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+        .join("(?:\\s|<[^>]+>)*");
+      const anchorRe = new RegExp(anchorPattern, "gi");
+
+      const forceGlyphBeforeWord = (
+        windowXml: string,
+        word: "Yes" | "No",
+        glyph: string,
+      ): string => {
+        const wordRe = `\\b${word}\\b`;
+        // 1) Glyph inside <w:t> followed by the word (across XML/whitespace).
+        const glyphInWt = new RegExp(
+          `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)((?:\\s|<[^>]+>)*?${wordRe})`,
+          "g",
+        );
+        let next = windowXml.replace(
+          glyphInWt,
+          (_m, wtOpen, pre, _g, wtTail, labelPart) =>
+            `${wtOpen}${pre}${glyph}${wtTail}${labelPart}`,
+        );
+
+        // 2) Plain-text glyph (no <w:t> wrapper) directly before the word.
+        const glyphPlain = new RegExp(
+          `([☐☑☒])((?:\\s|<[^>]+>)*?)(${wordRe})`,
+          "g",
+        );
+        next = next.replace(
+          glyphPlain,
+          (_m, _g, mid, labelText) => `${glyph}${mid}${labelText}`,
+        );
+        return next;
+      };
+
+      const WINDOW_SIZE = 3000;
+      let scanFrom = 0;
+      let rebuilt = "";
+      let anchorMatch: RegExpExecArray | null;
+      let touched = false;
+      anchorRe.lastIndex = 0;
+      while ((anchorMatch = anchorRe.exec(result)) !== null) {
+        const winStart = anchorMatch.index;
+        const winEnd = Math.min(result.length, winStart + WINDOW_SIZE);
+        // Append untouched chunk before window
+        rebuilt += result.substring(scanFrom, winStart);
+        let windowXml = result.substring(winStart, winEnd);
+        windowXml = forceGlyphBeforeWord(windowXml, "Yes", yesGlyph);
+        windowXml = forceGlyphBeforeWord(windowXml, "No", noGlyph);
+        rebuilt += windowXml;
+        scanFrom = winEnd;
+        anchorRe.lastIndex = winEnd;
+        touched = true;
+      }
+      if (touched) {
+        rebuilt += result.substring(scanFrom);
+        result = rebuilt;
+      }
+    }
+  }
+
+
   // RE851A Part 2 — broker-capacity A/B safety pass.
   // Strictly scoped to the literal "A. Agent in arranging..." and
   // "B. [optional *]Principal as a borrower..." labels. After all merge-tag,

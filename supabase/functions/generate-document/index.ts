@@ -837,6 +837,20 @@ async function generateSingleDocument(
     fieldValues.set("loan_terms.balloon_payment", { rawValue: balloonTrue ? "true" : "false", dataType: "boolean" });
     debugLog(`[generate-document] Derived ln_p_balloonPayment from "${balloonRaw}": ${balloonTrue}`);
 
+    // Subordination Provision (RE851A Yes/No row) → boolean checkbox key.
+    // CSR persists under loan_terms.subordination_provision; template references
+    // {{ln_p_subordinationProvision}}. Republish normalized boolean under both
+    // names so the conditional always evaluates against the saved value.
+    const subordinationRaw = (
+      fieldValues.get("ln_p_subordinationProvision")?.rawValue ??
+      fieldValues.get("loan_terms.subordination_provision")?.rawValue ??
+      ""
+    ).toString().trim().toLowerCase();
+    const subordinationTrue = ["true", "yes", "y", "1", "checked", "on"].includes(subordinationRaw);
+    fieldValues.set("ln_p_subordinationProvision", { rawValue: subordinationTrue ? "true" : "false", dataType: "boolean" });
+    fieldValues.set("loan_terms.subordination_provision", { rawValue: subordinationTrue ? "true" : "false", dataType: "boolean" });
+    debugLog(`[generate-document] Derived ln_p_subordinationProvision from "${subordinationRaw}": ${subordinationTrue}`);
+
     // Broker Capacity in Transaction (RE851A Part 2) → boolean checkbox keys
     // Derived from "Is Broker Also a Borrower?" UI checkbox. The UI persists this
     // under origination_app.doc.is_broker_also_borrower_yes (legacy alias
