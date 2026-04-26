@@ -1153,6 +1153,18 @@ function getConditionalAliasCandidates(fieldKey: string): string[] {
     return [normalized, "ln_p_balloonPaymen", "ln_p_balloonPayment"];
   }
 
+  // "Is Broker Also a Borrower?" — RE851A Part 2 A/B capacity checkboxes.
+  // Falls back to the engine-published sibling boolean and the UI persistence key
+  // so the conditional resolves correctly even if the primary key is missing.
+  if (lower === "or_p_isbrkborrower") {
+    return [
+      normalized,
+      "or_p_brkCapacityPrincipal",
+      "or_p_isBrokerAlsoBorrower_yes",
+      "origination_app.doc.is_broker_also_borrower_yes",
+    ];
+  }
+
   return [normalized];
 }
 
