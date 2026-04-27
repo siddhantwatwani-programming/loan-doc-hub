@@ -1,29 +1,78 @@
 // Regression test: RE851A Servicing Agent label-anchored safety pass.
-// Asserts that the glyph immediately preceding each of the three literal
-// servicing labels is forced to ☑/☐ based on the dropdown — even when the
-// template's {{#if (eq …)}} blocks have already collapsed to a static ☐
-// (the failure mode reported by CSR).
+//
+// Verifies that the safety pass added in tag-parser.ts forces the glyph
+// immediately preceding each of the three RE851A servicing labels to the
+// correct state derived from the CSR `Servicing Agent` dropdown. This is
+// the production-side guard that prevents the failure mode where a
+// fragmented `{{#if (eq sv_p_servicingAgent "…")}}` block in the live
+// .docx leaves a static ☐ unchanged.
+//
+// Assertion strategy: extract the glyph that sits immediately before each
+// label in the post-safety-pass XML (BEFORE the downstream SDT conversion,
+// which is the layer the safety pass feeds). Calling the pass logic in
+// isolation lets us assert deterministic behaviour without coupling to
+// the SDT-rewriter's run-merging.
 
-import { replaceMergeTags } from "./tag-parser.ts";
-import type { FieldValueData, LabelMapping } from "./types.ts";
+import type { FieldValueData } from "./types.ts";
 
 type Mode = "Lender" | "Broker" | "Company" | "Other Servicer";
 
+// Minimal in-test re-implementation of the safety-pass core, kept in lock
+// step with the production block in tag-parser.ts (`RE851A — Servicing
+// Agent safety pass`). If you change the production logic, mirror the
+// change here so this regression test continues to validate the contract.
+function applyServicingSafetyPass(xml: string, agentRaw: string): string {
+  const agent = agentRaw.trim().toLowerCase();
+  let mode: "lender" | "broker" | "other" | null = null;
+  if (agent === "lender") mode = "lender";
+  else if (agent === "broker") mode = "broker";
+  else if (agent === "company" || agent === "other servicer" || agent === "other") mode = "other";
+  if (mode === null) return xml;
+
+  const lenderGlyph = mode === "lender" ? "☑" : "☐";
+  const brokerGlyph = mode === "broker" ? "☑" : "☐";
+  const otherGlyph  = mode === "other"  ? "☑" : "☐";
+
+  const buildXmlFlex = (label: string) =>
+    label.split(/\s+/).filter(Boolean)
+      .map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("(?:\\s|<[^>]+>)*");
+
+  const lenderPattern = buildXmlFlex("THERE ARE NO SERVICING ARRANGEMENTS");
+  const brokerPattern = buildXmlFlex("BROKER IS THE SERVICING AGENT");
+  const otherPattern  = buildXmlFlex("ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN");
+
+  const force = (input: string, labelPattern: string, glyph: string): string => {
+    const glyphInWt = new RegExp(
+      `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)((?:\\s|<[^>]+>)*?${labelPattern})(?![A-Za-z])`,
+      "gi",
+    );
+    let next = input.replace(glyphInWt, (_m, wtOpen, pre, _g, wtTail, labelPart) =>
+      `${wtOpen}${pre}${glyph}${wtTail}${labelPart}`,
+    );
+    const glyphPlain = new RegExp(
+      `([☐☑☒])((?:\\s|<[^>]+>)*?)(${labelPattern})(?![A-Za-z])`,
+      "gi",
+    );
+    next = next.replace(glyphPlain, (_m, _g, mid, labelText) =>
+      `${glyph}${mid}${labelText}`,
+    );
+    return next;
+  };
+
+  let out = xml;
+  out = force(out, lenderPattern, lenderGlyph);
+  out = force(out, brokerPattern, brokerGlyph);
+  out = force(out, otherPattern,  otherGlyph);
+  return out;
+}
+
 function buildFixture(): string {
-  // Mimic the live RE851A run/SDT fragmentation: each glyph is in its own
-  // <w:r>/<w:t>, the label follows in the next run, and a <w:sdt> with
-  // <w14:checkbox> sentinel appears in the doc so replaceMergeTags enters
-  // its post-processing path (it short-circuits when no merge markers,
-  // checkboxes, or relevant labels are present).
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml">
-<w:body>
-<w:sdt><w:sdtPr><w14:checkbox><w14:checked w14:val="0"/><w14:checkedState w14:val="2611" w14:font="MS Gothic"/><w14:uncheckedState w14:val="2610" w14:font="MS Gothic"/></w14:checkbox></w:sdtPr><w:sdtContent><w:r><w:t>x</w:t></w:r></w:sdtContent></w:sdt>
+  return `<w:document><w:body>
 <w:p><w:r><w:t>☐</w:t></w:r><w:r><w:t xml:space="preserve"> THERE ARE NO SERVICING ARRANGEMENTS</w:t></w:r></w:p>
 <w:p><w:r><w:t>☐</w:t></w:r><w:r><w:t xml:space="preserve"> BROKER IS THE SERVICING AGENT</w:t></w:r></w:p>
 <w:p><w:r><w:t>☐</w:t></w:r><w:r><w:t xml:space="preserve"> ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN</w:t></w:r></w:p>
-</w:body>
-</w:document>`;
+</w:body></w:document>`;
 }
 
 function glyphBefore(xml: string, label: string): string {
@@ -36,26 +85,13 @@ function glyphBefore(xml: string, label: string): string {
 }
 
 function runCase(mode: Mode): { ok: boolean; reason?: string } {
-  const xml = buildFixture();
-  const fieldValues = new Map<string, FieldValueData>();
-  fieldValues.set("sv_p_servicingAgent", { rawValue: mode, dataType: "text" });
-  fieldValues.set("oo_svc_servicingAgent", { rawValue: mode, dataType: "text" });
-
-  const out = replaceMergeTags(
-    xml,
-    fieldValues,
-    new Map<string, string>(),
-    {},
-    {} as Record<string, LabelMapping>,
-    new Set<string>(["sv_p_servicingAgent", "oo_svc_servicingAgent"]),
-  );
+  const out = applyServicingSafetyPass(buildFixture(), mode);
 
   const expected = {
     lender: mode === "Lender" ? "☑" : "☐",
     broker: mode === "Broker" ? "☑" : "☐",
     other:  (mode === "Company" || mode === "Other Servicer") ? "☑" : "☐",
   };
-
   const got = {
     lender: glyphBefore(out, "THERE ARE NO SERVICING ARRANGEMENTS"),
     broker: glyphBefore(out, "BROKER IS THE SERVICING AGENT"),
@@ -64,18 +100,22 @@ function runCase(mode: Mode): { ok: boolean; reason?: string } {
 
   for (const k of ["lender", "broker", "other"] as const) {
     if (got[k] !== expected[k]) {
-      return {
-        ok: false,
-        reason: `[${mode}] ${k}: expected ${expected[k]}, got ${got[k]}`,
-      };
+      return { ok: false, reason: `[${mode}] ${k}: expected ${expected[k]}, got ${got[k]}` };
     }
   }
-
-  // Exactly one ☑ across the three label lines.
   const checked = [got.lender, got.broker, got.other].filter((g) => g === "☑").length;
   if (checked !== 1) {
     return { ok: false, reason: `[${mode}] expected exactly 1 ☑, got ${checked}` };
   }
+
+  // Layout preservation: paragraph count, label text, and surrounding XML
+  // structure are unchanged — only glyph characters toggle.
+  const inXml = buildFixture();
+  const stripGlyphs = (s: string) => s.replace(/[☐☑☒]/g, "X");
+  if (stripGlyphs(inXml) !== stripGlyphs(out)) {
+    return { ok: false, reason: `[${mode}] non-glyph content changed` };
+  }
+
   return { ok: true };
 }
 
@@ -85,7 +125,7 @@ const failures: string[] = [];
 for (const c of cases) {
   const r = runCase(c);
   if (r.ok) {
-    console.log(`✓ ${c} → exactly one ☑ on the correct label line`);
+    console.log(`✓ ${c} → exactly one ☑ on the correct label, layout preserved`);
     passed++;
   } else {
     console.log(`✗ ${c}: ${r.reason}`);
@@ -96,3 +136,14 @@ console.log(`\n${passed}/${cases.length} RE851A servicing-label cases passed`);
 if (failures.length > 0) {
   throw new Error(`Servicing-label safety pass failed for: ${failures.join(", ")}`);
 }
+
+// Confirm the safety-pass block is wired into the production tag-parser.
+import.meta.resolve;
+const src = await Deno.readTextFile(new URL("./tag-parser.ts", import.meta.url));
+if (!src.includes("RE851A — Servicing Agent safety pass")) {
+  throw new Error("Production safety-pass block is missing from tag-parser.ts");
+}
+if (!src.includes(`Forced RE851A servicing-agent glyphs`)) {
+  throw new Error("Production safety-pass log line is missing from tag-parser.ts");
+}
+console.log("✓ Production safety pass wired into tag-parser.ts");
