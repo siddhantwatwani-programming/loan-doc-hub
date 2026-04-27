@@ -132,7 +132,7 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
 
   const phoneRows: { key: keyof typeof FIELD_KEYS; prefKey: keyof typeof FIELD_KEYS; label: string; prefId: string; hasPreferred?: boolean }[] = [
     { key: 'phoneHome', prefKey: 'preferredHome', label: 'Home', prefId: 'prefHome' },
-    { key: 'phoneHome2', prefKey: 'preferredHome', label: 'Home', prefId: 'prefHome2', hasPreferred: false },
+    { key: 'phoneHome2', prefKey: 'preferredHome2', label: 'Home', prefId: 'prefHome2' },
     { key: 'phoneWork', prefKey: 'preferredWork', label: 'Work', prefId: 'prefWork' },
     { key: 'phoneCell', prefKey: 'preferredCell', label: 'Cell', prefId: 'prefCell' },
     { key: 'phoneFax', prefKey: 'preferredFax', label: 'Fax', prefId: 'prefFax' },
