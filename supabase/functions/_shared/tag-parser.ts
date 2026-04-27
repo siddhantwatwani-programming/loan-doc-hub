@@ -2894,7 +2894,7 @@ export function replaceMergeTags(
       // both a static glyph AND a conditionally-rendered glyph on the same
       // A/B line.
       result = result.replace(
-        /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)(A\.(?:\s|<[^>]+>)*Agent|B\.(?:\s|<[^>]+>)*\*?(?:\s|<[^>]+>)*Principal)/g,
+        /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)(A\.(?:\s|<[^>]+>)*Agent|B\.(?:\s|<[^>]+>)*\*?(?:\s|<[^>]+>)*Principal)/g,
         (_m, g1, mid1, _g2, mid2, labelHead) => `${g1}${mid1}${mid2}${labelHead}`,
       );
     }
