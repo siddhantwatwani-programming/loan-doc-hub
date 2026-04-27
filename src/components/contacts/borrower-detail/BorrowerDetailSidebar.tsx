@@ -1,12 +1,12 @@
 import React from 'react';
 import {
   LayoutDashboard, Briefcase, History, DollarSign, BookOpen,
-  MessageSquare, Building2, FileText, UserCheck, Paperclip, ScrollText, User,
+  MessageSquare, Building2, FileText, UserCheck, UserPlus, Paperclip, ScrollText, User,
 } from 'lucide-react';
 
 export type BorrowerSection =
   | 'borrower' | 'dashboard' | 'portfolio' | 'history' | 'charges'
-  | 'banking' | '1098' | 'authorized-party' | 'trust-ledger'
+  | 'banking' | '1098' | 'additional-guarantor' | 'authorized-party' | 'trust-ledger'
   | 'conversation-log' | 'attachments' | 'events-journal';
 
 const SECTIONS: { id: BorrowerSection; label: string; icon: React.ElementType }[] = [
@@ -17,6 +17,7 @@ const SECTIONS: { id: BorrowerSection; label: string; icon: React.ElementType }[
   { id: 'charges', label: 'Charges', icon: DollarSign },
   { id: 'banking', label: 'Banking', icon: Building2 },
   { id: '1098', label: '1098', icon: FileText },
+  { id: 'additional-guarantor', label: 'Additional Guarantor', icon: UserPlus },
   { id: 'authorized-party', label: 'Authorized Party', icon: UserCheck },
   { id: 'trust-ledger', label: 'Trust Ledger', icon: BookOpen },
   { id: 'conversation-log', label: 'Conversation Log', icon: MessageSquare },

@@ -138,6 +138,15 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
               disabled={isReadOnly}
           />
         );
+      case 'additional-guarantor':
+        return (
+          <BorrowerAdditionalGuarantorForm
+            fields={emptyFields}
+            values={values}
+            onValueChange={handleValueChange}
+              disabled={isReadOnly}
+          />
+        );
       case 'authorized-party':
         return (
           <BorrowerAuthorizedPartyForm
